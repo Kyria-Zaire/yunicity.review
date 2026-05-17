@@ -161,14 +161,40 @@ Voir `.env.example`. Principales :
 
 ```bash
 # Nécessite DATABASE_URL dans .env
-alembic revision --autogenerate -m "description"
 alembic upgrade head
+alembic downgrade -1   # rollback dernière révision
+alembic upgrade head
+```
+
+Révision initiale auth/RBAC : `alembic/versions/20260517_0001_auth_rbac_foundation.py`
+
+## Seed RBAC (TICKET-102)
+
+Idempotent — rôles et permissions MVP uniquement (aucun utilisateur) :
+
+```bash
+# Local ou conteneur backend, après migration
+python -m app.db.seeds
+```
+
+Docker :
+
+```bash
+docker compose exec backend alembic upgrade head
+docker compose exec backend python -m app.db.seeds
+```
+
+## Tests Auth/RBAC
+
+```bash
+pytest                          # unitaires sans DB
+pytest -m integration           # nécessite DATABASE_URL (PostgreSQL)
 ```
 
 ## Prochaines étapes
 
 | Ticket | Objectif |
 |--------|----------|
-| TICKET-003 | Frontend Foundation |
-| TICKET-004 | Docker Compose + PostgreSQL/Redis locaux — **fait** |
-| Sprint Auth | JWT / sessions (`app/core/security.py`) |
+| TICKET-103 | Endpoints auth (register, login, refresh, logout, /me) |
+| TICKET-104 | Guards RBAC `require_permission` |
+| TICKET-105 | Clients frontend auth |
