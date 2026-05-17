@@ -80,13 +80,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: pip-audit (backend)
         working-directory: backend
         run: |
           set -euo pipefail
           python -m pip install --upgrade pip pip-audit
-          python -m pip install -e ".[dev]"
-          # Skip local editable yunicity-api (not on PyPI); audit third-party deps only.
+          python -m venv .venv-ci-audit
+          source .venv-ci-audit/bin/activate
+          pip install -e ".[dev]"
+          # Isolated venv: skip editable yunicity-api + avoid Ubuntu system packages (e.g. bcc).
           pip-audit --skip-editable --strict --desc --format columns
 
       - name: Setup pnpm
