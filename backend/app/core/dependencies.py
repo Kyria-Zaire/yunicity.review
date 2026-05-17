@@ -62,6 +62,24 @@ async def require_authenticated_user(
     return current_user
 
 
+async def get_current_user_optional(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> User | None:
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        return None
+    try:
+        payload = decode_access_token(credentials.credentials)
+        user_id = uuid.UUID(str(payload["sub"]))
+    except (KeyError, ValueError):
+        return None
+
+    user = await UserRepository(session).get_by_id(user_id)
+    if user is None or not user.is_active:
+        return None
+    return user
+
+
 def require_permission(permission_key: str) -> Callable[..., Awaitable[User]]:
     async def _guard(
         current_user: Annotated[User, Depends(get_current_user)],

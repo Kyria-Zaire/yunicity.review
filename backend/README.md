@@ -109,7 +109,40 @@ Utiliser les URLs `localhost:5434` / `localhost:6379` dans `.env` (voir commenta
 | POST | `/api/v1/auth/login` | Connexion |
 | POST | `/api/v1/auth/refresh` | Rotation refresh (cookie ou body mobile) |
 | POST | `/api/v1/auth/logout` | Révocation refresh + clear cookie |
-| GET | `/api/v1/auth/me` | Profil + rôles + permissions (Bearer) |
+| GET | `/api/v1/auth/me` | Identité auth + rôles + permissions (Bearer) |
+| GET | `/api/v1/profile/me` | Profil social du user connecté |
+| PATCH | `/api/v1/profile/me` | Mise à jour profil (username **immuable**) |
+| POST | `/api/v1/profile/complete` | Terminer l'onboarding profil |
+| GET | `/api/v1/profile/{username}` | Profil public (selon visibilité) |
+
+### User vs UserProfile (TICKET-202)
+
+| Table | Rôle |
+|-------|------|
+| `users` | Auth : email, mot de passe, `is_active`, `is_verified` |
+| `user_profiles` | Social : `username`, bio, intérêts, visibilité, onboarding |
+
+À l'inscription, un `user_profiles` est créé automatiquement avec un **username généré** (unique).
+
+**Username (MVP)** :
+
+- Format : `^[a-z0-9_]{3,30}$`, lowercase, trim
+- **Immuable** — pas d'endpoint de rename
+- Liste réservée : `admin`, `yunicity`, `login`, `register`, etc. (`app/core/profile_username.py`)
+
+**Visibilité** :
+
+| Valeur | Comportement MVP |
+|--------|------------------|
+| `public` | Visible après onboarding terminé |
+| `private` | Seul le propriétaire via `/profile/me` |
+| `city_only` | Viewers authentifiés dans la même ville (`users.city`) — enrichissement futur |
+
+**Intérêts** (whitelist) : `food`, `sports`, `tech`, `nightlife`, `business`, `gaming`, `culture`, `fitness`, `music`, `art`, `entrepreneurship` — max 10.
+
+**Onboarding** : ville + ≥1 intérêt → `POST /profile/complete` → `onboarding_completed=true`.
+
+Les champs `users.full_name` et `users.city` restent en place (pas de suppression Sprint 2).
 
 ### RBAC — endpoints de validation technique (TICKET-104)
 
@@ -215,7 +248,10 @@ alembic downgrade -1   # rollback dernière révision
 alembic upgrade head
 ```
 
-Révision initiale auth/RBAC : `alembic/versions/20260517_0001_auth_rbac_foundation.py`
+Révisions :
+
+- `alembic/versions/20260517_0001_auth_rbac_foundation.py` — auth/RBAC
+- `alembic/versions/20260518_0002_user_profiles.py` — profils sociaux + backfill
 
 ## Seed RBAC (TICKET-102)
 
@@ -244,8 +280,10 @@ Tests auth (TICKET-103) : `tests/test_auth_endpoints.py`, `test_refresh_rotation
 
 Tests RBAC (TICKET-104) : `tests/test_rbac_guards.py`, `test_rbac_permissions.py`, `test_rbac_inactive_user.py`.
 
+Tests profil (TICKET-202) : `tests/test_profile_endpoints.py`, `test_profile_username.py`, `test_profile_migration.py`.
+
 ## Prochaines étapes
 
 | Ticket | Objectif |
 |--------|----------|
-| TICKET-105 | Clients frontend auth |
+| TICKET-203+ | Organizations + memberships + vérification |

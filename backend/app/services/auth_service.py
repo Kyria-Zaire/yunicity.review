@@ -26,6 +26,7 @@ from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import LoginRequest, RefreshTokenResponse, RegisterRequest
 from app.schemas.user import UserPublic
+from app.services.profile_service import ProfileService
 
 _INVALID_CREDENTIALS_MSG = "Identifiants invalides."
 
@@ -72,6 +73,12 @@ class AuthService:
                 city=payload.city,
             )
             await self._rbac.assign_role_to_user(user.id, "USER")
+            await ProfileService(self._session).create_profile_for_new_user(
+                user_id=user.id,
+                email=email,
+                full_name=payload.full_name,
+                city=payload.city,
+            )
             await self._session.commit()
         except IntegrityError as exc:
             await self._session.rollback()

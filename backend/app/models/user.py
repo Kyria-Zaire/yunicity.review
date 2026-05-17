@@ -10,6 +10,7 @@ from app.models._mixins import TimestampMixin
 if TYPE_CHECKING:
     from app.models.rbac import UserRole
     from app.models.refresh_token import RefreshToken
+    from app.models.user_profile import UserProfile
 
 
 class User(TimestampMixin, Base):
@@ -36,5 +37,11 @@ class User(TimestampMixin, Base):
     refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
         "RefreshToken",
         back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    profile: Mapped["UserProfile | None"] = relationship(
+        "UserProfile",
+        back_populates="user",
+        uselist=False,
         cascade="all, delete-orphan",
     )
