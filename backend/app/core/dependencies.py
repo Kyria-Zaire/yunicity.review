@@ -14,8 +14,8 @@ from app.core.errors import AppError
 from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.user import User
-from app.repositories.rbac_repository import RbacRepository
 from app.repositories.user_repository import UserRepository
+from app.services.rbac_service import RbacService
 
 _bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -67,7 +67,7 @@ def require_permission(permission_key: str) -> Callable[..., Awaitable[User]]:
         current_user: Annotated[User, Depends(get_current_user)],
         session: Annotated[AsyncSession, Depends(get_db)],
     ) -> User:
-        rbac = RbacRepository(session)
+        rbac = RbacService(session)
         if not await rbac.user_has_permission(current_user.id, permission_key):
             raise AppError(
                 status_code=403,

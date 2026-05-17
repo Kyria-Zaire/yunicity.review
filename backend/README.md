@@ -111,6 +111,28 @@ Utiliser les URLs `localhost:5434` / `localhost:6379` dans `.env` (voir commenta
 | POST | `/api/v1/auth/logout` | Révocation refresh + clear cookie |
 | GET | `/api/v1/auth/me` | Profil + rôles + permissions (Bearer) |
 
+### RBAC — endpoints de validation technique (TICKET-104)
+
+Routes temporaires pour prouver les guards avant les features métier (supprimables ou déplacées plus tard).
+
+| Méthode | Chemin | Permission requise |
+|---------|--------|-------------------|
+| GET | `/api/v1/rbac/me/permissions` | Authentifié |
+| GET | `/api/v1/rbac/moderation/check` | `moderation.read` |
+| GET | `/api/v1/rbac/users/check` | `users.read.all` |
+| GET | `/api/v1/rbac/admin/check` | `system.admin` |
+| POST | `/api/v1/rbac/test/inactive-access` | Authentifié + compte actif |
+
+**Erreurs authZ :**
+
+| HTTP | Code | Cas |
+|------|------|-----|
+| 401 | `UNAUTHORIZED` | Pas de Bearer, JWT invalide ou expiré |
+| 403 | `FORBIDDEN` | Permission manquante (`require_permission`) |
+| 403 | `ACCOUNT_SUSPENDED` | Compte `is_active=false` |
+
+**Rôles MVP (seed)** : `USER`, `MODERATOR`, `CITY_ADMIN`, `SUPER_ADMIN` — permissions uniquement depuis la DB (pas de `users.role`).
+
 ### Auth — web vs mobile
 
 | Plateforme | Refresh token |
@@ -220,9 +242,10 @@ pytest -m integration           # nécessite DATABASE_URL (PostgreSQL)
 
 Tests auth (TICKET-103) : `tests/test_auth_endpoints.py`, `test_refresh_rotation.py`, `test_auth_permissions.py`.
 
+Tests RBAC (TICKET-104) : `tests/test_rbac_guards.py`, `test_rbac_permissions.py`, `test_rbac_inactive_user.py`.
+
 ## Prochaines étapes
 
 | Ticket | Objectif |
 |--------|----------|
-| TICKET-104 | Guards RBAC avancés + endpoints protégés métier |
 | TICKET-105 | Clients frontend auth |
