@@ -32,6 +32,10 @@ async def close_redis() -> None:
     _redis_client = None
 
 
+def get_redis_client() -> "Redis | None":
+    return _redis_client
+
+
 async def check_redis() -> CheckStatus:
     settings = get_settings()
     if not settings.redis_url:

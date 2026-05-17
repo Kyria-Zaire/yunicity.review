@@ -43,6 +43,10 @@ def get_engine() -> AsyncEngine | None:
     return _engine
 
 
+def get_session_factory() -> async_sessionmaker[AsyncSession] | None:
+    return _session_factory
+
+
 async def dispose_db() -> None:
     global _engine, _session_factory
     if _engine is not None:

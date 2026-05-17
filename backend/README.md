@@ -19,8 +19,12 @@ backend/
 ├── app/
 │   ├── main.py              # create_app()
 │   ├── api/v1/              # routers versionnés
-│   ├── core/                # config, logging, security (TODO auth)
-│   ├── db/                  # Base, session async
+│   ├── core/                # config, security, dependencies, rate limit
+│   ├── db/                  # Base, session, seeds
+│   ├── models/              # User, RBAC, refresh_tokens
+│   ├── repositories/        # Accès DB
+│   ├── services/            # Logique métier (auth)
+│   ├── schemas/             # Pydantic API
 │   └── integrations/        # Redis
 ├── alembic/
 ├── tests/
@@ -101,6 +105,24 @@ Utiliser les URLs `localhost:5434` / `localhost:6379` dans `.env` (voir commenta
 |---------|--------|-------------|
 | GET | `/api/v1/health` | Liveness |
 | GET | `/api/v1/ready` | Readiness (DB / Redis si configurés) |
+| POST | `/api/v1/auth/register` | Inscription citoyenne |
+| POST | `/api/v1/auth/login` | Connexion |
+| POST | `/api/v1/auth/refresh` | Rotation refresh (cookie ou body mobile) |
+| POST | `/api/v1/auth/logout` | Révocation refresh + clear cookie |
+| GET | `/api/v1/auth/me` | Profil + rôles + permissions (Bearer) |
+
+### Auth — web vs mobile
+
+| Plateforme | Refresh token |
+|------------|----------------|
+| Web / admin | Cookie httpOnly `refresh_token`, path `/api/v1/auth` |
+| Mobile | Header `X-Client-Platform: mobile` + champ `refresh_token` dans le JSON (register/login/refresh) |
+
+Workflow : **register/login** → `access_token` (Bearer, 15 min) + refresh → **refresh** pour renouveler l’access → **logout** révoque le refresh.
+
+**Décision DECIDE (Sprint 1, validée CTO)** : le PRD-101 mentionnait un refresh à 30 jours ; l’implémentation TICKET-103 utilise **7 jours** (`REFRESH_TOKEN_EXPIRE_DAYS`, défaut `7`). Choix plus restrictif pour limiter la fenêtre d’abus si un refresh est compromis (l’access JWT reste à 15 min). Ajustement possible après MEASURE en recette.
+
+Prérequis : `alembic upgrade head` + `python -m app.db.seeds` (rôles RBAC).
 
 Exemple `/api/v1/health` :
 
@@ -156,6 +178,11 @@ Voir `.env.example`. Principales :
 | `DATABASE_URL` | Optionnel (asyncpg) |
 | `REDIS_URL` | Optionnel |
 | `CORS_ORIGINS` | Liste JSON ou CSV — pas de `*` en prod |
+| `JWT_SECRET_KEY` | Secret HS256 (≥ 32 car. en preprod/prod) |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Durée access JWT (défaut 15) |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | Durée refresh (défaut 7) |
+| `REFRESH_COOKIE_*` | Cookie httpOnly refresh (web) |
+| `REFRESH_TOKEN_PEPPER` | Pepper optionnel pour hash refresh |
 
 ## Migrations
 
@@ -191,10 +218,11 @@ pytest                          # unitaires sans DB
 pytest -m integration           # nécessite DATABASE_URL (PostgreSQL)
 ```
 
+Tests auth (TICKET-103) : `tests/test_auth_endpoints.py`, `test_refresh_rotation.py`, `test_auth_permissions.py`.
+
 ## Prochaines étapes
 
 | Ticket | Objectif |
 |--------|----------|
-| TICKET-103 | Endpoints auth (register, login, refresh, logout, /me) |
-| TICKET-104 | Guards RBAC `require_permission` |
+| TICKET-104 | Guards RBAC avancés + endpoints protégés métier |
 | TICKET-105 | Clients frontend auth |

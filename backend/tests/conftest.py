@@ -1,10 +1,12 @@
-from collections.abc import AsyncGenerator, Iterator
+pytest_plugins = ["tests.conftest_auth"]
 
-import pytest
-from app.core.config import get_settings
-from app.main import create_app
-from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
+from collections.abc import AsyncGenerator, Iterator  # noqa: E402
+
+import pytest  # noqa: E402
+from app.core.config import get_settings  # noqa: E402
+from app.main import create_app  # noqa: E402
+from fastapi import FastAPI  # noqa: E402
+from httpx import ASGITransport, AsyncClient  # noqa: E402
 
 
 @pytest.fixture

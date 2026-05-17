@@ -994,6 +994,7 @@ En tant que **plateforme**, je veux **vérifier des permissions sur les endpoint
 | Q2 | `HS256` vs `RS256` MVP ? | HS256 | OK dev ; revisiter preprod |
 | Q3 | Nom cookie refresh | `yunicity_refresh` | OK |
 | Q4 | Header `X-Client-Platform` pour register/login ? | mobile vs web | TICKET-105 |
+| Q5 | Durée refresh token | **7 jours** en impl. (PRD initial : 30 j) | **DECIDE** — validé CTO Sprint 1 |
 
 ---
 
@@ -1002,6 +1003,7 @@ En tant que **plateforme**, je veux **vérifier des permissions sur les endpoint
 | Date | Auteur | Changement |
 |------|--------|------------|
 | 2026-05-17 | agents PRD-101 | Création DESIGN_READY — Auth + Users + RBAC Foundation |
+| 2026-05-17 | CTO / TICKET-103 | DECIDE : `REFRESH_TOKEN_EXPIRE_DAYS=7` (vs 30 j PRD) — sécurité Sprint 1 |
 
 ---
 
