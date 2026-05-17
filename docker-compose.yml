@@ -1,0 +1,92 @@
+# Yunicity — stack de développement local (TICKET-004)
+#
+# ⚠️  DEV ONLY — identifiants et mots de passe ci-dessous sont réservés au dev local.
+#     Interdiction de réutiliser ces valeurs en recette, preprod ou prod.
+#
+# Variables backend : noms alignés sur backend/app/core/config.py (Settings) :
+#   APP_NAME, APP_ENV, DEBUG, API_V1_PREFIX, DATABASE_URL, REDIS_URL, CORS_ORIGINS, LOG_LEVEL
+#   (ne pas utiliser ENVIRONMENT ou autre alias non défini dans Settings)
+#
+# Copier : cp backend/.env.example backend/.env  (optionnel)
+
+name: yunicity-dev
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: yunicity-postgres-dev
+    # DEV ONLY — POSTGRES_* : ne pas réutiliser hors dev local
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-yunicity_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-yunicity}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-yunicity_dev_password}
+    ports:
+      - "${POSTGRES_PORT:-5434}:5432"
+    volumes:
+      - yunicity_postgres_data:/var/lib/postgresql/data
+      - ./infra/docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-yunicity} -d ${POSTGRES_DB:-yunicity_dev}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: yunicity-redis-dev
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - yunicity_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: yunicity-backend-dev
+    command: uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: backend/.env
+        required: false
+    # Noms = alias pydantic dans app/core/config.py (Settings)
+    environment:
+      APP_NAME: ${APP_NAME:-Yunicity API}
+      APP_ENV: ${APP_ENV:-dev}
+      DEBUG: ${DEBUG:-true}
+      API_V1_PREFIX: ${API_V1_PREFIX:-/api/v1}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-yunicity}:${POSTGRES_PASSWORD:-yunicity_dev_password}@postgres:5432/${POSTGRES_DB:-yunicity_dev}
+      REDIS_URL: redis://redis:6379/0
+      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000","http://localhost:19006"]}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+
+volumes:
+  yunicity_postgres_data:
+  yunicity_redis_data:

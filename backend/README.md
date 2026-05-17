@@ -44,9 +44,56 @@ cp .env.example .env
 
 ## Lancer l’API
 
+### Docker (recommandé — TICKET-004)
+
+**DEV ONLY** — identifiants du compose (ex. `yunicity_dev_password`) ne doivent **jamais** être réutilisés en recette/preprod/prod.
+
+Variables : mêmes noms que `app/core/config.py` (`APP_ENV`, `APP_NAME`, `DEBUG`, … — pas `ENVIRONMENT`).
+
+Depuis la **racine** du monorepo :
+
+```bash
+cp .env.example .env
+cp backend/.env.example backend/.env
+docker compose up --build -d
+docker compose ps
+docker compose logs -f backend
+```
+
+Vérifications :
+
+```bash
+curl http://localhost:8000/api/v1/health
+curl http://localhost:8000/api/v1/ready
+# Windows PowerShell : curl.exe au lieu de curl
+```
+
+PostGIS :
+
+```bash
+docker compose exec postgres psql -U yunicity -d yunicity_dev -c "SELECT PostGIS_Version();"
+```
+
+Reset volumes dev : `bash scripts/reset-dev-env.sh` ou `.\scripts\reset-dev-env.ps1`
+
+Qualité dans le conteneur :
+
+```bash
+docker compose exec backend pytest
+docker compose exec backend ruff check .
+docker compose exec backend mypy app tests
+docker compose exec backend alembic current
+```
+
+Voir [infra/docker/README.md](../infra/docker/README.md).
+
+### Local (sans Docker)
+
 ```bash
 uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --reload
 ```
+
+Utiliser les URLs `localhost:5434` / `localhost:6379` dans `.env` (voir commentaires dans `.env.example`).
 
 ## Endpoints
 
@@ -73,6 +120,18 @@ Exemple `/api/v1/ready` (sans DB/Redis) :
   "checks": {
     "database": "disabled",
     "redis": "disabled"
+  }
+}
+```
+
+Avec Docker Compose (DB + Redis connectés) :
+
+```json
+{
+  "status": "ready",
+  "checks": {
+    "database": "ok",
+    "redis": "ok"
   }
 }
 ```
@@ -111,5 +170,5 @@ alembic upgrade head
 | Ticket | Objectif |
 |--------|----------|
 | TICKET-003 | Frontend Foundation |
-| TICKET-004 | Docker Compose + PostgreSQL/Redis locaux |
+| TICKET-004 | Docker Compose + PostgreSQL/Redis locaux — **fait** |
 | Sprint Auth | JWT / sessions (`app/core/security.py`) |

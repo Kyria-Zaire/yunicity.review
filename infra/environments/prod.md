@@ -9,9 +9,12 @@
 | Aspect | Politique |
 |--------|-----------|
 | Données | Production réelle |
-| Accès | Restreint, moindre privilège |
+| Secrets | **Gestionnaire de secrets** (pas de fichiers `.env` dans l’image ou le dépôt) |
+| Backups | Automatisés, chiffrés, test de restauration régulier |
+| Rollback | Plan documenté par release ; migrations réversibles quand possible |
+| Accès | Moindre privilège, MFA, journalisation |
 | Paiements | Stripe live |
-| Logs | Sans PII ; pas de stack traces client |
+| Logs | Sans PII ; pas de stack traces exposées au client |
 | HTTPS | Obligatoire |
 
 ## Règles strictes
@@ -20,6 +23,7 @@
 - **Jamais** de commit de secrets
 - Promotion uniquement depuis preprod validée
 - Hotfix : branche `hotfix/*` + validation **CTO**
+- **Jamais** de données prod brutes en dev/recette
 
 ## Avant tout changement destructif
 

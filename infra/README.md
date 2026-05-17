@@ -6,7 +6,8 @@ Docker, environnements et déploiement.
 
 | Dossier | Rôle |
 |---------|------|
-| [docker/](docker/) | Compose, Dockerfiles (TICKET-004) |
+| [docker/](docker/) | Init Postgres/PostGIS, doc services |
+| `docker-compose.yml` (racine) | Stack dev Postgres + Redis + API |
 | [environments/](environments/) | dev, recette, preprod, prod |
 
 ## Promotion

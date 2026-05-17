@@ -15,13 +15,25 @@ python scripts/lint-agent-rules.py --strict   # mode CI
 
 Contrôles : frontmatter unique, parité Cursor↔Claude, docs canon, pas de `staging` / secrets patterns.
 
+### `reset-dev-env.sh` / `reset-dev-env.ps1`
+
+**DEV ONLY** — supprime les volumes Docker locaux (Postgres, Redis) et relance la stack.
+
+```bash
+bash scripts/reset-dev-env.sh
+```
+
+```powershell
+.\scripts\reset-dev-env.ps1
+```
+
+Ne pas utiliser hors environnement de développement local.
+
 ## Prévus (tickets suivants)
 
 | Script | Ticket |
 |--------|--------|
-| Bootstrap backend | TICKET-002 |
 | Bootstrap frontend workspace | TICKET-003 |
-| `docker-up.sh` / compose helpers | TICKET-004 |
 | CI wrappers | TICKET-005 |
 
 ## Conventions
