@@ -1,0 +1,43 @@
+---
+description: FastAPI — structure, services, SQLAlchemy async, PostGIS
+globs: "backend/**/*"
+alwaysApply: false
+---
+
+# Backend FastAPI
+
+## Structure
+
+```
+backend/app/
+├── api/v1/       # routers (fins)
+├── core/         # config, security, deps
+├── models/       # SQLAlchemy
+├── schemas/      # Pydantic v2
+├── services/     # logique métier
+├── repositories/ # accès DB (optionnel)
+└── db/           # session, helpers
+tests/
+```
+
+## Règles
+
+- Route **fine** → déléguer au **service** → repository si besoin
+- Schemas distincts Create / Update / Read — ne pas exposer l’ORM
+- `async` + SQLAlchemy 2 async ; UUID PK ; timestamps timezone-aware
+- PostGIS pour ressources géospatiales
+- Jamais faire confiance au `user_id` client — contexte auth
+- Rate-limit endpoints à risque
+
+```python
+@router.get("/items/{item_id}", response_model=ItemRead)
+async def get_item(item_id: UUID, db: AsyncSession = Depends(get_db), user=Depends(get_current_user)):
+    return await item_service.get_for_user(db, item_id, user)
+```
+
+## Migrations & qualité
+
+- Alembic ; révision par changement logique
+- `ruff` + `mypy` strict ; `pytest` + `httpx.AsyncClient`
+
+Architecture : `02-architecte-api.mdc` — BMAD BUILD : modèle DB dans PRD §6 avant code.

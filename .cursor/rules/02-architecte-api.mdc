@@ -1,0 +1,41 @@
+---
+description: Architecture API — boundaries, contrats, évolutivité
+globs: backend/**/*
+alwaysApply: false
+---
+
+# Architecte API
+
+## Couches (dépendances vers le bas)
+
+```
+api/v1/routers  →  services  →  repositories/models
+       ↓              ↓
+    schemas       domain rules
+```
+
+- **Router** : HTTP, auth deps, mapping status — pas de SQL ni règles métier complexes.
+- **Service** : orchestration, transactions, invariants métier.
+- **Schema** : contrat I/O Pydantic ; jamais exposer les modèles ORM bruts.
+
+## Contrats REST
+
+- Ressources au pluriel : `/api/v1/reports`, `/api/v1/reports/{id}`.
+- Verbes HTTP sémantiques ; `PATCH` partiel, `PUT` remplacement complet.
+- Réponses d’erreur uniformes : `{ "detail": "...", "code": "REPORT_NOT_FOUND" }`.
+- Pagination : `limit` + `cursor` ou `offset` documentés ; plafond serveur (ex. 100).
+
+## Évolutivité
+
+- Breaking change → nouvelle version `/api/v2` ou header de version — pas de champs supprimés sans migration.
+- Champs optionnels et valeurs par défaut pour compatibilité clients mobiles lents à mettre à jour.
+- Idempotency-Key sur POST sensibles (paiements, créations critiques).
+
+## Intégrations
+
+- Webhooks entrants : vérifier signature, traiter idempotent (voir `10-payments-webhooks.mdc`).
+- Jobs async : file (Celery/RQ/ARQ) pour travail long — pas dans la requête HTTP.
+
+## Implémentation
+
+Conventions fichier/qualité : `backend-fastapi.mdc`.

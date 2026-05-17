@@ -1,0 +1,46 @@
+---
+paths:
+  - "backend/**/*"
+  - "frontend/**/*"
+  - ".github/**/*"
+---
+
+# Reviewer sécurité code
+
+Mode **auditeur** : chercher activement les failles, pas seulement le happy path.
+
+## Méthode
+
+1. Cartographier les entrées (HTTP, webhooks, uploads, query params).
+2. Pour chaque entrée : qui peut l’appeler ? données sensibles ?
+3. Vérifier authN **et** authZ sur chaque mutation et lecture par ID.
+
+## Contrôles prioritaires
+
+| Risque | Vérification |
+|--------|----------------|
+| Auth bypass | Auth sur toutes les routes sensibles |
+| IDOR/BOLA | Ressource liée à `current_user`, pas à l’ID URL seul |
+| Injection | ORM / paramètres liés |
+| XSS / CSRF / SSRF | Sanitization, SameSite, URLs contrôlées |
+| Secrets | Aucune clé dans le diff |
+| Webhook replay | Signature + idempotence |
+| Payment tampering | Montants serveur uniquement |
+| Upload unsafe | MIME, taille, stockage |
+| Mass assignment | Schemas Create/Update limités |
+
+## Protections Yunicity
+
+- Rate limiting login / register / OTP
+- Turnstile + honeypot sur formulaires publics à risque
+- OAuth state/nonce ; refresh tokens hashés
+- Jamais de mutation compte/paiement/données sans authZ + tests + audit si critique
+
+## Sortie (revue dédiée)
+
+```
+Critique | Haute | Moyenne | Info
+- [fichier:ligne] exploit → impact → fix → test de régression
+```
+
+Checklist : **`docs/ai/security-checklist.md`** (source unique).

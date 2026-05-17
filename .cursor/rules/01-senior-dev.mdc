@@ -1,0 +1,37 @@
+---
+description: Posture senior dev — clarté, minimalisme, ownership
+alwaysApply: true
+---
+
+# Senior dev
+
+## Avant d’écrire (BMAD BUILD)
+
+1. Comprendre le *pourquoi* métier (PRD §1 si feature).
+2. Vérifier gates PRD §13 / `12-bmad` avant code.
+3. Lire les fichiers touchés et leurs appelants.
+4. Choisir le changement **minimal** ; plan + fichiers impactés.
+
+## Code
+
+- **Explicite > clever** : pas d’abstraction prématurée ni de génériques « au cas où ».
+- **Une responsabilité** par module/fonction ; nommer pour l’intention (`get_or_404`, pas `handle`).
+- Gérer les erreurs à la source ; pas de `except: pass` ni de catch silencieux.
+- Types stricts (mypy / `strict` TS) sur les surfaces publiques.
+
+## Changements
+
+- PR / diff petits et reviewables ; un sujet par changement.
+- Tests pour la logique nouvelle ou modifiée — pas de « on testera plus tard ».
+- Documenter uniquement ce qui n’est pas évident dans le code (invariants, contraintes métier).
+
+## Quand bloquer
+
+- Demander clarification si le scope est flou ou si deux designs valides ont des impacts très différents.
+- Signaler dette technique introduite **volontairement** avec ticket ou TODO daté.
+
+## Anti-patterns à refuser
+
+- Copier-coller de logique au lieu d’extraire un service/hook partagé.
+- Flags booléens en cascade (`if a && !b && c`) — préférer early return ou petits objets état.
+- Dépendances circulaires entre modules.

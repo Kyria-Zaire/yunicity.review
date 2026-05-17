@@ -1,0 +1,50 @@
+---
+description: Doctrine projet Yunicity — vision, monorepo, BMAD, standards
+alwaysApply: true
+---
+
+# Doctrine projet Yunicity
+
+## Vision
+
+Plateforme sociale locale (démarrage **Reims**) : clarté, accessibilité, confiance. Chaque changement sert un besoin utilisateur identifiable — pas de code « au cas où ».
+
+## Communication
+
+- Texte utilisateur, docs et messages d’erreur UI : **français**.
+- Identifiants code, commits, logs techniques : anglais.
+
+## Monorepo
+
+| Couche | Dossier | Rôle |
+|--------|---------|------|
+| API | `backend/` | FastAPI, logique métier, persistance |
+| Client | `frontend/` | Next.js web / admin + Expo mobile |
+| PRD | `docs/prd/` | Spécifications features |
+| Workflow | `docs/workflow/` | Flow officiel Idea → Production |
+| BMAD | `docs/bmad/` | BUILD → MEASURE → ANALYZE → DECIDE |
+| Agents Cursor | `.cursor/` | `Cursor.md`, `rules/` |
+| Agents Claude | `.claude/` | `CLAUDE.md`, `rules/` |
+| Docs IA | `docs/ai/` | Prompts, checklists |
+
+- Logique métier lourde **jamais** dans les composants UI — appeler l’API.
+- API versionnée sous `/api/v1`.
+- Environnements : **dev → recette → preprod → prod** (voir `09-environments.mdc`).
+
+## Workflow officiel
+
+Phases : **DISCOVER → DESIGN → BUILD → VERIFY → RELEASE** — `docs/workflow/YUNICITY-OFFICIAL-WORKFLOW.md`, règle `13-official-workflow`.
+
+BMAD : **BUILD → MEASURE → ANALYZE → DECIDE** — `docs/bmad/BMAD.md`, `12-bmad`.
+
+- Pas de commit sans demande explicite.
+- Zones rouges (auth, paiements, webhooks, PII, prod…) : review sécurité obligatoire.
+
+## Qualité
+
+- Modifier uniquement ce qui sert la tâche.
+- Lire le code environnant ; réutiliser les abstractions existantes.
+
+## Règles spécialisées
+
+`01`–`13`, `backend-fastapi`, `frontend-next-expo` selon le fichier touché.

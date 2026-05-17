@@ -1,0 +1,53 @@
+---
+description: Next.js, Expo et React — Frontend Yunicity
+globs: "frontend/**/*"
+alwaysApply: false
+---
+
+# Frontend Next.js + Expo
+
+## Organisation
+
+- **Web** : Next.js App Router (`app/`), Server Components par défaut, `"use client"` si nécessaire
+- **Mobile** : Expo (SDK récent), expo-router si adopté
+- **Partage** : hooks, types API, `lib/api`, design tokens
+
+## TypeScript
+
+- Strict ; pas de `any` sans justification
+- DTO alignés sur schemas Pydantic backend
+
+## Data fetching
+
+- Web : RSC ou React Query / SWR ; pas de secrets `NEXT_PUBLIC_*` abusifs
+- Mobile : `apiClient` + intercepteurs auth ; tokens stockés de façon sécurisée
+- Variables : `NEXT_PUBLIC_*` (web), `EXPO_PUBLIC_*` (mobile)
+
+```typescript
+export async function getCity(id: string): Promise<City> {
+  const res = await api.get<City>(`/api/v1/cities/${id}`);
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.data;
+}
+```
+
+## États UI obligatoires (PRD §5, BMAD BUILD)
+
+loading · empty · error · success — chaque écran data-driven
+
+## Composants
+
+- Fichiers < 200 lignes ; extraire sous-composants
+- Tailwind (web) ; NativeWind / StyleSheet (mobile) — cohérent
+- Pas d’orchestration lourde dans le JSX → hooks
+
+## Navigation & perf
+
+- `Link` / `useRouter` (web) ; deep links documentés (mobile)
+- `next/image` / `expo-image` ; `FlashList` pour longues listes
+
+## Tests
+
+- Testing Library (web) ; RNTL (mobile) ; mocker l’API en CI
+
+Voir aussi : `07-constructeur-ui.mdc`, `08-ui-ux-pro-max.mdc`.

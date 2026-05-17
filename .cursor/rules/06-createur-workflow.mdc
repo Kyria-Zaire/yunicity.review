@@ -1,0 +1,62 @@
+---
+description: CI/CD, git, promotion dev → recette → preprod → prod
+globs: ".github/**/*,**/Dockerfile*,**/docker-compose*.{yml,yaml},**/.gitlab-ci.yml"
+alwaysApply: false
+---
+
+# Créateur workflow
+
+## Git
+
+- `main` (prod-ready) · `develop` (intégration) · `feature/*` · `fix/*` · `hotfix/*`
+- PR obligatoire pour feature importante ; pas de force-push sur `main` sans accord
+- Commits : phrase courte anglais ; corps = *pourquoi*
+
+## Environnements (aligné PRD / BMAD)
+
+```
+dev → recette → preprod → prod
+```
+
+| Env | Rôle |
+|-----|------|
+| dev | développement local |
+| recette | validation fonctionnelle, données test |
+| preprod | miroir prod, dry-run migrations |
+| prod | utilisateurs réels |
+
+- Base de données **séparée** par environnement
+- Pas de saut direct vers prod (sauf hotfix validé CTO)
+- Voir `09-environments.mdc`
+
+## CI (`.github/workflows/`)
+
+| Workflow | Déclencheur | Jobs |
+|----------|-------------|------|
+| `lint-agent-rules.yml` | PR + rules/docs | cohérence PRD/BMAD, frontmatter |
+| `ci-backend.yml` | PR + `backend/**` | ruff, mypy, pytest |
+| `ci-frontend.yml` | PR + `frontend/**` | lint, typecheck, test |
+| `ci-security.yml` | hebdo + PR | audit deps, secret scan |
+
+```bash
+python scripts/lint-agent-rules.py          # local
+python scripts/lint-agent-rules.py --strict # comme CI
+```
+
+Gates PR : lint, types, tests, build, migrations si pertinent.
+
+## Pipeline
+
+- Build → tests → image → deploy recette → QA → preprod smoke → prod
+- Migrations tracées dans le job deploy
+- Avant migration prod destructive : backup, dry-run preprod, rollback documenté
+
+## Docker
+
+- Multi-stage ; user non-root ; `HEALTHCHECK` sur `/health`
+- Secrets via orchestrateur, pas `ARG` sensibles
+
+## Agents
+
+- Ne pas modifier `.github/` sans tâche explicite
+- Ne pas committer workflows sans validation utilisateur

@@ -1,0 +1,45 @@
+---
+paths:
+  - "frontend/**/*.{tsx,jsx,css}"
+---
+
+# UI / UX Pro Max
+
+## Principes
+
+- **Claire, citoyenne, locale, de confiance** — action avant décoration
+- Ton : moderne, chaleureux, social ; « ma ville est vivante »
+- shadcn/ui pour admin/web si pertinent
+
+## UX prioritaires
+
+1. Onboarding rapide
+2. Contexte ville clair
+3. Découverte simple
+4. Preuve sociale
+5. Participation facile
+6. Sécurité perçue
+
+## Design system
+
+- Tokens centralisés ; composants base réutilisés
+- Hiérarchie forte ; **une** action primaire visible
+- États UI obligatoires : loading, empty, error, success (PRD §5, BMAD BUILD)
+
+## Accessibilité (WCAG 2.1 AA)
+
+- Contraste ≥ 4.5:1 ; focus clavier ; labels ; touch ≥ 44px mobile
+
+## Responsive
+
+- Mobile-first ; safe areas ; 320px → desktop
+
+## Microcopy
+
+- Français, court, humain, orienté action
+- Éviter le jargon SaaS générique
+
+## Revue
+
+- Grille 4/8px ; pas de style inline si token existe
+- Si trop complexe : réduire les choix, clarifier l’action principale

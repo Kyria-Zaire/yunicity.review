@@ -1,0 +1,46 @@
+---
+description: Paiements et webhooks — Stripe, idempotence, sécurité
+globs: "{backend/**/*payment*,backend/**/*webhook*,backend/**/*stripe*,frontend/**/*payment*,frontend/**/*checkout*}"
+alwaysApply: false
+---
+
+# Payments & webhooks
+
+## Principes
+
+- **Le serveur fait foi** : montants, statuts et droits issus de la DB + provider — jamais du client seul.
+- Webhooks = source de vérité asynchrone ; l’UI affiche un état provisoire jusqu’à confirmation.
+
+## Stripe (convention)
+
+1. **Checkout / PaymentIntent** créé côté backend avec `amount` calculé serveur.
+2. Client reçoit uniquement `client_secret` ou `session_id` — pas de prix modifiable côté JS.
+3. Webhook `POST /api/v1/webhooks/stripe` :
+   - Vérifier signature (`stripe.Webhook.construct_event`).
+   - Traiter **idempotent** : clé = `event.id` en table `processed_webhooks`.
+   - Répondre 200 rapidement ; travail lourd en tâche async si besoin.
+
+```python
+# ✅ Idempotence webhook
+if await webhook_repo.exists(event.id):
+    return {"status": "already_processed"}
+await payment_service.handle_event(event)
+await webhook_repo.mark_processed(event.id)
+```
+
+## États commande / abonnement
+
+- Machine à états explicite : `pending` → `paid` → `refunded` / `failed`.
+- Transitions uniquement via service métier, pas de PATCH client sur `status`.
+
+## Frontend
+
+- Afficher succès seulement après polling ou redirect validé serveur.
+- Ne pas stocker de données carte — Stripe Elements / Checkout hébergé.
+
+## Tests
+
+- Fixtures événements Stripe signés (CLI ou mocks).
+- Cas : double delivery webhook, événement hors ordre, remboursement.
+
+Sécurité : `04-reviewer-securite-code.mdc`.

@@ -1,0 +1,52 @@
+---
+description: Checklist revue PR — correctness, sécurité, BMAD BUILD
+alwaysApply: false
+---
+
+# Code review — checklist PR
+
+> Invoquer pour une revue : « applique 05-code-review ».
+
+## Compréhension
+
+- [ ] Titre/description clairs ; scope limité ; ticket lié
+- [ ] PRD / phase BMAD cohérents si feature significative
+
+## Correctness
+
+- [ ] Cas nominaux + erreurs (4xx/5xx, UI loading/empty/error)
+- [ ] Pas de régression ; types backend ↔ frontend alignés
+
+## Qualité
+
+- [ ] Nommage explicite ; pas de code mort
+- [ ] `11-anti-spaghetti` : pas de duplication ni couplage excessif
+- [ ] Tests pour logique modifiée
+
+## Sécurité
+
+- [ ] Pas de secrets dans le diff
+- [ ] AuthZ nouveaux endpoints
+- [ ] `docs/ai/security-checklist.md` si auth, PII, paiements, webhooks
+
+## UI/UX (si applicable)
+
+- [ ] Français ; responsive ; `08-ui-ux-pro-max` (a11y)
+
+## Ops
+
+- [ ] Migrations + `.env.example` ; CI verte
+- [ ] Promotion env : dev → recette → preprod → prod
+
+## Verdict strict
+
+```
+Verdict: APPROVE / REQUEST CHANGES / BLOCK
+Blocking:
+Non-blocking:
+Security:
+Test gaps:
+```
+
+- **Approuver** : OK ou réserves mineures documentées
+- **Bloquer** : sécurité, perte de données, auth/paiement/webhook non sûr

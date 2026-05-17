@@ -1,0 +1,12 @@
+---
+description: Renvoi checklist sécurité — merge et release (BMAD BUILD/VERIFY)
+alwaysApply: false
+---
+
+# Checklist sécurité
+
+Checklist canonique (une seule source) : **`docs/ai/security-checklist.md`**
+
+Parcourir avant merge PR et avant promotion **recette → preprod → prod**.
+
+Mode revue approfondie : `04-reviewer-securite-code.mdc` + prompt Security Review dans `docs/ai/prompts.md`.

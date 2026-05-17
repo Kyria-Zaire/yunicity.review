@@ -1,0 +1,25 @@
+# Normalisation fin de ligne (LF) pour tout le texte
+* text=auto eol=lf
+
+# Scripts shell exécutables
+*.sh text eol=lf
+
+# Binaires
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.gz binary
+
+# Linguist overrides (optionnel GitHub)
+docs/** linguist-documentation
+.cursor/** linguist-documentation
+.claude/** linguist-documentation

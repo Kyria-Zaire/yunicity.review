@@ -1,0 +1,36 @@
+name: Lint agent rules (PRD / BMAD coherence)
+
+on:
+  pull_request:
+    paths:
+      - ".cursor/**"
+      - ".claude/**"
+      - "docs/bmad/**"
+      - "docs/workflow/**"
+      - "docs/prd/**"
+      - "docs/ai/**"
+      - "scripts/lint-agent-rules.py"
+      - ".github/workflows/lint-agent-rules.yml"
+  push:
+    branches: [main]
+    paths:
+      - ".cursor/**"
+      - ".claude/**"
+      - "docs/bmad/**"
+      - "docs/workflow/**"
+      - "docs/prd/**"
+      - "docs/ai/**"
+      - "scripts/lint-agent-rules.py"
+
+jobs:
+  lint-agent-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Lint rules coherence
+        run: python scripts/lint-agent-rules.py --strict

@@ -1,0 +1,54 @@
+---
+paths:
+  - "**/.env*"
+  - "backend/**/config*.py"
+  - "backend/**/settings*.py"
+  - "frontend/**/next.config.*"
+---
+
+# Environments
+
+## Hiérarchie (canon PRD + BMAD)
+
+```
+dev → recette → preprod → prod
+```
+
+- Comportement par **configuration**, pas par branche Git
+- Même build ; variables et bases distinctes
+
+## Bases de données
+
+- `yunicity_dev`, `yunicity_recette`, `yunicity_preprod`, `yunicity_prod`
+- Schéma identique ; données différentes
+- Jamais de données prod brutes en dev — anonymisation si refresh
+
+## Fichiers env
+
+- `.env` gitignoré ; `.env.example` commenté sans secrets
+- Fichiers par env (ex. `.env.recette`) — ne pas committer les vrais secrets
+
+## Variables
+
+| Préfixe | Client ? | Exemple |
+|---------|----------|---------|
+| (aucun) | Non | `DATABASE_URL`, `JWT_SECRET` |
+| `NEXT_PUBLIC_` | Web | `NEXT_PUBLIC_API_URL` |
+| `EXPO_PUBLIC_` | Mobile | `EXPO_PUBLIC_API_URL` |
+
+- Validation au boot (`pydantic-settings`) — fail fast
+
+## Par environnement
+
+| Env | Données | Notes |
+|-----|---------|-------|
+| dev | seed / Docker local | hot reload |
+| recette | test anonymisées | validation BMAD MEASURE |
+| preprod | proche prod | dry-run migrations |
+| prod | réelles | HTTPS, logs sans PII |
+
+## CORS
+
+Origines explicites par env (localhost, Expo tunnel, domaines prod).
+
+Pipeline : `06-createur-workflow.md`.

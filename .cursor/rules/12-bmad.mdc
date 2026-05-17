@@ -1,0 +1,36 @@
+---
+description: Méthode BMAD — Build, Measure, Analyze, Decide
+alwaysApply: true
+---
+
+# BMAD (Yunicity)
+
+Sous-cycle : **BUILD → MEASURE → ANALYZE → DECIDE**. Détail : `docs/bmad/BMAD.md`. Flow complet : `docs/workflow/YUNICITY-OFFICIAL-WORKFLOW.md`.
+
+## BUILD — avant tout code
+
+Gates obligatoires : PRD §13 (`docs/prd/PRD-template.md`) — validé, architecture, risques, permissions, endpoints, modèle DB.
+
+- Plus petite version **correcte et sécurisée** ; modulaire ; testable.
+- **Interdit** : coder sans plan, logique métier dans routes, secrets en dur, bypass auth, patch prod non tracé.
+- Livrables : code, migrations, tests, `.env.example`.
+
+## MEASURE — après déploiement recette/prod
+
+Mesurer produit (adoption, conversion, engagement), technique (p95, erreurs, DB, queues), sécurité (abus, auth), UX (abandon, friction).
+
+## ANALYZE — sur les données
+
+Scope correct ? Vraie valeur ? Ralentissements, dette, patterns, risques sécurité, confusion UX.
+
+## DECIDE — action suivante
+
+Scaler | refactor | optimiser | supprimer | repousser | sécuriser | monitorer.
+
+**Règle CTO : ne jamais scaler une mauvaise architecture.**
+
+## Agent
+
+1. Identifier la phase BMAD de la tâche.
+2. En BUILD : vérifier gates PRD ; plan + fichiers impactés avant code.
+3. Ne pas sauter MEASURE/ANALYZE/DECIDE pour une feature P0/P1 sans trace écrite.
