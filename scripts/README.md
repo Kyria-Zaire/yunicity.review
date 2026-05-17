@@ -34,7 +34,7 @@ Ne pas utiliser hors environnement de développement local.
 | Script | Ticket |
 |--------|--------|
 | Bootstrap frontend workspace | TICKET-003 |
-| CI wrappers | TICKET-005 |
+| CI | `.github/workflows/ci-*.yml` — **fait** (TICKET-005) |
 
 ## Conventions
 

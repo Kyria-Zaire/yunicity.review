@@ -1,0 +1,77 @@
+name: Docker CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "docker-compose.yml"
+      - "backend/Dockerfile"
+      - "backend/.dockerignore"
+      - "infra/docker/**"
+      - ".github/workflows/docker-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docker-compose.yml"
+      - "backend/Dockerfile"
+      - "backend/.dockerignore"
+      - "infra/docker/**"
+      - ".github/workflows/docker-ci.yml"
+
+concurrency:
+  group: docker-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compose-stack:
+    name: compose · health · pytest
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate compose file
+        run: docker compose config
+
+      - name: Start stack (DEV ONLY credentials from compose)
+        run: docker compose up --build -d
+
+      - name: Wait for API health
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8000/api/v1/health >/dev/null 2>&1; then
+              echo "API healthy after ${i} attempt(s)"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "API did not become healthy in time"
+          docker compose ps
+          docker compose logs backend --tail 80
+          exit 1
+
+      - name: Check liveness endpoint
+        run: |
+          set -euo pipefail
+          body=$(curl -fsS http://localhost:8000/api/v1/health)
+          echo "$body"
+          echo "$body" | grep -q '"status":"ok"'
+
+      - name: Check readiness (database + redis)
+        run: |
+          set -euo pipefail
+          body=$(curl -fsS http://localhost:8000/api/v1/ready)
+          echo "$body"
+          echo "$body" | grep -q '"status":"ready"'
+          echo "$body" | grep -q '"database":"ok"'
+          echo "$body" | grep -q '"redis":"ok"'
+
+      - name: Pytest in backend container
+        run: docker compose exec -T backend pytest
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

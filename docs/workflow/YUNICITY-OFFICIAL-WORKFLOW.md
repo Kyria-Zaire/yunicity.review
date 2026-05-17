@@ -214,3 +214,4 @@ Les fichiers agents **ne remplacent pas** la discipline humaine.
 | `docs/ai/prompts.md` | Prompt Library + BMAD |
 | `docs/ai/security-checklist.md` | Checklist merge / release |
 | `scripts/lint-agent-rules.py` | Cohérence rules/docs |
+| `.github/workflows/` | CI quality gates (backend, frontend, docker, PR safety) — voir `README.md` dans ce dossier |

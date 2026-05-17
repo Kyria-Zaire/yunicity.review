@@ -2,6 +2,7 @@ name: Lint agent rules (PRD / BMAD coherence)
 
 on:
   pull_request:
+    branches: [main, develop]
     paths:
       - ".cursor/**"
       - ".claude/**"

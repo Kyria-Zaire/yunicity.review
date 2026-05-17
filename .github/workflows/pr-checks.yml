@@ -1,0 +1,108 @@
+name: PR Safety Checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: pr-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  forbidden-files:
+    name: Forbidden paths & artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Block secrets and local env files
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -E '(^|/)\.env$|\.env\.prod$|\.pem$|\.key$|(^|/)secrets/'; then
+            echo "::error::Committed forbidden secret/env files (.env, .pem, .key, secrets/)"
+            exit 1
+          fi
+          echo "No forbidden secret paths in git index"
+
+      - name: Block committed dependency trees
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -E '(^|/)node_modules/|(^|/)backend/\.venv/|(^|/)frontend/node_modules/'; then
+            echo "::error::Committed node_modules or .venv — use .gitignore"
+            exit 1
+          fi
+          echo "No committed node_modules / .venv"
+
+      - name: Block oversized tracked files (>5 MiB)
+        run: |
+          set -euo pipefail
+          max_bytes=5242880
+          large_files=""
+          while IFS= read -r file; do
+            [ -f "$file" ] || continue
+            size=$(stat -c%s "$file")
+            if [ "$size" -gt "$max_bytes" ]; then
+              large_files="${large_files}${file} (${size} bytes)\n"
+            fi
+          done < <(git ls-files)
+          if [ -n "$large_files" ]; then
+            echo "::error::Tracked files exceed 5 MiB:"
+            printf "%b" "$large_files"
+            exit 1
+          fi
+          echo "No oversized tracked files"
+
+  secret-scan:
+    name: Gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: pip-audit (backend)
+        working-directory: backend
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip pip-audit
+          python -m pip install -e ".[dev]"
+          pip-audit
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: pnpm audit (frontend)
+        working-directory: frontend
+        run: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile
+          pnpm audit --audit-level=high

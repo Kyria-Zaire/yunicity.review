@@ -1,0 +1,18 @@
+# Dev-only placeholders documentés — jamais de secrets prod réels.
+title = "Yunicity"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fichiers et motifs DEV ONLY explicitement non-prod"
+paths = [
+  '''\.env\.example$''',
+  '''docker-compose\.yml$''',
+  '''infra/docker/README\.md$''',
+  '''infra/environments/dev\.md$''',
+]
+regexTarget = "match"
+regexes = [
+  '''yunicity_dev_password''',
+]

@@ -18,7 +18,7 @@ Une plateforme claire, accessible et de confiance : événements, lieux, tribus,
 | **Infra** | Docker Compose, GitHub Actions |
 | **Méthode** | PRD + workflow officiel + BMAD |
 
-> **État actuel (SPRINT-0)** : fondation monorepo uniquement. Pas encore d’app FastAPI, Next.js ni Expo initialisées — voir tickets TICKET-002 à TICKET-005.
+> **État actuel (SPRINT-0)** : fondation monorepo, backend, frontend, Docker local et CI quality gates en place.
 
 ## Structure du dépôt
 
@@ -69,20 +69,37 @@ Une base de données par environnement. Documentation : [infra/environments/](in
 - **Autorisé** : `.env.example` avec clés factices et commentaires
 - Production : validation CTO, backup, plan de rollback ([prod](infra/environments/prod.md))
 
-## Commandes (prévues — actives après TICKET-002+)
+## CI/CD (GitHub Actions)
+
+Quality gates sur **`main`** — détail : [.github/workflows/README.md](.github/workflows/README.md)
+
+| Workflow | Rôle |
+|----------|------|
+| `backend-ci.yml` | ruff, mypy, pytest |
+| `frontend-ci.yml` | lint, typecheck, build |
+| `docker-ci.yml` | compose, health/ready, pytest conteneur |
+| `pr-checks.yml` | `.env`/clés interdits, Gitleaks, audit deps |
+| `lint-agent-rules.yml` | cohérence règles agents & PRD |
+
+Avant merge : **CI verte** + review. Configurer les branch protection rules sur GitHub.
+
+## Commandes locales
 
 ```bash
-# Qualité docs / règles agents (disponible dès maintenant)
+# Règles agents (miroir CI)
 python scripts/lint-agent-rules.py --strict
 
-# Backend (TICKET-002)
-# cd backend && pip install -e ".[dev]" && uvicorn app.main:app --reload
+# Backend
+cd backend && pip install -e ".[dev]" && ruff check . && mypy app tests && pytest
+uvicorn app.main:create_app --factory --reload
 
-# Frontend web (TICKET-003)
-# cd frontend && npm install && npm run dev --workspace=web
+# Frontend
+cd frontend && pnpm install && pnpm --filter web dev
 
-# Docker (TICKET-004)
-# docker compose -f infra/docker/compose.yml up -d
+# Docker (racine repo)
+docker compose up --build -d
+curl http://localhost:8000/api/v1/health
+docker compose down -v
 ```
 
 ## Agents IA
@@ -94,7 +111,7 @@ python scripts/lint-agent-rules.py --strict
 
 | Ticket | Objectif |
 |--------|----------|
-| TICKET-002 | Backend FastAPI Foundation |
-| TICKET-003 | Frontend Foundation |
-| TICKET-004 | Docker + Environments |
-| TICKET-005 | CI/CD Quality Gates |
+| TICKET-002 | Backend FastAPI Foundation — **fait** |
+| TICKET-003 | Frontend Foundation — **fait** |
+| TICKET-004 | Docker + Environments — **fait** |
+| TICKET-005 | CI/CD Quality Gates — **fait** |
