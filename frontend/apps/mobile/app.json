@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Yunicity",
+    "slug": "yunicity-mobile",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "scheme": "yunicity",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yunicity.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#fafafa"
+      },
+      "package": "com.yunicity.mobile"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

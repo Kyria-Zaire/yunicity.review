@@ -1,5 +1,5 @@
 # @yunicity/types
 
-Types TypeScript partagés, alignés sur les schemas Pydantic backend.
+DTO TypeScript alignés sur l’API backend (`/api/v1/health`, `/api/v1/ready`).
 
-Génération OpenAPI possible en TICKET-003+.
+Ne pas dupliquer ces types dans les apps — importer depuis ce package.

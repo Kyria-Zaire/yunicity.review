@@ -1,5 +1,5 @@
 # @yunicity/utils
 
-Utilitaires partagés : formatage dates, validation client légère, helpers API.
+Helpers partagés : URL API publique, `safeFetch`, libellés d’environnement.
 
-Pas de logique métier lourde — appeler l’API backend.
+Aucun secret — uniquement `NEXT_PUBLIC_*` / `EXPO_PUBLIC_*` côté apps.

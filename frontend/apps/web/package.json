@@ -1,0 +1,31 @@
+{
+  "name": "web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@yunicity/types": "workspace:*",
+    "@yunicity/ui": "workspace:*",
+    "@yunicity/utils": "workspace:*",
+    "next": "^15.3.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@types/node": "^22.15.21",
+    "@types/react": "^18.3.20",
+    "@types/react-dom": "^18.3.7",
+    "eslint": "^9.27.0",
+    "eslint-config-next": "^15.3.3",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.3"
+  }
+}
