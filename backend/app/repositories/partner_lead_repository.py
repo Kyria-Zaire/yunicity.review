@@ -9,6 +9,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.partner_lead_constants import PartnerLeadStatus
+from app.core.partner_lead_normalize import normalize_instagram
 from app.models.partner_lead import PartnerLead
 
 
@@ -18,6 +19,21 @@ class PartnerLeadRepository:
 
     async def get_by_id(self, lead_id: uuid.UUID) -> PartnerLead | None:
         return await self._session.get(PartnerLead, lead_id)
+
+    async def find_by_instagram(
+        self,
+        instagram: str | None,
+    ) -> PartnerLead | None:
+        key = normalize_instagram(instagram)
+        if not key:
+            return None
+        result = await self._session.execute(
+            select(PartnerLead).where(PartnerLead.instagram.isnot(None))
+        )
+        for lead in result.scalars():
+            if normalize_instagram(lead.instagram) == key:
+                return lead
+        return None
 
     async def find_duplicate(
         self,
@@ -55,9 +71,7 @@ class PartnerLeadRepository:
                 & (PartnerLead.city_normalized == city_key)
                 & (PartnerLead.phone_normalized == phone_key)
             )
-        result = await self._session.execute(
-            select(PartnerLead).where(or_(*conditions))
-        )
+        result = await self._session.execute(select(PartnerLead).where(or_(*conditions)))
         return list(result.scalars().all())
 
     async def create(self, lead: PartnerLead) -> PartnerLead:
@@ -99,9 +113,7 @@ class PartnerLeadRepository:
 
         offset = (page - 1) * page_size
         list_query = (
-            list_query.order_by(PartnerLead.created_at.desc())
-            .offset(offset)
-            .limit(page_size)
+            list_query.order_by(PartnerLead.created_at.desc()).offset(offset).limit(page_size)
         )
         result = await self._session.execute(list_query)
         return list(result.scalars().all()), total

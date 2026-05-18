@@ -370,6 +370,57 @@ Tests organizations (TICKET-203) : `tests/test_organization_models.py`, `test_or
 
 Tests organizations API (TICKET-204) : `tests/test_organization_api.py`.
 
+## Supabase recovery → partner_leads (TICKET-250)
+
+Récupération des leads/partenaires historiques depuis un backup PostgreSQL Supabase
+vers le CRM `partner_leads` (sans création d’organizations).
+
+### Prérequis
+
+1. Restaurer le backup Supabase dans une base **locale** dédiée (pas la DB Yunicity prod).
+2. Définir `SUPABASE_DATABASE_URL` dans `.env` (voir `.env.example`).
+3. `DATABASE_URL` pointe vers la base CRM Yunicity (cible d’import).
+
+### Discovery
+
+```bash
+# Depuis une DB restaurée
+docker compose exec backend python scripts/supabase_discovery.py
+
+# Depuis un dump .sql
+docker compose exec backend python scripts/supabase_discovery.py \
+  --sql-dump /path/to/backup.sql
+```
+
+Rapport : `reports/supabase_discovery_report.md`  
+Mapping : `reports/supabase_partner_mapping.md`
+
+### Import (dry-run par défaut)
+
+```bash
+docker compose exec backend python scripts/import_supabase_partner_leads.py --dry-run
+# équivalent sans flag apply
+
+docker compose exec backend python scripts/import_supabase_partner_leads.py \
+  --source-table landing_partners --limit 50
+
+docker compose exec backend python scripts/import_supabase_partner_leads.py --apply
+```
+
+Rapport : `reports/supabase_partner_import_report.md`
+
+### Règles
+
+| Règle | Détail |
+|-------|--------|
+| `source` | Toujours `landing_page` |
+| `status` | `signed` si détecté, sinon `interested` |
+| Doublons | Skip sur name+city+phone et Instagram (pas d’écrasement) |
+| Organizations | Jamais créées / vérifiées |
+| Défaut | Dry-run — `--apply` explicite pour écrire |
+
+Tests : `tests/test_supabase_partner_import.py`
+
 ## Prochaines étapes
 
 | Ticket | Objectif |
