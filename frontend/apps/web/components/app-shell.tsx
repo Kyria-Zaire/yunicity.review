@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 const NAV = [
+  { href: "/passport", label: "Passport" },
   { href: "/profile/me", label: "Profil" },
   { href: "/organizations/me", label: "Lieux" },
   { href: "/organizations/request", label: "Proposer un lieu" },

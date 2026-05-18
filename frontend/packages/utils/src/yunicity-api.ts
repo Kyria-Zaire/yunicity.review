@@ -3,24 +3,32 @@ import type {
   OrganizationMeListResponse,
   OrganizationPublic,
   OrganizationRequestPayload,
+  PartnerOfferListResponse,
+  PassportActivateRequest,
+  PassportMe,
+  PassportStampListResponse,
   ProfileCompleteRequest,
   ProfilePublic,
   ProfileUpdateRequest,
+  Redemption,
   UserProfile,
 } from "@yunicity/types";
 
 import type { AuthClient } from "./auth/auth-client";
 import { OrganizationApi, createOrganizationApi } from "./organization-api";
+import { PassportApi, createPassportApi } from "./passport-api";
 import { ProfileApi, createProfileApi } from "./profile-api";
 
-/** Façade profile + organizations (compat TICKET-206). */
+/** Façade profile + organizations + passport. */
 export class YunicityApi {
   readonly profile: ProfileApi;
   readonly organization: OrganizationApi;
+  readonly passport: PassportApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.profile = createProfileApi(client, apiBaseUrl);
     this.organization = createOrganizationApi(client, apiBaseUrl);
+    this.passport = createPassportApi(client, apiBaseUrl);
   }
 
   getProfileMe(): Promise<UserProfile> {
@@ -51,6 +59,26 @@ export class YunicityApi {
 
   getOrganizationBySlug(slug: string): Promise<OrganizationPublic> {
     return this.organization.getOrganizationBySlug(slug);
+  }
+
+  getPassportMe(): Promise<PassportMe> {
+    return this.passport.getPassportMe();
+  }
+
+  activatePassport(payload?: PassportActivateRequest): Promise<PassportMe> {
+    return this.passport.activatePassport(payload ?? {});
+  }
+
+  listPassportStamps(): Promise<PassportStampListResponse> {
+    return this.passport.listStamps();
+  }
+
+  listPassportOffers(): Promise<PartnerOfferListResponse> {
+    return this.passport.listOffers();
+  }
+
+  redeemPassportOffer(offerId: string): Promise<Redemption> {
+    return this.passport.redeemOffer(offerId);
   }
 }
 

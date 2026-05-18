@@ -35,6 +35,26 @@ export type {
 } from "./profile";
 
 export type {
+  OfferRedemptionStatus,
+  PartnerOffer,
+  PartnerOfferListResponse,
+  PartnerOfferOrganization,
+  PartnerOfferType,
+  PassportActivateRequest,
+  PassportMe,
+  PassportStamp,
+  PassportStampListResponse,
+  PassportStampOrganization,
+  PassportStampSource,
+  PassportStats,
+  PassportStatus,
+  PassportTier,
+  PassportTierCode,
+  PassportTierListResponse,
+  Redemption,
+} from "./passport";
+
+export type {
   ConvertLeadPayload,
   PartnerLead,
   PartnerLeadListParams,

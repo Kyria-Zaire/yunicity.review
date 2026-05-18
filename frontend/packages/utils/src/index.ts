@@ -27,6 +27,18 @@ export {
   createProfileApi,
   fetchPublicProfileAnonymous,
 } from "./profile-api";
+export {
+  PassportApi,
+  createPassportApi,
+  fetchPassportTiersPublic,
+} from "./passport-api";
+export {
+  PARTNER_OFFER_TYPE_LABELS,
+  PASSPORT_TIER_META,
+  formatPassportDate,
+  isPassportNotActiveError,
+  maskQrToken,
+} from "./passport-labels";
 export { YunicityApi, createYunicityApi } from "./yunicity-api";
 export { MemoryTokenStorage } from "./storage/memory-token-storage";
 export type { TokenStorage } from "./storage/token-storage";

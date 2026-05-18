@@ -60,8 +60,10 @@ Monorepo **pnpm** + **Turborepo** : Next.js (web + admin), Expo (mobile), packag
 | Web | `/organizations/me` | Lieux dont tu es membre |
 | Web | `/organizations/request` | Demande partenaire MVP |
 | Mobile | `/(tabs)/profile` | Équivalent profil |
+| Mobile | `/(tabs)/passport` | Passport citoyen (identité, tampons, offres) |
 | Mobile | `/(tabs)/organizations` | Liste lieux |
 | Mobile | `/organizations/request` | Demande partenaire |
+| Web | `/passport` | Passport minimal (activation, carte, offres) |
 
 Admin : cockpit CRM partenaires (TICKET-207, voir ci-dessous).
 
@@ -72,8 +74,38 @@ Admin : cockpit CRM partenaires (TICKET-207, voir ci-dessous).
 | `profile-api.ts` | `getProfileMe`, `updateProfileMe`, `completeProfileOnboarding`, `fetchPublicProfileAnonymous` |
 | `organization-api.ts` | `listMyOrganizations`, `createOrganizationRequest`, `filterPublicOrganizations` |
 | `YunicityApi` | Façade utilisée par les `AuthProvider` |
+| `passport-api.ts` | `getPassportMe`, `activatePassport`, `listPassportStamps`, `listPassportOffers`, `redeemOffer` |
 
-Types : `UserProfile`, `OrganizationSummary`, `OrganizationRequestPayload`, `ProfileVisibility`.
+Types : `UserProfile`, `PassportMe`, `PartnerOffer`, `OrganizationSummary`, `OrganizationRequestPayload`, `ProfileVisibility`.
+
+## Passport — identité citoyenne (TICKET-304)
+
+### Écran mobile (`/(tabs)/passport`)
+
+- **Activation** : onboarding émotionnel si pas de passport actif → `POST /passport/activate`
+- **Carte premium** : photo, nom, ville, tier, numéro, QR placeholder (pas de scan réel), stats
+- **Tampons** : collection lecture seule (`GET /passport/stamps`)
+- **Offres** : partenaires vérifiés (`GET /passport/offers`) + CTA « Utiliser » → redemption MVP
+
+### Web (`/passport`)
+
+Version minimaliste : même flux activation + carte + listes.
+
+### Composants mobile (`apps/mobile/components/passport/`)
+
+`passport-card`, `passport-tier-badge`, `passport-qr-placeholder`, `stamp-card`, `offer-card`, `empty-passport-state`
+
+### Hooks
+
+| App | Fichiers |
+|-----|----------|
+| Mobile | `hooks/use-passport.ts`, `use-passport-stamps.ts`, `use-passport-offers.ts` |
+| Web | idem sous `apps/web/hooks/` |
+
+### Exclusions MVP frontend
+
+- Scan QR live, géoloc, wallet, paiements, creator economy, animations lourdes
+- Rate limit redemption : no-op si Redis absent côté API (surveiller avant pilote public)
 
 Pas de React Query — hooks `useState` + `useEffect` (fetch simple).
 
