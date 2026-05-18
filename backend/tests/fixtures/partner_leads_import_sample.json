@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "leads": [
+    {
+      "name": "Import Test Café",
+      "organization_type": "commerce",
+      "city": "Reims",
+      "source": "physical_prospecting",
+      "status": "signed",
+      "tags": ["food"]
+    },
+    {
+      "name": "Import Test Association",
+      "organization_type": "association",
+      "city": "Reims",
+      "source": "physical_prospecting",
+      "status": "signed",
+      "tags": ["sport"]
+    }
+  ]
+}

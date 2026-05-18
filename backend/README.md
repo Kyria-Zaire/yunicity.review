@@ -191,7 +191,41 @@ Pipeline cible : **lead** → qualification → **conversion** → `organization
 
 **Sécurité** : aucun endpoint public ; anti-IDOR via permissions staff uniquement ; notes max 5000 caractères.
 
-**Hors scope** : import réel, emailing, notifications, analytics, QR, offres.
+### Import partenaires physiques (TICKET-205B)
+
+Fichier contrôlé : `data/partner_leads/physical_partners_reims_2026.json` (14 partenaires Reims signés terrain).
+
+**Script CLI** (depuis `backend/`) :
+
+```bash
+# Dry-run par défaut (aucune écriture)
+python scripts/import_partner_leads.py \
+  --file data/partner_leads/physical_partners_reims_2026.json
+
+# Écriture idempotente
+python scripts/import_partner_leads.py \
+  --file data/partner_leads/physical_partners_reims_2026.json \
+  --apply
+```
+
+Docker :
+
+```bash
+docker compose exec backend python scripts/import_partner_leads.py \
+  --file data/partner_leads/physical_partners_reims_2026.json --dry-run
+docker compose exec backend python scripts/import_partner_leads.py \
+  --file data/partner_leads/physical_partners_reims_2026.json --apply
+```
+
+**Règles** :
+
+- Anti-doublon : `lower(name) + city + phone` (téléphone vide accepté pour ce batch).
+- N’écrase jamais un lead existant ; second `--apply` = skip duplicates.
+- **Aucune** organization créée, **aucune** conversion automatique.
+- Les **Tribus** (Sport, Business, Culture, etc.) sont **exclues** — ticket dédié futur.
+- Pas d’email/téléphone inventés ; pas de seed au démarrage de l’API.
+
+**Hors scope** : emailing, notifications, analytics, QR, offres.
 
 ### RBAC — endpoints de validation technique (TICKET-104)
 
