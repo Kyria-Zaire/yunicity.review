@@ -163,7 +163,35 @@ Les champs `users.full_name` et `users.city` restent en place (pas de suppressio
 
 **Membership MVP** : `owner` / `admin` → update + liste membres ; `staff` / `member` → lecture limitée ; statuts `suspended` / `removed` → accès refusé.
 
-**Hors scope** : partner leads, claim complet, invitations, upload logo, pages frontend.
+**Hors scope** : claim complet, invitations, upload logo, pages frontend.
+
+### Partner leads — CRM foundation (TICKET-205)
+
+Pipeline cible : **lead** → qualification → **conversion** → `organization` `pending`/`private` → **review** → `verified`.
+
+| Méthode | Chemin | Auth | Description |
+|---------|--------|------|-------------|
+| POST | `/api/v1/partner-leads` | Bearer + `moderation.manage` ou `system.admin` | Création manuelle |
+| GET | `/api/v1/partner-leads` | Idem | Liste paginée (`status`, `source`, `city`) |
+| GET | `/api/v1/partner-leads/{id}` | Idem | Détail lead |
+| PATCH | `/api/v1/partner-leads/{id}` | Idem | CRM : statut, notes, tags, intérêts, relances |
+| POST | `/api/v1/partner-leads/{id}/convert` | Idem | Conversion → organization (sans auto-vérification) |
+| POST | `/api/v1/partner-leads/import-preview` | Idem | Preview JSON (doublons / invalides) — **aucune écriture DB** |
+
+**Statuts lead** : `new`, `contacted`, `interested`, `meeting_scheduled`, `signed`, `converted`, `rejected`, `archived`.
+
+**Sources** : `landing_page`, `physical_prospecting`, `referral`, `instagram`, `event`, `inbound`, `outbound`, `manual`, `other`.
+
+**Conversion** :
+
+- Crée une `organization` (`pending`, `private`) ou lie une existante.
+- Crée le membership `owner` actif si besoin.
+- **Ne vérifie pas** l’organization ; la review reste sur `POST /organizations/{id}/review`.
+- Un lead ne se convertit qu’**une fois** ; champs `converted_*` immuables.
+
+**Sécurité** : aucun endpoint public ; anti-IDOR via permissions staff uniquement ; notes max 5000 caractères.
+
+**Hors scope** : import réel, emailing, notifications, analytics, QR, offres.
 
 ### RBAC — endpoints de validation technique (TICKET-104)
 

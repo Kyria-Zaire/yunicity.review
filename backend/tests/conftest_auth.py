@@ -14,8 +14,22 @@ from app.integrations.redis import close_redis, init_redis
 from app.main import create_app
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import text
 
 _TEST_JWT_SECRET = "test-secret-key-at-least-32-characters-long!!"
+
+
+def _reset_database_schema(connection) -> None:  # type: ignore[no-untyped-def]
+    """Drop and recreate all ORM tables (PostgreSQL CASCADE for FK chains)."""
+    if connection.dialect.name == "postgresql":
+        table_names = ", ".join(
+            f'"{table.name}"' for table in reversed(Base.metadata.sorted_tables)
+        )
+        if table_names:
+            connection.execute(text(f"DROP TABLE IF EXISTS {table_names} CASCADE"))
+    else:
+        Base.metadata.drop_all(connection)
+    Base.metadata.create_all(connection)
 
 
 def _database_url() -> str | None:
@@ -44,8 +58,7 @@ async def auth_client(auth_env: None) -> AsyncGenerator[AsyncClient, None]:
     engine = get_engine()
     assert engine is not None
     async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.drop_all)
-        await connection.run_sync(Base.metadata.create_all)
+        await connection.run_sync(_reset_database_schema)
 
     session_factory = get_session_factory()
     assert session_factory is not None

@@ -5,6 +5,7 @@ from app.models.organization import (
     OrganizationMember,
     OrganizationVerification,
 )
+from app.models.partner_lead import PartnerLead
 from app.models.rbac import Permission, Role, RolePermission, UserRole
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
@@ -14,6 +15,7 @@ __all__ = [
     "Organization",
     "OrganizationMember",
     "OrganizationVerification",
+    "PartnerLead",
     "Permission",
     "ProfileVisibility",
     "RefreshToken",
