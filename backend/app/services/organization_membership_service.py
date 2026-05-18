@@ -13,6 +13,7 @@ from app.repositories.organization_repository import OrganizationRepository
 
 _ADMIN_ROLES = frozenset({OrganizationMemberRole.OWNER, OrganizationMemberRole.ADMIN})
 _UPDATE_ROLES = _ADMIN_ROLES
+_OFFER_MANAGER_ROLES = _ADMIN_ROLES
 
 
 class OrganizationMembershipService:
@@ -81,3 +82,15 @@ class OrganizationMembershipService:
 
     def is_admin_or_owner(self, member: OrganizationMember) -> bool:
         return member.role in _ADMIN_ROLES
+
+    async def require_offer_manager(
+        self,
+        *,
+        organization_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> OrganizationMember:
+        return await self.require_roles(
+            organization_id=organization_id,
+            user_id=user_id,
+            allowed_roles=_OFFER_MANAGER_ROLES,
+        )

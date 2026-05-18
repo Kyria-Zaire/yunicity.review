@@ -11,6 +11,7 @@ PASSPORT_ONBOARDING_STEP_MAX_LENGTH = 64
 
 PARTNER_OFFER_TITLE_MAX_LENGTH = 160
 PARTNER_OFFER_DESCRIPTION_MAX_LENGTH = 2000
+PARTNER_OFFER_REJECTION_REASON_MAX_LENGTH = 1000
 
 DEFAULT_PASSPORT_TIER_CODE = "basic"
 DEFAULT_MAX_REDEMPTIONS_PER_PASSPORT = 1
@@ -47,10 +48,12 @@ class PartnerOfferType(StrEnum):
 
 
 class PartnerOfferStatus(StrEnum):
+    """Product offer_status — stored in partner_offers.status (TICKET-305A)."""
+
     DRAFT = "draft"
-    ACTIVE = "active"
-    PAUSED = "paused"
-    EXPIRED = "expired"
+    PENDING_REVIEW = "pending_review"
+    PUBLISHED = "published"
+    REJECTED = "rejected"
     ARCHIVED = "archived"
 
 

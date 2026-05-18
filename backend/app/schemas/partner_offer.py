@@ -1,4 +1,4 @@
-"""Partner offer API schemas."""
+"""Partner offer API schemas — citizen Passport view (TICKET-303)."""
 
 from __future__ import annotations
 

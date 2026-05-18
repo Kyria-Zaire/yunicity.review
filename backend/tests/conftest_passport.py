@@ -57,7 +57,7 @@ async def create_verified_org_with_offer(
     offer_title: str = "Café offert",
     visibility: OrganizationVisibility = OrganizationVisibility.PUBLIC,
     verification_status: VerificationStatus = VerificationStatus.VERIFIED,
-    offer_status: PartnerOfferStatus = PartnerOfferStatus.ACTIVE,
+    offer_status: PartnerOfferStatus = PartnerOfferStatus.PUBLISHED,
 ) -> tuple[Organization, PartnerOffer]:
     org = Organization(
         slug=f"partner-{slug_suffix}",
@@ -75,6 +75,7 @@ async def create_verified_org_with_offer(
         description="Offre test",
         offer_type=PartnerOfferType.DRINK,
         status=offer_status,
+        is_active=offer_status == PartnerOfferStatus.PUBLISHED,
     )
     session.add(offer)
     await session.flush()

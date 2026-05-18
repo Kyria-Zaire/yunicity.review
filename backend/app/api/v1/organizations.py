@@ -8,6 +8,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1 import organization_partner_offers
 from app.core.dependencies import (
     get_current_user_optional,
     require_any_permission,
@@ -29,6 +30,7 @@ from app.schemas.organization import (
 from app.services.organization_service import OrganizationService
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
+router.include_router(organization_partner_offers.router)
 
 
 def _client_ip(request: Request) -> str:

@@ -407,7 +407,7 @@ Services : `PassportService` — repositories `passport_repository`, `partner_of
 | Règle | Détail |
 |-------|--------|
 | Activation | Tier `basic` uniquement ; 1 actif / user |
-| Offres | Org `verified` + `visibility=public` + statut `active` |
+| Offres | Org `verified` + `visibility=public` + statut `published` + `is_active` |
 | Redemption | Statut `completed` ; pas de scan staff |
 | Sécurité | Pas d'élévation tier ; pas de création d'offre citoyen |
 
@@ -417,6 +417,58 @@ Services : `PassportService` — repositories `passport_repository`, `partner_of
 - Creator economy, wallet, paiements, leaderboard, points
 
 Tests : `tests/test_passport_activation.py`, `test_passport_api.py`, `test_passport_redemptions.py`
+
+## Partner offers — self-service modéré (TICKET-305 / 305A)
+
+Les offres Passport passent d’un modèle **admin-only** à un flux **partenaire autonome + modération Yunicity**.
+
+### Statuts produit (`offer_status` → colonne `status`)
+
+| Statut | Rôle |
+|--------|------|
+| `draft` | Brouillon partenaire (éditable) |
+| `pending_review` | Soumis à modération |
+| `published` | Visible citoyens (`is_active=true`) |
+| `rejected` | Refus modération (motif audité) |
+| `archived` | Retiré du catalogue |
+
+Transitions : `draft→pending_review→published|rejected`, `rejected→draft`, `published→archived`.
+
+### Endpoints partenaire (`organization_members` — owner/admin)
+
+| Méthode | Route | Description |
+|---------|-------|-------------|
+| POST | `/api/v1/organizations/me/offers` | Créer brouillon (org verified) |
+| PATCH | `/api/v1/organizations/me/offers/{id}` | Éditer brouillon/rejeté |
+| POST | `/api/v1/organizations/me/offers/{id}/submit` | Soumettre modération |
+| GET | `/api/v1/organizations/me/offers` | Liste offres des orgs gérées |
+
+Pas de nouveau RBAC global — rôles `owner` / `admin` via `OrganizationMembershipService`.
+
+### Endpoints modération staff
+
+| Méthode | Route | RBAC |
+|---------|-------|------|
+| GET | `/api/v1/admin/partner-offers?status=pending_review` | `moderation.manage` ou `system.admin` |
+| POST | `/api/v1/admin/partner-offers/{id}/approve` | → `published` + org `public` |
+| POST | `/api/v1/admin/partner-offers/{id}/reject` | → `rejected` + `rejection_reason` |
+| POST | `/api/v1/admin/partner-offers/{id}/archive` | → `archived` |
+
+Audit : `created_by_user_id`, `moderated_by_user_id`, `moderated_at`, `rejection_reason`.
+
+Migration `20260520_0006` : mappe l’ancien `active` → `published`, `paused/expired` → `archived`, ajoute `is_active`.
+
+### Citoyen (inchangé TICKET-303)
+
+Offres visibles si org `verified` + `public`, offre `published` + `is_active`, fenêtre de dates valide.
+
+### TODO futur (hors scope)
+
+- Notifications partenaire (soumis / publié / rejeté)
+- UI partenaire complète
+- Scan QR staff, wallet, creator economy
+
+Tests : `test_partner_offer_workflow.py`, `test_partner_offer_permissions.py`, `test_partner_offer_moderation.py`, `test_admin_partner_offers.py`
 
 ## Seed RBAC (TICKET-102)
 
@@ -454,6 +506,8 @@ Tests organizations API (TICKET-204) : `tests/test_organization_api.py`.
 Tests passport fondation (TICKET-302) : `tests/test_passport_models.py`, `test_partner_offers.py`, `test_passport_constraints.py`, `test_passport_migration.py`.
 
 Tests passport API (TICKET-303) : `tests/test_passport_activation.py`, `test_passport_api.py`, `test_passport_redemptions.py`.
+
+Tests partner offers (TICKET-305/305A) : `tests/test_partner_offer_workflow.py`, `test_partner_offer_permissions.py`, `test_partner_offer_moderation.py`, `test_admin_partner_offers.py`.
 
 ## Supabase Recovery Operations
 

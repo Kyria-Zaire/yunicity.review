@@ -231,6 +231,14 @@ class PartnerOffer(TimestampMixin, Base):
         nullable=False,
         server_default=PartnerOfferStatus.DRAFT.value,
         default=PartnerOfferStatus.DRAFT,
+        comment="Product offer_status (workflow source of truth).",
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+        comment="MVP compat flag — true when offer_status is published.",
     )
     tier_code_required: Mapped[str | None] = mapped_column(String(32), nullable=True)
     max_redemptions_total: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -245,6 +253,11 @@ class PartnerOffer(TimestampMixin, Base):
     created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
+    moderated_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    moderated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     metadata_: Mapped[dict[str, Any]] = mapped_column(
         "metadata",
         JSONB,
@@ -260,7 +273,14 @@ class PartnerOffer(TimestampMixin, Base):
         back_populates="offer",
         cascade="all, delete-orphan",
     )
-    created_by_user: Mapped[User | None] = relationship("User")
+    created_by_user: Mapped[User | None] = relationship(
+        "User",
+        foreign_keys=[created_by_user_id],
+    )
+    moderated_by_user: Mapped[User | None] = relationship(
+        "User",
+        foreign_keys=[moderated_by_user_id],
+    )
 
 
 class PassportOfferRedemption(TimestampMixin, Base):
