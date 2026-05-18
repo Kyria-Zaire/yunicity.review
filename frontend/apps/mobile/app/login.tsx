@@ -18,7 +18,7 @@ export default function LoginScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (isAuthenticated) {
-    router.replace("/(protected)/home");
+    router.replace("/(protected)/(tabs)/profile");
     return null;
   }
 
@@ -49,7 +49,7 @@ export default function LoginScreen() {
           setIsSubmitting(true);
           try {
             await login({ email, password });
-            router.replace("/(protected)/home");
+            router.replace("/(protected)/(tabs)/profile");
           } finally {
             setIsSubmitting(false);
           }

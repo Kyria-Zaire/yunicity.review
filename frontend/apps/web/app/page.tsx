@@ -1,4 +1,5 @@
 import { HealthStatusCard } from "@/components/health-status-card";
+import Link from "next/link";
 
 export default function HomePage() {
   return (
@@ -7,20 +8,23 @@ export default function HomePage() {
         <p className="text-sm font-medium uppercase tracking-wide text-blue-600">Yunicity</p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight">Bienvenue</h1>
         <p className="mt-2 text-neutral-600">
-          Application citoyenne — fondation frontend (sans feature métier).
+          Réseau social local — Reims et au-delà.
         </p>
       </header>
       <HealthStatusCard />
-      <nav className="flex gap-4 text-sm">
-        <a href="/login" className="text-blue-600 hover:underline">
+      <nav className="flex flex-wrap gap-4 text-sm">
+        <Link href="/login" className="text-blue-600 hover:underline">
           Connexion
-        </a>
-        <a href="/register" className="text-blue-600 hover:underline">
+        </Link>
+        <Link href="/register" className="text-blue-600 hover:underline">
           Inscription
-        </a>
-        <a href="/protected" className="text-blue-600 hover:underline">
-          Zone protégée
-        </a>
+        </Link>
+        <Link href="/profile/me" className="text-blue-600 hover:underline">
+          Mon profil
+        </Link>
+        <Link href="/organizations/me" className="text-blue-600 hover:underline">
+          Mes lieux
+        </Link>
       </nav>
     </main>
   );

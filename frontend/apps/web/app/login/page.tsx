@@ -12,7 +12,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace("/protected");
+      router.replace("/profile/me");
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -29,7 +29,7 @@ export default function LoginPage() {
           setIsSubmitting(true);
           try {
             await login({ email: values.email, password: values.password });
-            router.replace("/protected");
+            router.replace("/profile/me");
           } finally {
             setIsSubmitting(false);
           }

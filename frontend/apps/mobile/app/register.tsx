@@ -19,7 +19,7 @@ export default function RegisterScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (isAuthenticated) {
-    router.replace("/(protected)/home");
+    router.replace("/(protected)/(tabs)/profile");
     return null;
   }
 
@@ -60,7 +60,7 @@ export default function RegisterScreen() {
               password,
               full_name: fullName,
             });
-            router.replace("/(protected)/home");
+            router.replace("/(protected)/(tabs)/profile");
           } finally {
             setIsSubmitting(false);
           }

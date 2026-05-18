@@ -45,9 +45,58 @@ Monorepo **pnpm** + **Turborepo** : Next.js (web + admin), Expo (mobile), packag
 
 | App | Routes |
 |-----|--------|
-| Web | `/login`, `/register`, `/protected` |
+| Web | `/login`, `/register`, `/profile/me`, `/organizations/me`, `/organizations/request` |
 | Admin | `/login`, `/protected-admin` |
-| Mobile | `/login`, `/register`, `/(protected)/home` |
+| Mobile | `/login`, `/register`, `/(protected)/(tabs)/profile`, `/(protected)/(tabs)/organizations` |
+
+## Profil & organizations (TICKET-206)
+
+### Routes
+
+| App | Route | Description |
+|-----|-------|-------------|
+| Web | `/profile/me` | Édition profil, intérêts, visibilité, onboarding |
+| Web | `/profile/[username]` | Profil public (404 si privé) |
+| Web | `/organizations/me` | Lieux dont tu es membre |
+| Web | `/organizations/request` | Demande partenaire MVP |
+| Mobile | `/(tabs)/profile` | Équivalent profil |
+| Mobile | `/(tabs)/organizations` | Liste lieux |
+| Mobile | `/organizations/request` | Demande partenaire |
+
+Admin : inchangé (pas de dashboard CRM dans ce ticket).
+
+### API clients (`@yunicity/utils`)
+
+| Module | Rôle |
+|--------|------|
+| `profile-api.ts` | `getProfileMe`, `updateProfileMe`, `completeProfileOnboarding`, `fetchPublicProfileAnonymous` |
+| `organization-api.ts` | `listMyOrganizations`, `createOrganizationRequest`, `filterPublicOrganizations` |
+| `YunicityApi` | Façade utilisée par les `AuthProvider` |
+
+Types : `UserProfile`, `OrganizationSummary`, `OrganizationRequestPayload`, `ProfileVisibility`.
+
+Pas de React Query — hooks `useState` + `useEffect` (fetch simple).
+
+### Onboarding
+
+Si `onboarding_completed === false` : bandeau discret sur `/profile/me` (ville + ≥1 intérêt) — **pas de blocage** du reste de l’app.
+
+### Demande organization
+
+Champs : nom, type, ville, adresse, site, Instagram, description.
+
+Après envoi :
+
+> Votre demande est en cours de vérification par l'équipe Yunicity.
+
+Pas d’auto-vérification ni publication publique.
+
+### Sécurité frontend
+
+- Refresh token jamais en `localStorage` (web cookie httpOnly, mobile SecureStore)
+- 401 → refresh puis logout si échec
+- Profil privé → UX 404 (le backend est source de vérité)
+- UI hide ≠ authZ (admin non exposé)
 
 ## Structure
 
@@ -56,8 +105,8 @@ frontend/
 ├── apps/web/
 ├── apps/admin/
 ├── apps/mobile/
-├── packages/types/     # auth.ts + health types
-├── packages/utils/     # auth-client, refresh-manager
+├── packages/types/     # auth, profile, organization
+├── packages/utils/     # auth-client, profile-api, organization-api
 └── packages/ui/
 ```
 

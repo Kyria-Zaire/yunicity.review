@@ -17,5 +17,13 @@ export default function ProtectedLayout() {
     return <Redirect href="/login" />;
   }
 
-  return <Stack screenOptions={{ headerShown: true }} />;
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen
+        name="organizations/request"
+        options={{ headerShown: true, title: "Proposer un lieu" }}
+      />
+    </Stack>
+  );
 }

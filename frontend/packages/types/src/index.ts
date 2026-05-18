@@ -10,6 +10,30 @@ export type {
   RoleKey,
 } from "./auth";
 
+export type {
+  OrganizationCreateRequest,
+  OrganizationCreateResponse,
+  OrganizationMeItem,
+  OrganizationMeListResponse,
+  OrganizationMemberRole,
+  OrganizationMemberStatus,
+  OrganizationPublic,
+  OrganizationRequestPayload,
+  OrganizationSummary,
+  OrganizationType,
+  OrganizationVisibility,
+  VerificationStatus,
+} from "./organization";
+
+export type {
+  ProfileCompleteRequest,
+  ProfileMe,
+  ProfilePublic,
+  ProfileUpdateRequest,
+  ProfileVisibility,
+  UserProfile,
+} from "./profile";
+
 export type EnvironmentName = "dev" | "recette" | "preprod" | "prod";
 
 export type ApiStatus = "ok" | "disabled" | "error";

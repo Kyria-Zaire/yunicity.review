@@ -14,7 +14,7 @@ export default function HomeScreen() {
       <Link href="/register" style={styles.link}>
         Inscription
       </Link>
-      <Link href="/(protected)/home" style={styles.link}>
+      <Link href="/(protected)/(tabs)/profile" style={styles.link}>
         Zone protégée
       </Link>
     </View>

@@ -1,8 +1,10 @@
 import type { AuthUser, LoginRequest, RegisterRequest } from "@yunicity/types";
 import {
   createAuthClient,
+  createYunicityApi,
   getExpoApiBaseUrl,
   isAuthError,
+  type YunicityApi,
 } from "@yunicity/utils";
 import {
   createContext,
@@ -21,6 +23,7 @@ interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
+  yunicityApi: YunicityApi;
   login: (payload: LoginRequest) => Promise<void>;
   register: (payload: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
@@ -36,15 +39,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const storage = useMemo(() => new SecureTokenStorage(), []);
 
+  const apiBaseUrl = getExpoApiBaseUrl();
+
   const client = useMemo(
     () =>
       createAuthClient({
-        apiBaseUrl: getExpoApiBaseUrl(),
+        apiBaseUrl,
         platform: "mobile",
         storage,
         onSessionCleared: () => setUser(null),
       }),
-    [storage],
+    [apiBaseUrl, storage],
+  );
+
+  const yunicityApi = useMemo(
+    () => createYunicityApi(client, apiBaseUrl),
+    [apiBaseUrl, client],
   );
 
   useEffect(() => {
@@ -123,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     isAuthenticated: user !== null,
     error,
+    yunicityApi,
     login,
     register,
     logout,
