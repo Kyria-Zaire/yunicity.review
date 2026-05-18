@@ -13,6 +13,33 @@ Guide pour agents et développeurs : quand utiliser quels skills Cursor, Claude 
 
 Parité Cursor : `.cursor/Cursor.md` ↔ `CLAUDE.md`, `.cursor/rules/*.mdc` ↔ `.claude/rules/*.md`.
 
+## Skills design frontend (TICKET-3050)
+
+Installés dans `.agents/skills/` à la racine du repo (local, non versionné) :
+
+```bash
+npx skills add emilkowalski/skill      # emil-design-eng — motion
+npx skills add pbakaus/impeccable      # layout, typo, spatial
+npx skills add Leonxlnx/taste-skill    # design-taste-frontend, anti-slop
+```
+
+| Skill dossier | Usage Yunicity |
+|---------------|----------------|
+| `emil-design-eng` | Motion qui clarifie ; `prefers-reduced-motion` |
+| `impeccable` | Hiérarchie, vertical rhythm, densité |
+| `design-taste-frontend` | Anti-slop, intention produit par écran |
+
+**Doctrine canon** : [frontend-design-system.md](frontend-design-system.md) — rule `14-frontend-design-system`.
+
+**Gate TICKET-305B** (Partner Offers UI) : produire intention UX + structure + composants + états + responsive + anti-patterns **avant** tout code (détail dans le doc canon).
+
+### Feature frontend P1
+
+1. Lire `docs/ai/frontend-design-system.md` + rules `07`, `08`, `14`
+2. Charger le skill pertinent si l’agent le supporte
+3. Référence visuelle pour grosses interfaces (image-to-code)
+4. Puis BUILD (composants, états loading/empty/error)
+
 ## Skills Cursor (utilisateur global)
 
 | Skill | Quand l’utiliser |
@@ -44,7 +71,7 @@ Parité Cursor : `.cursor/Cursor.md` ↔ `CLAUDE.md`, `.cursor/rules/*.mdc` ↔ 
 1. Lire [YUNICITY-OFFICIAL-WORKFLOW.md](../workflow/YUNICITY-OFFICIAL-WORKFLOW.md)
 2. Créer / compléter `docs/prd/PRD-XXX-*.md` (DISCOVER → DESIGN → §13 gates)
 3. Phase **BUILD** : ne pas coder si gates non cochés
-3. Rules `00-project-doctrine`, `12-bmad`, `backend-fastapi`, `frontend-next-expo`
+3. Rules `00-project-doctrine`, `12-bmad`, `backend-fastapi`, `frontend-next-expo`, `14-frontend-design-system` (si UI)
 4. Schémas → migration → endpoints → client API → UI (états loading/empty/error)
 5. Tests ; `docs/ai/security-checklist.md` si auth / PII / paiements
 6. Post-deploy : **MEASURE → ANALYZE → DECIDE** (mettre à jour PRD §13)

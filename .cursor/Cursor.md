@@ -100,6 +100,7 @@ npm run lint && npm run typecheck && npm test
 | `06-createur-workflow.mdc` | CI/CD, promotion env |
 | `07-constructeur-ui.mdc` | Composants UI |
 | `08-ui-ux-pro-max.mdc` | Design, a11y |
+| `14-frontend-design-system.mdc` | Doctrine design, motion, anti-slop, gate 305B |
 | `09-environments.mdc` | dev/recette/preprod/prod |
 | `10-payments-webhooks.mdc` | Stripe, idempotence |
 | `11-anti-spaghetti.mdc` | Structure code |
@@ -117,3 +118,4 @@ npm run lint && npm run typecheck && npm test
 | [prompts.md](../docs/ai/prompts.md) | Prompt Library + BMAD |
 | [security-checklist.md](../docs/ai/security-checklist.md) | Avant merge / release |
 | [skills.md](../docs/ai/skills.md) | Workflows agents |
+| [frontend-design-system.md](../docs/ai/frontend-design-system.md) | Design frontend canon + gate 305B |

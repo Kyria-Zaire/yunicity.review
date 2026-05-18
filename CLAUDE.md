@@ -96,8 +96,15 @@ After coding:
 | `docs/bmad/BMAD.md` | BMAD sub-cycle detail |
 | `docs/ai/security-checklist.md` | Sécurité (source unique) |
 | `docs/ai/prompts.md` | Prompt Library + BMAD prompts |
+| `docs/ai/frontend-design-system.md` | Doctrine design frontend + gate TICKET-305B |
 
 Environnements : **dev → recette → preprod → prod** (not staging).
+
+## Frontend design (TICKET-3050)
+
+Avant UI frontend P1 (ex. Partner Offers 305B) : lire `docs/ai/frontend-design-system.md` et rule `14-frontend-design-system`.
+
+Skills design (`.agents/skills/`) : `emil-design-eng`, `impeccable`, `design-taste-frontend` — installer via `npx skills add` (voir `docs/ai/skills.md`).
 
 ## Import Rules
 @.claude/rules/00-project-doctrine.md
@@ -114,3 +121,4 @@ Environnements : **dev → recette → preprod → prod** (not staging).
 @.claude/rules/11-anti-spaghetti.md
 @.claude/rules/12-bmad.md
 @.claude/rules/13-official-workflow.md
+@.claude/rules/14-frontend-design-system.md

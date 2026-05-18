@@ -5,6 +5,8 @@ paths:
 
 # UI / UX Pro Max
 
+Doctrine design complète (positioning, motion, anti-slop, gate 305B) : rule `14-frontend-design-system` + `docs/ai/frontend-design-system.md`.
+
 ## Principes
 
 - **Claire, citoyenne, locale, de confiance** — action avant décoration

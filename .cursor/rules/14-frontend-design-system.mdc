@@ -1,0 +1,54 @@
+---
+description: Doctrine design frontend Yunicity — positioning, motion, anti-slop, gate 305B
+globs: "frontend/**/*.{tsx,jsx,css}"
+alwaysApply: false
+---
+
+# Frontend design system (TICKET-3050)
+
+Canon détaillé : `docs/ai/frontend-design-system.md`
+
+Skills projet (`.agents/skills/`) : `emil-design-eng`, `impeccable`, `design-taste-frontend` — lire avant UI P1.
+
+## Positionnement
+
+Yunicity = **mobile-first**, premium **chaleureux**, territorial, social, humain, crédible partenaires locaux.
+
+**Interdit visuellement** : dashboard SaaS froid, crypto wallet, couponing cheap, admin Bootstrap, purple AI slop, CRM enterprise lourd.
+
+| Surface | Idée directrice |
+|---------|-----------------|
+| Passport | « Ma ville me reconnaît » |
+| Partner offers | « Je publie pour ma ville » |
+| Admin CRM | « Je modère avec clarté » (Linear/Notion) |
+| Mobile social | « Ma ville bouge » |
+
+## Motion (emil-design-eng)
+
+- Motion si elle **clarifie** l’action — pas de décoration.
+- 150–250 ms interactions ; `prefers-reduced-motion` obligatoire.
+- Pas de bounce gratuit, parallax, loaders infinis.
+
+## Layout / typo (impeccable)
+
+- Hiérarchie : 1 titre, 1 action primaire, sous-texte court.
+- Spacing échelle **4/8px** ; cartes non empilées sans raison.
+- Max 2 niveaux de cartes imbriquées ; respiration latérale cohérente.
+
+## Taste / anti-slop
+
+- Chaque écran : **une idée directrice** (phrase) avant le code.
+- Pas de template marketing générique ; pas de stats vides.
+- Microcopy **français**, humain — pas jargon SaaS.
+
+## Image-to-code
+
+Référence visuelle → analyse → intention documentée → code → review vs intention.
+
+## Gate TICKET-305B (Partner Offers UI)
+
+Avant code UI partenaire, livrer : intention UX, structure écrans, composants, états (loading/empty/error/success/rejected), responsive, anti-patterns évités.
+
+Ne pas copier le CRUD admin froid tel quel.
+
+Complète : `07-constructeur-ui`, `08-ui-ux-pro-max`, `frontend-next-expo`.

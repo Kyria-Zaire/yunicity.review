@@ -38,4 +38,4 @@ Feature fragile = dette · feature propre = actif
 
 ## Règles
 
-`01`–`13`, `backend-fastapi`, `frontend-next-expo`
+`01`–`14`, `backend-fastapi`, `frontend-next-expo`. UI P1 : `14-frontend-design-system` + `docs/ai/frontend-design-system.md`.

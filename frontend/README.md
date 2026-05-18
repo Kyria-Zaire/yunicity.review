@@ -46,7 +46,7 @@ Monorepo **pnpm** + **Turborepo** : Next.js (web + admin), Expo (mobile), packag
 | App | Routes |
 |-----|--------|
 | Web | `/login`, `/register`, `/profile/me`, `/organizations/me`, `/organizations/request` |
-| Admin | `/login`, `/partner-leads`, `/partner-leads/[id]`, `/unauthorized`, `/protected-admin` |
+| Admin | `/login`, `/partner-leads`, `/partner-leads/[id]`, `/passport-offers`, `/passport-offers/new`, `/passport-offers/[id]`, `/unauthorized`, `/protected-admin` |
 | Mobile | `/login`, `/register`, `/(protected)/(tabs)/profile`, `/(protected)/(tabs)/organizations` |
 
 ## Profil & organizations (TICKET-206)
@@ -164,6 +164,36 @@ Types : `PartnerLead`, `PartnerLeadStatus`, `PartnerLeadSource`, `ConvertLeadPay
 
 Import terrain : script backend `backend/scripts/import_partner_leads.py` (hors UI).
 
+## Partner offers admin — Passport (TICKET-305)
+
+### Routes (app `admin`)
+
+| Route | Description |
+|-------|-------------|
+| `/passport-offers` | Liste — filtres statut, type, org ; recherche titre/org |
+| `/passport-offers/new` | Création offre (org verified uniquement) |
+| `/passport-offers/[id]` | Fiche — édition, activer / mettre en pause |
+
+Même garde staff que CRM : `moderation.manage` ou `system.admin`.
+
+### API client
+
+`packages/utils/src/partner-offers-admin-api.ts` — `listVerifiedOrganizations`, `listOffers`, `getOffer`, `createOffer`, `updateOffer`, `activateOffer`, `deactivateOffer`.
+
+Types : `PartnerOfferAdmin`, `PartnerOfferAdminCreatePayload`, `PartnerOfferAdminUpdatePayload` (`packages/types/src/admin_partner_offer.ts`).
+
+### Workflow pilote
+
+1. Organization **verified** (via conversion lead + modération)
+2. Créer offre en brouillon → vérifier dates et limite redemption
+3. **Activer** : offre `active` + organisation `public` → visible dans le Passport citoyen
+4. Citoyens : `GET /passport/offers` + redemption MVP (TICKET-304)
+
+### Exclusions MVP UI
+
+- Upload image, pricing, coupons, QR scan staff, analytics
+- Pas de React Query — hooks locaux
+
 ### Style & technique
 
 - UI type Linear/Notion (badges, cartes, pas de CRUD gris)
@@ -178,7 +208,7 @@ frontend/
 ├── apps/admin/
 ├── apps/mobile/
 ├── packages/types/     # auth, profile, organization, partner_lead
-├── packages/utils/     # auth-client, profile-api, organization-api, partner-leads-api
+├── packages/utils/     # auth-client, profile-api, organization-api, partner-leads-api, partner-offers-admin-api
 └── packages/ui/
 ```
 
@@ -239,6 +269,16 @@ pnpm --filter mobile start
 ## Mobile / émulateur
 
 `EXPO_PUBLIC_API_URL` : souvent `http://10.0.2.2:8000` (Android) ou IP LAN pour appareil physique.
+
+## Design system (agents IA — TICKET-3050)
+
+Avant toute UI frontend importante (ex. **TICKET-305B** Partner Offers self-service) :
+
+1. Lire [`docs/ai/frontend-design-system.md`](../docs/ai/frontend-design-system.md)
+2. Rules Cursor/Claude : `14-frontend-design-system` (+ `07`, `08`)
+3. Skills locaux (`.agents/skills/`) : `emil-design-eng`, `impeccable`, `design-taste-frontend` — voir [`docs/ai/skills.md`](../docs/ai/skills.md)
+
+Positionnement : mobile-first, premium chaleureux, territorial — **pas** dashboard SaaS froid ni template marketing générique.
 
 ## Prochaines étapes
 

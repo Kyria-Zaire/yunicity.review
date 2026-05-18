@@ -26,6 +26,9 @@ htmlcov/
 dist/
 build/
 
+# Agent skills (install local via `npx skills add`, not versioned)
+.agents/
+
 # Node / frontend
 node_modules/
 npm-debug.log*

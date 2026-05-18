@@ -47,4 +47,4 @@ BMAD : **BUILD → MEASURE → ANALYZE → DECIDE** — `docs/bmad/BMAD.md`, `12
 
 ## Règles spécialisées
 
-`01`–`13`, `backend-fastapi`, `frontend-next-expo` selon le fichier touché.
+`01`–`14`, `backend-fastapi`, `frontend-next-expo` selon le fichier touché. UI P1 : `14-frontend-design-system` + `docs/ai/frontend-design-system.md`.
