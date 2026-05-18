@@ -11,6 +11,9 @@ ORGANIZATION_VERIFICATION_REASON_MAX_LENGTH = 1000
 ORGANIZATION_SLUG_MIN_LENGTH = 3
 ORGANIZATION_SLUG_MAX_LENGTH = 80
 
+MAX_PENDING_ORGANIZATIONS_PER_USER = 5
+ONBOARDING_STEP_INITIAL = "type_name"
+
 
 class OrganizationType(StrEnum):
     COMMERCE = "commerce"
@@ -66,3 +69,27 @@ VERIFICATION_METHODS: frozenset[str] = frozenset(m.value for m in VerificationMe
 ORGANIZATION_VISIBILITIES: frozenset[str] = frozenset(m.value for m in OrganizationVisibility)
 ORGANIZATION_MEMBER_ROLES: frozenset[str] = frozenset(m.value for m in OrganizationMemberRole)
 ORGANIZATION_MEMBER_STATUSES: frozenset[str] = frozenset(m.value for m in OrganizationMemberStatus)
+
+ALLOWED_VERIFICATION_TRANSITIONS: dict[VerificationStatus, frozenset[VerificationStatus]] = {
+    VerificationStatus.PENDING: frozenset(
+        {
+            VerificationStatus.UNDER_REVIEW,
+            VerificationStatus.VERIFIED,
+            VerificationStatus.REJECTED,
+        }
+    ),
+    VerificationStatus.UNDER_REVIEW: frozenset(
+        {
+            VerificationStatus.VERIFIED,
+            VerificationStatus.REJECTED,
+            VerificationStatus.SUSPENDED,
+        }
+    ),
+    VerificationStatus.VERIFIED: frozenset({VerificationStatus.SUSPENDED}),
+    VerificationStatus.REJECTED: frozenset(
+        {VerificationStatus.PENDING, VerificationStatus.UNDER_REVIEW}
+    ),
+    VerificationStatus.SUSPENDED: frozenset(
+        {VerificationStatus.VERIFIED, VerificationStatus.UNDER_REVIEW}
+    ),
+}

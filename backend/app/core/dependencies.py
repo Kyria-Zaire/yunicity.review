@@ -80,6 +80,24 @@ async def get_current_user_optional(
     return user
 
 
+def require_any_permission(*permission_keys: str) -> Callable[..., Awaitable[User]]:
+    async def _guard(
+        current_user: Annotated[User, Depends(get_current_user)],
+        session: Annotated[AsyncSession, Depends(get_db)],
+    ) -> User:
+        rbac = RbacService(session)
+        for permission_key in permission_keys:
+            if await rbac.user_has_permission(current_user.id, permission_key):
+                return current_user
+        raise AppError(
+            status_code=403,
+            code="FORBIDDEN",
+            detail="Permission insuffisante.",
+        )
+
+    return _guard
+
+
 def require_permission(permission_key: str) -> Callable[..., Awaitable[User]]:
     async def _guard(
         current_user: Annotated[User, Depends(get_current_user)],

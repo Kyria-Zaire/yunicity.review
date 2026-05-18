@@ -144,33 +144,26 @@ Utiliser les URLs `localhost:5434` / `localhost:6379` dans `.env` (voir commenta
 
 Les champs `users.full_name` et `users.city` restent en place (pas de suppression Sprint 2).
 
-### Organizations — modèle DB (TICKET-203)
+### Organizations — API (TICKET-204)
 
-**Pas d’API organizations** à ce stade — uniquement schéma DB, helpers slug, tests.
+| Méthode | Chemin | Auth | Description |
+|---------|--------|------|-------------|
+| POST | `/api/v1/organizations/request` | Bearer | Demande création (`pending`, `private`, owner actif) |
+| GET | `/api/v1/organizations/me` | Bearer | Organizations où l’utilisateur est membre actif |
+| GET | `/api/v1/organizations/{slug}` | Optionnel | Public si `verified` + `public` ; owner/admin sinon |
+| GET | `/api/v1/organizations/{id}/members` | Bearer | Owner/admin actifs |
+| PATCH | `/api/v1/organizations/{id}` | Bearer | Owner/admin actifs (champs limités) |
+| POST | `/api/v1/organizations/{id}/review` | Bearer + `moderation.manage` ou `system.admin` | Workflow vérification |
 
-| Table | Rôle |
-|-------|------|
-| `organizations` | Acteur local (commerce, asso, école…) |
-| `organization_members` | Lien user ↔ org + rôle |
-| `organization_verifications` | Historique des transitions de vérification |
+**Création** : slug auto (`name` + `city`), max **5** organizations `pending` par user, anti-doublon `name+city+address`, rate limit.
 
-**Types** (`type`) : `commerce`, `association`, `school`, `freelance`, `public_agency`, `creator`, `other`.
+**Review** : écrit `organization_verifications`, ne change **pas** `visibility` automatiquement.
 
-**Vérification** (`verification_status`) : `pending` (défaut) → `under_review` → `verified` \| `rejected` \| `suspended`.
+**Sécurité** : anti-IDOR via membership scoped ; champs internes (`rejection_reason`, reviewer ids) jamais dans les réponses publiques/member view.
 
-**Visibilité** (`visibility`) : `private` (défaut), `public`, `unlisted` — aucune page publique tant qu’API absente.
+**Membership MVP** : `owner` / `admin` → update + liste membres ; `staff` / `member` → lecture limitée ; statuts `suspended` / `removed` → accès refusé.
 
-**Membership** (`role`) : `owner`, `admin`, `staff`, `member` — statuts : `active`, `invited`, `suspended`, `removed`.
-
-**Règle MVP** : un seul `owner` **actif** par organization (index unique partiel PostgreSQL).
-
-**Slug** (`app/core/organization_slug.py`) :
-
-- Format : `^[a-z0-9]+(?:-[a-z0-9]+)*$`, longueur 3–80
-- Accents supprimés, espaces → tirets
-- Réservés : `admin`, `api`, `yunicity`, `o`, `organizations`, etc.
-
-**Hors scope TICKET-203** : API création/review, partner leads, claim, pages publiques `/o/{slug}`, upload logo, seed partenaires.
+**Hors scope** : partner leads, claim complet, invitations, upload logo, pages frontend.
 
 ### RBAC — endpoints de validation technique (TICKET-104)
 
@@ -313,8 +306,10 @@ Tests profil (TICKET-202) : `tests/test_profile_endpoints.py`, `test_profile_use
 
 Tests organizations (TICKET-203) : `tests/test_organization_models.py`, `test_organization_slug.py`, `test_organization_constraints.py`, `test_organization_migration.py`.
 
+Tests organizations API (TICKET-204) : `tests/test_organization_api.py`.
+
 ## Prochaines étapes
 
 | Ticket | Objectif |
 |--------|----------|
-| TICKET-204+ | API organizations + onboarding + review workflow |
+| TICKET-205+ | Claim, invitations staff, partner leads, pages publiques frontend |

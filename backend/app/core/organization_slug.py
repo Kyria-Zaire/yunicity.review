@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from collections.abc import Awaitable, Callable
 
 from app.core.organization_constants import (
     ORGANIZATION_SLUG_MAX_LENGTH,
@@ -72,3 +73,30 @@ def disambiguate_slug(base: str, suffix: int) -> str:
     if not trimmed:
         trimmed = "org"
     return f"{trimmed}{suffix_text}"
+
+
+def build_slug_base(*, name: str, city: str) -> str:
+    name_part = slugify_organization_name(name)
+    city_part = slugify_organization_name(city)
+    if name_part and city_part:
+        return f"{name_part}-{city_part}"[:ORGANIZATION_SLUG_MAX_LENGTH]
+    candidate = name_part or city_part
+    return candidate[:ORGANIZATION_SLUG_MAX_LENGTH] if candidate else "org"
+
+
+async def pick_available_organization_slug(
+    check_taken: Callable[[str], Awaitable[bool]],
+    *,
+    name: str,
+    city: str,
+) -> str:
+    base = build_slug_base(name=name, city=city)
+    if not is_valid_organization_slug_format(base):
+        base = "org"
+
+    candidate = base
+    for suffix in range(2, 100):
+        if not await check_taken(candidate):
+            return candidate
+        candidate = disambiguate_slug(base, suffix)
+    raise RuntimeError("Unable to allocate a unique organization slug")
