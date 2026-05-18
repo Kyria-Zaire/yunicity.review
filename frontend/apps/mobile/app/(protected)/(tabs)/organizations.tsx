@@ -56,9 +56,14 @@ export default function OrganizationsTabScreen() {
 
   return (
     <View style={styles.container}>
-      <Link href="/(protected)/organizations/request" asChild>
+      <Link href="/(protected)/partner-offers" asChild>
         <Pressable style={styles.cta}>
-          <Text style={styles.ctaText}>Proposer un lieu</Text>
+          <Text style={styles.ctaText}>Mes offres pour la ville</Text>
+        </Pressable>
+      </Link>
+      <Link href="/(protected)/organizations/request" asChild>
+        <Pressable style={styles.ctaSecondary}>
+          <Text style={styles.ctaSecondaryText}>Proposer un lieu</Text>
         </Pressable>
       </Link>
 
@@ -93,13 +98,22 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   container: { flex: 1, padding: 16 },
   cta: {
-    backgroundColor: "#171717",
+    backgroundColor: "#fafaf9",
+    borderRadius: 12,
+    padding: 14,
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  ctaText: { color: "#0c0a09", fontWeight: "700" },
+  ctaSecondary: {
     borderRadius: 12,
     padding: 14,
     alignItems: "center",
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#44403c",
   },
-  ctaText: { color: "#fff", fontWeight: "600" },
+  ctaSecondaryText: { color: "#d6d3d1", fontWeight: "600" },
   card: {
     backgroundColor: "#fff",
     borderRadius: 16,

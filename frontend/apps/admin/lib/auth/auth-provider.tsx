@@ -5,9 +5,15 @@ import {
   MemoryTokenStorage,
   createAuthClient,
   createPartnerLeadsApi,
+  createPartnerOffersAdminApi,
+  createOrganizationApi,
+  createPartnerOffersApi,
   getWebApiBaseUrl,
   isAuthError,
+  type OrganizationApi,
   type PartnerLeadsApi,
+  type PartnerOffersAdminApi,
+  type PartnerOffersApi,
 } from "@yunicity/utils";
 import {
   createContext,
@@ -25,6 +31,9 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   error: string | null;
   partnerLeadsApi: PartnerLeadsApi;
+  partnerOffersAdminApi: PartnerOffersAdminApi;
+  partnerOffersApi: PartnerOffersApi;
+  organizationApi: OrganizationApi;
   login: (payload: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
@@ -52,6 +61,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const partnerLeadsApi = useMemo(
     () => createPartnerLeadsApi(client, apiBaseUrl),
+    [client, apiBaseUrl],
+  );
+
+  const partnerOffersAdminApi = useMemo(
+    () => createPartnerOffersAdminApi(client, apiBaseUrl),
+    [client, apiBaseUrl],
+  );
+
+  const partnerOffersApi = useMemo(
+    () => createPartnerOffersApi(client, apiBaseUrl),
+    [client, apiBaseUrl],
+  );
+
+  const organizationApi = useMemo(
+    () => createOrganizationApi(client, apiBaseUrl),
     [client, apiBaseUrl],
   );
 
@@ -106,6 +130,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: user !== null,
     error,
     partnerLeadsApi,
+    partnerOffersAdminApi,
+    partnerOffersApi,
+    organizationApi,
     login,
     logout,
     clearError: () => setError(null),

@@ -1,4 +1,4 @@
-import type { PartnerOfferType, PassportTierCode } from "@yunicity/types";
+import type { PartnerOfferStatus, PartnerOfferType, PassportTierCode } from "@yunicity/types";
 
 export interface PassportTierMeta {
   label: string;
@@ -52,6 +52,54 @@ export const PASSPORT_TIER_META: Record<PassportTierCode, PassportTierMeta> = {
     border: "#94a3b8",
   },
 };
+
+export const PARTNER_OFFER_STATUS_LABELS: Record<PartnerOfferStatus, string> = {
+  draft: "Brouillon",
+  pending_review: "En attente de validation",
+  published: "Visible dans Yunicity",
+  rejected: "À ajuster",
+  archived: "Archivée",
+};
+
+/** Micro-copy partenaire — ton humain (TICKET-305B, validé CTO). */
+export const PARTNER_OFFER_STATUS_MICROCOPY: Record<PartnerOfferStatus, string> = {
+  draft: "Tu peux encore modifier et soumettre quand tu es prêt.",
+  pending_review: "En attente de validation par l’équipe Yunicity.",
+  published: "Ton offre est visible dans Yunicity Reims.",
+  rejected: "Quelques ajustements sont nécessaires avant publication.",
+  archived: "Cette offre n’est plus proposée aux citoyens.",
+};
+
+/** Hub partenaire — liste vide (TICKET-305B). */
+export const PARTNER_OFFERS_EMPTY_TITLE = "Pas encore d’offre";
+export const PARTNER_OFFERS_EMPTY_BODY =
+  "Crée la première et fais vivre ton commerce dans Yunicity.";
+export const PARTNER_OFFERS_EMPTY_CTA = "Créer une offre";
+
+export const PARTNER_OFFER_REJECTED_SECTION_TITLE =
+  "Quelques ajustements sont nécessaires";
+export const PARTNER_OFFER_REJECTED_REASON_LABEL = "Ce qu’il faut préciser";
+export const PARTNER_OFFER_REJECTED_HINT =
+  "Modifie ton offre puis renvoie-la — on t’accompagne pour la publication.";
+
+export const PARTNER_OFFER_STATUS_TONES: Record<
+  PartnerOfferStatus,
+  { bg: string; text: string; border: string }
+> = {
+  draft: { bg: "#f5f5f4", text: "#44403c", border: "#e7e5e4" },
+  pending_review: { bg: "#fffbeb", text: "#92400e", border: "#fde68a" },
+  published: { bg: "#ecfdf5", text: "#047857", border: "#a7f3d0" },
+  rejected: { bg: "#fffbeb", text: "#92400e", border: "#fde68a" },
+  archived: { bg: "#f8fafc", text: "#64748b", border: "#e2e8f0" },
+};
+
+export function canEditPartnerOffer(status: PartnerOfferStatus): boolean {
+  return status === "draft" || status === "rejected";
+}
+
+export function canSubmitPartnerOffer(status: PartnerOfferStatus): boolean {
+  return status === "draft" || status === "rejected";
+}
 
 export const PARTNER_OFFER_TYPE_LABELS: Record<PartnerOfferType, string> = {
   drink: "Boisson",

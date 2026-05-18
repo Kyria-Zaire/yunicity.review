@@ -16,6 +16,7 @@ import type {
 
 import type { AuthClient } from "./auth/auth-client";
 import { OrganizationApi, createOrganizationApi } from "./organization-api";
+import { PartnerOffersApi, createPartnerOffersApi } from "./partner-offers-api";
 import { PassportApi, createPassportApi } from "./passport-api";
 import { ProfileApi, createProfileApi } from "./profile-api";
 
@@ -23,11 +24,13 @@ import { ProfileApi, createProfileApi } from "./profile-api";
 export class YunicityApi {
   readonly profile: ProfileApi;
   readonly organization: OrganizationApi;
+  readonly partnerOffers: PartnerOffersApi;
   readonly passport: PassportApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.profile = createProfileApi(client, apiBaseUrl);
     this.organization = createOrganizationApi(client, apiBaseUrl);
+    this.partnerOffers = createPartnerOffersApi(client, apiBaseUrl);
     this.passport = createPassportApi(client, apiBaseUrl);
   }
 

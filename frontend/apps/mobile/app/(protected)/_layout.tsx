@@ -24,6 +24,18 @@ export default function ProtectedLayout() {
         name="organizations/request"
         options={{ headerShown: true, title: "Proposer un lieu" }}
       />
+      <Stack.Screen
+        name="partner-offers/index"
+        options={{ headerShown: true, title: "Offres pour la ville" }}
+      />
+      <Stack.Screen
+        name="partner-offers/new"
+        options={{ headerShown: true, title: "Nouvelle offre" }}
+      />
+      <Stack.Screen
+        name="partner-offers/[id]"
+        options={{ headerShown: true, title: "Détail offre" }}
+      />
     </Stack>
   );
 }

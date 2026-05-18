@@ -35,6 +35,27 @@ export type {
 } from "./profile";
 
 export type {
+  PartnerOfferAdmin,
+  PartnerOfferAdminCreatePayload,
+  PartnerOfferAdminListParams,
+  PartnerOfferAdminListResponse,
+  PartnerOfferAdminStatus,
+  PartnerOfferAdminUpdatePayload,
+  PartnerOfferRejectPayload,
+  VerifiedOrganizationListResponse,
+  VerifiedOrganizationOption,
+} from "./admin_partner_offer";
+
+export type {
+  PartnerOfferCreatePayload,
+  PartnerOfferListParams,
+  PartnerOfferManagement,
+  PartnerOfferManagementListResponse,
+  PartnerOfferStatus,
+  PartnerOfferUpdatePayload,
+} from "./partner_offer_management";
+
+export type {
   OfferRedemptionStatus,
   PartnerOffer,
   PartnerOfferListResponse,

@@ -270,6 +270,22 @@ pnpm --filter mobile start
 
 `EXPO_PUBLIC_API_URL` : souvent `http://10.0.2.2:8000` (Android) ou IP LAN pour appareil physique.
 
+## Partner offers self-service (TICKET-305B)
+
+Espace partenaire autonome (workflow modéré 305A) :
+
+| Surface | Routes |
+|---------|--------|
+| Mobile | `/(protected)/partner-offers` (hub, création, détail) |
+| Admin web | `/partner-offers` (même UX, auth sans rôle staff) |
+| Staff modération | `/passport-offers` (approve / reject / archive) |
+
+API client : `yunicityApi.partnerOffers` / `PartnerOffersApi` → `/api/v1/organizations/me/offers`.
+
+**Exclusions MVP** : analytics, QR, payouts, paiements, push, géoloc, CRM avancé.
+
+Intention UX : [`docs/ux/partner-offers-intention.md`](../docs/ux/partner-offers-intention.md) (canon CTO) · [`docs/ai/ticket-305b-ux-intent.md`](../docs/ai/ticket-305b-ux-intent.md).
+
 ## Design system (agents IA — TICKET-3050)
 
 Avant toute UI frontend importante (ex. **TICKET-305B** Partner Offers self-service) :
