@@ -1,15 +1,24 @@
 import { ReadinessStatusPanel } from "@/components/readiness-status-panel";
+import Link from "next/link";
 
 export default function AdminHomePage() {
   return (
-    <div className="mx-auto max-w-lg space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Tableau de bord</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Fondation admin — readiness backend uniquement.
+    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 p-6">
+      <header>
+        <h1 className="text-2xl font-semibold">Yunicity Admin</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Fondation — shell et auth. Pas de features métier.
         </p>
-      </div>
+      </header>
       <ReadinessStatusPanel />
-    </div>
+      <nav className="flex gap-4 text-sm">
+        <Link href="/login" className="text-primary hover:underline">
+          Connexion admin
+        </Link>
+        <Link href="/protected-admin" className="text-primary hover:underline">
+          Zone protégée
+        </Link>
+      </nav>
+    </main>
   );
 }

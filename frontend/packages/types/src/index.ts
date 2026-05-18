@@ -1,3 +1,15 @@
+export type {
+  ApiErrorBody,
+  AuthResponse,
+  AuthTokens,
+  AuthUser,
+  LoginRequest,
+  PermissionKey,
+  RefreshResponse,
+  RegisterRequest,
+  RoleKey,
+} from "./auth";
+
 export type EnvironmentName = "dev" | "recette" | "preprod" | "prod";
 
 export type ApiStatus = "ok" | "disabled" | "error";

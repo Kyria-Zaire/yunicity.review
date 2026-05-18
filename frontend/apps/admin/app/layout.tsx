@@ -1,5 +1,5 @@
+import { AuthProvider } from "@/lib/auth/auth-provider";
 import type { Metadata } from "next";
-import { AdminShell } from "@/components/admin-shell";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body>
-        <AdminShell>{children}</AdminShell>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

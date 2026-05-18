@@ -11,6 +11,17 @@ export default function HomePage() {
         </p>
       </header>
       <HealthStatusCard />
+      <nav className="flex gap-4 text-sm">
+        <a href="/login" className="text-blue-600 hover:underline">
+          Connexion
+        </a>
+        <a href="/register" className="text-blue-600 hover:underline">
+          Inscription
+        </a>
+        <a href="/protected" className="text-blue-600 hover:underline">
+          Zone protégée
+        </a>
+      </nav>
     </main>
   );
 }

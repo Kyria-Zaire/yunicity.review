@@ -6,7 +6,8 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
-    "validate": "turbo run typecheck lint build --force"
+    "validate": "turbo run typecheck lint build --force",
+    "test": "turbo run test"
   },
   "devDependencies": {
     "turbo": "^2.5.4",
