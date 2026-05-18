@@ -336,6 +336,58 @@ Révisions :
 - `alembic/versions/20260517_0001_auth_rbac_foundation.py` — auth/RBAC
 - `alembic/versions/20260518_0002_user_profiles.py` — profils sociaux + backfill
 - `alembic/versions/20260518_0003_organizations_foundation.py` — organisations + memberships + vérifications
+- `alembic/versions/20260518_0004_partner_leads_foundation.py` — partner leads CRM
+- `alembic/versions/20260519_0005_passport_foundation.py` — Passport MVP (tiers, stamps, offers, redemptions)
+
+## Passport — fondation données (TICKET-302)
+
+Référence produit : [`docs/prd/PRD-301-passport-benefits-foundation.md`](../docs/prd/PRD-301-passport-benefits-foundation.md).
+
+### Concepts
+
+| Entité | Rôle |
+|--------|------|
+| `passport_tiers` | Catalogue configurable (basic, silver, gold, néo-arrivant, press/creator, business) |
+| `passports` | Instance numérique d’un citoyen (ville, numéro, QR placeholder, tier, stats minimales) |
+| `passport_stamps` | Tampon collecté — **MVP : visite `organization` uniquement** |
+| `partner_offers` | Offre partenaire liée à une `organization` **vérifiée** (règle métier services/API) |
+| `passport_offer_redemptions` | Suivi simple d’utilisation d’une offre |
+
+### Relations
+
+```
+User
+ └── Passport (1 actif max / user en MVP)
+      ├── PassportStamp → Organization
+      ├── PassportOfferRedemption → PartnerOffer
+      └── PassportTier
+
+Organization (verified pour publier des offres)
+ └── PartnerOffer
+      └── PassportOfferRedemption → Passport
+```
+
+### Limites MVP
+
+| Règle | Détail |
+|-------|--------|
+| 1 passport actif / user | Index partiel `uq_passports_one_active_per_user` |
+| Tampon / org | Un tampon par couple `(passport, organization)` |
+| Redemption | Une redemption par couple `(passport, partner_offer)` |
+| QR | Colonne `qr_token` placeholder — **pas de scan temps réel** |
+| Offres | Création réservée aux org `verification_status = verified` (couche API à venir) |
+
+### Exclusions volontaires (hors TICKET-302)
+
+- QR temps réel / rotation avancée
+- Géolocalisation anti-fraude
+- Creator economy, payouts, live gifts
+- Passport physique, wallet, paiements
+- NFT / blockchain, analytics avancées, moteur points
+
+Constantes : `app/core/passport_constants.py`
+
+Tests : `tests/test_passport_models.py`, `test_partner_offers.py`, `test_passport_constraints.py`, `test_passport_migration.py`
 
 ## Seed RBAC (TICKET-102)
 
@@ -369,6 +421,8 @@ Tests profil (TICKET-202) : `tests/test_profile_endpoints.py`, `test_profile_use
 Tests organizations (TICKET-203) : `tests/test_organization_models.py`, `test_organization_slug.py`, `test_organization_constraints.py`, `test_organization_migration.py`.
 
 Tests organizations API (TICKET-204) : `tests/test_organization_api.py`.
+
+Tests passport fondation (TICKET-302) : `tests/test_passport_models.py`, `test_partner_offers.py`, `test_passport_constraints.py`, `test_passport_migration.py`.
 
 ## Supabase Recovery Operations
 

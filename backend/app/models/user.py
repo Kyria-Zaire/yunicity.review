@@ -8,6 +8,7 @@ from app.db.base import Base
 from app.models._mixins import TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.passport import Passport
     from app.models.rbac import UserRole
     from app.models.refresh_token import RefreshToken
     from app.models.user_profile import UserProfile
@@ -43,5 +44,10 @@ class User(TimestampMixin, Base):
         "UserProfile",
         back_populates="user",
         uselist=False,
+        cascade="all, delete-orphan",
+    )
+    passports: Mapped[list["Passport"]] = relationship(
+        "Passport",
+        back_populates="user",
         cascade="all, delete-orphan",
     )

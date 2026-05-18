@@ -33,6 +33,7 @@ from app.db.base import Base
 from app.models._mixins import TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.passport import PartnerOffer, PassportStamp
     from app.models.user import User
 
 
@@ -70,9 +71,7 @@ class Organization(TimestampMixin, Base):
     longitude: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
     website: Mapped[str | None] = mapped_column(String(2048), nullable=True)
-    social_links: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, server_default="{}"
-    )
+    social_links: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default="{}")
     logo_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     banner_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     verification_status: Mapped[VerificationStatus] = mapped_column(
@@ -123,6 +122,16 @@ class Organization(TimestampMixin, Base):
     )
     created_by: Mapped[User | None] = relationship("User", foreign_keys=[created_by_user_id])
     verified_by: Mapped[User | None] = relationship("User", foreign_keys=[verified_by_user_id])
+    passport_stamps: Mapped[list[PassportStamp]] = relationship(
+        "PassportStamp",
+        back_populates="organization",
+        cascade="all, delete-orphan",
+    )
+    partner_offers: Mapped[list[PartnerOffer]] = relationship(
+        "PartnerOffer",
+        back_populates="organization",
+        cascade="all, delete-orphan",
+    )
 
 
 class OrganizationMember(TimestampMixin, Base):
