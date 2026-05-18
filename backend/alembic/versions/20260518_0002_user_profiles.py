@@ -14,7 +14,6 @@ from datetime import UTC, datetime
 
 import sqlalchemy as sa
 from alembic import op
-
 from app.core.profile_username import pick_available_username_sync
 
 revision: str = "20260518_0002"

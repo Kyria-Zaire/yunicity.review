@@ -144,6 +144,34 @@ Utiliser les URLs `localhost:5434` / `localhost:6379` dans `.env` (voir commenta
 
 Les champs `users.full_name` et `users.city` restent en place (pas de suppression Sprint 2).
 
+### Organizations — modèle DB (TICKET-203)
+
+**Pas d’API organizations** à ce stade — uniquement schéma DB, helpers slug, tests.
+
+| Table | Rôle |
+|-------|------|
+| `organizations` | Acteur local (commerce, asso, école…) |
+| `organization_members` | Lien user ↔ org + rôle |
+| `organization_verifications` | Historique des transitions de vérification |
+
+**Types** (`type`) : `commerce`, `association`, `school`, `freelance`, `public_agency`, `creator`, `other`.
+
+**Vérification** (`verification_status`) : `pending` (défaut) → `under_review` → `verified` \| `rejected` \| `suspended`.
+
+**Visibilité** (`visibility`) : `private` (défaut), `public`, `unlisted` — aucune page publique tant qu’API absente.
+
+**Membership** (`role`) : `owner`, `admin`, `staff`, `member` — statuts : `active`, `invited`, `suspended`, `removed`.
+
+**Règle MVP** : un seul `owner` **actif** par organization (index unique partiel PostgreSQL).
+
+**Slug** (`app/core/organization_slug.py`) :
+
+- Format : `^[a-z0-9]+(?:-[a-z0-9]+)*$`, longueur 3–80
+- Accents supprimés, espaces → tirets
+- Réservés : `admin`, `api`, `yunicity`, `o`, `organizations`, etc.
+
+**Hors scope TICKET-203** : API création/review, partner leads, claim, pages publiques `/o/{slug}`, upload logo, seed partenaires.
+
 ### RBAC — endpoints de validation technique (TICKET-104)
 
 Routes temporaires pour prouver les guards avant les features métier (supprimables ou déplacées plus tard).
@@ -252,6 +280,7 @@ Révisions :
 
 - `alembic/versions/20260517_0001_auth_rbac_foundation.py` — auth/RBAC
 - `alembic/versions/20260518_0002_user_profiles.py` — profils sociaux + backfill
+- `alembic/versions/20260518_0003_organizations_foundation.py` — organisations + memberships + vérifications
 
 ## Seed RBAC (TICKET-102)
 
@@ -282,8 +311,10 @@ Tests RBAC (TICKET-104) : `tests/test_rbac_guards.py`, `test_rbac_permissions.py
 
 Tests profil (TICKET-202) : `tests/test_profile_endpoints.py`, `test_profile_username.py`, `test_profile_migration.py`.
 
+Tests organizations (TICKET-203) : `tests/test_organization_models.py`, `test_organization_slug.py`, `test_organization_constraints.py`, `test_organization_migration.py`.
+
 ## Prochaines étapes
 
 | Ticket | Objectif |
 |--------|----------|
-| TICKET-203+ | Organizations + memberships + vérification |
+| TICKET-204+ | API organizations + onboarding + review workflow |
