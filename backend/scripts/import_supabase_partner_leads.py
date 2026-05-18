@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Migration Supabase → partner_leads (dry-run par défaut).",
+        description="Migration Supabase -> partner_leads (dry-run par defaut).",
     )
     parser.add_argument(
         "--apply",

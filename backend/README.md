@@ -370,54 +370,56 @@ Tests organizations (TICKET-203) : `tests/test_organization_models.py`, `test_or
 
 Tests organizations API (TICKET-204) : `tests/test_organization_api.py`.
 
-## Supabase recovery → partner_leads (TICKET-250)
+## Supabase Recovery Operations
 
-Récupération des leads/partenaires historiques depuis un backup PostgreSQL Supabase
-vers le CRM `partner_leads` (sans création d’organizations).
+| Ticket | Contenu |
+|--------|---------|
+| TICKET-250 | Pipeline technique (scripts, mapping, tests) |
+| TICKET-251 | **Runbook import données réelles** — procédure opérationnelle |
 
-### Prérequis
+### Documentation officielle
 
-1. Restaurer le backup Supabase dans une base **locale** dédiée (pas la DB Yunicity prod).
-2. Définir `SUPABASE_DATABASE_URL` dans `.env` (voir `.env.example`).
-3. `DATABASE_URL` pointe vers la base CRM Yunicity (cible d’import).
+| Document | Usage |
+|----------|--------|
+| [`reports/TICKET-251-real-import-runbook.md`](reports/TICKET-251-real-import-runbook.md) | Restore backup, discovery, dry-run, apply, rollback, QA |
+| [`reports/supabase_partner_mapping.md`](reports/supabase_partner_mapping.md) | Correspondance colonnes Supabase → `partner_leads` |
+| [`reports/templates/import_validation_checklist.md`](reports/templates/import_validation_checklist.md) | Checklist validation humaine avant `--apply` |
 
-### Discovery
+### Séparation des bases (rappel)
+
+| Instance | Variable | Port hôte dev |
+|----------|----------|---------------|
+| Yunicity CRM | `DATABASE_URL` | `5434` (compose) |
+| Supabase restauré | `SUPABASE_DATABASE_URL` | `5435` (instance **séparée**) |
+
+Ne jamais restaurer le backup Supabase dans `yunicity_dev`.
+
+### Commandes rapides (référence)
 
 ```bash
-# Depuis une DB restaurée
+# Discovery
 docker compose exec backend python scripts/supabase_discovery.py
 
-# Depuis un dump .sql
-docker compose exec backend python scripts/supabase_discovery.py \
-  --sql-dump /path/to/backup.sql
-```
-
-Rapport : `reports/supabase_discovery_report.md`  
-Mapping : `reports/supabase_partner_mapping.md`
-
-### Import (dry-run par défaut)
-
-```bash
-docker compose exec backend python scripts/import_supabase_partner_leads.py --dry-run
-# équivalent sans flag apply
-
+# Dry-run (défaut — sans --apply)
 docker compose exec backend python scripts/import_supabase_partner_leads.py \
-  --source-table landing_partners --limit 50
+  --source-table VOTRE_TABLE --limit 50
 
-docker compose exec backend python scripts/import_supabase_partner_leads.py --apply
+# Apply — uniquement après checklist TICKET-251 + accord CTO
+docker compose exec backend python scripts/import_supabase_partner_leads.py \
+  --source-table VOTRE_TABLE --apply
 ```
 
-Rapport : `reports/supabase_partner_import_report.md`
+Rapports générés : `reports/supabase_discovery_report.md`, `reports/supabase_partner_import_report.md`
 
-### Règles
+### Règles pipeline (TICKET-250)
 
 | Règle | Détail |
 |-------|--------|
 | `source` | Toujours `landing_page` |
 | `status` | `signed` si détecté, sinon `interested` |
-| Doublons | Skip sur name+city+phone et Instagram (pas d’écrasement) |
-| Organizations | Jamais créées / vérifiées |
-| Défaut | Dry-run — `--apply` explicite pour écrire |
+| Doublons | Skip (name+city+phone + Instagram) — pas d’écrasement |
+| Organizations / users | Jamais modifiés |
+| Apply | Humain + checklist — pas d’import automatique |
 
 Tests : `tests/test_supabase_partner_import.py`
 
