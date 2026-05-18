@@ -40,9 +40,7 @@ class UserProfile(TimestampMixin, Base):
     avatar_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     banner_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     city: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    interests: Mapped[list[str]] = mapped_column(
-        JSONB, nullable=False, server_default="[]"
-    )
+    interests: Mapped[list[str]] = mapped_column(JSONB, nullable=False, server_default="[]")
     visibility: Mapped[ProfileVisibility] = mapped_column(
         String(16),
         nullable=False,

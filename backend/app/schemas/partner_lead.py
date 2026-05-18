@@ -174,9 +174,7 @@ class PartnerLeadImportPreviewRequest(BaseModel):
     @classmethod
     def cap_rows(cls, value: list[PartnerLeadImportRow]) -> list[PartnerLeadImportRow]:
         if len(value) > PARTNER_LEAD_IMPORT_MAX_ROWS:
-            raise ValueError(
-                f"Maximum {PARTNER_LEAD_IMPORT_MAX_ROWS} lignes par import preview."
-            )
+            raise ValueError(f"Maximum {PARTNER_LEAD_IMPORT_MAX_ROWS} lignes par import preview.")
         return value
 
 

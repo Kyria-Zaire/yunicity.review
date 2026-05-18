@@ -182,6 +182,4 @@ async def test_supabase_import_duplicate_instagram_skip(auth_client: object) -> 
 
     assert second.imported == 0
     assert second.skipped_duplicates == 1
-    assert any(
-        r.reason == "duplicate_instagram_in_crm" for r in second.duplicate_rows
-    )
+    assert any(r.reason == "duplicate_instagram_in_crm" for r in second.duplicate_rows)

@@ -11,9 +11,7 @@ from app.core.organization_constants import OrganizationMemberRole
 from app.models.organization import OrganizationMember
 from app.repositories.organization_repository import OrganizationRepository
 
-_ADMIN_ROLES = frozenset(
-    {OrganizationMemberRole.OWNER, OrganizationMemberRole.ADMIN}
-)
+_ADMIN_ROLES = frozenset({OrganizationMemberRole.OWNER, OrganizationMemberRole.ADMIN})
 _UPDATE_ROLES = _ADMIN_ROLES
 
 

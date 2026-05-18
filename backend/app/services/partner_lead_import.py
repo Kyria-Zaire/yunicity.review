@@ -34,9 +34,7 @@ BLOCKED_TRIBU_NAMES: frozenset[str] = frozenset(
     }
 )
 
-DEFAULT_SIGNED_NOTES = (
-    "Partenaire signé physiquement par l'équipe terrain Yunicity."
-)
+DEFAULT_SIGNED_NOTES = "Partenaire signé physiquement par l'équipe terrain Yunicity."
 
 
 @dataclass
@@ -69,8 +67,7 @@ class PartnerLeadImportSummary:
             "duplicate_names": self.duplicate_names,
             "created_names": self.created_names,
             "issues": [
-                {"row_index": i.row_index, "name": i.name, "errors": i.errors}
-                for i in self.issues
+                {"row_index": i.row_index, "name": i.name, "errors": i.errors} for i in self.issues
             ],
         }
 
@@ -93,9 +90,7 @@ def load_import_file(path: Path) -> list[dict[str, Any]]:
     elif isinstance(raw, dict) and isinstance(raw.get("leads"), list):
         items = raw["leads"]
     else:
-        raise PartnerLeadImportError(
-            "Format attendu : liste JSON ou objet {\"leads\": [...]}."
-        )
+        raise PartnerLeadImportError('Format attendu : liste JSON ou objet {"leads": [...]}.')
 
     leads: list[dict[str, Any]] = []
     for item in items:
@@ -247,9 +242,7 @@ class PartnerLeadImportService:
             city=payload.city,
             phone=payload.phone,
         )
-        org_type_value = (
-            payload.organization_type.value if payload.organization_type else None
-        )
+        org_type_value = payload.organization_type.value if payload.organization_type else None
         return PartnerLead(
             name=payload.name.strip(),
             organization_type=org_type_value,

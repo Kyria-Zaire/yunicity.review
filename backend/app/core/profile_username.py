@@ -113,9 +113,7 @@ async def pick_available_username(
     email: str,
     user_id: uuid.UUID,
 ) -> str:
-    for candidate in candidate_usernames(
-        full_name=full_name, email=email, user_id=user_id
-    ):
+    for candidate in candidate_usernames(full_name=full_name, email=email, user_id=user_id):
         if not await check_taken(candidate):
             return candidate
     raise RuntimeError("Unable to allocate a unique username")
@@ -128,9 +126,7 @@ def pick_available_username_sync(
     email: str,
     user_id: uuid.UUID,
 ) -> str:
-    for candidate in candidate_usernames(
-        full_name=full_name, email=email, user_id=user_id
-    ):
+    for candidate in candidate_usernames(full_name=full_name, email=email, user_id=user_id):
         if candidate not in taken:
             taken.add(candidate)
             return candidate

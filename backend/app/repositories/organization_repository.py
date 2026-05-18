@@ -33,9 +33,7 @@ class OrganizationRepository:
         return await self._session.get(Organization, organization_id)
 
     async def get_by_slug(self, slug: str) -> Organization | None:
-        result = await self._session.execute(
-            select(Organization).where(Organization.slug == slug)
-        )
+        result = await self._session.execute(select(Organization).where(Organization.slug == slug))
         return result.scalar_one_or_none()
 
     async def count_pending_for_user(self, user_id: uuid.UUID) -> int:

@@ -35,9 +35,7 @@ async def _reset_to_revision_0002() -> None:
     engine = get_engine()
     assert engine is not None
     async with engine.begin() as connection:
-        await connection.execute(
-            text("DROP TABLE IF EXISTS organization_verifications CASCADE")
-        )
+        await connection.execute(text("DROP TABLE IF EXISTS organization_verifications CASCADE"))
         await connection.execute(text("DROP TABLE IF EXISTS organization_members CASCADE"))
         await connection.execute(text("DROP TABLE IF EXISTS organizations CASCADE"))
         await connection.execute(text("DELETE FROM alembic_version"))

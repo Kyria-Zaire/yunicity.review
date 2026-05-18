@@ -94,9 +94,7 @@ class ProfileService:
                 detail="La ville est requise pour terminer l'onboarding.",
             )
 
-        interests_source = (
-            payload.interests if payload.interests is not None else profile.interests
-        )
+        interests_source = payload.interests if payload.interests is not None else profile.interests
         interests = self._validate_interests_list(interests_source)
         if not interests:
             raise AppError(

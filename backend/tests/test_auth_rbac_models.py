@@ -85,8 +85,6 @@ def test_user_roles_scope_unique_constraint() -> None:
     table_args = UserRole.__table_args__
     assert isinstance(table_args, tuple)
     constraint_names = {
-        arg.name
-        for arg in table_args
-        if isinstance(arg, UniqueConstraint) and arg.name is not None
+        arg.name for arg in table_args if isinstance(arg, UniqueConstraint) and arg.name is not None
     }
     assert "uq_user_roles_scope" in constraint_names

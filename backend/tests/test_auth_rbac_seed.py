@@ -56,17 +56,13 @@ async def test_seed_idempotent(db_session: AsyncSession) -> None:
     await db_session.commit()
 
     role_count_first = await db_session.scalar(select(func.count()).select_from(Role))
-    permission_count_first = await db_session.scalar(
-        select(func.count()).select_from(Permission)
-    )
+    permission_count_first = await db_session.scalar(select(func.count()).select_from(Permission))
 
     await seed_auth_rbac(db_session)
     await db_session.commit()
 
     role_count_second = await db_session.scalar(select(func.count()).select_from(Role))
-    permission_count_second = await db_session.scalar(
-        select(func.count()).select_from(Permission)
-    )
+    permission_count_second = await db_session.scalar(select(func.count()).select_from(Permission))
 
     assert role_count_first == role_count_second == len(ROLE_DEFINITIONS)
     assert permission_count_first == permission_count_second == len(PERMISSION_DEFINITIONS)
@@ -81,8 +77,8 @@ async def test_roles_and_permissions_seeded(db_session: AsyncSession) -> None:
     assert [role.key for role in roles] == sorted(ROLE_DEFINITIONS.keys())
 
     permissions = (
-        await db_session.execute(select(Permission).order_by(Permission.key))
-    ).scalars().all()
+        (await db_session.execute(select(Permission).order_by(Permission.key))).scalars().all()
+    )
     assert [perm.key for perm in permissions] == sorted(PERMISSION_DEFINITIONS.keys())
 
 

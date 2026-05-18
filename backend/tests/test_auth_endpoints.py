@@ -100,9 +100,7 @@ async def test_inactive_user_cannot_login(
     assert engine is not None
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     async with factory() as session:
-        result = await session.execute(
-            select(User).where(User.email == register_payload["email"])
-        )
+        result = await session.execute(select(User).where(User.email == register_payload["email"]))
         user = result.scalar_one()
         user.is_active = False
         await session.commit()

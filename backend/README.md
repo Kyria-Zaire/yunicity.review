@@ -389,6 +389,35 @@ Constantes : `app/core/passport_constants.py`
 
 Tests : `tests/test_passport_models.py`, `test_partner_offers.py`, `test_passport_constraints.py`, `test_passport_migration.py`
 
+## Passport API (TICKET-303)
+
+| Méthode | Route | Auth | Description |
+|---------|-------|------|-------------|
+| GET | `/api/v1/passport/tiers` | Non | Tiers publics actifs |
+| GET | `/api/v1/passport/me` | Oui | Passport actif + tier + stats |
+| POST | `/api/v1/passport/activate` | Oui | Active (ou retourne l'existant) |
+| GET | `/api/v1/passport/stamps` | Oui | Tampons du citoyen |
+| GET | `/api/v1/passport/offers` | Oui | Offres visibles (org verified + public) |
+| POST | `/api/v1/passport/offers/{offer_id}/redeem` | Oui | Redemption MVP (rate limit) |
+
+Services : `PassportService` — repositories `passport_repository`, `partner_offer_repository`.
+
+### Limites MVP API
+
+| Règle | Détail |
+|-------|--------|
+| Activation | Tier `basic` uniquement ; 1 actif / user |
+| Offres | Org `verified` + `visibility=public` + statut `active` |
+| Redemption | Statut `completed` ; pas de scan staff |
+| Sécurité | Pas d'élévation tier ; pas de création d'offre citoyen |
+
+### Exclusions API (hors scope)
+
+- Scan QR live, géolocalisation, anti-fraude avancée
+- Creator economy, wallet, paiements, leaderboard, points
+
+Tests : `tests/test_passport_activation.py`, `test_passport_api.py`, `test_passport_redemptions.py`
+
 ## Seed RBAC (TICKET-102)
 
 Idempotent — rôles et permissions MVP uniquement (aucun utilisateur) :
@@ -423,6 +452,8 @@ Tests organizations (TICKET-203) : `tests/test_organization_models.py`, `test_or
 Tests organizations API (TICKET-204) : `tests/test_organization_api.py`.
 
 Tests passport fondation (TICKET-302) : `tests/test_passport_models.py`, `test_partner_offers.py`, `test_passport_constraints.py`, `test_passport_migration.py`.
+
+Tests passport API (TICKET-303) : `tests/test_passport_activation.py`, `test_passport_api.py`, `test_passport_redemptions.py`.
 
 ## Supabase Recovery Operations
 

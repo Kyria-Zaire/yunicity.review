@@ -89,9 +89,7 @@ class PartnerLead(TimestampMixin, Base):
         Boolean, nullable=False, default=False, server_default="false"
     )
 
-    tags: Mapped[list[Any]] = mapped_column(
-        JSONB, nullable=False, server_default="[]"
-    )
+    tags: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, server_default="[]")
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     internal_rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
     last_contacted_at: Mapped[datetime | None] = mapped_column(
@@ -107,9 +105,7 @@ class PartnerLead(TimestampMixin, Base):
         nullable=True,
         index=True,
     )
-    converted_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    converted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     converted_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid,
         ForeignKey("users.id", ondelete="SET NULL"),
@@ -141,9 +137,7 @@ class PartnerLead(TimestampMixin, Base):
     converted_organization: Mapped[Organization | None] = relationship(
         "Organization", foreign_keys=[converted_organization_id]
     )
-    converted_by: Mapped[User | None] = relationship(
-        "User", foreign_keys=[converted_by_user_id]
-    )
+    converted_by: Mapped[User | None] = relationship("User", foreign_keys=[converted_by_user_id])
     created_by: Mapped[User | None] = relationship("User", foreign_keys=[created_by_user_id])
     updated_by: Mapped[User | None] = relationship("User", foreign_keys=[updated_by_user_id])
 

@@ -112,9 +112,7 @@ class AuthService:
     async def refresh(
         self, raw_refresh_token: str
     ) -> tuple[RefreshTokenResponse, IssuedRefreshToken | None]:
-        token_hash = hash_refresh_token(
-            raw_refresh_token, self._settings.refresh_token_pepper
-        )
+        token_hash = hash_refresh_token(raw_refresh_token, self._settings.refresh_token_pepper)
         stored = await self._refresh_tokens.get_by_hash(token_hash)
         if stored is None:
             raise AppError(
@@ -172,9 +170,7 @@ class AuthService:
     async def logout(self, raw_refresh_token: str | None) -> None:
         if not raw_refresh_token:
             return
-        token_hash = hash_refresh_token(
-            raw_refresh_token, self._settings.refresh_token_pepper
-        )
+        token_hash = hash_refresh_token(raw_refresh_token, self._settings.refresh_token_pepper)
         stored = await self._refresh_tokens.get_by_hash(token_hash)
         if stored is not None:
             await self._refresh_tokens.revoke(stored)
@@ -205,9 +201,7 @@ class AuthService:
         await self._session.commit()
 
         access = create_access_token(user.id, self._settings)
-        max_age = int(
-            (expires_at - datetime.now(UTC)).total_seconds()
-        )
+        max_age = int((expires_at - datetime.now(UTC)).total_seconds())
         user_public = await self._build_user_public(user)
         return AuthSessionBundle(
             access_token=access,

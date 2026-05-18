@@ -76,9 +76,7 @@ async def _assert_profile(user_id: uuid.UUID) -> None:
     assert session_factory is not None
     async with session_factory() as session:
         result = await session.execute(
-            text(
-                "SELECT username, display_name, city FROM user_profiles WHERE user_id = :uid"
-            ),
+            text("SELECT username, display_name, city FROM user_profiles WHERE user_id = :uid"),
             {"uid": user_id},
         )
         row = result.one()

@@ -391,9 +391,7 @@ class PartnerLeadService:
             city=payload.city,
             phone=payload.phone,
         )
-        org_type_value = (
-            payload.organization_type.value if payload.organization_type else None
-        )
+        org_type_value = payload.organization_type.value if payload.organization_type else None
         return PartnerLead(
             name=payload.name.strip(),
             organization_type=org_type_value,
@@ -428,10 +426,7 @@ class PartnerLeadService:
         self,
         index: int,
         row: PartnerLeadImportRow,
-    ) -> (
-        tuple[PartnerLeadImportNormalizedRow, str]
-        | PartnerLeadImportInvalidRow
-    ):
+    ) -> tuple[PartnerLeadImportNormalizedRow, str] | PartnerLeadImportInvalidRow:
         errors: list[str] = []
         raw = row.model_dump()
 

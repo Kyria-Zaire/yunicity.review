@@ -41,9 +41,7 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = Field(default=7, alias="REFRESH_TOKEN_EXPIRE_DAYS")
     refresh_cookie_name: str = Field(default="refresh_token", alias="REFRESH_COOKIE_NAME")
     refresh_cookie_secure: bool = Field(default=False, alias="REFRESH_COOKIE_SECURE")
-    refresh_cookie_samesite: CookieSameSite = Field(
-        default="lax", alias="REFRESH_COOKIE_SAMESITE"
-    )
+    refresh_cookie_samesite: CookieSameSite = Field(default="lax", alias="REFRESH_COOKIE_SAMESITE")
     refresh_token_pepper: str = Field(default="", alias="REFRESH_TOKEN_PEPPER")
 
     @field_validator("cors_origins", mode="before")

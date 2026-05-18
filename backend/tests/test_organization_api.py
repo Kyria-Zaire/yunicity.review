@@ -13,6 +13,7 @@ from tests.conftest_rbac import RbacUserFactory, auth_header
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
+
 def _org_id(data: dict[str, object]) -> uuid.UUID:
     return uuid.UUID(str(data["id"]))
 

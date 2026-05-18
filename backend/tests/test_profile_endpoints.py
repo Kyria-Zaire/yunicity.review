@@ -49,12 +49,8 @@ async def test_register_creates_profile(auth_client: AsyncClient) -> None:
 async def test_username_unique_for_similar_names(auth_client: AsyncClient) -> None:
     first = await _register(auth_client, {"full_name": "Jean Dupont"}, suffix="1")
     second = await _register(auth_client, {"full_name": "Jean Dupont"}, suffix="2")
-    p1 = await auth_client.get(
-        "/api/v1/profile/me", headers=_auth_headers(first["access_token"])
-    )
-    p2 = await auth_client.get(
-        "/api/v1/profile/me", headers=_auth_headers(second["access_token"])
-    )
+    p1 = await auth_client.get("/api/v1/profile/me", headers=_auth_headers(first["access_token"]))
+    p2 = await auth_client.get("/api/v1/profile/me", headers=_auth_headers(second["access_token"]))
     assert p1.json()["username"] != p2.json()["username"]
 
 

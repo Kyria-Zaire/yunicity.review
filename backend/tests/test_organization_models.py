@@ -1,6 +1,5 @@
 """Organization ORM model unit tests."""
 
-
 import app.models  # noqa: F401 — register metadata
 from app.core.organization_constants import (
     ORGANIZATION_MEMBER_ROLES,
@@ -64,9 +63,7 @@ def test_unique_membership_constraint() -> None:
     table_args = OrganizationMember.__table_args__
     assert isinstance(table_args, tuple)
     names = {
-        constraint.name
-        for constraint in table_args
-        if isinstance(constraint, UniqueConstraint)
+        constraint.name for constraint in table_args if isinstance(constraint, UniqueConstraint)
     }
     assert "uq_organization_members_org_user" in names
 
@@ -74,9 +71,7 @@ def test_unique_membership_constraint() -> None:
 def test_one_active_owner_partial_index() -> None:
     table_args = OrganizationMember.__table_args__
     assert isinstance(table_args, tuple)
-    index_names = {
-        constraint.name for constraint in table_args if isinstance(constraint, Index)
-    }
+    index_names = {constraint.name for constraint in table_args if isinstance(constraint, Index)}
     assert "uq_organization_members_one_active_owner" in index_names
 
 

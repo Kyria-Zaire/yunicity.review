@@ -1,0 +1,105 @@
+"""Passport persistence layer."""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.core.passport_constants import PassportStatus, PassportTierCode
+from app.models.passport import Passport, PassportOfferRedemption, PassportStamp, PassportTier
+
+
+class PassportRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def get_active_for_user(self, user_id: uuid.UUID) -> Passport | None:
+        result = await self._session.execute(
+            select(Passport)
+            .options(selectinload(Passport.tier))
+            .where(
+                Passport.user_id == user_id,
+                Passport.status == PassportStatus.ACTIVE.value,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_id_for_user(
+        self,
+        passport_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> Passport | None:
+        result = await self._session.execute(
+            select(Passport)
+            .options(selectinload(Passport.tier))
+            .where(Passport.id == passport_id, Passport.user_id == user_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_tier_by_code(self, code: PassportTierCode) -> PassportTier | None:
+        result = await self._session.execute(
+            select(PassportTier).where(PassportTier.code == code.value)
+        )
+        return result.scalar_one_or_none()
+
+    async def list_public_tiers(self) -> list[PassportTier]:
+        result = await self._session.execute(
+            select(PassportTier)
+            .where(
+                PassportTier.is_active.is_(True),
+                PassportTier.is_publicly_visible.is_(True),
+            )
+            .order_by(PassportTier.display_order.asc())
+        )
+        return list(result.scalars().all())
+
+    async def create_passport(self, passport: Passport) -> Passport:
+        self._session.add(passport)
+        await self._session.flush()
+        await self._session.refresh(passport, attribute_names=["tier"])
+        return passport
+
+    async def list_stamps_for_passport(self, passport_id: uuid.UUID) -> list[PassportStamp]:
+        result = await self._session.execute(
+            select(PassportStamp)
+            .options(selectinload(PassportStamp.organization))
+            .where(PassportStamp.passport_id == passport_id)
+            .order_by(PassportStamp.stamped_at.desc())
+        )
+        return list(result.scalars().all())
+
+    async def get_redemption(
+        self,
+        *,
+        passport_id: uuid.UUID,
+        partner_offer_id: uuid.UUID,
+    ) -> PassportOfferRedemption | None:
+        result = await self._session.execute(
+            select(PassportOfferRedemption).where(
+                PassportOfferRedemption.passport_id == passport_id,
+                PassportOfferRedemption.partner_offer_id == partner_offer_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def create_redemption(
+        self,
+        redemption: PassportOfferRedemption,
+    ) -> PassportOfferRedemption:
+        self._session.add(redemption)
+        await self._session.flush()
+        return redemption
+
+    async def increment_redemptions_count(self, passport: Passport) -> None:
+        passport.redemptions_count = passport.redemptions_count + 1
+        await self._session.flush()
+
+    async def touch_activated(self, passport: Passport, *, activated_at: datetime) -> None:
+        passport.activated_at = activated_at
+        passport.onboarding_completed = True
+        passport.onboarding_step = "activated"
+        await self._session.flush()
