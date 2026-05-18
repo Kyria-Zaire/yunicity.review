@@ -46,7 +46,7 @@ Monorepo **pnpm** + **Turborepo** : Next.js (web + admin), Expo (mobile), packag
 | App | Routes |
 |-----|--------|
 | Web | `/login`, `/register`, `/profile/me`, `/organizations/me`, `/organizations/request` |
-| Admin | `/login`, `/protected-admin` |
+| Admin | `/login`, `/partner-leads`, `/partner-leads/[id]`, `/unauthorized`, `/protected-admin` |
 | Mobile | `/login`, `/register`, `/(protected)/(tabs)/profile`, `/(protected)/(tabs)/organizations` |
 
 ## Profil & organizations (TICKET-206)
@@ -63,7 +63,7 @@ Monorepo **pnpm** + **Turborepo** : Next.js (web + admin), Expo (mobile), packag
 | Mobile | `/(tabs)/organizations` | Liste lieux |
 | Mobile | `/organizations/request` | Demande partenaire |
 
-Admin : inchangé (pas de dashboard CRM dans ce ticket).
+Admin : cockpit CRM partenaires (TICKET-207, voir ci-dessous).
 
 ### API clients (`@yunicity/utils`)
 
@@ -98,6 +98,46 @@ Pas d’auto-vérification ni publication publique.
 - Profil privé → UX 404 (le backend est source de vérité)
 - UI hide ≠ authZ (admin non exposé)
 
+## Partner leads admin (TICKET-207)
+
+### Routes (app `admin`, port 3001)
+
+| Route | Description |
+|-------|-------------|
+| `/partner-leads` | Liste CRM — filtres statut/source/ville, recherche nom/ville (client, max 100 lignes) |
+| `/partner-leads/[id]` | Fiche lead — notes, tags, suivi, conversion |
+| `/unauthorized` | Compte connecté sans droits staff |
+| `/protected-admin` | Zone staff (même garde que CRM) |
+
+### Permissions requises (TICKET-207B)
+
+- **`moderation.manage`** ou **`system.admin`** — helpers `isStaffUser()` / `hasAnyPermission()` dans `apps/admin/lib/auth/staff-permissions.ts`
+- Toutes les routes sous `(protected)/` : `ProtectedRoute` (session) puis `StaffRoute` (permissions)
+- Non connecté → `/login` · connecté sans staff → `/unauthorized`
+- Navigation CRM masquée si non-staff (`AdminShell`)
+- `/protected-admin` et `/partner-leads` : **staff-only** (plus accessible au simple USER)
+
+### API client
+
+`packages/utils/src/partner-leads-api.ts` — `listPartnerLeads`, `getPartnerLead`, `updatePartnerLead`, `convertPartnerLead`.
+
+Types : `PartnerLead`, `PartnerLeadStatus`, `PartnerLeadSource`, `ConvertLeadPayload`, `PartnerLeadUpdatePayload`.
+
+### Workflow conversion
+
+1. Ouvrir une fiche lead non convertie → **Convertir en organization**
+2. Choisir **créer** (sans `organization_id`) ou **lier** (UUID organization existante)
+3. Renseigner **`owner_user_id`** (UUID propriétaire — prérempli avec l’utilisateur connecté)
+4. Rappel UI : l’organization reste **`pending`** / **`private`** jusqu’à validation modération
+
+Import terrain : script backend `backend/scripts/import_partner_leads.py` (hors UI).
+
+### Style & technique
+
+- UI type Linear/Notion (badges, cartes, pas de CRUD gris)
+- Pas de React Query — `useState` + `useEffect`
+- États loading / error / empty obligatoires
+
 ## Structure
 
 ```
@@ -105,8 +145,8 @@ frontend/
 ├── apps/web/
 ├── apps/admin/
 ├── apps/mobile/
-├── packages/types/     # auth, profile, organization
-├── packages/utils/     # auth-client, profile-api, organization-api
+├── packages/types/     # auth, profile, organization, partner_lead
+├── packages/utils/     # auth-client, profile-api, organization-api, partner-leads-api
 └── packages/ui/
 ```
 

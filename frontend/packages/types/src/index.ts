@@ -34,6 +34,16 @@ export type {
   UserProfile,
 } from "./profile";
 
+export type {
+  ConvertLeadPayload,
+  PartnerLead,
+  PartnerLeadListParams,
+  PartnerLeadListResponse,
+  PartnerLeadSource,
+  PartnerLeadStatus,
+  PartnerLeadUpdatePayload,
+} from "./partner_lead";
+
 export type EnvironmentName = "dev" | "recette" | "preprod" | "prod";
 
 export type ApiStatus = "ok" | "disabled" | "error";

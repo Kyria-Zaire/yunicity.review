@@ -7,16 +7,13 @@ export default function AdminHomePage() {
       <header>
         <h1 className="text-2xl font-semibold">Yunicity Admin</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Fondation — shell et auth. Pas de features métier.
+          Back-office staff — connexion requise avec droits modération ou admin système.
         </p>
       </header>
       <ReadinessStatusPanel />
       <nav className="flex gap-4 text-sm">
-        <Link href="/login" className="text-primary hover:underline">
-          Connexion admin
-        </Link>
-        <Link href="/protected-admin" className="text-primary hover:underline">
-          Zone protégée
+        <Link href="/login" className="font-medium text-neutral-900 hover:underline">
+          Connexion staff
         </Link>
       </nav>
     </main>

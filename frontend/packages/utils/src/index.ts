@@ -6,10 +6,16 @@ export { ApiClientBase } from "./api-client";
 export {
   INTEREST_LABELS,
   ORGANIZATION_TYPE_OPTIONS,
+  PARTNER_LEAD_SOURCE_LABELS,
+  PARTNER_LEAD_STATUS_LABELS,
   PROFILE_INTERESTS,
   VERIFICATION_STATUS_LABELS,
   VISIBILITY_OPTIONS,
 } from "./domain-labels";
+export {
+  PartnerLeadsApi,
+  createPartnerLeadsApi,
+} from "./partner-leads-api";
 export {
   OrganizationApi,
   buildOrganizationCreateRequest,

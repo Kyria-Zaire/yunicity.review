@@ -4,8 +4,10 @@ import type { AuthUser, LoginRequest } from "@yunicity/types";
 import {
   MemoryTokenStorage,
   createAuthClient,
+  createPartnerLeadsApi,
   getWebApiBaseUrl,
   isAuthError,
+  type PartnerLeadsApi,
 } from "@yunicity/utils";
 import {
   createContext,
@@ -22,6 +24,7 @@ interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
+  partnerLeadsApi: PartnerLeadsApi;
   login: (payload: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
@@ -34,16 +37,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const storage = useMemo(() => new MemoryTokenStorage(), []);
+  const apiBaseUrl = getWebApiBaseUrl();
 
   const client = useMemo(
     () =>
       createAuthClient({
-        apiBaseUrl: getWebApiBaseUrl(),
+        apiBaseUrl,
         platform: "admin",
         storage,
         onSessionCleared: () => setUser(null),
       }),
-    [storage],
+    [storage, apiBaseUrl],
+  );
+
+  const partnerLeadsApi = useMemo(
+    () => createPartnerLeadsApi(client, apiBaseUrl),
+    [client, apiBaseUrl],
   );
 
   useEffect(() => {
@@ -96,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     isAuthenticated: user !== null,
     error,
+    partnerLeadsApi,
     login,
     logout,
     clearError: () => setError(null),

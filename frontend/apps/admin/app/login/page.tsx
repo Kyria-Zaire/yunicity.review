@@ -1,21 +1,22 @@
 "use client";
 
 import { useAuth } from "@/lib/auth/auth-provider";
+import { isStaffUser } from "@/lib/auth/staff-permissions";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 
 export default function AdminLoginPage() {
-  const { login, error, clearError, isAuthenticated, isLoading } = useAuth();
+  const { login, error, clearError, isAuthenticated, isLoading, user } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.replace("/protected-admin");
+    if (!isLoading && isAuthenticated && user) {
+      router.replace(isStaffUser(user) ? "/partner-leads" : "/unauthorized");
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, user, router]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -23,7 +24,6 @@ export default function AdminLoginPage() {
     setIsSubmitting(true);
     try {
       await login({ email, password });
-      router.replace("/protected-admin");
     } finally {
       setIsSubmitting(false);
     }

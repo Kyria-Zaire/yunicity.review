@@ -7,9 +7,11 @@ export default function ProtectedAdminPage() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Zone admin protégée</h2>
+      <h2 className="text-lg font-semibold">Zone staff</h2>
       <p className="text-sm text-muted-foreground">
-        Connecté en tant que <strong>{user?.email}</strong>
+        Accès réservé (<code className="text-xs">moderation.manage</code> ou{" "}
+        <code className="text-xs">system.admin</code>). Connecté :{" "}
+        <strong>{user?.email}</strong>
       </p>
       <p className="text-sm">
         Rôles : {user?.roles.join(", ") || "—"}
