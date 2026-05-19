@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
+from app.core.flash_offer import build_flash_snapshot
 from app.core.organization_constants import VerificationStatus
 from app.core.passport_constants import (
     DEFAULT_PASSPORT_TIER_CODE,
@@ -115,8 +116,24 @@ class PassportService:
         offers = await self._offers.list_visible_offers(now=now)
         tier_code = passport.tier.code if passport.tier else PassportTierCode.BASIC.value
         filtered = [o for o in offers if self._offer_accessible(o, tier_code)]
-        items = [PartnerOfferResponse.model_validate(o) for o in filtered]
+        items = [self._to_partner_offer_response(o) for o in filtered]
         return PartnerOfferListResponse(items=items, total=len(items))
+
+    @staticmethod
+    def _to_partner_offer_response(offer: object) -> PartnerOfferResponse:
+        from app.models.passport import PartnerOffer
+
+        assert isinstance(offer, PartnerOffer)
+        flash = build_flash_snapshot(offer)
+        base = PartnerOfferResponse.model_validate(offer)
+        return base.model_copy(
+            update={
+                "is_flash": flash.is_flash,
+                "flash_ends_at": flash.flash_ends_at,
+                "remaining_hours": flash.remaining_hours,
+                "remaining_minutes": flash.remaining_minutes,
+            }
+        )
 
     async def redeem_offer(self, user: User, offer_id: uuid.UUID) -> RedemptionResponse:
         passport = await self._require_active_passport(user.id)

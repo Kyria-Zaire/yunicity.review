@@ -24,6 +24,10 @@ export interface FeedOfferMeta {
   valid_from: string | null;
   valid_until: string | null;
   offer_type: string | null;
+  is_flash?: boolean;
+  flash_ends_at?: string | null;
+  remaining_hours?: number | null;
+  remaining_minutes?: number | null;
 }
 
 export interface FeedPost {

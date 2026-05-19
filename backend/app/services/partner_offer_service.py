@@ -4,10 +4,16 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
+from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
+from app.core.flash_offer import (
+    apply_flash_clear_on_archive,
+    build_flash_snapshot,
+    validate_flash_fields,
+)
 from app.core.organization_constants import OrganizationVisibility, VerificationStatus
 from app.core.partner_offer_workflow import (
     assert_partner_can_edit,
@@ -74,6 +80,8 @@ class PartnerOfferService:
             max_redemptions_total=payload.max_redemptions_total,
             valid_from=payload.valid_from,
             valid_until=payload.valid_until,
+            is_flash=payload.is_flash,
+            flash_ends_at=payload.flash_ends_at if payload.is_flash else None,
             created_by_user_id=actor.id,
         )
         created = await self._offers.create(offer)
@@ -98,6 +106,7 @@ class PartnerOfferService:
         valid_from = updates.get("valid_from", offer.valid_from)
         valid_until = updates.get("valid_until", offer.valid_until)
         self._validate_dates(valid_from, valid_until)
+        self._merge_and_validate_flash(offer, updates)
         await self._offers.update_fields(offer, fields=updates)
         await self._session.commit()
         return await self._to_management_response(await self._require_offer(offer_id))
@@ -113,6 +122,17 @@ class PartnerOfferService:
             user_id=actor.id,
         )
         self._validate_dates(offer.valid_from, offer.valid_until)
+        status = (
+            offer.status
+            if isinstance(offer.status, PartnerOfferStatus)
+            else PartnerOfferStatus(offer.status)
+        )
+        validate_flash_fields(
+            is_flash=offer.is_flash,
+            flash_ends_at=offer.flash_ends_at,
+            valid_until=offer.valid_until,
+            status=status,
+        )
         self._transition_offer(offer, PartnerOfferStatus.PENDING_REVIEW)
         await self._session.commit()
         return await self._to_management_response(await self._require_offer(offer_id))
@@ -337,6 +357,7 @@ class PartnerOfferService:
         clear_rejection: bool = False,
     ) -> None:
         assert_transition_allowed(offer.status, target)
+        apply_flash_clear_on_archive(offer, target)
         offer.status = target
         offer.is_active = is_offer_active(target)
         if moderator is not None:
@@ -359,6 +380,35 @@ class PartnerOfferService:
                 detail="La date de fin doit être postérieure à la date de début.",
             )
 
+    def _merge_and_validate_flash(
+        self,
+        offer: PartnerOffer,
+        updates: dict[str, object],
+    ) -> None:
+        is_flash = offer.is_flash if "is_flash" not in updates else bool(updates["is_flash"])
+        flash_ends_at = (
+            offer.flash_ends_at
+            if "flash_ends_at" not in updates
+            else cast(datetime | None, updates.get("flash_ends_at"))
+        )
+        valid_until = (
+            offer.valid_until
+            if "valid_until" not in updates
+            else cast(datetime | None, updates.get("valid_until"))
+        )
+        status = offer.status
+        if isinstance(status, str):
+            status = PartnerOfferStatus(status)
+        validate_flash_fields(
+            is_flash=is_flash,
+            flash_ends_at=flash_ends_at if is_flash else None,
+            valid_until=valid_until,
+            status=status,
+        )
+        if "is_flash" in updates or "flash_ends_at" in updates:
+            updates["is_flash"] = is_flash
+            updates["flash_ends_at"] = flash_ends_at if is_flash else None
+
     async def _to_management_response(
         self,
         offer: PartnerOffer,
@@ -369,6 +419,7 @@ class PartnerOfferService:
             if isinstance(offer.status, PartnerOfferStatus)
             else PartnerOfferStatus(offer.status)
         )
+        flash = build_flash_snapshot(offer)
         return PartnerOfferManagementResponse(
             id=offer.id,
             organization_id=offer.organization_id,
@@ -387,6 +438,12 @@ class PartnerOfferService:
             moderated_by_user_id=offer.moderated_by_user_id,
             moderated_at=offer.moderated_at,
             rejection_reason=offer.rejection_reason,
+            is_flash=offer.is_flash,
+            flash_ends_at=offer.flash_ends_at,
+            flash_active=flash.is_flash,
+            remaining_hours=flash.remaining_hours,
+            remaining_minutes=flash.remaining_minutes,
+            notification_sent_at=offer.notification_sent_at,
             created_at=offer.created_at,
             updated_at=offer.updated_at,
         )

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from app.core.flash_offer import build_flash_snapshot
 from app.models.post import Post
 from app.schemas.feed import FeedAuthor, FeedLocation, FeedOfferMeta, FeedPostItem
 from app.schemas.post import PostResponse
@@ -11,11 +12,16 @@ def _offer_meta(post: Post) -> FeedOfferMeta | None:
     if post.partner_offer_id is None or post.partner_offer is None:
         return None
     offer = post.partner_offer
+    flash = build_flash_snapshot(offer)
     return FeedOfferMeta(
         partner_offer_id=post.partner_offer_id,
         valid_from=offer.valid_from,
         valid_until=offer.valid_until,
         offer_type=offer.offer_type,
+        is_flash=flash.is_flash,
+        flash_ends_at=flash.flash_ends_at,
+        remaining_hours=flash.remaining_hours,
+        remaining_minutes=flash.remaining_minutes,
     )
 
 

@@ -1,7 +1,12 @@
 "use client";
 
 import { OfferStatusBadge } from "@/components/offer-status-badge";
-import { formatDate, fromDatetimeLocalValue, toDatetimeLocalValue } from "@/lib/format";
+import {
+  fromDatetimeLocalValue,
+  PartnerFlashFields,
+  toDatetimeLocalValue,
+} from "@/components/partner-flash-fields";
+import { formatDate } from "@/lib/format";
 import { usePartnerOfferMutations } from "@/lib/hooks/use-partner-offers";
 import { useAuth } from "@/lib/auth/auth-provider";
 import type { PartnerOfferManagement, PartnerOfferType } from "@yunicity/types";
@@ -42,6 +47,8 @@ export default function PartnerOfferDetailPage() {
   const [offerType, setOfferType] = useState<PartnerOfferType>("drink");
   const [validFrom, setValidFrom] = useState("");
   const [validUntil, setValidUntil] = useState("");
+  const [isFlash, setIsFlash] = useState(false);
+  const [flashEndsAt, setFlashEndsAt] = useState("");
   const [saveOk, setSaveOk] = useState(false);
 
   const load = useCallback(async () => {
@@ -61,6 +68,8 @@ export default function PartnerOfferDetailPage() {
       setOfferType(found.offer_type);
       setValidFrom(toDatetimeLocalValue(found.valid_from));
       setValidUntil(toDatetimeLocalValue(found.valid_until));
+      setIsFlash(found.is_flash);
+      setFlashEndsAt(toDatetimeLocalValue(found.flash_ends_at));
     } catch (err) {
       setLoadError(isAuthError(err) ? err.message : "Chargement impossible.");
     } finally {
@@ -85,6 +94,9 @@ export default function PartnerOfferDetailPage() {
       offer_type: offerType,
       valid_from: validFrom ? fromDatetimeLocalValue(validFrom) : null,
       valid_until: validUntil ? fromDatetimeLocalValue(validUntil) : null,
+      is_flash: isFlash,
+      flash_ends_at:
+        isFlash && flashEndsAt ? fromDatetimeLocalValue(flashEndsAt) : null,
     });
     setOffer(updated);
     setSaveOk(true);
@@ -205,6 +217,13 @@ export default function PartnerOfferDetailPage() {
               />
             </label>
           </div>
+          <PartnerFlashFields
+            isFlash={isFlash}
+            flashEndsAt={flashEndsAt}
+            validUntil={validUntil}
+            onIsFlashChange={setIsFlash}
+            onFlashEndsAtChange={setFlashEndsAt}
+          />
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           {saveOk ? <p className="text-sm text-emerald-700">Enregistré.</p> : null}
           <button

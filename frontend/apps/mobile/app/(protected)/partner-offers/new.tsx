@@ -1,6 +1,8 @@
 import { useAuth } from "@/lib/auth-provider";
 import type { OrganizationMeItem, PartnerOfferType } from "@yunicity/types";
 import {
+  FLASH_PARTNER_HELPER,
+  fromDatetimeLocalValue,
   isAuthError,
   listOfferManageableOrganizations,
 } from "@yunicity/utils";
@@ -34,6 +36,8 @@ export default function NewPartnerOfferScreen() {
   const [description, setDescription] = useState("");
   const [offerType, setOfferType] = useState<PartnerOfferType>("drink");
   const [submitAfter, setSubmitAfter] = useState(true);
+  const [isFlash, setIsFlash] = useState(false);
+  const [flashEndsAt, setFlashEndsAt] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +65,11 @@ export default function NewPartnerOfferScreen() {
         title: title.trim(),
         description: description.trim() || null,
         offer_type: offerType,
+        is_flash: isFlash,
+        flash_ends_at:
+          isFlash && flashEndsAt.trim()
+            ? fromDatetimeLocalValue(flashEndsAt)
+            : null,
       });
       if (submitAfter) {
         await yunicityApi.partnerOffers.submitOffer(created.id);
@@ -133,6 +142,27 @@ export default function NewPartnerOfferScreen() {
       </View>
 
       <View style={styles.switchRow}>
+        <View style={styles.flashLabelCol}>
+          <Text style={styles.label}>Offre flash</Text>
+          <Text style={styles.flashHint}>{FLASH_PARTNER_HELPER}</Text>
+        </View>
+        <Switch value={isFlash} onValueChange={setIsFlash} />
+      </View>
+      {isFlash ? (
+        <>
+          <Text style={styles.label}>Fin de la mise en avant</Text>
+          <TextInput
+            style={styles.input}
+            value={flashEndsAt}
+            onChangeText={setFlashEndsAt}
+            placeholder="2026-05-19T20:00"
+            placeholderTextColor="#78716c"
+            autoCapitalize="none"
+          />
+        </>
+      ) : null}
+
+      <View style={styles.switchRow}>
         <Text style={styles.label}>Envoyer à Yunicity après création</Text>
         <Switch value={submitAfter} onValueChange={setSubmitAfter} />
       </View>
@@ -180,6 +210,8 @@ const styles = StyleSheet.create({
   typeChipText: { color: "#a8a29e", fontSize: 12 },
   typeChipTextActive: { color: "#0c0a09", fontWeight: "700" },
   switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 16 },
+  flashLabelCol: { flex: 1, paddingRight: 12 },
+  flashHint: { color: "#78716c", fontSize: 12, marginTop: 4, lineHeight: 16 },
   cta: {
     backgroundColor: "#fafaf9",
     borderRadius: 16,

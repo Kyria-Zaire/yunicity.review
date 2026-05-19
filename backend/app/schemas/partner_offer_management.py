@@ -7,6 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.core.flash_offer import validate_flash_fields
 from app.core.passport_constants import (
     DEFAULT_MAX_REDEMPTIONS_PER_PASSPORT,
     PARTNER_OFFER_REJECTION_REASON_MAX_LENGTH,
@@ -31,6 +32,8 @@ class PartnerOfferCreateRequest(BaseModel):
     redemption_limit: int = Field(default=DEFAULT_MAX_REDEMPTIONS_PER_PASSPORT, ge=1)
     max_redemptions_total: int | None = Field(default=None, ge=1)
     tier_code_required: str | None = Field(default=None, max_length=32)
+    is_flash: bool = False
+    flash_ends_at: datetime | None = None
 
     @field_validator("offer_type", mode="before")
     @classmethod
@@ -43,6 +46,19 @@ class PartnerOfferCreateRequest(BaseModel):
     def validate_dates(self) -> PartnerOfferCreateRequest:
         if self.valid_from and self.valid_until and self.valid_until <= self.valid_from:
             raise ValueError("La date de fin doit être postérieure à la date de début.")
+        if self.is_flash:
+            try:
+                validate_flash_fields(
+                    is_flash=True,
+                    flash_ends_at=self.flash_ends_at,
+                    valid_until=self.valid_until,
+                    status=PartnerOfferStatus.DRAFT,
+                )
+            except Exception as exc:
+                detail = getattr(exc, "detail", str(exc))
+                raise ValueError(str(detail)) from exc
+        elif self.flash_ends_at is not None:
+            raise ValueError("flash_ends_at interdit sans offre flash.")
         return self
 
 
@@ -57,11 +73,15 @@ class PartnerOfferUpdateRequest(BaseModel):
     redemption_limit: int | None = Field(default=None, ge=1)
     max_redemptions_total: int | None = Field(default=None, ge=1)
     tier_code_required: str | None = Field(default=None, max_length=32)
+    is_flash: bool | None = None
+    flash_ends_at: datetime | None = None
 
     @model_validator(mode="after")
     def validate_dates(self) -> PartnerOfferUpdateRequest:
         if self.valid_from and self.valid_until and self.valid_until <= self.valid_from:
             raise ValueError("La date de fin doit être postérieure à la date de début.")
+        if self.is_flash is False and self.flash_ends_at is not None:
+            raise ValueError("flash_ends_at interdit sans offre flash.")
         return self
 
 
@@ -91,6 +111,12 @@ class PartnerOfferManagementResponse(BaseModel):
     moderated_by_user_id: UUID | None
     moderated_at: datetime | None
     rejection_reason: str | None
+    is_flash: bool
+    flash_ends_at: datetime | None
+    flash_active: bool = False
+    remaining_hours: int | None = None
+    remaining_minutes: int | None = None
+    notification_sent_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 

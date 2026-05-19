@@ -98,6 +98,10 @@ export interface PartnerOffer {
   tier_code_required: string | null;
   valid_from: string | null;
   valid_until: string | null;
+  is_flash?: boolean;
+  flash_ends_at?: string | null;
+  remaining_hours?: number | null;
+  remaining_minutes?: number | null;
   organization: PartnerOfferOrganization;
 }
 

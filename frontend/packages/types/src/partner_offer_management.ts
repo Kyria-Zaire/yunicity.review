@@ -25,6 +25,12 @@ export interface PartnerOfferManagement {
   moderated_by_user_id: string | null;
   moderated_at: string | null;
   rejection_reason: string | null;
+  is_flash: boolean;
+  flash_ends_at: string | null;
+  flash_active?: boolean;
+  remaining_hours?: number | null;
+  remaining_minutes?: number | null;
+  notification_sent_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -46,6 +52,8 @@ export interface PartnerOfferCreatePayload {
   redemption_limit?: number;
   max_redemptions_total?: number | null;
   tier_code_required?: string | null;
+  is_flash?: boolean;
+  flash_ends_at?: string | null;
 }
 
 export interface PartnerOfferUpdatePayload {
@@ -57,6 +65,8 @@ export interface PartnerOfferUpdatePayload {
   redemption_limit?: number;
   max_redemptions_total?: number | null;
   tier_code_required?: string | null;
+  is_flash?: boolean;
+  flash_ends_at?: string | null;
 }
 
 export interface PartnerOfferListParams {

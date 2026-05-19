@@ -1,6 +1,9 @@
 import { useAuth } from "@/lib/auth-provider";
 import type { PartnerOfferManagement, PartnerOfferType } from "@yunicity/types";
 import {
+  FLASH_PARTNER_HELPER,
+  fromDatetimeLocalValue,
+  toDatetimeLocalValue,
   PARTNER_OFFER_REJECTED_HINT,
   PARTNER_OFFER_REJECTED_REASON_LABEL,
   PARTNER_OFFER_REJECTED_SECTION_TITLE,
@@ -19,6 +22,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -31,6 +35,8 @@ export default function PartnerOfferDetailScreen() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [offerType, setOfferType] = useState<PartnerOfferType>("drink");
+  const [isFlash, setIsFlash] = useState(false);
+  const [flashEndsAt, setFlashEndsAt] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -48,6 +54,8 @@ export default function PartnerOfferDetailScreen() {
       setTitle(found.title);
       setDescription(found.description ?? "");
       setOfferType(found.offer_type);
+      setIsFlash(found.is_flash);
+      setFlashEndsAt(toDatetimeLocalValue(found.flash_ends_at));
     } catch (err) {
       setError(isAuthError(err) ? err.message : "Chargement impossible.");
     } finally {
@@ -70,6 +78,11 @@ export default function PartnerOfferDetailScreen() {
         title: title.trim(),
         description: description.trim() || null,
         offer_type: offerType,
+        is_flash: isFlash,
+        flash_ends_at:
+          isFlash && flashEndsAt.trim()
+            ? fromDatetimeLocalValue(flashEndsAt)
+            : null,
       });
       setOffer(updated);
     } catch (err) {
@@ -148,6 +161,26 @@ export default function PartnerOfferDetailScreen() {
             multiline
           />
           <Text style={styles.meta}>{PARTNER_OFFER_TYPE_LABELS[offerType]}</Text>
+          <View style={styles.switchRow}>
+            <View style={styles.flashLabelCol}>
+              <Text style={styles.label}>Offre flash</Text>
+              <Text style={styles.flashHint}>{FLASH_PARTNER_HELPER}</Text>
+            </View>
+            <Switch value={isFlash} onValueChange={setIsFlash} />
+          </View>
+          {isFlash ? (
+            <>
+              <Text style={styles.label}>Fin de la mise en avant</Text>
+              <TextInput
+                style={styles.input}
+                value={flashEndsAt}
+                onChangeText={setFlashEndsAt}
+                placeholder="2026-05-19T20:00"
+                placeholderTextColor="#78716c"
+                autoCapitalize="none"
+              />
+            </>
+          ) : null}
           <Pressable style={styles.secondaryBtn} disabled={busy} onPress={() => void save()}>
             <Text style={styles.secondaryBtnText}>{busy ? "…" : "Enregistrer"}</Text>
           </Pressable>
@@ -207,6 +240,14 @@ const styles = StyleSheet.create({
   },
   textArea: { minHeight: 80 },
   meta: { color: "#78716c", marginTop: 8, fontSize: 12 },
+  switchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 16,
+  },
+  flashLabelCol: { flex: 1, paddingRight: 12 },
+  flashHint: { color: "#78716c", fontSize: 12, marginTop: 4, lineHeight: 16 },
   body: { color: "#d6d3d1", fontSize: 15, marginTop: 16, lineHeight: 22 },
   secondaryBtn: {
     marginTop: 12,

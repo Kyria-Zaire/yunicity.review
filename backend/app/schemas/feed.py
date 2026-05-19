@@ -28,6 +28,10 @@ class FeedOfferMeta(BaseModel):
     valid_from: datetime | None = None
     valid_until: datetime | None = None
     offer_type: str | None = None
+    is_flash: bool = False
+    flash_ends_at: datetime | None = None
+    remaining_hours: int | None = None
+    remaining_minutes: int | None = None
 
 
 class FeedPostItem(BaseModel):

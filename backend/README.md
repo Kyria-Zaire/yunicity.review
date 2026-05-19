@@ -531,6 +531,33 @@ Tables : `posts`, `likes`, `comments`, `reports` — migration `20260522_0008_fe
 
 Tests : `tests/test_feed.py`, `tests/test_posts.py` (commentaires / reports couverts dans `test_feed` ; fichiers `test_comments.py` / `test_reports.py` = marqueurs d’intégration).
 
+## Offres flash locales (TICKET-501)
+
+Intention UX : [`docs/ux/flash-offers-intent.md`](../docs/ux/flash-offers-intent.md).
+
+Philosophie : urgence **utile** (informer, contextualiser) — pas de FOMO toxique, pas de countdown casino, pas de notifications push automatiques en MVP.
+
+### Modèle
+
+Colonnes `partner_offers` : `is_flash`, `flash_ends_at`, `notification_sent_at` (préparé, sans logique) — migration `20260523_0009_partner_offer_flash`.
+
+Règles :
+
+- `is_flash=true` ⇒ `flash_ends_at` obligatoire, futur, `<= valid_until` si défini
+- Flash expirée ⇒ `is_flash_active=false` côté API publique (offre normale si toujours valide)
+- Pas de cron : calcul dynamique (`app/core/flash_offer.py`)
+
+### API
+
+- Partner offers (create/update) : champs `is_flash`, `flash_ends_at`
+- Feed / Passport : `FeedOfferMeta` + réponses passport exposent badge flash, `remaining_hours` / `remaining_minutes`
+
+Tests : `tests/test_flash_offers.py`
+
+### Exclusions MVP
+
+Websocket temps réel, scheduler notifications, ranking promo, geofencing, gamification casino.
+
 ### TODO futur (hors scope)
 
 - Web Push, inbox, analytics, segmentation marketing

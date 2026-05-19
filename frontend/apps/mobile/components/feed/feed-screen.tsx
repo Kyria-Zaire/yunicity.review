@@ -28,6 +28,7 @@ import {
   View,
 } from "react-native";
 
+import { FlashOfferBadge } from "@/components/flash-offer-badge";
 import { feedTheme } from "@/components/feed/feed-theme";
 import { useFeed } from "@/hooks/use-feed";
 import { useAuth } from "@/lib/auth-provider";
@@ -96,9 +97,10 @@ function FeedCardMobile({
     <View style={[styles.card, isOffer && styles.cardOffer]}>
       {isOffer ? (
         <View style={styles.offerBadges}>
+          <FlashOfferBadge offer={post.offer} />
           <Text style={styles.passportBadge}>{FEED_PASSPORT_BADGE}</Text>
           <Text style={styles.meta}>{offerTypeLabel}</Text>
-          {formatOfferValidUntil(post.offer?.valid_until) ? (
+          {!post.offer?.is_flash && formatOfferValidUntil(post.offer?.valid_until) ? (
             <Text style={styles.meta}>{formatOfferValidUntil(post.offer?.valid_until)}</Text>
           ) : null}
         </View>

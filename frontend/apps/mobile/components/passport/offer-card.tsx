@@ -2,6 +2,7 @@ import type { PartnerOffer } from "@yunicity/types";
 import { PARTNER_OFFER_TYPE_LABELS } from "@yunicity/utils";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { FlashOfferBadge } from "@/components/flash-offer-badge";
 import { passportTheme } from "./passport-theme";
 
 export function OfferCard({
@@ -17,6 +18,7 @@ export function OfferCard({
 }) {
   return (
     <View style={styles.card}>
+      <FlashOfferBadge offer={offer} />
       <View style={styles.header}>
         <Text style={styles.type}>{PARTNER_OFFER_TYPE_LABELS[offer.offer_type]}</Text>
         <Text style={styles.org}>{offer.organization.name}</Text>

@@ -31,6 +31,10 @@ class PartnerOfferResponse(BaseModel):
     tier_code_required: str | None
     valid_from: datetime | None
     valid_until: datetime | None
+    is_flash: bool = False
+    flash_ends_at: datetime | None = None
+    remaining_hours: int | None = None
+    remaining_minutes: int | None = None
     organization: PartnerOfferOrganizationSummary
 
 

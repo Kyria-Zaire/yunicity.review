@@ -1,7 +1,10 @@
 "use client";
 
+import {
+  fromDatetimeLocalValue,
+  PartnerFlashFields,
+} from "@/components/partner-flash-fields";
 import { PartnerOfferAccessPanel } from "@/components/partner-offer-access-panel";
-import { fromDatetimeLocalValue } from "@/lib/format";
 import {
   usePartnerOfferMutations,
   usePartnerOrganizations,
@@ -31,6 +34,8 @@ export default function NewPartnerOfferPage() {
   const [offerType, setOfferType] = useState<PartnerOfferType>("drink");
   const [validFrom, setValidFrom] = useState("");
   const [validUntil, setValidUntil] = useState("");
+  const [isFlash, setIsFlash] = useState(false);
+  const [flashEndsAt, setFlashEndsAt] = useState("");
   const [submitAfterCreate, setSubmitAfterCreate] = useState(true);
 
   const defaultOrg = manageable[0]?.id ?? "";
@@ -48,6 +53,9 @@ export default function NewPartnerOfferPage() {
       offer_type: offerType,
       valid_from: validFrom ? fromDatetimeLocalValue(validFrom) : null,
       valid_until: validUntil ? fromDatetimeLocalValue(validUntil) : null,
+      is_flash: isFlash,
+      flash_ends_at:
+        isFlash && flashEndsAt ? fromDatetimeLocalValue(flashEndsAt) : null,
     });
     if (submitAfterCreate) {
       await submit(created.id);
@@ -148,6 +156,14 @@ export default function NewPartnerOfferPage() {
               />
             </label>
           </div>
+
+          <PartnerFlashFields
+            isFlash={isFlash}
+            flashEndsAt={flashEndsAt}
+            validUntil={validUntil}
+            onIsFlashChange={setIsFlash}
+            onFlashEndsAtChange={setFlashEndsAt}
+          />
 
           <label className="flex items-center gap-2 text-sm text-stone-700">
             <input

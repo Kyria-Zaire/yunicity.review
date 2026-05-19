@@ -110,6 +110,24 @@ Hashtags, mentions, repost, stories, vidéo, temps réel, notifications likes/co
 
 `packages/utils/src/feed-labels.test.ts`
 
+## Offres flash locales (TICKET-501)
+
+Intention UX : [`docs/ux/flash-offers-intent.md`](../docs/ux/flash-offers-intent.md)
+
+| Zone | Détail |
+|------|--------|
+| Labels | `packages/utils/src/flash-labels.ts` + `flash-labels.test.ts` |
+| Feed web | `FlashOfferBadge` + `OfferFeedCard` |
+| Feed mobile | `components/flash-offer-badge.tsx` + `feed-screen.tsx` |
+| Passport | web `passport-screen.tsx`, mobile `offer-card.tsx` |
+| Partenaire | admin `partner-offers/new` + `[id]`, mobile `partner-offers/new` + `[id]` |
+
+Timer discret (« Encore 2h », « Disponible encore aujourd'hui ») — **pas** de secondes, rouge agressif, ni section « FLASH OFFERS ».
+
+### Exclusions MVP frontend
+
+Countdown animé, websocket, notifications push auto, popups intrusifs.
+
 ## Passport — identité citoyenne (TICKET-304)
 
 ### Écran mobile (`/(tabs)/passport`)

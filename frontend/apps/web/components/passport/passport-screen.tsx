@@ -16,6 +16,7 @@ import {
   maskQrToken,
 } from "@yunicity/utils";
 import type { PartnerOffer, PassportStamp } from "@yunicity/types";
+import { FlashOfferBadge } from "@/components/feed/flash-offer-badge";
 import type { ReactNode } from "react";
 
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
@@ -84,7 +85,8 @@ function PassportOffersList({
         <ul className="mt-2 space-y-3">
           {offers.map((offer) => (
             <li key={offer.id} className="rounded-lg border border-neutral-200 bg-white p-4">
-                <p className="text-xs font-semibold uppercase text-yunicity-primary">
+              <FlashOfferBadge offer={offer} />
+              <p className="text-xs font-semibold uppercase text-yunicity-primary">
                 {PARTNER_OFFER_TYPE_LABELS[offer.offer_type]}
               </p>
               <p className="font-semibold">{offer.title}</p>
