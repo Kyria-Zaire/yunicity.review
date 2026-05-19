@@ -56,7 +56,7 @@ export function OrganizationRequestForm() {
         </p>
         <Link
           href="/organizations/me"
-          className="inline-block rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white"
+          className="inline-block rounded-xl bg-yunicity-primary px-4 py-2.5 text-sm font-semibold text-white"
         >
           Voir mes lieux
         </Link>
@@ -166,7 +166,7 @@ export function OrganizationRequestForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-xl bg-neutral-900 py-3 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-60"
+        className="w-full rounded-xl bg-yunicity-primary py-3 text-sm font-semibold text-white transition hover:bg-yunicity-primary-hover disabled:opacity-60"
       >
         {isSubmitting ? "Envoi…" : "Envoyer la demande"}
       </button>

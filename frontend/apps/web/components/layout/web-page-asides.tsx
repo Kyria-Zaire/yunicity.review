@@ -64,7 +64,7 @@ export function OrganizationsMeAside() {
         </p>
         <Link
           href="/organizations/request"
-          className="inline-block rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800"
+          className="inline-block rounded-xl bg-yunicity-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-yunicity-primary-hover"
         >
           Créer une demande
         </Link>

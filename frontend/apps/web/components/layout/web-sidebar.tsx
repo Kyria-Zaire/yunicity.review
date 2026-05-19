@@ -41,7 +41,7 @@ export function WebSidebar() {
                 href={item.href}
                 className={`rounded-xl px-3 py-2 text-sm transition-colors ${
                   active
-                    ? "bg-neutral-900 text-white"
+                    ? "bg-yunicity-primary text-white"
                     : "text-neutral-600 hover:bg-neutral-100"
                 }`}
               >

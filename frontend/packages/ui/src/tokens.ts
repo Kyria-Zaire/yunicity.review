@@ -1,14 +1,9 @@
-/** Design tokens minimaux — à étendre avec shadcn/ui (web/admin). */
-export const colors = {
-  background: "#fafafa",
-  foreground: "#0a0a0a",
-  muted: "#737373",
-  border: "#e5e5e5",
-  primary: "#2563eb",
-  success: "#16a34a",
-  warning: "#ca8a04",
-  error: "#dc2626",
-} as const;
+import { legacyUiColors, yunicityBrand } from "./brand-tokens";
+
+/** @deprecated Préférer `yunicityBrand` depuis `@yunicity/ui` */
+export const colors = legacyUiColors;
+
+export { yunicityBrand };
 
 export const spacing = {
   xs: "0.25rem",

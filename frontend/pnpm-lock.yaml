@@ -103,6 +103,9 @@ importers:
       '@yunicity/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@yunicity/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@yunicity/utils':
         specifier: workspace:*
         version: link:../../packages/utils

@@ -12,9 +12,9 @@ export const PASSPORT_TIER_META: Record<PassportTierCode, PassportTierMeta> = {
   basic: {
     label: "Basic",
     description: "Citoyen Yunicity — exploration locale",
-    accent: "#1c1917",
-    accentMuted: "#f5f5f4",
-    border: "#d6d3d1",
+    accent: "#2A2FFF",
+    accentMuted: "#EEF0FF",
+    border: "#C7D2FE",
   },
   silver: {
     label: "Silver",
@@ -40,9 +40,9 @@ export const PASSPORT_TIER_META: Record<PassportTierCode, PassportTierMeta> = {
   press_creator: {
     label: "Press / Creator",
     description: "Voix locale et création territoriale",
-    accent: "#6d28d9",
-    accentMuted: "#f5f3ff",
-    border: "#c4b5fd",
+    accent: "#2A2FFF",
+    accentMuted: "#EEF0FF",
+    border: "#C7D2FE",
   },
   business: {
     label: "Business",

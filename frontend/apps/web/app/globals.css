@@ -2,9 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+@import "@yunicity/ui/brand.css";
+
 :root {
-  --background: #fafafa;
-  --foreground: #0a0a0a;
+  --background: var(--yunicity-background);
+  --foreground: var(--yunicity-text-primary);
 
   /* Shell web citoyen — tokens layout (TICKET-306D) */
   --web-shell-max: 80rem; /* max-w-7xl */

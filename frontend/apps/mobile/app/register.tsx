@@ -95,11 +95,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   button: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "#2A2FFF",
     padding: 14,
     borderRadius: 8,
     alignItems: "center",
   },
   buttonText: { color: "#fff", fontWeight: "600" },
-  link: { color: "#2563eb", textAlign: "center", marginTop: 8 },
+  link: { color: "#2A2FFF", textAlign: "center", marginTop: 8 },
 });

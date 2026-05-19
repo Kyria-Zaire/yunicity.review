@@ -114,7 +114,7 @@ export function AuthForm({
         {isSubmitting ? "En cours…" : mode === "login" ? "Se connecter" : "Créer un compte"}
       </button>
 
-      <a href={alternateHref} className="text-center text-sm text-blue-600 hover:underline">
+      <a href={alternateHref} className="text-center text-sm text-yunicity-primary hover:underline">
         {alternateLabel}
       </a>
     </form>

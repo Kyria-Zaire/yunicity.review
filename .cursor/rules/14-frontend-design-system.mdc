@@ -6,7 +6,9 @@ alwaysApply: false
 
 # Frontend design system (TICKET-3050)
 
-Canon détaillé : `docs/ai/frontend-design-system.md`
+Canon détaillé : `docs/ai/frontend-design-system.md` — **§0 Brand Identity (306F)** obligatoire.
+
+**Couleurs** : `yunicityBrand` / `@yunicity/ui/brand.css` / Tailwind `yunicity-primary`. Dominant blanc, bleu `#2A2FFF`, **pas de gradients**, pas de glassmorphism.
 
 Skills projet (`.agents/skills/`) : `emil-design-eng`, `impeccable`, `design-taste-frontend` — lire avant UI P1.
 

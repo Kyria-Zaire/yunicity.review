@@ -28,7 +28,7 @@ export function InterestPicker({
             onClick={() => toggle(interest)}
             className={`rounded-full px-3 py-1.5 text-sm transition-all ${
               selected
-                ? "bg-neutral-900 text-white shadow-sm"
+                ? "bg-yunicity-primary text-white shadow-sm"
                 : "bg-white text-neutral-700 ring-1 ring-neutral-200 hover:ring-neutral-400"
             }`}
           >

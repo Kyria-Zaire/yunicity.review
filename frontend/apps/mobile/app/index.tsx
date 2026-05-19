@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
     color: "#525252",
   },
   link: {
-    color: "#2563eb",
+    color: "#2A2FFF",
     fontSize: 16,
   },
 });

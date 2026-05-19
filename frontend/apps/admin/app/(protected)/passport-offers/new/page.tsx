@@ -175,7 +175,7 @@ export default function NewPassportOfferPage() {
         <button
           type="submit"
           disabled={isSubmitting || !organizationId}
-          className="w-full rounded-xl bg-neutral-900 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+          className="w-full rounded-xl bg-yunicity-primary py-2.5 text-sm font-medium text-white disabled:opacity-50"
         >
           {isSubmitting ? "Création…" : "Créer l'offre"}
         </button>

@@ -1,0 +1,23 @@
+/**
+ * Variables CSS identité Yunicity — importer dans globals.css (web/admin).
+ */
+:root {
+  --yunicity-primary: #2a2fff;
+  --yunicity-primary-hover: #1f24d9;
+  --yunicity-primary-soft: #eef0ff;
+
+  --yunicity-background: #ffffff;
+  --yunicity-surface: #f7f8fa;
+  --yunicity-border: #e5e7eb;
+
+  --yunicity-text-primary: #111827;
+  --yunicity-text-secondary: #6b7280;
+
+  --yunicity-success: #16a34a;
+  --yunicity-warning: #d97706;
+  --yunicity-danger: #dc2626;
+
+  /* shadcn admin — primary = brand blue (HSL ~239 100% 58%) */
+  --primary: 239 100% 58%;
+  --primary-foreground: 0 0% 100%;
+}

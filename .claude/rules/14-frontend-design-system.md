@@ -5,7 +5,9 @@ paths:
 
 # Frontend design system (TICKET-3050)
 
-Canon : `docs/ai/frontend-design-system.md`
+Canon : `docs/ai/frontend-design-system.md` — **§0 Brand Identity (306F)**.
+
+**Couleurs** : `yunicityBrand` / `@yunicity/ui/brand.css` / `yunicity-primary`. Blanc dominant, `#2A2FFF`, **pas de gradients**, pas de glassmorphism.
 
 Skills : `emil-design-eng`, `impeccable`, `design-taste-frontend` (`.agents/skills/`)
 

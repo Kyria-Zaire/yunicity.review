@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
   type: {
     fontSize: 11,
     fontWeight: "700",
-    color: passportTheme.gold,
+    color: passportTheme.accent,
     letterSpacing: 0.8,
     textTransform: "uppercase",
   },
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   desc: { fontSize: 13, color: passportTheme.textMuted, lineHeight: 18 },
   btn: {
     marginTop: 4,
-    backgroundColor: passportTheme.gold,
+    backgroundColor: passportTheme.accent,
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: "center",

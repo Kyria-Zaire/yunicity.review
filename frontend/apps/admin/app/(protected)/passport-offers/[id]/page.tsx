@@ -348,7 +348,7 @@ export default function PassportOfferDetailPage() {
         <button
           type="submit"
           disabled={isSaving}
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded-lg bg-yunicity-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {isSaving ? "Enregistrement…" : "Enregistrer"}
         </button>

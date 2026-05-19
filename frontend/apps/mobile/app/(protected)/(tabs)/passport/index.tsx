@@ -56,7 +56,7 @@ export default function PassportScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={passportTheme.gold} />
+        <ActivityIndicator size="large" color={passportTheme.accent} />
         <Text style={styles.loadingText}>Préparation de ton passeport…</Text>
       </View>
     );
@@ -93,7 +93,7 @@ export default function PassportScreen() {
 
           <Section title="Mes tampons" subtitle="Collection de visites locales">
             {stampsLoading ? (
-              <ActivityIndicator color={passportTheme.gold} />
+              <ActivityIndicator color={passportTheme.accent} />
             ) : stampsError ? (
               <Text style={styles.sectionError}>{stampsError}</Text>
             ) : stamps.length === 0 ? (
@@ -118,7 +118,7 @@ export default function PassportScreen() {
               </Pressable>
             ) : null}
             {offersLoading ? (
-              <ActivityIndicator color={passportTheme.gold} />
+              <ActivityIndicator color={passportTheme.accent} />
             ) : offersError ? (
               <Text style={styles.sectionError}>{offersError}</Text>
             ) : offers.length === 0 ? (
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: passportTheme.borderGold,
+    borderColor: passportTheme.borderAccent,
   },
   presentCtaText: { color: "#0c0a09", fontWeight: "800", fontSize: 16 },
   presentCtaHint: { color: "#78716c", fontSize: 12, marginTop: 4 },

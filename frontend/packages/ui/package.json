@@ -6,7 +6,10 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./tokens": "./src/tokens.ts"
+    "./tokens": "./src/tokens.ts",
+    "./brand": "./src/brand-tokens.ts",
+    "./brand.css": "./src/brand.css",
+    "./tailwind-preset": "./src/tailwind-preset.ts"
   },
   "scripts": {
     "build": "tsc --noEmit",

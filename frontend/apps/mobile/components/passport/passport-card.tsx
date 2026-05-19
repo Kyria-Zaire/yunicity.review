@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     borderRadius: passportTheme.radius,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: passportTheme.borderGold,
+    borderColor: passportTheme.borderAccent,
     backgroundColor: passportTheme.bgCard,
   },
   header: {
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   },
   brandRow: { flexDirection: "row", alignItems: "baseline", gap: 8 },
   brand: {
-    color: passportTheme.gold,
+    color: passportTheme.accent,
     fontSize: 11,
     fontWeight: "800",
     letterSpacing: 3,
@@ -121,9 +121,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: passportTheme.borderGold,
+    borderColor: passportTheme.borderAccent,
   },
-  avatarText: { color: passportTheme.gold, fontWeight: "700", fontSize: 18 },
+  avatarText: { color: passportTheme.accent, fontWeight: "700", fontSize: 18 },
   identityText: { flex: 1, gap: 2 },
   name: { color: passportTheme.text, fontSize: 20, fontWeight: "700" },
   city: { color: passportTheme.textMuted, fontSize: 14 },
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   statLabel: { color: passportTheme.textSubtle, fontSize: 11, marginTop: 2 },
   footer: {
     padding: 12,
-    backgroundColor: "rgba(0,0,0,0.25)",
+    backgroundColor: passportTheme.accentSoft,
     alignItems: "center",
   },
   footerText: {

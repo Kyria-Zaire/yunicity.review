@@ -7,7 +7,7 @@ const STYLES: Record<PartnerLeadStatus, string> = {
   interested: "bg-indigo-50 text-indigo-800 ring-indigo-200",
   meeting_scheduled: "bg-blue-50 text-blue-800 ring-blue-200",
   signed: "bg-emerald-50 text-emerald-800 ring-emerald-200",
-  converted: "bg-neutral-900 text-white ring-neutral-700",
+  converted: "bg-yunicity-primary text-white ring-yunicity-primary/30",
   rejected: "bg-red-50 text-red-700 ring-red-200",
   archived: "bg-neutral-100 text-neutral-600 ring-neutral-200",
 };

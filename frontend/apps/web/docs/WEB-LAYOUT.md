@@ -16,6 +16,12 @@ Fondation officielle pour toutes les pages web authentifiées (`frontend/apps/we
 
 Import : `@/components/layout`
 
+## Identité visuelle (306F)
+
+- Couleurs : `yunicityBrand` (`@yunicity/ui`) — primaire `#2A2FFF`, fond blanc.
+- CTA web : `yunicityBtnPrimary` depuis `@/lib/brand-classes`.
+- **Pas de gradients** sur le shell — `WebAppShell` utilise `bg-yunicity-background`.
+
 ## Exemple page standard
 
 ```tsx

@@ -2,10 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@import "@yunicity/ui/brand.css";
+
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 0 0% 4%;
+    --background: 0 0% 100%;
+    --foreground: 220 13% 13%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 4%;
     --muted: 0 0% 96%;

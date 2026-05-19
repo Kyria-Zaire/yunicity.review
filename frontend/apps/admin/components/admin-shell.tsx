@@ -49,7 +49,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const homeHref = staff ? "/partner-leads" : "/partner-offers";
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-b from-stone-50 via-amber-50/30 to-white">
+    <div className="flex min-h-screen bg-yunicity-background">
       <aside className="hidden w-56 shrink-0 border-r border-stone-200 bg-white/90 p-4 md:block">
         <Link href={homeHref} className="text-sm font-semibold tracking-tight text-stone-900">
           Yunicity
@@ -86,7 +86,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
         </nav>
       </aside>
       <div className="flex flex-1 flex-col">
-        <header className="border-b border-stone-200 bg-white/90 px-4 py-3 backdrop-blur md:px-6">
+        <header className="border-b border-stone-200 bg-white px-4 py-3 md:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-stone-900">

@@ -56,7 +56,7 @@ function OrganizationsMeContent() {
       <div className="mb-6 flex justify-end xl:hidden">
         <Link
           href="/organizations/request"
-          className="rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800"
+          className="rounded-xl bg-yunicity-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-yunicity-primary-hover"
         >
           Proposer un lieu
         </Link>
@@ -73,7 +73,7 @@ function OrganizationsMeContent() {
           </p>
           <Link
             href="/organizations/request"
-            className="mt-4 inline-block text-sm font-medium text-blue-600 hover:underline"
+            className="mt-4 inline-block text-sm font-medium text-yunicity-primary hover:underline"
           >
             Créer une demande
           </Link>

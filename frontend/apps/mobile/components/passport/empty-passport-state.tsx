@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
     borderRadius: passportTheme.radius,
     backgroundColor: passportTheme.bgCard,
     borderWidth: 1,
-    borderColor: passportTheme.borderGold,
+    borderColor: passportTheme.borderAccent,
     gap: 14,
     overflow: "hidden",
   },
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(212,165,116,0.15)",
   },
   eyebrow: {
-    color: passportTheme.gold,
+    color: passportTheme.accent,
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 2,
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   error: { color: passportTheme.error, fontSize: 13 },
   cta: {
     marginTop: 8,
-    backgroundColor: passportTheme.gold,
+    backgroundColor: passportTheme.accent,
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: "center",

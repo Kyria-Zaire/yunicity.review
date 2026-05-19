@@ -120,7 +120,7 @@ export function ConvertLeadModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50"
+              className="rounded-lg bg-yunicity-primary px-4 py-2 text-sm font-medium text-white hover:bg-yunicity-primary-hover disabled:opacity-50"
             >
               {isSubmitting ? "Conversion…" : "Convertir"}
             </button>

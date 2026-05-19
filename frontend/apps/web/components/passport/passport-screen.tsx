@@ -1,6 +1,10 @@
 "use client";
 
 import { WebAppShell } from "@/components/layout";
+import {
+  yunicityBtnPrimary,
+  yunicityBtnPrimaryLg,
+} from "@/lib/brand-classes";
 import { PassportTipsAside } from "@/components/layout/web-page-asides";
 import { usePassport } from "@/hooks/use-passport";
 import { usePassportOffers } from "@/hooks/use-passport-offers";
@@ -80,7 +84,7 @@ function PassportOffersList({
         <ul className="mt-2 space-y-3">
           {offers.map((offer) => (
             <li key={offer.id} className="rounded-lg border border-neutral-200 bg-white p-4">
-              <p className="text-xs font-semibold uppercase text-amber-800">
+                <p className="text-xs font-semibold uppercase text-yunicity-primary">
                 {PARTNER_OFFER_TYPE_LABELS[offer.offer_type]}
               </p>
               <p className="font-semibold">{offer.title}</p>
@@ -89,7 +93,7 @@ function PassportOffersList({
                 type="button"
                 onClick={() => onRedeem(offer.id)}
                 disabled={redeemingId === offer.id}
-                className="mt-3 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                  className={`mt-3 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 ${yunicityBtnPrimary}`}
               >
                 {redeemingId === offer.id ? "…" : "Utiliser"}
               </button>
@@ -137,7 +141,7 @@ export function PassportScreen() {
   } else if (!hasPassport) {
     main = (
       <Card>
-        <p className="text-xs font-bold uppercase tracking-widest text-amber-700">
+        <p className="text-xs font-bold uppercase tracking-widest text-yunicity-primary">
           Territoire · Identité
         </p>
         <h2 className="mt-2 text-2xl font-bold text-neutral-900">
@@ -151,7 +155,7 @@ export function PassportScreen() {
           type="button"
           onClick={() => void activate()}
           disabled={isActivating}
-          className="mt-6 rounded-xl bg-neutral-900 px-5 py-3 font-semibold text-white disabled:opacity-60"
+          className={`mt-6 ${yunicityBtnPrimaryLg} disabled:opacity-60`}
         >
           {isActivating ? "Activation…" : "Activer mon passeport Yunicity"}
         </button>
@@ -163,11 +167,11 @@ export function PassportScreen() {
 
     main = (
       <>
-        <Card className="border-amber-200/60 bg-gradient-to-br from-stone-900 to-stone-800 text-stone-50 shadow-md lg:p-8">
-          <p className="text-xs font-bold tracking-[0.25em] text-amber-400">YUNICITY PASSPORT</p>
-          <p className="mt-2 font-mono text-sm text-stone-300">{passport.passport_number}</p>
-          <h2 className="mt-4 text-2xl font-bold lg:text-3xl">{name}</h2>
-          <p className="text-stone-400">{passport.city}</p>
+        <Card className="border-2 border-yunicity-primary/20 bg-white shadow-md lg:p-8">
+          <p className="text-xs font-bold tracking-[0.25em] text-yunicity-primary">YUNICITY PASSPORT</p>
+          <p className="mt-2 font-mono text-sm text-yunicity-ink-muted">{passport.passport_number}</p>
+          <h2 className="mt-4 text-2xl font-bold text-yunicity-ink lg:text-3xl">{name}</h2>
+          <p className="text-yunicity-ink-muted">{passport.city}</p>
           <span
             className="mt-3 inline-block rounded-full border px-3 py-1 text-xs font-semibold"
             style={{
@@ -181,30 +185,30 @@ export function PassportScreen() {
           <div className="mt-6 grid grid-cols-3 gap-2 text-center text-sm">
             <div>
               <p className="font-bold">{passport.stats.stamps_count}</p>
-              <p className="text-stone-500">Tampons</p>
+              <p className="text-yunicity-ink-muted">Tampons</p>
             </div>
             <div>
               <p className="font-bold">{passport.stats.redemptions_count}</p>
-              <p className="text-stone-500">Offres</p>
+              <p className="text-yunicity-ink-muted">Offres</p>
             </div>
             <div>
               <p className="text-xs font-bold leading-tight">
                 {formatPassportDate(passport.activated_at)}
               </p>
-              <p className="text-stone-500">Activé</p>
+              <p className="text-yunicity-ink-muted">Activé</p>
             </div>
           </div>
-          <div className="mt-6 rounded-lg bg-white p-4 text-center">
+          <div className="mt-6 rounded-lg border border-yunicity-border bg-yunicity-surface p-4 text-center">
             <div className="mx-auto grid w-24 grid-cols-6 gap-0.5 lg:w-28">
               {Array.from({ length: 36 }).map((_, index) => (
                 <div
                   key={index}
-                  className={`aspect-square rounded-sm ${index % 3 === 0 ? "bg-stone-900" : "bg-transparent"}`}
+                  className={`aspect-square rounded-sm ${index % 3 === 0 ? "bg-yunicity-primary" : "bg-transparent"}`}
                 />
               ))}
             </div>
-            <p className="mt-2 text-xs uppercase text-stone-500">QR — scan à venir</p>
-            <p className="font-mono text-xs text-stone-600">{maskQrToken(passport.qr_token)}</p>
+            <p className="mt-2 text-xs uppercase text-yunicity-ink-muted">QR — scan à venir</p>
+            <p className="font-mono text-xs text-yunicity-ink-muted">{maskQrToken(passport.qr_token)}</p>
           </div>
         </Card>
       </>

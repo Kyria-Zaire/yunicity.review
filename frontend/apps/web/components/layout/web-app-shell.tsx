@@ -41,7 +41,7 @@ export function WebAppShell({
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-50 via-white to-blue-50/30">
+    <div className="min-h-screen bg-yunicity-background">
       <WebMobileHeader />
       <WebResponsiveContainer>
         <WebDesktopLayout

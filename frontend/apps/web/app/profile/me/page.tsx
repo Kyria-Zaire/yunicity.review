@@ -117,7 +117,7 @@ function ProfileMeContent() {
           <p className="text-sm text-neutral-500">@{profile.username}</p>
           <Link
             href={`/profile/${profile.username}`}
-            className="mt-1 inline-block text-sm text-blue-600 hover:underline"
+            className="mt-1 inline-block text-sm text-yunicity-primary hover:underline"
           >
             Voir le profil public
           </Link>
@@ -154,7 +154,7 @@ function ProfileMeContent() {
           <input
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+            className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 focus:border-yunicity-primary focus:outline-none focus:ring-1 focus:ring-yunicity-primary"
           />
         </label>
 
@@ -192,7 +192,7 @@ function ProfileMeContent() {
                 key={option.value}
                 className={`cursor-pointer rounded-xl border p-3 text-sm transition ${
                   visibility === option.value
-                    ? "border-neutral-900 bg-neutral-900 text-white"
+                    ? "border-neutral-900 bg-yunicity-primary text-white"
                     : "border-neutral-200 bg-white hover:border-neutral-400"
                 }`}
               >
@@ -220,7 +220,7 @@ function ProfileMeContent() {
         <button
           type="submit"
           disabled={isSaving}
-          className="w-full rounded-xl bg-neutral-900 py-3 text-sm font-semibold text-white disabled:opacity-60"
+          className="w-full rounded-xl bg-yunicity-primary py-3 text-sm font-semibold text-white disabled:opacity-60"
         >
           {isSaving ? "Enregistrement…" : "Enregistrer"}
         </button>

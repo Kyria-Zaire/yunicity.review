@@ -14,6 +14,52 @@ Règles repo : `.cursor/rules/14-frontend-design-system.mdc` ↔ `.claude/rules/
 
 ---
 
+## 0. Official Yunicity Brand Identity (TICKET-306F)
+
+**Source unique des couleurs** : `frontend/packages/ui/src/brand-tokens.ts` (`yunicityBrand`), CSS ` @yunicity/ui/brand.css`, Tailwind `yunicity-*` via `@yunicity/ui/tailwind-preset`.
+
+### Positionnement visuel
+
+- Réseau social territorial **moderne**, humain, respirant, local, premium sobre.
+- **Dominante blanche** — surfaces aérées, pas de mur de couleur.
+- **Bleu primaire `#2A2FFF`** — guide l’attention (CTA, liens, nav active, accents Passport), **sans saturation**.
+
+### Palette officielle
+
+| Token | Hex | Usage |
+|-------|-----|--------|
+| Primary | `#2A2FFF` | CTA, liens, états actifs |
+| Primary hover | `#1F24D9` | Survol boutons |
+| Primary soft | `#EEF0FF` | Fonds accent discrets |
+| Background | `#FFFFFF` | Fond page |
+| Surface | `#F7F8FA` | Cartes secondaires, zones QR |
+| Border | `#E5E7EB` | Contours |
+| Text primary | `#111827` | Titres, corps |
+| Text secondary | `#6B7280` | Sous-textes |
+| Success / Warning / Danger | `#16A34A` / `#D97706` / `#DC2626` | États métier |
+
+### Interdits (durables)
+
+- **Gradients** (`bg-gradient*`, `linear-gradient`) — interdit.
+- Glassmorphism / `backdrop-blur` décoratif — interdit.
+- Néons, purple AI slop, dark blocks agressifs (cartes type fintech).
+- Surutilisation du bleu (tout en primary).
+- Étirement formulaires sur 4K — utiliser `WebContentColumn` / `contentWidth`.
+
+### Règles futures (feed, events, messaging…)
+
+1. Importer `yunicityBrand` ou classes `yunicity-*` — **pas de hex ad hoc**.
+2. Une action primaire bleue par zone ; le reste en neutre.
+3. Conserver la respiration (spacing 4/8px, cartes simples).
+4. Web citoyen : `WebAppShell` + `contentWidth` (`feed`, `form`, `readable`).
+5. Mobile : `constants/brand.ts` → `@yunicity/ui/brand`.
+
+### Ce que Yunicity n’est pas
+
+Crypto, fintech, dashboard SaaS froid, gaming flashy, couponing cheap.
+
+---
+
 ## 1. Design positioning
 
 Yunicity UI doit être :
@@ -31,7 +77,7 @@ Ne doit **pas** ressembler à :
 - crypto wallet / fintech agressive
 - couponing cheap (codes barrés, rouge promo criard)
 - admin Bootstrap générique
-- purple gradient « AI slop »
+- purple gradient « AI slop » (voir §0 — **gradients interdits**)
 - CRM enterprise lourd (tables sans respiration)
 
 ### Par surface produit

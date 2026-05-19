@@ -52,7 +52,7 @@ export default function PresentPassportScreen() {
       <Text style={styles.hint}>Montre cet écran au partenaire — rapide et simple.</Text>
 
       {isLoading ? (
-        <ActivityIndicator color={passportTheme.gold} size="large" />
+        <ActivityIndicator color={passportTheme.accent} size="large" />
       ) : error ? (
         <Text style={styles.error}>{error}</Text>
       ) : qrPayload ? (

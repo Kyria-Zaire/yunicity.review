@@ -11,7 +11,7 @@ export function WebMobileHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-20 border-b border-neutral-200/80 bg-white/80 backdrop-blur-md lg:hidden">
+    <header className="sticky top-0 z-20 border-b border-neutral-200/80 bg-white lg:hidden">
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <Link href="/profile/me" className="text-lg font-bold tracking-tight text-neutral-900">
           Yunicity
@@ -25,7 +25,7 @@ export function WebMobileHeader() {
                 href={item.href}
                 className={`rounded-full px-3 py-1.5 transition-colors ${
                   active
-                    ? "bg-neutral-900 text-white"
+                    ? "bg-yunicity-primary text-white"
                     : "text-neutral-600 hover:bg-neutral-100"
                 }`}
               >

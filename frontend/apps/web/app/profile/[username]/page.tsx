@@ -68,18 +68,18 @@ export default function PublicProfilePage() {
   }, [username, isAuthenticated, yunicityApi]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white">
-      <header className="border-b border-neutral-200/80 bg-white/80 px-4 py-4 backdrop-blur-md">
+    <div className="min-h-screen bg-yunicity-background">
+      <header className="border-b border-neutral-200/80 bg-white px-4 py-4">
         <div className="mx-auto flex max-w-lg items-center justify-between">
           <Link href="/" className="font-bold text-neutral-900">
             Yunicity
           </Link>
           {isAuthenticated ? (
-            <Link href="/profile/me" className="text-sm text-blue-600 hover:underline">
+            <Link href="/profile/me" className="text-sm text-yunicity-primary hover:underline">
               Mon profil
             </Link>
           ) : (
-            <Link href="/login" className="text-sm text-blue-600 hover:underline">
+            <Link href="/login" className="text-sm text-yunicity-primary hover:underline">
               Connexion
             </Link>
           )}
