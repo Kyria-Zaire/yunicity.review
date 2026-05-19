@@ -513,6 +513,24 @@ Token invalide (`DeviceNotRegistered`) → désactivation automatique. Logs sans
 
 Tests : `tests/test_notifications.py`
 
+### Citizen Feed — fondation API (TICKET-402)
+
+Posts citoyens et organisations, likes, commentaires, signalements. Feed **ville-first** (`ORDER BY city_match DESC, created_at DESC`). Offres `published` → enregistrement `posts.type=offer` à l’approbation modération (`feed_offer_sync`).
+
+| Méthode | Route | Auth |
+|---------|-------|------|
+| GET | `/api/v1/feed` | JWT (curseur `created_at` + `id`) |
+| POST | `/api/v1/posts` | JWT |
+| GET/PATCH/DELETE | `/api/v1/posts/{id}` | JWT (DELETE : auteur ou `moderation.manage` / `system.admin`) |
+| POST/DELETE | `/api/v1/posts/{id}/like` | JWT |
+| GET/POST | `/api/v1/posts/{id}/comments` | JWT |
+| DELETE | `/api/v1/comments/{id}` | JWT (auteur ou modération) |
+| POST | `/api/v1/posts/{id}/report` | JWT |
+
+Tables : `posts`, `likes`, `comments`, `reports` — migration `20260522_0008_feed_foundation`.
+
+Tests : `tests/test_feed.py`, `tests/test_posts.py` (commentaires / reports couverts dans `test_feed` ; fichiers `test_comments.py` / `test_reports.py` = marqueurs d’intégration).
+
 ### TODO futur (hors scope)
 
 - Web Push, inbox, analytics, segmentation marketing

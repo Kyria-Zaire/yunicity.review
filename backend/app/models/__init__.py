@@ -1,5 +1,7 @@
 """ORM models — import all modules so Alembic sees Base.metadata."""
 
+from app.models.comment import Comment
+from app.models.like import Like
 from app.models.organization import (
     Organization,
     OrganizationMember,
@@ -13,9 +15,11 @@ from app.models.passport import (
     PassportStamp,
     PassportTier,
 )
+from app.models.post import Post
 from app.models.push_subscription import PushSubscription
 from app.models.rbac import Permission, Role, RolePermission, UserRole
 from app.models.refresh_token import RefreshToken
+from app.models.report import Report
 from app.models.user import User
 from app.models.user_profile import ProfileVisibility, UserProfile
 
@@ -23,7 +27,11 @@ __all__ = [
     "Organization",
     "OrganizationMember",
     "OrganizationVerification",
+    "Comment",
+    "Like",
     "PartnerLead",
+    "Post",
+    "Report",
     "PushSubscription",
     "PartnerOffer",
     "Passport",

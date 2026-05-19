@@ -37,6 +37,7 @@ from app.schemas.partner_offer_management import (
     PartnerOfferManagementResponse,
     PartnerOfferUpdateRequest,
 )
+from app.services.feed_offer_sync import FeedOfferSyncService
 from app.services.notification_triggers import notify_offer_approved, notify_offer_rejected
 from app.services.organization_membership_service import OrganizationMembershipService
 
@@ -255,6 +256,7 @@ class PartnerOfferService:
             clear_rejection=True,
         )
         org.visibility = OrganizationVisibility.PUBLIC
+        await FeedOfferSyncService(self._session).upsert_offer_post(offer, org)
         await self._session.commit()
         if offer.created_by_user_id is not None:
             await notify_offer_approved(self._session, offer.created_by_user_id)
@@ -274,6 +276,7 @@ class PartnerOfferService:
             moderator=moderator,
             rejection_reason=payload.reason.strip(),
         )
+        await FeedOfferSyncService(self._session).deactivate_offer_post(offer.id)
         await self._session.commit()
         if offer.created_by_user_id is not None:
             await notify_offer_rejected(self._session, offer.created_by_user_id)
@@ -292,6 +295,7 @@ class PartnerOfferService:
             moderator=moderator,
             clear_rejection=True,
         )
+        await FeedOfferSyncService(self._session).deactivate_offer_post(offer.id)
         await self._session.commit()
         return await self.get_offer_admin(offer_id)
 
