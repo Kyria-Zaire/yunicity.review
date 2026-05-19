@@ -14,6 +14,7 @@ from app.api.v1 import (
     profile,
     rbac_validation,
     scan,
+    users,
 )
 
 api_router = APIRouter()
@@ -25,6 +26,7 @@ api_router.include_router(partner_leads.router)
 api_router.include_router(admin_partner_offers.router)
 api_router.include_router(passport.router)
 api_router.include_router(notifications.router)
+api_router.include_router(users.router)
 api_router.include_router(feed.router)
 api_router.include_router(posts.router)
 api_router.include_router(comments.router)

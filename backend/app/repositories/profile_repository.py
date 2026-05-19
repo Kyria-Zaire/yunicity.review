@@ -59,7 +59,11 @@ class ProfileRepository:
             onboarding_completed=False,
             onboarding_step="city",
             preferred_language="fr",
-            notification_preferences={},
+            notification_preferences={
+                "social": True,
+                "passport": True,
+                "offers": True,
+            },
         )
         self._session.add(profile)
         await self._session.flush()

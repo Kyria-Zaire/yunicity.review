@@ -15,6 +15,7 @@ export type WebNavItem = {
 /** Navigation principale — zone authentifiée citoyenne. */
 export const WEB_CITIZEN_NAV: WebNavItem[] = [
   { href: "/feed", label: "Fil local", match: "prefix" },
+  { href: "/notifications", label: "Notifications", match: "prefix" },
   { href: "/passport", label: "Passport", match: "prefix" },
   { href: "/profile/me", label: "Profil", match: "prefix" },
   { href: "/organizations/me", label: "Lieux", match: "prefix" },

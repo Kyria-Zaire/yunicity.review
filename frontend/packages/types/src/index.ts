@@ -93,6 +93,14 @@ export type {
 } from "./notifications";
 
 export type {
+  SocialNotificationType,
+  UserNotificationItem,
+  UserNotificationListResponse,
+  UserNotificationPreferences,
+  UserNotificationPreferencesUpdate,
+} from "./notifications-inbox";
+
+export type {
   CommentCreatePayload,
   CommentListResponse,
   FeedAuthor,

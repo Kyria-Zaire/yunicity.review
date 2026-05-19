@@ -30,8 +30,8 @@ from app.schemas.scan import (
     ScanResolveResponse,
 )
 from app.services.notification_triggers import notify_redemption_success
-from app.services.passport_level_hooks import evaluate_passport_level_after_activity
 from app.services.organization_membership_service import OrganizationMembershipService
+from app.services.passport_level_hooks import evaluate_passport_level_after_activity
 
 logger = logging.getLogger(__name__)
 

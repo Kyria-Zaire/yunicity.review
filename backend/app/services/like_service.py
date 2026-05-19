@@ -11,6 +11,7 @@ from app.core.errors import AppError
 from app.models.like import Like
 from app.repositories.like_repository import LikeRepository
 from app.repositories.post_repository import PostRepository
+from app.services.social_notification_hooks import notify_post_liked
 
 
 class LikeService:
@@ -34,6 +35,7 @@ class LikeService:
             await self._likes.add(Like(user_id=user_id, post_id=post_id))
             await self._posts.increment_like_count(post_id, 1)
             await self._session.commit()
+            await notify_post_liked(self._session, actor_id=user_id, post=post)
         except IntegrityError:
             await self._session.rollback()
 

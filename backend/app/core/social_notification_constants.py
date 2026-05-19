@@ -1,0 +1,12 @@
+"""Social notification types (TICKET-503)."""
+
+from enum import StrEnum
+
+SOCIAL_NOTIFICATION_COOLDOWN_SECONDS = 300
+POST_EXCERPT_MAX_LENGTH = 120
+
+
+class SocialNotificationType(StrEnum):
+    POST_LIKED = "POST_LIKED"
+    POST_COMMENTED = "POST_COMMENTED"
+    PASSPORT_LEVEL_UNLOCKED = "PASSPORT_LEVEL_UNLOCKED"

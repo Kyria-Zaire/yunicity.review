@@ -17,6 +17,7 @@ from app.repositories.post_repository import PostRepository
 from app.repositories.profile_repository import ProfileRepository
 from app.schemas.post import CommentCreateRequest, CommentListResponse, CommentResponse
 from app.services.rbac_service import RbacService
+from app.services.social_notification_hooks import notify_post_commented
 
 
 class CommentService:
@@ -79,6 +80,12 @@ class CommentService:
         await self._posts.increment_comment_count(post_id, 1)
         await self._session.commit()
         await self._session.refresh(comment)
+        await notify_post_commented(
+            self._session,
+            actor_id=user.id,
+            post=post,
+            comment_body=payload.body,
+        )
         return await self._to_response(comment)
 
     async def soft_delete_comment(self, user: User, comment_id: uuid.UUID) -> None:

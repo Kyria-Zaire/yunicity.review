@@ -17,7 +17,13 @@ from app.schemas.notifications import (
     PushSubscriptionResponse,
     RegisterDeviceRequest,
 )
+from app.schemas.social_notification import (
+    MarkAllNotificationsReadResponse,
+    MarkNotificationReadResponse,
+    UserNotificationListResponse,
+)
 from app.services.notification_service import NotificationService
+from app.services.social_notification_service import SocialNotificationService
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -70,3 +76,29 @@ async def delete_push_subscription(
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> None:
     await NotificationService(session).delete_subscription(current_user, subscription_id)
+
+
+@router.get("", response_model=UserNotificationListResponse)
+async def list_notifications(
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    limit: int = 50,
+) -> UserNotificationListResponse:
+    return await SocialNotificationService(session).list_inbox(current_user, limit=limit)
+
+
+@router.patch("/{notification_id}/read", response_model=MarkNotificationReadResponse)
+async def mark_notification_read(
+    notification_id: uuid.UUID,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> MarkNotificationReadResponse:
+    return await SocialNotificationService(session).mark_read(current_user, notification_id)
+
+
+@router.post("/read-all", response_model=MarkAllNotificationsReadResponse)
+async def mark_all_notifications_read(
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> MarkAllNotificationsReadResponse:
+    return await SocialNotificationService(session).mark_all_read(current_user)

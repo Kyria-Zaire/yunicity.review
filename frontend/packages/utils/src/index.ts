@@ -60,6 +60,10 @@ export {
 } from "./flash-labels";
 export { fromDatetimeLocalValue, toDatetimeLocalValue } from "./datetime-local";
 export {
+  formatNotificationMessage,
+  formatNotificationRelativeTime,
+} from "./social-notification-labels";
+export {
   FEED_COMPOSER_PLACEHOLDER,
   FEED_DELETED_COMMENT_LABEL,
   FEED_EMPTY_BODY,

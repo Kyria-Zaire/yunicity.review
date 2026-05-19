@@ -29,7 +29,6 @@ from app.models.user import User
 from app.repositories.passport_repository import PassportRepository
 from app.repositories.post_repository import PostRepository
 from app.schemas.passport_level import PassportProgressionHint
-from app.services.notification_triggers import notify_passport_level_up
 
 logger = logging.getLogger(__name__)
 
@@ -210,10 +209,12 @@ class PassportLevelService:
             },
         )
 
-        await notify_passport_level_up(
-            self._session,
-            user.id,
+        from app.services.social_notification_service import SocialNotificationService
+
+        await SocialNotificationService(self._session).notify_passport_level_unlocked(
+            target_user_id=user.id,
             tier_code=target.value,
+            tier_label=TIER_DISPLAY_LABELS.get(target.value, target.value),
         )
 
         if PASSPORT_LEVEL_FEED_ANNOUNCEMENTS:

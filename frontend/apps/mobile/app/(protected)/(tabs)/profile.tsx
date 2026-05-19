@@ -8,7 +8,8 @@ import {
   VISIBILITY_OPTIONS,
   isAuthError,
 } from "@yunicity/utils";
-import { useRouter } from "expo-router";
+import type { Href } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -105,6 +106,13 @@ export default function ProfileTabScreen() {
         </View>
       ) : null}
 
+      <Link href={"/(protected)/notifications" as Href} asChild>
+        <Pressable style={styles.notifLink}>
+          <Text style={styles.notifLinkText}>Notifications</Text>
+          <Text style={styles.notifLinkHint}>Activité sur vos publications</Text>
+        </Pressable>
+      </Link>
+
       {!profile?.onboarding_completed ? (
         <View style={styles.banner}>
           <Text style={styles.bannerTitle}>Active ton profil</Text>
@@ -188,6 +196,16 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   container: { padding: 20, gap: 10, paddingBottom: 40 },
   hero: { marginBottom: 8 },
+  notifLink: {
+    borderWidth: 1,
+    borderColor: "#e5e5e5",
+    borderRadius: 14,
+    padding: 14,
+    backgroundColor: "#fff",
+    marginBottom: 12,
+  },
+  notifLinkText: { fontWeight: "700", fontSize: 15, color: t.accent },
+  notifLinkHint: { fontSize: 12, color: "#737373", marginTop: 4 },
   username: { color: "#737373", fontSize: 14 },
   title: { fontSize: 24, fontWeight: "700" },
   banner: {

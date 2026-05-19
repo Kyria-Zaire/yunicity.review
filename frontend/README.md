@@ -144,6 +144,19 @@ Pas de jauge XP agressive — progression via texte discret (`progression.hint` 
 
 Leaderboard, animations level-up, affichage score type jeu.
 
+## Notifications sociales (TICKET-503)
+
+Intention UX : [`docs/ux/social-notifications-intent.md`](../docs/ux/social-notifications-intent.md) · Produit : [`docs/product/social-notifications.md`](../docs/product/social-notifications.md)
+
+| Zone | Détail |
+|------|--------|
+| API | `notifications-api.ts` — inbox + préférences |
+| Labels | `social-notification-labels.ts` |
+| Web | `/notifications` |
+| Mobile | `/(protected)/notifications` |
+
+Pas de browser push web MVP — inbox calme, point non lu discret (#2A2FFF).
+
 ## Passport — identité citoyenne (TICKET-304)
 
 ### Écran mobile (`/(tabs)/passport`)

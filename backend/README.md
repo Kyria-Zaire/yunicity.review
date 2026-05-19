@@ -582,6 +582,21 @@ Tests : `tests/test_passport_levels.py`
 
 Leaderboard, XP visible, streaks, daily rewards, feed d’annonces niveau (flag `PASSPORT_LEVEL_FEED_ANNOUNCEMENTS=false`).
 
+## Notifications sociales (TICKET-503)
+
+Intention UX : [`docs/ux/social-notifications-intent.md`](../docs/ux/social-notifications-intent.md) · Produit : [`docs/product/social-notifications.md`](../docs/product/social-notifications.md).
+
+- Table `user_notifications` — inbox + fondation système
+- `SocialNotificationService` — like, comment, passport level
+- `PATCH /users/me/preferences` — `social`, `passport`, `offers`
+- `GET /notifications`, marquage lu
+- Cooldown anti-doublon, skip self-action
+- Push Expo (TICKET-307) payload `{ type: "social", post_id, actor_name }`
+
+Tests : `tests/test_social_notifications.py`
+
+Exclusions : websocket, browser push web, regroupement complexe, trending.
+
 ### TODO futur (hors scope)
 
 - Web Push, inbox, analytics, segmentation marketing

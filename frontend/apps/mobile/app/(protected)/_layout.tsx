@@ -41,6 +41,10 @@ export default function ProtectedLayout() {
         options={{ headerShown: false, presentation: "fullScreenModal" }}
       />
       <Stack.Screen
+        name="notifications/index"
+        options={{ headerShown: true, title: "Notifications" }}
+      />
+      <Stack.Screen
         name="partner-scan/index"
         options={{ headerShown: true, title: "Scanner" }}
       />

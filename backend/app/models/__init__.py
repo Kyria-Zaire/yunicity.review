@@ -22,6 +22,7 @@ from app.models.rbac import Permission, Role, RolePermission, UserRole
 from app.models.refresh_token import RefreshToken
 from app.models.report import Report
 from app.models.user import User
+from app.models.user_notification import UserNotification
 from app.models.user_profile import ProfileVisibility, UserProfile
 
 __all__ = [
@@ -46,6 +47,7 @@ __all__ = [
     "Role",
     "RolePermission",
     "User",
+    "UserNotification",
     "UserProfile",
     "UserRole",
 ]
