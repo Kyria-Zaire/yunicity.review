@@ -44,6 +44,38 @@ async def notify_offer_approved(session: AsyncSession, creator_user_id: uuid.UUI
         )
 
 
+def _passport_level_notification_body(tier_code: str) -> str:
+    messages = {
+        "silver": "Vous avez atteint le niveau Silver.",
+        "gold": "Votre Passport évolue — niveau Gold.",
+        "neo_arrivant": "Bienvenue sur le territoire.",
+        "press_creator": "Bienvenue parmi les créateurs locaux.",
+        "basic": "Votre Passport est actif.",
+    }
+    return messages.get(tier_code, "Votre Passport évolue.")
+
+
+async def notify_passport_level_up(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    *,
+    tier_code: str,
+) -> None:
+    try:
+        await NotificationService(session).send_to_user(
+            user_id,
+            title="Yunicity",
+            body=_passport_level_notification_body(tier_code),
+            data={"type": "passport_level_up", "tier_code": tier_code},
+        )
+    except Exception:
+        logger.warning(
+            "push_notification_failed",
+            extra={"event": "passport_level_up", "user_id": str(user_id), "tier": tier_code},
+            exc_info=True,
+        )
+
+
 async def notify_offer_rejected(session: AsyncSession, creator_user_id: uuid.UUID) -> None:
     try:
         await NotificationService(session).send_to_user(

@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.elements import ColumnElement
 
+from app.core.feed_constants import PostAuthorType, PostType
 from app.models.post import Post
 
 
@@ -94,3 +95,16 @@ class PostRepository:
         if post is None:
             return
         post.comment_count = max(0, post.comment_count + delta)
+
+    async def count_citizen_posts_for_user(self, user_id: uuid.UUID) -> int:
+        result = await self._session.execute(
+            select(func.count())
+            .select_from(Post)
+            .where(
+                Post.author_type == PostAuthorType.CITIZEN.value,
+                Post.author_id == user_id,
+                Post.type == PostType.POST.value,
+                Post.is_active.is_(True),
+            )
+        )
+        return int(result.scalar_one())

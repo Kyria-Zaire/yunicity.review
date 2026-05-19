@@ -118,6 +118,12 @@ class Passport(TimestampMixin, Base):
     redemptions_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default="0"
     )
+    reputation_score: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    tier_unlocked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     last_stamp_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     activated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     suspended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -140,6 +146,28 @@ class Passport(TimestampMixin, Base):
         back_populates="passport",
         cascade="all, delete-orphan",
     )
+    tier_events: Mapped[list[PassportTierEvent]] = relationship(
+        "PassportTierEvent",
+        back_populates="passport",
+        cascade="all, delete-orphan",
+    )
+
+
+class PassportTierEvent(TimestampMixin, Base):
+    """Minimal tier change history (TICKET-502)."""
+
+    __tablename__ = "passport_tier_events"
+    __table_args__ = (Index("ix_passport_tier_events_passport_id", "passport_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    passport_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("passports.id", ondelete="CASCADE"), nullable=False
+    )
+    from_tier_code: Mapped[str] = mapped_column(String(32), nullable=False)
+    to_tier_code: Mapped[str] = mapped_column(String(32), nullable=False)
+    reason: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    passport: Mapped[Passport] = relationship("Passport", back_populates="tier_events")
 
 
 class PassportStamp(TimestampMixin, Base):

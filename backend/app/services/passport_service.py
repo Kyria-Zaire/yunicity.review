@@ -12,7 +12,6 @@ from app.core.errors import AppError
 from app.core.flash_offer import build_flash_snapshot
 from app.core.organization_constants import VerificationStatus
 from app.core.passport_constants import (
-    DEFAULT_PASSPORT_TIER_CODE,
     OfferRedemptionStatus,
     PassportStatus,
     PassportTierCode,
@@ -23,6 +22,7 @@ from app.models.passport import PartnerOffer, Passport, PassportOfferRedemption,
 from app.models.user import User
 from app.repositories.partner_offer_repository import PartnerOfferRepository
 from app.repositories.passport_repository import PassportRepository
+from app.repositories.post_repository import PostRepository
 from app.repositories.profile_repository import ProfileRepository
 from app.schemas.partner_offer import PartnerOfferListResponse, PartnerOfferResponse
 from app.schemas.passport import (
@@ -36,6 +36,8 @@ from app.schemas.passport import (
 )
 from app.schemas.redemption import RedemptionResponse
 from app.schemas.scan import PassportQrResponse
+from app.services.passport_level_hooks import evaluate_passport_level_after_activity
+from app.services.passport_level_service import PassportLevelService
 
 
 class PassportService:
@@ -44,6 +46,8 @@ class PassportService:
         self._passports = PassportRepository(session)
         self._offers = PartnerOfferRepository(session)
         self._profiles = ProfileRepository(session)
+        self._posts = PostRepository(session)
+        self._levels = PassportLevelService(session)
 
     async def list_public_tiers(self) -> PassportTierListResponse:
         tiers = await self._passports.list_public_tiers()
@@ -53,7 +57,7 @@ class PassportService:
 
     async def get_me(self, user: User) -> PassportMeResponse:
         passport = await self._require_active_passport(user.id)
-        return self._to_me_response(passport)
+        return await self._build_me_response(passport, user)
 
     async def get_qr(self, user: User) -> PassportQrResponse:
         passport = await self._require_active_passport(user.id)
@@ -70,10 +74,11 @@ class PassportService:
     ) -> PassportMeResponse:
         existing = await self._passports.get_active_for_user(user.id)
         if existing is not None:
-            return self._to_me_response(existing)
+            return await self._build_me_response(existing, user)
 
         city = await self._resolve_city(user, payload)
-        tier = await self._require_basic_tier()
+        initial_code = PassportLevelService.initial_tier_code_for_user(user)
+        tier = await self._require_tier(initial_code)
         now = datetime.now(UTC)
 
         passport = Passport(
@@ -86,6 +91,8 @@ class PassportService:
             onboarding_completed=True,
             onboarding_step="activated",
             activated_at=now,
+            tier_unlocked_at=now,
+            reputation_score=0,
         )
         try:
             created = await self._passports.create_passport(passport)
@@ -93,7 +100,7 @@ class PassportService:
             await self._session.rollback()
             retry = await self._passports.get_active_for_user(user.id)
             if retry is not None:
-                return self._to_me_response(retry)
+                return await self._build_me_response(retry, user)
             raise AppError(
                 status_code=409,
                 code="PASSPORT_ACTIVATION_FAILED",
@@ -102,7 +109,7 @@ class PassportService:
 
         await self._session.commit()
         await self._session.refresh(created, attribute_names=["tier"])
-        return self._to_me_response(created)
+        return await self._build_me_response(created, user)
 
     async def list_stamps(self, user: User) -> PassportStampListResponse:
         passport = await self._require_active_passport(user.id)
@@ -200,6 +207,7 @@ class PassportService:
                 detail="Vous avez déjà utilisé cette offre.",
             ) from exc
 
+        await evaluate_passport_level_after_activity(self._session, passport.id)
         return RedemptionResponse.model_validate(created)
 
     async def _require_active_passport(self, user_id: uuid.UUID) -> Passport:
@@ -212,8 +220,8 @@ class PassportService:
             )
         return passport
 
-    async def _require_basic_tier(self) -> PassportTier:
-        tier = await self._passports.get_tier_by_code(PassportTierCode(DEFAULT_PASSPORT_TIER_CODE))
+    async def _require_tier(self, code: PassportTierCode) -> PassportTier:
+        tier = await self._passports.get_tier_by_code(code)
         if tier is None or not tier.is_active:
             raise AppError(
                 status_code=503,
@@ -221,6 +229,48 @@ class PassportService:
                 detail="Catalogue des tiers Passport indisponible.",
             )
         return tier
+
+    async def _build_me_response(self, passport: Passport, user: User) -> PassportMeResponse:
+        tier = passport.tier
+        if tier is None:
+            raise AppError(
+                status_code=500,
+                code="PASSPORT_TIER_MISSING",
+                detail="Tier Passport manquant.",
+            )
+        tier_code = (
+            tier.code.value if isinstance(tier.code, PassportTierCode) else str(tier.code)
+        )
+        posts_count = await self._posts.count_citizen_posts_for_user(user.id)
+        score = PassportLevelService.compute_reputation_score(
+            passport, user, posts_count=posts_count
+        )
+        progression = PassportLevelService.build_progression_hint(
+            current_tier_code=tier_code,
+            reputation_score=score,
+        )
+        return PassportMeResponse(
+            id=passport.id,
+            user_id=passport.user_id,
+            city=passport.city,
+            passport_number=passport.passport_number,
+            qr_token=passport.qr_token,
+            status=PassportStatus(passport.status),
+            tier=PassportTierResponse.model_validate(tier),
+            stats=PassportStatsResponse(
+                stamps_count=passport.stamps_count,
+                redemptions_count=passport.redemptions_count,
+                last_stamp_at=passport.last_stamp_at,
+            ),
+            reputation_score=score,
+            progression=progression,
+            tier_unlocked_at=passport.tier_unlocked_at,
+            onboarding_completed=passport.onboarding_completed,
+            onboarding_step=passport.onboarding_step,
+            activated_at=passport.activated_at,
+            created_at=passport.created_at,
+            updated_at=passport.updated_at,
+        )
 
     async def _resolve_city(
         self,
@@ -247,31 +297,3 @@ class PassportService:
             return True
         return required == tier_code
 
-    @staticmethod
-    def _to_me_response(passport: Passport) -> PassportMeResponse:
-        tier = passport.tier
-        if tier is None:
-            raise AppError(
-                status_code=500,
-                code="PASSPORT_TIER_MISSING",
-                detail="Tier Passport manquant.",
-            )
-        return PassportMeResponse(
-            id=passport.id,
-            user_id=passport.user_id,
-            city=passport.city,
-            passport_number=passport.passport_number,
-            qr_token=passport.qr_token,
-            status=PassportStatus(passport.status),
-            tier=PassportTierResponse.model_validate(tier),
-            stats=PassportStatsResponse(
-                stamps_count=passport.stamps_count,
-                redemptions_count=passport.redemptions_count,
-                last_stamp_at=passport.last_stamp_at,
-            ),
-            onboarding_completed=passport.onboarding_completed,
-            onboarding_step=passport.onboarding_step,
-            activated_at=passport.activated_at,
-            created_at=passport.created_at,
-            updated_at=passport.updated_at,
-        )

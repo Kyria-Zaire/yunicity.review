@@ -558,6 +558,30 @@ Tests : `tests/test_flash_offers.py`
 
 Websocket temps réel, scheduler notifications, ranking promo, geofencing, gamification casino.
 
+## Niveaux Passport & réputation locale (TICKET-502)
+
+Intention UX : [`docs/ux/passport-levels-intent.md`](../docs/ux/passport-levels-intent.md) · Produit : [`docs/product/passport-levels.md`](../docs/product/passport-levels.md).
+
+Philosophie : identité territoriale et progression lente — pas d’XP gaming, streaks, ni leaderboard.
+
+### Modèle
+
+- `passports.reputation_score`, `tier_unlocked_at`
+- `passport_tier_events` — historique minimal des promotions
+- Descriptions enrichies sur `passport_tiers`
+
+### Service
+
+`PassportLevelService` — recalcul réputation, éligibilité basic/silver/gold, promotion après redemption / post / scan.
+
+Notifications push sobres via `notify_passport_level_up` (TICKET-307).
+
+Tests : `tests/test_passport_levels.py`
+
+### Exclusions MVP
+
+Leaderboard, XP visible, streaks, daily rewards, feed d’annonces niveau (flag `PASSPORT_LEVEL_FEED_ANNOUNCEMENTS=false`).
+
 ### TODO futur (hors scope)
 
 - Web Push, inbox, analytics, segmentation marketing

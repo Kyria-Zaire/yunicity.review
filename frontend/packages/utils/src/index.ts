@@ -93,6 +93,15 @@ export {
   isPassportNotActiveError,
   maskQrToken,
 } from "./passport-labels";
+export {
+  PASSPORT_LEVEL_ABOUT_TITLE,
+  PASSPORT_LEVEL_PROGRESS_HINT,
+  PASSPORT_LEVEL_SECTION_TITLE,
+  PASSPORT_LEVEL_UNLOCKED,
+  PASSPORT_TIER_LABELS,
+  PASSPORT_TIER_SIGNIFICANCE,
+  formatPassportProgressionHint,
+} from "./passport-level-labels";
 export { YunicityApi, createYunicityApi } from "./yunicity-api";
 export { MemoryTokenStorage } from "./storage/memory-token-storage";
 export type { TokenStorage } from "./storage/token-storage";

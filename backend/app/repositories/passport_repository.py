@@ -10,7 +10,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.passport_constants import PassportStampSource, PassportStatus, PassportTierCode
-from app.models.passport import Passport, PassportOfferRedemption, PassportStamp, PassportTier
+from app.models.passport import (
+    Passport,
+    PassportOfferRedemption,
+    PassportStamp,
+    PassportTier,
+    PassportTierEvent,
+)
 
 
 class PassportRepository:
@@ -145,4 +151,32 @@ class PassportRepository:
         passport.activated_at = activated_at
         passport.onboarding_completed = True
         passport.onboarding_step = "activated"
+        await self._session.flush()
+
+    async def get_active_by_id(self, passport_id: uuid.UUID) -> Passport | None:
+        result = await self._session.execute(
+            select(Passport)
+            .options(selectinload(Passport.tier), selectinload(Passport.user))
+            .where(
+                Passport.id == passport_id,
+                Passport.status == PassportStatus.ACTIVE.value,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def add_tier_event(self, event: PassportTierEvent) -> PassportTierEvent:
+        self._session.add(event)
+        await self._session.flush()
+        return event
+
+    async def update_tier(
+        self,
+        passport: Passport,
+        *,
+        tier: PassportTier,
+        unlocked_at: datetime,
+    ) -> None:
+        passport.tier_id = tier.id
+        passport.tier = tier
+        passport.tier_unlocked_at = unlocked_at
         await self._session.flush()

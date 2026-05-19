@@ -13,12 +13,14 @@ from app.models.post import Post
 from app.models.user import User
 from app.repositories.like_repository import LikeRepository
 from app.repositories.organization_repository import OrganizationRepository
+from app.repositories.passport_repository import PassportRepository
 from app.repositories.post_repository import PostRepository
 from app.repositories.profile_repository import ProfileRepository
 from app.schemas.post import PostCreateRequest, PostResponse, PostUpdateRequest
 from app.services.feed_author_resolver import FeedAuthorResolver
 from app.services.feed_post_mapper import to_post_response
 from app.services.organization_membership_service import OrganizationMembershipService
+from app.services.passport_level_hooks import evaluate_passport_level_after_activity
 from app.services.rbac_service import RbacService
 
 
@@ -51,6 +53,9 @@ class PostService:
             await self._posts.add(post)
             await self._session.commit()
             await self._session.refresh(post)
+            passport = await PassportRepository(self._session).get_active_for_user(user.id)
+            if passport is not None:
+                await evaluate_passport_level_after_activity(self._session, passport.id)
             author = await self._authors.resolve_user(user.id)
             return to_post_response(post, author=author, liked_by_me=False)
 

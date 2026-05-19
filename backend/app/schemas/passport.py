@@ -9,6 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.passport_constants import PassportStampSource, PassportStatus, PassportTierCode
+from app.schemas.passport_level import PassportProgressionHint
 
 
 class PassportActivateRequest(BaseModel):
@@ -45,6 +46,9 @@ class PassportMeResponse(BaseModel):
     status: PassportStatus
     tier: PassportTierResponse
     stats: PassportStatsResponse
+    reputation_score: int = 0
+    progression: PassportProgressionHint | None = None
+    tier_unlocked_at: datetime | None = None
     onboarding_completed: bool
     onboarding_step: str | None
     activated_at: datetime | None

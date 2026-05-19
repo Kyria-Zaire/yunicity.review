@@ -30,6 +30,7 @@ from app.schemas.scan import (
     ScanResolveResponse,
 )
 from app.services.notification_triggers import notify_redemption_success
+from app.services.passport_level_hooks import evaluate_passport_level_after_activity
 from app.services.organization_membership_service import OrganizationMembershipService
 
 logger = logging.getLogger(__name__)
@@ -220,6 +221,7 @@ class ScanRedemptionService:
             },
         )
         await notify_redemption_success(self._session, passport.user_id)
+        await evaluate_passport_level_after_activity(self._session, passport.id)
         return ScanRedeemResponse(
             success=True,
             redemption_id=created.id,

@@ -35,6 +35,14 @@ export interface PassportStats {
   last_stamp_at: string | null;
 }
 
+export interface PassportProgressionHint {
+  next_tier_code: PassportTierCode | null;
+  next_tier_label: string | null;
+  hint: string | null;
+  reputation_score: number;
+  points_to_next: number | null;
+}
+
 export interface PassportMe {
   id: string;
   user_id: string;
@@ -44,6 +52,9 @@ export interface PassportMe {
   status: PassportStatus;
   tier: PassportTier;
   stats: PassportStats;
+  reputation_score?: number;
+  progression?: PassportProgressionHint | null;
+  tier_unlocked_at?: string | null;
   onboarding_completed: boolean;
   onboarding_step: string | null;
   activated_at: string | null;

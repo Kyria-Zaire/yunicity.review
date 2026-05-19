@@ -17,6 +17,7 @@ import {
 } from "@yunicity/utils";
 import type { PartnerOffer, PassportStamp } from "@yunicity/types";
 import { FlashOfferBadge } from "@/components/feed/flash-offer-badge";
+import { PassportLevelAbout } from "@/components/passport/passport-level-about";
 import type { ReactNode } from "react";
 
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
@@ -213,6 +214,9 @@ export function PassportScreen() {
             <p className="font-mono text-xs text-yunicity-ink-muted">{maskQrToken(passport.qr_token)}</p>
           </div>
         </Card>
+        <div className="mt-6">
+          <PassportLevelAbout passport={passport} />
+        </div>
       </>
     );
   }

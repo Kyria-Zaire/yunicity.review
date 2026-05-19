@@ -1,6 +1,7 @@
 import { EmptyPassportState } from "@/components/passport/empty-passport-state";
 import { OfferCard } from "@/components/passport/offer-card";
 import { PassportCard } from "@/components/passport/passport-card";
+import { PassportLevelAbout } from "@/components/passport/passport-level-about";
 import { passportTheme } from "@/components/passport/passport-theme";
 import { StampCard } from "@/components/passport/stamp-card";
 import { usePassport } from "@/hooks/use-passport";
@@ -83,6 +84,7 @@ export default function PassportScreen() {
             </View>
           ) : null}
           <PassportCard passport={passport} profile={profile} />
+          <PassportLevelAbout passport={passport} />
 
           <Link href="/(protected)/passport/present" asChild>
             <Pressable style={styles.presentCta}>

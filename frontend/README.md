@@ -128,6 +128,22 @@ Timer discret (« Encore 2h », « Disponible encore aujourd'hui ») — **pas**
 
 Countdown animé, websocket, notifications push auto, popups intrusifs.
 
+## Niveaux Passport & réputation (TICKET-502)
+
+Intention UX : [`docs/ux/passport-levels-intent.md`](../docs/ux/passport-levels-intent.md) · Produit : [`docs/product/passport-levels.md`](../docs/product/passport-levels.md)
+
+| Zone | Détail |
+|------|--------|
+| Labels | `packages/utils/src/passport-level-labels.ts` |
+| Web | `PassportLevelAbout` + carte Passport |
+| Mobile | `passport-level-about.tsx` + `PassportTierBadge` |
+
+Pas de jauge XP agressive — progression via texte discret (`progression.hint` API).
+
+### Exclusions MVP frontend
+
+Leaderboard, animations level-up, affichage score type jeu.
+
 ## Passport — identité citoyenne (TICKET-304)
 
 ### Écran mobile (`/(tabs)/passport`)

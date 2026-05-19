@@ -10,22 +10,22 @@ export interface PassportTierMeta {
 
 export const PASSPORT_TIER_META: Record<PassportTierCode, PassportTierMeta> = {
   basic: {
-    label: "Basic",
-    description: "Citoyen Yunicity — exploration locale",
+    label: "Citoyen·ne",
+    description: "Votre place dans la ville — exploration locale",
     accent: "#2A2FFF",
     accentMuted: "#EEF0FF",
     border: "#C7D2FE",
   },
   silver: {
     label: "Silver",
-    description: "Engagement régulier sur le territoire",
+    description: "Engagement régulier reconnu sur le territoire",
     accent: "#64748b",
     accentMuted: "#f1f5f9",
     border: "#cbd5e1",
   },
   gold: {
     label: "Gold",
-    description: "Ambassadeur de ta ville",
+    description: "Ambassadeur·rice de votre ville",
     accent: "#a16207",
     accentMuted: "#fffbeb",
     border: "#fcd34d",
@@ -38,8 +38,8 @@ export const PASSPORT_TIER_META: Record<PassportTierCode, PassportTierMeta> = {
     border: "#5eead4",
   },
   press_creator: {
-    label: "Press / Creator",
-    description: "Voix locale et création territoriale",
+    label: "Créateur·rice",
+    description: "Voix locale — création territoriale",
     accent: "#2A2FFF",
     accentMuted: "#EEF0FF",
     border: "#C7D2FE",

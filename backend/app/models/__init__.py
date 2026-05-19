@@ -14,6 +14,7 @@ from app.models.passport import (
     PassportOfferRedemption,
     PassportStamp,
     PassportTier,
+    PassportTierEvent,
 )
 from app.models.post import Post
 from app.models.push_subscription import PushSubscription
@@ -38,6 +39,7 @@ __all__ = [
     "PassportOfferRedemption",
     "PassportStamp",
     "PassportTier",
+    "PassportTierEvent",
     "Permission",
     "ProfileVisibility",
     "RefreshToken",
