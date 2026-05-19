@@ -5,11 +5,24 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
+    "postlint": "node scripts/normalize-next-tsconfig.mjs",
+    "postbuild": "node scripts/normalize-next-tsconfig.mjs",
+    "pretypecheck": "node scripts/normalize-next-tsconfig.mjs",
     "typecheck": "turbo typecheck",
-    "validate": "turbo run typecheck lint build --force",
-    "test": "turbo run test"
+    "validate": "pnpm typecheck && pnpm lint && pnpm build",
+    "test": "turbo run test",
+    "clean:next": "node scripts/clean-next.mjs",
+    "build:web:clean": "node scripts/clean-next.mjs && pnpm --filter web build",
+    "build:admin:clean": "node scripts/clean-next.mjs && pnpm --filter admin build"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
+    "@types/react": "18.3.20",
+    "@types/react-dom": "18.3.7",
+    "cross-env": "^10.1.0",
     "turbo": "^2.5.4",
     "typescript": "^5.8.3"
   },
@@ -21,13 +34,14 @@
     "overrides": {
       "react": "18.3.1",
       "react-dom": "18.3.1",
-      "@types/react": "~18.3.20",
+      "@types/react": "18.3.20",
       "mobile>react": "19.1.0",
       "mobile>react-dom": "19.1.0",
       "expo-linking": "~8.0.12",
       "mobile>@types/react": "~19.1.0",
-      "web>@types/react": "~18.3.20",
-      "admin>@types/react": "~18.3.20",
+      "web>@types/react": "18.3.20",
+      "admin>@types/react": "18.3.20",
+      "@types/react-dom>@types/react": "18.3.20",
       "@xmldom/xmldom": "0.8.13",
       "tar": "7.5.11"
     }

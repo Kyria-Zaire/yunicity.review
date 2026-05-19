@@ -49,5 +49,8 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Clean Next build artifacts
+        run: pnpm clean:next
+
       - name: Build
         run: pnpm build
