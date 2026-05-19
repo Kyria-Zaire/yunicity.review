@@ -47,6 +47,16 @@ export type {
 } from "./admin_partner_offer";
 
 export type {
+  PassportQr,
+  ScanPassportPreview,
+  ScanRedeemableOffer,
+  ScanRedeemRequest,
+  ScanRedeemResponse,
+  ScanResolveRequest,
+  ScanResolveResponse,
+} from "./scan";
+
+export type {
   PartnerOfferCreatePayload,
   PartnerOfferListParams,
   PartnerOfferManagement,

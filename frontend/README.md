@@ -46,7 +46,7 @@ Monorepo **pnpm** + **Turborepo** : Next.js (web + admin), Expo (mobile), packag
 | App | Routes |
 |-----|--------|
 | Web | `/login`, `/register`, `/profile/me`, `/organizations/me`, `/organizations/request` |
-| Admin | `/login`, `/partner-leads`, `/partner-leads/[id]`, `/passport-offers`, `/passport-offers/new`, `/passport-offers/[id]`, `/unauthorized`, `/protected-admin` |
+| Admin | `/login`, `/partner-scan`, `/partner-offers`, `/partner-leads`, `/passport-offers`, `/unauthorized`, `/protected-admin` |
 | Mobile | `/login`, `/register`, `/(protected)/(tabs)/profile`, `/(protected)/(tabs)/organizations` |
 
 ## Profil & organizations (TICKET-206)
@@ -285,6 +285,20 @@ API client : `yunicityApi.partnerOffers` / `PartnerOffersApi` → `/api/v1/organ
 **Exclusions MVP** : analytics, QR, payouts, paiements, push, géoloc, CRM avancé.
 
 Intention UX : [`docs/ux/partner-offers-intention.md`](../docs/ux/partner-offers-intention.md) (canon CTO) · [`docs/ai/ticket-305b-ux-intent.md`](../docs/ai/ticket-305b-ux-intent.md).
+
+## Passport scan & redemption (TICKET-306)
+
+| Surface | Routes | Rôle |
+|---------|--------|------|
+| Mobile citoyen | `/(protected)/passport/present` | QR plein écran (`getPassportQr`) |
+| Mobile partenaire | `/(protected)/partner-scan/*` | Scan caméra (`expo-camera`) ou code manuel → offres → résultat |
+| Admin web | `/partner-scan` | Fallback saisie manuelle (pas de caméra desktop avancée) |
+
+API : `createScanApi` → `POST /scan/resolve`, `POST /scan/redeem` ; `getPassportQr` sur `passport-api.ts`. Messages humains : `scan-labels.ts` (`humanizeScanError`).
+
+**Exclusions MVP** : offline, NFC, wallet, analytics scan, multi-batch, AI fraud, géofencing, POS — QR rotatif = V2.
+
+Intention UX : [`docs/ux/passport-scan-redemption-intent.md`](../docs/ux/passport-scan-redemption-intent.md).
 
 ## Design system (agents IA — TICKET-3050)
 

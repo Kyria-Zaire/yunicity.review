@@ -9,13 +9,24 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.passport_constants import PassportStatus, PassportTierCode
+from app.core.passport_constants import PassportStampSource, PassportStatus, PassportTierCode
 from app.models.passport import Passport, PassportOfferRedemption, PassportStamp, PassportTier
 
 
 class PassportRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
+
+    async def get_active_by_qr_token(self, qr_token: str) -> Passport | None:
+        result = await self._session.execute(
+            select(Passport)
+            .options(selectinload(Passport.tier), selectinload(Passport.user))
+            .where(
+                Passport.qr_token == qr_token,
+                Passport.status == PassportStatus.ACTIVE.value,
+            )
+        )
+        return result.scalar_one_or_none()
 
     async def get_active_for_user(self, user_id: uuid.UUID) -> Passport | None:
         result = await self._session.execute(
@@ -97,6 +108,38 @@ class PassportRepository:
     async def increment_redemptions_count(self, passport: Passport) -> None:
         passport.redemptions_count = passport.redemptions_count + 1
         await self._session.flush()
+
+    async def add_stamp_if_missing(
+        self,
+        *,
+        passport_id: uuid.UUID,
+        organization_id: uuid.UUID,
+        stamped_at: datetime,
+    ) -> bool:
+        existing = await self._session.execute(
+            select(PassportStamp.id).where(
+                PassportStamp.passport_id == passport_id,
+                PassportStamp.organization_id == organization_id,
+            )
+        )
+        if existing.scalar_one_or_none() is not None:
+            return False
+
+        passport = await self._session.get(Passport, passport_id)
+        if passport is None:
+            return False
+
+        stamp = PassportStamp(
+            passport_id=passport_id,
+            organization_id=organization_id,
+            stamp_source=PassportStampSource.ORGANIZATION,
+            stamped_at=stamped_at,
+        )
+        self._session.add(stamp)
+        passport.stamps_count = passport.stamps_count + 1
+        passport.last_stamp_at = stamped_at
+        await self._session.flush()
+        return True
 
     async def touch_activated(self, passport: Passport, *, activated_at: datetime) -> None:
         passport.activated_at = activated_at

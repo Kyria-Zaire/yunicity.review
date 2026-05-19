@@ -39,6 +39,30 @@ class PartnerOfferRepository:
             (PartnerOffer.valid_until.is_(None)) | (PartnerOffer.valid_until >= now),
         )
 
+    async def list_published_for_organizations(
+        self,
+        organization_ids: list[uuid.UUID],
+        *,
+        now: datetime,
+    ) -> list[PartnerOffer]:
+        if not organization_ids:
+            return []
+        result = await self._session.execute(
+            select(PartnerOffer)
+            .join(Organization, PartnerOffer.organization_id == Organization.id)
+            .options(selectinload(PartnerOffer.organization))
+            .where(
+                PartnerOffer.organization_id.in_(organization_ids),
+                Organization.verification_status == VerificationStatus.VERIFIED.value,
+                PartnerOffer.status == PartnerOfferStatus.PUBLISHED.value,
+                PartnerOffer.is_active.is_(True),
+                (PartnerOffer.valid_from.is_(None)) | (PartnerOffer.valid_from <= now),
+                (PartnerOffer.valid_until.is_(None)) | (PartnerOffer.valid_until >= now),
+            )
+            .order_by(PartnerOffer.title.asc())
+        )
+        return list(result.scalars().unique().all())
+
     async def list_visible_offers(self, *, now: datetime) -> list[PartnerOffer]:
         result = await self._session.execute(
             select(PartnerOffer)

@@ -509,6 +509,42 @@ Tests passport API (TICKET-303) : `tests/test_passport_activation.py`, `test_pas
 
 Tests partner offers (TICKET-305/305A) : `tests/test_partner_offer_workflow.py`, `test_partner_offer_permissions.py`, `test_partner_offer_moderation.py`, `test_admin_partner_offers.py`.
 
+## Passport scan & redemption sur place (TICKET-306)
+
+Premier flux physique : le citoyen affiche un QR ; le partenaire (owner/admin de l’organisation) scanne ou saisit le code, choisit une offre publiée de **son** lieu, valide la redemption.
+
+Intention UX : [`docs/ux/passport-scan-redemption-intent.md`](../docs/ux/passport-scan-redemption-intent.md).
+
+### Endpoints
+
+| Méthode | Route | Auth | Rôle |
+|---------|-------|------|------|
+| GET | `/api/v1/passport/me/qr` | Citoyen | Payload QR (`YNCP1:` + `qr_token`), numéro passport |
+| POST | `/api/v1/scan/resolve` | Partenaire | Charge passport + offres redeemables de ses orgs |
+| POST | `/api/v1/scan/redeem` | Partenaire | Body `{ offer_id, qr_secret }` — enregistre redemption |
+
+Services : `ScanRedemptionService` — helpers `app/core/passport_qr.py` (`normalize_qr_secret`, préfixe `YNCP1:`).
+
+### Règles MVP
+
+| Règle | Détail |
+|-------|--------|
+| Organisation | Redemption uniquement sur offres `published` dont l’org est `verified` et dont l’utilisateur est `owner` ou `admin` (`organization_members`) |
+| Passport | Actif, utilisateur non banni (`is_active`) |
+| Unicité | 1 redemption max par couple `(passport, partner_offer)` |
+| Validité | `valid_until` respecté ; tier requis si configuré |
+| Tampon | Option simple : stamp org si absent après redemption réussie |
+| Audit | Logs structurés (`redemption_success` / `redemption_failed`, org, `redeemed_by`, IP approx.) |
+| Rate limit | Sur `resolve` et `redeem` |
+
+### Sécurité MVP (limites connues)
+
+- **QR token statique** — rotation / expiration courte = **V2**
+- Pas d’anti-fraude enterprise, offline, géofencing, batch scan
+- Pas d’exposition du secret brut côté citoyen au-delà du token QR encodé
+
+Tests : `tests/test_scan_redemption.py` (auth partenaire, isolation org, doublon, offre expirée/brouillon, passport invalide, saisie manuelle token).
+
 ## Supabase Recovery Operations
 
 | Ticket | Contenu |

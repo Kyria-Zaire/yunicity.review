@@ -16,6 +16,7 @@ from app.core.passport_constants import (
     PassportStatus,
     PassportTierCode,
 )
+from app.core.passport_qr import build_qr_payload
 from app.core.passport_tokens import generate_passport_number, generate_qr_token_placeholder
 from app.models.passport import PartnerOffer, Passport, PassportOfferRedemption, PassportTier
 from app.models.user import User
@@ -33,6 +34,7 @@ from app.schemas.passport import (
     PassportTierResponse,
 )
 from app.schemas.redemption import RedemptionResponse
+from app.schemas.scan import PassportQrResponse
 
 
 class PassportService:
@@ -51,6 +53,14 @@ class PassportService:
     async def get_me(self, user: User) -> PassportMeResponse:
         passport = await self._require_active_passport(user.id)
         return self._to_me_response(passport)
+
+    async def get_qr(self, user: User) -> PassportQrResponse:
+        passport = await self._require_active_passport(user.id)
+        return PassportQrResponse(
+            qr_payload=build_qr_payload(passport.qr_token),
+            passport_number=passport.passport_number,
+            expires_at=None,
+        )
 
     async def activate(
         self,

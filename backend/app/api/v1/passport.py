@@ -20,6 +20,7 @@ from app.schemas.passport import (
     PassportTierListResponse,
 )
 from app.schemas.redemption import RedemptionResponse
+from app.schemas.scan import PassportQrResponse
 from app.services.passport_service import PassportService
 
 router = APIRouter(prefix="/passport", tags=["passport"])
@@ -39,6 +40,14 @@ async def list_passport_tiers(
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> PassportTierListResponse:
     return await PassportService(session).list_public_tiers()
+
+
+@router.get("/me/qr", response_model=PassportQrResponse)
+async def get_passport_qr(
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> PassportQrResponse:
+    return await PassportService(session).get_qr(current_user)
 
 
 @router.get("/me", response_model=PassportMeResponse)

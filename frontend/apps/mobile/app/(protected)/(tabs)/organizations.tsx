@@ -56,9 +56,14 @@ export default function OrganizationsTabScreen() {
 
   return (
     <View style={styles.container}>
-      <Link href="/(protected)/partner-offers" asChild>
+      <Link href="/(protected)/partner-scan" asChild>
         <Pressable style={styles.cta}>
-          <Text style={styles.ctaText}>Mes offres pour la ville</Text>
+          <Text style={styles.ctaText}>Scanner un Passport</Text>
+        </Pressable>
+      </Link>
+      <Link href="/(protected)/partner-offers" asChild>
+        <Pressable style={styles.ctaSecondary}>
+          <Text style={styles.ctaSecondaryText}>Mes offres pour la ville</Text>
         </Pressable>
       </Link>
       <Link href="/(protected)/organizations/request" asChild>

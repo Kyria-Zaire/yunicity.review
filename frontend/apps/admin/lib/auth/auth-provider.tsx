@@ -8,12 +8,14 @@ import {
   createPartnerOffersAdminApi,
   createOrganizationApi,
   createPartnerOffersApi,
+  createScanApi,
   getWebApiBaseUrl,
   isAuthError,
   type OrganizationApi,
   type PartnerLeadsApi,
   type PartnerOffersAdminApi,
   type PartnerOffersApi,
+  type ScanApi,
 } from "@yunicity/utils";
 import {
   createContext,
@@ -34,6 +36,7 @@ interface AuthContextValue {
   partnerOffersAdminApi: PartnerOffersAdminApi;
   partnerOffersApi: PartnerOffersApi;
   organizationApi: OrganizationApi;
+  scanApi: ScanApi;
   login: (payload: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
@@ -78,6 +81,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => createOrganizationApi(client, apiBaseUrl),
     [client, apiBaseUrl],
   );
+
+  const scanApi = useMemo(() => createScanApi(client, apiBaseUrl), [client, apiBaseUrl]);
 
   useEffect(() => {
     let cancelled = false;
@@ -133,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     partnerOffersAdminApi,
     partnerOffersApi,
     organizationApi,
+    scanApi,
     login,
     logout,
     clearError: () => setError(null),

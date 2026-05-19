@@ -45,6 +45,8 @@ export {
   createPassportApi,
   fetchPassportTiersPublic,
 } from "./passport-api";
+export { ScanApi, createScanApi } from "./scan-api";
+export { SCAN_ERROR_MESSAGES, humanizeScanError } from "./scan-labels";
 export {
   PARTNER_OFFER_STATUS_LABELS,
   PARTNER_OFFER_STATUS_MICROCOPY,

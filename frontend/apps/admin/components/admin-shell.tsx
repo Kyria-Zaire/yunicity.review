@@ -6,7 +6,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-const PARTNER_NAV = [{ href: "/partner-offers", label: "Mes offres pour la ville" }] as const;
+const PARTNER_NAV = [
+  { href: "/partner-scan", label: "Valider un Passport" },
+  { href: "/partner-offers", label: "Mes offres pour la ville" },
+] as const;
 
 const STAFF_NAV = [
   { href: "/partner-leads", label: "Partenaires terrain" },
@@ -41,7 +44,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const staff = isStaffUser(user);
-  const isPartnerArea = pathname.startsWith("/partner-offers");
+  const isPartnerArea =
+    pathname.startsWith("/partner-offers") || pathname.startsWith("/partner-scan");
   const homeHref = staff ? "/partner-leads" : "/partner-offers";
 
   return (
@@ -86,7 +90,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-stone-900">
-                {isPartnerArea ? "Offres pour ta ville" : "Administration"}
+                {pathname.startsWith("/partner-scan")
+                  ? "Validation sur place"
+                  : isPartnerArea
+                    ? "Offres pour ta ville"
+                    : "Administration"}
               </h1>
               {user ? <p className="text-xs text-stone-500">{user.email}</p> : null}
             </div>

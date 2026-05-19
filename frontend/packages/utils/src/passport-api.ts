@@ -2,6 +2,7 @@ import type {
   PartnerOfferListResponse,
   PassportActivateRequest,
   PassportMe,
+  PassportQr,
   PassportStampListResponse,
   PassportTierListResponse,
   Redemption,
@@ -14,6 +15,10 @@ import { ApiClientBase } from "./api-client";
 export class PassportApi extends ApiClientBase {
   getPassportMe(): Promise<PassportMe> {
     return this.getJson<PassportMe>("/passport/me");
+  }
+
+  getPassportQr(): Promise<PassportQr> {
+    return this.getJson<PassportQr>("/passport/me/qr");
   }
 
   activatePassport(payload: PassportActivateRequest = {}): Promise<PassportMe> {

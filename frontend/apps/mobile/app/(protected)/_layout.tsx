@@ -36,6 +36,30 @@ export default function ProtectedLayout() {
         name="partner-offers/[id]"
         options={{ headerShown: true, title: "Détail offre" }}
       />
+      <Stack.Screen
+        name="passport/present"
+        options={{ headerShown: false, presentation: "fullScreenModal" }}
+      />
+      <Stack.Screen
+        name="partner-scan/index"
+        options={{ headerShown: true, title: "Scanner" }}
+      />
+      <Stack.Screen
+        name="partner-scan/scan"
+        options={{ headerShown: true, title: "Scanner QR" }}
+      />
+      <Stack.Screen
+        name="partner-scan/manual"
+        options={{ headerShown: true, title: "Code manuel" }}
+      />
+      <Stack.Screen
+        name="partner-scan/offers"
+        options={{ headerShown: true, title: "Choisir l'offre" }}
+      />
+      <Stack.Screen
+        name="partner-scan/result"
+        options={{ headerShown: true, title: "Résultat" }}
+      />
     </Stack>
   );
 }

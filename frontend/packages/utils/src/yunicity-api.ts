@@ -18,6 +18,7 @@ import type { AuthClient } from "./auth/auth-client";
 import { OrganizationApi, createOrganizationApi } from "./organization-api";
 import { PartnerOffersApi, createPartnerOffersApi } from "./partner-offers-api";
 import { PassportApi, createPassportApi } from "./passport-api";
+import { ScanApi, createScanApi } from "./scan-api";
 import { ProfileApi, createProfileApi } from "./profile-api";
 
 /** Façade profile + organizations + passport. */
@@ -26,12 +27,14 @@ export class YunicityApi {
   readonly organization: OrganizationApi;
   readonly partnerOffers: PartnerOffersApi;
   readonly passport: PassportApi;
+  readonly scan: ScanApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.profile = createProfileApi(client, apiBaseUrl);
     this.organization = createOrganizationApi(client, apiBaseUrl);
     this.partnerOffers = createPartnerOffersApi(client, apiBaseUrl);
     this.passport = createPassportApi(client, apiBaseUrl);
+    this.scan = createScanApi(client, apiBaseUrl);
   }
 
   getProfileMe(): Promise<UserProfile> {
@@ -82,6 +85,10 @@ export class YunicityApi {
 
   redeemPassportOffer(offerId: string): Promise<Redemption> {
     return this.passport.redeemOffer(offerId);
+  }
+
+  getPassportQr() {
+    return this.passport.getPassportQr();
   }
 }
 

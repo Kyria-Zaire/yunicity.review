@@ -6,6 +6,7 @@ import { StampCard } from "@/components/passport/stamp-card";
 import { usePassport } from "@/hooks/use-passport";
 import { usePassportOffers } from "@/hooks/use-passport-offers";
 import { usePassportStamps } from "@/hooks/use-passport-stamps";
+import { Link } from "expo-router";
 import { useEffect, type ReactNode } from "react";
 import {
   ActivityIndicator,
@@ -83,6 +84,13 @@ export default function PassportScreen() {
           ) : null}
           <PassportCard passport={passport} profile={profile} />
 
+          <Link href="/(protected)/passport/present" asChild>
+            <Pressable style={styles.presentCta}>
+              <Text style={styles.presentCtaText}>Présenter mon passeport</Text>
+              <Text style={styles.presentCtaHint}>QR plein écran pour le partenaire</Text>
+            </Pressable>
+          </Link>
+
           <Section title="Mes tampons" subtitle="Collection de visites locales">
             {stampsLoading ? (
               <ActivityIndicator color={passportTheme.gold} />
@@ -97,7 +105,7 @@ export default function PassportScreen() {
             )}
           </Section>
 
-          <Section title="Offres partenaires" subtitle="Lieux vérifiés · sans scan pour l'instant">
+          <Section title="Offres partenaires" subtitle="Lieux vérifiés sur le territoire">
             {feedback ? (
               <Pressable onPress={clearFeedback}>
                 <Text
@@ -173,6 +181,16 @@ const styles = StyleSheet.create({
   },
   successTitle: { color: passportTheme.success, fontWeight: "700", fontSize: 16 },
   successText: { color: passportTheme.textMuted, marginTop: 4, fontSize: 13 },
+  presentCta: {
+    backgroundColor: "#fafaf9",
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: passportTheme.borderGold,
+  },
+  presentCtaText: { color: "#0c0a09", fontWeight: "800", fontSize: 16 },
+  presentCtaHint: { color: "#78716c", fontSize: 12, marginTop: 4 },
   section: { gap: 8 },
   sectionTitle: { color: passportTheme.text, fontSize: 18, fontWeight: "700" },
   sectionSubtitle: { color: passportTheme.textSubtle, fontSize: 12 },
