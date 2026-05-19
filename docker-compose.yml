@@ -70,7 +70,7 @@ services:
       API_V1_PREFIX: ${API_V1_PREFIX:-/api/v1}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-yunicity}:${POSTGRES_PASSWORD:-yunicity_dev_password}@postgres:5432/${POSTGRES_DB:-yunicity_dev}
       REDIS_URL: redis://redis:6379/0
-      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000","http://localhost:19006"]}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000","http://localhost:3001","http://localhost:19006"]}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
     volumes:
       - ./backend:/app
