@@ -28,8 +28,10 @@ export default function LoginPage() {
           clearError();
           setIsSubmitting(true);
           try {
-            await login({ email: values.email, password: values.password });
-            router.replace("/feed");
+            const ok = await login({ email: values.email, password: values.password });
+            if (ok) {
+              router.replace("/feed");
+            }
           } finally {
             setIsSubmitting(false);
           }

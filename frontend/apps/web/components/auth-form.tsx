@@ -33,10 +33,10 @@ export function AuthForm({
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     await onSubmit({
-      email,
+      email: email.trim().toLowerCase(),
       password,
-      full_name: mode === "register" ? fullName : undefined,
-      city: mode === "register" ? city || undefined : undefined,
+      full_name: mode === "register" ? fullName.trim() : undefined,
+      city: mode === "register" ? city.trim() || undefined : undefined,
     });
   }
 
@@ -99,7 +99,7 @@ export function AuthForm({
           required
           type="password"
           autoComplete={mode === "login" ? "current-password" : "new-password"}
-          minLength={12}
+          minLength={mode === "register" ? 12 : 1}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="rounded-md border border-neutral-300 px-3 py-2"

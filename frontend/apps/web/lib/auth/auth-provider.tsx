@@ -6,7 +6,7 @@ import {
   createAuthClient,
   createYunicityApi,
   getWebApiBaseUrl,
-  isAuthError,
+  humanizeAuthFailure,
   type YunicityApi,
 } from "@yunicity/utils";
 import {
@@ -25,8 +25,8 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   error: string | null;
   yunicityApi: YunicityApi;
-  login: (payload: LoginRequest) => Promise<void>;
-  register: (payload: RegisterRequest) => Promise<void>;
+  login: (payload: LoginRequest) => Promise<boolean>;
+  register: (payload: RegisterRequest) => Promise<boolean>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   clearError: () => void;
@@ -95,10 +95,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const response = await client.login(payload);
         setUser(response.user);
+        return true;
       } catch (err) {
-        const message = isAuthError(err) ? err.message : "Connexion impossible.";
-        setError(message);
-        throw err;
+        setError(humanizeAuthFailure(err, "Connexion impossible."));
+        return false;
       }
     },
     [client],
@@ -110,10 +110,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const response = await client.register(payload);
         setUser(response.user);
+        return true;
       } catch (err) {
-        const message = isAuthError(err) ? err.message : "Inscription impossible.";
-        setError(message);
-        throw err;
+        setError(humanizeAuthFailure(err, "Inscription impossible."));
+        return false;
       }
     },
     [client],

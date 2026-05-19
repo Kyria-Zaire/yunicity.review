@@ -3,7 +3,7 @@ import {
   createAuthClient,
   createYunicityApi,
   getExpoApiBaseUrl,
-  isAuthError,
+  humanizeAuthFailure,
   type YunicityApi,
 } from "@yunicity/utils";
 import {
@@ -101,8 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const response = await client.login(payload);
         setUser(response.user);
       } catch (err) {
-        setError(isAuthError(err) ? err.message : "Connexion impossible.");
-        throw err;
+        setError(humanizeAuthFailure(err, "Connexion impossible."));
       }
     },
     [client],
@@ -115,8 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const response = await client.register(payload);
         setUser(response.user);
       } catch (err) {
-        setError(isAuthError(err) ? err.message : "Inscription impossible.");
-        throw err;
+        setError(humanizeAuthFailure(err, "Inscription impossible."));
       }
     },
     [client],

@@ -27,3 +27,20 @@ export async function parseApiError(response: Response): Promise<AuthError> {
 export function isAuthError(error: unknown): error is AuthError {
   return error instanceof AuthError;
 }
+
+/** Messages UI pour erreurs auth attendues (login/register). */
+export function humanizeAuthFailure(err: unknown, fallback: string): string {
+  if (!isAuthError(err)) {
+    return fallback;
+  }
+  if (err.code === "INVALID_CREDENTIALS") {
+    return "Email ou mot de passe incorrect. Vérifiez vos identifiants ou créez un compte.";
+  }
+  if (err.code === "RATE_LIMITED") {
+    return "Trop de tentatives. Réessayez dans quelques minutes.";
+  }
+  if (err.code === "EMAIL_ALREADY_EXISTS") {
+    return "Un compte existe déjà avec cet email. Connectez-vous ou utilisez un autre email.";
+  }
+  return err.message;
+}

@@ -28,13 +28,15 @@ export default function RegisterPage() {
           clearError();
           setIsSubmitting(true);
           try {
-            await register({
+            const ok = await register({
               email: values.email,
               password: values.password,
               full_name: values.full_name ?? "",
               city: values.city ?? null,
             });
-            router.replace("/feed");
+            if (ok) {
+              router.replace("/feed");
+            }
           } finally {
             setIsSubmitting(false);
           }
