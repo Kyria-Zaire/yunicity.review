@@ -262,6 +262,30 @@ Workflow : **register/login** → `access_token` (Bearer, 15 min) + refresh → 
 
 Prérequis : `alembic upgrade head` + `python -m app.db.seeds` (rôles RBAC).
 
+### Outils dev — promotion RBAC (local uniquement)
+
+Attribuer un rôle seedé à un compte **déjà inscrit** (table `user_roles`, permissions via la DB — pas de bypass en dur) :
+
+```bash
+# Depuis backend/ avec venv actif, ou :
+docker compose exec backend python -m app.db.dev promote_user \
+  --email vous@example.com \
+  --role SUPER_ADMIN
+```
+
+| Garde-fou | Détail |
+|-----------|--------|
+| Environnement | **Refusé** si `APP_ENV=prod` |
+| Utilisateur | Doit exister (sinon erreur explicite) |
+| Rôle | Clés seedées : `USER`, `MODERATOR`, `CITY_ADMIN`, `SUPER_ADMIN` |
+| Idempotence | Ré-exécuter ne duplique pas l’assignation |
+
+Exemple PowerShell (depuis la racine du monorepo, DB via Docker) :
+
+```powershell
+docker compose exec backend python -m app.db.dev promote_user --email kyriamambu1@gmail.com --role SUPER_ADMIN
+```
+
 Exemple `/api/v1/health` :
 
 ```json
