@@ -36,6 +36,13 @@ export class ApiClientBase {
     return this.readJson<T>(response);
   }
 
+  protected async deleteVoid(segment: string): Promise<void> {
+    const response = await this.client.fetch(this.apiPath(segment), { method: "DELETE" });
+    if (!response.ok) {
+      throw await parseApiError(response);
+    }
+  }
+
   protected async readJson<T>(response: Response): Promise<T> {
     if (!response.ok) {
       throw await parseApiError(response);

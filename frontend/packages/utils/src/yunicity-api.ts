@@ -10,7 +10,10 @@ import type {
   ProfileCompleteRequest,
   ProfilePublic,
   ProfileUpdateRequest,
+  PushSubscription,
+  PushSubscriptionListResponse,
   Redemption,
+  RegisterPushDeviceRequest,
   UserProfile,
 } from "@yunicity/types";
 
@@ -19,6 +22,7 @@ import { OrganizationApi, createOrganizationApi } from "./organization-api";
 import { PartnerOffersApi, createPartnerOffersApi } from "./partner-offers-api";
 import { PassportApi, createPassportApi } from "./passport-api";
 import { ScanApi, createScanApi } from "./scan-api";
+import { NotificationsApi, createNotificationsApi } from "./notifications-api";
 import { ProfileApi, createProfileApi } from "./profile-api";
 
 /** Façade profile + organizations + passport. */
@@ -28,6 +32,7 @@ export class YunicityApi {
   readonly partnerOffers: PartnerOffersApi;
   readonly passport: PassportApi;
   readonly scan: ScanApi;
+  readonly notifications: NotificationsApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.profile = createProfileApi(client, apiBaseUrl);
@@ -35,6 +40,19 @@ export class YunicityApi {
     this.partnerOffers = createPartnerOffersApi(client, apiBaseUrl);
     this.passport = createPassportApi(client, apiBaseUrl);
     this.scan = createScanApi(client, apiBaseUrl);
+    this.notifications = createNotificationsApi(client, apiBaseUrl);
+  }
+
+  registerPushDevice(payload: RegisterPushDeviceRequest): Promise<PushSubscription> {
+    return this.notifications.registerPushDevice(payload);
+  }
+
+  listMyPushSubscriptions(): Promise<PushSubscriptionListResponse> {
+    return this.notifications.listMyPushSubscriptions();
+  }
+
+  deletePushSubscription(subscriptionId: string): Promise<void> {
+    return this.notifications.deletePushSubscription(subscriptionId);
   }
 
   getProfileMe(): Promise<UserProfile> {

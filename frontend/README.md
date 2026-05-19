@@ -309,7 +309,20 @@ Espace partenaire autonome (workflow modéré 305A) :
 
 API client : `yunicityApi.partnerOffers` / `PartnerOffersApi` → `/api/v1/organizations/me/offers`.
 
-**Exclusions MVP** : analytics, QR, payouts, paiements, push, géoloc, CRM avancé.
+**Exclusions MVP** : analytics, QR, payouts, paiements, géoloc, CRM avancé.
+
+### Push notifications mobile (TICKET-307)
+
+| Élément | Détail |
+|---------|--------|
+| Packages | `expo-notifications`, `expo-device` |
+| Code | `apps/mobile/lib/notifications.ts`, `hooks/use-push-notifications.ts` |
+| UX | Section « Notifications Yunicity » sur l’onglet Profil (après login) |
+| API | `yunicityApi.registerPushDevice` → `POST /api/v1/notifications/register-device` |
+
+**Limitations MVP** : pas de Web Push ; permission demandée via CTA explicite (pas au cold start) ; Expo Go sur iPhone pour tester l’enregistrement du token (push réel souvent limité sans dev build).
+
+**Test iPhone Expo Go** : profil → « Activer les notifications » → vérifier l’appel API et l’état « Activées » ; refus de permission → état « Permission refusée » sans crash.
 
 Intention UX : [`docs/ux/partner-offers-intention.md`](../docs/ux/partner-offers-intention.md) (canon CTO) · [`docs/ai/ticket-305b-ux-intent.md`](../docs/ai/ticket-305b-ux-intent.md).
 

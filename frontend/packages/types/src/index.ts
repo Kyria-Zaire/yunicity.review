@@ -86,6 +86,13 @@ export type {
 } from "./passport";
 
 export type {
+  PushPlatform,
+  PushSubscription,
+  PushSubscriptionListResponse,
+  RegisterPushDeviceRequest,
+} from "./notifications";
+
+export type {
   ConvertLeadPayload,
   PartnerLead,
   PartnerLeadListParams,

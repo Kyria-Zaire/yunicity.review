@@ -486,9 +486,36 @@ Migration `20260520_0006` : mappe l’ancien `active` → `published`, `paused/e
 
 Offres visibles si org `verified` + `public`, offre `published` + `is_active`, fenêtre de dates valide.
 
+### Push notifications Expo (TICKET-307 — MVP mobile)
+
+Fondation **Expo Push** (pas de Web Push, pas d’inbox, pas de segmentation).
+
+| Méthode | Route | Auth |
+|---------|-------|------|
+| POST | `/api/v1/notifications/register-device` | JWT |
+| GET | `/api/v1/notifications/me/subscriptions` | JWT |
+| DELETE | `/api/v1/notifications/subscriptions/{id}` | JWT (propre token uniquement) |
+
+Table `push_subscriptions` — token Expo unique, `platform` ios/android, `is_active`, cascade `users`.
+
+**Config** (`.env`) :
+
+- `EXPO_PUSH_ENABLED=false` en dev → log uniquement, pas d’appel réseau Expo
+- `EXPO_ACCESS_TOKEN` optionnel (Expo push security)
+
+**Événements MVP** (best-effort, **ne bloque pas** la transaction métier) :
+
+- Redemption scan réussie → citoyen : « Votre avantage a été validé »
+- Offre approuvée → créateur : « Votre offre est visible dans Yunicity »
+- Offre rejetée → créateur : « Quelques ajustements sont nécessaires sur votre offre »
+
+Token invalide (`DeviceNotRegistered`) → désactivation automatique. Logs sans token complet.
+
+Tests : `tests/test_notifications.py`
+
 ### TODO futur (hors scope)
 
-- Notifications partenaire (soumis / publié / rejeté)
+- Web Push, inbox, analytics, segmentation marketing
 - UI partenaire complète
 - Scan QR staff, wallet, creator economy
 

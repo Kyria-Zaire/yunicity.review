@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     refresh_cookie_samesite: CookieSameSite = Field(default="lax", alias="REFRESH_COOKIE_SAMESITE")
     refresh_token_pepper: str = Field(default="", alias="REFRESH_TOKEN_PEPPER")
 
+    expo_push_enabled: bool = Field(default=False, alias="EXPO_PUSH_ENABLED")
+    expo_access_token: str | None = Field(default=None, alias="EXPO_ACCESS_TOKEN")
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: object) -> list[str]:

@@ -13,6 +13,7 @@ from app.models.passport import (
     PassportStamp,
     PassportTier,
 )
+from app.models.push_subscription import PushSubscription
 from app.models.rbac import Permission, Role, RolePermission, UserRole
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
@@ -23,6 +24,7 @@ __all__ = [
     "OrganizationMember",
     "OrganizationVerification",
     "PartnerLead",
+    "PushSubscription",
     "PartnerOffer",
     "Passport",
     "PassportOfferRedemption",

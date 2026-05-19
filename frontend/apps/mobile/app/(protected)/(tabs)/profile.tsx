@@ -1,3 +1,4 @@
+import { PushNotificationsCard } from "@/components/push-notifications-card";
 import { useAuth } from "@/lib/auth-provider";
 import type { ProfileMe, ProfileVisibility } from "@yunicity/types";
 import {
@@ -166,6 +167,8 @@ export default function ProfileTabScreen() {
       <Pressable style={styles.primaryBtn} onPress={() => void save()} disabled={isSaving}>
         <Text style={styles.primaryBtnText}>{isSaving ? "…" : "Enregistrer"}</Text>
       </Pressable>
+
+      <PushNotificationsCard />
 
       <Pressable
         style={styles.secondaryBtn}

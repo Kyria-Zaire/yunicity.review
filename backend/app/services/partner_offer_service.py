@@ -37,6 +37,7 @@ from app.schemas.partner_offer_management import (
     PartnerOfferManagementResponse,
     PartnerOfferUpdateRequest,
 )
+from app.services.notification_triggers import notify_offer_approved, notify_offer_rejected
 from app.services.organization_membership_service import OrganizationMembershipService
 
 
@@ -255,6 +256,8 @@ class PartnerOfferService:
         )
         org.visibility = OrganizationVisibility.PUBLIC
         await self._session.commit()
+        if offer.created_by_user_id is not None:
+            await notify_offer_approved(self._session, offer.created_by_user_id)
         return await self.get_offer_admin(offer_id)
 
     async def reject_offer(
@@ -272,6 +275,8 @@ class PartnerOfferService:
             rejection_reason=payload.reason.strip(),
         )
         await self._session.commit()
+        if offer.created_by_user_id is not None:
+            await notify_offer_rejected(self._session, offer.created_by_user_id)
         return await self.get_offer_admin(offer_id)
 
     async def archive_offer(
