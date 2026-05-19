@@ -28,7 +28,8 @@
         {
           "cameraPermission": "Yunicity utilise la caméra pour scanner les Passport citoyens chez les partenaires."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

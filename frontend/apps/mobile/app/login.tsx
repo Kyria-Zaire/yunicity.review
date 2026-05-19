@@ -1,5 +1,6 @@
 import { useAuth } from "@/lib/auth-provider";
-import { Link, useRouter } from "expo-router";
+import { useRedirectWhenAuthenticated } from "@/lib/use-redirect-when-authenticated";
+import { Link } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -11,15 +12,18 @@ import {
 } from "react-native";
 
 export default function LoginScreen() {
-  const { login, error, clearError, isAuthenticated } = useAuth();
-  const router = useRouter();
+  const { login, error, clearError } = useAuth();
+  const { showAuthGate } = useRedirectWhenAuthenticated();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (isAuthenticated) {
-    router.replace("/(protected)/(tabs)/profile");
-    return null;
+  if (showAuthGate) {
+    return (
+      <View style={styles.gate}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
   }
 
   return (
@@ -49,7 +53,6 @@ export default function LoginScreen() {
           setIsSubmitting(true);
           try {
             await login({ email, password });
-            router.replace("/(protected)/(tabs)/profile");
           } finally {
             setIsSubmitting(false);
           }
@@ -69,6 +72,7 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  gate: { flex: 1, justifyContent: "center", alignItems: "center" },
   container: { flex: 1, padding: 24, justifyContent: "center", gap: 12 },
   title: { fontSize: 24, fontWeight: "700" },
   error: { color: "#b91c1c", fontSize: 14 },
