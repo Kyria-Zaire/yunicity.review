@@ -1,0 +1,110 @@
+"use client";
+
+import type { FeedPost } from "@yunicity/types";
+import { applyFeedLikeToggle, mergeFeedItems, isAuthError } from "@yunicity/utils";
+import { useCallback, useState } from "react";
+
+import { useYunicityApi } from "@/hooks/use-yunicity-api";
+
+const PAGE_SIZE = 20;
+
+export function useFeed() {
+  const api = useYunicityApi();
+  const [items, setItems] = useState<FeedPost[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadPage = useCallback(
+    async (cursor: string | null, mode: "initial" | "refresh" | "more") => {
+      if (mode === "initial") {
+        setIsLoading(true);
+      } else if (mode === "refresh") {
+        setIsRefreshing(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+      setError(null);
+      try {
+        const response = await api.listFeed({ cursor: cursor ?? undefined, limit: PAGE_SIZE });
+        setItems((prev) =>
+          mode === "more" ? mergeFeedItems(prev, response.items) : response.items,
+        );
+        setNextCursor(response.next_cursor);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Impossible de charger le fil pour le moment.";
+        if (!isAuthError(err)) {
+          setError(message);
+        }
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+        setIsLoadingMore(false);
+      }
+    },
+    [api],
+  );
+
+  const refresh = useCallback(() => loadPage(null, "refresh"), [loadPage]);
+  const loadMore = useCallback(() => {
+    if (!nextCursor || isLoadingMore) {
+      return;
+    }
+    void loadPage(nextCursor, "more");
+  }, [isLoadingMore, loadPage, nextCursor]);
+
+  const createPost = useCallback(
+    async (body: string, mediaUrl?: string | null) => {
+      const created = await api.createFeedPost({
+        body,
+        media_url: mediaUrl?.trim() ? mediaUrl.trim() : null,
+      });
+      setItems((prev) => [created, ...prev]);
+      return created;
+    },
+    [api],
+  );
+
+  const loadInitial = useCallback(() => loadPage(null, "initial"), [loadPage]);
+
+  const toggleLike = useCallback(
+    async (post: FeedPost) => {
+      const nextLiked = !post.liked_by_me;
+      setItems((prev) =>
+        prev.map((item) => (item.id === post.id ? applyFeedLikeToggle(item, nextLiked) : item)),
+      );
+      try {
+        if (nextLiked) {
+          await api.likeFeedPost(post.id);
+        } else {
+          await api.unlikeFeedPost(post.id);
+        }
+      } catch {
+        setItems((prev) =>
+          prev.map((item) =>
+            item.id === post.id ? applyFeedLikeToggle(item, post.liked_by_me) : item,
+          ),
+        );
+        throw new Error("Impossible de mettre à jour le like.");
+      }
+    },
+    [api],
+  );
+
+  return {
+    items,
+    nextCursor,
+    isLoading,
+    isRefreshing,
+    isLoadingMore,
+    error,
+    loadInitial,
+    refresh,
+    loadMore,
+    createPost,
+    toggleLike,
+  };
+}

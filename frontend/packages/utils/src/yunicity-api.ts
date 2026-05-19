@@ -1,4 +1,10 @@
 import type {
+  CommentCreatePayload,
+  CommentListResponse,
+  FeedComment,
+  FeedListParams,
+  FeedListResponse,
+  FeedPost,
   OrganizationCreateResponse,
   OrganizationMeListResponse,
   OrganizationPublic,
@@ -7,6 +13,7 @@ import type {
   PassportActivateRequest,
   PassportMe,
   PassportStampListResponse,
+  PostCreatePayload,
   ProfileCompleteRequest,
   ProfilePublic,
   ProfileUpdateRequest,
@@ -14,6 +21,7 @@ import type {
   PushSubscriptionListResponse,
   Redemption,
   RegisterPushDeviceRequest,
+  ReportPostPayload,
   UserProfile,
 } from "@yunicity/types";
 
@@ -23,6 +31,7 @@ import { PartnerOffersApi, createPartnerOffersApi } from "./partner-offers-api";
 import { PassportApi, createPassportApi } from "./passport-api";
 import { ScanApi, createScanApi } from "./scan-api";
 import { NotificationsApi, createNotificationsApi } from "./notifications-api";
+import { FeedApi, createFeedApi } from "./feed-api";
 import { ProfileApi, createProfileApi } from "./profile-api";
 
 /** Façade profile + organizations + passport. */
@@ -33,6 +42,7 @@ export class YunicityApi {
   readonly passport: PassportApi;
   readonly scan: ScanApi;
   readonly notifications: NotificationsApi;
+  readonly feed: FeedApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.profile = createProfileApi(client, apiBaseUrl);
@@ -41,6 +51,7 @@ export class YunicityApi {
     this.passport = createPassportApi(client, apiBaseUrl);
     this.scan = createScanApi(client, apiBaseUrl);
     this.notifications = createNotificationsApi(client, apiBaseUrl);
+    this.feed = createFeedApi(client, apiBaseUrl);
   }
 
   registerPushDevice(payload: RegisterPushDeviceRequest): Promise<PushSubscription> {
@@ -107,6 +118,42 @@ export class YunicityApi {
 
   getPassportQr() {
     return this.passport.getPassportQr();
+  }
+
+  listFeed(params?: FeedListParams): Promise<FeedListResponse> {
+    return this.feed.listFeed(params ?? {});
+  }
+
+  getFeedPost(postId: string): Promise<FeedPost> {
+    return this.feed.getPost(postId);
+  }
+
+  createFeedPost(payload: PostCreatePayload): Promise<FeedPost> {
+    return this.feed.createPost(payload);
+  }
+
+  likeFeedPost(postId: string): Promise<void> {
+    return this.feed.likePost(postId);
+  }
+
+  unlikeFeedPost(postId: string): Promise<void> {
+    return this.feed.unlikePost(postId);
+  }
+
+  listFeedComments(postId: string, params?: FeedListParams): Promise<CommentListResponse> {
+    return this.feed.listComments(postId, params ?? {});
+  }
+
+  createFeedComment(postId: string, payload: CommentCreatePayload): Promise<FeedComment> {
+    return this.feed.createComment(postId, payload);
+  }
+
+  deleteFeedComment(commentId: string): Promise<void> {
+    return this.feed.deleteComment(commentId);
+  }
+
+  reportFeedPost(postId: string, payload: ReportPostPayload): Promise<void> {
+    return this.feed.reportPost(postId, payload);
   }
 }
 

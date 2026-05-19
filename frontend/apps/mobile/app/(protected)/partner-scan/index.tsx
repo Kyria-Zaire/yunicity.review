@@ -1,3 +1,4 @@
+import { screenTheme as t } from "@/constants/screen-theme";
 import { Link, useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -26,25 +27,25 @@ export default function PartnerScanHubScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#0c0a09" },
-  kicker: { color: "#d4a574", fontWeight: "600", fontSize: 13 },
-  title: { color: "#fafaf9", fontSize: 26, fontWeight: "800", marginTop: 6 },
-  subtitle: { color: "#a8a29e", fontSize: 14, lineHeight: 20, marginTop: 10 },
+  container: { flex: 1, padding: 20, backgroundColor: t.bg },
+  kicker: { color: t.accent, fontWeight: "600", fontSize: 13 },
+  title: { color: t.text, fontSize: 26, fontWeight: "800", marginTop: 6 },
+  subtitle: { color: t.textMuted, fontSize: 14, lineHeight: 20, marginTop: 10 },
   cta: {
     marginTop: 28,
-    backgroundColor: "#fafaf9",
+    backgroundColor: t.accent,
     borderRadius: 16,
     padding: 16,
     alignItems: "center",
   },
-  ctaText: { color: "#0c0a09", fontWeight: "700", fontSize: 16 },
+  ctaText: { color: t.bg, fontWeight: "700", fontSize: 16 },
   secondary: {
     marginTop: 12,
     borderRadius: 16,
     padding: 16,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#44403c",
+    borderColor: t.border,
   },
-  secondaryText: { color: "#d6d3d1", fontWeight: "600" },
+  secondaryText: { color: t.accent, fontWeight: "600" },
 });

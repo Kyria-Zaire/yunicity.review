@@ -45,9 +45,9 @@ Monorepo **pnpm** + **Turborepo** : Next.js (web + admin), Expo (mobile), packag
 
 | App | Routes |
 |-----|--------|
-| Web | `/login`, `/register`, `/profile/me`, `/organizations/me`, `/organizations/request` |
+| Web | `/login`, `/register`, `/feed`, `/profile/me`, `/organizations/me`, `/organizations/request` |
 | Admin | `/login`, `/partner-scan`, `/partner-offers`, `/partner-leads`, `/passport-offers`, `/unauthorized`, `/protected-admin` |
-| Mobile | `/login`, `/register`, `/(protected)/(tabs)/profile`, `/(protected)/(tabs)/organizations` |
+| Mobile | `/login`, `/register`, `/(protected)/(tabs)/feed`, `/(protected)/(tabs)/profile`, `/(protected)/(tabs)/organizations` |
 
 ## Profil & organizations (TICKET-206)
 
@@ -75,8 +75,40 @@ Admin : cockpit CRM partenaires (TICKET-207, voir ci-dessous).
 | `organization-api.ts` | `listMyOrganizations`, `createOrganizationRequest`, `filterPublicOrganizations` |
 | `YunicityApi` | Façade utilisée par les `AuthProvider` |
 | `passport-api.ts` | `getPassportMe`, `activatePassport`, `listPassportStamps`, `listPassportOffers`, `redeemOffer` |
+| `feed-api.ts` | `listFeed`, `getPost`, `createPost`, like/unlike, comments, `reportPost` |
 
 Types : `UserProfile`, `PassportMe`, `PartnerOffer`, `OrganizationSummary`, `OrganizationRequestPayload`, `ProfileVisibility`.
+
+## Citizen Feed — fil local (TICKET-403)
+
+Intention UX : [`docs/ux/citizen-feed-ui-intent.md`](../docs/ux/citizen-feed-ui-intent.md)
+
+### Routes
+
+| App | Route | Description |
+|-----|-------|-------------|
+| Web | `/feed` | `WebAppShell` + `contentWidth="feed"` + rail contextuel |
+| Mobile | `/(protected)/(tabs)/feed` | Onglet principal — référence UX |
+
+### Composants
+
+| Web | Mobile |
+|-----|--------|
+| `apps/web/components/feed/*` | `apps/mobile/components/feed/feed-screen.tsx` |
+
+Cartes : post citoyen, post organisation, offre Passport (sobre). Composer citoyen MVP. Like discret, commentaires inline, signalement léger.
+
+### API (`feed-api.ts` + types `feed.ts`)
+
+Aligné backend TICKET-402 : `GET /feed`, `POST /posts`, like/unlike, comments, `POST /posts/{id}/report`.
+
+### Exclusions MVP frontend feed
+
+Hashtags, mentions, repost, stories, vidéo, temps réel, notifications likes/comments, upload média avancé, ranking algorithmique, dark patterns.
+
+### Tests
+
+`packages/utils/src/feed-labels.test.ts`
 
 ## Passport — identité citoyenne (TICKET-304)
 

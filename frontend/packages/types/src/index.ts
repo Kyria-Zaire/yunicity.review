@@ -93,6 +93,23 @@ export type {
 } from "./notifications";
 
 export type {
+  CommentCreatePayload,
+  CommentListResponse,
+  FeedAuthor,
+  FeedAuthorType,
+  FeedComment,
+  FeedListParams,
+  FeedListResponse,
+  FeedLocation,
+  FeedOfferMeta,
+  FeedPost,
+  FeedPostType,
+  FeedReportReason,
+  PostCreatePayload,
+  ReportPostPayload,
+} from "./feed";
+
+export type {
   ConvertLeadPayload,
   PartnerLead,
   PartnerLeadListParams,

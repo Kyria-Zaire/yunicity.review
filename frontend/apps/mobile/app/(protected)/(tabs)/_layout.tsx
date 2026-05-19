@@ -1,3 +1,4 @@
+import { feedTheme } from "@/components/feed/feed-theme";
 import { Tabs } from "expo-router";
 
 export default function TabsLayout() {
@@ -5,14 +6,25 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: true,
-        tabBarStyle: { backgroundColor: "#0c0a09", borderTopColor: "rgba(255,255,255,0.08)" },
-        tabBarActiveTintColor: "#d4a574",
-        tabBarInactiveTintColor: "#78716c",
-        headerStyle: { backgroundColor: "#0c0a09" },
-        headerTintColor: "#fafaf9",
+        tabBarStyle: {
+          backgroundColor: feedTheme.bg,
+          borderTopColor: feedTheme.border,
+        },
+        tabBarActiveTintColor: feedTheme.accent,
+        tabBarInactiveTintColor: feedTheme.textMuted,
+        headerStyle: { backgroundColor: feedTheme.bg },
+        headerTintColor: feedTheme.text,
+        headerShadowVisible: false,
       }}
     >
-      <Tabs.Screen name="profile" options={{ title: "Profil", tabBarLabel: "Profil" }} />
+      <Tabs.Screen
+        name="feed"
+        options={{
+          title: "Fil local",
+          tabBarLabel: "Fil",
+          headerShown: false,
+        }}
+      />
       <Tabs.Screen
         name="passport"
         options={{
@@ -21,10 +33,8 @@ export default function TabsLayout() {
           headerShown: false,
         }}
       />
-      <Tabs.Screen
-        name="organizations"
-        options={{ title: "Lieux", tabBarLabel: "Lieux" }}
-      />
+      <Tabs.Screen name="profile" options={{ title: "Profil", tabBarLabel: "Profil" }} />
+      <Tabs.Screen name="organizations" options={{ title: "Lieux", tabBarLabel: "Lieux" }} />
     </Tabs>
   );
 }

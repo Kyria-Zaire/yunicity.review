@@ -1,3 +1,4 @@
+import { screenTheme as t } from "@/constants/screen-theme";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -57,7 +58,7 @@ export default function PartnerScanCameraScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0c0a09", padding: 20, justifyContent: "center" },
+  container: { flex: 1, backgroundColor: t.bg, padding: 20, justifyContent: "center" },
   camera: { flex: 1, borderRadius: 16, overflow: "hidden" },
   overlay: {
     position: "absolute",
@@ -74,15 +75,15 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     overflow: "hidden",
   },
-  title: { color: "#fafaf9", fontSize: 20, fontWeight: "700" },
-  hint: { color: "#a8a29e", marginTop: 8, marginBottom: 20 },
+  title: { color: t.text, fontSize: 20, fontWeight: "700" },
+  hint: { color: t.textMuted, marginTop: 8, marginBottom: 20 },
   cta: {
-    backgroundColor: "#fafaf9",
+    backgroundColor: t.accent,
     borderRadius: 14,
     padding: 14,
     alignItems: "center",
   },
-  ctaText: { color: "#0c0a09", fontWeight: "700" },
+  ctaText: { color: t.bg, fontWeight: "700" },
   link: { marginTop: 16, alignItems: "center" },
-  linkText: { color: "#d4a574" },
+  linkText: { color: t.accent },
 });

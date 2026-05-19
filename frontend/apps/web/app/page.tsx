@@ -13,6 +13,9 @@ export default function HomePage() {
       </header>
       <HealthStatusCard />
       <nav className="flex flex-wrap gap-4 text-sm">
+        <Link href="/feed" className="text-yunicity-primary hover:underline">
+          Fil local
+        </Link>
         <Link href="/login" className="text-yunicity-primary hover:underline">
           Connexion
         </Link>

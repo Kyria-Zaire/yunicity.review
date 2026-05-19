@@ -1,3 +1,4 @@
+import { screenTheme as t } from "@/constants/screen-theme";
 import { useAuth } from "@/lib/auth-provider";
 import type { OrganizationMeItem, PartnerOfferManagement, PartnerOfferStatus } from "@yunicity/types";
 import {
@@ -69,7 +70,7 @@ export default function PartnerOffersHubScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#d4a574" />
+        <ActivityIndicator size="large" color={t.accent} />
       </View>
     );
   }
@@ -150,54 +151,54 @@ export default function PartnerOffersHubScreen() {
 }
 
 const styles = StyleSheet.create({
-  centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0c0a09" },
-  container: { flex: 1, padding: 16, backgroundColor: "#0c0a09" },
-  kicker: { color: "#d4a574", fontSize: 13, fontWeight: "600" },
-  title: { color: "#fafaf9", fontSize: 26, fontWeight: "800", marginTop: 4 },
-  subtitle: { color: "#a8a29e", fontSize: 14, marginTop: 8, lineHeight: 20 },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: t.bg },
+  container: { flex: 1, padding: 16, backgroundColor: t.bg },
+  kicker: { color: t.accent, fontSize: 13, fontWeight: "600" },
+  title: { color: t.text, fontSize: 26, fontWeight: "800", marginTop: 4 },
+  subtitle: { color: t.textMuted, fontSize: 14, marginTop: 8, lineHeight: 20 },
   cta: {
-    backgroundColor: "#fafaf9",
+    backgroundColor: t.accent,
     borderRadius: 16,
     padding: 16,
     alignItems: "center",
     marginTop: 20,
     marginBottom: 16,
   },
-  ctaText: { color: "#0c0a09", fontWeight: "700", fontSize: 15 },
+  ctaText: { color: t.bg, fontWeight: "700", fontSize: 15 },
   card: {
-    backgroundColor: "#1c1917",
+    backgroundColor: t.bgElevated,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#292524",
+    borderColor: t.border,
   },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", gap: 8, alignItems: "flex-start" },
-  cardTitle: { color: "#fafaf9", fontSize: 17, fontWeight: "700", flex: 1 },
+  cardTitle: { color: t.text, fontSize: 17, fontWeight: "700", flex: 1 },
   pill: { borderRadius: 999, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4 },
   pillText: { fontSize: 11, fontWeight: "600" },
-  cardMeta: { color: "#a8a29e", fontSize: 12, marginTop: 6 },
-  cardCopy: { color: "#d6d3d1", fontSize: 13, marginTop: 8 },
-  cardDates: { color: "#78716c", fontSize: 11, marginTop: 8 },
+  cardMeta: { color: t.textMuted, fontSize: 12, marginTop: 6 },
+  cardCopy: { color: t.text, fontSize: 13, marginTop: 8 },
+  cardDates: { color: t.textMuted, fontSize: 11, marginTop: 8 },
   emptyBox: {
     marginTop: 24,
     padding: 20,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#44403c",
-    backgroundColor: "#1c1917",
+    borderColor: t.border,
+    backgroundColor: t.bgElevated,
   },
-  emptyTitle: { color: "#fafaf9", fontSize: 17, fontWeight: "700" },
-  emptyBody: { color: "#a8a29e", fontSize: 14, marginTop: 8, lineHeight: 20, textAlign: "center" },
+  emptyTitle: { color: t.text, fontSize: 17, fontWeight: "700" },
+  emptyBody: { color: t.textMuted, fontSize: 14, marginTop: 8, lineHeight: 20, textAlign: "center" },
   emptyList: { flexGrow: 1, paddingTop: 8 },
   emptyOfferBox: {
     marginTop: 8,
     padding: 20,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#44403c",
-    backgroundColor: "#1c1917",
+    borderColor: t.border,
+    backgroundColor: t.bgElevated,
     alignItems: "center",
   },
-  error: { color: "#f87171", marginBottom: 8 },
+  error: { color: t.error, marginBottom: 8 },
 });

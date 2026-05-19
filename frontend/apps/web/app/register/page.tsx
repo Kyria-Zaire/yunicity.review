@@ -12,7 +12,7 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace("/profile/me");
+      router.replace("/feed");
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -34,7 +34,7 @@ export default function RegisterPage() {
               full_name: values.full_name ?? "",
               city: values.city ?? null,
             });
-            router.replace("/profile/me");
+            router.replace("/feed");
           } finally {
             setIsSubmitting(false);
           }

@@ -50,6 +50,23 @@ export {
   NotificationsApi,
   createNotificationsApi,
 } from "./notifications-api";
+export { FeedApi, createFeedApi } from "./feed-api";
+export { applyFeedLikeToggle, mergeFeedItems } from "./feed-state";
+export {
+  FEED_COMPOSER_PLACEHOLDER,
+  FEED_DELETED_COMMENT_LABEL,
+  FEED_EMPTY_BODY,
+  FEED_EMPTY_TITLE,
+  FEED_ERROR_BODY,
+  FEED_ERROR_TITLE,
+  FEED_LOAD_MORE_LABEL,
+  FEED_PASSPORT_BADGE,
+  FEED_REPORT_LABEL,
+  FEED_REPORT_REASON_LABELS,
+  authorInitials,
+  formatFeedDate,
+  formatOfferValidUntil,
+} from "./feed-labels";
 export { SCAN_ERROR_MESSAGES, humanizeScanError } from "./scan-labels";
 export {
   PARTNER_OFFER_STATUS_LABELS,

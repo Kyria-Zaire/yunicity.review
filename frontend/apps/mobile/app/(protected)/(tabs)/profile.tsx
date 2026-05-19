@@ -1,4 +1,5 @@
 import { PushNotificationsCard } from "@/components/push-notifications-card";
+import { screenTheme as t } from "@/constants/screen-theme";
 import { useAuth } from "@/lib/auth-provider";
 import type { ProfileMe, ProfileVisibility } from "@yunicity/types";
 import {
@@ -217,9 +218,9 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     backgroundColor: "#fff",
   },
-  chipSelected: { backgroundColor: "#171717", borderColor: "#171717" },
+  chipSelected: { backgroundColor: t.accentSoft, borderColor: t.accent },
   chipText: { fontSize: 13, color: "#404040" },
-  chipTextSelected: { color: "#fff" },
+  chipTextSelected: { color: t.accent, fontWeight: "600" },
   radio: {
     borderWidth: 1,
     borderColor: "#e5e5e5",
@@ -227,16 +228,16 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: "#fff",
   },
-  radioSelected: { borderColor: "#171717", backgroundColor: "#f5f5f5" },
+  radioSelected: { borderColor: t.accent, backgroundColor: t.accentSoft },
   radioLabel: { fontWeight: "500" },
   primaryBtn: {
     marginTop: 12,
-    backgroundColor: "#171717",
+    backgroundColor: t.accent,
     borderRadius: 12,
     padding: 14,
     alignItems: "center",
   },
-  primaryBtnText: { color: "#fff", fontWeight: "600" },
+  primaryBtnText: { color: t.bg, fontWeight: "600" },
   secondaryBtn: { marginTop: 8, padding: 12, alignItems: "center" },
   secondaryBtnText: { color: "#525252" },
   error: { color: "#dc2626", fontSize: 13 },
