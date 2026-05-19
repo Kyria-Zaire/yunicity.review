@@ -6,7 +6,7 @@ Monorepo **pnpm** + **Turborepo** : Next.js (web + admin), Expo (mobile), packag
 
 - TypeScript strict
 - Next.js 15 (App Router) + Tailwind CSS
-- Expo 52 + Expo Router (mobile)
+- Expo 54 + Expo Router 6 (mobile) — web/admin restent React 18
 - `@yunicity/types` · `@yunicity/utils` · `@yunicity/ui` (tokens)
 
 ## Auth (TICKET-105)
@@ -268,7 +268,34 @@ pnpm --filter mobile start
 
 ## Mobile / émulateur
 
-`EXPO_PUBLIC_API_URL` : souvent `http://10.0.2.2:8000` (Android) ou IP LAN pour appareil physique.
+### Expo SDK 54 (TICKET-306B — QA iPhone)
+
+L’app `apps/mobile` cible **Expo SDK 54** pour être compatible avec **Expo Go** sur iPhone (SDK 54+ uniquement).
+
+| Package | Version cible |
+|---------|----------------|
+| `expo` | ~54.0.34 |
+| `react` / `react-dom` | 19.1.0 (mobile uniquement) |
+| `react-native` | 0.81.5 |
+| `expo-router` | ~6.0.23 |
+| `expo-camera` | ~17.0.10 |
+| `react-native-svg` | 15.12.1 |
+
+**Monorepo** : overrides pnpm dans `frontend/package.json` — React 18 pour `web` / `admin`, React 19 pour `mobile`.
+
+**Vérifications locales** :
+
+```bash
+cd frontend/apps/mobile
+npx expo-doctor          # 1 avertissement Metro monorepo attendu (watchFolders)
+pnpm --filter mobile typecheck
+pnpm --filter mobile build
+pnpm --filter mobile start   # scanner QR avec Expo Go iPhone
+```
+
+**Note** : `metro.config.js` inclut `watchFolders` vers la racine `frontend/` pour `@yunicity/types` et `@yunicity/utils` — expo-doctor peut signaler un écart vs le défaut Expo ; ne pas supprimer sans casser le monorepo.
+
+`EXPO_PUBLIC_API_URL` : souvent `http://10.0.2.2:8000` (Android) ou **IP LAN du PC** pour iPhone physique (pas `localhost`).
 
 ## Partner offers self-service (TICKET-305B)
 
