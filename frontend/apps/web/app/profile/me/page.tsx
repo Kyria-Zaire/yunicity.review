@@ -1,6 +1,7 @@
 "use client";
 
-import { AppShell } from "@/components/app-shell";
+import { ProfilePageAside } from "@/components/layout/web-page-asides";
+import { WebAppShell } from "@/components/layout";
 import { InterestPicker } from "@/components/interest-picker";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { ProtectedRoute } from "@/components/protected-route";
@@ -86,24 +87,28 @@ function ProfileMeContent() {
 
   if (isLoading) {
     return (
-      <AppShell title="Mon profil">
+      <WebAppShell header={{ title: "Mon profil" }} context={<ProfilePageAside />} contentWidth="readable">
         <p className="text-sm text-neutral-600">Chargement…</p>
-      </AppShell>
+      </WebAppShell>
     );
   }
 
   if (!profile) {
     return (
-      <AppShell title="Mon profil">
+      <WebAppShell header={{ title: "Mon profil" }} context={<ProfilePageAside />} contentWidth="readable">
         <p className="text-sm text-red-600">{error}</p>
-      </AppShell>
+      </WebAppShell>
     );
   }
 
   return (
-    <AppShell
-      title="Mon profil"
-      subtitle="Ton identité sociale sur le réseau local."
+    <WebAppShell
+      header={{
+        title: "Mon profil",
+        subtitle: "Ton identité sociale sur le réseau local.",
+      }}
+      context={<ProfilePageAside />}
+      contentWidth="readable"
     >
       <div className="mb-6 flex items-center gap-4 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
         <ProfileAvatar name={profile.display_name ?? profile.username} size="md" />
@@ -220,7 +225,7 @@ function ProfileMeContent() {
           {isSaving ? "Enregistrement…" : "Enregistrer"}
         </button>
       </form>
-    </AppShell>
+    </WebAppShell>
   );
 }
 

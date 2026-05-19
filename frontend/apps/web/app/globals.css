@@ -5,6 +5,40 @@
 :root {
   --background: #fafafa;
   --foreground: #0a0a0a;
+
+  /* Shell web citoyen — tokens layout (TICKET-306D) */
+  --web-shell-max: 80rem; /* max-w-7xl */
+  --web-sidebar-width: 220px;
+  --web-context-min-width: 260px;
+  --web-main-max-width: 720px;
+  --web-sticky-offset: 2rem;
+}
+
+/* Grille desktop : sidebar | main | contexte optionnel */
+.web-desktop-grid {
+  display: grid;
+  align-items: start;
+  gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .web-desktop-grid {
+    grid-template-columns: var(--web-sidebar-width) minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .web-desktop-grid--with-context {
+    grid-template-columns:
+      var(--web-sidebar-width)
+      minmax(0, min(var(--web-main-max-width), 100%))
+      minmax(var(--web-context-min-width), 1fr);
+    gap: 2.5rem;
+  }
+}
+
+.web-main-column {
+  width: 100%;
 }
 
 body {

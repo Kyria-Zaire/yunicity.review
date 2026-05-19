@@ -1,6 +1,7 @@
 "use client";
 
-import { AppShell } from "@/components/app-shell";
+import { OrganizationsMeAside } from "@/components/layout/web-page-asides";
+import { WebAppShell } from "@/components/layout";
 import { ProtectedRoute } from "@/components/protected-route";
 import { VerificationBadge } from "@/components/verification-badge";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
@@ -44,11 +45,15 @@ function OrganizationsMeContent() {
   }, [api]);
 
   return (
-    <AppShell
-      title="Mes lieux"
-      subtitle="Les acteurs locaux que tu représentes sur Yunicity."
+    <WebAppShell
+      header={{
+        title: "Mes lieux",
+        subtitle: "Les acteurs locaux que tu représentes sur Yunicity.",
+      }}
+      context={<OrganizationsMeAside />}
+      contentWidth="wide"
     >
-      <div className="mb-6 flex justify-end">
+      <div className="mb-6 flex justify-end xl:hidden">
         <Link
           href="/organizations/request"
           className="rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800"
@@ -100,7 +105,8 @@ function OrganizationsMeContent() {
           </li>
         ))}
       </ul>
-    </AppShell>
+
+    </WebAppShell>
   );
 }
 
