@@ -11,7 +11,7 @@ from app.models.neighborhood import Neighborhood
 from app.models.post import Post
 from app.services.neighborhood_summary import resolve_feed_neighborhood_summary
 
-pytestmark = pytest.mark.unit  # type: ignore[name-defined]
+pytestmark = pytest.mark.unit
 
 
 def test_resolve_from_post_neighborhood() -> None:
