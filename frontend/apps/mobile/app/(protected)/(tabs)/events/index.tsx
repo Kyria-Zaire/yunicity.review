@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -34,30 +35,58 @@ function EventRow({ event }: { event: LocalEvent }) {
 }
 
 export default function EventsTabScreen() {
-  const { yunicityApi: api } = useAuth();
+  const { yunicityApi: api, user } = useAuth();
   const [events, setEvents] = useState<LocalEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    setError(null);
     try {
-      const response = await api.events.listEvents();
+      const response = await api.events.listEvents({
+        city: user?.city ?? undefined,
+      });
       setEvents(response.items);
+    } catch {
+      setError("Impossible de charger les moments locaux.");
     } finally {
       setLoading(false);
     }
-  }, [api.events]);
+  }, [api.events, user?.city]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      await load();
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />
+      }
+    >
       <Text style={styles.title}>{EVENTS_PAGE_TITLE}</Text>
       <Text style={styles.subtitle}>{EVENTS_PAGE_SUBTITLE}</Text>
       {loading ? (
         <ActivityIndicator color={feedTheme.accent} style={styles.loader} />
+      ) : error ? (
+        <View style={styles.errorBlock}>
+          <Text style={styles.empty}>{error}</Text>
+          <Pressable style={styles.retryBtn} onPress={() => void load()}>
+            <Text style={styles.retryText}>Réessayer</Text>
+          </Pressable>
+        </View>
       ) : events.length === 0 ? (
         <Text style={styles.empty}>{EVENTS_EMPTY}</Text>
       ) : (
@@ -88,4 +117,13 @@ const styles = StyleSheet.create({
   },
   cardTitle: { fontSize: 16, fontWeight: "600", color: feedTheme.text },
   cardMeta: { fontSize: 13, color: feedTheme.textMuted, marginTop: 4 },
+  errorBlock: { gap: 12, marginTop: 8 },
+  retryBtn: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: feedTheme.accent,
+  },
+  retryText: { color: "#fff", fontSize: 14, fontWeight: "600" },
 });

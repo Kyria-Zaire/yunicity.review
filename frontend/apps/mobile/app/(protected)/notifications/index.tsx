@@ -4,6 +4,7 @@ import type { UserNotificationItem } from "@yunicity/types";
 import {
   formatNotificationMessage,
   formatNotificationRelativeTime,
+  resolveNotificationDeeplink,
 } from "@yunicity/utils";
 import type { Href } from "expo-router";
 import { Link, useRouter } from "expo-router";
@@ -54,11 +55,17 @@ export default function NotificationsScreen() {
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const data = await yunicityApi.notifications.listInbox(50);
-    setItems(data.items);
-    setUnread(data.unread_count);
+    setError(null);
+    try {
+      const data = await yunicityApi.notifications.listInbox(50);
+      setItems(data.items);
+      setUnread(data.unread_count);
+    } catch {
+      setError("Impossible de charger les notifications.");
+    }
   }, [yunicityApi]);
 
   useEffect(() => {
@@ -86,13 +93,25 @@ export default function NotificationsScreen() {
         /* best effort */
       }
     }
-    router.push("/(protected)/(tabs)/feed" as Href);
+    const href = resolveNotificationDeeplink(item.deeplink, "mobile");
+    router.push(href as Href);
   }
 
   if (loading) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator color={feedTheme.accent} />
+      </View>
+    );
+  }
+
+  if (error && items.length === 0) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorText}>{error}</Text>
+        <Pressable style={styles.retryBtn} onPress={() => void load()}>
+          <Text style={styles.retryText}>Réessayer</Text>
+        </Pressable>
       </View>
     );
   }
@@ -192,4 +211,12 @@ const styles = StyleSheet.create({
   },
   backLink: { marginTop: 20, alignItems: "center" },
   backLinkText: { color: feedTheme.accent, fontWeight: "600" },
+  errorText: { color: feedTheme.textMuted, fontSize: 14, marginBottom: 12, textAlign: "center" },
+  retryBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: feedTheme.accent,
+  },
+  retryText: { color: "#fff", fontWeight: "600", fontSize: 14 },
 });

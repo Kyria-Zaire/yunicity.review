@@ -4,7 +4,7 @@ export function FeedLoadingState() {
       {[0, 1, 2].map((key) => (
         <div
           key={key}
-          className="animate-pulse rounded-2xl border border-yunicity-border bg-white p-6"
+          className="rounded-2xl border border-yunicity-border bg-white p-6 opacity-70"
         >
           <div className="mb-4 h-10 w-10 rounded-full bg-neutral-100" />
           <div className="mb-2 h-4 w-1/3 rounded bg-neutral-100" />

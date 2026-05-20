@@ -98,6 +98,8 @@ export {
   formatOfferValidUntil,
 } from "./feed-labels";
 export { SCAN_ERROR_MESSAGES, humanizeScanError } from "./scan-labels";
+export { resolveNotificationDeeplink } from "./notification-deeplink";
+export type { NotificationPlatform } from "./notification-deeplink";
 export {
   PARTNER_OFFER_STATUS_LABELS,
   PARTNER_OFFER_STATUS_MICROCOPY,
@@ -109,6 +111,7 @@ export {
   PARTNER_OFFER_REJECTED_REASON_LABEL,
   PARTNER_OFFER_REJECTED_SECTION_TITLE,
   PARTNER_OFFER_TYPE_LABELS,
+  PASSPORT_CITIZEN_OFFERS_EMPTY,
   PASSPORT_TIER_META,
   canEditPartnerOffer,
   canSubmitPartnerOffer,

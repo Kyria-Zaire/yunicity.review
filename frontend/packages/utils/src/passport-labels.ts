@@ -70,6 +70,10 @@ export const PARTNER_OFFER_STATUS_MICROCOPY: Record<PartnerOfferStatus, string> 
   archived: "Cette offre n’est plus proposée aux citoyens.",
 };
 
+/** Passport citoyen — aucune offre publiée à proximité (TICKET-506). */
+export const PASSPORT_CITIZEN_OFFERS_EMPTY =
+  "Aucune offre disponible pour le moment. Les commerces de votre ville publient au fil des semaines.";
+
 /** Hub partenaire — liste vide (TICKET-305B). */
 export const PARTNER_OFFERS_EMPTY_TITLE = "Pas encore d’offre";
 export const PARTNER_OFFERS_EMPTY_BODY =

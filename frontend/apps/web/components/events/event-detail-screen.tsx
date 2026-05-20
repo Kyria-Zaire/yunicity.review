@@ -61,7 +61,7 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
             />
           ) : null}
           {eventTypeLabel(event.event_type) ? (
-            <p className="text-sm font-medium text-[#2A2FFF]">
+            <p className="text-sm font-medium text-yunicity-primary">
               {eventTypeLabel(event.event_type)}
             </p>
           ) : null}
@@ -84,7 +84,7 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
             type="button"
             disabled={toggling}
             onClick={() => void handleInterest()}
-            className="rounded-full bg-[#2A2FFF] px-6 py-3 text-sm font-semibold text-white disabled:opacity-60"
+            className="rounded-full bg-yunicity-primary px-6 py-3 text-sm font-semibold text-white disabled:opacity-60"
           >
             {event.interested_by_me ? EVENT_INTEREST_SAVED : EVENT_INTEREST_CTA}
           </button>

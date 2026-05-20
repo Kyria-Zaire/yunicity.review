@@ -21,7 +21,7 @@ export function EventFeedCard({ post }: { post: FeedPost }) {
   return (
     <div className="-m-6 mb-0 rounded-t-2xl border-b border-neutral-100 bg-white p-6">
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-[#2A2FFF]/10 px-2.5 py-0.5 text-xs font-semibold text-[#2A2FFF]">
+        <span className="rounded-full bg-yunicity-primary/10 px-2.5 py-0.5 text-xs font-semibold text-yunicity-primary">
           {EVENT_FEED_BADGE}
         </span>
         {typeLabel ? <span className="text-xs text-neutral-500">{typeLabel}</span> : null}
@@ -37,7 +37,7 @@ export function EventFeedCard({ post }: { post: FeedPost }) {
       <p className="text-sm text-neutral-500">{where}</p>
       <Link
         href={`/events/${meta.local_event_id}`}
-        className="mt-4 inline-flex text-sm font-medium text-[#2A2FFF] underline-offset-2 hover:underline"
+        className="mt-4 inline-flex text-sm font-medium text-yunicity-primary underline-offset-2 hover:underline"
       >
         Découvrir ce moment
       </Link>

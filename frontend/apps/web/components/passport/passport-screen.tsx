@@ -16,6 +16,7 @@ import {
   formatStampDisplayLine,
   formatStampSubtitle,
   maskQrToken,
+  PASSPORT_CITIZEN_OFFERS_EMPTY,
   PASSPORT_STAMPS_EMPTY,
   PASSPORT_STAMPS_SECTION_TITLE,
 } from "@yunicity/utils";
@@ -57,7 +58,7 @@ function PassportStampsList({
               className="flex gap-3 rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm"
             >
               <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#2A2FFF] text-[#2A2FFF]"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-yunicity-primary text-yunicity-primary"
                 aria-hidden
               >
                 {stamp.kind === "memory" ? "◇" : "✦"}
@@ -97,7 +98,7 @@ function PassportOffersList({
       {isLoading ? (
         <p className="mt-2 text-sm text-neutral-500">Chargement…</p>
       ) : offers.length === 0 ? (
-        <p className="mt-2 text-sm text-neutral-500">Aucune offre disponible.</p>
+        <p className="mt-2 text-sm text-neutral-500">{PASSPORT_CITIZEN_OFFERS_EMPTY}</p>
       ) : (
         <ul className="mt-2 space-y-3">
           {offers.map((offer) => (
@@ -164,7 +165,7 @@ export function PassportScreen() {
           Territoire · Identité
         </p>
         <h2 className="mt-2 text-2xl font-bold text-neutral-900">
-          Active ton passeport Yunicity
+          Activez votre passeport Yunicity
         </h2>
         <p className="mt-2 text-neutral-600">
           Identité citoyenne locale, tampons et offres partenaires vérifiées — sans paiement.
@@ -176,7 +177,7 @@ export function PassportScreen() {
           disabled={isActivating}
           className={`mt-6 ${yunicityBtnPrimaryLg} disabled:opacity-60`}
         >
-          {isActivating ? "Activation…" : "Activer mon passeport Yunicity"}
+          {isActivating ? "Activation…" : "Activer mon passeport"}
         </button>
       </Card>
     );

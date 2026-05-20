@@ -20,10 +20,10 @@ function EventListCard({ event }: { event: LocalEvent }) {
   return (
     <Link
       href={`/events/${event.id}`}
-      className="block rounded-xl border border-neutral-200 bg-white p-5 shadow-sm transition hover:border-[#2A2FFF]/30"
+      className="block rounded-xl border border-neutral-200 bg-white p-5 shadow-sm transition hover:border-yunicity-primary/30"
     >
       {typeLabel ? (
-        <p className="text-xs font-medium uppercase tracking-wide text-[#2A2FFF]">{typeLabel}</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-yunicity-primary">{typeLabel}</p>
       ) : null}
       <h2 className="mt-1 text-lg font-semibold text-neutral-900">{event.title}</h2>
       <p className="mt-2 text-sm text-neutral-600">
@@ -68,7 +68,9 @@ export function EventsScreen() {
       contentWidth="wide"
       context={
         <aside className="space-y-4 text-sm text-neutral-600">
-          <p className="font-semibold text-neutral-900">Cette semaine à Reims</p>
+          <p className="font-semibold text-neutral-900">
+            Cette semaine à {user?.city ?? "Reims"}
+          </p>
           <p>Moments locaux à découvrir, sans pression ni compteur viral.</p>
           <p className="text-neutral-500">Découvertes proches de chez vous.</p>
         </aside>
@@ -79,7 +81,18 @@ export function EventsScreen() {
         <p className="mt-2 text-neutral-600">{EVENTS_PAGE_SUBTITLE}</p>
       </header>
       {loading ? <p className="text-neutral-500">Chargement…</p> : null}
-      {error ? <p className="text-red-600">{error}</p> : null}
+      {error ? (
+        <div className="mb-6 space-y-3">
+          <p className="text-sm text-red-600">{error}</p>
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="rounded-full bg-yunicity-primary px-4 py-2 text-sm font-medium text-white"
+          >
+            Réessayer
+          </button>
+        </div>
+      ) : null}
       {!loading && !error && events.length === 0 ? (
         <p className="text-neutral-500">{EVENTS_EMPTY}</p>
       ) : null}

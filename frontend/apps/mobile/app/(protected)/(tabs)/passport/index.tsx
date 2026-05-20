@@ -8,6 +8,7 @@ import { usePassport } from "@/hooks/use-passport";
 import { usePassportOffers } from "@/hooks/use-passport-offers";
 import { usePassportStamps } from "@/hooks/use-passport-stamps";
 import {
+  PASSPORT_CITIZEN_OFFERS_EMPTY,
   PASSPORT_STAMPS_EMPTY,
   PASSPORT_STAMPS_SECTION_TITLE,
 } from "@yunicity/utils";
@@ -130,7 +131,7 @@ export default function PassportScreen() {
               <Text style={styles.sectionError}>{offersError}</Text>
             ) : offers.length === 0 ? (
               <Text style={styles.empty}>
-                Aucune offre disponible dans ta ville pour le moment.
+                {PASSPORT_CITIZEN_OFFERS_EMPTY}
               </Text>
             ) : (
               offers.map((offer) => (
