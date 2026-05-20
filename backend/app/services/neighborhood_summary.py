@@ -8,7 +8,9 @@ from app.models.post import Post
 from app.schemas.neighborhood import FeedNeighborhoodSummary
 
 
-def neighborhood_summary_from_entity(neighborhood: Neighborhood | None) -> FeedNeighborhoodSummary | None:
+def neighborhood_summary_from_entity(
+    neighborhood: Neighborhood | None,
+) -> FeedNeighborhoodSummary | None:
     if neighborhood is None or not neighborhood.is_active:
         return None
     return FeedNeighborhoodSummary(
