@@ -54,6 +54,7 @@ def test_require_non_production_env_rejects_prod(
 ) -> None:
     monkeypatch.setenv("APP_ENV", "prod")
     monkeypatch.setenv("JWT_SECRET_KEY", _TEST_JWT_SECRET)
+    monkeypatch.setenv("REFRESH_COOKIE_SECURE", "true")
     get_settings.cache_clear()
     settings = get_settings()
 
