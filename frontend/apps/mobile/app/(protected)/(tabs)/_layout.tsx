@@ -26,6 +26,14 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="events"
+        options={{
+          title: "Moments locaux",
+          tabBarLabel: "Moments",
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
         name="passport"
         options={{
           title: "Passport",

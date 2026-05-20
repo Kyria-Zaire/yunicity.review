@@ -4,7 +4,8 @@ export type SocialNotificationType =
   | "POST_LIKED"
   | "POST_COMMENTED"
   | "PASSPORT_LEVEL_UNLOCKED"
-  | "LOCAL_STAMP_EARNED";
+  | "LOCAL_STAMP_EARNED"
+  | "LOCAL_EVENT_PUBLISHED";
 
 export interface UserNotificationItem {
   id: string;

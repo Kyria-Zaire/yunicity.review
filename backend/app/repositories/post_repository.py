@@ -22,11 +22,20 @@ class PostRepository:
         stmt = (
             select(Post)
             .where(Post.id == post_id)
-            .options(selectinload(Post.partner_offer))
+            .options(
+                selectinload(Post.partner_offer),
+                selectinload(Post.local_event),
+            )
         )
         if active_only:
             stmt = stmt.where(Post.is_active.is_(True))
         result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_by_local_event_id(self, event_id: uuid.UUID) -> Post | None:
+        result = await self._session.execute(
+            select(Post).where(Post.local_event_id == event_id)
+        )
         return result.scalar_one_or_none()
 
     async def get_by_partner_offer_id(self, offer_id: uuid.UUID) -> Post | None:
@@ -62,7 +71,10 @@ class PostRepository:
         stmt = (
             select(Post)
             .where(Post.is_active.is_(True))
-            .options(selectinload(Post.partner_offer))
+            .options(
+                selectinload(Post.partner_offer),
+                selectinload(Post.local_event),
+            )
             .order_by(city_priority.desc(), Post.created_at.desc(), Post.id.desc())
             .limit(limit + 1)
         )

@@ -109,6 +109,7 @@ export type {
   FeedListParams,
   FeedListResponse,
   FeedLocation,
+  FeedEventMeta,
   FeedOfferMeta,
   FeedPost,
   FeedPostType,
@@ -116,6 +117,13 @@ export type {
   PostCreatePayload,
   ReportPostPayload,
 } from "./feed";
+
+export type {
+  EventInterestToggleResponse,
+  LocalEvent,
+  LocalEventListResponse,
+  LocalEventOrganization,
+} from "./local-event";
 
 export type {
   ConvertLeadPayload,

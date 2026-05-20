@@ -4,8 +4,28 @@ from __future__ import annotations
 
 from app.core.flash_offer import build_flash_snapshot
 from app.models.post import Post
-from app.schemas.feed import FeedAuthor, FeedLocation, FeedOfferMeta, FeedPostItem
+from app.schemas.feed import (
+    FeedAuthor,
+    FeedEventMeta,
+    FeedLocation,
+    FeedOfferMeta,
+    FeedPostItem,
+)
 from app.schemas.post import PostResponse
+
+
+def _event_meta(post: Post) -> FeedEventMeta | None:
+    if post.local_event_id is None or post.local_event is None:
+        return None
+    event = post.local_event
+    return FeedEventMeta(
+        local_event_id=post.local_event_id,
+        starts_at=event.starts_at,
+        ends_at=event.ends_at,
+        location_name=event.location_name,
+        district=event.district,
+        event_type=event.event_type,
+    )
 
 
 def _offer_meta(post: Post) -> FeedOfferMeta | None:
@@ -51,6 +71,7 @@ def to_feed_item(
         comment_count=post.comment_count,
         liked_by_me=liked_by_me,
         offer=_offer_meta(post),
+        event=_event_meta(post),
         created_at=post.created_at,
         updated_at=post.updated_at,
     )
@@ -76,6 +97,7 @@ def to_post_response(
         is_active=post.is_active,
         liked_by_me=liked_by_me,
         offer=_offer_meta(post),
+        event=_event_meta(post),
         created_at=post.created_at,
         updated_at=post.updated_at,
     )

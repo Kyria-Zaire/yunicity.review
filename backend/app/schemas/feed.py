@@ -34,6 +34,15 @@ class FeedOfferMeta(BaseModel):
     remaining_minutes: int | None = None
 
 
+class FeedEventMeta(BaseModel):
+    local_event_id: uuid.UUID
+    starts_at: datetime
+    ends_at: datetime | None = None
+    location_name: str
+    district: str | None = None
+    event_type: str | None = None
+
+
 class FeedPostItem(BaseModel):
     id: uuid.UUID
     type: str
@@ -47,6 +56,7 @@ class FeedPostItem(BaseModel):
     comment_count: int
     liked_by_me: bool
     offer: FeedOfferMeta | None = None
+    event: FeedEventMeta | None = None
     created_at: datetime
     updated_at: datetime
 

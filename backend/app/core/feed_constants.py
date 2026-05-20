@@ -16,6 +16,7 @@ class PostAuthorType(StrEnum):
 class PostType(StrEnum):
     POST = "post"
     OFFER = "offer"
+    EVENT = "event"
 
 
 class ReportReason(StrEnum):

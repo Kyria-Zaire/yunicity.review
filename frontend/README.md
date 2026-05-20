@@ -176,6 +176,17 @@ Version minimaliste : même flux activation + carte + listes.
 
 Labels : `packages/utils/src/stamp-labels.ts` · Intention : [`docs/ux/local-stamps-intent.md`](../docs/ux/local-stamps-intent.md)
 
+## Événements locaux (TICKET-505)
+
+Intention : [`docs/ux/local-events-intent.md`](../docs/ux/local-events-intent.md) · Labels : `event-labels.ts`
+
+| Surface | Route / composant |
+|---------|-------------------|
+| Web liste | `/events` — `EventsScreen`, `WebAppShell` `wide` |
+| Web détail | `/events/[id]` — CTA intérêt |
+| Mobile tab | `/(tabs)/events` |
+| Feed | `EventFeedCard` (`post.type === "event"`) |
+
 ### Hooks
 
 | App | Fichiers |

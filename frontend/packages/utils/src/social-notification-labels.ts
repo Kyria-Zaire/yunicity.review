@@ -22,6 +22,14 @@ export function formatNotificationMessage(
       }
       return "Votre Passport évolue.";
     }
+    case "LOCAL_EVENT_PUBLISHED": {
+      const eventTitle =
+        typeof payload?.event_title === "string" ? payload.event_title : null;
+      if (eventTitle) {
+        return `Votre événement « ${eventTitle} » est visible sur le territoire.`;
+      }
+      return "Un nouvel événement local est disponible.";
+    }
     case "LOCAL_STAMP_EARNED": {
       const stampTitle =
         typeof payload?.stamp_title === "string" ? payload.stamp_title : null;

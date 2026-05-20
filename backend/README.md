@@ -616,6 +616,25 @@ Tests : `tests/test_local_stamps.py`
 
 Exclusions : achievements, streaks, leaderboard, farming, NFT.
 
+## Événements locaux — city moments (TICKET-505)
+
+Intention UX : [`docs/ux/local-events-intent.md`](../docs/ux/local-events-intent.md) · Produit : [`docs/product/local-events.md`](../docs/product/local-events.md).
+
+| Table | Rôle |
+|-------|------|
+| `local_events` | Moments locaux (modération, lieu, dates) |
+| `event_interests` | Intérêt citoyen (sauvegarde / « je suis intéressé ») |
+
+Modération : `pending_review` → `approved` \| `rejected` — auto-approval si org `verified`.
+
+API : `GET /events`, `GET /events/{id}`, `POST /events/{id}/interest`, `GET /events/me/saved`, partenaire `/organizations/me/events`, admin `/admin/local-events`.
+
+Feed : `PostType.EVENT` + `FeedEventSyncService` à l’approbation.
+
+Tests : `tests/test_local_events.py`
+
+Exclusions : billetterie, paiement, trending, présence temps réel.
+
 ### TODO futur (hors scope)
 
 - Web Push, inbox, analytics, segmentation marketing

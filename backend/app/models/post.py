@@ -14,6 +14,7 @@ from app.models._mixins import TimestampMixin
 if TYPE_CHECKING:
     from app.models.comment import Comment
     from app.models.like import Like
+    from app.models.local_event import LocalEvent
     from app.models.passport import PartnerOffer
     from app.models.report import Report
 
@@ -49,10 +50,20 @@ class Post(TimestampMixin, Base):
         nullable=True,
         unique=True,
     )
+    local_event_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("local_events.id", ondelete="SET NULL"),
+        nullable=True,
+        unique=True,
+    )
 
     partner_offer: Mapped[PartnerOffer | None] = relationship(
         "PartnerOffer",
         foreign_keys=[partner_offer_id],
+    )
+    local_event: Mapped[LocalEvent | None] = relationship(
+        "LocalEvent",
+        foreign_keys=[local_event_id],
     )
     likes: Mapped[list[Like]] = relationship(
         "Like",

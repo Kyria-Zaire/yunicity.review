@@ -9,7 +9,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.core.feed_constants import COMMENT_BODY_MAX_LENGTH, POST_BODY_MAX_LENGTH
-from app.schemas.feed import FeedAuthor, FeedLocation, FeedOfferMeta
+from app.schemas.feed import FeedAuthor, FeedEventMeta, FeedLocation, FeedOfferMeta
 
 PostAuthorTypeLiteral = Literal["citizen", "organization"]
 
@@ -72,6 +72,7 @@ class PostResponse(BaseModel):
     is_active: bool
     liked_by_me: bool
     offer: FeedOfferMeta | None = None
+    event: FeedEventMeta | None = None
     created_at: datetime
     updated_at: datetime
 

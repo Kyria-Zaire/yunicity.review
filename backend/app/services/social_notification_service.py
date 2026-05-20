@@ -45,6 +45,7 @@ _PUSH_BODIES: dict[SocialNotificationType, str] = {
     SocialNotificationType.POST_COMMENTED: "{actor_name} a commenté votre publication.",
     SocialNotificationType.PASSPORT_LEVEL_UNLOCKED: "Votre Passport évolue.",
     SocialNotificationType.LOCAL_STAMP_EARNED: "Nouveau souvenir ajouté à votre Passport.",
+    SocialNotificationType.LOCAL_EVENT_PUBLISHED: "Votre événement local est visible.",
 }
 
 
@@ -210,6 +211,50 @@ class SocialNotificationService:
             logger.warning(
                 "push_notification_failed",
                 extra={"event": "local_stamp_earned", "user_id": str(target_user_id)},
+                exc_info=True,
+            )
+
+    async def notify_local_event_published(
+        self,
+        *,
+        target_user_id: uuid.UUID,
+        event_title: str,
+        city: str,
+    ) -> None:
+        profile = await self._profiles.get_by_user_id(target_user_id)
+        if profile is None:
+            return
+        if not is_notification_enabled(
+            profile.notification_preferences,
+            key=PREFERENCE_KEY_SOCIAL,
+        ):
+            return
+        payload = {
+            "event_title": event_title,
+            "city": city,
+            "category": "events",
+        }
+        row = UserNotification(
+            type=SocialNotificationType.LOCAL_EVENT_PUBLISHED.value,
+            actor_id=None,
+            target_user_id=target_user_id,
+            target_post_id=None,
+            deeplink="/events",
+            payload=payload,
+        )
+        await self._notifications.add(row)
+        await self._session.commit()
+        try:
+            await self._push.send_to_user(
+                target_user_id,
+                title="Yunicity",
+                body="Un nouvel événement local est disponible.",
+                data={"type": "events", "event_title": event_title, "city": city},
+            )
+        except Exception:
+            logger.warning(
+                "push_notification_failed",
+                extra={"event": "local_event_published", "user_id": str(target_user_id)},
                 exc_info=True,
             )
 

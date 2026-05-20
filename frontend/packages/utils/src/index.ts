@@ -45,6 +45,19 @@ export {
   createPassportApi,
   fetchPassportTiersPublic,
 } from "./passport-api";
+export { EventsApi, createEventsApi } from "./events-api";
+export {
+  EVENTS_EMPTY,
+  EVENTS_PAGE_SUBTITLE,
+  EVENTS_PAGE_TITLE,
+  EVENT_FEED_BADGE,
+  EVENT_INTEREST_CTA,
+  EVENT_INTEREST_SAVED,
+  EVENT_TYPE_LABELS,
+  eventTypeLabel,
+  formatEventDateRange,
+  formatEventLocation,
+} from "./event-labels";
 export { ScanApi, createScanApi } from "./scan-api";
 export {
   NotificationsApi,

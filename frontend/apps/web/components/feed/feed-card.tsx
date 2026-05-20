@@ -7,6 +7,7 @@ import { CitizenPostCard } from "@/components/feed/citizen-post-card";
 import { CommentComposer } from "@/components/feed/comment-composer";
 import { CommentList } from "@/components/feed/comment-list";
 import { FeedCardShell } from "@/components/feed/feed-card-shell";
+import { EventFeedCard } from "@/components/events/event-feed-card";
 import { OfferFeedCard } from "@/components/feed/offer-feed-card";
 import { OrganizationPostCard } from "@/components/feed/organization-post-card";
 import { ReportAction } from "@/components/feed/report-action";
@@ -16,6 +17,9 @@ import { useAuth } from "@/lib/auth/auth-provider";
 function FeedCardBody({ post }: { post: FeedPost }) {
   if (post.type === "offer") {
     return <OfferFeedCard post={post} />;
+  }
+  if (post.type === "event") {
+    return <EventFeedCard post={post} />;
   }
   if (post.author.type === "organization") {
     return <OrganizationPostCard post={post} />;
