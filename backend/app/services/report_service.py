@@ -13,6 +13,7 @@ from app.models.user import User
 from app.repositories.post_repository import PostRepository
 from app.repositories.report_repository import ReportRepository
 from app.schemas.post import ReportCreateRequest
+from app.services.tribe_authorization import TribeAuthorizationService
 
 
 class ReportService:
@@ -34,6 +35,7 @@ class ReportService:
                 code="POST_NOT_FOUND",
                 detail="Publication introuvable.",
             )
+        await TribeAuthorizationService(self._session).require_can_interact_with_post(post, user)
         existing = await self._reports.get_pending_by_user_and_post(
             user_id=user.id,
             post_id=post_id,

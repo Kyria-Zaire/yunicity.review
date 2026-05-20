@@ -159,32 +159,48 @@ class NeighborhoodContextService:
         ]
 
     async def _count_events(self, neighborhood_id: uuid.UUID, *, now: datetime) -> int:
-        stmt = select(func.count()).select_from(LocalEvent).where(
-            LocalEvent.neighborhood_id == neighborhood_id,
-            LocalEvent.moderation_status == LocalEventModerationStatus.APPROVED.value,
-            LocalEvent.is_cancelled.is_(False),
-            LocalEvent.starts_at >= now,
+        stmt = (
+            select(func.count())
+            .select_from(LocalEvent)
+            .where(
+                LocalEvent.neighborhood_id == neighborhood_id,
+                LocalEvent.moderation_status == LocalEventModerationStatus.APPROVED.value,
+                LocalEvent.is_cancelled.is_(False),
+                LocalEvent.starts_at >= now,
+            )
         )
         return int((await self._session.execute(stmt)).scalar_one())
 
     async def _count_organizations(self, neighborhood_id: uuid.UUID) -> int:
-        stmt = select(func.count()).select_from(Organization).where(
-            Organization.neighborhood_id == neighborhood_id,
-            Organization.verification_status == VerificationStatus.VERIFIED.value,
+        stmt = (
+            select(func.count())
+            .select_from(Organization)
+            .where(
+                Organization.neighborhood_id == neighborhood_id,
+                Organization.verification_status == VerificationStatus.VERIFIED.value,
+            )
         )
         return int((await self._session.execute(stmt)).scalar_one())
 
     async def _count_offers(self, neighborhood_id: uuid.UUID) -> int:
-        stmt = select(func.count()).select_from(PartnerOffer).where(
-            PartnerOffer.neighborhood_id == neighborhood_id,
-            PartnerOffer.status == PartnerOfferStatus.PUBLISHED.value,
-            PartnerOffer.is_active.is_(True),
+        stmt = (
+            select(func.count())
+            .select_from(PartnerOffer)
+            .where(
+                PartnerOffer.neighborhood_id == neighborhood_id,
+                PartnerOffer.status == PartnerOfferStatus.PUBLISHED.value,
+                PartnerOffer.is_active.is_(True),
+            )
         )
         return int((await self._session.execute(stmt)).scalar_one())
 
     async def _count_posts(self, neighborhood_id: uuid.UUID) -> int:
-        stmt = select(func.count()).select_from(Post).where(
-            Post.neighborhood_id == neighborhood_id,
-            Post.is_active.is_(True),
+        stmt = (
+            select(func.count())
+            .select_from(Post)
+            .where(
+                Post.neighborhood_id == neighborhood_id,
+                Post.is_active.is_(True),
+            )
         )
         return int((await self._session.execute(stmt)).scalar_one())

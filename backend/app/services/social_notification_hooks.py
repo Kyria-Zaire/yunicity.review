@@ -19,6 +19,8 @@ async def notify_post_liked(
     actor_id: uuid.UUID,
     post: Post,
 ) -> None:
+    if post.tribe_id is not None:
+        return
     try:
         await SocialNotificationService(session).notify_post_liked(
             actor_id=actor_id,
@@ -39,6 +41,8 @@ async def notify_post_commented(
     post: Post,
     comment_body: str,
 ) -> None:
+    if post.tribe_id is not None:
+        return
     try:
         await SocialNotificationService(session).notify_post_commented(
             actor_id=actor_id,

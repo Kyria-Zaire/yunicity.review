@@ -52,10 +52,14 @@ class NeighborhoodRepository:
             stmt = stmt.where(Neighborhood.is_active.is_(True))
         if featured_only:
             stmt = stmt.where(Neighborhood.is_featured.is_(True))
-        stmt = stmt.order_by(
-            Neighborhood.is_featured.desc(),
-            Neighborhood.display_name.asc(),
-        ).offset(offset).limit(limit)
+        stmt = (
+            stmt.order_by(
+                Neighborhood.is_featured.desc(),
+                Neighborhood.display_name.asc(),
+            )
+            .offset(offset)
+            .limit(limit)
+        )
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
@@ -66,8 +70,12 @@ class NeighborhoodRepository:
         featured_only: bool,
         active_only: bool,
     ) -> int:
-        stmt = select(func.count()).select_from(Neighborhood).where(
-            func.lower(Neighborhood.city) == city.strip().lower(),
+        stmt = (
+            select(func.count())
+            .select_from(Neighborhood)
+            .where(
+                func.lower(Neighborhood.city) == city.strip().lower(),
+            )
         )
         if active_only:
             stmt = stmt.where(Neighborhood.is_active.is_(True))

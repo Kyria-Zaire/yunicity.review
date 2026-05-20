@@ -64,9 +64,9 @@ def upgrade() -> None:
 
     for code, description in _TIER_DESCRIPTIONS.items():
         op.execute(
-            sa.text(
-                "UPDATE passport_tiers SET description = :desc WHERE code = :code"
-            ).bindparams(desc=description, code=code)
+            sa.text("UPDATE passport_tiers SET description = :desc WHERE code = :code").bindparams(
+                desc=description, code=code
+            )
         )
 
 

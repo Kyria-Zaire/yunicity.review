@@ -132,6 +132,12 @@ class PostService:
 
     async def get_post(self, user: User, post_id: uuid.UUID) -> PostResponse:
         post = await self._posts.get_by_id(post_id, active_only=True)
+        if post is not None and post.tribe_id is not None:
+            raise AppError(
+                status_code=404,
+                code="POST_NOT_FOUND",
+                detail="Publication introuvable.",
+            )
         if post is None:
             raise AppError(
                 status_code=404,

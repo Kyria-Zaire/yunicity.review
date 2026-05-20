@@ -18,6 +18,7 @@ from app.repositories.profile_repository import ProfileRepository
 from app.schemas.post import CommentCreateRequest, CommentListResponse, CommentResponse
 from app.services.rbac_service import RbacService
 from app.services.social_notification_hooks import notify_post_commented
+from app.services.tribe_authorization import TribeAuthorizationService
 
 
 class CommentService:
@@ -30,6 +31,7 @@ class CommentService:
 
     async def list_comments(
         self,
+        viewer: User,
         post_id: uuid.UUID,
         *,
         cursor: str | None,
@@ -42,6 +44,7 @@ class CommentService:
                 code="POST_NOT_FOUND",
                 detail="Publication introuvable.",
             )
+        await TribeAuthorizationService(self._session).require_can_interact_with_post(post, viewer)
         limit = min(limit, FEED_PAGE_SIZE_MAX)
         cursor_created_at = None
         cursor_id = None
@@ -75,6 +78,7 @@ class CommentService:
                 code="POST_NOT_FOUND",
                 detail="Publication introuvable.",
             )
+        await TribeAuthorizationService(self._session).require_can_interact_with_post(post, user)
         comment = Comment(user_id=user.id, post_id=post_id, body=payload.body)
         await self._comments.add(comment)
         await self._posts.increment_comment_count(post_id, 1)

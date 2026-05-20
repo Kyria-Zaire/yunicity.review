@@ -4,6 +4,7 @@ from app.api.v1 import (
     admin_local_events,
     admin_neighborhoods,
     admin_partner_offers,
+    admin_tribes,
     auth,
     comments,
     events,
@@ -18,6 +19,8 @@ from app.api.v1 import (
     profile,
     rbac_validation,
     scan,
+    tribe_invitations,
+    tribes,
     users,
 )
 
@@ -32,6 +35,9 @@ api_router.include_router(admin_local_events.router)
 api_router.include_router(admin_neighborhoods.router)
 api_router.include_router(events.router)
 api_router.include_router(neighborhoods.router)
+api_router.include_router(tribes.router)
+api_router.include_router(tribe_invitations.router)
+api_router.include_router(admin_tribes.router)
 api_router.include_router(passport.router)
 api_router.include_router(notifications.router)
 api_router.include_router(users.router)

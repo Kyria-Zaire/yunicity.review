@@ -63,9 +63,7 @@ async def update_organization_event(
     current_user: Annotated[User, Depends(require_authenticated_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> LocalEventManagementResponse:
-    return await LocalEventService(session).update_for_organization(
-        current_user, event_id, payload
-    )
+    return await LocalEventService(session).update_for_organization(current_user, event_id, payload)
 
 
 @router.post("/events/{event_id}/submit", response_model=LocalEventManagementResponse)

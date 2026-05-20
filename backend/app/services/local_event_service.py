@@ -71,9 +71,7 @@ class LocalEventService:
             interested_ids = await self._events.interest_event_ids_for_user(
                 user.id, [e.id for e in rows]
             )
-        items = [
-            self._to_response(e, interested_by_me=e.id in interested_ids) for e in rows
-        ]
+        items = [self._to_response(e, interested_by_me=e.id in interested_ids) for e in rows]
         return LocalEventListResponse(
             items=items,
             total=len(items),
@@ -81,9 +79,7 @@ class LocalEventService:
             page_size=page_size,
         )
 
-    async def get_public(
-        self, event_id: uuid.UUID, user: User | None
-    ) -> LocalEventResponse:
+    async def get_public(self, event_id: uuid.UUID, user: User | None) -> LocalEventResponse:
         event = await self._require_public_event(event_id)
         interested = False
         if user:
@@ -101,18 +97,14 @@ class LocalEventService:
             page_size=limit,
         )
 
-    async def toggle_interest(
-        self, user: User, event_id: uuid.UUID
-    ) -> EventInterestToggleResponse:
+    async def toggle_interest(self, user: User, event_id: uuid.UUID) -> EventInterestToggleResponse:
         event = await self._require_public_event(event_id)
         existing = await self._events.get_interest(user_id=user.id, event_id=event.id)
         if existing is not None:
             await self._events.delete_interest(existing)
             await self._session.commit()
             return EventInterestToggleResponse(event_id=event.id, interested=False)
-        await self._events.add_interest(
-            EventInterest(user_id=user.id, event_id=event.id)
-        )
+        await self._events.add_interest(EventInterest(user_id=user.id, event_id=event.id))
         await self._session.commit()
         logger.info(
             "event_interest_added",
@@ -375,9 +367,7 @@ class LocalEventService:
         self, event: LocalEvent, *, interested_by_me: bool = False
     ) -> LocalEventResponse:
         org = event.organization
-        org_summary = (
-            LocalEventOrganizationSummary.model_validate(org) if org is not None else None
-        )
+        org_summary = LocalEventOrganizationSummary.model_validate(org) if org is not None else None
         return LocalEventResponse(
             id=event.id,
             organization_id=event.organization_id,

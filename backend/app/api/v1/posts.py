@@ -87,12 +87,14 @@ async def unlike_post(
 @router.get("/{post_id}/comments", response_model=CommentListResponse)
 async def list_comments(
     post_id: uuid.UUID,
-    _current_user: Annotated[User, Depends(require_authenticated_user)],
+    current_user: Annotated[User, Depends(require_authenticated_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
     cursor: str | None = None,
     limit: int = Query(default=FEED_PAGE_SIZE_DEFAULT, ge=1, le=FEED_PAGE_SIZE_MAX),
 ) -> CommentListResponse:
-    return await CommentService(session).list_comments(post_id, cursor=cursor, limit=limit)
+    return await CommentService(session).list_comments(
+        current_user, post_id, cursor=cursor, limit=limit
+    )
 
 
 @router.post(

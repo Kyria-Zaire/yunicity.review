@@ -24,6 +24,7 @@ from app.models.push_subscription import PushSubscription
 from app.models.rbac import Permission, Role, RolePermission, UserRole
 from app.models.refresh_token import RefreshToken
 from app.models.report import Report
+from app.models.tribe import Tribe, TribeInvitation, TribeMember, TribeModerationLog
 from app.models.user import User
 from app.models.user_notification import UserNotification
 from app.models.user_profile import ProfileVisibility, UserProfile
@@ -42,6 +43,10 @@ __all__ = [
     "StampDefinition",
     "Post",
     "Report",
+    "Tribe",
+    "TribeInvitation",
+    "TribeMember",
+    "TribeModerationLog",
     "PushSubscription",
     "PartnerOffer",
     "Passport",

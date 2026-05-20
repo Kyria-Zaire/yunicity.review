@@ -31,9 +31,7 @@ async def test_reims_neighborhood_seed_idempotent(auth_client: AsyncClient) -> N
         await session.commit()
         count = (
             await session.execute(
-                select(func.count())
-                .select_from(Neighborhood)
-                .where(Neighborhood.city == "Reims")
+                select(func.count()).select_from(Neighborhood).where(Neighborhood.city == "Reims")
             )
         ).scalar_one()
     assert count >= len(REIMS_NEIGHBORHOOD_SEED)

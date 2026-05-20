@@ -159,9 +159,7 @@ def upgrade() -> None:
     op.create_index(
         "ix_organization_members_user_id", "organization_members", ["user_id"], unique=False
     )
-    op.create_index(
-        "ix_organization_members_role", "organization_members", ["role"], unique=False
-    )
+    op.create_index("ix_organization_members_role", "organization_members", ["role"], unique=False)
     op.create_index(
         "uq_organization_members_one_active_owner",
         "organization_members",
@@ -238,14 +236,10 @@ def downgrade() -> None:
     )
     op.drop_table("organization_verifications")
 
-    op.drop_index(
-        "uq_organization_members_one_active_owner", table_name="organization_members"
-    )
+    op.drop_index("uq_organization_members_one_active_owner", table_name="organization_members")
     op.drop_index("ix_organization_members_role", table_name="organization_members")
     op.drop_index("ix_organization_members_user_id", table_name="organization_members")
-    op.drop_index(
-        "ix_organization_members_organization_id", table_name="organization_members"
-    )
+    op.drop_index("ix_organization_members_organization_id", table_name="organization_members")
     op.drop_table("organization_members")
 
     op.drop_index("ix_organizations_created_by_user_id", table_name="organizations")

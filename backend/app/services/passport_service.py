@@ -141,9 +141,7 @@ class PassportService:
             organization_id=stamp.organization_id,
             stamp_source=stamp.stamp_source,
             stamped_at=stamp.stamped_at,
-            organization=PassportStampOrganizationSummary.model_validate(org)
-            if org
-            else None,
+            organization=PassportStampOrganizationSummary.model_validate(org) if org else None,
         )
 
     @staticmethod
@@ -153,11 +151,7 @@ class PassportService:
         description = definition.description if definition else None
         icon = definition.icon if definition else "seal"
         slug = definition.slug if definition else None
-        human = (
-            LocalStampService.human_line(stamp, definition)
-            if definition
-            else title
-        )
+        human = LocalStampService.human_line(stamp, definition) if definition else title
         org = stamp.organization
         org_summary = (
             PassportStampOrganizationSummary.model_validate(org) if org is not None else None
@@ -273,9 +267,7 @@ class PassportService:
             await self._session.commit()
             await self._session.refresh(created)
             for stamp in new_local:
-                await LocalStampService(self._session).notify_stamp_earned(
-                    passport.user_id, stamp
-                )
+                await LocalStampService(self._session).notify_stamp_earned(passport.user_id, stamp)
         except IntegrityError as exc:
             await self._session.rollback()
             raise AppError(
@@ -315,9 +307,7 @@ class PassportService:
                 code="PASSPORT_TIER_MISSING",
                 detail="Tier Passport manquant.",
             )
-        tier_code = (
-            tier.code.value if isinstance(tier.code, PassportTierCode) else str(tier.code)
-        )
+        tier_code = tier.code.value if isinstance(tier.code, PassportTierCode) else str(tier.code)
         posts_count = await self._posts.count_citizen_posts_for_user(user.id)
         score = PassportLevelService.compute_reputation_score(
             passport, user, posts_count=posts_count
@@ -373,4 +363,3 @@ class PassportService:
         if required is None:
             return True
         return required == tier_code
-

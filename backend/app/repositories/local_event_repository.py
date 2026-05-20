@@ -135,9 +135,7 @@ class LocalEventRepository:
         await self._session.delete(interest)
         await self._session.flush()
 
-    async def list_saved_for_user(
-        self, user_id: uuid.UUID, *, limit: int
-    ) -> list[LocalEvent]:
+    async def list_saved_for_user(self, user_id: uuid.UUID, *, limit: int) -> list[LocalEvent]:
         result = await self._session.execute(
             select(LocalEvent)
             .join(EventInterest, EventInterest.event_id == LocalEvent.id)

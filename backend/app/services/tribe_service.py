@@ -1,0 +1,474 @@
+"""Tribe catalog and membership (TICKET-A.2)."""
+
+from __future__ import annotations
+
+import hashlib
+import re
+import secrets
+import uuid
+from datetime import UTC, datetime, timedelta
+
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.errors import AppError
+from app.core.tribe_constants import (
+    TRIBE_CATEGORIES,
+    TRIBE_CHARTER_VERSION,
+    TRIBE_INVITATION_TTL_DAYS,
+    TRIBE_PERSISTENCE_KINDS,
+    TRIBE_VISIBILITYS,
+    TribeMemberRole,
+    TribeModerationAction,
+    TribeVisibility,
+)
+from app.models.tribe import Tribe, TribeInvitation, TribeMember
+from app.models.user import User
+from app.repositories.tribe_invitation_repository import TribeInvitationRepository
+from app.repositories.tribe_member_repository import TribeMemberRepository
+from app.repositories.tribe_repository import TribeRepository
+from app.schemas.tribe import (
+    TribeCreateRequest,
+    TribeInvitationCreateResponse,
+    TribeListResponse,
+    TribeMemberListResponse,
+    TribeMemberResponse,
+    TribeMemberRoleUpdateRequest,
+    TribeResponse,
+    TribeUpdateRequest,
+    clamp_list_page_size,
+)
+from app.services.tribe_authorization import TribeAuthorizationService
+from app.services.tribe_moderation_log_service import TribeModerationLogService
+from app.services.tribe_notification_hooks import (
+    notify_tribe_invitation_accepted,
+)
+
+_SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+
+
+class TribeService:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+        self._tribes = TribeRepository(session)
+        self._members = TribeMemberRepository(session)
+        self._invitations = TribeInvitationRepository(session)
+        self._authz = TribeAuthorizationService(session)
+        self._audit = TribeModerationLogService(session)
+
+    async def list_public(
+        self,
+        *,
+        city: str,
+        featured_only: bool,
+        page: int,
+        page_size: int,
+        viewer: User | None,
+    ) -> TribeListResponse:
+        page_size = clamp_list_page_size(page_size)
+        offset = (max(page, 1) - 1) * page_size
+        rows, total = await self._tribes.list_public(
+            city=city,
+            featured_only=featured_only,
+            offset=offset,
+            limit=page_size,
+        )
+        items = [await self._to_response(row, viewer) for row in rows]
+        return TribeListResponse(items=items, total=total, page=page, page_size=page_size)
+
+    async def get_by_slug(self, *, city: str, slug: str, viewer: User | None) -> TribeResponse:
+        tribe = await self._authz.require_active_tribe(city, slug)
+        return await self._to_response(tribe, viewer)
+
+    async def create(self, actor: User, payload: TribeCreateRequest) -> TribeResponse:
+        await self._authz.require_staff(actor)
+        self._validate_create(payload)
+        slug = payload.slug.strip().lower()
+        now = datetime.now(UTC)
+        tribe = Tribe(
+            slug=slug,
+            name=payload.name.strip(),
+            description=payload.description.strip(),
+            city=payload.city.strip(),
+            category=payload.category,
+            visibility=payload.visibility,
+            persistence_kind=payload.persistence_kind,
+            cover_image_url=payload.cover_image_url,
+            created_by_user_id=actor.id,
+            organization_id=payload.organization_id,
+            charter_version=TRIBE_CHARTER_VERSION,
+            member_limit=payload.member_limit,
+            is_featured=payload.is_featured,
+        )
+        try:
+            await self._tribes.add(tribe)
+            await self._members.add(
+                TribeMember(
+                    tribe_id=tribe.id,
+                    user_id=actor.id,
+                    role=TribeMemberRole.OWNER.value,
+                    joined_at=now,
+                    charter_accepted_at=now,
+                )
+            )
+            await self._session.commit()
+            await self._session.refresh(tribe)
+        except IntegrityError as exc:
+            await self._session.rollback()
+            raise AppError(
+                status_code=409,
+                code="TRIBE_ALREADY_EXISTS",
+                detail="Une tribu avec ce slug existe déjà dans cette ville.",
+            ) from exc
+        return await self._to_response(tribe, actor)
+
+    async def update(
+        self,
+        actor: User,
+        *,
+        city: str,
+        slug: str,
+        payload: TribeUpdateRequest,
+    ) -> TribeResponse:
+        tribe = await self._authz.require_active_tribe(city, slug)
+        await self._authz.require_role_at_least(tribe, actor, min_role=TribeMemberRole.OWNER)
+        if payload.name is not None:
+            tribe.name = payload.name.strip()
+        if payload.description is not None:
+            tribe.description = payload.description.strip()
+        if payload.cover_image_url is not None:
+            tribe.cover_image_url = payload.cover_image_url
+        if payload.is_featured is not None:
+            tribe.is_featured = payload.is_featured
+        if payload.member_limit is not None:
+            tribe.member_limit = payload.member_limit
+        await self._session.commit()
+        await self._session.refresh(tribe)
+        return await self._to_response(tribe, actor)
+
+    async def archive(self, actor: User, *, city: str, slug: str) -> TribeResponse:
+        tribe = await self._authz.require_active_tribe(city, slug)
+        is_staff = await self._authz.is_staff(actor.id)
+        if not is_staff:
+            await self._authz.require_role_at_least(tribe, actor, min_role=TribeMemberRole.OWNER)
+        tribe.archived_at = datetime.now(UTC)
+        await self._audit.log(
+            tribe_id=tribe.id,
+            actor_user_id=actor.id,
+            action=TribeModerationAction.ARCHIVE_TRIBE.value,
+        )
+        await self._session.commit()
+        await self._session.refresh(tribe)
+        return await self._to_response(tribe, actor)
+
+    async def join(
+        self, user: User, *, city: str, slug: str, charter_accepted: bool
+    ) -> TribeMemberResponse:
+        if not charter_accepted:
+            raise AppError(
+                status_code=422,
+                code="CHARTER_REQUIRED",
+                detail="Vous devez accepter la charte de la tribu.",
+            )
+        tribe = await self._authz.require_active_tribe(city, slug)
+        if tribe.visibility != TribeVisibility.PUBLIC.value:
+            raise AppError(
+                status_code=403,
+                code="TRIBE_INVITE_REQUIRED",
+                detail="Cette tribu est accessible sur invitation uniquement.",
+            )
+        return await self._add_member(user, tribe, invited_by=None)
+
+    async def leave(self, user: User, *, city: str, slug: str) -> None:
+        tribe = await self._authz.require_active_tribe(city, slug)
+        member = await self._authz.require_active_member(tribe, user)
+        if member.role == TribeMemberRole.OWNER.value:
+            owner_count = await self._count_active_owners(tribe.id)
+            if owner_count <= 1:
+                raise AppError(
+                    status_code=409,
+                    code="TRIBE_OWNER_CANNOT_LEAVE",
+                    detail=("Transférez la responsabilité ou archivez la tribu avant de partir."),
+                )
+        member.left_at = datetime.now(UTC)
+        await self._session.commit()
+
+    async def list_members(
+        self,
+        actor: User,
+        *,
+        city: str,
+        slug: str,
+        page: int,
+        page_size: int,
+    ) -> TribeMemberListResponse:
+        tribe = await self._authz.require_active_tribe(city, slug)
+        await self._authz.require_active_member(tribe, actor)
+        page_size = clamp_list_page_size(page_size)
+        offset = (max(page, 1) - 1) * page_size
+        rows = await self._members.list_active_members(tribe.id, offset=offset, limit=page_size)
+        total = await self._members.count_active_members(tribe.id)
+        return TribeMemberListResponse(
+            items=[
+                TribeMemberResponse(user_id=row.user_id, role=row.role, joined_at=row.joined_at)
+                for row in rows
+            ],
+            total=total,
+            page=page,
+            page_size=page_size,
+        )
+
+    async def update_member_role(
+        self,
+        actor: User,
+        *,
+        city: str,
+        slug: str,
+        target_user_id: uuid.UUID,
+        payload: TribeMemberRoleUpdateRequest,
+    ) -> TribeMemberResponse:
+        tribe = await self._authz.require_active_tribe(city, slug)
+        await self._authz.require_role_at_least(tribe, actor, min_role=TribeMemberRole.OWNER)
+        if payload.role not in (
+            TribeMemberRole.MEMBER.value,
+            TribeMemberRole.MODERATOR.value,
+        ):
+            raise AppError(
+                status_code=422,
+                code="INVALID_ROLE",
+                detail="Rôle invalide.",
+            )
+        target = await self._members.get_active_membership(tribe.id, target_user_id)
+        if target is None:
+            raise AppError(
+                status_code=404,
+                code="TRIBE_MEMBER_NOT_FOUND",
+                detail="Membre introuvable.",
+            )
+        if target.role == TribeMemberRole.OWNER.value:
+            raise AppError(
+                status_code=409,
+                code="TRIBE_OWNER_ROLE_FIXED",
+                detail="Le rôle du propriétaire ne peut pas être modifié ainsi.",
+            )
+        target.role = payload.role
+        await self._audit.log(
+            tribe_id=tribe.id,
+            actor_user_id=actor.id,
+            action=TribeModerationAction.CHANGE_ROLE.value,
+            target_user_id=target_user_id,
+            detail=payload.role,
+        )
+        await self._session.commit()
+        return TribeMemberResponse(
+            user_id=target.user_id, role=target.role, joined_at=target.joined_at
+        )
+
+    async def remove_member(
+        self,
+        actor: User,
+        *,
+        city: str,
+        slug: str,
+        target_user_id: uuid.UUID,
+    ) -> None:
+        tribe = await self._authz.require_active_tribe(city, slug)
+        await self._authz.require_role_at_least(tribe, actor, min_role=TribeMemberRole.MODERATOR)
+        target = await self._members.get_active_membership(tribe.id, target_user_id)
+        if target is None:
+            return
+        if target.role == TribeMemberRole.OWNER.value:
+            raise AppError(
+                status_code=409,
+                code="TRIBE_CANNOT_EXCLUDE_OWNER",
+                detail="Le propriétaire ne peut pas être exclu.",
+            )
+        target.left_at = datetime.now(UTC)
+        await self._audit.log(
+            tribe_id=tribe.id,
+            actor_user_id=actor.id,
+            action=TribeModerationAction.EXCLUDE_MEMBER.value,
+            target_user_id=target_user_id,
+        )
+        await self._session.commit()
+
+    async def create_invitation(
+        self, actor: User, *, city: str, slug: str
+    ) -> TribeInvitationCreateResponse:
+        tribe = await self._authz.require_active_tribe(city, slug)
+        await self._authz.require_role_at_least(tribe, actor, min_role=TribeMemberRole.MODERATOR)
+        token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+        now = datetime.now(UTC)
+        invitation = TribeInvitation(
+            tribe_id=tribe.id,
+            token_hash=token_hash,
+            invited_by=actor.id,
+            expires_at=now + timedelta(days=TRIBE_INVITATION_TTL_DAYS),
+            created_at=now,
+        )
+        await self._invitations.add(invitation)
+        await self._session.commit()
+        return TribeInvitationCreateResponse(token=token, expires_at=invitation.expires_at)
+
+    async def accept_invitation(
+        self, user: User, *, token: str, charter_accepted: bool
+    ) -> TribeMemberResponse:
+        if not charter_accepted:
+            raise AppError(
+                status_code=422,
+                code="CHARTER_REQUIRED",
+                detail="Vous devez accepter la charte de la tribu.",
+            )
+        token_hash = hashlib.sha256(token.strip().encode()).hexdigest()
+        invitation = await self._invitations.get_by_token_hash(token_hash)
+        if invitation is None or not TribeInvitationRepository.is_usable(invitation):
+            raise AppError(
+                status_code=404,
+                code="INVITATION_INVALID",
+                detail="Invitation invalide ou expirée.",
+            )
+        tribe = await self._tribes.get_by_id(invitation.tribe_id)
+        if tribe is None or tribe.archived_at is not None:
+            raise AppError(
+                status_code=404,
+                code="TRIBE_NOT_FOUND",
+                detail="Cette tribu n'est pas disponible.",
+            )
+        member = await self._add_member(user, tribe, invited_by=invitation.invited_by)
+        invitation.accepted_at = datetime.now(UTC)
+        invitation.accepted_by = user.id
+        inviter_id = invitation.invited_by
+        await self._session.commit()
+        if inviter_id != user.id:
+            await notify_tribe_invitation_accepted(
+                self._session,
+                inviter_user_id=inviter_id,
+                tribe_name=tribe.name,
+                acceptor_name=user.full_name or "Un membre",
+            )
+        return member
+
+    async def _add_member(
+        self,
+        user: User,
+        tribe: Tribe,
+        *,
+        invited_by: uuid.UUID | None,
+    ) -> TribeMemberResponse:
+        existing = await self._members.get_active_membership(tribe.id, user.id)
+        if existing is not None:
+            return TribeMemberResponse(
+                user_id=existing.user_id,
+                role=existing.role,
+                joined_at=existing.joined_at,
+            )
+        if not await self._members.can_rejoin(tribe.id, user.id):
+            raise AppError(
+                status_code=409,
+                code="TRIBE_REJOIN_COOLDOWN",
+                detail="Vous pourrez rejoindre cette tribu plus tard.",
+            )
+        if await self._members.is_at_user_tribe_limit(user.id):
+            raise AppError(
+                status_code=409,
+                code="TRIBE_USER_LIMIT",
+                detail="Vous participez déjà à plusieurs tribus actives.",
+            )
+        if await self._members.is_at_member_limit(tribe.id, tribe.member_limit):
+            raise AppError(
+                status_code=409,
+                code="TRIBE_MEMBER_LIMIT",
+                detail="Cette tribu a atteint sa taille maximale.",
+            )
+        now = datetime.now(UTC)
+        row = await self._members.get_membership(tribe.id, user.id)
+        if row is not None and row.left_at is not None:
+            row.left_at = None
+            row.joined_at = now
+            row.charter_accepted_at = now
+            row.role = TribeMemberRole.MEMBER.value
+            row.invited_by = invited_by
+            member = row
+        else:
+            member = await self._members.add(
+                TribeMember(
+                    tribe_id=tribe.id,
+                    user_id=user.id,
+                    role=TribeMemberRole.MEMBER.value,
+                    joined_at=now,
+                    invited_by=invited_by,
+                    charter_accepted_at=now,
+                )
+            )
+        await self._session.commit()
+        return TribeMemberResponse(
+            user_id=member.user_id, role=member.role, joined_at=member.joined_at
+        )
+
+    async def _to_response(self, tribe: Tribe, viewer: User | None) -> TribeResponse:
+        count = await self._members.count_active_members(tribe.id)
+        viewer_role = None
+        is_member = False
+        if viewer is not None:
+            member = await self._members.get_active_membership(tribe.id, viewer.id)
+            if member is not None:
+                is_member = True
+                viewer_role = member.role
+            elif await self._authz.is_staff(viewer.id):
+                is_member = True
+        return TribeResponse(
+            id=tribe.id,
+            slug=tribe.slug,
+            name=tribe.name,
+            description=tribe.description,
+            city=tribe.city,
+            category=tribe.category,
+            visibility=tribe.visibility,
+            persistence_kind=tribe.persistence_kind,
+            cover_image_url=tribe.cover_image_url,
+            is_featured=tribe.is_featured,
+            member_limit=tribe.member_limit,
+            active_member_count=count,
+            is_archived=tribe.archived_at is not None,
+            viewer_is_member=is_member,
+            viewer_role=viewer_role,
+            created_at=tribe.created_at,
+            updated_at=tribe.updated_at,
+        )
+
+    async def _count_active_owners(self, tribe_id: uuid.UUID) -> int:
+        from sqlalchemy import func, select
+
+        result = await self._session.execute(
+            select(func.count())
+            .select_from(TribeMember)
+            .where(
+                TribeMember.tribe_id == tribe_id,
+                TribeMember.role == TribeMemberRole.OWNER.value,
+                TribeMember.left_at.is_(None),
+            )
+        )
+        return int(result.scalar_one())
+
+    @staticmethod
+    def _validate_create(payload: TribeCreateRequest) -> None:
+        slug = payload.slug.strip().lower()
+        if not _SLUG_PATTERN.match(slug):
+            raise AppError(
+                status_code=422,
+                code="INVALID_TRIBE_SLUG",
+                detail="Slug invalide.",
+            )
+        if payload.category not in TRIBE_CATEGORIES:
+            raise AppError(status_code=422, code="INVALID_CATEGORY", detail="Catégorie invalide.")
+        if payload.visibility not in TRIBE_VISIBILITYS:
+            raise AppError(
+                status_code=422, code="INVALID_VISIBILITY", detail="Visibilité invalide."
+            )
+        if payload.persistence_kind not in TRIBE_PERSISTENCE_KINDS:
+            raise AppError(
+                status_code=422,
+                code="INVALID_PERSISTENCE",
+                detail="Type de persistance invalide.",
+            )

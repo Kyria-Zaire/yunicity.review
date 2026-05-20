@@ -12,6 +12,7 @@ from app.models.like import Like
 from app.repositories.like_repository import LikeRepository
 from app.repositories.post_repository import PostRepository
 from app.services.social_notification_hooks import notify_post_liked
+from app.services.tribe_authorization import TribeAuthorizationService
 
 
 class LikeService:
@@ -28,6 +29,9 @@ class LikeService:
                 code="POST_NOT_FOUND",
                 detail="Publication introuvable.",
             )
+        await TribeAuthorizationService(self._session).require_can_interact_with_post_for_user(
+            post, user_id
+        )
         existing = await self._likes.get(user_id=user_id, post_id=post_id)
         if existing is not None:
             return
@@ -46,6 +50,10 @@ class LikeService:
                 status_code=404,
                 code="POST_NOT_FOUND",
                 detail="Publication introuvable.",
+            )
+        if post.is_active:
+            await TribeAuthorizationService(self._session).require_can_interact_with_post_for_user(
+                post, user_id
             )
         existing = await self._likes.get(user_id=user_id, post_id=post_id)
         if existing is None:

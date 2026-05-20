@@ -41,9 +41,7 @@ async def backfill_local_stamps() -> None:
             select(PassportOfferRedemption)
             .options(
                 selectinload(PassportOfferRedemption.passport),
-                selectinload(PassportOfferRedemption.offer).selectinload(
-                    PartnerOffer.organization
-                ),
+                selectinload(PassportOfferRedemption.offer).selectinload(PartnerOffer.organization),
             )
             .where(PassportOfferRedemption.status == OfferRedemptionStatus.COMPLETED.value)
             .order_by(PassportOfferRedemption.redeemed_at.asc().nulls_last())

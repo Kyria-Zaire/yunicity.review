@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from app.models.neighborhood import Neighborhood
     from app.models.passport import PartnerOffer
     from app.models.report import Report
+    from app.models.tribe import Tribe
 
 
 class Post(TimestampMixin, Base):
@@ -26,6 +27,7 @@ class Post(TimestampMixin, Base):
         Index("ix_posts_city_created_at", "city", "created_at"),
         Index("ix_posts_author", "author_type", "author_id"),
         Index("ix_posts_is_active_created_at", "is_active", "created_at"),
+        Index("ix_posts_tribe_created_at", "tribe_id", "created_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
@@ -63,6 +65,12 @@ class Post(TimestampMixin, Base):
         nullable=True,
         index=True,
     )
+    tribe_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("tribes.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     partner_offer: Mapped[PartnerOffer | None] = relationship(
         "PartnerOffer",
@@ -76,6 +84,7 @@ class Post(TimestampMixin, Base):
         "Neighborhood",
         back_populates="posts",
     )
+    tribe: Mapped[Tribe | None] = relationship("Tribe", back_populates="posts")
     likes: Mapped[list[Like]] = relationship(
         "Like",
         back_populates="post",

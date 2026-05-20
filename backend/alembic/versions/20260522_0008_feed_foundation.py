@@ -55,9 +55,7 @@ def upgrade() -> None:
     op.create_index("ix_posts_is_active_created_at", "posts", ["is_active", "created_at"])
     op.create_index("ix_posts_city", "posts", ["city"])
 
-    op.execute(
-        "ALTER TABLE posts ADD COLUMN location geography(Point, 4326)"
-    )
+    op.execute("ALTER TABLE posts ADD COLUMN location geography(Point, 4326)")
 
     op.create_table(
         "likes",

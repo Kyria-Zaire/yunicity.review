@@ -48,10 +48,7 @@ async def _run_promote_user(email: str, role: str) -> int:
         return 1
 
     if result.created:
-        print(
-            f"OK — rôle {result.role_key} attribué à {result.email} "
-            f"(user_id={result.user_id})"
-        )
+        print(f"OK — rôle {result.role_key} attribué à {result.email} (user_id={result.user_id})")
     else:
         print(
             f"OK — {result.email} avait déjà le rôle {result.role_key} "

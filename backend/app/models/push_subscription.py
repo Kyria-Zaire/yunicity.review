@@ -18,9 +18,7 @@ if TYPE_CHECKING:
 
 class PushSubscription(TimestampMixin, Base):
     __tablename__ = "push_subscriptions"
-    __table_args__ = (
-        Index("ix_push_subscriptions_user_id", "user_id"),
-    )
+    __table_args__ = (Index("ix_push_subscriptions_user_id", "user_id"),)
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(

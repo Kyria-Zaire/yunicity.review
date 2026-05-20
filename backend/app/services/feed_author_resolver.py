@@ -20,14 +20,8 @@ class FeedAuthorResolver:
         self._orgs = OrganizationRepository(session)
 
     async def resolve_posts(self, posts: list[Post]) -> dict[uuid.UUID, FeedAuthor]:
-        citizen_ids = [
-            p.author_id for p in posts if p.author_type == PostAuthorType.CITIZEN.value
-        ]
-        org_ids = [
-            p.author_id
-            for p in posts
-            if p.author_type == PostAuthorType.ORGANIZATION.value
-        ]
+        citizen_ids = [p.author_id for p in posts if p.author_type == PostAuthorType.CITIZEN.value]
+        org_ids = [p.author_id for p in posts if p.author_type == PostAuthorType.ORGANIZATION.value]
         authors: dict[uuid.UUID, FeedAuthor] = {}
 
         for user_id in set(citizen_ids):

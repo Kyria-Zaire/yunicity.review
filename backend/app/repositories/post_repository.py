@@ -36,15 +36,11 @@ class PostRepository:
         return result.scalar_one_or_none()
 
     async def get_by_local_event_id(self, event_id: uuid.UUID) -> Post | None:
-        result = await self._session.execute(
-            select(Post).where(Post.local_event_id == event_id)
-        )
+        result = await self._session.execute(select(Post).where(Post.local_event_id == event_id))
         return result.scalar_one_or_none()
 
     async def get_by_partner_offer_id(self, offer_id: uuid.UUID) -> Post | None:
-        result = await self._session.execute(
-            select(Post).where(Post.partner_offer_id == offer_id)
-        )
+        result = await self._session.execute(select(Post).where(Post.partner_offer_id == offer_id))
         return result.scalar_one_or_none()
 
     async def add(self, post: Post) -> Post:
@@ -71,9 +67,10 @@ class PostRepository:
         cursor_id: uuid.UUID | None,
     ) -> list[Post]:
         city_priority = self._city_priority_expr(user_city)
+        # Global city feed: tribe-scoped posts are never listed (TICKET-A.2 invariant).
         stmt = (
             select(Post)
-            .where(Post.is_active.is_(True))
+            .where(Post.is_active.is_(True), Post.tribe_id.is_(None))
             .options(
                 selectinload(Post.partner_offer).selectinload(PartnerOffer.neighborhood),
                 selectinload(Post.local_event).selectinload(LocalEvent.neighborhood),
@@ -111,6 +108,48 @@ class PostRepository:
         if post is None:
             return
         post.comment_count = max(0, post.comment_count + delta)
+
+    async def list_tribe_posts(
+        self,
+        tribe_id: uuid.UUID,
+        *,
+        limit: int,
+        cursor_created_at: datetime | None,
+        cursor_id: uuid.UUID | None,
+    ) -> list[Post]:
+        stmt = (
+            select(Post)
+            .where(
+                Post.is_active.is_(True),
+                Post.tribe_id == tribe_id,
+            )
+            .order_by(Post.created_at.desc(), Post.id.desc())
+            .limit(limit + 1)
+        )
+        if cursor_created_at is not None and cursor_id is not None:
+            stmt = stmt.where(
+                or_(
+                    Post.created_at < cursor_created_at,
+                    and_(Post.created_at == cursor_created_at, Post.id < cursor_id),
+                )
+            )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_last_tribe_post_at(
+        self, tribe_id: uuid.UUID, author_id: uuid.UUID
+    ) -> datetime | None:
+        result = await self._session.execute(
+            select(Post.created_at)
+            .where(
+                Post.tribe_id == tribe_id,
+                Post.author_id == author_id,
+                Post.author_type == PostAuthorType.CITIZEN.value,
+            )
+            .order_by(Post.created_at.desc())
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
 
     async def count_citizen_posts_for_user(self, user_id: uuid.UUID) -> int:
         result = await self._session.execute(

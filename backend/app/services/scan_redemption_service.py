@@ -288,11 +288,7 @@ class ScanRedemptionService:
         else:
             label = passport.passport_number
         tier = passport.tier
-        tier_code = (
-            PassportTierCode(tier.code)
-            if tier
-            else PassportTierCode.BASIC
-        )
+        tier_code = PassportTierCode(tier.code) if tier else PassportTierCode.BASIC
         return ScanPassportPreview(
             passport_id=passport.id,
             passport_number=passport.passport_number,

@@ -19,16 +19,12 @@ class FeedEventSyncService:
         self._session = session
         self._posts = PostRepository(session)
 
-    async def upsert_event_post(
-        self, event: LocalEvent, organization: Organization | None
-    ) -> Post:
+    async def upsert_event_post(self, event: LocalEvent, organization: Organization | None) -> Post:
         existing = await self._posts.get_by_local_event_id(event.id)
         body = (event.description or event.title).strip()
         author_id = organization.id if organization else event.created_by_user_id
         author_type = (
-            PostAuthorType.ORGANIZATION.value
-            if organization
-            else PostAuthorType.CITIZEN.value
+            PostAuthorType.ORGANIZATION.value if organization else PostAuthorType.CITIZEN.value
         )
         media = event.cover_image_url
         lat = float(event.latitude) if event.latitude is not None else None

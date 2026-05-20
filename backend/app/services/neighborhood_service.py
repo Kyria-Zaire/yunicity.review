@@ -143,8 +143,7 @@ class NeighborhoodService:
                 status_code=422,
                 code="INVALID_NEIGHBORHOOD_SLUG",
                 detail=(
-                    "Le slug doit contenir uniquement des lettres minuscules, "
-                    "chiffres et tirets."
+                    "Le slug doit contenir uniquement des lettres minuscules, chiffres et tirets."
                 ),
             )
 
