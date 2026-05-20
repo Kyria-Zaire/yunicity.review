@@ -28,6 +28,7 @@ from app.db.base import Base
 from app.models._mixins import TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.neighborhood import Neighborhood
     from app.models.organization import Organization
     from app.models.user import User
 
@@ -80,8 +81,17 @@ class LocalEvent(TimestampMixin, Base):
     is_cancelled: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
+    neighborhood_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("neighborhoods.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     organization: Mapped[Organization | None] = relationship("Organization")
+    neighborhood: Mapped[Neighborhood | None] = relationship(
+        "Neighborhood", back_populates="local_events"
+    )
     created_by_user: Mapped[User] = relationship("User", foreign_keys=[created_by_user_id])
     interests: Mapped[list[EventInterest]] = relationship(
         "EventInterest",

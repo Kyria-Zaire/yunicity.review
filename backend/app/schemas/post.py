@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.core.feed_constants import COMMENT_BODY_MAX_LENGTH, POST_BODY_MAX_LENGTH
 from app.schemas.feed import FeedAuthor, FeedEventMeta, FeedLocation, FeedOfferMeta
+from app.schemas.neighborhood import FeedNeighborhoodSummary
 
 PostAuthorTypeLiteral = Literal["citizen", "organization"]
 
@@ -73,6 +74,7 @@ class PostResponse(BaseModel):
     liked_by_me: bool
     offer: FeedOfferMeta | None = None
     event: FeedEventMeta | None = None
+    neighborhood_summary: FeedNeighborhoodSummary | None = None
     created_at: datetime
     updated_at: datetime
 

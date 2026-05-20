@@ -11,6 +11,8 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.elements import ColumnElement
 
 from app.core.feed_constants import PostAuthorType, PostType
+from app.models.local_event import LocalEvent
+from app.models.passport import PartnerOffer
 from app.models.post import Post
 
 
@@ -23,8 +25,9 @@ class PostRepository:
             select(Post)
             .where(Post.id == post_id)
             .options(
-                selectinload(Post.partner_offer),
-                selectinload(Post.local_event),
+                selectinload(Post.partner_offer).selectinload(PartnerOffer.neighborhood),
+                selectinload(Post.local_event).selectinload(LocalEvent.neighborhood),
+                selectinload(Post.neighborhood),
             )
         )
         if active_only:
@@ -72,8 +75,9 @@ class PostRepository:
             select(Post)
             .where(Post.is_active.is_(True))
             .options(
-                selectinload(Post.partner_offer),
-                selectinload(Post.local_event),
+                selectinload(Post.partner_offer).selectinload(PartnerOffer.neighborhood),
+                selectinload(Post.local_event).selectinload(LocalEvent.neighborhood),
+                selectinload(Post.neighborhood),
             )
             .order_by(city_priority.desc(), Post.created_at.desc(), Post.id.desc())
             .limit(limit + 1)

@@ -4,6 +4,7 @@ from app.models.comment import Comment
 from app.models.like import Like
 from app.models.local_event import EventInterest, LocalEvent
 from app.models.local_stamp import CitizenLocalStamp, StampDefinition
+from app.models.neighborhood import Neighborhood
 from app.models.organization import (
     Organization,
     OrganizationMember,
@@ -36,6 +37,7 @@ __all__ = [
     "EventInterest",
     "Like",
     "LocalEvent",
+    "Neighborhood",
     "PartnerLead",
     "StampDefinition",
     "Post",

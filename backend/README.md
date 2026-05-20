@@ -635,6 +635,30 @@ Tests : `tests/test_local_events.py`
 
 Exclusions : billetterie, paiement, trending, présence temps réel.
 
+## Quartiers & territoires (TICKET-602)
+
+Architecture : [`docs/architecture/neighborhood-foundation.md`](../docs/architecture/neighborhood-foundation.md) · Produit : [`docs/product/neighborhoods.md`](../docs/product/neighborhoods.md) · PRD : [`docs/prd/PRD-601-neighborhoods-territorial-identity.md`](../docs/prd/PRD-601-neighborhoods-territorial-identity.md).
+
+| Table | Rôle |
+|-------|------|
+| `neighborhoods` | Catalogue éditorial par ville (slug stable, ambiance, géo optionnelle) |
+
+FK optionnelles : `posts`, `local_events`, `partner_offers`, `organizations` → `neighborhood_id` (nullable, `ON DELETE SET NULL`).
+
+API publique : `GET /neighborhoods?city=Reims`, `GET /neighborhoods/{slug}?city=Reims`, `GET /neighborhoods/{slug}/context?city=Reims`.
+
+API staff : `POST/PATCH/DELETE /admin/neighborhoods` — permissions `moderation.manage` \| `system.admin`. `DELETE` = désactivation.
+
+Feed : `neighborhood_summary` nullable `{ slug, display_name }` sur `FeedPostItem` / `PostResponse`.
+
+Seed Reims (6 quartiers) : inclus dans `python -m app.db.seeds` via `reims_neighborhoods.py`.
+
+Migration : `alembic/versions/20260528_0014_neighborhoods.py`.
+
+Tests : `tests/test_neighborhoods.py`.
+
+Exclusions : groupes quartier, leaderboard territorial, feed autonome par quartier, création libre citoyen.
+
 ### TODO futur (hors scope)
 
 - Web Push, inbox, analytics, segmentation marketing

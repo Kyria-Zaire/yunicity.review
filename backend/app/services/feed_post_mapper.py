@@ -12,6 +12,7 @@ from app.schemas.feed import (
     FeedPostItem,
 )
 from app.schemas.post import PostResponse
+from app.services.neighborhood_summary import resolve_feed_neighborhood_summary
 
 
 def _event_meta(post: Post) -> FeedEventMeta | None:
@@ -72,6 +73,7 @@ def to_feed_item(
         liked_by_me=liked_by_me,
         offer=_offer_meta(post),
         event=_event_meta(post),
+        neighborhood_summary=resolve_feed_neighborhood_summary(post),
         created_at=post.created_at,
         updated_at=post.updated_at,
     )
@@ -98,6 +100,7 @@ def to_post_response(
         liked_by_me=liked_by_me,
         offer=_offer_meta(post),
         event=_event_meta(post),
+        neighborhood_summary=resolve_feed_neighborhood_summary(post),
         created_at=post.created_at,
         updated_at=post.updated_at,
     )

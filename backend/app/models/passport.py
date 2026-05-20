@@ -35,6 +35,7 @@ from app.db.base import Base
 from app.models._mixins import TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.neighborhood import Neighborhood
     from app.models.organization import Organization
     from app.models.user import User
 
@@ -307,9 +308,18 @@ class PartnerOffer(TimestampMixin, Base):
         nullable=False,
         server_default=text("'{}'::jsonb"),
     )
+    neighborhood_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("neighborhoods.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     organization: Mapped[Organization] = relationship(
         "Organization", back_populates="partner_offers"
+    )
+    neighborhood: Mapped[Neighborhood | None] = relationship(
+        "Neighborhood", back_populates="partner_offers"
     )
     redemptions: Mapped[list[PassportOfferRedemption]] = relationship(
         "PassportOfferRedemption",

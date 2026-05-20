@@ -110,6 +110,7 @@ export type {
   FeedListResponse,
   FeedLocation,
   FeedEventMeta,
+  FeedNeighborhoodSummary,
   FeedOfferMeta,
   FeedPost,
   FeedPostType,

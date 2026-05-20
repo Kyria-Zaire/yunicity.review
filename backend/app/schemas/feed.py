@@ -8,6 +8,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from app.core.feed_constants import FEED_PAGE_SIZE_DEFAULT, FEED_PAGE_SIZE_MAX
+from app.schemas.neighborhood import FeedNeighborhoodSummary
 
 
 class FeedLocation(BaseModel):
@@ -57,6 +58,7 @@ class FeedPostItem(BaseModel):
     liked_by_me: bool
     offer: FeedOfferMeta | None = None
     event: FeedEventMeta | None = None
+    neighborhood_summary: FeedNeighborhoodSummary | None = None
     created_at: datetime
     updated_at: datetime
 

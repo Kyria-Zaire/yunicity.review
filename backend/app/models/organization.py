@@ -33,6 +33,7 @@ from app.db.base import Base
 from app.models._mixins import TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.neighborhood import Neighborhood
     from app.models.passport import PartnerOffer, PassportStamp
     from app.models.user import User
 
@@ -109,6 +110,12 @@ class Organization(TimestampMixin, Base):
     )
     verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    neighborhood_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("neighborhoods.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     members: Mapped[list[OrganizationMember]] = relationship(
         "OrganizationMember",
@@ -119,6 +126,9 @@ class Organization(TimestampMixin, Base):
         "OrganizationVerification",
         back_populates="organization",
         cascade="all, delete-orphan",
+    )
+    neighborhood: Mapped[Neighborhood | None] = relationship(
+        "Neighborhood", back_populates="organizations"
     )
     created_by: Mapped[User | None] = relationship("User", foreign_keys=[created_by_user_id])
     verified_by: Mapped[User | None] = relationship("User", foreign_keys=[verified_by_user_id])

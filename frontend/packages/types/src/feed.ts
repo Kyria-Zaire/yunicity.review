@@ -28,6 +28,12 @@ export interface FeedEventMeta {
   event_type: string | null;
 }
 
+/** Discrete territorial badge on feed cards (TICKET-602). */
+export interface FeedNeighborhoodSummary {
+  slug: string;
+  display_name: string;
+}
+
 export interface FeedOfferMeta {
   partner_offer_id: string;
   valid_from: string | null;
@@ -53,6 +59,7 @@ export interface FeedPost {
   liked_by_me: boolean;
   offer: FeedOfferMeta | null;
   event: FeedEventMeta | null;
+  neighborhood_summary: FeedNeighborhoodSummary | null;
   created_at: string;
   updated_at: string;
 }
