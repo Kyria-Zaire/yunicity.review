@@ -9,6 +9,7 @@ import {
   NEIGHBORHOOD_DETAIL_OFFERS,
   NEIGHBORHOOD_DETAIL_ORGS,
   NEIGHBORHOOD_DETAIL_POSTS,
+  NEIGHBORHOOD_DETAIL_LOADING,
   NEIGHBORHOOD_NOT_FOUND,
   NEIGHBORHOODS_RETRY,
   formatEventDateRange,
@@ -43,7 +44,7 @@ export function NeighborhoodDetailScreen({ slug, city }: { slug: string; city: s
   if (loading) {
     return (
       <WebAppShell contentWidth="wide">
-        <p className="text-neutral-500">Chargement…</p>
+        <p className="text-neutral-500">{NEIGHBORHOOD_DETAIL_LOADING}</p>
       </WebAppShell>
     );
   }
@@ -51,7 +52,7 @@ export function NeighborhoodDetailScreen({ slug, city }: { slug: string; city: s
   if (error || !data) {
     return (
       <WebAppShell contentWidth="readable">
-        <p className="text-red-600">{error ?? NEIGHBORHOOD_NOT_FOUND}</p>
+        <p className="text-neutral-700">{error ?? NEIGHBORHOOD_NOT_FOUND}</p>
         <button
           type="button"
           onClick={() => void load()}

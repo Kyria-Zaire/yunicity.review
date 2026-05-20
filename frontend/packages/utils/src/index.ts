@@ -143,6 +143,8 @@ export {
   NEIGHBORHOODS_PAGE_SUBTITLE,
   NEIGHBORHOODS_PAGE_TITLE,
   NEIGHBORHOODS_RETRY,
+  NEIGHBORHOODS_LOADING,
+  NEIGHBORHOOD_DETAIL_LOADING,
   formatTerritorialLine,
   neighborhoodAmbianceLabel,
   neighborhoodAmbianceLine,

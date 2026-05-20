@@ -1,9 +1,12 @@
-"""Idempotent Reims demo content for QA (TICKET-506).
+"""Idempotent Reims demo content for QA (TICKET-506 / TICKET-604).
 
 Run (dev/recette only): python -m app.db.seeds --demo
 Blocked when APP_ENV is preprod or prod (see seeds.__main__).
 
 Demo login: demo@yunicity.dev / DemoReims1! — never deploy to production.
+
+Territorial links (TICKET-604): posts, events and orgs reference Reims neighborhoods
+so feed badges and quartier detail feel alive in recette.
 """
 
 from __future__ import annotations
@@ -27,6 +30,7 @@ from app.core.organization_constants import (
 from app.core.passport_constants import PartnerOfferStatus, PartnerOfferType, PassportStatus
 from app.core.security import hash_password
 from app.models.local_event import LocalEvent
+from app.models.neighborhood import Neighborhood
 from app.models.organization import Organization, OrganizationMember
 from app.models.passport import PartnerOffer, Passport, PassportTier
 from app.models.post import Post
@@ -57,6 +61,17 @@ DEMO_EVENT_2_ID = uuid.UUID("c5050000-0000-4000-8000-000000000002")
 
 DEMO_OFFER_FLASH_ID = uuid.UUID("c5060000-0000-4000-8000-000000000001")
 DEMO_PASSPORT_ID = uuid.UUID("c5070000-0000-4000-8000-000000000001")
+
+REIMS_CITY = "Reims"
+
+
+async def _neighborhood_id_by_slug(session: AsyncSession, slug: str) -> uuid.UUID | None:
+    result = await session.execute(
+        select(Neighborhood.id)
+        .where(Neighborhood.city == REIMS_CITY, Neighborhood.slug == slug)
+        .limit(1)
+    )
+    return result.scalar_one_or_none()
 
 
 async def _user_exists(session: AsyncSession, user_id: uuid.UUID) -> bool:
@@ -104,10 +119,13 @@ async def _ensure_organization(
     slug: str,
     name: str,
     owner_id: uuid.UUID,
+    neighborhood_id: uuid.UUID | None = None,
 ) -> Organization:
     result = await session.execute(select(Organization).where(Organization.id == org_id))
     existing = result.scalar_one_or_none()
     if existing is not None:
+        if neighborhood_id is not None and existing.neighborhood_id is None:
+            existing.neighborhood_id = neighborhood_id
         return existing
 
     org = Organization(
@@ -115,7 +133,8 @@ async def _ensure_organization(
         slug=slug,
         name=name,
         type=OrganizationType.COMMERCE,
-        city="Reims",
+        city=REIMS_CITY,
+        neighborhood_id=neighborhood_id,
         verification_status=VerificationStatus.VERIFIED,
         visibility=OrganizationVisibility.PUBLIC,
     )
@@ -139,9 +158,13 @@ async def _ensure_citizen_post(
     post_id: uuid.UUID,
     author_id: uuid.UUID,
     body: str,
+    neighborhood_id: uuid.UUID | None = None,
 ) -> None:
-    result = await session.execute(select(Post.id).where(Post.id == post_id).limit(1))
-    if result.scalar_one_or_none() is not None:
+    result = await session.execute(select(Post).where(Post.id == post_id).limit(1))
+    existing = result.scalar_one_or_none()
+    if existing is not None:
+        if neighborhood_id is not None and existing.neighborhood_id is None:
+            existing.neighborhood_id = neighborhood_id
         return
     session.add(
         Post(
@@ -149,8 +172,9 @@ async def _ensure_citizen_post(
             author_type=PostAuthorType.CITIZEN.value,
             author_id=author_id,
             type=PostType.POST.value,
-            city="Reims",
+            city=REIMS_CITY,
             body=body,
+            neighborhood_id=neighborhood_id,
             is_active=True,
         )
     )
@@ -203,11 +227,17 @@ async def _ensure_local_event(
     event_type: str,
     location_name: str,
     days_ahead: int,
+    district: str,
+    neighborhood_id: uuid.UUID | None = None,
 ) -> LocalEvent:
     result = await session.execute(select(LocalEvent).where(LocalEvent.id == event_id))
     existing = result.scalar_one_or_none()
     starts = datetime.now(UTC) + timedelta(days=days_ahead)
     if existing is not None:
+        if neighborhood_id is not None and existing.neighborhood_id is None:
+            existing.neighborhood_id = neighborhood_id
+        if existing.district != district:
+            existing.district = district
         return existing
 
     event = LocalEvent(
@@ -217,8 +247,9 @@ async def _ensure_local_event(
         title=title,
         description=description,
         event_type=event_type,
-        city="Reims",
-        district="Centre-ville",
+        city=REIMS_CITY,
+        district=district,
+        neighborhood_id=neighborhood_id,
         starts_at=starts,
         ends_at=starts + timedelta(hours=3),
         location_name=location_name,
@@ -238,11 +269,16 @@ async def _ensure_flash_offer(
     session: AsyncSession,
     org: Organization,
     partner_id: uuid.UUID,
+    *,
+    neighborhood_id: uuid.UUID | None = None,
 ) -> None:
     result = await session.execute(
-        select(PartnerOffer.id).where(PartnerOffer.id == DEMO_OFFER_FLASH_ID).limit(1)
+        select(PartnerOffer).where(PartnerOffer.id == DEMO_OFFER_FLASH_ID).limit(1)
     )
-    if result.scalar_one_or_none() is not None:
+    existing = result.scalar_one_or_none()
+    if existing is not None:
+        if neighborhood_id is not None and existing.neighborhood_id is None:
+            existing.neighborhood_id = neighborhood_id
         return
 
     now = datetime.now(UTC)
@@ -259,6 +295,7 @@ async def _ensure_flash_offer(
         valid_from=now,
         valid_until=now + timedelta(days=1),
         created_by_user_id=partner_id,
+        neighborhood_id=neighborhood_id,
         moderated_at=now,
     )
     session.add(offer)
@@ -293,12 +330,17 @@ async def seed_reims_demo_content(session: AsyncSession) -> None:
         full_name="Caveau Saint-Pierre",
     )
 
+    hood_centre = await _neighborhood_id_by_slug(session, "centre-ville")
+    hood_saint_remi = await _neighborhood_id_by_slug(session, "saint-remi")
+    hood_boulingrin = await _neighborhood_id_by_slug(session, "boulingrin")
+
     org_cafe = await _ensure_organization(
         session,
         org_id=DEMO_ORG_CAFE_ID,
         slug="cafe-du-centre-reims",
         name="Café du Centre",
         owner_id=partner_cafe.id,
+        neighborhood_id=hood_centre,
     )
     org_caveau = await _ensure_organization(
         session,
@@ -306,6 +348,7 @@ async def seed_reims_demo_content(session: AsyncSession) -> None:
         slug="caveau-saint-pierre",
         name="Caveau Saint-Pierre",
         owner_id=partner_caveau.id,
+        neighborhood_id=hood_saint_remi,
     )
 
     await _ensure_passport(session, citizen)
@@ -315,18 +358,21 @@ async def seed_reims_demo_content(session: AsyncSession) -> None:
         post_id=DEMO_POST_1_ID,
         author_id=citizen.id,
         body="Première pause café sur la place — le centre-ville respire ce matin.",
+        neighborhood_id=hood_centre,
     )
     await _ensure_citizen_post(
         session,
         post_id=DEMO_POST_2_ID,
         author_id=DEMO_CITIZEN_2_ID,
         body="Quelqu’un connaît un bon marché local ce week-end à Reims ?",
+        neighborhood_id=hood_boulingrin,
     )
     await _ensure_citizen_post(
         session,
         post_id=DEMO_POST_3_ID,
         author_id=citizen.id,
-        body="La cathédrale au crépuscule, toujours aussi belle. Bonne soirée à tous.",
+        body="La basilique Saint-Remi au crépuscule — une pause culturelle avant la soirée.",
+        neighborhood_id=hood_saint_remi,
     )
 
     await _ensure_local_event(
@@ -339,6 +385,8 @@ async def seed_reims_demo_content(session: AsyncSession) -> None:
         event_type="cafe_meetup",
         location_name="Café du Centre",
         days_ahead=4,
+        district="Centre-ville",
+        neighborhood_id=hood_centre,
     )
     await _ensure_local_event(
         session,
@@ -350,9 +398,16 @@ async def seed_reims_demo_content(session: AsyncSession) -> None:
         event_type="exhibition",
         location_name="Caveau Saint-Pierre",
         days_ahead=11,
+        district="Saint-Remi",
+        neighborhood_id=hood_saint_remi,
     )
 
-    await _ensure_flash_offer(session, org_cafe, partner_cafe.id)
+    await _ensure_flash_offer(
+        session,
+        org_cafe,
+        partner_cafe.id,
+        neighborhood_id=hood_centre,
+    )
 
     await session.flush()
     logger.info("reims_demo_content_seed_completed")

@@ -5,6 +5,7 @@ import {
   NEIGHBORHOOD_DISCOVER_CTA,
   NEIGHBORHOODS_EMPTY,
   NEIGHBORHOODS_ERROR,
+  NEIGHBORHOODS_LOADING,
   NEIGHBORHOODS_PAGE_SUBTITLE,
   NEIGHBORHOODS_PAGE_TITLE,
   NEIGHBORHOODS_RETRY,
@@ -92,6 +93,7 @@ export default function NeighborhoodsTabScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
+        <Text style={styles.srOnly}>{NEIGHBORHOODS_LOADING}</Text>
         <ActivityIndicator color={feedTheme.accent} />
       </View>
     );
@@ -164,6 +166,7 @@ const styles = StyleSheet.create({
   cta: { marginTop: 8, fontSize: 14, fontWeight: "600", color: feedTheme.accent },
   empty: { color: feedTheme.textMuted, textAlign: "center", marginTop: 24 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
+  srOnly: { position: "absolute", width: 1, height: 1, opacity: 0 },
   error: { color: feedTheme.textMuted, marginBottom: 12, textAlign: "center" },
   retryBtn: {
     backgroundColor: feedTheme.accent,

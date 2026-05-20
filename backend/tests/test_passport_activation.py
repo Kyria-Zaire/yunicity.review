@@ -15,7 +15,7 @@ async def test_activate_creates_passport(auth_client: AsyncClient) -> None:
     data = await register_user(auth_client, suffix="-act")
     passport = await activate_passport(auth_client, data["access_token"])
     assert passport["status"] == "active"
-    assert passport["tier"]["code"] == "basic"
+    assert passport["tier"]["code"] == "neo_arrivant"
     assert passport["passport_number"].startswith("YUN-")
     assert passport["qr_token"].startswith("qr_ph_")
 

@@ -8,6 +8,7 @@ import {
   NEIGHBORHOOD_DISCOVER_CTA,
   NEIGHBORHOODS_EMPTY,
   NEIGHBORHOODS_ERROR,
+  NEIGHBORHOODS_LOADING,
   NEIGHBORHOODS_PAGE_SUBTITLE,
   NEIGHBORHOODS_PAGE_TITLE,
   NEIGHBORHOODS_RETRY,
@@ -97,18 +98,22 @@ export function NeighborhoodsScreen() {
         <p className="mt-2 text-neutral-600">{NEIGHBORHOODS_PAGE_SUBTITLE}</p>
       </header>
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {[0, 1, 2].map((key) => (
-            <div
-              key={key}
-              className="h-64 rounded-2xl border border-neutral-200 bg-neutral-50 opacity-70"
-            />
-          ))}
+        <div className="space-y-4">
+          <p className="sr-only">{NEIGHBORHOODS_LOADING}</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[0, 1, 2].map((key) => (
+              <div
+                key={key}
+                className="h-64 animate-pulse rounded-2xl border border-neutral-200 bg-neutral-50"
+                aria-hidden
+              />
+            ))}
+          </div>
         </div>
       ) : null}
       {error ? (
         <div className="space-y-3">
-          <p className="text-sm text-red-600">{error}</p>
+          <p className="text-sm text-neutral-700">{error}</p>
           <button
             type="button"
             onClick={() => void load()}

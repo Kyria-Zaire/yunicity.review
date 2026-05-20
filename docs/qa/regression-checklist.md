@@ -2,6 +2,8 @@
 
 Usage : avant merge stabilisation, recette ou beta terrain. Cocher chaque scénario sur **web desktop**, **web mobile** (viewport étroit) et **Expo Android** lorsque applicable.
 
+> **Beta readiness (Sprint 6)** : voir `beta-readiness-checklist.md` et `ticket-604-beta-readiness-report.md`.
+
 ## Prérequis
 
 - [ ] Migrations Alembic à jour (`alembic upgrade head`)
@@ -54,6 +56,14 @@ Usage : avant merge stabilisation, recette ou beta terrain. Cocher chaque scéna
 - [ ] Tap notification → deeplink correct (fil / passport / événements)
 - [ ] Marquer lu / tout marquer lu
 - [ ] Ton sobre, pas manipulateur
+
+## Quartiers (TICKET-603 / 604)
+
+- [ ] Liste quartiers Reims (web `/neighborhoods`, mobile onglet)
+- [ ] Détail quartier : sections, empty states, pas de feed infini
+- [ ] Badge quartier fil → fiche quartier
+- [ ] Event : ligne `Quartier · Reims`
+- [ ] Pas de trending / leaderboard quartier
 
 ## Partenaire (smoke)
 
