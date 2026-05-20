@@ -49,6 +49,14 @@ export default function ProtectedLayout() {
         options={{ headerShown: true, title: "Quartier" }}
       />
       <Stack.Screen
+        name="tribes/[slug]"
+        options={{ headerShown: true, title: "Tribu" }}
+      />
+      <Stack.Screen
+        name="tribes/invitation"
+        options={{ headerShown: true, title: "Invitation" }}
+      />
+      <Stack.Screen
         name="events/[id]"
         options={{ headerShown: true, title: "Moment local" }}
       />
