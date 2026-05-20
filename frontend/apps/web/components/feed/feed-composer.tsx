@@ -5,8 +5,12 @@ import { useState } from "react";
 
 export function FeedComposer({
   onSubmit,
+  placeholder = FEED_COMPOSER_PLACEHOLDER,
+  submitLabel = "Publier",
 }: {
   onSubmit: (body: string, mediaUrl?: string | null) => Promise<void>;
+  placeholder?: string;
+  submitLabel?: string;
 }) {
   const [body, setBody] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
@@ -41,7 +45,7 @@ export function FeedComposer({
         id="feed-composer-body"
         value={body}
         onChange={(event) => setBody(event.target.value)}
-        placeholder={FEED_COMPOSER_PLACEHOLDER}
+        placeholder={placeholder}
         rows={3}
         maxLength={4000}
         className="w-full resize-none rounded-xl border border-yunicity-border bg-yunicity-surface px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-yunicity-primary focus:outline-none focus:ring-1 focus:ring-yunicity-primary"
@@ -75,7 +79,7 @@ export function FeedComposer({
           onClick={() => void handleSubmit()}
           className="rounded-xl bg-yunicity-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-yunicity-primary-hover disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2"
         >
-          {isSubmitting ? "Publication…" : "Publier"}
+          {isSubmitting ? "Publication…" : submitLabel}
         </button>
       </div>
     </section>

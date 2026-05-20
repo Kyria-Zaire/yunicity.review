@@ -138,6 +138,23 @@ export type {
 } from "./neighborhood";
 
 export type {
+  Tribe,
+  TribeCategory,
+  TribeInvitationAcceptPayload,
+  TribeInvitationCreateResponse,
+  TribeJoinPayload,
+  TribeListResponse,
+  TribeMember,
+  TribeMemberListResponse,
+  TribeMemberRole,
+  TribeMemberRoleUpdatePayload,
+  TribePostCreatePayload,
+  TribePostListResponse,
+  TribeUpdatePayload,
+  TribeVisibility,
+} from "./tribe";
+
+export type {
   ConvertLeadPayload,
   PartnerLead,
   PartnerLeadListParams,
