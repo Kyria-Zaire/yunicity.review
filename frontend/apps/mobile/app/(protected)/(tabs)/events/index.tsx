@@ -7,6 +7,7 @@ import {
   EVENTS_PAGE_TITLE,
   formatEventDateRange,
   formatEventLocation,
+  formatTerritorialLine,
 } from "@yunicity/utils";
 import { useRouter, type Href } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -29,7 +30,10 @@ function EventRow({ event }: { event: LocalEvent }) {
     >
       <Text style={styles.cardTitle}>{event.title}</Text>
       <Text style={styles.cardMeta}>{formatEventDateRange(event.starts_at, event.ends_at)}</Text>
-      <Text style={styles.cardMeta}>{formatEventLocation(event, event.city)}</Text>
+      <Text style={styles.cardMeta}>
+        {formatTerritorialLine(event.neighborhood_summary, event.city, event.district) ??
+          formatEventLocation(event, event.city)}
+      </Text>
     </Pressable>
   );
 }

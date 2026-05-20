@@ -20,7 +20,10 @@ class LocalEventRepository:
     async def get_by_id(self, event_id: uuid.UUID) -> LocalEvent | None:
         result = await self._session.execute(
             select(LocalEvent)
-            .options(selectinload(LocalEvent.organization))
+            .options(
+                selectinload(LocalEvent.organization),
+                selectinload(LocalEvent.neighborhood),
+            )
             .where(LocalEvent.id == event_id)
         )
         return result.scalar_one_or_none()
@@ -45,7 +48,10 @@ class LocalEventRepository:
     ) -> list[LocalEvent]:
         stmt = (
             select(LocalEvent)
-            .options(selectinload(LocalEvent.organization))
+            .options(
+                selectinload(LocalEvent.organization),
+                selectinload(LocalEvent.neighborhood),
+            )
             .where(
                 LocalEvent.moderation_status == LocalEventModerationStatus.APPROVED.value,
                 LocalEvent.is_cancelled.is_(False),
@@ -135,7 +141,10 @@ class LocalEventRepository:
         result = await self._session.execute(
             select(LocalEvent)
             .join(EventInterest, EventInterest.event_id == LocalEvent.id)
-            .options(selectinload(LocalEvent.organization))
+            .options(
+                selectinload(LocalEvent.organization),
+                selectinload(LocalEvent.neighborhood),
+            )
             .where(
                 EventInterest.user_id == user_id,
                 LocalEvent.moderation_status == LocalEventModerationStatus.APPROVED.value,

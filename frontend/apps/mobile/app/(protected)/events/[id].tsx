@@ -6,6 +6,7 @@ import {
   EVENT_INTEREST_SAVED,
   formatEventDateRange,
   formatEventLocation,
+  formatTerritorialLine,
 } from "@yunicity/utils";
 import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -70,7 +71,10 @@ export default function EventDetailScreen() {
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={styles.title}>{event.title}</Text>
       <Text style={styles.meta}>{formatEventDateRange(event.starts_at, event.ends_at)}</Text>
-      <Text style={styles.meta}>{formatEventLocation(event, event.city)}</Text>
+      <Text style={styles.meta}>
+        {formatTerritorialLine(event.neighborhood_summary, event.city, event.district) ??
+          formatEventLocation(event, event.city)}
+      </Text>
       {event.description ? <Text style={styles.body}>{event.description}</Text> : null}
       <Pressable
         style={[styles.cta, event.interested_by_me && styles.ctaSaved]}

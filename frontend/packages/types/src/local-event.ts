@@ -1,5 +1,7 @@
 /** Local events / city moments (TICKET-505). */
 
+import type { FeedNeighborhoodSummary } from "./neighborhood";
+
 export interface LocalEventOrganization {
   id: string;
   slug: string;
@@ -28,6 +30,7 @@ export interface LocalEvent {
   is_cancelled: boolean;
   interested_by_me: boolean;
   organization: LocalEventOrganization | null;
+  neighborhood_summary?: FeedNeighborhoodSummary | null;
   created_at: string;
 }
 

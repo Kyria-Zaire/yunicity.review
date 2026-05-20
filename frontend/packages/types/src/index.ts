@@ -127,6 +127,17 @@ export type {
 } from "./local-event";
 
 export type {
+  Neighborhood,
+  NeighborhoodContextEventItem,
+  NeighborhoodContextOfferItem,
+  NeighborhoodContextOrganizationItem,
+  NeighborhoodContextPostItem,
+  NeighborhoodContextResponse,
+  NeighborhoodContextStats,
+  NeighborhoodListResponse,
+} from "./neighborhood";
+
+export type {
   ConvertLeadPayload,
   PartnerLead,
   PartnerLeadListParams,

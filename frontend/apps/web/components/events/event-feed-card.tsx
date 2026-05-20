@@ -4,7 +4,9 @@ import {
   eventTypeLabel,
   formatEventDateRange,
   formatEventLocation,
+  formatTerritorialLine,
 } from "@yunicity/utils";
+import { NeighborhoodBadge } from "@/components/neighborhoods/neighborhood-badge";
 import Link from "next/link";
 
 import { FeedAuthorHeader } from "@/components/feed/feed-author-header";
@@ -16,7 +18,9 @@ export function EventFeedCard({ post }: { post: FeedPost }) {
   }
   const typeLabel = eventTypeLabel(meta.event_type);
   const when = formatEventDateRange(meta.starts_at, meta.ends_at);
-  const where = formatEventLocation(meta, post.city);
+  const where =
+    formatTerritorialLine(post.neighborhood_summary, post.city, meta.district) ??
+    formatEventLocation(meta, post.city);
 
   return (
     <div className="-m-6 mb-0 rounded-t-2xl border-b border-neutral-100 bg-white p-6">
@@ -35,6 +39,11 @@ export function EventFeedCard({ post }: { post: FeedPost }) {
       ) : null}
       <p className="mt-3 text-sm text-neutral-600">{when}</p>
       <p className="text-sm text-neutral-500">{where}</p>
+      {post.neighborhood_summary ? (
+        <div className="mt-2">
+          <NeighborhoodBadge summary={post.neighborhood_summary} city={post.city} />
+        </div>
+      ) : null}
       <Link
         href={`/events/${meta.local_event_id}`}
         className="mt-4 inline-flex text-sm font-medium text-yunicity-primary underline-offset-2 hover:underline"

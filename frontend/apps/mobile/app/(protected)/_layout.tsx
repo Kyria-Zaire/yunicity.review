@@ -45,6 +45,14 @@ export default function ProtectedLayout() {
         options={{ headerShown: true, title: "Notifications" }}
       />
       <Stack.Screen
+        name="neighborhoods/[slug]"
+        options={{ headerShown: true, title: "Quartier" }}
+      />
+      <Stack.Screen
+        name="events/[id]"
+        options={{ headerShown: true, title: "Moment local" }}
+      />
+      <Stack.Screen
         name="partner-scan/index"
         options={{ headerShown: true, title: "Scanner" }}
       />

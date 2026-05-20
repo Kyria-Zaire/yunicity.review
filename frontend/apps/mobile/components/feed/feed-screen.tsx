@@ -29,6 +29,7 @@ import {
 } from "react-native";
 
 import { FlashOfferBadge } from "@/components/flash-offer-badge";
+import { NeighborhoodBadgeMobile } from "@/components/neighborhoods/neighborhood-badge";
 import { feedTheme } from "@/components/feed/feed-theme";
 import { useFeed } from "@/hooks/use-feed";
 import { useAuth } from "@/lib/auth-provider";
@@ -115,6 +116,9 @@ function FeedCardMobile({
             {post.city ? `${post.city} · ` : ""}
             {formatFeedDate(post.created_at)}
           </Text>
+          {post.neighborhood_summary ? (
+            <NeighborhoodBadgeMobile summary={post.neighborhood_summary} city={post.city} />
+          ) : null}
         </View>
       </View>
       {post.title ? <Text style={styles.title}>{post.title}</Text> : null}

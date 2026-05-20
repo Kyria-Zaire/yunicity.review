@@ -34,6 +34,14 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="neighborhoods"
+        options={{
+          title: "Quartiers",
+          tabBarLabel: "Quartiers",
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
         name="passport"
         options={{
           title: "Passport",

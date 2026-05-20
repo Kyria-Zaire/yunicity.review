@@ -34,6 +34,7 @@ from app.schemas.local_event import (
     LocalEventUpdateRequest,
 )
 from app.services.feed_event_sync import FeedEventSyncService
+from app.services.neighborhood_summary import neighborhood_summary_from_event
 from app.services.organization_membership_service import OrganizationMembershipService
 
 logger = logging.getLogger(__name__)
@@ -397,6 +398,7 @@ class LocalEventService:
             is_cancelled=event.is_cancelled,
             interested_by_me=interested_by_me,
             organization=org_summary,
+            neighborhood_summary=neighborhood_summary_from_event(event),
             created_at=event.created_at,
         )
 

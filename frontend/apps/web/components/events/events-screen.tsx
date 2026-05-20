@@ -11,12 +11,18 @@ import {
   eventTypeLabel,
   formatEventDateRange,
   formatEventLocation,
+  formatTerritorialLine,
 } from "@yunicity/utils";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 function EventListCard({ event }: { event: LocalEvent }) {
   const typeLabel = eventTypeLabel(event.event_type);
+  const territorial = formatTerritorialLine(
+    event.neighborhood_summary,
+    event.city,
+    event.district,
+  );
   return (
     <Link
       href={`/events/${event.id}`}
@@ -29,7 +35,9 @@ function EventListCard({ event }: { event: LocalEvent }) {
       <p className="mt-2 text-sm text-neutral-600">
         {formatEventDateRange(event.starts_at, event.ends_at)}
       </p>
-      <p className="text-sm text-neutral-500">{formatEventLocation(event, event.city)}</p>
+      <p className="text-sm text-neutral-500">
+        {territorial ?? formatEventLocation(event, event.city)}
+      </p>
       {event.organization ? (
         <p className="mt-2 text-xs text-neutral-500">Par {event.organization.name}</p>
       ) : null}

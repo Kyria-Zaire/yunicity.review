@@ -9,7 +9,9 @@ import {
   eventTypeLabel,
   formatEventDateRange,
   formatEventLocation,
+  formatTerritorialLine,
 } from "@yunicity/utils";
+import { NeighborhoodBadge } from "@/components/neighborhoods/neighborhood-badge";
 import { useCallback, useEffect, useState } from "react";
 
 export function EventDetailScreen({ eventId }: { eventId: string }) {
@@ -69,7 +71,15 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
           <p className="text-neutral-600">
             {formatEventDateRange(event.starts_at, event.ends_at)}
           </p>
-          <p className="text-neutral-600">{formatEventLocation(event, event.city)}</p>
+          <p className="text-neutral-600">
+            {formatTerritorialLine(event.neighborhood_summary, event.city, event.district) ??
+              formatEventLocation(event, event.city)}
+          </p>
+          {event.neighborhood_summary ? (
+            <div className="mt-2">
+              <NeighborhoodBadge summary={event.neighborhood_summary} city={event.city} />
+            </div>
+          ) : null}
           {event.organization ? (
             <p className="text-sm text-neutral-500">
               Organisé par <span className="font-medium">{event.organization.name}</span>

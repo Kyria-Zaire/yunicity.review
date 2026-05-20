@@ -32,6 +32,7 @@ import { PassportApi, createPassportApi } from "./passport-api";
 import { ScanApi, createScanApi } from "./scan-api";
 import { NotificationsApi, createNotificationsApi } from "./notifications-api";
 import { EventsApi, createEventsApi } from "./events-api";
+import { NeighborhoodsApi, createNeighborhoodsApi } from "./neighborhood-api";
 import { FeedApi, createFeedApi } from "./feed-api";
 import { ProfileApi, createProfileApi } from "./profile-api";
 
@@ -45,6 +46,7 @@ export class YunicityApi {
   readonly notifications: NotificationsApi;
   readonly feed: FeedApi;
   readonly events: EventsApi;
+  readonly neighborhoods: NeighborhoodsApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.profile = createProfileApi(client, apiBaseUrl);
@@ -55,6 +57,7 @@ export class YunicityApi {
     this.notifications = createNotificationsApi(client, apiBaseUrl);
     this.feed = createFeedApi(client, apiBaseUrl);
     this.events = createEventsApi(client, apiBaseUrl);
+    this.neighborhoods = createNeighborhoodsApi(client, apiBaseUrl);
   }
 
   registerPushDevice(payload: RegisterPushDeviceRequest): Promise<PushSubscription> {

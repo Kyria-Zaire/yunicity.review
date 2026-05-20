@@ -11,6 +11,7 @@ from app.core.local_event_constants import (
     LOCAL_EVENT_LIST_PAGE_SIZE_DEFAULT,
     MVP_LOCAL_EVENT_TYPES,
 )
+from app.schemas.neighborhood import FeedNeighborhoodSummary
 
 
 class LocalEventOrganizationSummary(BaseModel):
@@ -45,6 +46,7 @@ class LocalEventResponse(BaseModel):
     is_cancelled: bool
     interested_by_me: bool = False
     organization: LocalEventOrganizationSummary | None = None
+    neighborhood_summary: FeedNeighborhoodSummary | None = None
     created_at: datetime
 
 

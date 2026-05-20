@@ -2,9 +2,23 @@
 
 from __future__ import annotations
 
+from app.models.local_event import LocalEvent
 from app.models.neighborhood import Neighborhood
 from app.models.post import Post
 from app.schemas.neighborhood import FeedNeighborhoodSummary
+
+
+def neighborhood_summary_from_entity(neighborhood: Neighborhood | None) -> FeedNeighborhoodSummary | None:
+    if neighborhood is None or not neighborhood.is_active:
+        return None
+    return FeedNeighborhoodSummary(
+        slug=neighborhood.slug,
+        display_name=neighborhood.display_name,
+    )
+
+
+def neighborhood_summary_from_event(event: LocalEvent) -> FeedNeighborhoodSummary | None:
+    return neighborhood_summary_from_entity(event.neighborhood)
 
 
 def resolve_feed_neighborhood_summary(post: Post) -> FeedNeighborhoodSummary | None:

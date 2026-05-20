@@ -1,3 +1,4 @@
+import { NeighborhoodBadge } from "@/components/neighborhoods/neighborhood-badge";
 import type { FeedPost } from "@yunicity/types";
 import { authorInitials, formatFeedDate } from "@yunicity/utils";
 
@@ -26,6 +27,11 @@ export function FeedAuthorHeader({ post }: { post: FeedPost }) {
           {post.city ? `${post.city} · ` : ""}
           {formatFeedDate(post.created_at)}
         </p>
+        {post.neighborhood_summary ? (
+          <div className="mt-1">
+            <NeighborhoodBadge summary={post.neighborhood_summary} city={post.city} />
+          </div>
+        ) : null}
       </div>
     </header>
   );
