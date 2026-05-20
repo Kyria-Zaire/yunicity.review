@@ -6,8 +6,8 @@ import uuid
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Boolean, ForeignKey, String, Text, Uuid
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Boolean, ForeignKey, String, Text, Uuid, text
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -53,6 +53,11 @@ class UserProfile(TimestampMixin, Base):
     preferred_language: Mapped[str | None] = mapped_column(String(8), nullable=True)
     notification_preferences: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, server_default="{}"
+    )
+    search_vector: Mapped[str] = mapped_column(
+        TSVECTOR,
+        nullable=False,
+        server_default=text("''::tsvector"),
     )
 
     user: Mapped[User] = relationship("User", back_populates="profile")

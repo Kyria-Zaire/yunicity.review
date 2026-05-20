@@ -5,7 +5,8 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Index, Integer, Numeric, String, Text, UniqueConstraint, Uuid
+from sqlalchemy import Boolean, Index, Integer, Numeric, String, Text, UniqueConstraint, Uuid, text
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -44,6 +45,11 @@ class Neighborhood(TimestampMixin, Base):
     )
     is_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default="true"
+    )
+    search_vector: Mapped[str] = mapped_column(
+        TSVECTOR,
+        nullable=False,
+        server_default=text("''::tsvector"),
     )
 
     posts: Mapped[list[Post]] = relationship("Post", back_populates="neighborhood")

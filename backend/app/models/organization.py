@@ -17,8 +17,9 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     Uuid,
+    text,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.organization_constants import (
@@ -115,6 +116,11 @@ class Organization(TimestampMixin, Base):
         ForeignKey("neighborhoods.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
+    )
+    search_vector: Mapped[str] = mapped_column(
+        TSVECTOR,
+        nullable=False,
+        server_default=text("''::tsvector"),
     )
 
     members: Mapped[list[OrganizationMember]] = relationship(

@@ -16,7 +16,9 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     Uuid,
+    text,
 )
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.local_event_constants import (
@@ -86,6 +88,11 @@ class LocalEvent(TimestampMixin, Base):
         ForeignKey("neighborhoods.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
+    )
+    search_vector: Mapped[str] = mapped_column(
+        TSVECTOR,
+        nullable=False,
+        server_default=text("''::tsvector"),
     )
 
     organization: Mapped[Organization | None] = relationship("Organization")

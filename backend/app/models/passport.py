@@ -19,7 +19,7 @@ from sqlalchemy import (
     Uuid,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.passport_constants import (
@@ -313,6 +313,11 @@ class PartnerOffer(TimestampMixin, Base):
         ForeignKey("neighborhoods.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
+    )
+    search_vector: Mapped[str] = mapped_column(
+        TSVECTOR,
+        nullable=False,
+        server_default=text("''::tsvector"),
     )
 
     organization: Mapped[Organization] = relationship(

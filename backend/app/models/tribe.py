@@ -16,7 +16,9 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     Uuid,
+    text,
 )
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -57,6 +59,11 @@ class Tribe(TimestampMixin, Base):
     member_limit: Mapped[int] = mapped_column(Integer, nullable=False, server_default="150")
     is_featured: Mapped[bool] = mapped_column(nullable=False, server_default="false", default=False)
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    search_vector: Mapped[str] = mapped_column(
+        TSVECTOR,
+        nullable=False,
+        server_default=text("''::tsvector"),
+    )
 
     created_by: Mapped[User] = relationship("User", foreign_keys=[created_by_user_id])
     organization: Mapped[Organization | None] = relationship("Organization")

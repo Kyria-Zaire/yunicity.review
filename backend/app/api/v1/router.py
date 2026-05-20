@@ -19,6 +19,7 @@ from app.api.v1 import (
     profile,
     rbac_validation,
     scan,
+    search,
     tribe_invitations,
     tribes,
     users,
@@ -45,4 +46,5 @@ api_router.include_router(feed.router)
 api_router.include_router(posts.router)
 api_router.include_router(comments.router)
 api_router.include_router(scan.router)
+api_router.include_router(search.router)
 api_router.include_router(rbac_validation.router)

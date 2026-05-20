@@ -531,6 +531,22 @@ Tables : `posts`, `likes`, `comments`, `reports` — migration `20260522_0008_fe
 
 Tests : `tests/test_feed.py`, `tests/test_posts.py` (commentaires / reports couverts dans `test_feed` ; fichiers `test_comments.py` / `test_reports.py` = marqueurs d’intégration).
 
+### Recherche locale (FEATURE-B / TICKET-B.4)
+
+Full-text PostgreSQL (`search_vector` + GIN + triggers). Résultats **groupés par type** (`groups.posts`, `groups.events`, …). Posts tribu **exclus** (`tribe_id IS NULL`).
+
+| Méthode | Route | Auth |
+|---------|-------|------|
+| GET | `/api/v1/search` | Optionnelle (ville via JWT ou `?city=`) |
+
+Query : `q`, `city`, `neighborhood_slug`, `type` (`post` \| `event` \| `org` \| `offer` \| `tribe` \| `user` \| `neighborhood` \| `all`), `period` (événements), `page`, `limit` (max 50).
+
+Rate limit : 30 req/min par IP ou utilisateur.
+
+Migration : `20260531_0017_search_fts`. Doc : [`docs/architecture/search.md`](../docs/architecture/search.md).
+
+Tests : `tests/test_search.py`.
+
 ## Offres flash locales (TICKET-501)
 
 Intention UX : [`docs/ux/flash-offers-intent.md`](../docs/ux/flash-offers-intent.md).

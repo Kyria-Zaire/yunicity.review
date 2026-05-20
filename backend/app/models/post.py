@@ -5,7 +5,8 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, Index, Integer, Numeric, String, Text, Uuid
+from sqlalchemy import Boolean, ForeignKey, Index, Integer, Numeric, String, Text, Uuid, text
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -70,6 +71,11 @@ class Post(TimestampMixin, Base):
         ForeignKey("tribes.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
+    )
+    search_vector: Mapped[str] = mapped_column(
+        TSVECTOR,
+        nullable=False,
+        server_default=text("''::tsvector"),
     )
 
     partner_offer: Mapped[PartnerOffer | None] = relationship(

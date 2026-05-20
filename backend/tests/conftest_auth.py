@@ -8,6 +8,7 @@ from collections.abc import AsyncGenerator, Iterator
 import pytest
 from app.core.config import get_settings
 from app.db.base import Base
+from app.db.search_fts import install_search_fts
 from app.db.seeds.auth_rbac import seed_auth_rbac
 from app.db.seeds.passport_tiers import seed_passport_tiers
 from app.db.seeds.reims_neighborhoods import seed_reims_neighborhoods
@@ -62,6 +63,7 @@ async def auth_client(auth_env: None) -> AsyncGenerator[AsyncClient, None]:
     assert engine is not None
     async with engine.begin() as connection:
         await connection.run_sync(_reset_database_schema)
+        await connection.run_sync(install_search_fts)
 
     session_factory = get_session_factory()
     assert session_factory is not None
