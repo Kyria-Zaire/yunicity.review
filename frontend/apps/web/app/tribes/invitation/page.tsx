@@ -4,9 +4,9 @@ import { ProtectedRoute } from "@/components/protected-route";
 export default async function TribeInvitationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ token?: string; slug?: string; city?: string }>;
 }) {
-  const { token } = await searchParams;
+  const { token, slug, city } = await searchParams;
   if (!token) {
     return (
       <ProtectedRoute>
@@ -16,7 +16,7 @@ export default async function TribeInvitationPage({
   }
   return (
     <ProtectedRoute>
-      <TribeInvitationScreen token={token} />
+      <TribeInvitationScreen token={token} slug={slug} city={city} />
     </ProtectedRoute>
   );
 }

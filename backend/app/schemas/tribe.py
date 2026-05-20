@@ -73,6 +73,25 @@ class TribeMemberResponse(BaseModel):
     user_id: uuid.UUID
     role: str
     joined_at: datetime
+    tribe_slug: str | None = None
+    tribe_city: str | None = None
+    tribe_name: str | None = None
+
+
+class TribeInvitationCreateRequest(BaseModel):
+    invitee_user_id: uuid.UUID | None = None
+
+
+class TribeInvitationPendingItem(BaseModel):
+    id: uuid.UUID
+    tribe_slug: str
+    tribe_name: str
+    tribe_city: str
+    expires_at: datetime
+
+
+class TribeInvitationListResponse(BaseModel):
+    items: list[TribeInvitationPendingItem]
 
 
 class TribeMemberListResponse(BaseModel):

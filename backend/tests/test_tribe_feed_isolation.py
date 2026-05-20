@@ -168,3 +168,31 @@ async def test_global_feed_never_returns_tribe_scoped_posts(
     feed_ids = {item["id"] for item in feed.json()["items"]}
     assert tribe_post_id not in feed_ids, "Invariant : post tribu absent du feed global"
     assert city_post_id in feed_ids, "Le feed global inclut toujours les posts ville"
+
+
+@pytest.mark.asyncio
+async def test_global_post_detail_never_exposes_tribe_wall_post(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    """Invariant : GET /posts/{id} masque les posts tribu (pas de fuite discovery)."""
+    staff = await rbac_user_factory("SUPER_ADMIN")
+    member = await _register(auth_client, suffix="-disc")
+    slug = f"disc-{member['user']['id'][:8]}"
+    await _staff_create_tribe(auth_client, staff.access_token, slug)
+    await auth_client.post(
+        f"/api/v1/tribes/{slug}/join?city=Reims",
+        json={"charter_accepted": True},
+        headers=auth_header(member["access_token"]),
+    )
+    post = await auth_client.post(
+        f"/api/v1/tribes/{slug}/posts?city=Reims",
+        json={"body": "Mur tribu uniquement"},
+        headers=auth_header(member["access_token"]),
+    )
+    post_id = post.json()["id"]
+    discovery = await auth_client.get(
+        f"/api/v1/posts/{post_id}",
+        headers=auth_header(member["access_token"]),
+    )
+    assert discovery.status_code == 404, discovery.text

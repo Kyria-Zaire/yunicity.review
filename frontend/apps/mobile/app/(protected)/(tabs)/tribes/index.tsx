@@ -1,3 +1,4 @@
+import { TribeInvitationsSectionMobile } from "@/components/tribes/tribe-invitations-section";
 import { feedTheme } from "@/components/feed/feed-theme";
 import { useAuth } from "@/lib/auth-provider";
 import type { Tribe } from "@yunicity/types";
@@ -11,6 +12,7 @@ import {
   TRIBES_PAGE_SUBTITLE,
   TRIBES_PAGE_TITLE,
   TRIBES_RETRY,
+  TRIBE_INVITATIONS_LINK_HINT,
   tribeCategoryLabel,
   tribeVisibilityLabel,
 } from "@yunicity/utils";
@@ -180,7 +182,14 @@ export default function TribesTabScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>{TRIBES_PAGE_TITLE}</Text>
         <Text style={styles.subtitle}>{TRIBES_PAGE_SUBTITLE}</Text>
+        <Pressable
+          onPress={() => router.push("/(protected)/tribes/invitation" as Href)}
+          style={styles.linkHint}
+        >
+          <Text style={styles.linkHintText}>{TRIBE_INVITATIONS_LINK_HINT}</Text>
+        </Pressable>
       </View>
+      <TribeInvitationsSectionMobile />
       <FlatList
         data={items}
         keyExtractor={(item) => item.id}
@@ -219,6 +228,8 @@ const styles = StyleSheet.create({
   header: { padding: 16, paddingBottom: 8 },
   title: { fontSize: 22, fontWeight: "700", color: feedTheme.text },
   subtitle: { fontSize: 14, color: feedTheme.textMuted, marginTop: 6, lineHeight: 20 },
+  linkHint: { marginTop: 10 },
+  linkHintText: { fontSize: 13, color: feedTheme.accent },
   list: { padding: 16, paddingTop: 8, gap: 14, paddingBottom: 40 },
   card: {
     borderRadius: 16,

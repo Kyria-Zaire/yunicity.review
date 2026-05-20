@@ -1,6 +1,7 @@
 "use client";
 
 import { TribeCard } from "@/components/tribes/tribe-card";
+import { TribeInvitationsSection } from "@/components/tribes/tribe-invitations-section";
 import { WebAppShell } from "@/components/layout";
 import { useTribesList } from "@/hooks/use-tribes";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -38,6 +39,7 @@ export function TribesScreen() {
         <h1 className="text-2xl font-bold text-neutral-900">{TRIBES_PAGE_TITLE}</h1>
         <p className="mt-2 text-neutral-600">{TRIBES_PAGE_SUBTITLE}</p>
       </header>
+      <TribeInvitationsSection />
 
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2">

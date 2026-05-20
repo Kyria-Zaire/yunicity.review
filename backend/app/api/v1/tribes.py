@@ -14,6 +14,7 @@ from app.db.session import get_db
 from app.models.user import User
 from app.schemas.post import PostResponse
 from app.schemas.tribe import (
+    TribeInvitationCreateRequest,
     TribeInvitationCreateResponse,
     TribeJoinRequest,
     TribeListResponse,
@@ -184,5 +185,9 @@ async def invite_to_tribe(
     current_user: Annotated[User, Depends(require_authenticated_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
     city: str = Query(min_length=1),
+    payload: TribeInvitationCreateRequest | None = None,
 ) -> TribeInvitationCreateResponse:
-    return await TribeService(session).create_invitation(current_user, city=city, slug=slug)
+    body = payload if payload is not None else TribeInvitationCreateRequest()
+    return await TribeService(session).create_invitation(
+        current_user, city=city, slug=slug, payload=body
+    )

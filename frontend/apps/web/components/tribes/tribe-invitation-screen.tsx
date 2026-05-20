@@ -10,7 +10,15 @@ import { useState } from "react";
 
 import { yunicityBtnPrimary } from "@/lib/brand-classes";
 
-export function TribeInvitationScreen({ token }: { token: string }) {
+export function TribeInvitationScreen({
+  token,
+  slug,
+  city: cityProp,
+}: {
+  token: string;
+  slug?: string;
+  city?: string;
+}) {
   const api = useYunicityApi();
   const { isAuthenticated, user } = useAuth();
   const router = useRouter();
@@ -26,9 +34,16 @@ export function TribeInvitationScreen({ token }: { token: string }) {
     setLoading(true);
     setError(null);
     try {
-      await api.tribes.acceptTribeInvitation(token, { charter_accepted: true });
-      const city = user?.city ?? "Reims";
-      router.push(`/tribes?city=${encodeURIComponent(city)}`);
+      const member = await api.tribes.acceptTribeInvitation(token, {
+        charter_accepted: true,
+      });
+      const city = member.tribe_city ?? cityProp ?? user?.city ?? "Reims";
+      const targetSlug = member.tribe_slug ?? slug;
+      if (targetSlug) {
+        router.push(`/tribes/${targetSlug}?city=${encodeURIComponent(city)}`);
+      } else {
+        router.push(`/tribes?city=${encodeURIComponent(city)}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invitation invalide ou expirée.");
     } finally {

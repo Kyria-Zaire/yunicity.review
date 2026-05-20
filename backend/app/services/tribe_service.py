@@ -29,7 +29,10 @@ from app.repositories.tribe_member_repository import TribeMemberRepository
 from app.repositories.tribe_repository import TribeRepository
 from app.schemas.tribe import (
     TribeCreateRequest,
+    TribeInvitationCreateRequest,
     TribeInvitationCreateResponse,
+    TribeInvitationListResponse,
+    TribeInvitationPendingItem,
     TribeListResponse,
     TribeMemberListResponse,
     TribeMemberResponse,
@@ -41,6 +44,7 @@ from app.schemas.tribe import (
 from app.services.tribe_authorization import TribeAuthorizationService
 from app.services.tribe_moderation_log_service import TribeModerationLogService
 from app.services.tribe_notification_hooks import (
+    notify_tribe_invitation,
     notify_tribe_invitation_accepted,
 )
 
@@ -293,10 +297,16 @@ class TribeService:
         await self._session.commit()
 
     async def create_invitation(
-        self, actor: User, *, city: str, slug: str
+        self,
+        actor: User,
+        *,
+        city: str,
+        slug: str,
+        payload: TribeInvitationCreateRequest | None = None,
     ) -> TribeInvitationCreateResponse:
         tribe = await self._authz.require_active_tribe(city, slug)
         await self._authz.require_role_at_least(tribe, actor, min_role=TribeMemberRole.MODERATOR)
+        invitee_id = payload.invitee_user_id if payload else None
         token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(token.encode()).hexdigest()
         now = datetime.now(UTC)
@@ -304,12 +314,98 @@ class TribeService:
             tribe_id=tribe.id,
             token_hash=token_hash,
             invited_by=actor.id,
+            invited_user_id=invitee_id,
             expires_at=now + timedelta(days=TRIBE_INVITATION_TTL_DAYS),
             created_at=now,
         )
         await self._invitations.add(invitation)
         await self._session.commit()
+        if invitee_id is not None and invitee_id != actor.id:
+            await notify_tribe_invitation(
+                self._session,
+                invitee_user_id=invitee_id,
+                tribe_name=tribe.name,
+                tribe_slug=tribe.slug,
+            )
         return TribeInvitationCreateResponse(token=token, expires_at=invitation.expires_at)
+
+    async def list_my_pending_invitations(self, user: User) -> TribeInvitationListResponse:
+        rows = await self._invitations.list_pending_for_user(user.id)
+        items: list[TribeInvitationPendingItem] = []
+        for row in rows:
+            tribe = row.tribe
+            if tribe is None or tribe.archived_at is not None:
+                continue
+            items.append(
+                TribeInvitationPendingItem(
+                    id=row.id,
+                    tribe_slug=tribe.slug,
+                    tribe_name=tribe.name,
+                    tribe_city=tribe.city,
+                    expires_at=row.expires_at,
+                )
+            )
+        return TribeInvitationListResponse(items=items)
+
+    async def decline_invitation(self, user: User, *, invitation_id: uuid.UUID) -> None:
+        invitation = await self._invitations.get_by_id(invitation_id)
+        if invitation is None or invitation.invited_user_id != user.id:
+            raise AppError(
+                status_code=404,
+                code="INVITATION_NOT_FOUND",
+                detail="Invitation introuvable.",
+            )
+        if not TribeInvitationRepository.is_usable(invitation):
+            raise AppError(
+                status_code=409,
+                code="INVITATION_INVALID",
+                detail="Invitation expirée ou déjà traitée.",
+            )
+        invitation.revoked_at = datetime.now(UTC)
+        await self._session.commit()
+
+    async def accept_invitation_by_id(
+        self, user: User, *, invitation_id: uuid.UUID, charter_accepted: bool
+    ) -> TribeMemberResponse:
+        if not charter_accepted:
+            raise AppError(
+                status_code=422,
+                code="CHARTER_REQUIRED",
+                detail="Vous devez accepter la charte de la tribu.",
+            )
+        invitation = await self._invitations.get_by_id(invitation_id)
+        if invitation is None or invitation.invited_user_id != user.id:
+            raise AppError(
+                status_code=404,
+                code="INVITATION_NOT_FOUND",
+                detail="Invitation introuvable.",
+            )
+        if not TribeInvitationRepository.is_usable(invitation):
+            raise AppError(
+                status_code=404,
+                code="INVITATION_INVALID",
+                detail="Invitation invalide ou expirée.",
+            )
+        tribe = invitation.tribe
+        if tribe is None or tribe.archived_at is not None:
+            raise AppError(
+                status_code=404,
+                code="TRIBE_NOT_FOUND",
+                detail="Cette tribu n'est pas disponible.",
+            )
+        member_resp = await self._add_member(user, tribe, invited_by=invitation.invited_by)
+        invitation.accepted_at = datetime.now(UTC)
+        invitation.accepted_by = user.id
+        inviter_id = invitation.invited_by
+        await self._session.commit()
+        if inviter_id != user.id:
+            await notify_tribe_invitation_accepted(
+                self._session,
+                inviter_user_id=inviter_id,
+                tribe_name=tribe.name,
+                acceptor_name=user.full_name or "Un membre",
+            )
+        return member_resp
 
     async def accept_invitation(
         self, user: User, *, token: str, charter_accepted: bool
@@ -335,7 +431,7 @@ class TribeService:
                 code="TRIBE_NOT_FOUND",
                 detail="Cette tribu n'est pas disponible.",
             )
-        member = await self._add_member(user, tribe, invited_by=invitation.invited_by)
+        member_resp = await self._add_member(user, tribe, invited_by=invitation.invited_by)
         invitation.accepted_at = datetime.now(UTC)
         invitation.accepted_by = user.id
         inviter_id = invitation.invited_by
@@ -347,7 +443,7 @@ class TribeService:
                 tribe_name=tribe.name,
                 acceptor_name=user.full_name or "Un membre",
             )
-        return member
+        return member_resp
 
     async def _add_member(
         self,
@@ -358,11 +454,7 @@ class TribeService:
     ) -> TribeMemberResponse:
         existing = await self._members.get_active_membership(tribe.id, user.id)
         if existing is not None:
-            return TribeMemberResponse(
-                user_id=existing.user_id,
-                role=existing.role,
-                joined_at=existing.joined_at,
-            )
+            return self._to_member_response(tribe, existing)
         if not await self._members.can_rejoin(tribe.id, user.id):
             raise AppError(
                 status_code=409,
@@ -402,8 +494,17 @@ class TribeService:
                 )
             )
         await self._session.commit()
+        return self._to_member_response(tribe, member)
+
+    @staticmethod
+    def _to_member_response(tribe: Tribe, member: TribeMember) -> TribeMemberResponse:
         return TribeMemberResponse(
-            user_id=member.user_id, role=member.role, joined_at=member.joined_at
+            user_id=member.user_id,
+            role=member.role,
+            joined_at=member.joined_at,
+            tribe_slug=tribe.slug,
+            tribe_city=tribe.city,
+            tribe_name=tribe.name,
         )
 
     async def _to_response(self, tribe: Tribe, viewer: User | None) -> TribeResponse:

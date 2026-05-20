@@ -72,9 +72,30 @@ export function tribeHref(slug: string, city: string): string {
   return `/tribes/${encodeURIComponent(slug)}?city=${encodeURIComponent(city)}`;
 }
 
-export function tribeInvitationHref(token: string): string {
-  return `/tribes/invitation?token=${encodeURIComponent(token)}`;
+export function tribeInvitationHref(token: string, slug?: string, city?: string): string {
+  const params = new URLSearchParams({ token });
+  if (slug) {
+    params.set("slug", slug);
+  }
+  if (city) {
+    params.set("city", city);
+  }
+  return `/tribes/invitation?${params.toString()}`;
 }
+
+export const TRIBE_INVITATIONS_SECTION_TITLE = "Invitations tribus";
+export const TRIBE_INVITATIONS_SECTION_BODY =
+  "Invitations personnelles — sans pression ni relance automatique.";
+export const TRIBE_INVITATIONS_EMPTY = "Aucune invitation en attente.";
+export const TRIBE_INVITATIONS_ACCEPT = "Accepter";
+export const TRIBE_INVITATIONS_DECLINE = "Ignorer";
+export const TRIBE_INVITATIONS_LINK_HINT =
+  "Vous avez reçu un lien ? Ouvrez-le depuis votre messagerie ou collez-le ci-dessous.";
+
+export const TRIBE_MOD_DELETE_POST = "Retirer cette publication";
+export const TRIBE_MOD_EXCLUDE_MEMBER = "Exclure ce membre";
+export const TRIBE_MOD_PROMOTE_MOD = "Nommer modérateur";
+export const TRIBE_MOD_DEMOTE_MOD = "Retirer modération";
 
 export function tribeTerritorialLine(tribe: Tribe): string {
   return `${tribe.name} · ${tribe.city}`;

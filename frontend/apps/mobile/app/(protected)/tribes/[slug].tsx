@@ -20,6 +20,10 @@ import {
   TRIBE_WALL_MEMBERS_ONLY,
   TRIBE_WALL_TITLE,
   TRIBES_RETRY,
+  TRIBE_MOD_DELETE_POST,
+  TRIBE_MOD_DEMOTE_MOD,
+  TRIBE_MOD_EXCLUDE_MEMBER,
+  TRIBE_MOD_PROMOTE_MOD,
   authorInitials,
   formatFeedDate,
   tribeCategoryLabel,
@@ -47,8 +51,22 @@ function memberDisplayName(member: TribeMember, currentUserId: string | undefine
   return `Participant · ${member.user_id.slice(0, 8)}`;
 }
 
-function TribePostCard({ post }: { post: FeedPost }) {
-  return (
+function canModerateTribe(role: string | null | undefined): boolean {
+  return role === "owner" || role === "moderator";
+}
+
+function canManageTribe(role: string | null | undefined): boolean {
+  return role === "owner";
+}
+
+function TribePostCard({
+  post,
+  onModeratePress,
+}: {
+  post: FeedPost;
+  onModeratePress?: () => void;
+}) {
+  const content = (
     <View style={styles.postCard}>
       <View style={styles.postHeader}>
         <View style={styles.avatar}>
@@ -61,6 +79,14 @@ function TribePostCard({ post }: { post: FeedPost }) {
       </View>
       {post.body ? <Text style={styles.postBody}>{post.body}</Text> : null}
     </View>
+  );
+  if (!onModeratePress) {
+    return content;
+  }
+  return (
+    <Pressable onLongPress={onModeratePress} delayLongPress={400}>
+      {content}
+    </Pressable>
   );
 }
 
@@ -223,6 +249,63 @@ export default function TribeDetailScreen() {
     setPosts((prev) => [created, ...prev]);
   }
 
+  function confirmDeletePost(post: FeedPost) {
+    if (!slug || !tribe) return;
+    const isAuthor = post.author.id === user?.id;
+    if (!isAuthor && !canModerateTribe(tribe.viewer_role)) return;
+    Alert.alert("Publication", undefined, [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: TRIBE_MOD_DELETE_POST,
+        style: "destructive",
+        onPress: () => {
+          void api.tribes.deleteTribePost(slug, city, post.id).then(() => {
+            setPosts((prev) => prev.filter((item) => item.id !== post.id));
+          });
+        },
+      },
+    ]);
+  }
+
+  function confirmMemberAction(member: TribeMember) {
+    if (!slug || !tribe || !canModerateTribe(tribe.viewer_role)) return;
+    if (member.role === "owner" || member.user_id === user?.id) return;
+    const buttons: {
+      text: string;
+      style?: "destructive" | "cancel";
+      onPress?: () => void;
+    }[] = [];
+    if (canManageTribe(tribe.viewer_role) && member.role === "member") {
+      buttons.push({
+        text: TRIBE_MOD_PROMOTE_MOD,
+        onPress: () => {
+          void api.tribes
+            .updateTribeMemberRole(slug, city, member.user_id, { role: "moderator" })
+            .then(() => loadAll());
+        },
+      });
+    }
+    if (canManageTribe(tribe.viewer_role) && member.role === "moderator") {
+      buttons.push({
+        text: TRIBE_MOD_DEMOTE_MOD,
+        onPress: () => {
+          void api.tribes
+            .updateTribeMemberRole(slug, city, member.user_id, { role: "member" })
+            .then(() => loadAll());
+        },
+      });
+    }
+    buttons.push({
+      text: TRIBE_MOD_EXCLUDE_MEMBER,
+      style: "destructive",
+      onPress: () => {
+        void api.tribes.removeTribeMember(slug, city, member.user_id).then(() => loadAll());
+      },
+    });
+    buttons.push({ text: "Annuler", style: "cancel" });
+    Alert.alert("Membre", undefined, buttons);
+  }
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -316,7 +399,17 @@ export default function TribeDetailScreen() {
               {posts.length === 0 && !wallLoading ? (
                 <Text style={styles.empty}>{TRIBE_WALL_EMPTY}</Text>
               ) : (
-                posts.map((post) => <TribePostCard key={post.id} post={post} />)
+                posts.map((post) => {
+                  const canDelete =
+                    post.author.id === user?.id || canModerateTribe(tribe.viewer_role);
+                  return (
+                    <TribePostCard
+                      key={post.id}
+                      post={post}
+                      onModeratePress={canDelete ? () => confirmDeletePost(post) : undefined}
+                    />
+                  );
+                })
               )}
             </>
           )}
@@ -328,7 +421,12 @@ export default function TribeDetailScreen() {
                 <Text style={styles.empty}>Aucun membre affiché.</Text>
               ) : (
                 members.map((member) => (
-                  <View key={member.user_id} style={styles.memberRow}>
+                  <Pressable
+                    key={member.user_id}
+                    style={styles.memberRow}
+                    onLongPress={() => confirmMemberAction(member)}
+                    delayLongPress={400}
+                  >
                     <View style={styles.avatar}>
                       <Text style={styles.avatarText}>
                         {(TRIBE_ROLE_LABELS[member.role] ?? "M")[0]}
@@ -342,7 +440,7 @@ export default function TribeDetailScreen() {
                         {TRIBE_ROLE_LABELS[member.role] ?? member.role}
                       </Text>
                     </View>
-                  </View>
+                  </Pressable>
                 ))
               )}
             </>

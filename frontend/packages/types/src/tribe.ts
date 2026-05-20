@@ -47,6 +47,25 @@ export interface TribeMember {
   user_id: string;
   role: TribeMemberRole;
   joined_at: string;
+  tribe_slug?: string | null;
+  tribe_city?: string | null;
+  tribe_name?: string | null;
+}
+
+export interface TribeInvitationPending {
+  id: string;
+  tribe_slug: string;
+  tribe_name: string;
+  tribe_city: string;
+  expires_at: string;
+}
+
+export interface TribeInvitationListResponse {
+  items: TribeInvitationPending[];
+}
+
+export interface TribeInvitationCreatePayload {
+  invitee_user_id?: string | null;
 }
 
 export interface TribeMemberListResponse {

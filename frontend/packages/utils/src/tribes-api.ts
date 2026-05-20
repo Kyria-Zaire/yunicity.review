@@ -1,7 +1,9 @@
 import type {
   Tribe,
   TribeInvitationAcceptPayload,
+  TribeInvitationCreatePayload,
   TribeInvitationCreateResponse,
+  TribeInvitationListResponse,
   TribeJoinPayload,
   TribeListResponse,
   TribeMember,
@@ -136,12 +138,34 @@ export class TribesApi extends ApiClientBase {
     );
   }
 
-  createTribeInvitation(slug: string, city: string): Promise<TribeInvitationCreateResponse> {
+  listMyTribeInvitations(): Promise<TribeInvitationListResponse> {
+    return this.getJson<TribeInvitationListResponse>("/tribe-invitations/me");
+  }
+
+  createTribeInvitation(
+    slug: string,
+    city: string,
+    payload: TribeInvitationCreatePayload = {},
+  ): Promise<TribeInvitationCreateResponse> {
     const qs = tribeCityQuery(city);
     return this.postJson<TribeInvitationCreateResponse>(
       `/tribes/${encodeURIComponent(slug)}/invite?${qs}`,
-      {},
+      payload,
     );
+  }
+
+  acceptTribeInvitationById(
+    invitationId: string,
+    payload: TribeInvitationAcceptPayload = { charter_accepted: true },
+  ): Promise<TribeMember> {
+    return this.postJson<TribeMember>(
+      `/tribe-invitations/me/${encodeURIComponent(invitationId)}/accept`,
+      payload,
+    );
+  }
+
+  declineTribeInvitation(invitationId: string): Promise<void> {
+    return this.postVoid(`/tribe-invitations/me/${encodeURIComponent(invitationId)}/decline`);
   }
 
   acceptTribeInvitation(

@@ -22,7 +22,7 @@ export function TribeModerationPanel({ tribe, city }: { tribe: Tribe; city: stri
     setError(null);
     try {
       const response = await api.tribes.createTribeInvitation(tribe.slug, city);
-      const path = tribeInvitationHref(response.token);
+      const path = tribeInvitationHref(response.token, tribe.slug, city);
       setInviteLink(`${window.location.origin}${path}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invitation impossible.");
