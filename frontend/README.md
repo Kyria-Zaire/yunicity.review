@@ -163,7 +163,7 @@ Pas de browser push web MVP — inbox calme, point non lu discret (#2A2FFF).
 
 - **Activation** : onboarding émotionnel si pas de passport actif → `POST /passport/activate`
 - **Carte premium** : photo, nom, ville, tier, numéro, QR placeholder (pas de scan réel), stats
-- **Tampons** : collection lecture seule (`GET /passport/stamps`)
+- **Tampons locaux** : souvenirs territoriaux (`GET /passport/stamps` — visites + mémoires, récents d’abord)
 - **Offres** : partenaires vérifiés (`GET /passport/offers`) + CTA « Utiliser » → redemption MVP
 
 ### Web (`/passport`)
@@ -173,6 +173,8 @@ Version minimaliste : même flux activation + carte + listes.
 ### Composants mobile (`apps/mobile/components/passport/`)
 
 `passport-card`, `passport-tier-badge`, `passport-qr-placeholder`, `stamp-card`, `offer-card`, `empty-passport-state`
+
+Labels : `packages/utils/src/stamp-labels.ts` · Intention : [`docs/ux/local-stamps-intent.md`](../docs/ux/local-stamps-intent.md)
 
 ### Hooks
 

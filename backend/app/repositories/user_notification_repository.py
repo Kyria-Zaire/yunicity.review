@@ -101,4 +101,5 @@ class UserNotificationRepository:
             )
             .values(is_read=True)
         )
-        return int(result.rowcount or 0)
+        rowcount = getattr(result, "rowcount", 0)
+        return int(rowcount or 0)

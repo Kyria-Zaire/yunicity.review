@@ -10,6 +10,8 @@ export type PassportStatus = "active" | "suspended" | "revoked";
 
 export type PassportStampSource = "organization";
 
+export type PassportStampKind = "visit" | "memory";
+
 export type PartnerOfferType =
   | "drink"
   | "discount"
@@ -76,11 +78,18 @@ export interface PassportStampOrganization {
 
 export interface PassportStamp {
   id: string;
-  passport_id: string;
-  organization_id: string;
-  stamp_source: PassportStampSource;
+  kind: PassportStampKind;
   stamped_at: string;
-  organization: PassportStampOrganization;
+  passport_id?: string | null;
+  organization_id?: string | null;
+  stamp_source?: PassportStampSource | null;
+  organization?: PassportStampOrganization | null;
+  title?: string | null;
+  description?: string | null;
+  icon?: string | null;
+  slug?: string | null;
+  city?: string | null;
+  human_line?: string | null;
 }
 
 export interface PassportStampListResponse {

@@ -10,6 +10,7 @@ from app.core.config import get_settings
 from app.db.base import Base
 from app.db.seeds.auth_rbac import seed_auth_rbac
 from app.db.seeds.passport_tiers import seed_passport_tiers
+from app.db.seeds.stamp_definitions import seed_stamp_definitions
 from app.db.session import dispose_db, get_engine, get_session_factory, init_db
 from app.integrations.redis import close_redis, init_redis
 from app.main import create_app
@@ -66,6 +67,7 @@ async def auth_client(auth_env: None) -> AsyncGenerator[AsyncClient, None]:
     async with session_factory() as session:
         await seed_auth_rbac(session)
         await seed_passport_tiers(session)
+        await seed_stamp_definitions(session)
         await session.commit()
 
     application: FastAPI = create_app()

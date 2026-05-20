@@ -18,6 +18,7 @@ from app.core.passport_constants import (
     PassportTierCode,
 )
 from app.core.passport_qr import normalize_qr_secret
+from app.models.local_stamp import CitizenLocalStamp
 from app.models.passport import PartnerOffer, Passport, PassportOfferRedemption
 from app.models.user import User
 from app.repositories.partner_offer_repository import PartnerOfferRepository
@@ -29,6 +30,7 @@ from app.schemas.scan import (
     ScanRedeemResponse,
     ScanResolveResponse,
 )
+from app.services.local_stamp_service import LocalStampService
 from app.services.notification_triggers import notify_redemption_success
 from app.services.organization_membership_service import OrganizationMembershipService
 from app.services.passport_level_hooks import evaluate_passport_level_after_activity
@@ -199,8 +201,23 @@ class ScanRedemptionService:
                 organization_id=offer.organization_id,
                 stamped_at=now,
             )
+            org = offer.organization
+            new_local: list[CitizenLocalStamp] = []
+            if org is not None:
+                new_local = await LocalStampService(self._session).evaluate_after_redemption(
+                    passport=passport,
+                    offer=offer,
+                    organization=org,
+                    redeemed_at=now,
+                    via_partner_scan=True,
+                    send_notifications=False,
+                )
             await self._session.commit()
             await self._session.refresh(created)
+            for local_stamp in new_local:
+                await LocalStampService(self._session).notify_stamp_earned(
+                    passport.user_id, local_stamp
+                )
         except IntegrityError as exc:
             await self._session.rollback()
             raise AppError(

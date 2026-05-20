@@ -3,7 +3,8 @@
 export type SocialNotificationType =
   | "POST_LIKED"
   | "POST_COMMENTED"
-  | "PASSPORT_LEVEL_UNLOCKED";
+  | "PASSPORT_LEVEL_UNLOCKED"
+  | "LOCAL_STAMP_EARNED";
 
 export interface UserNotificationItem {
   id: string;

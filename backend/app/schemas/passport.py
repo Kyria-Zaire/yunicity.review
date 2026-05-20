@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import StrEnum
 from typing import Any
 from uuid import UUID
 
@@ -66,15 +67,29 @@ class PassportStampOrganizationSummary(BaseModel):
     logo_url: str | None
 
 
+class PassportStampKind(StrEnum):
+    VISIT = "visit"
+    MEMORY = "memory"
+
+
 class PassportStampResponse(BaseModel):
+    """Unified timeline item — partner visit or territorial memory (TICKET-504)."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
-    passport_id: UUID
-    organization_id: UUID
-    stamp_source: PassportStampSource
+    kind: PassportStampKind = PassportStampKind.VISIT
     stamped_at: datetime
-    organization: PassportStampOrganizationSummary
+    passport_id: UUID | None = None
+    organization_id: UUID | None = None
+    stamp_source: PassportStampSource | None = None
+    organization: PassportStampOrganizationSummary | None = None
+    title: str | None = None
+    description: str | None = None
+    icon: str | None = None
+    slug: str | None = None
+    city: str | None = None
+    human_line: str | None = None
 
 
 class PassportStampListResponse(BaseModel):

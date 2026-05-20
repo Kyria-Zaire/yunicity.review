@@ -47,6 +47,11 @@ class Settings(BaseSettings):
     expo_push_enabled: bool = Field(default=False, alias="EXPO_PUSH_ENABLED")
     expo_access_token: str | None = Field(default=None, alias="EXPO_ACCESS_TOKEN")
 
+    passport_stamp_feed_events: bool = Field(
+        default=False,
+        alias="PASSPORT_STAMP_FEED_EVENTS",
+    )
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: object) -> list[str]:

@@ -18,8 +18,16 @@ from app.core.passport_constants import (
 )
 from app.core.passport_qr import build_qr_payload
 from app.core.passport_tokens import generate_passport_number, generate_qr_token_placeholder
-from app.models.passport import PartnerOffer, Passport, PassportOfferRedemption, PassportTier
+from app.models.local_stamp import CitizenLocalStamp
+from app.models.passport import (
+    PartnerOffer,
+    Passport,
+    PassportOfferRedemption,
+    PassportStamp,
+    PassportTier,
+)
 from app.models.user import User
+from app.repositories.local_stamp_repository import LocalStampRepository
 from app.repositories.partner_offer_repository import PartnerOfferRepository
 from app.repositories.passport_repository import PassportRepository
 from app.repositories.post_repository import PostRepository
@@ -28,7 +36,9 @@ from app.schemas.partner_offer import PartnerOfferListResponse, PartnerOfferResp
 from app.schemas.passport import (
     PassportActivateRequest,
     PassportMeResponse,
+    PassportStampKind,
     PassportStampListResponse,
+    PassportStampOrganizationSummary,
     PassportStampResponse,
     PassportStatsResponse,
     PassportTierListResponse,
@@ -36,6 +46,7 @@ from app.schemas.passport import (
 )
 from app.schemas.redemption import RedemptionResponse
 from app.schemas.scan import PassportQrResponse
+from app.services.local_stamp_service import LocalStampService
 from app.services.passport_level_hooks import evaluate_passport_level_after_activity
 from app.services.passport_level_service import PassportLevelService
 
@@ -113,9 +124,56 @@ class PassportService:
 
     async def list_stamps(self, user: User) -> PassportStampListResponse:
         passport = await self._require_active_passport(user.id)
-        stamps = await self._passports.list_stamps_for_passport(passport.id)
-        items = [PassportStampResponse.model_validate(s) for s in stamps]
+        visit_stamps = await self._passports.list_stamps_for_passport(passport.id)
+        local_stamps = await LocalStampRepository(self._session).list_for_user(user.id)
+        items = [self._visit_stamp_response(s) for s in visit_stamps]
+        items.extend(self._memory_stamp_response(s) for s in local_stamps)
+        items.sort(key=lambda item: item.stamped_at, reverse=True)
         return PassportStampListResponse(items=items, total=len(items))
+
+    @staticmethod
+    def _visit_stamp_response(stamp: PassportStamp) -> PassportStampResponse:
+        org = stamp.organization
+        return PassportStampResponse(
+            id=stamp.id,
+            kind=PassportStampKind.VISIT,
+            passport_id=stamp.passport_id,
+            organization_id=stamp.organization_id,
+            stamp_source=stamp.stamp_source,
+            stamped_at=stamp.stamped_at,
+            organization=PassportStampOrganizationSummary.model_validate(org)
+            if org
+            else None,
+        )
+
+    @staticmethod
+    def _memory_stamp_response(stamp: CitizenLocalStamp) -> PassportStampResponse:
+        definition = stamp.definition
+        title = definition.title if definition else "Souvenir local"
+        description = definition.description if definition else None
+        icon = definition.icon if definition else "seal"
+        slug = definition.slug if definition else None
+        human = (
+            LocalStampService.human_line(stamp, definition)
+            if definition
+            else title
+        )
+        org = stamp.organization
+        org_summary = (
+            PassportStampOrganizationSummary.model_validate(org) if org is not None else None
+        )
+        return PassportStampResponse(
+            id=stamp.id,
+            kind=PassportStampKind.MEMORY,
+            stamped_at=stamp.earned_at,
+            title=title,
+            description=description,
+            icon=icon,
+            slug=slug,
+            city=stamp.city,
+            human_line=human,
+            organization=org_summary,
+        )
 
     async def list_visible_offers(self, user: User) -> PartnerOfferListResponse:
         passport = await self._require_active_passport(user.id)
@@ -194,11 +252,30 @@ class PassportService:
             status=OfferRedemptionStatus.COMPLETED,
             redeemed_at=now,
         )
+        org = offer.organization
+        if org is None:
+            raise AppError(
+                status_code=500,
+                code="OFFER_ORGANIZATION_MISSING",
+                detail="Organisation partenaire introuvable.",
+            )
         try:
             created = await self._passports.create_redemption(redemption)
             await self._passports.increment_redemptions_count(passport)
+            new_local = await LocalStampService(self._session).evaluate_after_redemption(
+                passport=passport,
+                offer=offer,
+                organization=org,
+                redeemed_at=now,
+                via_partner_scan=False,
+                send_notifications=False,
+            )
             await self._session.commit()
             await self._session.refresh(created)
+            for stamp in new_local:
+                await LocalStampService(self._session).notify_stamp_earned(
+                    passport.user_id, stamp
+                )
         except IntegrityError as exc:
             await self._session.rollback()
             raise AppError(

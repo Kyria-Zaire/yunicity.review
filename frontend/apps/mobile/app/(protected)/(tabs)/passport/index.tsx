@@ -7,6 +7,10 @@ import { StampCard } from "@/components/passport/stamp-card";
 import { usePassport } from "@/hooks/use-passport";
 import { usePassportOffers } from "@/hooks/use-passport-offers";
 import { usePassportStamps } from "@/hooks/use-passport-stamps";
+import {
+  PASSPORT_STAMPS_EMPTY,
+  PASSPORT_STAMPS_SECTION_TITLE,
+} from "@yunicity/utils";
 import { Link } from "expo-router";
 import { useEffect, type ReactNode } from "react";
 import {
@@ -93,15 +97,16 @@ export default function PassportScreen() {
             </Pressable>
           </Link>
 
-          <Section title="Mes tampons" subtitle="Collection de visites locales">
+          <Section
+            title={PASSPORT_STAMPS_SECTION_TITLE}
+            subtitle="Souvenirs de vos passages et découvertes sur le territoire"
+          >
             {stampsLoading ? (
               <ActivityIndicator color={passportTheme.accent} />
             ) : stampsError ? (
               <Text style={styles.sectionError}>{stampsError}</Text>
             ) : stamps.length === 0 ? (
-              <Text style={styles.empty}>
-                Aucun tampon pour l&apos;instant — explore les lieux du territoire.
-              </Text>
+              <Text style={styles.empty}>{PASSPORT_STAMPS_EMPTY}</Text>
             ) : (
               stamps.map((stamp) => <StampCard key={stamp.id} stamp={stamp} />)
             )}

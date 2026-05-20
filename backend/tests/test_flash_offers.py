@@ -31,7 +31,7 @@ def _offer(**kwargs: object) -> PartnerOffer:
         "valid_until": now + timedelta(days=7),
     }
     defaults.update(kwargs)
-    return PartnerOffer(**defaults)  # type: ignore[arg-type]
+    return PartnerOffer(**defaults)
 
 
 def test_validate_flash_requires_ends_at() -> None:

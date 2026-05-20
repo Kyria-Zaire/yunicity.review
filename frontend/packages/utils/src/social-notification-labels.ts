@@ -22,6 +22,15 @@ export function formatNotificationMessage(
       }
       return "Votre Passport évolue.";
     }
+    case "LOCAL_STAMP_EARNED": {
+      const stampTitle =
+        typeof payload?.stamp_title === "string" ? payload.stamp_title : null;
+      const city = typeof payload?.city === "string" ? payload.city : null;
+      if (stampTitle && city) {
+        return `${stampTitle} — un nouveau souvenir à ${city}.`;
+      }
+      return "Nouveau souvenir ajouté à votre Passport.";
+    }
     default:
       return "Nouvelle activité sur Yunicity.";
   }

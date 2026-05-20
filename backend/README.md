@@ -597,6 +597,25 @@ Tests : `tests/test_social_notifications.py`
 
 Exclusions : websocket, browser push web, regroupement complexe, trending.
 
+## Tampons locaux — mémoire territoriale (TICKET-504)
+
+Intention UX : [`docs/ux/local-stamps-intent.md`](../docs/ux/local-stamps-intent.md) · Produit : [`docs/product/local-stamps.md`](../docs/product/local-stamps.md).
+
+| Table | Rôle |
+|-------|------|
+| `stamp_definitions` | Catalogue extensible (slug, trigger, icône) |
+| `citizen_local_stamps` | Souvenirs utilisateur (dédup user + définition + org optionnelle) |
+
+`GET /passport/stamps` fusionne visites (`passport_stamps`) + souvenirs locaux, tri chronologique inverse.
+
+`LocalStampService` — hooks après redemption citoyenne / scan partenaire. Backfill : `python scripts/backfill_local_stamps.py`.
+
+Notification `LOCAL_STAMP_EARNED` (préférence `passport`). Feed : `PASSPORT_STAMP_FEED_EVENTS=false` par défaut.
+
+Tests : `tests/test_local_stamps.py`
+
+Exclusions : achievements, streaks, leaderboard, farming, NFT.
+
 ### TODO futur (hors scope)
 
 - Web Push, inbox, analytics, segmentation marketing

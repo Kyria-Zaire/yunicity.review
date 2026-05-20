@@ -2,6 +2,7 @@
 
 from app.models.comment import Comment
 from app.models.like import Like
+from app.models.local_stamp import CitizenLocalStamp, StampDefinition
 from app.models.organization import (
     Organization,
     OrganizationMember,
@@ -29,9 +30,11 @@ __all__ = [
     "Organization",
     "OrganizationMember",
     "OrganizationVerification",
+    "CitizenLocalStamp",
     "Comment",
     "Like",
     "PartnerLead",
+    "StampDefinition",
     "Post",
     "Report",
     "PushSubscription",

@@ -13,7 +13,11 @@ import {
   PARTNER_OFFER_TYPE_LABELS,
   PASSPORT_TIER_META,
   formatPassportDate,
+  formatStampDisplayLine,
+  formatStampSubtitle,
   maskQrToken,
+  PASSPORT_STAMPS_EMPTY,
+  PASSPORT_STAMPS_SECTION_TITLE,
 } from "@yunicity/utils";
 import type { PartnerOffer, PassportStamp } from "@yunicity/types";
 import { FlashOfferBadge } from "@/components/feed/flash-offer-badge";
@@ -37,22 +41,34 @@ function PassportStampsList({
 }) {
   return (
     <section>
-      <h3 className="font-semibold text-neutral-900">Tampons</h3>
+      <h3 className="font-semibold text-neutral-900">{PASSPORT_STAMPS_SECTION_TITLE}</h3>
+      <p className="mt-1 text-sm text-neutral-500">
+        Souvenirs de vos passages et découvertes sur le territoire
+      </p>
       {isLoading ? (
         <p className="mt-2 text-sm text-neutral-500">Chargement…</p>
       ) : stamps.length === 0 ? (
-        <p className="mt-2 text-sm text-neutral-500">Aucun tampon pour l&apos;instant.</p>
+        <p className="mt-2 text-sm text-neutral-500">{PASSPORT_STAMPS_EMPTY}</p>
       ) : (
-        <ul className="mt-2 space-y-2">
+        <ul className="mt-3 space-y-2">
           {stamps.map((stamp) => (
             <li
               key={stamp.id}
-              className="rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm"
+              className="flex gap-3 rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm"
             >
-              <p className="font-medium">{stamp.organization.name}</p>
-              <p className="text-neutral-500">
-                {stamp.organization.city} · {formatPassportDate(stamp.stamped_at)}
-              </p>
+              <span
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#2A2FFF] text-[#2A2FFF]"
+                aria-hidden
+              >
+                {stamp.kind === "memory" ? "◇" : "✦"}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-neutral-900">{formatStampDisplayLine(stamp)}</p>
+                {formatStampSubtitle(stamp) ? (
+                  <p className="text-neutral-600">{formatStampSubtitle(stamp)}</p>
+                ) : null}
+                <p className="text-neutral-500">{formatPassportDate(stamp.stamped_at)}</p>
+              </div>
             </li>
           ))}
         </ul>

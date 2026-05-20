@@ -44,6 +44,7 @@ _PUSH_BODIES: dict[SocialNotificationType, str] = {
     SocialNotificationType.POST_LIKED: "Quelqu'un a aimé votre publication.",
     SocialNotificationType.POST_COMMENTED: "{actor_name} a commenté votre publication.",
     SocialNotificationType.PASSPORT_LEVEL_UNLOCKED: "Votre Passport évolue.",
+    SocialNotificationType.LOCAL_STAMP_EARNED: "Nouveau souvenir ajouté à votre Passport.",
 }
 
 
@@ -154,6 +155,61 @@ class SocialNotificationService:
             logger.warning(
                 "push_notification_failed",
                 extra={"event": "passport_level_up", "user_id": str(target_user_id)},
+                exc_info=True,
+            )
+
+    async def notify_local_stamp_earned(
+        self,
+        *,
+        target_user_id: uuid.UUID,
+        stamp_title: str,
+        city: str,
+    ) -> None:
+        profile = await self._profiles.get_by_user_id(target_user_id)
+        if profile is None:
+            return
+        if not is_notification_enabled(
+            profile.notification_preferences,
+            key=PREFERENCE_KEY_PASSPORT,
+        ):
+            return
+        payload = {
+            "stamp_title": stamp_title,
+            "city": city,
+            "category": "passport",
+        }
+        row = UserNotification(
+            type=SocialNotificationType.LOCAL_STAMP_EARNED.value,
+            actor_id=None,
+            target_user_id=target_user_id,
+            target_post_id=None,
+            deeplink="/passport",
+            payload=payload,
+        )
+        await self._notifications.add(row)
+        await self._session.commit()
+        logger.info(
+            "social_notification_created",
+            extra={
+                "type": SocialNotificationType.LOCAL_STAMP_EARNED.value,
+                "target_user_id": str(target_user_id),
+            },
+        )
+        try:
+            await self._push.send_to_user(
+                target_user_id,
+                title="Yunicity",
+                body=_PUSH_BODIES[SocialNotificationType.LOCAL_STAMP_EARNED],
+                data={
+                    "type": "passport",
+                    "stamp_title": stamp_title,
+                    "city": city,
+                },
+            )
+        except Exception:
+            logger.warning(
+                "push_notification_failed",
+                extra={"event": "local_stamp_earned", "user_id": str(target_user_id)},
                 exc_info=True,
             )
 

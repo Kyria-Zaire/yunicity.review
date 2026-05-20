@@ -64,6 +64,12 @@ export {
   formatNotificationRelativeTime,
 } from "./social-notification-labels";
 export {
+  PASSPORT_STAMPS_EMPTY,
+  PASSPORT_STAMPS_SECTION_TITLE,
+  formatStampDisplayLine,
+  formatStampSubtitle,
+} from "./stamp-labels";
+export {
   FEED_COMPOSER_PLACEHOLDER,
   FEED_DELETED_COMMENT_LABEL,
   FEED_EMPTY_BODY,
