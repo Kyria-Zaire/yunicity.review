@@ -64,6 +64,36 @@ export {
   createNotificationsApi,
 } from "./notifications-api";
 export { FeedApi, createFeedApi } from "./feed-api";
+export { SearchApi, createSearchApi } from "./search-api";
+export {
+  SEARCH_CITY_LABEL,
+  SEARCH_EMPTY_BODY,
+  SEARCH_EMPTY_TITLE,
+  SEARCH_ERROR,
+  SEARCH_GROUP_LABELS,
+  SEARCH_GROUP_ORDER,
+  SEARCH_INITIAL_BODY,
+  SEARCH_INITIAL_TITLE,
+  SEARCH_LOAD_MORE,
+  SEARCH_LOADING,
+  SEARCH_MIN_QUERY_HINT,
+  SEARCH_PAGE_SUBTITLE,
+  SEARCH_PAGE_TITLE,
+  SEARCH_PLACEHOLDER,
+  SEARCH_RESULT_COUNT,
+  SEARCH_RETRY,
+  SEARCH_TYPE_TABS,
+  emptySearchGroups,
+  isSearchInitialState,
+  isSearchQueryReady,
+  searchResultHref,
+  searchResultSubtitle,
+  searchResultTitle,
+  searchTypeFilterFromApi,
+  searchTypeToApiParam,
+  visibleSearchGroups,
+  type SearchHrefTarget,
+} from "./search-labels";
 export { applyFeedLikeToggle, mergeFeedItems } from "./feed-state";
 export {
   FLASH_BADGE_LABEL,

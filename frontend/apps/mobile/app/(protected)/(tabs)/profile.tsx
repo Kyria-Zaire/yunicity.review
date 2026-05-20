@@ -113,6 +113,13 @@ export default function ProfileTabScreen() {
         </Pressable>
       </Link>
 
+      <Link href={"/(protected)/search" as Href} asChild>
+        <Pressable style={styles.notifLink}>
+          <Text style={styles.notifLinkText}>Recherche</Text>
+          <Text style={styles.notifLinkHint}>Événements, lieux, tribus et quartiers</Text>
+        </Pressable>
+      </Link>
+
       {!profile?.onboarding_completed ? (
         <View style={styles.banner}>
           <Text style={styles.bannerTitle}>Active ton profil</Text>

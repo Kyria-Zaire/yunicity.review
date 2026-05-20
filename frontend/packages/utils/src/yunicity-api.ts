@@ -1,4 +1,6 @@
 import type {
+  SearchListParams,
+  SearchResponse,
   CommentCreatePayload,
   CommentListResponse,
   FeedComment,
@@ -35,6 +37,7 @@ import { EventsApi, createEventsApi } from "./events-api";
 import { NeighborhoodsApi, createNeighborhoodsApi } from "./neighborhood-api";
 import { TribesApi, createTribesApi } from "./tribes-api";
 import { FeedApi, createFeedApi } from "./feed-api";
+import { SearchApi, createSearchApi } from "./search-api";
 import { ProfileApi, createProfileApi } from "./profile-api";
 
 /** Façade profile + organizations + passport. */
@@ -49,6 +52,7 @@ export class YunicityApi {
   readonly events: EventsApi;
   readonly neighborhoods: NeighborhoodsApi;
   readonly tribes: TribesApi;
+  readonly search: SearchApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.profile = createProfileApi(client, apiBaseUrl);
@@ -61,6 +65,11 @@ export class YunicityApi {
     this.events = createEventsApi(client, apiBaseUrl);
     this.neighborhoods = createNeighborhoodsApi(client, apiBaseUrl);
     this.tribes = createTribesApi(client, apiBaseUrl);
+    this.search = createSearchApi(client, apiBaseUrl);
+  }
+
+  searchLocal(params: SearchListParams): Promise<SearchResponse> {
+    return this.search.search(params);
   }
 
   registerPushDevice(payload: RegisterPushDeviceRequest): Promise<PushSubscription> {

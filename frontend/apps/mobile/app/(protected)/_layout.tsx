@@ -57,6 +57,10 @@ export default function ProtectedLayout() {
         options={{ headerShown: true, title: "Invitation" }}
       />
       <Stack.Screen
+        name="search"
+        options={{ headerShown: true, title: "Recherche" }}
+      />
+      <Stack.Screen
         name="events/[id]"
         options={{ headerShown: true, title: "Moment local" }}
       />

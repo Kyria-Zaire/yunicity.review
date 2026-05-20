@@ -138,6 +138,17 @@ export type {
 } from "./neighborhood";
 
 export type {
+  SearchEntityType,
+  SearchGroupKey,
+  SearchGroups,
+  SearchListParams,
+  SearchResponse,
+  SearchResultGroup,
+  SearchResultItem,
+  SearchTypeFilter,
+} from "./search";
+
+export type {
   Tribe,
   TribeCategory,
   TribeInvitationAcceptPayload,

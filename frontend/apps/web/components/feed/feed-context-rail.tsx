@@ -19,7 +19,10 @@ export function FeedContextRail({ city }: { city?: string | null }) {
           Les offres Passport de vos commerces partenaires apparaissent ici lorsqu’elles sont
           publiées — des avantages utiles, pas de la publicité.
         </p>
-        <Link href="/passport" className="font-medium text-yunicity-primary hover:underline">
+        <Link href="/search" className="font-medium text-yunicity-primary hover:underline">
+          Rechercher à {city ?? "Reims"}
+        </Link>
+        <Link href="/passport" className="mt-2 block font-medium text-yunicity-primary hover:underline">
           Mon Passport
         </Link>
       </WebContextPanel>

@@ -45,9 +45,9 @@ Monorepo **pnpm** + **Turborepo** : Next.js (web + admin), Expo (mobile), packag
 
 | App | Routes |
 |-----|--------|
-| Web | `/login`, `/register`, `/feed`, `/profile/me`, `/organizations/me`, `/organizations/request` |
+| Web | `/login`, `/register`, `/feed`, `/search`, `/profile/me`, `/organizations/me`, `/organizations/request` |
 | Admin | `/login`, `/partner-scan`, `/partner-offers`, `/partner-leads`, `/passport-offers`, `/unauthorized`, `/protected-admin` |
-| Mobile | `/login`, `/register`, `/(protected)/(tabs)/feed`, `/(protected)/(tabs)/profile`, `/(protected)/(tabs)/organizations` |
+| Mobile | `/login`, `/register`, `/(protected)/(tabs)/feed`, `/(protected)/search`, `/(protected)/(tabs)/profile`, `/(protected)/(tabs)/organizations` |
 
 ## Profil & organizations (TICKET-206)
 
@@ -76,6 +76,7 @@ Admin : cockpit CRM partenaires (TICKET-207, voir ci-dessous).
 | `YunicityApi` | Façade utilisée par les `AuthProvider` |
 | `passport-api.ts` | `getPassportMe`, `activatePassport`, `listPassportStamps`, `listPassportOffers`, `redeemOffer` |
 | `feed-api.ts` | `listFeed`, `getPost`, `createPost`, like/unlike, comments, `reportPost` |
+| `search-api.ts` | `search` — `GET /search` (groupes par type) |
 
 Types : `UserProfile`, `PassportMe`, `PartnerOffer`, `OrganizationSummary`, `OrganizationRequestPayload`, `ProfileVisibility`.
 
@@ -109,6 +110,44 @@ Hashtags, mentions, repost, stories, vidéo, temps réel, notifications likes/co
 ### Tests
 
 `packages/utils/src/feed-labels.test.ts`
+
+## Recherche locale (FEATURE-B / TICKET-B.5)
+
+Intention UX : [`docs/ux/search-ui-intent.md`](../docs/ux/search-ui-intent.md) · PRD : [`docs/prd/PRD-B1-local-discovery-and-search-philosophy.md`](../docs/prd/PRD-B1-local-discovery-and-search-philosophy.md) · Spec : [`docs/technical/search-technical-spec.md`](../docs/technical/search-technical-spec.md)
+
+### Routes
+
+| App | Route | Description |
+|-----|-------|-------------|
+| Web | `/search` | `WebAppShell` — barre, filtres type, groupes, « Voir plus » |
+| Mobile | `/(protected)/search` | Écran stack — lien feed + profil (pas d’onglet tab dédié) |
+
+### API clients (`@yunicity/utils`)
+
+| Module | Rôle |
+|--------|------|
+| `search-api.ts` | `GET /search` — `q`, `city`, `type`, `neighborhood_slug`, pagination |
+| `search-labels.ts` | Labels, mapping groupes, liens résultats, helpers état initial/vide |
+| `YunicityApi.search` / `searchLocal()` | Façade |
+
+Types : `packages/types/src/search.ts` — `SearchGroups`, `SearchResultItem`, `SearchTypeFilter`.
+
+### Composants
+
+| Web | Mobile |
+|-----|--------|
+| `apps/web/components/search/*` | `apps/mobile/components/search/*` |
+| `apps/web/hooks/use-search.ts` | `apps/mobile/hooks/use-search.ts` |
+
+Cartes : `SearchResultCard`, `SearchGroupSection`, `SearchTypeTabs`. Debounce 300 ms ; requête vide = état initial calme.
+
+### Exclusions MVP frontend recherche
+
+Autocomplete, trending, popular searches, infinite scroll, partage, filtres date/géo avancés, notifications liées à la recherche.
+
+### Tests
+
+`packages/utils/src/search-labels.test.ts` · `packages/utils/src/search-api.test.ts`
 
 ## Offres flash locales (TICKET-501)
 

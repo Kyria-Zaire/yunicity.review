@@ -14,6 +14,7 @@ import {
   formatOfferValidUntil,
   PARTNER_OFFER_TYPE_LABELS,
 } from "@yunicity/utils";
+import type { Href } from "expo-router";
 import { Link } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -226,8 +227,17 @@ export function FeedScreen() {
 
   const header = (
     <View style={styles.headerBlock}>
-      <Text style={styles.screenTitle}>Fil local</Text>
-      <Text style={styles.screenSubtitle}>Vie et avantages près de chez vous</Text>
+      <View style={styles.headerTop}>
+        <View style={styles.headerTitles}>
+          <Text style={styles.screenTitle}>Fil local</Text>
+          <Text style={styles.screenSubtitle}>Vie et avantages près de chez vous</Text>
+        </View>
+        <Link href={"/(protected)/search" as Href} asChild>
+          <Pressable style={styles.searchLink}>
+            <Text style={styles.searchLinkText}>Recherche</Text>
+          </Pressable>
+        </Link>
+      </View>
       <FeedComposerMobile
         onSubmit={async (body) => {
           await createPost(body);
@@ -308,6 +318,16 @@ const styles = StyleSheet.create({
   listContent: { padding: 16, paddingBottom: 32 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: feedTheme.bg },
   headerBlock: { marginBottom: 16, gap: 8 },
+  headerTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
+  headerTitles: { flex: 1, gap: 4 },
+  searchLink: {
+    borderWidth: 1,
+    borderColor: feedTheme.border,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  searchLinkText: { fontSize: 13, fontWeight: "600", color: feedTheme.accent },
   screenTitle: { fontSize: 26, fontWeight: "700", color: feedTheme.text },
   screenSubtitle: { fontSize: 14, color: feedTheme.textMuted, marginBottom: 8 },
   composer: {
