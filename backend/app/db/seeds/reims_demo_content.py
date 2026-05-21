@@ -3,7 +3,7 @@
 Run (dev/recette only): python -m app.db.seeds --demo
 Blocked when APP_ENV is preprod or prod (see seeds.__main__).
 
-Demo login: demo@yunicity.dev / DemoReims1! — never deploy to production.
+Demo login: demo@yunicity.dev / DemoReims1!Dev — never deploy to production.
 
 Territorial links (TICKET-604): posts, events and orgs reference Reims neighborhoods
 so feed badges and quartier detail feel alive in recette.
@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -42,7 +42,7 @@ from app.services.profile_service import ProfileService
 
 logger = logging.getLogger(__name__)
 
-DEMO_PASSWORD = "DemoReims1!"
+DEMO_PASSWORD = "DemoReims1!Dev"
 
 DEMO_CITIZEN_ID = uuid.UUID("c5010000-0000-4000-8000-000000000001")
 DEMO_CITIZEN_2_ID = uuid.UUID("c5010000-0000-4000-8000-000000000002")
@@ -58,11 +58,47 @@ DEMO_POST_3_ID = uuid.UUID("c5040000-0000-4000-8000-000000000003")
 
 DEMO_EVENT_1_ID = uuid.UUID("c5050000-0000-4000-8000-000000000001")
 DEMO_EVENT_2_ID = uuid.UUID("c5050000-0000-4000-8000-000000000002")
+DEMO_EVENT_3_ID = uuid.UUID("c5050000-0000-4000-8000-000000000003")
+
+# Europe/Paris approx. for demo seeds (UTC+2 — summer / CEST).
+PARIS_UTC_OFFSET = timedelta(hours=2)
 
 DEMO_OFFER_FLASH_ID = uuid.UUID("c5060000-0000-4000-8000-000000000001")
 DEMO_PASSPORT_ID = uuid.UUID("c5070000-0000-4000-8000-000000000001")
 
 REIMS_CITY = "Reims"
+
+
+def _demo_event_window(
+    *,
+    days_ahead: int,
+    start_hour: int,
+    start_minute: int = 0,
+    end_hour: int,
+    end_minute: int = 0,
+) -> tuple[datetime, datetime]:
+    """Build UTC instants from today + N days at local (Paris) wall-clock times."""
+    local_reference = datetime.now(UTC) + PARIS_UTC_OFFSET
+    target_day: date = (local_reference + timedelta(days=days_ahead)).date()
+    start_utc = datetime(
+        target_day.year,
+        target_day.month,
+        target_day.day,
+        start_hour,
+        start_minute,
+        tzinfo=UTC,
+    ) - PARIS_UTC_OFFSET
+    end_utc = datetime(
+        target_day.year,
+        target_day.month,
+        target_day.day,
+        end_hour,
+        end_minute,
+        tzinfo=UTC,
+    ) - PARIS_UTC_OFFSET
+    if end_utc <= start_utc:
+        end_utc += timedelta(hours=1)
+    return start_utc, end_utc
 
 
 async def _neighborhood_id_by_slug(session: AsyncSession, slug: str) -> uuid.UUID | None:
@@ -226,18 +262,37 @@ async def _ensure_local_event(
     description: str,
     event_type: str,
     location_name: str,
-    days_ahead: int,
-    district: str,
+    starts_at: datetime,
+    ends_at: datetime,
+    district: str | None = None,
     neighborhood_id: uuid.UUID | None = None,
+    latitude: float | None = None,
+    longitude: float | None = None,
+    address: str | None = None,
 ) -> LocalEvent:
     result = await session.execute(select(LocalEvent).where(LocalEvent.id == event_id))
     existing = result.scalar_one_or_none()
-    starts = datetime.now(UTC) + timedelta(days=days_ahead)
     if existing is not None:
-        if neighborhood_id is not None and existing.neighborhood_id is None:
-            existing.neighborhood_id = neighborhood_id
-        if existing.district != district:
+        existing.title = title
+        existing.description = description
+        existing.event_type = event_type
+        existing.location_name = location_name
+        existing.starts_at = starts_at
+        existing.ends_at = ends_at
+        existing.moderation_status = LocalEventModerationStatus.APPROVED.value
+        existing.is_cancelled = False
+        if district is not None:
             existing.district = district
+        if neighborhood_id is not None:
+            existing.neighborhood_id = neighborhood_id
+        if latitude is not None:
+            existing.latitude = latitude
+        if longitude is not None:
+            existing.longitude = longitude
+        if address is not None:
+            existing.address = address
+        await session.flush()
+        await FeedEventSyncService(session).upsert_event_post(existing, org)
         return existing
 
     event = LocalEvent(
@@ -250,10 +305,12 @@ async def _ensure_local_event(
         city=REIMS_CITY,
         district=district,
         neighborhood_id=neighborhood_id,
-        starts_at=starts,
-        ends_at=starts + timedelta(hours=3),
+        starts_at=starts_at,
+        ends_at=ends_at,
         location_name=location_name,
-        address=None,
+        address=address,
+        latitude=latitude,
+        longitude=longitude,
         visibility=LocalEventVisibility.PUBLIC.value,
         moderation_status=LocalEventModerationStatus.APPROVED.value,
         moderated_at=datetime.now(UTC),
@@ -375,38 +432,79 @@ async def seed_reims_demo_content(session: AsyncSession) -> None:
         neighborhood_id=hood_saint_remi,
     )
 
-    await _ensure_local_event(
-        session,
-        event_id=DEMO_EVENT_1_ID,
-        org=org_cafe,
-        created_by=partner_cafe.id,
-        title="Café-rencontre du quartier",
-        description="Un moment simple pour échanger autour d'un café, sans inscription lourde.",
-        event_type="cafe_meetup",
-        location_name="Café du Centre",
-        days_ahead=4,
-        district="Centre-ville",
-        neighborhood_id=hood_centre,
-    )
-    await _ensure_local_event(
-        session,
-        event_id=DEMO_EVENT_2_ID,
-        org=org_caveau,
-        created_by=partner_caveau.id,
-        title="Dégustation vins de Champagne",
-        description="Découverte de trois cuvées locales, en petit comité.",
-        event_type="exhibition",
-        location_name="Caveau Saint-Pierre",
-        days_ahead=11,
-        district="Saint-Remi",
-        neighborhood_id=hood_saint_remi,
-    )
-
     await _ensure_flash_offer(
         session,
         org_cafe,
         partner_cafe.id,
         neighborhood_id=hood_centre,
+    )
+
+    event_1_start, event_1_end = _demo_event_window(
+        days_ahead=3,
+        start_hour=8,
+        end_hour=13,
+    )
+    event_2_start, event_2_end = _demo_event_window(
+        days_ahead=5,
+        start_hour=18,
+        end_hour=20,
+    )
+    event_3_start, event_3_end = _demo_event_window(
+        days_ahead=10,
+        start_hour=10,
+        end_hour=12,
+    )
+
+    await _ensure_local_event(
+        session,
+        event_id=DEMO_EVENT_3_ID,
+        org=org_cafe,
+        created_by=partner_cafe.id,
+        title="Marché local bio",
+        description="Produits frais et rencontrer les producteurs locaux.",
+        event_type="market",
+        location_name="Place d'Erlon",
+        address="Place d'Erlon",
+        starts_at=event_1_start,
+        ends_at=event_1_end,
+        district="Centre-ville",
+        neighborhood_id=hood_centre,
+        latitude=49.27,
+        longitude=4.02,
+    )
+    await _ensure_local_event(
+        session,
+        event_id=DEMO_EVENT_1_ID,
+        org=org_cafe,
+        created_by=partner_cafe.id,
+        title="Café-rencontre des entrepreneurs",
+        description="Venez échanger avec les acteurs économiques locaux autour d’un café.",
+        event_type="meetup",
+        location_name="Centre-ville – 10 rue du Commerce",
+        address="10 rue du Commerce",
+        starts_at=event_2_start,
+        ends_at=event_2_end,
+        district="Centre-ville",
+        neighborhood_id=hood_centre,
+        latitude=49.2583,
+        longitude=4.0317,
+    )
+    await _ensure_local_event(
+        session,
+        event_id=DEMO_EVENT_2_ID,
+        org=org_cafe,
+        created_by=partner_cafe.id,
+        title="Atelier photo urbain",
+        description="Promenade photo dans le quartier Saint-Remi, animée par un photographe local.",
+        event_type="workshop",
+        location_name="Quartier Saint-Remi – départ place du Cardinal",
+        address="Place du Cardinal",
+        starts_at=event_3_start,
+        ends_at=event_3_end,
+        district="Saint-Remi",
+        neighborhood_id=hood_saint_remi,
+        latitude=49.24,
+        longitude=4.045,
     )
 
     await session.flush()
