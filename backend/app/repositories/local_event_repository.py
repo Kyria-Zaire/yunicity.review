@@ -68,6 +68,40 @@ class LocalEventRepository:
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
+    async def list_public_in_bbox(
+        self,
+        *,
+        lat_min: float,
+        lon_min: float,
+        lat_max: float,
+        lon_max: float,
+        city: str | None,
+        limit: int,
+        now: datetime,
+    ) -> list[LocalEvent]:
+        stmt = (
+            select(LocalEvent)
+            .options(selectinload(LocalEvent.neighborhood))
+            .where(
+                LocalEvent.moderation_status == LocalEventModerationStatus.APPROVED.value,
+                LocalEvent.is_cancelled.is_(False),
+                LocalEvent.visibility == "public",
+                LocalEvent.starts_at >= now,
+                LocalEvent.latitude.is_not(None),
+                LocalEvent.longitude.is_not(None),
+                LocalEvent.latitude >= lat_min,
+                LocalEvent.latitude <= lat_max,
+                LocalEvent.longitude >= lon_min,
+                LocalEvent.longitude <= lon_max,
+            )
+            .order_by(LocalEvent.starts_at.asc())
+            .limit(limit)
+        )
+        if city:
+            stmt = stmt.where(func.lower(LocalEvent.city) == city.strip().lower())
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
     async def list_for_organization_ids(
         self,
         organization_ids: list[uuid.UUID],

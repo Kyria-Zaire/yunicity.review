@@ -547,6 +547,28 @@ Migration : `20260531_0017_search_fts`. Doc : [`docs/architecture/search.md`](..
 
 Tests : `tests/test_search.py`.
 
+### Carte événements (FEATURE-D / TICKET-D.3)
+
+Événements publics **géolocalisés** dans une bounding box — pas de présence utilisateur, pas de temps réel.
+
+| Méthode | Route | Auth |
+|---------|-------|------|
+| GET | `/api/v1/map/events` | Optionnelle (`city` via JWT ou `?city=`) |
+
+Query : `lat_min`, `lon_min`, `lat_max`, `lon_max` (requis), `city`, `limit` (défaut 100, max 100).
+
+Filtres : `approved`, `public`, non annulé, `starts_at >= now`, `latitude`/`longitude` non NULL, dans la bbox.
+
+Réponse : `{ city, bbox, count, truncated, events[] }` — champs carte (id, title, description tronquée, coords, dates, lieu, quartier).
+
+Rate limit : 30 req/min par IP ou utilisateur.
+
+Migration : `20260601_0018_event_map_index` (index partiel `ix_local_events_map_bbox`).
+
+Doc produit : [`docs/prd/PRD-D20-event-map-foundation.md`](../docs/prd/PRD-D20-event-map-foundation.md) · Spec : [`docs/technical/event-map-technical-spec.md`](../docs/technical/event-map-technical-spec.md).
+
+Tests : `tests/test_event_map.py`.
+
 ## Offres flash locales (TICKET-501)
 
 Intention UX : [`docs/ux/flash-offers-intent.md`](../docs/ux/flash-offers-intent.md).
