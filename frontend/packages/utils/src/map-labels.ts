@@ -14,7 +14,11 @@ export const MAP_EMPTY = "Aucun événement à proximité";
 export const MAP_EMPTY_HINT = "Déplacez la carte ou revenez plus tard.";
 export const MAP_RECENTER = (city: string): string => `Revenir à ${city}`;
 export const MAP_TOKEN_MISSING =
+  "Carte indisponible : token Mapbox public manquant.";
+export const MAP_TOKEN_MISSING_WEB =
   "Carte indisponible : configurez NEXT_PUBLIC_MAPBOX_TOKEN.";
+export const MAP_TOKEN_MISSING_EXPO =
+  "Carte indisponible : configurez EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN.";
 export const MAP_VIEW_EVENT = "Voir l’événement";
 export const MAP_TRUNCATED_HINT =
   "Beaucoup d’événements dans cette zone — zoomez pour affiner.";

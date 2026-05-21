@@ -9,7 +9,7 @@ import {
   MAP_PAGE_SUBTITLE,
   MAP_PAGE_TITLE,
   MAP_RETRY,
-  MAP_TOKEN_MISSING,
+  MAP_TOKEN_MISSING_WEB,
   MAP_TRUNCATED_HINT,
 } from "@yunicity/utils";
 import { useEffect, useState } from "react";
@@ -53,7 +53,7 @@ export function EventMapScreen() {
       <div className="space-y-4">
         {!MAPBOX_TOKEN ? (
           <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {MAP_TOKEN_MISSING}
+            {MAP_TOKEN_MISSING_WEB}
           </p>
         ) : (
           <EventMap

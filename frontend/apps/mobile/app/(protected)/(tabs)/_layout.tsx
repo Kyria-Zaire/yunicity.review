@@ -34,6 +34,14 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="map"
+        options={{
+          title: "Carte",
+          tabBarLabel: "Carte",
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
         name="neighborhoods"
         options={{
           title: "Quartiers",
