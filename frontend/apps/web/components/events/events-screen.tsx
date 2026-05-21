@@ -85,8 +85,18 @@ export function EventsScreen() {
       }
     >
       <header className="mb-8">
-        <h1 className="text-2xl font-bold text-neutral-900">{EVENTS_PAGE_TITLE}</h1>
-        <p className="mt-2 text-neutral-600">{EVENTS_PAGE_SUBTITLE}</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-neutral-900">{EVENTS_PAGE_TITLE}</h1>
+            <p className="mt-2 text-neutral-600">{EVENTS_PAGE_SUBTITLE}</p>
+          </div>
+          <Link
+            href="/map"
+            className="rounded-full border border-neutral-200 px-3 py-1.5 text-sm font-medium text-yunicity-primary hover:border-yunicity-primary/40"
+          >
+            Voir la carte
+          </Link>
+        </div>
       </header>
       {loading ? <p className="text-neutral-500">Chargement…</p> : null}
       {error ? (

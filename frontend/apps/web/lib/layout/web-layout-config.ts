@@ -17,6 +17,7 @@ export const WEB_CITIZEN_NAV: WebNavItem[] = [
   { href: "/feed", label: "Fil local", match: "prefix" },
   { href: "/search", label: "Recherche", match: "prefix" },
   { href: "/events", label: "Événements", match: "prefix" },
+  { href: "/map", label: "Carte", match: "prefix" },
   { href: "/neighborhoods", label: "Quartiers", match: "prefix" },
   { href: "/tribes", label: "Tribus", match: "prefix" },
   { href: "/notifications", label: "Notifications", match: "prefix" },

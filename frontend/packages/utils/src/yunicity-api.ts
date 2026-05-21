@@ -1,4 +1,6 @@
 import type {
+  MapEventsListParams,
+  MapEventListResponse,
   SearchListParams,
   SearchResponse,
   CommentCreatePayload,
@@ -37,6 +39,7 @@ import { EventsApi, createEventsApi } from "./events-api";
 import { NeighborhoodsApi, createNeighborhoodsApi } from "./neighborhood-api";
 import { TribesApi, createTribesApi } from "./tribes-api";
 import { FeedApi, createFeedApi } from "./feed-api";
+import { MapEventsApi, createMapEventsApi } from "./map-events-api";
 import { SearchApi, createSearchApi } from "./search-api";
 import { ProfileApi, createProfileApi } from "./profile-api";
 
@@ -53,6 +56,7 @@ export class YunicityApi {
   readonly neighborhoods: NeighborhoodsApi;
   readonly tribes: TribesApi;
   readonly search: SearchApi;
+  readonly map: MapEventsApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.profile = createProfileApi(client, apiBaseUrl);
@@ -66,6 +70,11 @@ export class YunicityApi {
     this.neighborhoods = createNeighborhoodsApi(client, apiBaseUrl);
     this.tribes = createTribesApi(client, apiBaseUrl);
     this.search = createSearchApi(client, apiBaseUrl);
+    this.map = createMapEventsApi(client, apiBaseUrl);
+  }
+
+  listMapEvents(params: MapEventsListParams): Promise<MapEventListResponse> {
+    return this.map.listEvents(params);
   }
 
   searchLocal(params: SearchListParams): Promise<SearchResponse> {

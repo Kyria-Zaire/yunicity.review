@@ -45,7 +45,7 @@ Monorepo **pnpm** + **Turborepo** : Next.js (web + admin), Expo (mobile), packag
 
 | App | Routes |
 |-----|--------|
-| Web | `/login`, `/register`, `/feed`, `/search`, `/profile/me`, `/organizations/me`, `/organizations/request` |
+| Web | `/login`, `/register`, `/feed`, `/search`, `/map`, `/profile/me`, `/organizations/me`, `/organizations/request` |
 | Admin | `/login`, `/partner-scan`, `/partner-offers`, `/partner-leads`, `/passport-offers`, `/unauthorized`, `/protected-admin` |
 | Mobile | `/login`, `/register`, `/(protected)/(tabs)/feed`, `/(protected)/search`, `/(protected)/(tabs)/profile`, `/(protected)/(tabs)/organizations` |
 
@@ -148,6 +148,44 @@ Autocomplete, trending, popular searches, infinite scroll, partage, filtres date
 ### Tests
 
 `packages/utils/src/search-labels.test.ts` · `packages/utils/src/search-api.test.ts`
+
+## Carte événements (FEATURE-D / TICKET-D.4 web)
+
+PRD : [`docs/prd/PRD-D20-event-map-foundation.md`](../docs/prd/PRD-D20-event-map-foundation.md) · Spec : [`docs/technical/event-map-technical-spec.md`](../docs/technical/event-map-technical-spec.md)
+
+### Routes
+
+| App | Route | Description |
+|-----|-------|-------------|
+| Web | `/map` | Mapbox GL — marqueurs événements, popup, bbox debounce 300 ms |
+
+### Env
+
+| Variable | App |
+|----------|-----|
+| `NEXT_PUBLIC_MAPBOX_TOKEN` | `apps/web` — token public Mapbox |
+
+### API & hooks
+
+| Module / hook | Rôle |
+|---------------|------|
+| `map-events-api.ts` | `GET /map/events` |
+| `map-labels.ts` | Copy FR, `hasBboxChangedSignificantly`, `boundsToMapBbox` |
+| `map-city-defaults.ts` | Centroïde Reims, zoom 12 |
+| `use-map-bbox.ts` | Debounce bounds carte |
+| `use-map-events.ts` | Fetch événements par bbox + ville |
+
+### Composants web
+
+`apps/web/components/map/event-map.tsx` · `event-map-screen.tsx`
+
+### Exclusions MVP
+
+Géolocalisation utilisateur, clustering, heatmap, polling, recherche sur carte.
+
+### Tests
+
+`packages/utils/src/map-events-api.test.ts`
 
 ## Offres flash locales (TICKET-501)
 

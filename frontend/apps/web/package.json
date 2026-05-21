@@ -14,9 +14,11 @@
     "@yunicity/types": "workspace:*",
     "@yunicity/ui": "workspace:*",
     "@yunicity/utils": "workspace:*",
+    "mapbox-gl": "^3.24.0",
     "next": "^15.3.3",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-map-gl": "^8.1.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

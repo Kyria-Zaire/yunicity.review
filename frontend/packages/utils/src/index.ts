@@ -65,6 +65,31 @@ export {
 } from "./notifications-api";
 export { FeedApi, createFeedApi } from "./feed-api";
 export { SearchApi, createSearchApi } from "./search-api";
+export { MapEventsApi, createMapEventsApi, buildMapEventsQuery } from "./map-events-api";
+export {
+  CITY_MAP_CENTERS,
+  DEFAULT_MAP_CITY,
+  resolveCityMapCenter,
+  type CityMapCenter,
+} from "./map-city-defaults";
+export {
+  MAP_BBOX_CHANGE_TOLERANCE,
+  MAP_EMPTY,
+  MAP_EMPTY_HINT,
+  MAP_ERROR,
+  MAP_LOADING,
+  MAP_PAGE_SUBTITLE,
+  MAP_PAGE_TITLE,
+  MAP_RECENTER,
+  MAP_RETRY,
+  MAP_TOKEN_MISSING,
+  MAP_TRUNCATED_HINT,
+  MAP_VIEW_EVENT,
+  boundsToMapBbox,
+  hasBboxChangedSignificantly,
+  mapEventPopupDate,
+  mapEventPopupLocation,
+} from "./map-labels";
 export {
   SEARCH_CITY_LABEL,
   SEARCH_EMPTY_BODY,

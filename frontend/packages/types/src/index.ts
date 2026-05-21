@@ -138,6 +138,15 @@ export type {
 } from "./neighborhood";
 
 export type {
+  MapBbox,
+  MapBboxResponse,
+  MapEventItem,
+  MapEventListResponse,
+  MapEventsListParams,
+  MapNeighborhoodSummary,
+} from "./map";
+
+export type {
   SearchEntityType,
   SearchGroupKey,
   SearchGroups,
