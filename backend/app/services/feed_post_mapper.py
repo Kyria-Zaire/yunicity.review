@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import uuid
+
 from app.core.flash_offer import build_flash_snapshot
 from app.models.post import Post
 from app.schemas.feed import (
@@ -15,7 +17,7 @@ from app.schemas.post import PostResponse
 from app.services.neighborhood_summary import resolve_feed_neighborhood_summary
 
 
-def _event_meta(post: Post) -> FeedEventMeta | None:
+def _event_meta(post: Post, *, interested_by_me: bool = False) -> FeedEventMeta | None:
     if post.local_event_id is None or post.local_event is None:
         return None
     event = post.local_event
@@ -26,6 +28,7 @@ def _event_meta(post: Post) -> FeedEventMeta | None:
         location_name=event.location_name,
         district=event.district,
         event_type=event.event_type,
+        interested_by_me=interested_by_me,
     )
 
 
@@ -58,7 +61,12 @@ def to_feed_item(
     *,
     author: FeedAuthor,
     liked_by_me: bool,
+    interested_event_ids: set[uuid.UUID] | None = None,
 ) -> FeedPostItem:
+    interested = interested_event_ids or set[uuid.UUID]()
+    event_interested = (
+        post.local_event_id in interested if post.local_event_id is not None else False
+    )
     return FeedPostItem(
         id=post.id,
         type=post.type,
@@ -72,7 +80,7 @@ def to_feed_item(
         comment_count=post.comment_count,
         liked_by_me=liked_by_me,
         offer=_offer_meta(post),
-        event=_event_meta(post),
+        event=_event_meta(post, interested_by_me=event_interested),
         neighborhood_summary=resolve_feed_neighborhood_summary(post),
         created_at=post.created_at,
         updated_at=post.updated_at,
@@ -99,7 +107,7 @@ def to_post_response(
         is_active=post.is_active,
         liked_by_me=liked_by_me,
         offer=_offer_meta(post),
-        event=_event_meta(post),
+        event=_event_meta(post, interested_by_me=False),
         neighborhood_summary=resolve_feed_neighborhood_summary(post),
         created_at=post.created_at,
         updated_at=post.updated_at,

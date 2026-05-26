@@ -53,4 +53,5 @@ export interface FeedEventMeta {
   location_name: string;
   district: string | null;
   event_type: string | null;
+  interested_by_me?: boolean;
 }

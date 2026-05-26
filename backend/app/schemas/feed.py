@@ -42,6 +42,7 @@ class FeedEventMeta(BaseModel):
     location_name: str
     district: str | None = None
     event_type: str | None = None
+    interested_by_me: bool = False
 
 
 class FeedPostItem(BaseModel):

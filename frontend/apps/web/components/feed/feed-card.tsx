@@ -7,10 +7,10 @@ import { CitizenPostCard } from "@/components/feed/citizen-post-card";
 import { CommentComposer } from "@/components/feed/comment-composer";
 import { CommentList } from "@/components/feed/comment-list";
 import { FeedCardShell } from "@/components/feed/feed-card-shell";
+import { FeedSocialActionBar } from "@/components/feed/feed-social-action-bar";
 import { EventFeedCard } from "@/components/events/event-feed-card";
 import { OfferFeedCard } from "@/components/feed/offer-feed-card";
 import { OrganizationPostCard } from "@/components/feed/organization-post-card";
-import { ReportAction } from "@/components/feed/report-action";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
 
@@ -50,6 +50,7 @@ export function FeedCard({
   useEffect(() => {
     setPost(initialPost);
   }, [initialPost]);
+
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [comments, setComments] = useState<FeedComment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
@@ -84,32 +85,37 @@ export function FeedCard({
     setPost((prev) => ({ ...prev, comment_count: Math.max(0, prev.comment_count - 1) }));
   }
 
+  async function toggleEventInterest() {
+    const eventId = post.event?.local_event_id;
+    if (!eventId) {
+      return;
+    }
+    const result = await api.toggleEventInterest(eventId);
+    setPost((prev) => {
+      if (!prev.event) {
+        return prev;
+      }
+      return {
+        ...prev,
+        event: { ...prev.event, interested_by_me: result.interested },
+      };
+    });
+  }
+
   return (
     <FeedCardShell
       variant={feedCardVariant(post)}
       footer={
-        <>
-          <button
-            type="button"
-            onClick={() => void onToggleLike(post)}
-            aria-pressed={post.liked_by_me}
-            className={`min-h-[44px] text-sm ${
-              post.liked_by_me ? "font-medium text-yunicity-primary" : "text-neutral-600"
-            } hover:text-yunicity-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary`}
-          >
-            {post.liked_by_me ? "Aimé" : "J’aime"}
-            {post.like_count > 0 ? ` · ${post.like_count}` : ""}
-          </button>
-          <button
-            type="button"
-            onClick={() => void toggleComments()}
-            className="min-h-[44px] text-sm text-neutral-600 hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
-          >
-            Commentaires
-            {post.comment_count > 0 ? ` · ${post.comment_count}` : ""}
-          </button>
-          <ReportAction onReport={(reason) => onReport(post.id, reason)} />
-        </>
+        <FeedSocialActionBar
+          post={post}
+          commentsOpen={commentsOpen}
+          onToggleLike={() => void onToggleLike(post)}
+          onToggleComments={() => void toggleComments()}
+          onToggleEventInterest={
+            post.type === "event" && post.event ? () => toggleEventInterest() : undefined
+          }
+          onReport={(reason) => onReport(post.id, reason)}
+        />
       }
       expanded={
         commentsOpen ? (

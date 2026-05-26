@@ -7,8 +7,6 @@ import {
   formatTerritorialLine,
 } from "@yunicity/utils";
 import { NeighborhoodBadge } from "@/components/neighborhoods/neighborhood-badge";
-import Link from "next/link";
-
 import { FeedAuthorHeader } from "@/components/feed/feed-author-header";
 
 export function EventFeedCard({ post }: { post: FeedPost }) {
@@ -44,12 +42,6 @@ export function EventFeedCard({ post }: { post: FeedPost }) {
           <NeighborhoodBadge summary={post.neighborhood_summary} city={post.city} />
         </div>
       ) : null}
-      <Link
-        href={`/events/${meta.local_event_id}`}
-        className="mt-4 inline-flex rounded-full bg-yunicity-primary px-4 py-2 text-sm font-medium text-white hover:bg-yunicity-primary-hover"
-      >
-        Découvrir ce moment
-      </Link>
     </div>
   );
 }

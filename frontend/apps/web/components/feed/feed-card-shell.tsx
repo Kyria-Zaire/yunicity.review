@@ -26,7 +26,7 @@ export function FeedCardShell({
       className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-md ${VARIANT_CLASS[variant]}`}
     >
       <div className="p-5 sm:p-6">{children}</div>
-      <footer className="flex flex-wrap items-center gap-4 border-t border-neutral-100 bg-neutral-50/40 px-5 py-3 sm:px-6">
+      <footer className="border-t border-neutral-100/90 px-4 py-2.5 sm:px-5 sm:py-3">
         {footer}
       </footer>
       {expanded ? (

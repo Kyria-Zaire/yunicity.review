@@ -27,6 +27,20 @@ export const FEED_LOAD_MORE_LABEL = "Charger plus";
 
 export const FEED_PASSPORT_BADGE = "Passport";
 
+/** Barre d’actions sociales feed (WEB-HOME-01F). */
+export const FEED_ACTION_REACT = "Réagir";
+export const FEED_ACTION_COMMENT = "Discuter";
+export const FEED_ACTION_SAVE = "Sauvegarder";
+export const FEED_ACTION_SAVED = "Sauvegardé";
+export const FEED_ACTION_SHARE = "Partager";
+export const FEED_ACTION_MAP = "Carte";
+export const FEED_ACTION_EVENT_INTEREST = "Je suis intéressé";
+export const FEED_ACTION_EVENT_VIEW = "Voir le moment";
+export const FEED_ACTION_OFFER_VIEW = "Voir l'offre";
+export const FEED_ACTION_NEIGHBORHOOD = "Quartier";
+export const FEED_ACTION_MORE = "Plus d'actions";
+export const FEED_SHARE_COPIED = "Lien copié";
+
 export function formatFeedDate(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) {

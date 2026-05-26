@@ -8,6 +8,7 @@ from app.core.feed_constants import FEED_PAGE_SIZE_MAX
 from app.core.feed_cursor import decode_feed_cursor, encode_feed_cursor
 from app.models.user import User
 from app.repositories.like_repository import LikeRepository
+from app.repositories.local_event_repository import LocalEventRepository
 from app.repositories.post_repository import PostRepository
 from app.repositories.profile_repository import ProfileRepository
 from app.schemas.feed import FeedListResponse
@@ -20,6 +21,7 @@ class FeedService:
         self._session = session
         self._posts = PostRepository(session)
         self._likes = LikeRepository(session)
+        self._local_events = LocalEventRepository(session)
         self._profiles = ProfileRepository(session)
         self._authors = FeedAuthorResolver(session)
 
@@ -54,6 +56,12 @@ class FeedService:
             viewer.id,
             [post.id for post in page],
         )
+        event_ids = [post.local_event_id for post in page if post.local_event_id is not None]
+        interested_event_ids = (
+            await self._local_events.interest_event_ids_for_user(viewer.id, event_ids)
+            if event_ids
+            else set()
+        )
         author_map = await self._authors.resolve_posts(page)
 
         items = []
@@ -66,6 +74,7 @@ class FeedService:
                     post,
                     author=author,
                     liked_by_me=post.id in liked_ids,
+                    interested_event_ids=interested_event_ids,
                 )
             )
 

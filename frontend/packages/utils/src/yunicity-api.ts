@@ -182,6 +182,10 @@ export class YunicityApi {
   reportFeedPost(postId: string, payload: ReportPostPayload): Promise<void> {
     return this.feed.reportPost(postId, payload);
   }
+
+  toggleEventInterest(eventId: string) {
+    return this.events.toggleInterest(eventId);
+  }
 }
 
 export function createYunicityApi(client: AuthClient, apiBaseUrl: string): YunicityApi {
