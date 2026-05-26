@@ -1,22 +1,105 @@
 "use client";
 
-import { FEED_COMPOSER_PLACEHOLDER } from "@yunicity/utils";
-import { useState } from "react";
+import { ProfileAvatar } from "@/components/profile-avatar";
+import { useYunicityApi } from "@/hooks/use-yunicity-api";
+import { useAuth } from "@/lib/auth/auth-provider";
+import { homeComposerPlaceholder } from "@yunicity/utils";
+import Link from "next/link";
+import { useEffect, useState, type ReactNode } from "react";
 
+function ComposerIconButton({
+  label,
+  onClick,
+  children,
+  href,
+}: {
+  label: string;
+  children: ReactNode;
+  onClick?: () => void;
+  href?: string;
+}) {
+  const className =
+    "flex h-9 w-9 items-center justify-center rounded-full text-yunicity-primary transition-colors hover:bg-yunicity-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary/40";
+
+  if (href) {
+    return (
+      <Link href={href} aria-label={label} title={label} className={className}>
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <button type="button" onClick={onClick} aria-label={label} title={label} className={className}>
+      {children}
+    </button>
+  );
+}
+
+function IconImage({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <circle cx="8.5" cy="10.5" r="1.5" fill="currentColor" stroke="none" />
+      <path d="M21 16l-5.5-5.5a1.5 1.5 0 0 0-2.12 0L7 17" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconMapPin({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+      <path
+        d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="10" r="2.25" />
+    </svg>
+  );
+}
+
+function IconCalendar({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+      <rect x="4" y="5" width="16" height="15" rx="2" />
+      <path d="M8 3v4M16 3v4M4 10h16" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** WEB-HOME-01D — Composer feed type X : avatar + zone libre + barre d’actions. */
 export function FeedComposer({
   onSubmit,
-  placeholder = FEED_COMPOSER_PLACEHOLDER,
+  city,
+  placeholder,
   submitLabel = "Publier",
 }: {
   onSubmit: (body: string, mediaUrl?: string | null) => Promise<void>;
+  city?: string | null;
   placeholder?: string;
   submitLabel?: string;
 }) {
+  const { user } = useAuth();
+  const api = useYunicityApi();
+  const [displayName, setDisplayName] = useState<string | null>(null);
   const [body, setBody] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
   const [showMedia, setShowMedia] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const resolvedPlaceholder =
+    placeholder ?? (city ? homeComposerPlaceholder(city) : "Partagez un moment local…");
+
+  const authorLabel = displayName ?? user?.email?.split("@")[0] ?? "Vous";
+  const canPublish = Boolean(body.trim()) && !isSubmitting;
+
+  useEffect(() => {
+    void api.getProfileMe().then((profile) => {
+      setDisplayName(profile.display_name ?? profile.username ?? null);
+    });
+  }, [api]);
 
   async function handleSubmit() {
     const trimmed = body.trim();
@@ -29,6 +112,7 @@ export function FeedComposer({
       await onSubmit(trimmed, mediaUrl.trim() || null);
       setBody("");
       setMediaUrl("");
+      setShowMedia(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Publication impossible pour le moment.");
     } finally {
@@ -37,51 +121,78 @@ export function FeedComposer({
   }
 
   return (
-    <section className="rounded-2xl border border-yunicity-border bg-white p-5 shadow-sm">
-      <label className="sr-only" htmlFor="feed-composer-body">
-        Nouveau message local
-      </label>
-      <textarea
-        id="feed-composer-body"
-        value={body}
-        onChange={(event) => setBody(event.target.value)}
-        placeholder={placeholder}
-        rows={3}
-        maxLength={4000}
-        className="w-full resize-none rounded-xl border border-yunicity-border bg-yunicity-surface px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-yunicity-primary focus:outline-none focus:ring-1 focus:ring-yunicity-primary"
-      />
-      <button
-        type="button"
-        onClick={() => setShowMedia((value) => !value)}
-        className="mt-2 text-xs text-neutral-500 underline-offset-2 hover:text-neutral-700 hover:underline"
-      >
-        {showMedia ? "Masquer l’image" : "Ajouter une image (URL)"}
-      </button>
-      {showMedia ? (
-        <input
-          id="feed-composer-media"
-          type="url"
-          value={mediaUrl}
-          onChange={(event) => setMediaUrl(event.target.value)}
-          placeholder="https://…"
-          className="mt-2 w-full rounded-lg border border-yunicity-border px-3 py-2 text-sm text-neutral-800 focus:border-yunicity-primary focus:outline-none focus:ring-1 focus:ring-yunicity-primary"
-        />
-      ) : null}
+    <section
+      id="feed-composer"
+      className="scroll-mt-24 border-y border-neutral-200/70 py-4 sm:py-5"
+      aria-label="Publier sur le fil local"
+    >
+      <div className="flex gap-3 sm:gap-4">
+        <div className="shrink-0 pt-0.5">
+          <ProfileAvatar name={authorLabel} size="md" />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <label className="sr-only" htmlFor="feed-composer-body">
+            {resolvedPlaceholder}
+          </label>
+          <textarea
+            id="feed-composer-body"
+            value={body}
+            onChange={(event) => setBody(event.target.value)}
+            placeholder={resolvedPlaceholder}
+            rows={2}
+            maxLength={4000}
+            className="min-h-[3.25rem] w-full resize-none border-0 bg-transparent p-0 text-xl leading-snug text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:ring-0 sm:min-h-[3.5rem] sm:text-[1.35rem]"
+          />
+
+          {showMedia ? (
+            <input
+              id="feed-composer-media"
+              type="url"
+              value={mediaUrl}
+              onChange={(event) => setMediaUrl(event.target.value)}
+              placeholder="URL de l’image (https://…)"
+              className="mt-3 w-full border-0 border-b border-neutral-200/90 bg-transparent py-2 text-sm text-neutral-800 placeholder:text-neutral-400 focus:border-yunicity-primary focus:outline-none"
+            />
+          ) : null}
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-3 pl-11 sm:mt-4 sm:pl-[3.75rem]">
+        <div className="flex min-w-0 flex-wrap items-center gap-0.5 sm:gap-1">
+          <ComposerIconButton
+            label={showMedia ? "Masquer l’image" : "Ajouter une image"}
+            onClick={() => setShowMedia((value) => !value)}
+          >
+            <IconImage />
+          </ComposerIconButton>
+          <ComposerIconButton label="Explorer les quartiers" href="/neighborhoods">
+            <IconMapPin />
+          </ComposerIconButton>
+          <ComposerIconButton label="Voir les moments locaux" href="/events">
+            <IconCalendar />
+          </ComposerIconButton>
+        </div>
+
+        <button
+          type="button"
+          disabled={!canPublish}
+          onClick={() => void handleSubmit()}
+          className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 sm:px-5 sm:py-2 ${
+            canPublish
+              ? "bg-yunicity-primary text-white hover:bg-yunicity-primary-hover"
+              : "cursor-not-allowed bg-yunicity-primary/40 text-white/90"
+          }`}
+        >
+          {isSubmitting ? "…" : submitLabel}
+        </button>
+      </div>
+
       {error ? (
-        <p className="mt-2 text-sm text-red-600" role="alert">
+        <p className="mt-3 pl-11 text-sm text-red-600 sm:pl-[3.75rem]" role="alert">
           {error}
         </p>
       ) : null}
-      <div className="mt-4 flex justify-end">
-        <button
-          type="button"
-          disabled={isSubmitting || !body.trim()}
-          onClick={() => void handleSubmit()}
-          className="rounded-xl bg-yunicity-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-yunicity-primary-hover disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2"
-        >
-          {isSubmitting ? "Publication…" : submitLabel}
-        </button>
-      </div>
     </section>
   );
 }

@@ -20,12 +20,15 @@ export { WebDesktopLayout } from "@/components/layout/web-desktop-layout";
 export { WebMobileFooter, WebMobileHeader } from "@/components/layout/web-mobile-chrome";
 export { WebPageHeader, type WebPageHeaderProps } from "@/components/layout/web-page-header";
 export { WebResponsiveContainer } from "@/components/layout/web-responsive-container";
-export { WebSidebar, WebSidebarLogout } from "@/components/layout/web-sidebar";
+export { WebSidebar } from "@/components/layout/web-sidebar";
 
 export {
   WEB_CITIZEN_NAV,
+  WEB_CITIZEN_NAV_PRIMARY,
+  WEB_CITIZEN_NAV_SECONDARY,
   WEB_CONTENT_WIDTH_CLASS,
   isWebNavActive,
   type WebContentWidth,
+  type WebNavIconId,
   type WebNavItem,
 } from "@/lib/layout/web-layout-config";

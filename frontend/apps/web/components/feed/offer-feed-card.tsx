@@ -14,10 +14,10 @@ export function OfferFeedCard({ post }: { post: FeedPost }) {
   const expiry = formatOfferValidUntil(post.offer?.valid_until);
 
   return (
-    <div className="-m-6 mb-0 rounded-t-2xl bg-yunicity-surface p-6">
+    <div className="-m-5 -mt-5 mb-0 rounded-t-2xl border-b border-neutral-100 bg-neutral-50/40 p-5 sm:-m-6 sm:-mt-6 sm:p-6">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <FlashOfferBadge offer={post.offer} />
-        <span className="rounded-full bg-yunicity-primary-soft px-2.5 py-0.5 text-xs font-semibold text-yunicity-primary">
+        <span className="rounded-full border border-yunicity-primary/30 bg-white px-2.5 py-0.5 text-xs font-semibold text-yunicity-primary">
           {FEED_PASSPORT_BADGE}
         </span>
         <span className="text-xs text-neutral-500">{typeLabel}</span>
@@ -34,7 +34,7 @@ export function OfferFeedCard({ post }: { post: FeedPost }) {
       ) : null}
       <Link
         href="/passport"
-        className="mt-4 inline-flex text-sm font-medium text-yunicity-primary underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
+        className="mt-4 inline-flex rounded-full border border-yunicity-primary px-4 py-2 text-sm font-semibold text-yunicity-primary hover:bg-yunicity-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
       >
         Voir dans mon Passport
       </Link>

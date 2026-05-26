@@ -1,25 +1,22 @@
 import type { ReactNode } from "react";
 
-/**
- * Grille desktop citoyenne : [sidebar | contenu principal | contexte optionnel].
- * Voir `globals.css` (.web-desktop-grid) pour les tokens de colonnes.
- */
+import { WebSidebar } from "@/components/layout/web-sidebar";
+
+/** Layout legacy — même grille 3 colonnes que WebAppShell. */
 export function WebDesktopLayout({
   sidebar,
   main,
   context,
 }: {
-  sidebar: ReactNode;
+  sidebar?: ReactNode;
   main: ReactNode;
   context?: ReactNode;
 }) {
-  const gridClass = context
-    ? "web-desktop-grid web-desktop-grid--with-context"
-    : "web-desktop-grid";
+  const gridClass = context ? "web-three-col web-three-col--with-rail" : "web-three-col";
 
   return (
     <div className={gridClass}>
-      {sidebar}
+      {sidebar ?? <WebSidebar />}
       {main}
       {context ?? null}
     </div>

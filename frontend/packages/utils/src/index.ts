@@ -154,6 +154,31 @@ export {
   formatFeedDate,
   formatOfferValidUntil,
 } from "./feed-labels";
+export {
+  HOME_EDITORIAL_TAGS,
+  HOME_EVENTS_THIS_WEEK,
+  HOME_LOCAL_TAGS_TITLE,
+  HOME_NEIGHBORHOOD_VIBE_ACTIVE,
+  HOME_NEIGHBORHOOD_VIBE_CALM,
+  HOME_NEIGHBORHOOD_VIBE_DISCOVER,
+  HOME_NEIGHBORHOODS_TITLE,
+  HOME_PASSPORT_CTA,
+  HOME_PASSPORT_PANEL_TITLE,
+  HOME_PRIVILEGE_TITLE,
+  HOME_PUBLISH_MOMENT,
+  HOME_TRIBE_CTA_BODY,
+  HOME_TRIBE_CTA_LINK,
+  HOME_TRIBE_CTA_TITLE,
+  HOME_VIEW_ALL_EVENTS,
+  HOME_VIEW_ALL_NEIGHBORHOODS,
+  HOME_WEATHER_MOCK_NOTE,
+  HOME_WEATHER_TITLE,
+  homeComposerPlaceholder,
+  homeComposerSubtitle,
+  homeGreeting,
+  isEventWithinDays,
+  mockLocalWeather,
+} from "./home-labels";
 export { SCAN_ERROR_MESSAGES, humanizeScanError } from "./scan-labels";
 export { resolveNotificationDeeplink } from "./notification-deeplink";
 export type { NotificationPlatform } from "./notification-deeplink";

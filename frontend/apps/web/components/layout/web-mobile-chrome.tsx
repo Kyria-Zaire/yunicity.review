@@ -1,23 +1,29 @@
 "use client";
 
-import { WEB_CITIZEN_NAV, isWebNavActive } from "@/lib/layout/web-layout-config";
-import { WebSidebarLogout } from "@/components/layout/web-sidebar";
+import { WEB_CITIZEN_NAV_PRIMARY, isWebNavActive } from "@/lib/layout/web-layout-config";
+import { HOME_PUBLISH_MOMENT } from "@yunicity/utils";
 import { useAuth } from "@/lib/auth/auth-provider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-/** Header compact mobile / tablette (< lg). */
+/** Header mobile uniquement (< md) — tablette+ utilise sidebar compacte. */
 export function WebMobileHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-20 border-b border-neutral-200/80 bg-white lg:hidden">
+    <header className="web-mobile-chrome-only sticky top-0 z-20 border-b border-neutral-200/80 bg-white">
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <Link href="/profile/me" className="text-lg font-bold tracking-tight text-neutral-900">
           Yunicity
         </Link>
-        <nav className="flex flex-wrap justify-end gap-1 text-sm" aria-label="Navigation principale">
-          {WEB_CITIZEN_NAV.map((item) => {
+        <Link
+          href="/feed#feed-composer"
+          className="hidden shrink-0 rounded-full bg-yunicity-primary px-3 py-1.5 text-xs font-semibold text-white sm:inline-flex"
+        >
+          {HOME_PUBLISH_MOMENT}
+        </Link>
+        <nav className="flex flex-wrap justify-end gap-1 text-xs sm:text-sm" aria-label="Navigation principale">
+          {WEB_CITIZEN_NAV_PRIMARY.map((item) => {
             const active = isWebNavActive(pathname, item);
             return (
               <Link
@@ -39,14 +45,13 @@ export function WebMobileHeader() {
   );
 }
 
-/** Pied de page mobile : compte + déconnexion. */
+/** Pied de page mobile : compte connecté. */
 export function WebMobileFooter() {
   const { user } = useAuth();
 
   return (
-    <footer className="border-t border-neutral-200/60 px-4 py-6 text-center text-xs text-neutral-500 lg:hidden">
+    <footer className="web-mobile-chrome-only border-t border-neutral-200/60 px-4 py-6 text-center text-xs text-neutral-500">
       <p>{user?.email}</p>
-      <WebSidebarLogout className="mt-2" />
     </footer>
   );
 }

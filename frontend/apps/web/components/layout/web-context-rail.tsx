@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 
-/** Colonne contextuelle desktop (xl+) — sticky, widgets secondaires. */
+/** Colonne contextuelle — lg+ dans la grille, sticky + scroll interne si débordement. */
 export function WebContextRail({ children }: { children: ReactNode }) {
   return (
-    <aside className="hidden min-w-0 xl:block" aria-label="Informations contextuelles">
-      <section className="sticky top-[var(--web-sticky-offset)] space-y-4">{children}</section>
+    <aside className="web-context-rail-aside min-w-0" aria-label="Informations contextuelles">
+      <section className="space-y-4 py-2">{children}</section>
     </aside>
   );
 }
@@ -12,7 +12,7 @@ export function WebContextRail({ children }: { children: ReactNode }) {
 /** Même contenu que la rail, empilé sous le main sur mobile / tablette. */
 export function WebContextStack({ children }: { children: ReactNode }) {
   return (
-    <section className="mt-8 space-y-4 xl:hidden" aria-label="Informations contextuelles">
+    <section className="web-mobile-chrome-only mt-8 space-y-4" aria-label="Informations contextuelles">
       {children}
     </section>
   );

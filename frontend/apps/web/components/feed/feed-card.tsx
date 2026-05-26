@@ -14,6 +14,13 @@ import { ReportAction } from "@/components/feed/report-action";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
 
+function feedCardVariant(post: FeedPost): "default" | "event" | "offer" | "organization" {
+  if (post.type === "offer") return "offer";
+  if (post.type === "event") return "event";
+  if (post.author.type === "organization") return "organization";
+  return "default";
+}
+
 function FeedCardBody({ post }: { post: FeedPost }) {
   if (post.type === "offer") {
     return <OfferFeedCard post={post} />;
@@ -79,6 +86,7 @@ export function FeedCard({
 
   return (
     <FeedCardShell
+      variant={feedCardVariant(post)}
       footer={
         <>
           <button

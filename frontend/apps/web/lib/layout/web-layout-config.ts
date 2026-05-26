@@ -1,45 +1,73 @@
 /**
  * Configuration canonique du shell web citoyen Yunicity.
- * Étendre ici la navigation et les largeurs lors de nouvelles surfaces
- * (feed, événements, messagerie, cartes, creators, communautés).
+ * WEB-HOME-01 : navigation primaire feed-first + entrées secondaires.
  */
 
 export type WebNavMatch = "prefix" | "exact";
 
+export type WebNavIconId =
+  | "feed"
+  | "map"
+  | "search"
+  | "events"
+  | "neighborhoods"
+  | "tribes"
+  | "passport"
+  | "notifications"
+  | "profile"
+  | "organizations"
+  | "place"
+  | "publish";
+
+export type WebNavTier = "primary" | "secondary";
+
 export type WebNavItem = {
   href: string;
   label: string;
+  icon: WebNavIconId;
   match?: WebNavMatch;
+  tier?: WebNavTier;
 };
 
-/** Navigation principale — zone authentifiée citoyenne. */
-export const WEB_CITIZEN_NAV: WebNavItem[] = [
-  { href: "/feed", label: "Fil local", match: "prefix" },
-  { href: "/search", label: "Recherche", match: "prefix" },
-  { href: "/events", label: "Événements", match: "prefix" },
-  { href: "/map", label: "Carte", match: "prefix" },
-  { href: "/neighborhoods", label: "Quartiers", match: "prefix" },
-  { href: "/tribes", label: "Tribus", match: "prefix" },
-  { href: "/notifications", label: "Notifications", match: "prefix" },
-  { href: "/passport", label: "Passport", match: "prefix" },
-  { href: "/profile/me", label: "Profil", match: "prefix" },
-  { href: "/organizations/me", label: "Lieux", match: "prefix" },
-  { href: "/organizations/request", label: "Proposer un lieu", match: "prefix" },
+/** Navigation principale — ordre feed-first (WEB-HOME-01). */
+export const WEB_CITIZEN_NAV_PRIMARY: WebNavItem[] = [
+  { href: "/feed", label: "Fil local", icon: "feed", match: "prefix", tier: "primary" },
+  { href: "/map", label: "Carte", icon: "map", match: "prefix", tier: "primary" },
+  { href: "/search", label: "Recherche", icon: "search", match: "prefix", tier: "primary" },
+  { href: "/events", label: "Moments", icon: "events", match: "prefix", tier: "primary" },
+  { href: "/neighborhoods", label: "Quartiers", icon: "neighborhoods", match: "prefix", tier: "primary" },
+  { href: "/tribes", label: "Tribus", icon: "tribes", match: "prefix", tier: "primary" },
+  { href: "/passport", label: "Passport", icon: "passport", match: "prefix", tier: "primary" },
+  { href: "/notifications", label: "Notifications", icon: "notifications", match: "prefix", tier: "primary" },
+  { href: "/profile/me", label: "Profil", icon: "profile", match: "prefix", tier: "primary" },
 ];
 
-/** Largeurs de colonne contenu — éviter lignes et formulaires trop larges. */
+/** Entrées occasionnelles — footer sidebar, pas la barre mobile compacte. */
+export const WEB_CITIZEN_NAV_SECONDARY: WebNavItem[] = [
+  { href: "/organizations/me", label: "Lieux", icon: "organizations", match: "prefix", tier: "secondary" },
+  {
+    href: "/organizations/request",
+    label: "Proposer un lieu",
+    icon: "place",
+    match: "prefix",
+    tier: "secondary",
+  },
+];
+
+/** Liste complète — compat routes & mobile chrome legacy. */
+export const WEB_CITIZEN_NAV: WebNavItem[] = [
+  ...WEB_CITIZEN_NAV_PRIMARY,
+  ...WEB_CITIZEN_NAV_SECONDARY,
+];
+
+/** Largeurs de colonne contenu */
 export type WebContentWidth = "form" | "readable" | "feed" | "wide" | "full";
 
 export const WEB_CONTENT_WIDTH_CLASS: Record<WebContentWidth, string> = {
-  /** Formulaires, onboarding org — ~576px */
   form: "max-w-xl w-full",
-  /** Profil, paramètres, texte — ~672px */
   readable: "max-w-2xl w-full",
-  /** Fil social, listes d’activité — même lisibilité que readable */
-  feed: "max-w-2xl w-full",
-  /** Listes événements, grilles cartes légères — ~768px */
+  feed: "w-full min-w-0",
   wide: "max-w-3xl w-full",
-  /** Utilise la colonne grille (max ~720px avec contexte) sans resserrement */
   full: "w-full min-w-0",
 };
 

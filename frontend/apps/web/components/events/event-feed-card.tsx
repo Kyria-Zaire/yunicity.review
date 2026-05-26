@@ -23,9 +23,9 @@ export function EventFeedCard({ post }: { post: FeedPost }) {
     formatEventLocation(meta, post.city);
 
   return (
-    <div className="-m-6 mb-0 rounded-t-2xl border-b border-neutral-100 bg-white p-6">
+    <div className="-m-5 -mt-5 mb-0 rounded-t-2xl border-b border-neutral-100 bg-neutral-50/60 p-5 sm:-m-6 sm:-mt-6 sm:p-6">
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-yunicity-primary/10 px-2.5 py-0.5 text-xs font-semibold text-yunicity-primary">
+        <span className="rounded-full bg-yunicity-primary px-2.5 py-0.5 text-xs font-semibold text-white">
           {EVENT_FEED_BADGE}
         </span>
         {typeLabel ? <span className="text-xs text-neutral-500">{typeLabel}</span> : null}
@@ -46,7 +46,7 @@ export function EventFeedCard({ post }: { post: FeedPost }) {
       ) : null}
       <Link
         href={`/events/${meta.local_event_id}`}
-        className="mt-4 inline-flex text-sm font-medium text-yunicity-primary underline-offset-2 hover:underline"
+        className="mt-4 inline-flex rounded-full bg-yunicity-primary px-4 py-2 text-sm font-medium text-white hover:bg-yunicity-primary-hover"
       >
         Découvrir ce moment
       </Link>
