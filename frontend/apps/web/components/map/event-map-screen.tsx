@@ -1,5 +1,11 @@
 "use client";
 
+import type {
+  CulturalPlaceListItem,
+  MapCulturalPlaceItem,
+  MapRouteGeometry,
+  MapRouteSummary,
+} from "@yunicity/types";
 import {
   DEFAULT_MAP_CITY,
   MAP_EMPTY,
@@ -9,9 +15,10 @@ import {
   MAP_RETRY,
   MAP_TOKEN_MISSING_WEB,
   MAP_TRUNCATED_HINT,
+  fetchMapboxWalkingRoute,
   resolveCityMapCenter,
 } from "@yunicity/utils";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { EventMap } from "@/components/map/event-map";
 import { MapNearbyEvents } from "@/components/map/map-nearby-events";
@@ -20,6 +27,7 @@ import { MapPageSearchHeader } from "@/components/map/map-page-search-header";
 import { MapRightRail } from "@/components/map/map-right-rail";
 import { WebAppShell } from "@/components/layout";
 import { useMapBbox } from "@/hooks/use-map-bbox";
+import { useMapCulturalPlaces } from "@/hooks/use-map-cultural-places";
 import { useMapEvents } from "@/hooks/use-map-events";
 import { useMapPageContext } from "@/hooks/use-map-page-context";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
@@ -27,17 +35,58 @@ import { useAuth } from "@/lib/auth/auth-provider";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
+function mapItemToListItem(place: MapCulturalPlaceItem): CulturalPlaceListItem {
+  return {
+    id: place.id,
+    slug: place.slug,
+    name: place.name,
+    short_description: "",
+    city: place.city,
+    address: place.address,
+    category: place.category,
+    latitude: place.latitude,
+    longitude: place.longitude,
+    image_url: place.image_url,
+    image_alt: place.image_alt,
+    source_name: place.source_name,
+    image_credit: place.image_credit,
+    neighborhood: place.neighborhood,
+  };
+}
+
+function resolveRouteOrigin(
+  bbox: ReturnType<typeof useMapBbox>["bbox"],
+  city: string,
+): { latitude: number; longitude: number } {
+  if (bbox) {
+    return {
+      latitude: (bbox.lat_min + bbox.lat_max) / 2,
+      longitude: (bbox.lon_min + bbox.lon_max) / 2,
+    };
+  }
+  const center = resolveCityMapCenter(city);
+  return { latitude: center.latitude, longitude: center.longitude };
+}
+
 export function EventMapScreen() {
   const api = useYunicityApi();
   const { user } = useAuth();
   const mapContext = useMapPageContext();
   const [profileCity, setProfileCity] = useState(user?.city ?? DEFAULT_MAP_CITY);
   const [focusedEventId, setFocusedEventId] = useState<string | null>(null);
+  const [selectedCulturalSlug, setSelectedCulturalSlug] = useState<string | null>(null);
+  const [expandedCulturalSlug, setExpandedCulturalSlug] = useState<string | null>(null);
+  const [routeTarget, setRouteTarget] = useState<CulturalPlaceListItem | null>(null);
+  const [routeGeometry, setRouteGeometry] = useState<MapRouteGeometry | null>(null);
+  const [routeSummary, setRouteSummary] = useState<MapRouteSummary | null>(null);
+  const [routeLoading, setRouteLoading] = useState(false);
+  const [routeError, setRouteError] = useState(false);
   const { bbox, updateFromBounds } = useMapBbox();
   const { events, loading, error, truncated, hasLoaded, retry } = useMapEvents(
     profileCity,
     bbox,
   );
+  const { places: mapCulturalPlaces } = useMapCulturalPlaces(profileCity, bbox);
 
   useEffect(() => {
     void api.getProfileMe().then((profile) => {
@@ -55,12 +104,121 @@ export function EventMapScreen() {
   const showInitialLoading = !hasLoaded && loading;
   const showEmpty = hasLoaded && !loading && !error && events.length === 0;
 
+  const culturalBySlug = useMemo(() => {
+    const map = new Map<string, CulturalPlaceListItem>();
+    for (const place of mapContext.culturalPlaces) {
+      map.set(place.slug, place);
+    }
+    for (const place of mapCulturalPlaces) {
+      if (!map.has(place.slug)) {
+        map.set(place.slug, mapItemToListItem(place));
+      }
+    }
+    return map;
+  }, [mapContext.culturalPlaces, mapCulturalPlaces]);
+
+  const routeTargetResolved = useMemo(() => {
+    if (routeTarget) return routeTarget;
+    if (!selectedCulturalSlug) return null;
+    return culturalBySlug.get(selectedCulturalSlug) ?? null;
+  }, [routeTarget, selectedCulturalSlug, culturalBySlug]);
+
+  const clearRoute = useCallback(() => {
+    setRouteTarget(null);
+    setRouteGeometry(null);
+    setRouteSummary(null);
+    setRouteLoading(false);
+    setRouteError(false);
+  }, []);
+
+  const requestRoute = useCallback(
+    async (place: CulturalPlaceListItem, origin: { latitude: number; longitude: number }) => {
+      if (!MAPBOX_TOKEN) {
+        setRouteError(true);
+        return;
+      }
+      setRouteTarget(place);
+      setSelectedCulturalSlug(place.slug);
+      setRouteLoading(true);
+      setRouteError(false);
+      setRouteGeometry(null);
+      setRouteSummary(null);
+
+      const result = await fetchMapboxWalkingRoute({
+        accessToken: MAPBOX_TOKEN,
+        origin,
+        destination: { latitude: place.latitude, longitude: place.longitude },
+      });
+
+      setRouteLoading(false);
+      if (!result.ok) {
+        setRouteError(true);
+        return;
+      }
+      setRouteGeometry(result.geometry);
+      setRouteSummary(result.summary);
+    },
+    [],
+  );
+
+  const handleRouteFromMapCenter = useCallback(
+    (place: CulturalPlaceListItem) => {
+      void requestRoute(place, resolveRouteOrigin(bbox, city));
+    },
+    [bbox, city, requestRoute],
+  );
+
+  const handleRouteFromMyPosition = useCallback(
+    (place: CulturalPlaceListItem) => {
+      if (!navigator.geolocation) {
+        void requestRoute(place, resolveRouteOrigin(bbox, city));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          void requestRoute(place, {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        () => {
+          void requestRoute(place, resolveRouteOrigin(bbox, city));
+        },
+        { enableHighAccuracy: false, timeout: 12_000, maximumAge: 60_000 },
+      );
+    },
+    [bbox, city, requestRoute],
+  );
+
+  const handleSelectCulturalPlace = useCallback((place: CulturalPlaceListItem) => {
+    setSelectedCulturalSlug(place.slug);
+    clearRoute();
+  }, [clearRoute]);
+
+  const handleToggleCulturalDetails = useCallback((place: CulturalPlaceListItem) => {
+    setExpandedCulturalSlug((current) => (current === place.slug ? null : place.slug));
+    setSelectedCulturalSlug(place.slug);
+  }, []);
+
+  const handleMapSelectCulturalSlug = useCallback(
+    (slug: string) => {
+      const place = culturalBySlug.get(slug);
+      if (place) {
+        setSelectedCulturalSlug(slug);
+      }
+    },
+    [culturalBySlug],
+  );
+
   const transitPoint = useMemo(() => {
     if (focusedEventId) {
       const focused = events.find((event) => event.id === focusedEventId);
       if (focused) {
         return { lat: focused.latitude, lon: focused.longitude, city };
       }
+    }
+    if (routeTargetResolved) {
+      return { lat: routeTargetResolved.latitude, lon: routeTargetResolved.longitude, city };
     }
     if (bbox) {
       return {
@@ -71,11 +229,22 @@ export function EventMapScreen() {
     }
     const center = resolveCityMapCenter(city);
     return { lat: center.latitude, lon: center.longitude, city };
-  }, [focusedEventId, events, bbox, city]);
+  }, [focusedEventId, events, bbox, city, routeTargetResolved]);
 
   return (
     <WebAppShell
-      context={<MapRightRail context={mapContext} transitPoint={transitPoint} />}
+      context={
+        <MapRightRail
+          context={mapContext}
+          transitPoint={transitPoint}
+          selectedCulturalSlug={selectedCulturalSlug}
+          expandedCulturalSlug={expandedCulturalSlug}
+          onSelectCulturalPlace={handleSelectCulturalPlace}
+          onRouteFromMapCenter={handleRouteFromMapCenter}
+          onRouteFromMyPosition={handleRouteFromMyPosition}
+          onToggleCulturalDetails={handleToggleCulturalDetails}
+        />
+      }
       contentWidth="full"
     >
       <MapPageSearchHeader city={city} />
@@ -90,8 +259,18 @@ export function EventMapScreen() {
             city={city}
             accessToken={MAPBOX_TOKEN}
             events={events}
+            culturalPlaces={mapCulturalPlaces}
             onBoundsChange={updateFromBounds}
             focusedEventId={focusedEventId}
+            selectedCulturalSlug={selectedCulturalSlug}
+            routeGeometry={routeGeometry}
+            routeTargetName={routeTargetResolved?.name ?? null}
+            routeSummary={routeSummary}
+            routeLoading={routeLoading}
+            routeError={routeError}
+            onSelectCulturalPlace={handleMapSelectCulturalSlug}
+            onClearRoute={clearRoute}
+            routeTargetPlace={routeTargetResolved}
           />
         )}
 

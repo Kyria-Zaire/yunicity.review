@@ -1,4 +1,8 @@
 import type {
+  CulturalPlaceDetail,
+  CulturalPlaceListResponse,
+  MapCulturalPlaceListResponse,
+  MapCulturalPlacesListParams,
   MapEventsListParams,
   MapEventListResponse,
   TransitNearbyParams,
@@ -42,6 +46,7 @@ import { NeighborhoodsApi, createNeighborhoodsApi } from "./neighborhood-api";
 import { TribesApi, createTribesApi } from "./tribes-api";
 import { FeedApi, createFeedApi } from "./feed-api";
 import { MapEventsApi, createMapEventsApi } from "./map-events-api";
+import { CulturalPlacesApi, createCulturalPlacesApi } from "./cultural-places-api";
 import { TransitApi, createTransitApi } from "./transit-api";
 import { SearchApi, createSearchApi } from "./search-api";
 import { ProfileApi, createProfileApi } from "./profile-api";
@@ -61,6 +66,7 @@ export class YunicityApi {
   readonly search: SearchApi;
   readonly map: MapEventsApi;
   readonly transit: TransitApi;
+  readonly culturalPlaces: CulturalPlacesApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.profile = createProfileApi(client, apiBaseUrl);
@@ -76,6 +82,23 @@ export class YunicityApi {
     this.search = createSearchApi(client, apiBaseUrl);
     this.map = createMapEventsApi(client, apiBaseUrl);
     this.transit = createTransitApi(client, apiBaseUrl);
+    this.culturalPlaces = createCulturalPlacesApi(client, apiBaseUrl);
+  }
+
+  listCulturalPlaces(params: {
+    city: string;
+    featured?: boolean;
+    limit?: number;
+  }): Promise<CulturalPlaceListResponse> {
+    return this.culturalPlaces.listPlaces(params);
+  }
+
+  listMapCulturalPlaces(params: MapCulturalPlacesListParams): Promise<MapCulturalPlaceListResponse> {
+    return this.culturalPlaces.listMapPlaces(params);
+  }
+
+  getCulturalPlace(slug: string, city: string): Promise<CulturalPlaceDetail> {
+    return this.culturalPlaces.getPlace(slug, city);
   }
 
   listMapEvents(params: MapEventsListParams): Promise<MapEventListResponse> {

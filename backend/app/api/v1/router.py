@@ -7,6 +7,7 @@ from app.api.v1 import (
     admin_tribes,
     auth,
     comments,
+    cultural_places,
     events,
     feed,
     health,
@@ -50,5 +51,6 @@ api_router.include_router(comments.router)
 api_router.include_router(scan.router)
 api_router.include_router(search.router)
 api_router.include_router(map.router)
+api_router.include_router(cultural_places.router)
 api_router.include_router(transit.router)
 api_router.include_router(rbac_validation.router)

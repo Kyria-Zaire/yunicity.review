@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.cultural_place_constants import CULTURAL_PLACE_MAP_LIMIT_DEFAULT
 from app.core.dependencies import get_current_user_optional
 from app.core.map_constants import (
     MAP_EVENTS_LIMIT_DEFAULT,
@@ -17,7 +18,12 @@ from app.core.map_constants import (
 from app.core.rate_limit import enforce_rate_limit
 from app.db.session import get_db
 from app.models.user import User
+from app.schemas.cultural_place import MapCulturalPlaceListResponse
 from app.schemas.map_event import MapEventListResponse
+from app.services.cultural_place_service import (
+    CulturalPlaceService,
+    default_map_limit as default_cultural_map_limit,
+)
 from app.services.map_event_service import MapBbox, MapEventService, default_map_limit
 
 router = APIRouter(prefix="/map", tags=["map"])
@@ -64,4 +70,38 @@ async def list_map_events(
         city=city,
         limit=default_map_limit(limit),
         viewer=current_user,
+    )
+
+
+@router.get("/cultural-places", response_model=MapCulturalPlaceListResponse)
+async def list_map_cultural_places(
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User | None, Depends(get_current_user_optional)],
+    lat_min: float = Query(ge=-90, le=90),
+    lon_min: float = Query(ge=-180, le=180),
+    lat_max: float = Query(ge=-90, le=90),
+    lon_max: float = Query(ge=-180, le=180),
+    city: str = Query(default="Reims", max_length=128),
+    limit: int = Query(default=CULTURAL_PLACE_MAP_LIMIT_DEFAULT, ge=1, le=100),
+) -> MapCulturalPlaceListResponse:
+    rate_key = (
+        f"rl:map_cultural:user:{current_user.id}"
+        if current_user is not None
+        else f"rl:map_cultural:ip:{_client_ip(request)}"
+    )
+    await enforce_rate_limit(
+        rate_key,
+        limit=MAP_RATE_LIMIT,
+        window_seconds=MAP_RATE_WINDOW_SECONDS,
+    )
+    return await CulturalPlaceService(session).list_map_places(
+        bbox=MapBbox(
+            lat_min=lat_min,
+            lon_min=lon_min,
+            lat_max=lat_max,
+            lon_max=lon_max,
+        ),
+        city=city,
+        limit=default_cultural_map_limit(limit),
     )

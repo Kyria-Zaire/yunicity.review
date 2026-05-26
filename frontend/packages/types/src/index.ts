@@ -138,6 +138,18 @@ export type {
 } from "./neighborhood";
 
 export type {
+  CulturalPlaceDetail,
+  CulturalPlaceListItem,
+  CulturalPlaceListResponse,
+  CulturalPlaceNeighborhoodSummary,
+  MapCulturalPlaceItem,
+  MapCulturalPlaceListResponse,
+  MapCulturalPlacesListParams,
+  MapRouteGeometry,
+  MapRouteSummary,
+} from "./cultural-place";
+
+export type {
   MapBbox,
   MapBboxResponse,
   MapEventItem,

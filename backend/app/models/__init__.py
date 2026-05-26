@@ -1,5 +1,6 @@
 """ORM models — import all modules so Alembic sees Base.metadata."""
 
+from app.models.cultural_place import CulturalPlace
 from app.models.comment import Comment
 from app.models.like import Like
 from app.models.local_event import EventInterest, LocalEvent
@@ -35,6 +36,7 @@ __all__ = [
     "OrganizationMember",
     "OrganizationVerification",
     "CitizenLocalStamp",
+    "CulturalPlace",
     "Comment",
     "EventInterest",
     "Like",

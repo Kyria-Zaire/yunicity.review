@@ -1,0 +1,8 @@
+"""Cultural places catalog constants (WEB-MAP-03)."""
+
+from __future__ import annotations
+
+CULTURAL_PLACE_LIST_LIMIT_DEFAULT = 8
+CULTURAL_PLACE_LIST_LIMIT_MAX = 50
+CULTURAL_PLACE_MAP_LIMIT_DEFAULT = 50
+CULTURAL_PLACE_MAP_LIMIT_MAX = 100

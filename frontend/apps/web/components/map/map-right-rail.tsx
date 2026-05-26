@@ -1,13 +1,13 @@
 "use client";
 
+import { MapCulturalPlacesRail } from "@/components/map/map-cultural-places-rail";
 import { MapTransitNearby } from "@/components/map/map-transit-nearby";
 import { WebContextPanel } from "@/components/layout/web-context-panel";
 import type { MapTransitQueryPoint } from "@/hooks/use-map-transit-nearby";
 import type { MapPageContextState } from "@/hooks/use-map-page-context";
+import type { CulturalPlaceListItem } from "@yunicity/types";
 import {
   MAP_EDITORIAL_ROUTES,
-  MAP_RAIL_CULTURE_EMPTY,
-  MAP_RAIL_CULTURE_TITLE,
   MAP_RAIL_NEIGHBORHOODS_EMPTY,
   MAP_RAIL_NEIGHBORHOODS_TITLE,
   MAP_RAIL_PRIVILEGES_TITLE,
@@ -16,7 +16,6 @@ import {
   MAP_OFFER_CTA,
   MAP_OFFER_EMPTY,
   formatOfferValidUntil,
-  searchResultTitle,
 } from "@yunicity/utils";
 import Link from "next/link";
 
@@ -30,13 +29,27 @@ function RailSkeleton() {
   );
 }
 
+type MapRightRailProps = {
+  context: MapPageContextState;
+  transitPoint: MapTransitQueryPoint;
+  selectedCulturalSlug: string | null;
+  expandedCulturalSlug: string | null;
+  onSelectCulturalPlace: (place: CulturalPlaceListItem) => void;
+  onRouteFromMapCenter: (place: CulturalPlaceListItem) => void;
+  onRouteFromMyPosition: (place: CulturalPlaceListItem) => void;
+  onToggleCulturalDetails: (place: CulturalPlaceListItem) => void;
+};
+
 export function MapRightRail({
   context,
   transitPoint,
-}: {
-  context: MapPageContextState;
-  transitPoint: MapTransitQueryPoint;
-}) {
+  selectedCulturalSlug,
+  expandedCulturalSlug,
+  onSelectCulturalPlace,
+  onRouteFromMapCenter,
+  onRouteFromMyPosition,
+  onToggleCulturalDetails,
+}: MapRightRailProps) {
   const { loading, neighborhoods, culturalPlaces, highlightOffer, city } = context;
 
   if (loading) {
@@ -66,29 +79,15 @@ export function MapRightRail({
 
       <MapTransitNearby point={transitPoint} />
 
-      <WebContextPanel title={MAP_RAIL_CULTURE_TITLE}>
-        {culturalPlaces.length === 0 ? (
-          <p className="text-neutral-500">{MAP_RAIL_CULTURE_EMPTY}</p>
-        ) : (
-          <ul className="space-y-2">
-            {culturalPlaces.map((place) => (
-              <li key={place.id}>
-                <Link
-                  href="/search?type=organization"
-                  className="block rounded-lg px-2 py-1.5 hover:bg-neutral-50"
-                >
-                  <span className="font-medium text-neutral-800">
-                    {searchResultTitle(place)}
-                  </span>
-                  {place.city ? (
-                    <span className="block text-xs text-neutral-500">{place.city}</span>
-                  ) : null}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </WebContextPanel>
+      <MapCulturalPlacesRail
+        places={culturalPlaces}
+        selectedSlug={selectedCulturalSlug}
+        expandedSlug={expandedCulturalSlug}
+        onSelectPlace={onSelectCulturalPlace}
+        onRouteFromMapCenter={onRouteFromMapCenter}
+        onRouteFromMyPosition={onRouteFromMyPosition}
+        onToggleDetails={onToggleCulturalDetails}
+      />
 
       <WebContextPanel title={MAP_RAIL_NEIGHBORHOODS_TITLE}>
         {neighborhoods.length === 0 ? (

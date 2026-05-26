@@ -55,7 +55,7 @@ export function groupTransitDeparturesByRoute(
 }
 export const MAP_RAIL_URBAN_SOON = "Bientôt disponible";
 export const MAP_RAIL_CULTURE_TITLE = "Lieux culturels";
-export const MAP_RAIL_CULTURE_EMPTY = "Bientôt plus de lieux à découvrir.";
+export const MAP_RAIL_CULTURE_EMPTY = "Aucun lieu culturel à afficher pour le moment.";
 export const MAP_RAIL_NEIGHBORHOODS_TITLE = "Quartiers à explorer";
 export const MAP_RAIL_NEIGHBORHOODS_EMPTY = "Les quartiers de votre ville arrivent progressivement.";
 export const MAP_RAIL_PRIVILEGES_TITLE = "Privilèges proches";

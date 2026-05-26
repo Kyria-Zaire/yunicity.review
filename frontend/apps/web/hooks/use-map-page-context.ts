@@ -1,6 +1,6 @@
 "use client";
 
-import type { Neighborhood, PartnerOffer, SearchResultItem } from "@yunicity/types";
+import type { CulturalPlaceListItem, Neighborhood, PartnerOffer } from "@yunicity/types";
 import { useCallback, useEffect, useState } from "react";
 
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
@@ -12,7 +12,7 @@ export type MapPageContextState = {
   city: string;
   loading: boolean;
   neighborhoods: Neighborhood[];
-  culturalPlaces: SearchResultItem[];
+  culturalPlaces: CulturalPlaceListItem[];
   highlightOffer: PartnerOffer | null;
 };
 
@@ -22,7 +22,7 @@ export function useMapPageContext(): MapPageContextState {
   const [city, setCity] = useState(user?.city ?? DEFAULT_CITY);
   const [loading, setLoading] = useState(true);
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
-  const [culturalPlaces, setCulturalPlaces] = useState<SearchResultItem[]>([]);
+  const [culturalPlaces, setCulturalPlaces] = useState<CulturalPlaceListItem[]>([]);
   const [highlightOffer, setHighlightOffer] = useState<PartnerOffer | null>(null);
 
   const load = useCallback(async () => {
@@ -32,14 +32,9 @@ export function useMapPageContext(): MapPageContextState {
       const resolvedCity = profile.city?.trim() || user?.city?.trim() || DEFAULT_CITY;
       setCity(resolvedCity);
 
-      const [hoodsRes, searchRes, offersRes] = await Promise.allSettled([
+      const [hoodsRes, cultureRes, offersRes] = await Promise.allSettled([
         api.neighborhoods.listNeighborhoods({ city: resolvedCity, page_size: 8 }),
-        api.searchLocal({
-          q: "lieu",
-          city: resolvedCity,
-          type: "organization",
-          limit: 4,
-        }),
+        api.listCulturalPlaces({ city: resolvedCity, featured: true, limit: 4 }),
         api.listPassportOffers(),
       ]);
 
@@ -49,8 +44,8 @@ export function useMapPageContext(): MapPageContextState {
         setNeighborhoods([]);
       }
 
-      if (searchRes.status === "fulfilled") {
-        setCulturalPlaces(searchRes.value.groups.organizations.items.slice(0, 4));
+      if (cultureRes.status === "fulfilled") {
+        setCulturalPlaces(cultureRes.value.items);
       } else {
         setCulturalPlaces([]);
       }
