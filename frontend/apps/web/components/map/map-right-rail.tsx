@@ -35,8 +35,7 @@ type MapRightRailProps = {
   selectedCulturalSlug: string | null;
   expandedCulturalSlug: string | null;
   onSelectCulturalPlace: (place: CulturalPlaceListItem) => void;
-  onRouteFromMapCenter: (place: CulturalPlaceListItem) => void;
-  onRouteFromMyPosition: (place: CulturalPlaceListItem) => void;
+  onStartRoute: (place: CulturalPlaceListItem) => void;
   onToggleCulturalDetails: (place: CulturalPlaceListItem) => void;
 };
 
@@ -46,8 +45,7 @@ export function MapRightRail({
   selectedCulturalSlug,
   expandedCulturalSlug,
   onSelectCulturalPlace,
-  onRouteFromMapCenter,
-  onRouteFromMyPosition,
+  onStartRoute,
   onToggleCulturalDetails,
 }: MapRightRailProps) {
   const { loading, neighborhoods, culturalPlaces, highlightOffer, city } = context;
@@ -84,8 +82,7 @@ export function MapRightRail({
         selectedSlug={selectedCulturalSlug}
         expandedSlug={expandedCulturalSlug}
         onSelectPlace={onSelectCulturalPlace}
-        onRouteFromMapCenter={onRouteFromMapCenter}
-        onRouteFromMyPosition={onRouteFromMyPosition}
+        onStartRoute={onStartRoute}
         onToggleDetails={onToggleCulturalDetails}
       />
 

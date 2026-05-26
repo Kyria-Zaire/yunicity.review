@@ -81,12 +81,30 @@ export {
   MAP_CULTURE_ROUTE_CTA,
   MAP_CULTURE_ROUTE_ERROR,
   MAP_CULTURE_ROUTE_PANEL_PREFIX,
+  MAP_ROUTE_ADDRESS_NOT_FOUND,
+  MAP_ROUTE_ADDRESS_PLACEHOLDER,
+  MAP_ROUTE_BACK,
+  MAP_ROUTE_CALCULATE,
+  MAP_ROUTE_DESTINATION_LABEL,
+  MAP_ROUTE_ENTER_ADDRESS,
+  MAP_ROUTE_GEO_DENIED,
+  MAP_ROUTE_MODE_BIKE,
+  MAP_ROUTE_MODE_DRIVE,
+  MAP_ROUTE_MODE_WALK,
+  MAP_ROUTE_ORIGIN_TITLE,
+  MAP_ROUTE_USE_MAP_CENTER,
   culturalPlaceCategoryLabel,
   culturalPlaceLocationLine,
   formatRouteDistance,
   formatRouteDuration,
+  mapRouteModeLabel,
 } from "./cultural-place-labels";
-export { fetchMapboxWalkingRoute } from "./mapbox-directions";
+export {
+  fetchMapboxRoute,
+  fetchMapboxWalkingRoute,
+  type MapRouteProfile,
+} from "./mapbox-directions";
+export { geocodeMapboxAddress, type GeocodeResult } from "./mapbox-geocoding";
 export {
   CITY_MAP_CENTERS,
   DEFAULT_MAP_CITY,

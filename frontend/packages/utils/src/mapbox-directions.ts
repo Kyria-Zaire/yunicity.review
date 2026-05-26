@@ -1,5 +1,7 @@
 import type { MapRouteGeometry, MapRouteSummary } from "@yunicity/types";
 
+export type MapRouteProfile = "walking" | "driving" | "cycling";
+
 type DirectionsResult =
   | { ok: true; summary: MapRouteSummary; geometry: MapRouteGeometry }
   | { ok: false };
@@ -12,15 +14,23 @@ type MapboxDirectionsResponse = {
   }>;
 };
 
-export async function fetchMapboxWalkingRoute(params: {
+const PROFILE_PATH: Record<MapRouteProfile, string> = {
+  walking: "walking",
+  driving: "driving",
+  cycling: "cycling",
+};
+
+export async function fetchMapboxRoute(params: {
   accessToken: string;
+  profile?: MapRouteProfile;
   origin: { latitude: number; longitude: number };
   destination: { latitude: number; longitude: number };
 }): Promise<DirectionsResult> {
   const { accessToken, origin, destination } = params;
+  const profile = params.profile ?? "walking";
   const coordinates = `${origin.longitude},${origin.latitude};${destination.longitude},${destination.latitude}`;
   const url = new URL(
-    `https://api.mapbox.com/directions/v5/mapbox/walking/${coordinates}`,
+    `https://api.mapbox.com/directions/v5/mapbox/${PROFILE_PATH[profile]}/${coordinates}`,
   );
   url.searchParams.set("geometries", "geojson");
   url.searchParams.set("overview", "full");
@@ -47,4 +57,13 @@ export async function fetchMapboxWalkingRoute(params: {
   } catch {
     return { ok: false };
   }
+}
+
+/** @deprecated Prefer fetchMapboxRoute with profile. */
+export async function fetchMapboxWalkingRoute(params: {
+  accessToken: string;
+  origin: { latitude: number; longitude: number };
+  destination: { latitude: number; longitude: number };
+}): Promise<DirectionsResult> {
+  return fetchMapboxRoute({ ...params, profile: "walking" });
 }

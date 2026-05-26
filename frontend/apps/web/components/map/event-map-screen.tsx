@@ -6,6 +6,7 @@ import type {
   MapRouteGeometry,
   MapRouteSummary,
 } from "@yunicity/types";
+import type { MapRouteProfile } from "@yunicity/utils";
 import {
   DEFAULT_MAP_CITY,
   MAP_EMPTY,
@@ -15,11 +16,13 @@ import {
   MAP_RETRY,
   MAP_TOKEN_MISSING_WEB,
   MAP_TRUNCATED_HINT,
-  fetchMapboxWalkingRoute,
+  fetchMapboxRoute,
+  geocodeMapboxAddress,
   resolveCityMapCenter,
 } from "@yunicity/utils";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import type { CulturalRoutePanelPhase } from "@/components/map/map-cultural-route-panel";
 import { EventMap } from "@/components/map/event-map";
 import { MapNearbyEvents } from "@/components/map/map-nearby-events";
 import { MapOfferTeaser } from "@/components/map/map-offer-teaser";
@@ -34,6 +37,8 @@ import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
+
+type LatLon = { latitude: number; longitude: number };
 
 function mapItemToListItem(place: MapCulturalPlaceItem): CulturalPlaceListItem {
   return {
@@ -54,10 +59,10 @@ function mapItemToListItem(place: MapCulturalPlaceItem): CulturalPlaceListItem {
   };
 }
 
-function resolveRouteOrigin(
+function resolveMapCenterOrigin(
   bbox: ReturnType<typeof useMapBbox>["bbox"],
   city: string,
-): { latitude: number; longitude: number } {
+): LatLon {
   if (bbox) {
     return {
       latitude: (bbox.lat_min + bbox.lat_max) / 2,
@@ -76,11 +81,21 @@ export function EventMapScreen() {
   const [focusedEventId, setFocusedEventId] = useState<string | null>(null);
   const [selectedCulturalSlug, setSelectedCulturalSlug] = useState<string | null>(null);
   const [expandedCulturalSlug, setExpandedCulturalSlug] = useState<string | null>(null);
+
   const [routeTarget, setRouteTarget] = useState<CulturalPlaceListItem | null>(null);
+  const [routePanelPhase, setRoutePanelPhase] = useState<CulturalRoutePanelPhase | null>(null);
+  const [routeOrigin, setRouteOrigin] = useState<LatLon | null>(null);
+  const [routeProfile, setRouteProfile] = useState<MapRouteProfile>("walking");
   const [routeGeometry, setRouteGeometry] = useState<MapRouteGeometry | null>(null);
   const [routeSummary, setRouteSummary] = useState<MapRouteSummary | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
   const [routeError, setRouteError] = useState(false);
+  const [geolocationDenied, setGeolocationDenied] = useState(false);
+  const [addressInput, setAddressInput] = useState("");
+  const [addressError, setAddressError] = useState(false);
+
+  const routeRequestIdRef = useRef(0);
+
   const { bbox, updateFromBounds } = useMapBbox();
   const { events, loading, error, truncated, hasLoaded, retry } = useMapEvents(
     profileCity,
@@ -117,38 +132,52 @@ export function EventMapScreen() {
     return map;
   }, [mapContext.culturalPlaces, mapCulturalPlaces]);
 
-  const routeTargetResolved = useMemo(() => {
-    if (routeTarget) return routeTarget;
-    if (!selectedCulturalSlug) return null;
-    return culturalBySlug.get(selectedCulturalSlug) ?? null;
-  }, [routeTarget, selectedCulturalSlug, culturalBySlug]);
-
   const clearRoute = useCallback(() => {
     setRouteTarget(null);
+    setRoutePanelPhase(null);
+    setRouteOrigin(null);
     setRouteGeometry(null);
     setRouteSummary(null);
     setRouteLoading(false);
     setRouteError(false);
+    setGeolocationDenied(false);
+    setAddressInput("");
+    setAddressError(false);
+    setRouteProfile("walking");
   }, []);
 
-  const requestRoute = useCallback(
-    async (place: CulturalPlaceListItem, origin: { latitude: number; longitude: number }) => {
+  const computeRoute = useCallback(
+    async (
+      place: CulturalPlaceListItem,
+      origin: LatLon,
+      profile: MapRouteProfile,
+    ) => {
       if (!MAPBOX_TOKEN) {
         setRouteError(true);
+        setRoutePanelPhase("active");
         return;
       }
+
+      const requestId = ++routeRequestIdRef.current;
       setRouteTarget(place);
       setSelectedCulturalSlug(place.slug);
+      setRouteOrigin(origin);
+      setRoutePanelPhase("active");
       setRouteLoading(true);
       setRouteError(false);
       setRouteGeometry(null);
       setRouteSummary(null);
 
-      const result = await fetchMapboxWalkingRoute({
+      const result = await fetchMapboxRoute({
         accessToken: MAPBOX_TOKEN,
+        profile,
         origin,
         destination: { latitude: place.latitude, longitude: place.longitude },
       });
+
+      if (requestId !== routeRequestIdRef.current) {
+        return;
+      }
 
       setRouteLoading(false);
       if (!result.ok) {
@@ -161,39 +190,106 @@ export function EventMapScreen() {
     [],
   );
 
-  const handleRouteFromMapCenter = useCallback(
-    (place: CulturalPlaceListItem) => {
-      void requestRoute(place, resolveRouteOrigin(bbox, city));
-    },
-    [bbox, city, requestRoute],
-  );
+  const handleStartRoute = useCallback((place: CulturalPlaceListItem) => {
+    routeRequestIdRef.current += 1;
+    setRouteTarget(place);
+    setSelectedCulturalSlug(place.slug);
+    setRoutePanelPhase("pick-origin");
+    setRouteGeometry(null);
+    setRouteSummary(null);
+    setRouteLoading(false);
+    setRouteError(false);
+    setGeolocationDenied(false);
+    setAddressInput("");
+    setAddressError(false);
+    setRouteOrigin(null);
+    setRouteProfile("walking");
+  }, []);
 
-  const handleRouteFromMyPosition = useCallback(
-    (place: CulturalPlaceListItem) => {
-      if (!navigator.geolocation) {
-        void requestRoute(place, resolveRouteOrigin(bbox, city));
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          void requestRoute(place, {
+  const handlePickMapCenter = useCallback(() => {
+    if (!routeTarget) return;
+    setGeolocationDenied(false);
+    void computeRoute(routeTarget, resolveMapCenterOrigin(bbox, city), routeProfile);
+  }, [routeTarget, bbox, city, routeProfile, computeRoute]);
+
+  const handlePickMyPosition = useCallback(() => {
+    if (!routeTarget) return;
+    setGeolocationDenied(false);
+
+    if (!navigator.geolocation) {
+      setGeolocationDenied(true);
+      return;
+    }
+
+    setRouteLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        void computeRoute(
+          routeTarget,
+          {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
-          });
-        },
-        () => {
-          void requestRoute(place, resolveRouteOrigin(bbox, city));
-        },
-        { enableHighAccuracy: false, timeout: 12_000, maximumAge: 60_000 },
+          },
+          routeProfile,
+        );
+      },
+      () => {
+        setRouteLoading(false);
+        setGeolocationDenied(true);
+      },
+      { enableHighAccuracy: false, timeout: 12_000, maximumAge: 60_000 },
+    );
+  }, [routeTarget, routeProfile, computeRoute]);
+
+  const handlePickAddressMode = useCallback(() => {
+    setAddressError(false);
+    setRoutePanelPhase("enter-address");
+  }, []);
+
+  const handleSubmitAddress = useCallback(() => {
+    if (!routeTarget || !MAPBOX_TOKEN) {
+      setAddressError(true);
+      return;
+    }
+
+    const proximity = resolveMapCenterOrigin(bbox, city);
+    setRouteLoading(true);
+    setAddressError(false);
+
+    void geocodeMapboxAddress({
+      accessToken: MAPBOX_TOKEN,
+      query: addressInput,
+      proximity,
+    }).then((result) => {
+      if (!result.ok) {
+        setRouteLoading(false);
+        setAddressError(true);
+        return;
+      }
+      void computeRoute(
+        routeTarget,
+        { latitude: result.latitude, longitude: result.longitude },
+        routeProfile,
       );
+    });
+  }, [routeTarget, addressInput, bbox, city, routeProfile, computeRoute]);
+
+  const handleChangeProfile = useCallback(
+    (profile: MapRouteProfile) => {
+      setRouteProfile(profile);
+      if (!routeTarget || !routeOrigin) return;
+      void computeRoute(routeTarget, routeOrigin, profile);
     },
-    [bbox, city, requestRoute],
+    [routeTarget, routeOrigin, computeRoute],
   );
 
-  const handleSelectCulturalPlace = useCallback((place: CulturalPlaceListItem) => {
-    setSelectedCulturalSlug(place.slug);
-    clearRoute();
-  }, [clearRoute]);
+  const handleSelectCulturalPlace = useCallback(
+    (place: CulturalPlaceListItem) => {
+      setSelectedCulturalSlug(place.slug);
+      clearRoute();
+    },
+    [clearRoute],
+  );
 
   const handleToggleCulturalDetails = useCallback((place: CulturalPlaceListItem) => {
     setExpandedCulturalSlug((current) => (current === place.slug ? null : place.slug));
@@ -217,8 +313,8 @@ export function EventMapScreen() {
         return { lat: focused.latitude, lon: focused.longitude, city };
       }
     }
-    if (routeTargetResolved) {
-      return { lat: routeTargetResolved.latitude, lon: routeTargetResolved.longitude, city };
+    if (routeTarget) {
+      return { lat: routeTarget.latitude, lon: routeTarget.longitude, city };
     }
     if (bbox) {
       return {
@@ -229,7 +325,7 @@ export function EventMapScreen() {
     }
     const center = resolveCityMapCenter(city);
     return { lat: center.latitude, lon: center.longitude, city };
-  }, [focusedEventId, events, bbox, city, routeTargetResolved]);
+  }, [focusedEventId, events, bbox, city, routeTarget]);
 
   return (
     <WebAppShell
@@ -240,8 +336,7 @@ export function EventMapScreen() {
           selectedCulturalSlug={selectedCulturalSlug}
           expandedCulturalSlug={expandedCulturalSlug}
           onSelectCulturalPlace={handleSelectCulturalPlace}
-          onRouteFromMapCenter={handleRouteFromMapCenter}
-          onRouteFromMyPosition={handleRouteFromMyPosition}
+          onStartRoute={handleStartRoute}
           onToggleCulturalDetails={handleToggleCulturalDetails}
         />
       }
@@ -264,13 +359,28 @@ export function EventMapScreen() {
             focusedEventId={focusedEventId}
             selectedCulturalSlug={selectedCulturalSlug}
             routeGeometry={routeGeometry}
-            routeTargetName={routeTargetResolved?.name ?? null}
-            routeSummary={routeSummary}
+            routeTargetName={routeTarget?.name ?? null}
             routeLoading={routeLoading}
             routeError={routeError}
             onSelectCulturalPlace={handleMapSelectCulturalSlug}
             onClearRoute={clearRoute}
-            routeTargetPlace={routeTargetResolved}
+            routeTarget={routeTarget}
+            routePanelPhase={routePanelPhase}
+            routeSummary={routeSummary}
+            routeProfile={routeProfile}
+            geolocationDenied={geolocationDenied}
+            addressInput={addressInput}
+            addressError={addressError}
+            onPickMyPosition={handlePickMyPosition}
+            onPickAddressMode={handlePickAddressMode}
+            onPickMapCenter={handlePickMapCenter}
+            onAddressInputChange={setAddressInput}
+            onSubmitAddress={handleSubmitAddress}
+            onBackFromAddress={() => {
+              setAddressError(false);
+              setRoutePanelPhase("pick-origin");
+            }}
+            onChangeProfile={handleChangeProfile}
           />
         )}
 

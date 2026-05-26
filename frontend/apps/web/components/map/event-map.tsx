@@ -9,6 +9,7 @@ import type {
   MapRouteGeometry,
   MapRouteSummary,
 } from "@yunicity/types";
+import type { MapRouteProfile } from "@yunicity/utils";
 import {
   MAP_RECENTER,
   MAP_VIEW_EVENT,
@@ -28,7 +29,10 @@ import Map, {
   type MapRef,
 } from "react-map-gl/mapbox";
 
-import { MapRoutePanel } from "@/components/map/map-route-panel";
+import {
+  MapCulturalRoutePanel,
+  type CulturalRoutePanelPhase,
+} from "@/components/map/map-cultural-route-panel";
 import type { MapBoundsLike } from "@/hooks/use-map-bbox";
 
 const MAP_STYLE = "mapbox://styles/mapbox/light-v11";
@@ -50,7 +54,19 @@ type EventMapProps = {
   routeError?: boolean;
   onSelectCulturalPlace?: (slug: string) => void;
   onClearRoute?: () => void;
-  routeTargetPlace?: CulturalPlaceListItem | null;
+  routeTarget?: CulturalPlaceListItem | null;
+  routePanelPhase?: CulturalRoutePanelPhase | null;
+  routeProfile?: MapRouteProfile;
+  geolocationDenied?: boolean;
+  addressInput?: string;
+  addressError?: boolean;
+  onPickMyPosition?: () => void;
+  onPickAddressMode?: () => void;
+  onPickMapCenter?: () => void;
+  onAddressInputChange?: (value: string) => void;
+  onSubmitAddress?: () => void;
+  onBackFromAddress?: () => void;
+  onChangeProfile?: (profile: MapRouteProfile) => void;
 };
 
 export function EventMap({
@@ -68,7 +84,19 @@ export function EventMap({
   routeError = false,
   onSelectCulturalPlace,
   onClearRoute,
-  routeTargetPlace = null,
+  routeTarget = null,
+  routePanelPhase = null,
+  routeProfile = "walking",
+  geolocationDenied = false,
+  addressInput = "",
+  addressError = false,
+  onPickMyPosition,
+  onPickAddressMode,
+  onPickMapCenter,
+  onAddressInputChange,
+  onSubmitAddress,
+  onBackFromAddress,
+  onChangeProfile,
 }: EventMapProps) {
   const mapRef = useRef<MapRef>(null);
   const center = resolveCityMapCenter(city);
@@ -146,11 +174,24 @@ export function EventMap({
 
   return (
     <div className="relative h-[min(58vh,640px)] w-full overflow-hidden rounded-2xl border border-neutral-200/90 bg-neutral-50 shadow-sm">
-      <MapRoutePanel
-        target={routeTargetPlace}
-        summary={routeSummary}
-        error={routeError}
+      <MapCulturalRoutePanel
+        target={routeTarget}
+        phase={routePanelPhase}
+        routeLoading={routeLoading}
+        routeError={routeError}
+        routeSummary={routeSummary}
+        routeProfile={routeProfile}
+        geolocationDenied={geolocationDenied}
+        addressInput={addressInput}
+        addressError={addressError}
         onClose={() => onClearRoute?.()}
+        onPickMyPosition={() => onPickMyPosition?.()}
+        onPickAddressMode={() => onPickAddressMode?.()}
+        onPickMapCenter={() => onPickMapCenter?.()}
+        onAddressInputChange={(value) => onAddressInputChange?.(value)}
+        onSubmitAddress={() => onSubmitAddress?.()}
+        onBackFromAddress={() => onBackFromAddress?.()}
+        onChangeProfile={(profile) => onChangeProfile?.(profile)}
       />
 
       <Map
@@ -257,7 +298,7 @@ export function EventMap({
         ) : null}
       </Map>
 
-      {routeLoading && routeTargetName ? (
+      {routeLoading && routeTargetName && routePanelPhase === "active" ? (
         <p className="pointer-events-none absolute bottom-16 left-4 rounded-full bg-white/90 px-3 py-1 text-xs text-neutral-600 shadow-sm">
           Itinéraire vers {routeTargetName}…
         </p>

@@ -4,7 +4,6 @@ import { WebContextPanel } from "@/components/layout/web-context-panel";
 import type { CulturalPlaceListItem } from "@yunicity/types";
 import {
   MAP_CULTURE_DETAILS_CTA,
-  MAP_CULTURE_FROM_MY_POSITION,
   MAP_CULTURE_IMAGE_PLACEHOLDER,
   MAP_CULTURE_ROUTE_CTA,
   MAP_RAIL_CULTURE_EMPTY,
@@ -18,8 +17,7 @@ type MapCulturalPlacesRailProps = {
   selectedSlug: string | null;
   expandedSlug: string | null;
   onSelectPlace: (place: CulturalPlaceListItem) => void;
-  onRouteFromMapCenter: (place: CulturalPlaceListItem) => void;
-  onRouteFromMyPosition: (place: CulturalPlaceListItem) => void;
+  onStartRoute: (place: CulturalPlaceListItem) => void;
   onToggleDetails: (place: CulturalPlaceListItem) => void;
 };
 
@@ -48,8 +46,7 @@ export function MapCulturalPlacesRail({
   selectedSlug,
   expandedSlug,
   onSelectPlace,
-  onRouteFromMapCenter,
-  onRouteFromMyPosition,
+  onStartRoute,
   onToggleDetails,
 }: MapCulturalPlacesRailProps) {
   return (
@@ -89,17 +86,10 @@ export function MapCulturalPlacesRail({
                     <div className="mt-2 flex flex-wrap gap-2">
                       <button
                         type="button"
-                        onClick={() => onRouteFromMapCenter(place)}
+                        onClick={() => onStartRoute(place)}
                         className="rounded-full bg-yunicity-primary px-2.5 py-1 text-xs font-semibold text-white hover:bg-yunicity-primary-hover"
                       >
                         {MAP_CULTURE_ROUTE_CTA}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onRouteFromMyPosition(place)}
-                        className="rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
-                      >
-                        {MAP_CULTURE_FROM_MY_POSITION}
                       </button>
                       <button
                         type="button"
