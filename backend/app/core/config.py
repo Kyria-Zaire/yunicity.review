@@ -52,6 +52,13 @@ class Settings(BaseSettings):
         alias="PASSPORT_STAMP_FEED_EVENTS",
     )
 
+    grand_reims_gtfs_url: str | None = Field(default=None, alias="GRAND_REIMS_GTFS_URL")
+    grand_reims_gtfs_rt_url: str | None = Field(default=None, alias="GRAND_REIMS_GTFS_RT_URL")
+    grand_reims_gtfs_local_path: str | None = Field(
+        default=None,
+        alias="GRAND_REIMS_GTFS_LOCAL_PATH",
+    )
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: object) -> list[str]:

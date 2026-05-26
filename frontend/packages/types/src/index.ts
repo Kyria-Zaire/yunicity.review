@@ -147,6 +147,14 @@ export type {
 } from "./map";
 
 export type {
+  TransitDeparture,
+  TransitMode,
+  TransitNearbyParams,
+  TransitNearbyResponse,
+  TransitStopNearby,
+} from "./transit";
+
+export type {
   SearchEntityType,
   SearchGroupKey,
   SearchGroups,

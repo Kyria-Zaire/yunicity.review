@@ -1,6 +1,8 @@
 import type {
   MapEventsListParams,
   MapEventListResponse,
+  TransitNearbyParams,
+  TransitNearbyResponse,
   SearchListParams,
   SearchResponse,
   CommentCreatePayload,
@@ -40,6 +42,7 @@ import { NeighborhoodsApi, createNeighborhoodsApi } from "./neighborhood-api";
 import { TribesApi, createTribesApi } from "./tribes-api";
 import { FeedApi, createFeedApi } from "./feed-api";
 import { MapEventsApi, createMapEventsApi } from "./map-events-api";
+import { TransitApi, createTransitApi } from "./transit-api";
 import { SearchApi, createSearchApi } from "./search-api";
 import { ProfileApi, createProfileApi } from "./profile-api";
 
@@ -57,6 +60,7 @@ export class YunicityApi {
   readonly tribes: TribesApi;
   readonly search: SearchApi;
   readonly map: MapEventsApi;
+  readonly transit: TransitApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.profile = createProfileApi(client, apiBaseUrl);
@@ -71,10 +75,15 @@ export class YunicityApi {
     this.tribes = createTribesApi(client, apiBaseUrl);
     this.search = createSearchApi(client, apiBaseUrl);
     this.map = createMapEventsApi(client, apiBaseUrl);
+    this.transit = createTransitApi(client, apiBaseUrl);
   }
 
   listMapEvents(params: MapEventsListParams): Promise<MapEventListResponse> {
     return this.map.listEvents(params);
+  }
+
+  getTransitNearby(params: TransitNearbyParams): Promise<TransitNearbyResponse> {
+    return this.transit.getNearby(params);
   }
 
   searchLocal(params: SearchListParams): Promise<SearchResponse> {

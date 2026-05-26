@@ -569,6 +569,37 @@ Doc produit : [`docs/prd/PRD-D20-event-map-foundation.md`](../docs/prd/PRD-D20-e
 
 Tests : `tests/test_event_map.py`.
 
+### Transit Grand Reims (WEB-MAP-02)
+
+Prochains passages **indicatifs** (GTFS statique) près d’un point carte — pas d’itinéraire, pas de géoloc persistée.
+
+| Méthode | Route | Auth |
+|---------|-------|------|
+| GET | `/api/v1/transit/nearby` | Aucune |
+
+Query : `lat`, `lon`, `city` (défaut Reims), `radius_meters` (défaut 600), `limit` (défaut 5).
+
+Réponse : `{ city, source, mode, disclaimer, stops[] }` — `mode` = `scheduled` \| `realtime`.
+
+Import GTFS (une fois par environnement, ~1 min) :
+
+```bash
+cp .env.example .env
+# DATABASE_URL hors Docker : localhost:5434 (voir commentaire dans .env.example)
+# GRAND_REIMS_GTFS_URL=https://transport.data.gouv.fr/resources/80594/download
+
+uv run alembic stamp head   # si schéma déjà à jour mais version Alembic en retard
+uv run python scripts/import_grand_reims_gtfs.py
+```
+
+Ne lancer qu’**un seul** import à la fois (sinon verrous Postgres). Rebuild/redémarrer le conteneur `backend` si l’API Docker ne voit pas le nouveau code.
+
+Migration : `20260602_0019_transit_grand_reims`.
+
+Architecture : [`docs/architecture/transit-grand-reims.md`](../docs/architecture/transit-grand-reims.md).
+
+Tests : `tests/test_transit.py`.
+
 ## Offres flash locales (TICKET-501)
 
 Intention UX : [`docs/ux/flash-offers-intent.md`](../docs/ux/flash-offers-intent.md).

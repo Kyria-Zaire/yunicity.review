@@ -24,6 +24,7 @@ from app.models.push_subscription import PushSubscription
 from app.models.rbac import Permission, Role, RolePermission, UserRole
 from app.models.refresh_token import RefreshToken
 from app.models.report import Report
+from app.models.transit import TransitDeparture, TransitFeedMeta, TransitStop
 from app.models.tribe import Tribe, TribeInvitation, TribeMember, TribeModerationLog
 from app.models.user import User
 from app.models.user_notification import UserNotification
@@ -43,6 +44,9 @@ __all__ = [
     "StampDefinition",
     "Post",
     "Report",
+    "TransitDeparture",
+    "TransitFeedMeta",
+    "TransitStop",
     "Tribe",
     "TribeInvitation",
     "TribeMember",
