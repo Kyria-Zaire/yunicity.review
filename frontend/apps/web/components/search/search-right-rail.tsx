@@ -23,6 +23,18 @@ import {
 } from "@yunicity/utils";
 import Link from "next/link";
 import { useMemo } from "react";
+import {
+  Cloud,
+  CloudFog,
+  CloudLightning,
+  CloudMoon,
+  CloudRain,
+  CloudSnow,
+  CloudSun,
+  Moon,
+  Sun,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 function RailSkeleton() {
   return (
@@ -39,6 +51,39 @@ const VIBE_CLASS: Record<ReturnType<typeof neighborhoodVibeTone>, string> = {
   calm: "bg-neutral-100 text-neutral-600",
   discover: "bg-amber-50 text-amber-800",
 };
+
+function getWeatherVisual(params: {
+  icon: string | null;
+  condition: string;
+  isDay: boolean;
+}): { Icon: LucideIcon; type: string } {
+  const iconKey = (params.icon ?? "").toLowerCase();
+  const condition = params.condition.toLowerCase();
+
+  const byIcon: Record<string, { Icon: LucideIcon; type: string }> = {
+    clear: { Icon: params.isDay ? Sun : Moon, type: "clear" },
+    "partly-cloudy": { Icon: params.isDay ? CloudSun : CloudMoon, type: "partly_cloudy" },
+    cloudy: { Icon: Cloud, type: "cloudy" },
+    fog: { Icon: CloudFog, type: "fog" },
+    drizzle: { Icon: CloudRain, type: "rain" },
+    rain: { Icon: CloudRain, type: "rain" },
+    showers: { Icon: CloudRain, type: "rain" },
+    snow: { Icon: CloudSnow, type: "snow" },
+    thunderstorm: { Icon: CloudLightning, type: "storm" },
+  };
+
+  const exact = byIcon[iconKey];
+  if (exact) return exact;
+
+  if (condition.includes("orage")) return { Icon: CloudLightning, type: "storm" };
+  if (condition.includes("neige")) return { Icon: CloudSnow, type: "snow" };
+  if (condition.includes("pluie") || condition.includes("averse")) {
+    return { Icon: CloudRain, type: "rain" };
+  }
+  if (condition.includes("brouillard")) return { Icon: CloudFog, type: "fog" };
+  if (condition.includes("nuage")) return { Icon: Cloud, type: "cloudy" };
+  return { Icon: params.isDay ? Sun : Moon, type: "clear" };
+}
 
 export function SearchRightRail({ explorer }: { explorer: SearchExplorerContextState }) {
   const { loading, weekEvents, neighborhoods, highlightOffer } = explorer;
@@ -73,18 +118,32 @@ export function SearchRightRail({ explorer }: { explorer: SearchExplorerContextS
 
   const weatherTint = (() => {
     if (!weather) return { bg: "bg-white", pill: "text-neutral-600", icon: "text-neutral-500" };
-    const isRainy = weather.condition.toLowerCase().includes("pluie") || weather.condition.toLowerCase().includes("rain");
+    const weatherVisual = getWeatherVisual({
+      icon: weather.icon,
+      condition: weather.condition,
+      isDay: weather.is_day,
+    });
+    const isRainy = weatherVisual.type === "rain";
+    const isStorm = weatherVisual.type === "storm";
     if (weather.is_day) {
       return {
-        bg: isRainy ? "bg-gradient-to-br from-sky-50 via-white to-yunicity-primary/10" : "bg-gradient-to-br from-blue-50 via-white to-yunicity-primary/10",
+        bg: isStorm
+          ? "bg-gradient-to-br from-amber-50 via-white to-orange-100"
+          : isRainy
+            ? "bg-gradient-to-br from-sky-50 via-white to-yunicity-primary/10"
+            : "bg-gradient-to-br from-blue-50 via-white to-yunicity-primary/10",
         pill: "text-neutral-600",
-        icon: "text-blue-500",
+        icon: isStorm ? "text-amber-600" : "text-blue-500",
       };
     }
     return {
-      bg: isRainy ? "bg-gradient-to-br from-slate-100 via-white to-yunicity-primary/10" : "bg-gradient-to-br from-neutral-100 via-white to-yunicity-primary/10",
+      bg: isStorm
+        ? "bg-gradient-to-br from-slate-200 via-white to-amber-100"
+        : isRainy
+          ? "bg-gradient-to-br from-slate-100 via-white to-yunicity-primary/10"
+          : "bg-gradient-to-br from-neutral-100 via-white to-yunicity-primary/10",
       pill: "text-neutral-600",
-      icon: "text-neutral-600",
+      icon: isStorm ? "text-amber-700" : "text-neutral-600",
     };
   })();
 
@@ -124,13 +183,23 @@ export function SearchRightRail({ explorer }: { explorer: SearchExplorerContextS
               <>
                 <p className="mt-2 flex items-center gap-3 text-2xl font-semibold text-neutral-900">
                   <span>{Math.round(weather.temperature)}°C</span>
-                  {weather.icon ? (
-                    <img
-                      src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`}
-                      alt={weather.condition}
-                      className={`h-10 w-10 ${weatherTint.icon}`}
-                    />
-                  ) : null}
+                  {(() => {
+                    const visual = getWeatherVisual({
+                      icon: weather.icon,
+                      condition: weather.condition,
+                      isDay: weather.is_day,
+                    });
+                    const Icon = visual.Icon;
+                    return (
+                      <span
+                        className={`inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/80 ${weatherTint.icon}`}
+                        aria-label={weather.condition}
+                        title={weather.condition}
+                      >
+                        <Icon className="h-5 w-5" aria-hidden="true" />
+                      </span>
+                    );
+                  })()}
                 </p>
                 <p className={`mt-1 text-sm ${weatherTint.pill}`}>{weather.condition}</p>
                 <p className="mt-1 text-xs text-neutral-500">{weather.city}</p>

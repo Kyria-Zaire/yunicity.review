@@ -121,7 +121,6 @@ export {
 } from "./map-city-defaults";
 export {
   MAP_BBOX_CHANGE_TOLERANCE,
-  MAP_EDITORIAL_ROUTES,
   MAP_EMPTY,
   MAP_EMPTY_HINT,
   MAP_ERROR,
@@ -137,12 +136,12 @@ export {
   MAP_PAGE_TITLE,
   MAP_RAIL_CULTURE_EMPTY,
   MAP_RAIL_CULTURE_TITLE,
+  MAP_RAIL_LIVE_EMPTY,
+  MAP_RAIL_LIVE_TITLE,
   MAP_RAIL_NEIGHBORHOODS_EMPTY,
   MAP_RAIL_NEIGHBORHOODS_TITLE,
   MAP_RAIL_PRIVILEGES_TITLE,
   MAP_RAIL_TRANSIT_TITLE,
-  MAP_RAIL_URBAN_SOON,
-  MAP_RAIL_URBAN_TITLE,
   MAP_TRANSIT_EMPTY,
   MAP_TRANSIT_ERROR,
   MAP_TRANSIT_STATUS_FLUIDE,
@@ -165,6 +164,11 @@ export {
   mapEventPopupDate,
   mapEventPopupLocation,
 } from "./map-labels";
+export {
+  buildMapLiveDiscoveryItems,
+  type MapLiveDiscoveryItem,
+  type MapLiveDiscoveryKind,
+} from "./map-live-discovery";
 export {
   SEARCH_CITY_LABEL,
   SEARCH_EMPTY_BODY,

@@ -11,9 +11,9 @@ import {
   MAP_TRANSIT_VIEW_SCHEDULES,
   formatTransitDepartureMinutes,
   groupTransitDeparturesByRoute,
-  transitRouteIcon,
   transitRouteLabel,
 } from "@yunicity/utils";
+import { BusFront, TrainFront, TramFront } from "lucide-react";
 
 function TransitSkeleton() {
   return (
@@ -22,6 +22,40 @@ function TransitSkeleton() {
         <div key={i} className="h-14 animate-pulse rounded-xl bg-neutral-100" />
       ))}
     </div>
+  );
+}
+
+function TransitModeIcon({ routeType }: { routeType: string }) {
+  if (routeType === "tram" || routeType === "metro") {
+    return (
+      <span
+        className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-violet-100 text-violet-700 ring-1 ring-violet-200"
+        aria-label="Tram"
+        title="Tram"
+      >
+        <TramFront className="h-3.5 w-3.5" aria-hidden="true" />
+      </span>
+    );
+  }
+  if (routeType === "bus" || routeType === "trolleybus") {
+    return (
+      <span
+        className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200"
+        aria-label="Bus"
+        title="Bus"
+      >
+        <BusFront className="h-3.5 w-3.5" aria-hidden="true" />
+      </span>
+    );
+  }
+  return (
+    <span
+      className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-neutral-100 text-neutral-700 ring-1 ring-neutral-200"
+      aria-label="Transport"
+      title="Transport"
+    >
+      <TrainFront className="h-3.5 w-3.5" aria-hidden="true" />
+    </span>
   );
 }
 
@@ -76,9 +110,11 @@ export function MapTransitNearby({ point }: { point: MapTransitQueryPoint }) {
                         </span>
                         <div className="min-w-0 flex-1">
                           <p className="flex items-baseline justify-between gap-2 text-sm font-semibold text-neutral-900">
-                            <span className="truncate">
-                              {transitRouteIcon(sample.route_type)}{" "}
+                            <span className="flex min-w-0 items-center gap-1.5 truncate">
+                              <TransitModeIcon routeType={sample.route_type} />
+                              <span className="truncate">
                               {transitRouteLabel(sample.route_type, sample.route_short_name)}
+                              </span>
                             </span>
                             <span className="shrink-0 tabular-nums text-yunicity-primary">
                               {formatTransitDepartureMinutes(departures)}

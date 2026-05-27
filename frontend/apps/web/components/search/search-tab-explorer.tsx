@@ -268,8 +268,8 @@ function AllExplorer({ explorer }: { explorer: SearchExplorerContextState }) {
       <SearchTribesSection
         tribes={explorer.tribes}
         city={explorer.city}
-        title="Tribus à découvrir"
-        subtitle="Communautés locales calmes pour se retrouver autour d'un thème."
+        title="Tribus locales"
+        subtitle=""
         maxItems={3}
         compact
       />

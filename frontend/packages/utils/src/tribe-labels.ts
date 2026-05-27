@@ -73,7 +73,7 @@ export type TribeDiscoveryTheme = {
   badge: string;
   activity: string;
   gradient: string;
-  icon: "motion" | "photo" | "culture" | "heart" | "students" | "users";
+  icon: "motion" | "photo" | "culture" | "heart" | "students" | "music" | "book" | "users";
 };
 
 const DEFAULT_TRIBE_THEME: TribeDiscoveryTheme = {
@@ -103,10 +103,10 @@ const TRIBE_DISCOVERY_THEMES: Record<string, TribeDiscoveryTheme> = {
     icon: "heart",
   },
   cafe_culture: {
-    badge: "Culture",
-    activity: "Rencontres culturelles",
+    badge: "Lecture",
+    activity: "Cafés lecture",
     gradient: "from-violet-100 via-indigo-50 to-fuchsia-100",
-    icon: "culture",
+    icon: "book",
   },
   students: {
     badge: "Étudiants",
@@ -118,7 +118,7 @@ const TRIBE_DISCOVERY_THEMES: Record<string, TribeDiscoveryTheme> = {
     badge: "Culture",
     activity: "Sessions musique locale",
     gradient: "from-purple-100 via-violet-50 to-indigo-100",
-    icon: "culture",
+    icon: "music",
   },
   association: {
     badge: "Bénévolat",

@@ -76,21 +76,29 @@ export function SearchTribesSection({
 
   return (
     <section className="space-y-3" aria-labelledby="search-tribes-title">
-      <div className="flex items-end justify-between gap-3">
-        <h2 id="search-tribes-title" className="text-base font-semibold text-neutral-900">
+      {compact ? (
+        <h2 id="search-tribes-title" className="text-xl font-semibold text-neutral-900">
           {title}
         </h2>
-        <Link href="/tribes" className="text-xs font-semibold text-yunicity-primary hover:underline">
-          Voir toutes les tribus
-        </Link>
-      </div>
-      <p className="text-sm text-neutral-500">{subtitle}</p>
+      ) : (
+        <>
+          <div className="flex items-end justify-between gap-3">
+            <h2 id="search-tribes-title" className="text-base font-semibold text-neutral-900">
+              {title}
+            </h2>
+            <Link href="/tribes" className="text-xs font-semibold text-yunicity-primary hover:underline">
+              Voir toutes les tribus
+            </Link>
+          </div>
+          <p className="text-sm text-neutral-500">{subtitle}</p>
+        </>
+      )}
       {visible.length === 0 ? (
         <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-6 text-sm text-neutral-500">
           {SEARCH_EXPLORER_TRIBES_EMPTY}
         </p>
       ) : (
-        <ul className={compact ? "grid gap-3 md:grid-cols-2 lg:grid-cols-3" : "grid gap-4 md:grid-cols-2"}>
+        <ul className={compact ? "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" : "grid gap-4 md:grid-cols-2"}>
           {visible.map((tribe) => (
             <li key={tribe.id} className="space-y-2">
               <TribeDiscoveryCard

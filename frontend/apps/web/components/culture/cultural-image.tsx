@@ -9,10 +9,11 @@ type CulturalImageProps = {
   className?: string;
   sizes: string;
   priority?: boolean;
+  showFallbackCaption?: boolean;
 };
 
 const FALLBACK_GRADIENT =
-  "bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.2),transparent_55%),linear-gradient(145deg,rgba(17,24,39,0.95),rgba(30,41,59,0.92))]";
+  "bg-[radial-gradient(circle_at_20%_10%,rgba(56,189,248,0.3),transparent_50%),radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.22),transparent_45%),linear-gradient(145deg,#0f172a_0%,#111827_45%,#1e293b_100%)]";
 
 /**
  * Images culturelles distantes (Wikimedia, Unsplash, etc.).
@@ -28,6 +29,7 @@ export function CulturalImage({
   className,
   sizes,
   priority = false,
+  showFallbackCaption = true,
 }: CulturalImageProps) {
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -57,7 +59,7 @@ export function CulturalImage({
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" aria-hidden />
 
-      {!showImage ? (
+      {!showImage && showFallbackCaption ? (
         <div className="absolute inset-0 flex items-end p-3">
           <div className="rounded-lg bg-white/12 px-2.5 py-2 backdrop-blur-sm">
             <div className="mb-1 inline-block rounded bg-white/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/90">

@@ -1,6 +1,11 @@
 "use client";
 
-import type { CulturalPlaceListItem, Neighborhood, PartnerOffer } from "@yunicity/types";
+import type {
+  CulturalPlaceListItem,
+  LocalEvent,
+  Neighborhood,
+  PartnerOffer,
+} from "@yunicity/types";
 import { useCallback, useEffect, useState } from "react";
 
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
@@ -13,6 +18,8 @@ export type MapPageContextState = {
   loading: boolean;
   neighborhoods: Neighborhood[];
   culturalPlaces: CulturalPlaceListItem[];
+  upcomingEvents: LocalEvent[];
+  passportOffers: PartnerOffer[];
   highlightOffer: PartnerOffer | null;
 };
 
@@ -23,6 +30,8 @@ export function useMapPageContext(): MapPageContextState {
   const [loading, setLoading] = useState(true);
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [culturalPlaces, setCulturalPlaces] = useState<CulturalPlaceListItem[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<LocalEvent[]>([]);
+  const [passportOffers, setPassportOffers] = useState<PartnerOffer[]>([]);
   const [highlightOffer, setHighlightOffer] = useState<PartnerOffer | null>(null);
 
   const load = useCallback(async () => {
@@ -37,10 +46,11 @@ export function useMapPageContext(): MapPageContextState {
       }
       setCity(resolvedCity);
 
-      const [hoodsRes, cultureRes, offersRes] = await Promise.allSettled([
+      const [hoodsRes, cultureRes, offersRes, eventsRes] = await Promise.allSettled([
         api.neighborhoods.listNeighborhoods({ city: resolvedCity, page_size: 8 }),
         api.listCulturalPlaces({ city: resolvedCity, featured: true, limit: 4 }),
         api.listPassportOffers(),
+        api.events.listEvents({ city: resolvedCity }),
       ]);
 
       if (hoodsRes.status === "fulfilled") {
@@ -65,9 +75,22 @@ export function useMapPageContext(): MapPageContextState {
       }
 
       if (offersRes.status === "fulfilled" && offersRes.value.items.length > 0) {
-        setHighlightOffer(offersRes.value.items[0] ?? null);
+        const offers = offersRes.value.items.slice(0, 8);
+        setPassportOffers(offers);
+        setHighlightOffer(offers[0] ?? null);
       } else {
+        setPassportOffers([]);
         setHighlightOffer(null);
+      }
+
+      if (eventsRes.status === "fulfilled") {
+        const upcoming = eventsRes.value.items
+          .filter((event) => !event.is_cancelled)
+          .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at))
+          .slice(0, 8);
+        setUpcomingEvents(upcoming);
+      } else {
+        setUpcomingEvents([]);
       }
     } finally {
       setLoading(false);
@@ -83,6 +106,8 @@ export function useMapPageContext(): MapPageContextState {
     loading,
     neighborhoods,
     culturalPlaces,
+    upcomingEvents,
+    passportOffers,
     highlightOffer,
   };
 }

@@ -16,7 +16,8 @@ export const MAP_OFFER_TITLE = "Privilège à proximité";
 export const MAP_OFFER_EMPTY = "Les offres Passport de vos commerces apparaîtront ici.";
 export const MAP_OFFER_CTA = "Ouvrir mon Passport";
 
-export const MAP_RAIL_URBAN_TITLE = "Parcours urbains";
+export const MAP_RAIL_LIVE_TITLE = "En ce moment à Reims";
+export const MAP_RAIL_LIVE_EMPTY = "Aucune activité mise en avant actuellement à Reims.";
 export const MAP_RAIL_TRANSIT_TITLE = "Transports à proximité";
 export const MAP_TRANSIT_EMPTY = "Aucun passage proche trouvé.";
 export const MAP_TRANSIT_ERROR = "Horaires indisponibles pour le moment.";
@@ -54,18 +55,11 @@ export function groupTransitDeparturesByRoute(
   }
   return groups;
 }
-export const MAP_RAIL_URBAN_SOON = "Bientôt disponible";
 export const MAP_RAIL_CULTURE_TITLE = "Lieux culturels";
 export const MAP_RAIL_CULTURE_EMPTY = "Aucun lieu culturel à afficher pour le moment.";
 export const MAP_RAIL_NEIGHBORHOODS_TITLE = "Quartiers à explorer";
 export const MAP_RAIL_NEIGHBORHOODS_EMPTY = "Les quartiers de votre ville arrivent progressivement.";
 export const MAP_RAIL_PRIVILEGES_TITLE = "Privilèges proches";
-
-/** Parcours éditoriaux statiques — pas de backend, pas de compteurs live. */
-export const MAP_EDITORIAL_ROUTES = [
-  { id: "art-deco", title: "Balade Art Déco", duration: "45 min", difficulty: "Facile" },
-  { id: "remparts", title: "Trace des remparts", duration: "30 min", difficulty: "Facile" },
-] as const;
 
 export const MAP_LOADING = "Chargement de la carte…";
 export const MAP_ERROR = "Impossible de charger la carte. Réessayez plus tard.";

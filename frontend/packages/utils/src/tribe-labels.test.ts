@@ -60,7 +60,7 @@ describe("tribe labels", () => {
 
   it("provides a fallback cover theme for categories", () => {
     expect(tribeDiscoveryTheme("sport_local").gradient).toContain("from-cyan-100");
-    expect(tribeDiscoveryTheme("cafe_culture").badge).toBe("Culture");
+    expect(tribeDiscoveryTheme("cafe_culture").badge).toBe("Lecture");
     expect(tribeDiscoveryTheme("unknown").activity).toBe("Activité locale");
   });
 

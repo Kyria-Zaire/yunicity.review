@@ -7,7 +7,9 @@ import {
 import { HomeWeekEventsCalendar } from "@/components/home/home-week-events-calendar";
 import { WebContextPanel } from "@/components/layout/web-context-panel";
 import type { FeedHomeContextState } from "@/hooks/use-feed-home-context";
+import { useCurrentWeather } from "@/hooks/use-current-weather";
 import {
+  HOME_NEIGHBORHOODS_TITLE,
   HOME_EDITORIAL_TAGS,
   HOME_EVENTS_THIS_WEEK,
   HOME_LOCAL_TAGS_TITLE,
@@ -15,12 +17,21 @@ import {
   HOME_PASSPORT_PANEL_TITLE,
   HOME_PRIVILEGE_TITLE,
   HOME_VIEW_ALL_NEIGHBORHOODS,
-  HOME_WEATHER_MOCK_NOTE,
   HOME_WEATHER_TITLE,
-  HOME_NEIGHBORHOODS_TITLE,
-  mockLocalWeather,
 } from "@yunicity/utils";
 import Link from "next/link";
+import {
+  Cloud,
+  CloudFog,
+  CloudLightning,
+  CloudMoon,
+  CloudRain,
+  CloudSnow,
+  CloudSun,
+  Moon,
+  Sun,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 function RailSkeleton() {
   return (
@@ -38,9 +49,42 @@ const VIBE_CLASS: Record<ReturnType<typeof neighborhoodVibeTone>, string> = {
   discover: "bg-amber-50 text-amber-800",
 };
 
+function getWeatherVisual(params: {
+  icon: string | null;
+  condition: string;
+  isDay: boolean;
+}): { Icon: LucideIcon; type: string } {
+  const iconKey = (params.icon ?? "").toLowerCase();
+  const condition = params.condition.toLowerCase();
+
+  const byIcon: Record<string, { Icon: LucideIcon; type: string }> = {
+    clear: { Icon: params.isDay ? Sun : Moon, type: "clear" },
+    "partly-cloudy": { Icon: params.isDay ? CloudSun : CloudMoon, type: "partly_cloudy" },
+    cloudy: { Icon: Cloud, type: "cloudy" },
+    fog: { Icon: CloudFog, type: "fog" },
+    drizzle: { Icon: CloudRain, type: "rain" },
+    rain: { Icon: CloudRain, type: "rain" },
+    showers: { Icon: CloudRain, type: "rain" },
+    snow: { Icon: CloudSnow, type: "snow" },
+    thunderstorm: { Icon: CloudLightning, type: "storm" },
+  };
+
+  const exact = byIcon[iconKey];
+  if (exact) return exact;
+
+  if (condition.includes("orage")) return { Icon: CloudLightning, type: "storm" };
+  if (condition.includes("neige")) return { Icon: CloudSnow, type: "snow" };
+  if (condition.includes("pluie") || condition.includes("averse")) {
+    return { Icon: CloudRain, type: "rain" };
+  }
+  if (condition.includes("brouillard")) return { Icon: CloudFog, type: "fog" };
+  if (condition.includes("nuage")) return { Icon: Cloud, type: "cloudy" };
+  return { Icon: params.isDay ? Sun : Moon, type: "clear" };
+}
+
 export function FeedHomeRightRail({ context }: { context: FeedHomeContextState }) {
   const { city, loading, weekEvents, neighborhoods, highlightOffer, passport } = context;
-  const weather = mockLocalWeather(city);
+  const { weather, loading: weatherLoading, error: weatherError } = useCurrentWeather({ city });
 
   if (loading) {
     return <RailSkeleton />;
@@ -49,12 +93,36 @@ export function FeedHomeRightRail({ context }: { context: FeedHomeContextState }
   return (
     <div className="space-y-4">
       <WebContextPanel title={HOME_WEATHER_TITLE}>
-        <p className="text-2xl font-semibold text-neutral-900">
-          {weather.tempC}°C
-          <span className="ml-2 text-base font-normal text-neutral-600">{weather.label}</span>
-        </p>
-        <p className="text-xs text-neutral-500">{city}</p>
-        <p className="text-xs text-neutral-400">{HOME_WEATHER_MOCK_NOTE}</p>
+        {weatherLoading ? (
+          <p className="text-sm text-neutral-500">Chargement…</p>
+        ) : weatherError || !weather ? (
+          <p className="text-sm text-neutral-500">Météo indisponible pour le moment.</p>
+        ) : (
+          <>
+            <p className="flex items-center gap-3 text-2xl font-semibold text-neutral-900">
+              <span>{Math.round(weather.temperature)}°C</span>
+              {(() => {
+                const visual = getWeatherVisual({
+                  icon: weather.icon,
+                  condition: weather.condition,
+                  isDay: weather.is_day,
+                });
+                const Icon = visual.Icon;
+                return (
+                  <span
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-700"
+                    aria-label={weather.condition}
+                    title={weather.condition}
+                  >
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                );
+              })()}
+            </p>
+            <p className="mt-1 text-sm text-neutral-600">{weather.condition}</p>
+            <p className="text-xs text-neutral-500">{weather.city}</p>
+          </>
+        )}
       </WebContextPanel>
 
       <WebContextPanel title={HOME_EVENTS_THIS_WEEK(city)}>
