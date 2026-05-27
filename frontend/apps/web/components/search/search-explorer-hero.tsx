@@ -7,6 +7,8 @@ import {
   SEARCH_EXPLORER_HERO_CTA_EVENT,
   SEARCH_EXPLORER_HERO_CTA_PLACE,
   SEARCH_EXPLORER_HERO_TITLE,
+  buildMapEventUrl,
+  buildMapPlaceUrl,
   formatEventDateRange,
   getCulturalPlaceImageCredit,
   pickExplorerHero,
@@ -59,6 +61,12 @@ export function SearchExplorerHero({ events, culturalPlaces, city }: SearchExplo
             >
               {SEARCH_EXPLORER_HERO_CTA_EVENT}
             </Link>
+            <Link
+              href={buildMapEventUrl(event.id)}
+              className="mt-4 ml-2 inline-flex rounded-full border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+            >
+              Voir sur la carte
+            </Link>
           </div>
         </div>
       </article>
@@ -89,13 +97,13 @@ export function SearchExplorerHero({ events, culturalPlaces, city }: SearchExplo
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <Link
-              href="/map"
+              href={buildMapPlaceUrl(place.slug)}
               className="inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 transition hover:bg-white/90"
             >
               {SEARCH_EXPLORER_HERO_CTA_PLACE}
             </Link>
             <Link
-              href="/map"
+              href={buildMapPlaceUrl(place.slug, { route: true })}
               className="inline-flex rounded-full border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
             >
               Itinéraire

@@ -156,7 +156,7 @@ describe("buildLocalTrendItems", () => {
       tribes: [],
       passportOffers: [],
     });
-    expect(items[0]?.href).toBe("/events/e1");
+    expect(items[0]?.href).toBe("/map?event=e1");
     expect(items[1]?.href).toContain("/neighborhoods/centre");
   });
 

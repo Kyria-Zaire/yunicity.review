@@ -13,6 +13,7 @@ import { formatEventDateRange } from "./event-labels";
 import { neighborhoodHref } from "./neighborhood-labels";
 import { resolveCulturalPlaceThumbnailUrl } from "./cultural-place-media";
 import { tribeHref } from "./tribe-labels";
+import { buildMapEventUrl, buildMapPlaceUrl } from "./explorer-links";
 
 export type LocalTrendType =
   | "event"
@@ -118,7 +119,7 @@ function trendFromEvent(event: LocalEvent): LocalTrendItem {
     meta: TREND_META.event,
     imageUrl: event.cover_image_url,
     icon: TREND_ICON.event,
-    href: `/events/${event.id}`,
+    href: buildMapEventUrl(event.id),
     actionLabel: TREND_ACTION.event,
   };
 }
@@ -132,7 +133,7 @@ function trendFromPlace(place: CulturalPlaceListItem): LocalTrendItem {
     meta: TREND_META.cultural_place,
     imageUrl: resolveCulturalPlaceThumbnailUrl(place),
     icon: TREND_ICON.cultural_place,
-    href: "/map",
+    href: buildMapPlaceUrl(place.slug),
     actionLabel: TREND_ACTION.cultural_place,
   };
 }

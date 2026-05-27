@@ -236,6 +236,15 @@ export {
 } from "./search-explorer";
 export { applyFeedLikeToggle, mergeFeedItems } from "./feed-state";
 export {
+  buildMapEventUrl,
+  buildMapPlaceUrl,
+  buildSearchUrl,
+  parseMapParams,
+  parseSearchParams,
+  type ParsedMapParams,
+  type ParsedSearchParams,
+} from "./explorer-links";
+export {
   FLASH_BADGE_LABEL,
   FLASH_PARTNER_HELPER,
   formatFlashTimerLabel,

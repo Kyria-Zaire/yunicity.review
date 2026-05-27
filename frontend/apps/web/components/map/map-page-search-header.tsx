@@ -1,10 +1,10 @@
 "use client";
 
-import { MAP_SEARCH_PLACEHOLDER } from "@yunicity/utils";
+import { MAP_SEARCH_PLACEHOLDER, buildSearchUrl } from "@yunicity/utils";
 import Link from "next/link";
 
 export function MapPageSearchHeader({ city }: { city: string }) {
-  const href = `/search?q=&city=${encodeURIComponent(city)}`;
+  const href = buildSearchUrl({ city });
 
   return (
     <div className="mb-4 sm:mb-5">

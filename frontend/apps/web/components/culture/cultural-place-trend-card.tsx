@@ -8,6 +8,7 @@ import {
   SEARCH_EXPLORER_CULTURE_CTA,
   SEARCH_EXPLORER_CULTURE_CTA_HINT,
   SEARCH_EXPLORER_CULTURE_ROUTE,
+  buildMapPlaceUrl,
   culturalPlaceCategoryLabel,
   getCulturalPlaceImageCredit,
   resolveCulturalPlaceThumbnailUrl,
@@ -39,6 +40,8 @@ export function CulturalPlaceTrendCard({
   const credit = getCulturalPlaceImageCredit(place);
   const locationLabel = place.neighborhood?.display_name ?? place.address;
   const excerpt = place.editorial_excerpt || place.short_description;
+  const mapPlaceHref = buildMapPlaceUrl(place.slug);
+  const mapRouteHref = buildMapPlaceUrl(place.slug, { route: true });
 
   const cardClass = `rounded-3xl border shadow-sm transition ${
     selected
@@ -62,6 +65,8 @@ export function CulturalPlaceTrendCard({
         <ActionRow
           mode={mode}
           category={place.category}
+          mapPlaceHref={mapPlaceHref}
+          mapRouteHref={mapRouteHref}
           onSelectMap={onSelectMap}
           onRoute={onRoute}
           compact
@@ -91,6 +96,7 @@ export function CulturalPlaceTrendCard({
       <div className="flex shrink-0 flex-col items-end justify-center gap-3 pl-1 sm:gap-4">
         <TrendAction
           mode={mode}
+          href={mapPlaceHref}
           icon={<MapPinIcon className="h-4 w-4" />}
           label={SEARCH_EXPLORER_CULTURE_CTA}
           hint={SEARCH_EXPLORER_CULTURE_CTA_HINT}
@@ -98,6 +104,7 @@ export function CulturalPlaceTrendCard({
         />
         <TrendAction
           mode={mode}
+          href={mapRouteHref}
           icon={<RouteIcon className="h-4 w-4" />}
           label={SEARCH_EXPLORER_CULTURE_ROUTE}
           hint={culturalPlaceCategoryLabel(place.category)}
@@ -151,12 +158,16 @@ function TitleBlock({
 function ActionRow({
   mode,
   category,
+  mapPlaceHref,
+  mapRouteHref,
   onSelectMap,
   onRoute,
   compact = false,
 }: {
   mode: "link" | "interactive";
   category: string;
+  mapPlaceHref: string;
+  mapRouteHref: string;
   onSelectMap?: () => void;
   onRoute?: () => void;
   compact?: boolean;
@@ -169,6 +180,7 @@ function ActionRow({
     <div className={rowClass}>
       <TrendAction
         mode={mode}
+        href={mapPlaceHref}
         icon={<MapPinIcon className="h-3.5 w-3.5" />}
         label={SEARCH_EXPLORER_CULTURE_CTA}
         hint={SEARCH_EXPLORER_CULTURE_CTA_HINT}
@@ -177,6 +189,7 @@ function ActionRow({
       />
       <TrendAction
         mode={mode}
+        href={mapRouteHref}
         icon={<RouteIcon className="h-3.5 w-3.5" />}
         label={SEARCH_EXPLORER_CULTURE_ROUTE}
         hint={culturalPlaceCategoryLabel(category)}
@@ -192,6 +205,7 @@ function TrendAction({
   icon,
   label,
   hint,
+  href,
   onClick,
   pill = false,
 }: {
@@ -199,6 +213,7 @@ function TrendAction({
   icon: ReactNode;
   label: string;
   hint: string;
+  href: string;
   onClick?: () => void;
   pill?: boolean;
 }) {
@@ -216,7 +231,7 @@ function TrendAction({
     }
 
     return (
-      <Link href="/map" className={pillClass} title={hint}>
+      <Link href={href} className={pillClass} title={hint}>
         {icon}
         {label}
       </Link>
@@ -246,7 +261,7 @@ function TrendAction({
   }
 
   return (
-    <Link href="/map" className="group flex flex-col items-end gap-0.5 text-right">
+    <Link href={href} className="group flex flex-col items-end gap-0.5 text-right">
       {content}
     </Link>
   );

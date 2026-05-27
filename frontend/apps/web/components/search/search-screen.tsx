@@ -10,13 +10,13 @@ import {
   SEARCH_PAGE_SUBTITLE,
   SEARCH_PAGE_TITLE,
   SEARCH_RETRY,
+  buildSearchUrl,
   isSearchInitialState,
-  searchTabFromUrlParam,
-  searchTabToUrlParam,
+  parseSearchParams,
   visibleSearchGroups,
 } from "@yunicity/utils";
 import type { SearchTypeFilter } from "@yunicity/types";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { WebAppShell } from "@/components/layout";
@@ -41,11 +41,12 @@ function formatTodayFr(): string {
 
 function SearchScreenInner({ urlQuery, urlCity, urlTab }: { urlQuery: string; urlCity: string; urlTab: string }) {
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const geo = useGeo();
 
-  const initialTab = searchTabFromUrlParam(urlTab);
+  const initialTab = parseSearchParams(
+    new URLSearchParams(urlTab ? `tab=${encodeURIComponent(urlTab)}` : ""),
+  ).tab;
 
   const search = useSearch(geo.currentCity, {
     initialQuery: urlQuery,
@@ -56,36 +57,30 @@ function SearchScreenInner({ urlQuery, urlCity, urlTab }: { urlQuery: string; ur
   const explorer = useSearchExplorerContext(search.city);
 
   useEffect(() => {
-    const tab = searchTabFromUrlParam(searchParams.get("tab"));
-    if (tab !== search.typeFilter) {
-      search.setTypeFilter(tab);
-    }
+    const parsed = parseSearchParams(new URLSearchParams(searchParams.toString()));
+    if (parsed.tab !== search.typeFilter) search.setTypeFilter(parsed.tab);
+    if (parsed.q !== search.debouncedQuery) search.setQuery(parsed.q);
+    if (parsed.city && parsed.city !== search.city) search.setCity(parsed.city);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- sync browser navigation only
   }, [searchParams]);
 
   const handleTabChange = (tab: SearchTypeFilter) => {
     search.setTypeFilter(tab);
-    const params = new URLSearchParams(searchParams.toString());
-    const tabSlug = searchTabToUrlParam(tab);
-    if (tabSlug) params.set("tab", tabSlug);
-    else params.delete("tab");
-    const next = params.toString();
-    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+    const href = buildSearchUrl({ q: search.query, city: search.city, tab });
+    router.replace(href, { scroll: false });
   };
 
   useEffect(() => {
-    const params = new URLSearchParams();
-    const q = search.debouncedQuery.trim();
-    const city = search.city.trim();
-    if (q.length >= 2) params.set("q", q);
-    if (city) params.set("city", city);
-    const tabSlug = searchTabToUrlParam(search.typeFilter);
-    if (tabSlug) params.set("tab", tabSlug);
-    const next = params.toString();
+    const href = buildSearchUrl({
+      q: search.debouncedQuery,
+      city: search.city,
+      tab: search.typeFilter,
+    });
     const current = searchParams.toString();
+    const next = href.includes("?") ? href.split("?")[1] ?? "" : "";
     if (next === current) return;
-    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
-  }, [search.debouncedQuery, search.city, search.typeFilter, pathname, router, searchParams]);
+    router.replace(href, { scroll: false });
+  }, [search.debouncedQuery, search.city, search.typeFilter, router, searchParams]);
 
   const showExplorer = isSearchInitialState(search.query, search.hasSearched);
   const sections = visibleSearchGroups(search.groups, search.typeFilter);

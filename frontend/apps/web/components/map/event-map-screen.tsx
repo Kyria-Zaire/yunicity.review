@@ -7,6 +7,7 @@ import {
   DEFAULT_MAP_CITY,
   MAP_EMPTY,
   MAP_EMPTY_HINT,
+  parseMapParams,
   MAP_ERROR,
   MAP_LOADING,
   MAP_RETRY,
@@ -17,6 +18,7 @@ import {
   resolveCityMapCenter,
 } from "@yunicity/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import type { CulturalRoutePanelPhase } from "@/components/map/map-cultural-route-panel";
 import { EventMap } from "@/components/map/event-map";
@@ -57,6 +59,7 @@ function resolveMapCenterOrigin(
 export function EventMapScreen() {
   const api = useYunicityApi();
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const mapContext = useMapPageContext();
   const [profileCity, setProfileCity] = useState(user?.city ?? DEFAULT_MAP_CITY);
   const [focusedEventId, setFocusedEventId] = useState<string | null>(null);
@@ -74,6 +77,7 @@ export function EventMapScreen() {
   const [geolocationDenied, setGeolocationDenied] = useState(false);
   const [addressInput, setAddressInput] = useState("");
   const [addressError, setAddressError] = useState(false);
+  const [mapNotice, setMapNotice] = useState<string | null>(null);
 
   const routeRequestIdRef = useRef(0);
 
@@ -95,6 +99,17 @@ export function EventMapScreen() {
       setProfileCity(mapContext.city);
     }
   }, [mapContext.city]);
+
+  const mapParams = useMemo(
+    () => parseMapParams(new URLSearchParams(searchParams.toString())),
+    [searchParams],
+  );
+
+  useEffect(() => {
+    if (mapParams.city) {
+      setProfileCity(mapParams.city);
+    }
+  }, [mapParams.city]);
 
   const city = profileCity || mapContext.city;
   const showInitialLoading = !hasLoaded && loading;
@@ -126,6 +141,39 @@ export function EventMapScreen() {
     setAddressError(false);
     setRouteProfile("walking");
   }, []);
+
+  const resolveRoutePlaceFromEvent = useCallback(
+    (event: {
+      id: string;
+      title: string;
+      city: string;
+      location_name: string | null;
+      latitude: number;
+      longitude: number;
+    }): CulturalPlaceListItem => ({
+      id: `event-${event.id}`,
+      slug: `event-${event.id}`,
+      name: event.title,
+      short_description: event.location_name ?? "Moment local",
+      city: event.city,
+      address: event.location_name ?? "Adresse non précisée",
+      category: "event",
+      latitude: event.latitude,
+      longitude: event.longitude,
+      image_url: null,
+      hero_image_url: null,
+      thumbnail_image_url: null,
+      gallery_images: [],
+      editorial_excerpt: null,
+      photo_credit: null,
+      image_source: null,
+      image_alt: null,
+      source_name: "Yunicity",
+      image_credit: null,
+      neighborhood: null,
+    }),
+    [],
+  );
 
   const computeRoute = useCallback(
     async (
@@ -313,6 +361,110 @@ export function EventMapScreen() {
     return { lat: center.latitude, lon: center.longitude, city };
   }, [focusedEventId, events, bbox, city, routeTarget]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const syncFromUrl = async () => {
+      setMapNotice(null);
+      if (!mapParams.place && !mapParams.event) {
+        setFocusedEventId(null);
+        setSelectedCulturalSlug(null);
+        clearRoute();
+        return;
+      }
+      if (mapParams.place) {
+        const fromContext = culturalBySlug.get(mapParams.place);
+        if (fromContext) {
+          setSelectedCulturalSlug(fromContext.slug);
+          if (mapParams.route) handleStartRoute(fromContext);
+          return;
+        }
+        try {
+          const detail = await api.getCulturalPlace(mapParams.place, city);
+          if (cancelled) return;
+          const fallbackPlace: CulturalPlaceListItem = {
+            id: detail.id,
+            slug: detail.slug,
+            name: detail.name,
+            short_description: detail.short_description,
+            city: detail.city,
+            address: detail.address,
+            category: detail.category,
+            latitude: detail.latitude,
+            longitude: detail.longitude,
+            image_url: detail.image_url,
+            hero_image_url: detail.hero_image_url,
+            thumbnail_image_url: detail.thumbnail_image_url,
+            gallery_images: detail.gallery_images,
+            editorial_excerpt: detail.editorial_excerpt,
+            photo_credit: detail.photo_credit,
+            image_source: detail.image_source,
+            image_alt: detail.image_alt,
+            source_name: detail.source_name,
+            image_credit: detail.image_credit,
+            neighborhood: detail.neighborhood,
+          };
+          setSelectedCulturalSlug(fallbackPlace.slug);
+          if (mapParams.route) handleStartRoute(fallbackPlace);
+        } catch {
+          if (!cancelled) {
+            setMapNotice("Le lieu demandé est indisponible actuellement.");
+          }
+        }
+        return;
+      }
+
+      if (mapParams.event) {
+        const existing = events.find((event) => event.id === mapParams.event);
+        if (existing) {
+          setFocusedEventId(existing.id);
+          if (mapParams.route) {
+            handleStartRoute(resolveRoutePlaceFromEvent(existing));
+          }
+          return;
+        }
+        try {
+          const event = await api.events.getEvent(mapParams.event);
+          if (cancelled) return;
+          if (event.latitude != null && event.longitude != null) {
+            const mapped = {
+              id: event.id,
+              title: event.title,
+              city: event.city,
+              location_name: event.location_name,
+              latitude: event.latitude,
+              longitude: event.longitude,
+            };
+            setFocusedEventId(event.id);
+            if (mapParams.route) {
+              handleStartRoute(resolveRoutePlaceFromEvent(mapped));
+            }
+          } else {
+            setMapNotice("Le moment demandé ne peut pas être positionné sur la carte.");
+          }
+        } catch {
+          if (!cancelled) {
+            setMapNotice("Le moment demandé est indisponible actuellement.");
+          }
+        }
+      }
+    };
+    void syncFromUrl();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    api,
+    city,
+    clearRoute,
+    culturalBySlug,
+    events,
+    handleStartRoute,
+    mapParams.event,
+    mapParams.place,
+    mapParams.route,
+    resolveRoutePlaceFromEvent,
+  ]);
+
   return (
     <WebAppShell
       context={
@@ -332,6 +484,11 @@ export function EventMapScreen() {
       <MapPageSearchHeader city={city} />
 
       <div className="space-y-5 pb-8">
+        {mapNotice ? (
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {mapNotice}
+          </p>
+        ) : null}
         {!MAPBOX_TOKEN ? (
           <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             {MAP_TOKEN_MISSING_WEB}

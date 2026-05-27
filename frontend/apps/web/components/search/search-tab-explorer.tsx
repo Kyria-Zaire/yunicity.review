@@ -17,6 +17,7 @@ import {
   SEARCH_TAB_EXPLORER_SUBTITLES,
   SEARCH_TAB_EXPLORER_TITLES,
   buildLocalTrendItems,
+  buildMapEventUrl,
   filterUpcomingEvents,
   formatEventDateRange,
   neighborhoodHref,
@@ -73,11 +74,10 @@ function MomentsExplorer({ explorer }: { explorer: SearchExplorerContextState })
       ) : (
         <ul className="space-y-2">
           {upcoming.map((event) => (
-            <li key={event.id}>
-              <Link
-                href={`/events/${event.id}`}
-                className="group flex flex-col gap-0.5 rounded-2xl border border-neutral-200/80 bg-white px-4 py-3 transition hover:border-neutral-300 hover:bg-neutral-50/50"
-              >
+            <li
+              key={event.id}
+              className="group flex flex-col gap-0.5 rounded-2xl border border-neutral-200/80 bg-white px-4 py-3 transition hover:border-neutral-300 hover:bg-neutral-50/50"
+            >
                 <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-400">
                   À suivre cette semaine
                 </span>
@@ -88,7 +88,20 @@ function MomentsExplorer({ explorer }: { explorer: SearchExplorerContextState })
                   {formatEventDateRange(event.starts_at, event.ends_at)}
                   {event.location_name ? ` · ${event.location_name}` : null}
                 </span>
-              </Link>
+                <span className="mt-2 inline-flex items-center gap-3 text-xs font-semibold">
+                  <Link
+                    href={`/events/${event.id}`}
+                    className="text-yunicity-primary hover:underline"
+                  >
+                    Voir le moment
+                  </Link>
+                  <Link
+                    href={buildMapEventUrl(event.id)}
+                    className="rounded-full border border-yunicity-primary/25 px-2.5 py-0.5 text-yunicity-primary hover:bg-yunicity-primary/10"
+                  >
+                    Voir sur la carte
+                  </Link>
+                </span>
             </li>
           ))}
         </ul>

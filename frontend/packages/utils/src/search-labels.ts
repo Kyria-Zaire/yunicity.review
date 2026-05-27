@@ -233,7 +233,12 @@ export function searchResultHref(
     case "posts":
       return null;
     case "organizations":
-      return item.slug ? { web: "/organizations/me", mobile: "/(protected)/(tabs)/organizations" } : null;
+      return item.slug
+        ? {
+            web: `/map?place=${encodeURIComponent(item.slug)}&city=${encodeURIComponent(city)}`,
+            mobile: "/(protected)/(tabs)/organizations",
+          }
+        : null;
     case "offers":
       return { web: "/passport", mobile: "/(protected)/(tabs)/passport" };
     case "tribes":
