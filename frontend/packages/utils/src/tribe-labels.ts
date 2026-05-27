@@ -33,6 +33,7 @@ export const TRIBE_CHARTER_LABEL = "J’accepte la charte de cette tribu (espace
 export const TRIBE_PUBLISH_CTA = "Publier";
 export const TRIBE_COMPOSER_PLACEHOLDER = "Un message pour la tribu…";
 export const TRIBE_DISCOVER_CTA = "Voir la tribu";
+export const TRIBE_INVITATION_CTA = "Sur invitation";
 export const TRIBE_FEED_LINK = "Retour au fil local";
 
 export const TRIBE_MEMBER_COUNT = (count: number, limit: number): string =>
@@ -66,6 +67,90 @@ export function tribeCategoryLabel(category: string): string {
 
 export function tribeVisibilityLabel(visibility: TribeVisibility): string {
   return TRIBE_VISIBILITY_LABELS[visibility] ?? visibility;
+}
+
+export type TribeDiscoveryTheme = {
+  badge: string;
+  activity: string;
+  gradient: string;
+  icon: "motion" | "photo" | "culture" | "heart" | "students" | "users";
+};
+
+const DEFAULT_TRIBE_THEME: TribeDiscoveryTheme = {
+  badge: "Communauté locale",
+  activity: "Activité locale",
+  gradient: "from-slate-100 via-white to-slate-200",
+  icon: "users",
+};
+
+const TRIBE_DISCOVERY_THEMES: Record<string, TribeDiscoveryTheme> = {
+  sport_local: {
+    badge: "Running",
+    activity: "Rencontres sportives",
+    gradient: "from-cyan-100 via-sky-50 to-emerald-100",
+    icon: "motion",
+  },
+  photography: {
+    badge: "Photo",
+    activity: "Sorties photo",
+    gradient: "from-indigo-100 via-slate-50 to-slate-200",
+    icon: "photo",
+  },
+  volunteering: {
+    badge: "Bénévolat",
+    activity: "Actions solidaires",
+    gradient: "from-emerald-100 via-green-50 to-lime-100",
+    icon: "heart",
+  },
+  cafe_culture: {
+    badge: "Culture",
+    activity: "Rencontres culturelles",
+    gradient: "from-violet-100 via-indigo-50 to-fuchsia-100",
+    icon: "culture",
+  },
+  students: {
+    badge: "Étudiants",
+    activity: "Rencontres étudiantes",
+    gradient: "from-blue-100 via-sky-50 to-indigo-100",
+    icon: "students",
+  },
+  music: {
+    badge: "Culture",
+    activity: "Sessions musique locale",
+    gradient: "from-purple-100 via-violet-50 to-indigo-100",
+    icon: "culture",
+  },
+  association: {
+    badge: "Bénévolat",
+    activity: "Vie associative",
+    gradient: "from-green-100 via-emerald-50 to-teal-100",
+    icon: "heart",
+  },
+  other: DEFAULT_TRIBE_THEME,
+};
+
+export function tribeDiscoveryTheme(category: string): TribeDiscoveryTheme {
+  return TRIBE_DISCOVERY_THEMES[category] ?? DEFAULT_TRIBE_THEME;
+}
+
+export function tribeDiscoveryActionLabel(tribe: Tribe): string {
+  if (tribe.visibility === "private_invite" && !tribe.viewer_is_member) {
+    return TRIBE_INVITATION_CTA;
+  }
+  if (tribe.viewer_is_member) {
+    return TRIBE_DISCOVER_CTA;
+  }
+  return TRIBE_JOIN_CTA;
+}
+
+export function tribeDiscoveryMeta(tribe: Tribe): string[] {
+  const parts = [
+    `${tribe.active_member_count} membre${tribe.active_member_count !== 1 ? "s" : ""}`,
+    tribe.city,
+    tribeVisibilityLabel(tribe.visibility),
+    tribeDiscoveryTheme(tribe.category).activity,
+  ];
+  return parts.filter(Boolean);
 }
 
 export function tribeHref(slug: string, city: string): string {

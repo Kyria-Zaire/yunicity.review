@@ -6,8 +6,11 @@ import {
   TRIBES_EMPTY,
   TRIBES_PAGE_SUBTITLE,
   TRIBES_PAGE_TITLE,
+  TRIBE_INVITATION_CTA,
   TRIBE_WALL_CONTEXT_BADGE,
   tribeCategoryLabel,
+  tribeDiscoveryActionLabel,
+  tribeDiscoveryTheme,
   tribeHref,
   tribeInvitationHref,
   tribeTerritorialLine,
@@ -55,6 +58,22 @@ describe("tribe labels", () => {
     expect(tribeVisibilityLabel("private_invite")).toBe("Sur invitation");
   });
 
+  it("provides a fallback cover theme for categories", () => {
+    expect(tribeDiscoveryTheme("sport_local").gradient).toContain("from-cyan-100");
+    expect(tribeDiscoveryTheme("cafe_culture").badge).toBe("Culture");
+    expect(tribeDiscoveryTheme("unknown").activity).toBe("Activité locale");
+  });
+
+  it("resolves CTA according to membership and invite state", () => {
+    expect(tribeDiscoveryActionLabel(sampleTribe)).toBe("Rejoindre");
+    expect(tribeDiscoveryActionLabel({ ...sampleTribe, viewer_is_member: true })).toBe(
+      "Voir la tribu",
+    );
+    expect(
+      tribeDiscoveryActionLabel({ ...sampleTribe, visibility: "private_invite", viewer_is_member: false }),
+    ).toBe(TRIBE_INVITATION_CTA);
+  });
+
   it("invitation href carries token query", () => {
     expect(tribeInvitationHref("abc123")).toContain("token=abc123");
   });
@@ -68,6 +87,13 @@ describe("tribe labels", () => {
     for (const text of [TRIBES_PAGE_TITLE, TRIBES_PAGE_SUBTITLE, TRIBES_EMPTY]) {
       expect(text).not.toMatch(FORBIDDEN_COPY);
     }
+  });
+
+  it("discovery helpers avoid fake metrics language", () => {
+    const activity = tribeDiscoveryTheme("sport_local").activity.toLowerCase();
+    expect(activity).not.toContain("trending");
+    expect(activity).not.toContain("viral");
+    expect(activity).not.toContain("top");
   });
 });
 

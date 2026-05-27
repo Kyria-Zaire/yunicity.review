@@ -187,7 +187,13 @@ function TribesExplorer({ explorer }: { explorer: SearchExplorerContextState }) 
   return (
     <div className="space-y-4">
       <TabHeader typeFilter="tribe" />
-      <SearchTribesSection tribes={explorer.tribes} city={explorer.city} />
+      <SearchTribesSection
+        tribes={explorer.tribes}
+        city={explorer.city}
+        title="Trouvez votre cercle local"
+        subtitle="Des groupes locaux pour agir, sortir, apprendre ou créer ensemble."
+        maxItems={6}
+      />
     </div>
   );
 }
@@ -246,7 +252,14 @@ function AllExplorer({ explorer }: { explorer: SearchExplorerContextState }) {
       />
       <SearchLocalTrends items={trends} />
       <SearchCulturalSection places={explorer.culturalPlaces} />
-      <SearchTribesSection tribes={explorer.tribes} city={explorer.city} />
+      <SearchTribesSection
+        tribes={explorer.tribes}
+        city={explorer.city}
+        title="Tribus à découvrir"
+        subtitle="Communautés locales calmes pour se retrouver autour d'un thème."
+        maxItems={3}
+        compact
+      />
     </div>
   );
 }
