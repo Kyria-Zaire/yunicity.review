@@ -1,83 +1,52 @@
 "use client";
 
+import { CulturalPlaceTrendCard } from "@/components/culture/cultural-place-trend-card";
 import type { CulturalPlaceListItem } from "@yunicity/types";
 import {
-  MAP_CULTURE_IMAGE_PLACEHOLDER,
-  MAP_CULTURE_ROUTE_CTA,
   SEARCH_EXPLORER_CULTURE_TITLE,
   SEARCH_EXPLORER_VIEW_ALL_CULTURE,
-  culturalPlaceCategoryLabel,
-  culturalPlaceLocationLine,
-  resolveCulturalPlaceImageUrl,
 } from "@yunicity/utils";
 import Link from "next/link";
+
+/** Met en avant d’autres lieux que la cathédrale (déjà omniprésente dans le hero). */
+function pickSearchCulturalHighlights(
+  places: CulturalPlaceListItem[],
+  limit: number,
+): CulturalPlaceListItem[] {
+  const others = places.filter(
+    (place) => place.category !== "cathedral" && place.slug !== "cathedrale-notre-dame",
+  );
+  const pool = others.length >= limit ? others : places;
+  return pool.slice(0, limit);
+}
 
 export function SearchCulturalSection({ places }: { places: CulturalPlaceListItem[] }) {
   if (places.length === 0) {
     return null;
   }
 
-  const visible = places.slice(0, 4);
+  const visible = pickSearchCulturalHighlights(places, 2);
 
   return (
-    <section className="space-y-3" aria-labelledby="search-culture-title">
-      <div className="flex items-end justify-between gap-3">
-        <h2 id="search-culture-title" className="text-base font-semibold text-neutral-900">
+    <section className="space-y-4" aria-labelledby="search-culture-title">
+      <div className="flex items-center justify-between gap-3">
+        <h2 id="search-culture-title" className="text-lg font-bold tracking-tight text-neutral-900">
           {SEARCH_EXPLORER_CULTURE_TITLE}
         </h2>
         <Link
           href="/map"
-          className="text-xs font-semibold text-yunicity-primary hover:underline"
+          className="text-sm font-semibold text-yunicity-primary transition hover:text-yunicity-primary-hover"
         >
           {SEARCH_EXPLORER_VIEW_ALL_CULTURE}
         </Link>
       </div>
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className="space-y-3">
         {visible.map((place) => (
-          <li
-            key={place.id}
-            className="flex gap-3 rounded-xl border border-neutral-100 bg-white p-3 shadow-sm"
-          >
-            <PlaceThumb place={place} />
-            <div className="min-w-0 flex-1">
-              <p className="font-medium text-neutral-900">{place.name}</p>
-              <p className="text-xs text-neutral-500">
-                {culturalPlaceCategoryLabel(place.category)}
-              </p>
-              <p className="mt-1 line-clamp-2 text-xs text-neutral-600">
-                {culturalPlaceLocationLine(place)}
-              </p>
-              <Link
-                href="/map"
-                className="mt-2 inline-block text-xs font-semibold text-yunicity-primary hover:underline"
-              >
-                {MAP_CULTURE_ROUTE_CTA}
-              </Link>
-            </div>
+          <li key={place.id}>
+            <CulturalPlaceTrendCard place={place} mode="link" />
           </li>
         ))}
       </ul>
     </section>
-  );
-}
-
-function PlaceThumb({ place }: { place: CulturalPlaceListItem }) {
-  const src = resolveCulturalPlaceImageUrl(place);
-  if (src) {
-    return (
-      <img
-        src={src}
-        alt={place.image_alt ?? place.name}
-        className="h-16 w-16 shrink-0 rounded-lg object-cover"
-      />
-    );
-  }
-  return (
-    <div
-      className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-neutral-100 to-neutral-200 text-[10px] font-medium text-neutral-500"
-      aria-hidden
-    >
-      {MAP_CULTURE_IMAGE_PLACEHOLDER.slice(0, 1)}
-    </div>
   );
 }

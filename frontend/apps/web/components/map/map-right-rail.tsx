@@ -31,6 +31,7 @@ function RailSkeleton() {
 
 type MapRightRailProps = {
   context: MapPageContextState;
+  culturalPlaces: CulturalPlaceListItem[];
   transitPoint: MapTransitQueryPoint;
   selectedCulturalSlug: string | null;
   expandedCulturalSlug: string | null;
@@ -41,6 +42,7 @@ type MapRightRailProps = {
 
 export function MapRightRail({
   context,
+  culturalPlaces,
   transitPoint,
   selectedCulturalSlug,
   expandedCulturalSlug,
@@ -48,7 +50,7 @@ export function MapRightRail({
   onStartRoute,
   onToggleCulturalDetails,
 }: MapRightRailProps) {
-  const { loading, neighborhoods, culturalPlaces, highlightOffer, city } = context;
+  const { loading, neighborhoods, highlightOffer, city } = context;
 
   if (loading) {
     return <RailSkeleton />;

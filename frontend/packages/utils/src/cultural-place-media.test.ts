@@ -2,14 +2,19 @@ import { describe, expect, it } from "vitest";
 
 import {
   culturalPlaceHasGallery,
+  getCulturalPlaceImageCredit,
+  hasCulturalPlaceImage,
   resolveCulturalPlaceHeroUrl,
   resolveCulturalPlaceImageUrl,
+  resolveCulturalPlaceThumbnailUrl,
 } from "./cultural-place-media";
 
 const base = {
   image_url: null,
   hero_image_url: null,
   thumbnail_image_url: null,
+  image_credit: null,
+  source_name: "",
   gallery_images: [],
   editorial_excerpt: null,
   photo_credit: null,
@@ -55,6 +60,74 @@ describe("resolveCulturalPlaceHeroUrl", () => {
   });
 });
 
+describe("resolveCulturalPlaceThumbnailUrl", () => {
+  it("uses thumbnail first then hero then legacy", () => {
+    expect(
+      resolveCulturalPlaceThumbnailUrl({
+        ...base,
+        thumbnail_image_url: "https://example.com/thumb.jpg",
+        hero_image_url: "https://example.com/hero.jpg",
+      }),
+    ).toBe("https://example.com/thumb.jpg");
+  });
+
+  it("returns null when all values are empty", () => {
+    expect(
+      resolveCulturalPlaceThumbnailUrl({
+        ...base,
+        thumbnail_image_url: " ",
+        hero_image_url: "",
+        image_url: "\n",
+      }),
+    ).toBeNull();
+  });
+});
+
+describe("hasCulturalPlaceImage", () => {
+  it("returns true when an image url can be resolved", () => {
+    expect(
+      hasCulturalPlaceImage({
+        ...base,
+        hero_image_url: "https://example.com/hero.jpg",
+      }),
+    ).toBe(true);
+  });
+
+  it("returns false when no image is available", () => {
+    expect(hasCulturalPlaceImage(base)).toBe(false);
+  });
+});
+
+describe("getCulturalPlaceImageCredit", () => {
+  it("prefers explicit photo credit", () => {
+    expect(
+      getCulturalPlaceImageCredit({
+        ...base,
+        photo_credit: "Photo: Auteur",
+        image_credit: "Image credit",
+        source_name: "Wikimedia Commons",
+      }),
+    ).toBe("Photo: Auteur");
+  });
+
+  it("falls back to image credit and source name", () => {
+    expect(
+      getCulturalPlaceImageCredit({
+        ...base,
+        image_credit: "Image credit",
+        source_name: "Wikimedia Commons",
+      }),
+    ).toBe("Image credit");
+    expect(
+      getCulturalPlaceImageCredit({
+        ...base,
+        image_credit: " ",
+        source_name: "Wikimedia Commons",
+      }),
+    ).toBe("Wikimedia Commons");
+  });
+});
+
 describe("culturalPlaceHasGallery", () => {
   it("detects gallery items", () => {
     expect(
@@ -76,5 +149,27 @@ describe("culturalPlaceHasGallery", () => {
         gallery_images: [{ url: "https://example.com/a.jpg" }],
       }),
     ).toBe(true);
+  });
+
+  it("returns false when gallery is empty", () => {
+    expect(
+      culturalPlaceHasGallery({
+        ...base,
+        id: "2",
+        slug: "y",
+        name: "Y",
+        short_description: "",
+        city: "Reims",
+        address: "",
+        category: "museum",
+        latitude: 0,
+        longitude: 0,
+        image_alt: null,
+        source_name: "",
+        image_credit: null,
+        neighborhood: null,
+        gallery_images: [],
+      }),
+    ).toBe(false);
   });
 });

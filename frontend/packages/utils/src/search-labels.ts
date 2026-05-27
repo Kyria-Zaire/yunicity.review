@@ -49,14 +49,16 @@ export const SEARCH_EXPLORER_TRENDS_TITLE = "Tendances locales";
 export const SEARCH_EXPLORER_TRENDS_SUBTITLE =
   "Repères calmes — pas de classement viral ni de compteurs agressifs.";
 export const SEARCH_EXPLORER_CULTURE_TITLE = "Lieux culturels";
+export const SEARCH_EXPLORER_CULTURE_BADGE = "Lieu culturel";
 export const SEARCH_EXPLORER_CULTURE_CTA = "Carte";
+export const SEARCH_EXPLORER_CULTURE_CTA_HINT = "Explorer";
 export const SEARCH_EXPLORER_CULTURE_ROUTE = "Itinéraire";
 export const SEARCH_EXPLORER_TRIBES_TITLE = "Tribus locales";
 export const SEARCH_EXPLORER_TRIBES_EMPTY = "Les tribus de votre ville apparaîtront ici.";
 export const SEARCH_EXPLORER_TRIBE_DISCOVER = "Découvrir";
 export const SEARCH_EXPLORER_TRIBE_JOIN = "Rejoindre";
 export const SEARCH_EXPLORER_VIEW_ALL_TRIBES = "Toutes les tribus";
-export const SEARCH_EXPLORER_VIEW_ALL_CULTURE = "Tous les lieux";
+export const SEARCH_EXPLORER_VIEW_ALL_CULTURE = "Tout voir";
 export const SEARCH_EXPLORER_RESULTS_TITLE = "Résultats";
 export const SEARCH_RAIL_TRANSIT_NOTE =
   "Horaires indicatifs autour du centre-ville — sans géolocalisation.";

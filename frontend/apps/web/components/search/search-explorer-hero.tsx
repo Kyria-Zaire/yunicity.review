@@ -1,12 +1,14 @@
 "use client";
 
+import { CulturalImage, CulturalImageCredit } from "@/components/culture/cultural-image";
+import { resolveCulturalPlaceImageOverride } from "@/lib/cultural-place-image-overrides";
 import type { CulturalPlaceListItem, LocalEvent } from "@yunicity/types";
 import {
-  MAP_CULTURE_IMAGE_PLACEHOLDER,
   SEARCH_EXPLORER_HERO_CTA_EVENT,
   SEARCH_EXPLORER_HERO_CTA_PLACE,
   SEARCH_EXPLORER_HERO_TITLE,
   formatEventDateRange,
+  getCulturalPlaceImageCredit,
   pickExplorerHero,
   resolveCulturalPlaceHeroUrl,
 } from "@yunicity/utils";
@@ -27,73 +29,83 @@ export function SearchExplorerHero({ events, culturalPlaces, city }: SearchExplo
   if (hero.kind === "event") {
     const { event } = hero;
     return (
-      <article className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-sm">
-        <HeroImage url={event.cover_image_url} alt={event.title} />
-        <div className="space-y-3 p-5 sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-wide text-yunicity-primary">
-            {SEARCH_EXPLORER_HERO_TITLE} à {city}
-          </p>
-          <h2 className="text-xl font-bold leading-snug text-neutral-900 sm:text-2xl">
-            {event.title}
-          </h2>
-          <p className="text-sm text-neutral-600">
-            {formatEventDateRange(event.starts_at, event.ends_at)}
-            {event.location_name ? ` · ${event.location_name}` : null}
-          </p>
-          {event.description ? (
-            <p className="line-clamp-2 text-sm leading-relaxed text-neutral-600">
-              {event.description}
+      <article className="overflow-hidden rounded-3xl bg-neutral-950 text-white shadow-lg ring-1 ring-black/5">
+        <div className="relative">
+          <CulturalImage
+            src={event.cover_image_url}
+            alt={event.title}
+            placeName={event.title}
+            className="h-56 w-full sm:h-72"
+            sizes="(max-width: 768px) 100vw, 780px"
+            priority
+          />
+          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+            <p className="text-xs font-semibold uppercase tracking-wide text-white/80">
+              {SEARCH_EXPLORER_HERO_TITLE} à {city}
             </p>
-          ) : null}
-          <Link
-            href={`/events/${event.id}`}
-            className="inline-flex rounded-full bg-yunicity-primary px-4 py-2 text-sm font-semibold text-white hover:bg-yunicity-primary-hover"
-          >
-            {SEARCH_EXPLORER_HERO_CTA_EVENT}
-          </Link>
+            <h2 className="mt-2 text-xl font-bold leading-tight text-white sm:text-3xl">{event.title}</h2>
+            <p className="mt-2 text-sm text-white/85">
+              {formatEventDateRange(event.starts_at, event.ends_at)}
+              {event.location_name ? ` · ${event.location_name}` : null}
+            </p>
+            {event.description ? (
+              <p className="mt-2 line-clamp-2 max-w-2xl text-sm leading-relaxed text-white/80">
+                {event.description}
+              </p>
+            ) : null}
+            <Link
+              href={`/events/${event.id}`}
+              className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 transition hover:bg-white/90"
+            >
+              {SEARCH_EXPLORER_HERO_CTA_EVENT}
+            </Link>
+          </div>
         </div>
       </article>
     );
   }
 
   const { place } = hero;
+  const credit = getCulturalPlaceImageCredit(place);
+  const heroImage = resolveCulturalPlaceImageOverride(place) ?? resolveCulturalPlaceHeroUrl(place);
   return (
-    <article className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-sm">
-      <HeroImage
-        url={resolveCulturalPlaceHeroUrl(place)}
-        alt={place.image_alt ?? place.name}
-      />
-      <div className="space-y-3 p-5 sm:p-6">
-        <p className="text-xs font-semibold uppercase tracking-wide text-yunicity-primary">
-          {SEARCH_EXPLORER_HERO_TITLE} à {city}
-        </p>
-        <h2 className="text-xl font-bold leading-snug text-neutral-900 sm:text-2xl">{place.name}</h2>
-        <p className="text-sm text-neutral-600">{place.short_description}</p>
-        <Link
-          href="/map"
-          className="inline-flex rounded-full bg-yunicity-primary px-4 py-2 text-sm font-semibold text-white hover:bg-yunicity-primary-hover"
-        >
-          {SEARCH_EXPLORER_HERO_CTA_PLACE}
-        </Link>
+    <article className="overflow-hidden rounded-3xl bg-neutral-950 text-white shadow-lg ring-1 ring-black/5">
+      <div className="relative">
+        <CulturalImage
+          src={heroImage}
+          alt={place.image_alt ?? place.name}
+          placeName={place.name}
+          className="h-56 w-full sm:h-72"
+          sizes="(max-width: 768px) 100vw, 780px"
+          priority
+        />
+        <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+          <p className="text-xs font-semibold uppercase tracking-wide text-white/80">
+            {SEARCH_EXPLORER_HERO_TITLE} à {city}
+          </p>
+          <h2 className="mt-2 text-xl font-bold leading-tight text-white sm:text-3xl">{place.name}</h2>
+          <p className="mt-2 line-clamp-2 max-w-2xl text-sm text-white/85">
+            {place.editorial_excerpt || place.short_description}
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <Link
+              href="/map"
+              className="inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 transition hover:bg-white/90"
+            >
+              {SEARCH_EXPLORER_HERO_CTA_PLACE}
+            </Link>
+            <Link
+              href="/map"
+              className="inline-flex rounded-full border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+            >
+              Itinéraire
+            </Link>
+          </div>
+          <div className="max-w-full">
+            <CulturalImageCredit credit={credit} />
+          </div>
+        </div>
       </div>
     </article>
-  );
-}
-
-function HeroImage({ url, alt }: { url: string | null; alt: string }) {
-  if (url) {
-    return (
-      <div className="relative h-44 w-full bg-neutral-100 sm:h-52">
-        <img src={url} alt={alt} className="h-full w-full object-cover" />
-      </div>
-    );
-  }
-  return (
-    <div
-      className="flex h-44 w-full items-center justify-center bg-gradient-to-br from-neutral-100 via-neutral-50 to-yunicity-primary/5 sm:h-52"
-      aria-hidden
-    >
-      <span className="text-sm font-medium text-neutral-400">{MAP_CULTURE_IMAGE_PLACEHOLDER}</span>
-    </div>
   );
 }

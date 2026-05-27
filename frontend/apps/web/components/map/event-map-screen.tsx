@@ -1,11 +1,7 @@
 "use client";
 
-import type {
-  CulturalPlaceListItem,
-  MapCulturalPlaceItem,
-  MapRouteGeometry,
-  MapRouteSummary,
-} from "@yunicity/types";
+import { mergeMapRailCulturalPlaces, mapCulturalPlaceItemToListItem } from "@/lib/map-cultural-places";
+import type { CulturalPlaceListItem, MapRouteGeometry, MapRouteSummary } from "@yunicity/types";
 import type { MapRouteProfile } from "@yunicity/utils";
 import {
   DEFAULT_MAP_CITY,
@@ -40,29 +36,8 @@ const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
 type LatLon = { latitude: number; longitude: number };
 
-function mapItemToListItem(place: MapCulturalPlaceItem): CulturalPlaceListItem {
-  return {
-    id: place.id,
-    slug: place.slug,
-    name: place.name,
-    short_description: "",
-    city: place.city,
-    address: place.address,
-    category: place.category,
-    latitude: place.latitude,
-    longitude: place.longitude,
-    image_url: place.image_url,
-    hero_image_url: place.hero_image_url,
-    thumbnail_image_url: place.thumbnail_image_url,
-    gallery_images: place.gallery_images,
-    editorial_excerpt: place.editorial_excerpt,
-    photo_credit: place.photo_credit,
-    image_source: place.image_source,
-    image_alt: place.image_alt,
-    source_name: place.source_name,
-    image_credit: place.image_credit,
-    neighborhood: place.neighborhood,
-  };
+function mapItemToListItem(place: Parameters<typeof mapCulturalPlaceItemToListItem>[0]): CulturalPlaceListItem {
+  return mapCulturalPlaceItemToListItem(place);
 }
 
 function resolveMapCenterOrigin(
@@ -312,6 +287,11 @@ export function EventMapScreen() {
     [culturalBySlug],
   );
 
+  const railCulturalPlaces = useMemo(
+    () => mergeMapRailCulturalPlaces(mapContext.culturalPlaces, mapCulturalPlaces, 4),
+    [mapContext.culturalPlaces, mapCulturalPlaces],
+  );
+
   const transitPoint = useMemo(() => {
     if (focusedEventId) {
       const focused = events.find((event) => event.id === focusedEventId);
@@ -338,6 +318,7 @@ export function EventMapScreen() {
       context={
         <MapRightRail
           context={mapContext}
+          culturalPlaces={railCulturalPlaces}
           transitPoint={transitPoint}
           selectedCulturalSlug={selectedCulturalSlug}
           expandedCulturalSlug={expandedCulturalSlug}

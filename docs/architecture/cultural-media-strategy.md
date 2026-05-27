@@ -46,6 +46,36 @@ Normalisation serveur : `normalize_cultural_media()` dans `app/services/cultural
 3. API `/cultural-places`, `/map/cultural-places` exposent hero, galerie, crédits
 4. Frontend : `resolveCulturalPlaceImageUrl()` — pas de redesign massif
 
+## Overrides temporaires (WEB-SEARCH-02B.2)
+
+Suite à la review CTO du ticket `WEB-SEARCH-02B.2`, des overrides frontend
+temporaires sont acceptés **uniquement en recette visuelle** pour 4 lieux
+culturels Reims (par `slug`) afin de stabiliser le rendu du polish Search/Map :
+
+- `porte-de-mars`
+- `basilique-saint-remi`
+- `palais-du-tau`
+- `cathedrale-notre-dame`
+
+Implémentation :
+
+- `frontend/apps/web/lib/cultural-place-image-overrides.ts`
+- consommé dans les surfaces web `Search` et `Map` où `CulturalPlace` est affiché
+
+Contraintes CTO :
+
+- ces URLs tierces (Bing / Linternaute / Actualitix / CDN externe) ne sont **pas**
+  une source média long terme ;
+- risque de droits/licences, hotlinking, disponibilité non garantie ;
+- aucun passage prod avec ces overrides sans migration média.
+
+Plan obligatoire avant prod :
+
+1. valider la licence de chaque image retenue ;
+2. migrer les assets vers stockage Yunicity (R2 + CDN) ;
+3. remplacer les overrides par URLs R2 officielles dans le seed/API ;
+4. retirer le fallback d’override frontend temporaire.
+
 ## Évolutions prévues
 
 ### Stockage R2 (Cloudflare)

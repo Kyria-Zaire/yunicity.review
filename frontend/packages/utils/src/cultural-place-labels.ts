@@ -26,7 +26,7 @@ export const MAP_ROUTE_MODE_DRIVE = "Voiture";
 export const MAP_ROUTE_MODE_BIKE = "Vélo";
 
 const CATEGORY_LABELS: Record<string, string> = {
-  cathedral: "Cathédrale",
+  cathedral: "Patrimoine",
   museum: "Musée",
   monument: "Monument",
   heritage: "Patrimoine",

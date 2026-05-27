@@ -27,9 +27,14 @@ export function useMapPageContext(): MapPageContextState {
 
   const load = useCallback(async () => {
     setLoading(true);
+    let resolvedCity = user?.city?.trim() || DEFAULT_CITY;
     try {
-      const profile = await api.getProfileMe();
-      const resolvedCity = profile.city?.trim() || user?.city?.trim() || DEFAULT_CITY;
+      try {
+        const profile = await api.getProfileMe();
+        resolvedCity = profile.city?.trim() || resolvedCity;
+      } catch {
+        // Profil indisponible (visiteur) — on garde la ville par défaut.
+      }
       setCity(resolvedCity);
 
       const [hoodsRes, cultureRes, offersRes] = await Promise.allSettled([
@@ -45,7 +50,16 @@ export function useMapPageContext(): MapPageContextState {
       }
 
       if (cultureRes.status === "fulfilled") {
-        setCulturalPlaces(cultureRes.value.items);
+        let items = cultureRes.value.items;
+        if (items.length === 0) {
+          try {
+            const fallback = await api.listCulturalPlaces({ city: resolvedCity, limit: 4 });
+            items = fallback.items;
+          } catch {
+            items = [];
+          }
+        }
+        setCulturalPlaces(items);
       } else {
         setCulturalPlaces([]);
       }
