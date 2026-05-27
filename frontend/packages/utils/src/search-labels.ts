@@ -12,9 +12,9 @@ import { formatEventDateRange } from "./event-labels";
 import { neighborhoodHref } from "./neighborhood-labels";
 import { tribeHref } from "./tribe-labels";
 
-export const SEARCH_PAGE_TITLE = "Recherche";
+export const SEARCH_PAGE_TITLE = "Explorer";
 export const SEARCH_PAGE_SUBTITLE =
-  "Trouvez un moment, un lieu, une tribu ou un quartier — sans fil infini.";
+  "Votre porte d’entrée locale — moments, lieux, quartiers et tribus à Reims.";
 export const SEARCH_PLACEHOLDER = "Rechercher à Reims…";
 export const SEARCH_CITY_LABEL = "Ville";
 export const SEARCH_LOADING = "Recherche en cours…";
@@ -33,14 +33,33 @@ export const SEARCH_RESULT_COUNT = (count: number): string =>
 
 export const SEARCH_TYPE_TABS: ReadonlyArray<{ value: SearchTypeFilter; label: string }> = [
   { value: "all", label: "Tous" },
-  { value: "post", label: "Publications" },
+  { value: "post", label: "Moments" },
   { value: "event", label: "Événements" },
   { value: "organization", label: "Lieux" },
-  { value: "offer", label: "Offres" },
-  { value: "tribe", label: "Tribus" },
-  { value: "user", label: "Personnes" },
   { value: "neighborhood", label: "Quartiers" },
+  { value: "tribe", label: "Tribus" },
+  { value: "offer", label: "Passport" },
 ];
+
+/** WEB-SEARCH-01 — Local Explorer sections */
+export const SEARCH_EXPLORER_HERO_TITLE = "À découvrir aujourd’hui";
+export const SEARCH_EXPLORER_HERO_CTA_EVENT = "Voir l’événement";
+export const SEARCH_EXPLORER_HERO_CTA_PLACE = "Voir sur la carte";
+export const SEARCH_EXPLORER_TRENDS_TITLE = "Tendances locales";
+export const SEARCH_EXPLORER_TRENDS_SUBTITLE =
+  "Repères calmes — pas de classement viral ni de compteurs agressifs.";
+export const SEARCH_EXPLORER_CULTURE_TITLE = "Lieux culturels";
+export const SEARCH_EXPLORER_CULTURE_CTA = "Carte";
+export const SEARCH_EXPLORER_CULTURE_ROUTE = "Itinéraire";
+export const SEARCH_EXPLORER_TRIBES_TITLE = "Tribus locales";
+export const SEARCH_EXPLORER_TRIBES_EMPTY = "Les tribus de votre ville apparaîtront ici.";
+export const SEARCH_EXPLORER_TRIBE_DISCOVER = "Découvrir";
+export const SEARCH_EXPLORER_TRIBE_JOIN = "Rejoindre";
+export const SEARCH_EXPLORER_VIEW_ALL_TRIBES = "Toutes les tribus";
+export const SEARCH_EXPLORER_VIEW_ALL_CULTURE = "Tous les lieux";
+export const SEARCH_EXPLORER_RESULTS_TITLE = "Résultats";
+export const SEARCH_RAIL_TRANSIT_NOTE =
+  "Horaires indicatifs autour du centre-ville — sans géolocalisation.";
 
 export const SEARCH_GROUP_ORDER: readonly SearchGroupKey[] = [
   "events",

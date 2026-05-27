@@ -21,6 +21,7 @@ export const MAP_RAIL_TRANSIT_TITLE = "Transports à proximité";
 export const MAP_TRANSIT_EMPTY = "Aucun passage proche trouvé.";
 export const MAP_TRANSIT_ERROR = "Horaires indisponibles pour le moment.";
 export const MAP_TRANSIT_VIEW_SCHEDULES = "Voir les horaires";
+export const MAP_TRANSIT_STATUS_FLUIDE = "Fluide";
 
 export function transitRouteIcon(routeType: string): string {
   if (routeType === "tram") return "🚋";

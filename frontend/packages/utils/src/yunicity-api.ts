@@ -5,6 +5,7 @@ import type {
   MapCulturalPlacesListParams,
   MapEventsListParams,
   MapEventListResponse,
+  WeatherCurrent,
   TransitNearbyParams,
   TransitNearbyResponse,
   SearchListParams,
@@ -50,6 +51,7 @@ import { CulturalPlacesApi, createCulturalPlacesApi } from "./cultural-places-ap
 import { TransitApi, createTransitApi } from "./transit-api";
 import { SearchApi, createSearchApi } from "./search-api";
 import { ProfileApi, createProfileApi } from "./profile-api";
+import { WeatherApi, createWeatherApi } from "./weather-api";
 
 /** Façade profile + organizations + passport. */
 export class YunicityApi {
@@ -67,6 +69,7 @@ export class YunicityApi {
   readonly map: MapEventsApi;
   readonly transit: TransitApi;
   readonly culturalPlaces: CulturalPlacesApi;
+  readonly weather: WeatherApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.profile = createProfileApi(client, apiBaseUrl);
@@ -83,6 +86,7 @@ export class YunicityApi {
     this.map = createMapEventsApi(client, apiBaseUrl);
     this.transit = createTransitApi(client, apiBaseUrl);
     this.culturalPlaces = createCulturalPlacesApi(client, apiBaseUrl);
+    this.weather = createWeatherApi(client, apiBaseUrl);
   }
 
   listCulturalPlaces(params: {
@@ -107,6 +111,10 @@ export class YunicityApi {
 
   getTransitNearby(params: TransitNearbyParams): Promise<TransitNearbyResponse> {
     return this.transit.getNearby(params);
+  }
+
+  getCurrentWeather(params: { lat?: number; lon?: number; city?: string }): Promise<WeatherCurrent> {
+    return this.weather.getCurrentWeather(params);
   }
 
   searchLocal(params: SearchListParams): Promise<SearchResponse> {

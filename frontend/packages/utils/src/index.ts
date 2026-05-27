@@ -137,6 +137,7 @@ export {
   MAP_RAIL_URBAN_TITLE,
   MAP_TRANSIT_EMPTY,
   MAP_TRANSIT_ERROR,
+  MAP_TRANSIT_STATUS_FLUIDE,
   MAP_TRANSIT_VIEW_SCHEDULES,
   formatTransitDepartureMinutes,
   groupTransitDeparturesByRoute,
@@ -171,6 +172,22 @@ export {
   SEARCH_PAGE_SUBTITLE,
   SEARCH_PAGE_TITLE,
   SEARCH_PLACEHOLDER,
+  SEARCH_EXPLORER_CULTURE_CTA,
+  SEARCH_EXPLORER_CULTURE_ROUTE,
+  SEARCH_EXPLORER_CULTURE_TITLE,
+  SEARCH_EXPLORER_HERO_CTA_EVENT,
+  SEARCH_EXPLORER_HERO_CTA_PLACE,
+  SEARCH_EXPLORER_HERO_TITLE,
+  SEARCH_EXPLORER_RESULTS_TITLE,
+  SEARCH_EXPLORER_TRENDS_SUBTITLE,
+  SEARCH_EXPLORER_TRENDS_TITLE,
+  SEARCH_EXPLORER_TRIBE_DISCOVER,
+  SEARCH_EXPLORER_TRIBE_JOIN,
+  SEARCH_EXPLORER_TRIBES_EMPTY,
+  SEARCH_EXPLORER_TRIBES_TITLE,
+  SEARCH_EXPLORER_VIEW_ALL_CULTURE,
+  SEARCH_EXPLORER_VIEW_ALL_TRIBES,
+  SEARCH_RAIL_TRANSIT_NOTE,
   SEARCH_RESULT_COUNT,
   SEARCH_RETRY,
   SEARCH_TYPE_TABS,
@@ -185,6 +202,12 @@ export {
   visibleSearchGroups,
   type SearchHrefTarget,
 } from "./search-labels";
+export {
+  buildCalmLocalTrends,
+  pickExplorerHero,
+  searchPlaceholderForCity,
+  type LocalTrendItem,
+} from "./search-explorer";
 export { applyFeedLikeToggle, mergeFeedItems } from "./feed-state";
 export {
   FLASH_BADGE_LABEL,
@@ -358,3 +381,12 @@ export {
 export { YunicityApi, createYunicityApi } from "./yunicity-api";
 export { MemoryTokenStorage } from "./storage/memory-token-storage";
 export type { TokenStorage } from "./storage/token-storage";
+
+export type {
+  GeoPermissionState,
+} from "./geo";
+export {
+  permissionStateFromGeolocationError,
+  resolveCityForUi,
+  shouldUseFallbackCity,
+} from "./geo";

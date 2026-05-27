@@ -11,7 +11,7 @@ type SearchTypeTabsProps = {
 export function SearchTypeTabs({ value, onChange }: SearchTypeTabsProps) {
   return (
     <div
-      className="flex flex-wrap gap-2"
+      className="flex gap-1 overflow-x-auto border-b border-neutral-200/90 pb-px"
       role="tablist"
       aria-label="Filtrer par type de contenu"
     >
@@ -24,10 +24,10 @@ export function SearchTypeTabs({ value, onChange }: SearchTypeTabsProps) {
             role="tab"
             aria-selected={active}
             onClick={() => onChange(tab.value)}
-            className={`rounded-full px-3 py-1.5 text-sm transition-colors ${
+            className={`shrink-0 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
               active
-                ? "bg-yunicity-primary text-white"
-                : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
+                ? "border-yunicity-primary text-yunicity-primary"
+                : "border-transparent text-neutral-500 hover:text-neutral-800"
             }`}
           >
             {tab.label}

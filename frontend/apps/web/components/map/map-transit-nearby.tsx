@@ -7,6 +7,7 @@ import {
   MAP_RAIL_TRANSIT_TITLE,
   MAP_TRANSIT_EMPTY,
   MAP_TRANSIT_ERROR,
+  MAP_TRANSIT_STATUS_FLUIDE,
   MAP_TRANSIT_VIEW_SCHEDULES,
   formatTransitDepartureMinutes,
   groupTransitDeparturesByRoute,
@@ -27,8 +28,19 @@ function TransitSkeleton() {
 export function MapTransitNearby({ point }: { point: MapTransitQueryPoint }) {
   const { data, loading, error } = useMapTransitNearby(point);
 
+  const showFluideBadge = Boolean(data?.stops.length);
+
   return (
-    <WebContextPanel title={MAP_RAIL_TRANSIT_TITLE}>
+    <WebContextPanel
+      title={MAP_RAIL_TRANSIT_TITLE}
+      action={
+        showFluideBadge ? (
+          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 ring-1 ring-emerald-100">
+            {MAP_TRANSIT_STATUS_FLUIDE}
+          </span>
+        ) : undefined
+      }
+    >
       {loading && !data ? <TransitSkeleton /> : null}
 
       {error ? (
@@ -40,46 +52,42 @@ export function MapTransitNearby({ point }: { point: MapTransitQueryPoint }) {
       ) : null}
 
       {!error && data && data.stops.length > 0 ? (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {data.disclaimer ? (
-            <p className="text-xs text-neutral-500">{data.disclaimer}</p>
+            <p className="text-[11px] leading-snug text-neutral-500">{data.disclaimer}</p>
           ) : null}
-          <ul className="space-y-3">
+          <ul className="space-y-2">
             {data.stops.map((stop) => {
               const byRoute = groupTransitDeparturesByRoute(stop.departures);
               return (
-                <li key={stop.stop_id} className="space-y-2">
+                <li key={stop.stop_id} className="space-y-1.5">
                   {Array.from(byRoute.entries()).map(([routeKey, departures]) => {
                     const sample = departures[0]!;
                     return (
                       <div
                         key={`${stop.stop_id}-${routeKey}`}
-                        className="rounded-xl border border-neutral-100 bg-neutral-50/80 px-3 py-2.5"
+                        className="flex items-center gap-2.5 rounded-lg border border-neutral-100 bg-neutral-50/90 px-2.5 py-2"
                       >
-                        <div className="flex items-start gap-2">
-                          <span className="text-base leading-none" aria-hidden>
-                            {transitRouteIcon(sample.route_type)}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="inline-flex rounded-md bg-white px-1.5 py-0.5 text-xs font-semibold text-neutral-800 ring-1 ring-neutral-200">
-                                {sample.route_short_name}
-                              </span>
-                              <span className="text-sm font-medium text-neutral-900">
-                                {transitRouteLabel(sample.route_type, sample.route_short_name)}
-                              </span>
-                            </div>
-                            <p className="mt-1 text-sm text-neutral-700">
-                              <span className="font-medium">{stop.name}</span>
-                              <span className="text-neutral-400"> → </span>
-                              <span>{formatTransitDepartureMinutes(departures)}</span>
-                            </p>
-                            {sample.headsign ? (
-                              <p className="mt-0.5 text-xs text-neutral-500">
-                                Direction {sample.headsign}
-                              </p>
-                            ) : null}
-                          </div>
+                        <span
+                          className="inline-flex min-w-[2rem] shrink-0 items-center justify-center rounded-md bg-white px-1.5 py-1 text-xs font-bold text-neutral-900 ring-1 ring-neutral-200"
+                          aria-hidden
+                        >
+                          {sample.route_short_name}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="flex items-baseline justify-between gap-2 text-sm font-semibold text-neutral-900">
+                            <span className="truncate">
+                              {transitRouteIcon(sample.route_type)}{" "}
+                              {transitRouteLabel(sample.route_type, sample.route_short_name)}
+                            </span>
+                            <span className="shrink-0 tabular-nums text-yunicity-primary">
+                              {formatTransitDepartureMinutes(departures)}
+                            </span>
+                          </p>
+                          <p className="truncate text-[11px] text-neutral-500">
+                            {stop.name}
+                            {sample.headsign ? ` · ${sample.headsign}` : ""}
+                          </p>
                         </div>
                       </div>
                     );

@@ -207,6 +207,10 @@ export type {
   PartnerLeadUpdatePayload,
 } from "./partner_lead";
 
+export type {
+  WeatherCurrent,
+} from "./weather";
+
 export type EnvironmentName = "dev" | "recette" | "preprod" | "prod";
 
 export type ApiStatus = "ok" | "disabled" | "error";

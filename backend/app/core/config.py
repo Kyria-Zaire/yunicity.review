@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     cors_origins: list[str] = Field(default_factory=list, alias="CORS_ORIGINS")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
 
+    # Weather provider (WEB-SEARCH-02A)
+    openweather_api_key: str | None = Field(default=None, alias="OPENWEATHER_API_KEY")
+
     jwt_secret_key: str = Field(default=_DEV_JWT_PLACEHOLDER, alias="JWT_SECRET_KEY")
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
     access_token_expire_minutes: int = Field(default=15, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
