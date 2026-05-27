@@ -10,6 +10,10 @@ export const CULTURAL_IMAGE_REMOTE_HOSTS = [
   "www.actualitix.com",
   "img-4.linternaute.com",
   "cdn.elebase.io",
+  "i2.wp.com",
+  "cernay-les-reims.fr",
+  "remeng.rosselcdn.net",
+  "media.lhebdoduvendredi.com",
 ] as const;
 
 export function isAllowedCulturalImageHost(src: string): boolean {

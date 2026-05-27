@@ -59,14 +59,22 @@ function TransitModeIcon({ routeType }: { routeType: string }) {
   );
 }
 
-export function MapTransitNearby({ point }: { point: MapTransitQueryPoint }) {
+export function MapTransitNearby({
+  point,
+  title = MAP_RAIL_TRANSIT_TITLE,
+  emptyMessage = MAP_TRANSIT_EMPTY,
+}: {
+  point: MapTransitQueryPoint;
+  title?: string;
+  emptyMessage?: string;
+}) {
   const { data, loading, error } = useMapTransitNearby(point);
 
   const showFluideBadge = Boolean(data?.stops.length);
 
   return (
     <WebContextPanel
-      title={MAP_RAIL_TRANSIT_TITLE}
+      title={title}
       action={
         showFluideBadge ? (
           <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 ring-1 ring-emerald-100">
@@ -82,7 +90,7 @@ export function MapTransitNearby({ point }: { point: MapTransitQueryPoint }) {
       ) : null}
 
       {!loading && !error && data && data.stops.length === 0 ? (
-        <p className="text-sm text-neutral-500">{MAP_TRANSIT_EMPTY}</p>
+        <p className="text-sm text-neutral-500">{emptyMessage}</p>
       ) : null}
 
       {!error && data && data.stops.length > 0 ? (

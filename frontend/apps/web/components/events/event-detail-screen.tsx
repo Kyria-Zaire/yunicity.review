@@ -1,105 +1,105 @@
 "use client";
 
+import { EventDetailGoThere } from "@/components/events/event-detail-go-there";
+import { EventDetailHero } from "@/components/events/event-detail-hero";
+import { EventDetailNeighborhood } from "@/components/events/event-detail-neighborhood";
+import { EventDetailPractical } from "@/components/events/event-detail-practical";
+import { EventDetailRelated } from "@/components/events/event-detail-related";
+import { EventDetailRightRail } from "@/components/events/event-detail-right-rail";
 import { WebAppShell } from "@/components/layout";
+import { useEventDetailContext } from "@/hooks/use-event-detail-context";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
-import type { LocalEvent } from "@yunicity/types";
 import {
-  EVENT_INTEREST_CTA,
-  EVENT_INTEREST_SAVED,
-  eventTypeLabel,
-  formatEventDateRange,
-  formatEventLocation,
-  formatTerritorialLine,
+  EVENT_DETAIL_DESCRIPTION_TITLE,
+  EVENT_DETAIL_LOADING,
+  EVENT_DETAIL_NOT_FOUND,
+  EVENT_DETAIL_RETRY,
 } from "@yunicity/utils";
-import { NeighborhoodBadge } from "@/components/neighborhoods/neighborhood-badge";
-import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useState } from "react";
 
 export function EventDetailScreen({ eventId }: { eventId: string }) {
   const api = useYunicityApi();
-  const [event, setEvent] = useState<LocalEvent | null>(null);
-  const [loading, setLoading] = useState(true);
+  const context = useEventDetailContext(eventId);
   const [toggling, setToggling] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await api.events.getEvent(eventId);
-      setEvent(data);
-    } catch {
-      setError("Moment introuvable.");
-    } finally {
-      setLoading(false);
-    }
-  }, [api.events, eventId]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   async function handleInterest() {
-    if (!event) return;
+    if (!context.event) return;
     setToggling(true);
     try {
-      const result = await api.events.toggleInterest(event.id);
-      setEvent({ ...event, interested_by_me: result.interested });
+      const current = context.event;
+      const result = await api.events.toggleInterest(current.id);
+      const interested = result.interested;
+      context.patchEvent({ interested_by_me: interested });
+      await context.syncPlanningAfterInterest(interested, {
+        ...current,
+        interested_by_me: interested,
+      });
     } finally {
       setToggling(false);
     }
   }
 
+  const event = context.event;
+
   return (
-    <WebAppShell contentWidth="readable">
-      {loading ? <p className="text-neutral-500">Chargement…</p> : null}
-      {error ? <p className="text-red-600">{error}</p> : null}
-      {event ? (
-        <article className="space-y-6">
-          {event.cover_image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={event.cover_image_url}
-              alt=""
-              className="w-full rounded-xl object-cover max-h-72"
+    <WebAppShell
+      contentWidth="wide"
+      context={<EventDetailRightRail context={context} currentEventId={eventId} />}
+    >
+      <div className="space-y-8 pb-12">
+        <nav className="text-sm text-neutral-500">
+          <Link href="/events" className="font-medium text-yunicity-primary hover:underline">
+            ← Agenda des moments
+          </Link>
+        </nav>
+
+        {context.loading ? (
+          <p className="text-neutral-500">{EVENT_DETAIL_LOADING}</p>
+        ) : null}
+
+        {context.error || (!context.loading && !event) ? (
+          <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-6 text-center">
+            <p className="text-red-800">{EVENT_DETAIL_NOT_FOUND}</p>
+            <button
+              type="button"
+              onClick={() => context.reload()}
+              className="mt-3 text-sm font-semibold text-yunicity-primary hover:underline"
+            >
+              {EVENT_DETAIL_RETRY}
+            </button>
+          </div>
+        ) : null}
+
+        {event ? (
+          <>
+            <EventDetailHero
+              event={event}
+              culturalPlaces={context.culturalPlaces}
+              toggling={toggling}
+              onToggleInterest={() => void handleInterest()}
             />
-          ) : null}
-          {eventTypeLabel(event.event_type) ? (
-            <p className="text-sm font-medium text-yunicity-primary">
-              {eventTypeLabel(event.event_type)}
-            </p>
-          ) : null}
-          <h1 className="text-2xl font-bold text-neutral-900">{event.title}</h1>
-          <p className="text-neutral-600">
-            {formatEventDateRange(event.starts_at, event.ends_at)}
-          </p>
-          <p className="text-neutral-600">
-            {formatTerritorialLine(event.neighborhood_summary, event.city, event.district) ??
-              formatEventLocation(event, event.city)}
-          </p>
-          {event.neighborhood_summary ? (
-            <div className="mt-2">
-              <NeighborhoodBadge summary={event.neighborhood_summary} city={event.city} />
-            </div>
-          ) : null}
-          {event.organization ? (
-            <p className="text-sm text-neutral-500">
-              Organisé par <span className="font-medium">{event.organization.name}</span>
-            </p>
-          ) : null}
-          {event.description ? (
-            <p className="whitespace-pre-wrap text-neutral-700 leading-relaxed">
-              {event.description}
-            </p>
-          ) : null}
-          <button
-            type="button"
-            disabled={toggling}
-            onClick={() => void handleInterest()}
-            className="rounded-full bg-yunicity-primary px-6 py-3 text-sm font-semibold text-white disabled:opacity-60"
-          >
-            {event.interested_by_me ? EVENT_INTEREST_SAVED : EVENT_INTEREST_CTA}
-          </button>
-        </article>
-      ) : null}
+
+            {event.description ? (
+              <section className="rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6">
+                <h2 className="text-lg font-bold text-neutral-900">{EVENT_DETAIL_DESCRIPTION_TITLE}</h2>
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-neutral-700 sm:text-base">
+                  {event.description}
+                </p>
+              </section>
+            ) : null}
+
+            <EventDetailPractical event={event} />
+            <EventDetailGoThere event={event} />
+
+            {context.neighborhoodContext ? (
+              <EventDetailNeighborhood context={context.neighborhoodContext} />
+            ) : null}
+
+            <EventDetailRelated events={context.relatedEvents} />
+          </>
+        ) : null}
+      </div>
     </WebAppShell>
   );
 }

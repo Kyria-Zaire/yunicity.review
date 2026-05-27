@@ -12,6 +12,9 @@ export const EVENT_FEED_BADGE = "Moment local";
 export const EVENT_TYPE_LABELS: Record<string, string> = {
   cafe_meetup: "Café-rencontre",
   local_market: "Marché local",
+  market: "Marché local",
+  meetup: "Rencontre locale",
+  workshop: "Atelier",
   association_evening: "Soirée associative",
   student_event: "Événement étudiant",
   local_concert: "Concert local",
