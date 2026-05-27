@@ -18,9 +18,7 @@ import {
   HOME_PRIVILEGE_TITLE,
   HOME_VIEW_ALL_NEIGHBORHOODS,
   HOME_WEATHER_TITLE,
-  MAP_CULTURE_IMAGE_PLACEHOLDER,
   SEARCH_RAIL_TRANSIT_NOTE,
-  culturalPlaceCategoryLabel,
   resolveCityMapCenter,
 } from "@yunicity/utils";
 import Link from "next/link";
@@ -43,7 +41,7 @@ const VIBE_CLASS: Record<ReturnType<typeof neighborhoodVibeTone>, string> = {
 };
 
 export function SearchRightRail({ explorer }: { explorer: SearchExplorerContextState }) {
-  const { loading, weekEvents, neighborhoods, culturalPlaces, highlightOffer } = explorer;
+  const { loading, weekEvents, neighborhoods, highlightOffer } = explorer;
   const geo = useGeo();
   const city = geo.currentCity;
 
@@ -192,24 +190,6 @@ export function SearchRightRail({ explorer }: { explorer: SearchExplorerContextS
           <Link href="/passport" className="text-xs font-semibold text-yunicity-primary hover:underline">
             Voir l&apos;avantage
           </Link>
-        </WebContextPanel>
-      ) : null}
-
-      {culturalPlaces.length > 0 ? (
-        <WebContextPanel title="Lieux calmes">
-          <ul className="space-y-2">
-            {culturalPlaces.slice(0, 3).map((place) => (
-              <li key={place.id}>
-                <Link href="/map" className="block rounded-lg px-2 py-1.5 hover:bg-neutral-50">
-                  <span className="font-medium text-neutral-800">{place.name}</span>
-                  <span className="block text-xs text-neutral-500">
-                    {culturalPlaceCategoryLabel(place.category)}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2 text-[10px] text-neutral-400">{MAP_CULTURE_IMAGE_PLACEHOLDER}</p>
         </WebContextPanel>
       ) : null}
 

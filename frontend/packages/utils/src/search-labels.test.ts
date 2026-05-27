@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   SEARCH_GROUP_LABELS,
   SEARCH_GROUP_ORDER,
+  SEARCH_TAB_SLUGS,
   SEARCH_TYPE_TABS,
   emptySearchGroups,
   isSearchInitialState,
@@ -10,6 +11,8 @@ import {
   searchResultHref,
   searchResultSubtitle,
   searchResultTitle,
+  searchTabFromUrlParam,
+  searchTabToUrlParam,
   searchTypeFilterFromApi,
   searchTypeToApiParam,
   visibleSearchGroups,
@@ -40,6 +43,7 @@ describe("isSearchQueryReady", () => {
 describe("isSearchInitialState", () => {
   it("reste initial tant que la requête est trop courte", () => {
     expect(isSearchInitialState("", false)).toBe(true);
+    expect(isSearchInitialState("a", false)).toBe(true);
     expect(isSearchInitialState("ab", true)).toBe(false);
   });
 });
@@ -98,5 +102,41 @@ describe("SEARCH_TYPE_TABS", () => {
   it("inclut Tous en premier", () => {
     expect(SEARCH_TYPE_TABS[0]?.value).toBe("all");
     expect(SEARCH_GROUP_LABELS.posts).toBe("Publications");
+  });
+});
+
+describe("searchTabFromUrlParam", () => {
+  it("mappe les slugs français vers SearchTypeFilter", () => {
+    expect(searchTabFromUrlParam("lieux")).toBe("organization");
+    expect(searchTabFromUrlParam("moments")).toBe("post");
+    expect(searchTabFromUrlParam("evenements")).toBe("event");
+    expect(searchTabFromUrlParam("quartiers")).toBe("neighborhood");
+    expect(searchTabFromUrlParam("tribus")).toBe("tribe");
+    expect(searchTabFromUrlParam("passport")).toBe("offer");
+  });
+
+  it("retourne all pour slug inconnu ou vide", () => {
+    expect(searchTabFromUrlParam(null)).toBe("all");
+    expect(searchTabFromUrlParam("")).toBe("all");
+    expect(searchTabFromUrlParam("inconnu")).toBe("all");
+  });
+});
+
+describe("searchTabToUrlParam", () => {
+  it("retourne null pour all", () => {
+    expect(searchTabToUrlParam("all")).toBeNull();
+  });
+
+  it("retourne le slug pour les autres tabs", () => {
+    expect(searchTabToUrlParam("organization")).toBe("lieux");
+    expect(searchTabToUrlParam("post")).toBe("moments");
+  });
+});
+
+describe("SEARCH_TAB_SLUGS", () => {
+  it("couvre tous les tabs exposés dans l'UI", () => {
+    for (const tab of SEARCH_TYPE_TABS) {
+      expect(SEARCH_TAB_SLUGS[tab.value]).toBeTruthy();
+    }
   });
 });

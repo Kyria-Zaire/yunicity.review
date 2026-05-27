@@ -207,16 +207,32 @@ export {
   searchResultHref,
   searchResultSubtitle,
   searchResultTitle,
+  searchTabFromUrlParam,
+  searchTabToUrlParam,
   searchTypeFilterFromApi,
   searchTypeToApiParam,
   visibleSearchGroups,
+  SEARCH_TAB_SLUGS,
+  SEARCH_TAB_EMPTY_MESSAGES,
+  SEARCH_TAB_EXPLORER_SUBTITLES,
+  SEARCH_TAB_EXPLORER_TITLES,
+  SEARCH_TRENDS_EMPTY,
   type SearchHrefTarget,
 } from "./search-labels";
 export {
   buildCalmLocalTrends,
+  buildLocalTrendItems,
+  filterLocalNeighborhoods,
+  filterLocalOffers,
+  filterLocalTribes,
+  filterUpcomingEvents,
   pickExplorerHero,
   searchPlaceholderForCity,
+  LOCAL_TREND_MAX_ITEMS,
+  type LocalTrendContext,
+  type LocalTrendIcon,
   type LocalTrendItem,
+  type LocalTrendType,
 } from "./search-explorer";
 export { applyFeedLikeToggle, mergeFeedItems } from "./feed-state";
 export {

@@ -11,8 +11,11 @@ import {
   SEARCH_PAGE_TITLE,
   SEARCH_RETRY,
   isSearchInitialState,
+  searchTabFromUrlParam,
+  searchTabToUrlParam,
   visibleSearchGroups,
 } from "@yunicity/utils";
+import type { SearchTypeFilter } from "@yunicity/types";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -36,18 +39,39 @@ function formatTodayFr(): string {
   });
 }
 
-function SearchScreenInner({ urlQuery, urlCity }: { urlQuery: string; urlCity: string }) {
+function SearchScreenInner({ urlQuery, urlCity, urlTab }: { urlQuery: string; urlCity: string; urlTab: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const geo = useGeo();
 
+  const initialTab = searchTabFromUrlParam(urlTab);
+
   const search = useSearch(geo.currentCity, {
     initialQuery: urlQuery,
     initialCity: urlCity || undefined,
+    initialTypeFilter: initialTab,
   });
 
   const explorer = useSearchExplorerContext(search.city);
+
+  useEffect(() => {
+    const tab = searchTabFromUrlParam(searchParams.get("tab"));
+    if (tab !== search.typeFilter) {
+      search.setTypeFilter(tab);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync browser navigation only
+  }, [searchParams]);
+
+  const handleTabChange = (tab: SearchTypeFilter) => {
+    search.setTypeFilter(tab);
+    const params = new URLSearchParams(searchParams.toString());
+    const tabSlug = searchTabToUrlParam(tab);
+    if (tabSlug) params.set("tab", tabSlug);
+    else params.delete("tab");
+    const next = params.toString();
+    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+  };
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -55,11 +79,13 @@ function SearchScreenInner({ urlQuery, urlCity }: { urlQuery: string; urlCity: s
     const city = search.city.trim();
     if (q.length >= 2) params.set("q", q);
     if (city) params.set("city", city);
+    const tabSlug = searchTabToUrlParam(search.typeFilter);
+    if (tabSlug) params.set("tab", tabSlug);
     const next = params.toString();
     const current = searchParams.toString();
     if (next === current) return;
     router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
-  }, [search.debouncedQuery, search.city, pathname, router, searchParams]);
+  }, [search.debouncedQuery, search.city, search.typeFilter, pathname, router, searchParams]);
 
   const showExplorer = isSearchInitialState(search.query, search.hasSearched);
   const sections = visibleSearchGroups(search.groups, search.typeFilter);
@@ -97,7 +123,7 @@ function SearchScreenInner({ urlQuery, urlCity }: { urlQuery: string; urlCity: s
           }
         />
 
-        <SearchTypeTabs value={search.typeFilter} onChange={search.setTypeFilter} />
+        <SearchTypeTabs value={search.typeFilter} onChange={handleTabChange} />
 
         {showExplorer ? (
           explorer.loading ? (
@@ -105,7 +131,7 @@ function SearchScreenInner({ urlQuery, urlCity }: { urlQuery: string; urlCity: s
               {SEARCH_LOADING}
             </p>
           ) : (
-            <SearchExplorerView explorer={explorer} />
+            <SearchExplorerView explorer={explorer} typeFilter={search.typeFilter} />
           )
         ) : null}
 
@@ -168,6 +194,7 @@ export function SearchScreen() {
   const searchParams = useSearchParams();
   const urlQuery = searchParams.get("q") ?? "";
   const urlCity = searchParams.get("city") ?? "";
+  const urlTab = searchParams.get("tab") ?? "";
 
   const [defaultCity, setDefaultCity] = useState(urlCity.trim() || user?.city?.trim() || "Reims");
 
@@ -185,7 +212,7 @@ export function SearchScreen() {
 
   return (
     <GeoProvider defaultCity={defaultCity}>
-      <SearchScreenInner urlQuery={urlQuery} urlCity={urlCity} />
+      <SearchScreenInner urlQuery={urlQuery} urlCity={urlCity} urlTab={urlTab} />
     </GeoProvider>
   );
 }

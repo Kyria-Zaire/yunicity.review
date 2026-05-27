@@ -41,6 +41,66 @@ export const SEARCH_TYPE_TABS: ReadonlyArray<{ value: SearchTypeFilter; label: s
   { value: "offer", label: "Passport" },
 ];
 
+/** URL slugs for /search?tab=… (WEB-SEARCH-02C). */
+export const SEARCH_TAB_SLUGS: Record<SearchTypeFilter, string> = {
+  all: "tous",
+  post: "moments",
+  event: "evenements",
+  organization: "lieux",
+  neighborhood: "quartiers",
+  tribe: "tribus",
+  offer: "passport",
+  user: "personnes",
+};
+
+const SEARCH_TAB_FROM_SLUG: Record<string, SearchTypeFilter> = Object.fromEntries(
+  Object.entries(SEARCH_TAB_SLUGS).map(([filter, slug]) => [slug, filter as SearchTypeFilter]),
+) as Record<string, SearchTypeFilter>;
+
+export function searchTabFromUrlParam(value: string | null | undefined): SearchTypeFilter {
+  if (!value?.trim()) return "all";
+  return SEARCH_TAB_FROM_SLUG[value.trim().toLowerCase()] ?? "all";
+}
+
+/** Returns null for "all" — omit tab param from URL. */
+export function searchTabToUrlParam(type: SearchTypeFilter): string | null {
+  if (type === "all") return null;
+  return SEARCH_TAB_SLUGS[type];
+}
+
+/** Tab-specific explorer section titles (empty-query mode). */
+export const SEARCH_TAB_EXPLORER_TITLES: Record<SearchTypeFilter, string> = {
+  all: "Explorer",
+  post: "Moments à découvrir",
+  event: "Événements à venir",
+  organization: "Lieux culturels",
+  neighborhood: "Quartiers",
+  tribe: "Tribus locales",
+  offer: "Avantages Passport",
+  user: "Personnes",
+};
+
+export const SEARCH_TAB_EXPLORER_SUBTITLES: Partial<Record<SearchTypeFilter, string>> = {
+  post: "Sélection éditoriale — ce qui anime la ville cette semaine.",
+  event: "Liste des prochains rendez-vous locaux.",
+  organization: "Patrimoine et lieux culturels à explorer.",
+  neighborhood: "Ambiances et repères par quartier.",
+  tribe: "Communautés ouvertes autour de vos passions.",
+  offer: "Offres actives réservées aux détenteurs du Passport.",
+};
+
+export const SEARCH_TAB_EMPTY_MESSAGES: Partial<Record<SearchTypeFilter, string>> = {
+  all: "Aucune tendance locale pour le moment.",
+  post: "Les premiers moments apparaîtront ici.",
+  event: "Aucun événement annoncé pour le moment.",
+  organization: "Les lieux culturels arrivent progressivement.",
+  neighborhood: "Les quartiers arrivent progressivement.",
+  tribe: "Les tribus de votre ville apparaîtront ici.",
+  offer: "Aucune offre Passport active pour le moment.",
+};
+
+export const SEARCH_TRENDS_EMPTY = "Aucune tendance locale pour le moment.";
+
 /** WEB-SEARCH-01 — Local Explorer sections */
 export const SEARCH_EXPLORER_HERO_TITLE = "À découvrir aujourd’hui";
 export const SEARCH_EXPLORER_HERO_CTA_EVENT = "Voir l’événement";

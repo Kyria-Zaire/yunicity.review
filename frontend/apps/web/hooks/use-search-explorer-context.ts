@@ -21,6 +21,7 @@ export type SearchExplorerContextState = {
   culturalPlaces: CulturalPlaceListItem[];
   tribes: Tribe[];
   highlightOffer: PartnerOffer | null;
+  passportOffers: PartnerOffer[];
 };
 
 const DEFAULT_CITY = "Reims";
@@ -34,6 +35,7 @@ export function useSearchExplorerContext(city: string): SearchExplorerContextSta
   const [culturalPlaces, setCulturalPlaces] = useState<CulturalPlaceListItem[]>([]);
   const [tribes, setTribes] = useState<Tribe[]>([]);
   const [highlightOffer, setHighlightOffer] = useState<PartnerOffer | null>(null);
+  const [passportOffers, setPassportOffers] = useState<PartnerOffer[]>([]);
 
   const load = useCallback(async () => {
     const activeCity = city.trim() || DEFAULT_CITY;
@@ -75,8 +77,10 @@ export function useSearchExplorerContext(city: string): SearchExplorerContextSta
       }
 
       if (offersRes.status === "fulfilled" && offersRes.value.items.length > 0) {
+        setPassportOffers(offersRes.value.items.slice(0, 8));
         setHighlightOffer(offersRes.value.items[0] ?? null);
       } else {
+        setPassportOffers([]);
         setHighlightOffer(null);
       }
     } finally {
@@ -97,5 +101,6 @@ export function useSearchExplorerContext(city: string): SearchExplorerContextSta
     culturalPlaces,
     tribes,
     highlightOffer,
+    passportOffers,
   };
 }

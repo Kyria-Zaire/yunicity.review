@@ -35,12 +35,18 @@ function mergeGroupItems(
 
 export function useSearch(
   defaultCity: string,
-  options?: { initialQuery?: string; initialCity?: string },
+  options?: {
+    initialQuery?: string;
+    initialCity?: string;
+    initialTypeFilter?: SearchTypeFilter;
+  },
 ) {
   const api = useYunicityApi();
   const [query, setQuery] = useState(options?.initialQuery ?? "");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<SearchTypeFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<SearchTypeFilter>(
+    options?.initialTypeFilter ?? "all",
+  );
   const [city, setCity] = useState(options?.initialCity ?? defaultCity);
   const [groups, setGroups] = useState<SearchGroups>(emptySearchGroups());
   const [page, setPage] = useState(1);
