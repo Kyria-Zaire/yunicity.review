@@ -1,11 +1,28 @@
-/** Cultural places API types (WEB-MAP-03). */
+/** Cultural places API types (WEB-MAP-03, WEB-SEARCH-02B.1). */
 
 export type CulturalPlaceNeighborhoodSummary = {
   slug: string;
   display_name: string;
 };
 
-export type CulturalPlaceListItem = {
+export type CulturalGalleryImage = {
+  url: string;
+  alt?: string | null;
+  credit?: string | null;
+  source?: string | null;
+};
+
+export type CulturalPlaceMediaFields = {
+  image_url: string | null;
+  hero_image_url: string | null;
+  thumbnail_image_url: string | null;
+  gallery_images: CulturalGalleryImage[];
+  editorial_excerpt: string | null;
+  photo_credit: string | null;
+  image_source: string | null;
+};
+
+export type CulturalPlaceListItem = CulturalPlaceMediaFields & {
   id: string;
   slug: string;
   name: string;
@@ -15,7 +32,6 @@ export type CulturalPlaceListItem = {
   category: string;
   latitude: number;
   longitude: number;
-  image_url: string | null;
   image_alt: string | null;
   source_name: string;
   image_credit: string | null;
@@ -27,6 +43,8 @@ export type CulturalPlaceDetail = CulturalPlaceListItem & {
   source_url: string | null;
   image_license: string | null;
   is_featured: boolean;
+  featured_priority: number;
+  image_blurhash: string | null;
 };
 
 export type CulturalPlaceListResponse = {
@@ -35,7 +53,7 @@ export type CulturalPlaceListResponse = {
   count: number;
 };
 
-export type MapCulturalPlaceItem = {
+export type MapCulturalPlaceItem = CulturalPlaceMediaFields & {
   id: string;
   slug: string;
   name: string;
@@ -45,7 +63,6 @@ export type MapCulturalPlaceItem = {
   neighborhood: CulturalPlaceNeighborhoodSummary | null;
   latitude: number;
   longitude: number;
-  image_url: string | null;
   image_alt: string | null;
   source_name: string;
   image_credit: string | null;

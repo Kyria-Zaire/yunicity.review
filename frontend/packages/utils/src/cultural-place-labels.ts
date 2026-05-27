@@ -34,6 +34,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   square: "Place",
   library: "Bibliothèque",
   winery: "Maison de champagne",
+  theatre: "Opéra & théâtre",
+  park: "Parc",
 };
 
 export function culturalPlaceCategoryLabel(category: string): string {

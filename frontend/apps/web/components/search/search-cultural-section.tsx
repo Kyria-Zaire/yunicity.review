@@ -8,6 +8,7 @@ import {
   SEARCH_EXPLORER_VIEW_ALL_CULTURE,
   culturalPlaceCategoryLabel,
   culturalPlaceLocationLine,
+  resolveCulturalPlaceImageUrl,
 } from "@yunicity/utils";
 import Link from "next/link";
 
@@ -61,10 +62,11 @@ export function SearchCulturalSection({ places }: { places: CulturalPlaceListIte
 }
 
 function PlaceThumb({ place }: { place: CulturalPlaceListItem }) {
-  if (place.image_url) {
+  const src = resolveCulturalPlaceImageUrl(place);
+  if (src) {
     return (
       <img
-        src={place.image_url}
+        src={src}
         alt={place.image_alt ?? place.name}
         className="h-16 w-16 shrink-0 rounded-lg object-cover"
       />

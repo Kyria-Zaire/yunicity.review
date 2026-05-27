@@ -10,6 +10,7 @@ import {
   MAP_RAIL_CULTURE_TITLE,
   culturalPlaceCategoryLabel,
   culturalPlaceLocationLine,
+  resolveCulturalPlaceImageUrl,
 } from "@yunicity/utils";
 
 type MapCulturalPlacesRailProps = {
@@ -22,10 +23,11 @@ type MapCulturalPlacesRailProps = {
 };
 
 function PlaceImage({ place }: { place: CulturalPlaceListItem }) {
-  if (place.image_url) {
+  const src = resolveCulturalPlaceImageUrl(place);
+  if (src) {
     return (
       <img
-        src={place.image_url}
+        src={src}
         alt={place.image_alt ?? place.name}
         className="h-16 w-16 shrink-0 rounded-lg object-cover"
       />
@@ -106,7 +108,9 @@ export function MapCulturalPlacesRail({
                     {place.short_description}
                   </p>
                 ) : null}
-                {place.source_name ? (
+                {place.photo_credit ? (
+                  <p className="mt-2 text-[10px] text-neutral-400">{place.photo_credit}</p>
+                ) : place.source_name ? (
                   <p className="mt-2 text-[10px] text-neutral-400">{place.source_name}</p>
                 ) : null}
               </li>

@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Float, ForeignKey, Index, String, Text, UniqueConstraint, Uuid
+from sqlalchemy import JSON, Boolean, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -21,6 +21,7 @@ class CulturalPlace(TimestampMixin, Base):
         UniqueConstraint("city", "slug", name="uq_cultural_places_city_slug"),
         Index("ix_cultural_places_city_active", "city", "is_active"),
         Index("ix_cultural_places_city_featured", "city", "is_featured"),
+        Index("ix_cultural_places_city_featured_priority", "city", "featured_priority"),
         Index("ix_cultural_places_lat_lon", "latitude", "longitude"),
     )
 
@@ -40,11 +41,19 @@ class CulturalPlace(TimestampMixin, Base):
     longitude: Mapped[float] = mapped_column(Float, nullable=False)
     category: Mapped[str] = mapped_column(String(32), nullable=False)
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    hero_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    gallery_images: Mapped[list[dict[str, str | None]] | None] = mapped_column(JSON, nullable=True)
+    thumbnail_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     image_alt: Mapped[str | None] = mapped_column(String(255), nullable=True)
     source_name: Mapped[str] = mapped_column(String(128), nullable=False)
     source_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    photo_credit: Mapped[str | None] = mapped_column(String(255), nullable=True)
     image_credit: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    image_source: Mapped[str | None] = mapped_column(String(64), nullable=True)
     image_license: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    editorial_excerpt: Mapped[str | None] = mapped_column(Text, nullable=True)
+    image_blurhash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    featured_priority: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     is_featured: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 

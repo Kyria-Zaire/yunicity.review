@@ -32,7 +32,11 @@ class CulturalPlaceRepository:
         stmt = (
             self._base_stmt(active_only=active_only)
             .where(CulturalPlace.city == city)
-            .order_by(CulturalPlace.is_featured.desc(), CulturalPlace.name.asc())
+            .order_by(
+                CulturalPlace.featured_priority.desc(),
+                CulturalPlace.is_featured.desc(),
+                CulturalPlace.name.asc(),
+            )
             .limit(limit)
         )
         if featured_only:
@@ -115,11 +119,19 @@ class CulturalPlaceRepository:
             "longitude",
             "category",
             "image_url",
+            "hero_image_url",
+            "gallery_images",
+            "thumbnail_image_url",
             "image_alt",
             "source_name",
             "source_url",
+            "photo_credit",
             "image_credit",
+            "image_source",
             "image_license",
+            "editorial_excerpt",
+            "image_blurhash",
+            "featured_priority",
             "is_featured",
             "is_active",
         ):

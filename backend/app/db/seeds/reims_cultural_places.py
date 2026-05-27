@@ -1,4 +1,4 @@
-"""Reims emblematic cultural places seed (WEB-MAP-03)."""
+"""Reims emblematic cultural places seed (WEB-MAP-03, WEB-SEARCH-02B.1)."""
 
 from __future__ import annotations
 
@@ -9,17 +9,17 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db.seeds.reims_cultural_media import REIMS_CULTURAL_MEDIA_BY_SLUG
 from app.models.cultural_place import CulturalPlace
 from app.models.neighborhood import Neighborhood
+from app.services.cultural_media import normalize_cultural_media
 
 logger = logging.getLogger(__name__)
 
 REIMS_CITY = "Reims"
 
-# Coordonnées de référence : open data / géolocalisation publique (DATAtourisme, IGN).
-# Images : droits non validés en MVP → image_url null, placeholder côté frontend.
-_SOURCE = "Catalogue éditorial Yunicity — coordonnées publiques"
-_SOURCE_URL = "https://www.datatourisme.fr/"
+_SOURCE = "Catalogue éditorial Yunicity — médias Wikimedia Commons"
+_SOURCE_URL = "https://commons.wikimedia.org/"
 
 REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
     {
@@ -36,7 +36,6 @@ REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
         "longitude": 4.0340,
         "category": "cathedral",
         "neighborhood_slug": "centre-ville",
-        "is_featured": True,
     },
     {
         "id": uuid.UUID("d6030000-0000-4000-8000-000000000002"),
@@ -49,7 +48,6 @@ REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
         "longitude": 4.0348,
         "category": "museum",
         "neighborhood_slug": "centre-ville",
-        "is_featured": True,
     },
     {
         "id": uuid.UUID("d6030000-0000-4000-8000-000000000003"),
@@ -62,7 +60,6 @@ REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
         "longitude": 4.0392,
         "category": "heritage",
         "neighborhood_slug": "saint-remi",
-        "is_featured": True,
     },
     {
         "id": uuid.UUID("d6030000-0000-4000-8000-000000000004"),
@@ -77,7 +74,6 @@ REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
         "longitude": 4.0414,
         "category": "museum",
         "neighborhood_slug": "saint-remi",
-        "is_featured": True,
     },
     {
         "id": uuid.UUID("d6030000-0000-4000-8000-000000000005"),
@@ -90,7 +86,6 @@ REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
         "longitude": 4.0311,
         "category": "monument",
         "neighborhood_slug": "centre-ville",
-        "is_featured": True,
     },
     {
         "id": uuid.UUID("d6030000-0000-4000-8000-000000000006"),
@@ -103,7 +98,6 @@ REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
         "longitude": 4.0275,
         "category": "market",
         "neighborhood_slug": "centre-ville",
-        "is_featured": True,
     },
     {
         "id": uuid.UUID("d6030000-0000-4000-8000-000000000007"),
@@ -116,7 +110,6 @@ REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
         "longitude": 4.0298,
         "category": "square",
         "neighborhood_slug": "centre-ville",
-        "is_featured": False,
     },
     {
         "id": uuid.UUID("d6030000-0000-4000-8000-000000000008"),
@@ -129,7 +122,6 @@ REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
         "longitude": 4.0258,
         "category": "square",
         "neighborhood_slug": "centre-ville",
-        "is_featured": False,
     },
     {
         "id": uuid.UUID("d6030000-0000-4000-8000-000000000009"),
@@ -142,7 +134,6 @@ REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
         "longitude": 4.0434,
         "category": "library",
         "neighborhood_slug": "saint-remi",
-        "is_featured": True,
     },
     {
         "id": uuid.UUID("d6030000-0000-4000-8000-000000000010"),
@@ -155,7 +146,6 @@ REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
         "longitude": 4.0470,
         "category": "heritage",
         "neighborhood_slug": "saint-remi",
-        "is_featured": False,
     },
     {
         "id": uuid.UUID("d6030000-0000-4000-8000-000000000011"),
@@ -168,8 +158,82 @@ REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
         "longitude": 4.0582,
         "category": "winery",
         "neighborhood_slug": "saint-remi",
-        "is_featured": True,
     },
+    {
+        "id": uuid.UUID("d6030000-0000-4000-8000-000000000012"),
+        "slug": "opera-de-reims",
+        "name": "Opéra de Reims",
+        "short_description": "Scène nationale et façade néoclassique sur la place du Forum.",
+        "description": "Programmation vivante au cœur du centre historique.",
+        "address": "1 Place du Forum",
+        "latitude": 49.2545,
+        "longitude": 4.0289,
+        "category": "theatre",
+        "neighborhood_slug": "centre-ville",
+    },
+    {
+        "id": uuid.UUID("d6030000-0000-4000-8000-000000000013"),
+        "slug": "parc-de-champagne",
+        "name": "Parc de Champagne",
+        "short_description": "Grand parc urbain au sud de Reims, verdure et panoramas.",
+        "description": "Promenades, jardins et vue sur la ville depuis les hauteurs.",
+        "address": "Avenue du Général Giraud",
+        "latitude": 49.2385,
+        "longitude": 4.0510,
+        "category": "park",
+        "neighborhood_slug": "saint-remi",
+    },
+    {
+        "id": uuid.UUID("d6030000-0000-4000-8000-000000000014"),
+        "slug": "musee-des-beaux-arts",
+        "name": "Musée des Beaux-Arts",
+        "short_description": "Collections des XVe au XXIe siècles dans un palais du XVIIIe.",
+        "description": "Peintures, sculptures et arts décoratifs au cœur de Reims.",
+        "address": "8 Rue Chanzy",
+        "latitude": 49.2581,
+        "longitude": 4.0318,
+        "category": "museum",
+        "neighborhood_slug": "centre-ville",
+    },
+    {
+        "id": uuid.UUID("d6030000-0000-4000-8000-000000000015"),
+        "slug": "cryptoportique",
+        "name": "Cryptoportique",
+        "short_description": "Galerie gallo-romaine sous la place du Forum.",
+        "description": "Mémoire souterraine de Durocortorum, accessible au public.",
+        "address": "Place du Forum",
+        "latitude": 49.2542,
+        "longitude": 4.0282,
+        "category": "heritage",
+        "neighborhood_slug": "centre-ville",
+    },
+)
+
+_MEDIA_SYNC_FIELDS = (
+    "name",
+    "short_description",
+    "description",
+    "neighborhood_id",
+    "address",
+    "latitude",
+    "longitude",
+    "category",
+    "image_url",
+    "hero_image_url",
+    "gallery_images",
+    "thumbnail_image_url",
+    "image_alt",
+    "source_name",
+    "source_url",
+    "photo_credit",
+    "image_credit",
+    "image_source",
+    "image_license",
+    "editorial_excerpt",
+    "image_blurhash",
+    "featured_priority",
+    "is_featured",
+    "is_active",
 )
 
 
@@ -180,32 +244,67 @@ async def _neighborhood_ids_by_slug(session: AsyncSession, city: str) -> dict[st
     return {slug: row_id for slug, row_id in result.all()}
 
 
+def _build_place_row(
+    entry: dict[str, Any],
+    *,
+    neighborhood_id: uuid.UUID | None,
+    media: dict[str, Any],
+) -> CulturalPlace:
+    slug = str(entry["slug"])
+    media_payload = REIMS_CULTURAL_MEDIA_BY_SLUG.get(slug, {})
+    merged_media = {**media_payload, **media}
+
+    normalized = normalize_cultural_media(
+        hero_image_url=merged_media.get("hero_image_url"),
+        thumbnail_image_url=merged_media.get("thumbnail_image_url"),
+        gallery_images=merged_media.get("gallery_images"),
+        photo_credit=merged_media.get("photo_credit"),
+        image_credit=merged_media.get("image_credit"),
+        image_source=merged_media.get("image_source"),
+        editorial_excerpt=merged_media.get("editorial_excerpt"),
+        image_blurhash=merged_media.get("image_blurhash"),
+    )
+
+    image_alt = entry.get("image_alt") or f"{entry['name']} — Reims"
+
+    return CulturalPlace(
+        id=entry["id"],
+        slug=slug,
+        name=entry["name"],
+        short_description=entry["short_description"],
+        description=entry.get("description"),
+        city=REIMS_CITY,
+        neighborhood_id=neighborhood_id,
+        address=entry["address"],
+        latitude=entry["latitude"],
+        longitude=entry["longitude"],
+        category=entry["category"],
+        image_url=normalized.image_url,
+        hero_image_url=normalized.hero_image_url,
+        gallery_images=normalized.gallery_images or None,
+        thumbnail_image_url=normalized.thumbnail_image_url,
+        image_alt=image_alt,
+        source_name=_SOURCE,
+        source_url=_SOURCE_URL,
+        photo_credit=normalized.photo_credit,
+        image_credit=normalized.image_credit,
+        image_source=normalized.image_source,
+        image_license=merged_media.get("image_license"),
+        editorial_excerpt=normalized.editorial_excerpt,
+        image_blurhash=normalized.image_blurhash,
+        featured_priority=int(merged_media.get("featured_priority", 0)),
+        is_featured=bool(merged_media.get("is_featured", False)),
+        is_active=True,
+    )
+
+
 async def seed_reims_cultural_places(session: AsyncSession) -> None:
     hood_ids = await _neighborhood_ids_by_slug(session, REIMS_CITY)
     for entry in REIMS_CULTURAL_PLACES_SEED:
         hood_slug = entry.get("neighborhood_slug")
         neighborhood_id = hood_ids.get(hood_slug) if isinstance(hood_slug, str) else None
-        row = CulturalPlace(
-            id=entry["id"],
-            slug=entry["slug"],
-            name=entry["name"],
-            short_description=entry["short_description"],
-            description=entry.get("description"),
-            city=REIMS_CITY,
-            neighborhood_id=neighborhood_id,
-            address=entry["address"],
-            latitude=entry["latitude"],
-            longitude=entry["longitude"],
-            category=entry["category"],
-            image_url=None,
-            image_alt=None,
-            source_name=_SOURCE,
-            source_url=_SOURCE_URL,
-            image_credit=None,
-            image_license=None,
-            is_featured=bool(entry.get("is_featured", False)),
-            is_active=True,
-        )
+        row = _build_place_row(entry, neighborhood_id=neighborhood_id, media={})
+
         repo_row = await session.get(CulturalPlace, row.id)
         if repo_row is None:
             existing = await session.execute(
@@ -218,35 +317,10 @@ async def seed_reims_cultural_places(session: AsyncSession) -> None:
             if found is None:
                 session.add(row)
             else:
-                for field in (
-                    "name",
-                    "short_description",
-                    "description",
-                    "neighborhood_id",
-                    "address",
-                    "latitude",
-                    "longitude",
-                    "category",
-                    "source_name",
-                    "source_url",
-                    "is_featured",
-                    "is_active",
-                ):
+                for field in _MEDIA_SYNC_FIELDS:
                     setattr(found, field, getattr(row, field))
         else:
-            for field in (
-                "name",
-                "short_description",
-                "description",
-                "neighborhood_id",
-                "address",
-                "latitude",
-                "longitude",
-                "category",
-                "source_name",
-                "source_url",
-                "is_featured",
-                "is_active",
-            ):
+            for field in _MEDIA_SYNC_FIELDS:
                 setattr(repo_row, field, getattr(row, field))
+
     logger.info("reims_cultural_places_seed_completed count=%s", len(REIMS_CULTURAL_PLACES_SEED))

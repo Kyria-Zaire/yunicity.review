@@ -100,6 +100,11 @@ export {
   mapRouteModeLabel,
 } from "./cultural-place-labels";
 export {
+  culturalPlaceHasGallery,
+  resolveCulturalPlaceHeroUrl,
+  resolveCulturalPlaceImageUrl,
+} from "./cultural-place-media";
+export {
   fetchMapboxRoute,
   fetchMapboxWalkingRoute,
   type MapRouteProfile,

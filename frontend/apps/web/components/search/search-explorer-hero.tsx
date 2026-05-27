@@ -8,6 +8,7 @@ import {
   SEARCH_EXPLORER_HERO_TITLE,
   formatEventDateRange,
   pickExplorerHero,
+  resolveCulturalPlaceHeroUrl,
 } from "@yunicity/utils";
 import Link from "next/link";
 
@@ -58,7 +59,10 @@ export function SearchExplorerHero({ events, culturalPlaces, city }: SearchExplo
   const { place } = hero;
   return (
     <article className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-sm">
-      <HeroImage url={place.image_url} alt={place.image_alt ?? place.name} />
+      <HeroImage
+        url={resolveCulturalPlaceHeroUrl(place)}
+        alt={place.image_alt ?? place.name}
+      />
       <div className="space-y-3 p-5 sm:p-6">
         <p className="text-xs font-semibold uppercase tracking-wide text-yunicity-primary">
           {SEARCH_EXPLORER_HERO_TITLE} à {city}

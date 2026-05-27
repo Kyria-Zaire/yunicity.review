@@ -1,4 +1,4 @@
-"""Cultural places business logic (WEB-MAP-03)."""
+"""Cultural places business logic (WEB-MAP-03, WEB-SEARCH-02B.1)."""
 
 from __future__ import annotations
 
@@ -14,14 +14,17 @@ from app.core.errors import AppError
 from app.models.cultural_place import CulturalPlace
 from app.repositories.cultural_place_repository import CulturalPlaceRepository
 from app.schemas.cultural_place import (
+    CulturalGalleryImage,
     CulturalPlaceDetail,
     CulturalPlaceListItem,
     CulturalPlaceListResponse,
+    CulturalPlaceMediaFields,
     CulturalPlaceNeighborhoodSummary,
     MapCulturalPlaceItem,
     MapCulturalPlaceListResponse,
 )
 from app.schemas.map_event import MapBboxResponse
+from app.services.cultural_media import gallery_for_api, normalize_cultural_media
 from app.services.map_event_service import MapBbox
 
 
@@ -102,8 +105,42 @@ class CulturalPlaceService:
             return None
         return CulturalPlaceNeighborhoodSummary(slug=hood.slug, display_name=hood.display_name)
 
+    @staticmethod
+    def _media_fields(row: CulturalPlace) -> CulturalPlaceMediaFields:
+        normalized = normalize_cultural_media(
+            image_url=row.image_url,
+            hero_image_url=row.hero_image_url,
+            thumbnail_image_url=row.thumbnail_image_url,
+            gallery_images=row.gallery_images,
+            photo_credit=row.photo_credit,
+            image_credit=row.image_credit,
+            image_source=row.image_source,
+            editorial_excerpt=row.editorial_excerpt,
+            image_blurhash=row.image_blurhash,
+        )
+        gallery = [
+            CulturalGalleryImage.model_validate(item)
+            for item in gallery_for_api(normalized.gallery_images)
+        ]
+        return CulturalPlaceMediaFields(
+            image_url=normalized.image_url,
+            hero_image_url=normalized.hero_image_url,
+            thumbnail_image_url=normalized.thumbnail_image_url,
+            gallery_images=gallery,
+            editorial_excerpt=normalized.editorial_excerpt,
+            photo_credit=normalized.photo_credit,
+            image_source=normalized.image_source,
+        )
+
     def _to_list_item(self, row: CulturalPlace) -> CulturalPlaceListItem:
+        media = self._media_fields(row)
+        normalized = normalize_cultural_media(
+            image_url=row.image_url,
+            image_credit=row.image_credit,
+            photo_credit=row.photo_credit,
+        )
         return CulturalPlaceListItem(
+            **media.model_dump(),
             id=row.id,
             slug=row.slug,
             name=row.name,
@@ -113,10 +150,9 @@ class CulturalPlaceService:
             category=row.category,
             latitude=row.latitude,
             longitude=row.longitude,
-            image_url=row.image_url,
             image_alt=row.image_alt,
             source_name=row.source_name,
-            image_credit=row.image_credit,
+            image_credit=normalized.image_credit,
             neighborhood=self._neighborhood_summary(row),
         )
 
@@ -128,10 +164,19 @@ class CulturalPlaceService:
             source_url=row.source_url,
             image_license=row.image_license,
             is_featured=row.is_featured,
+            featured_priority=row.featured_priority,
+            image_blurhash=row.image_blurhash,
         )
 
     def _to_map_item(self, row: CulturalPlace) -> MapCulturalPlaceItem:
+        media = self._media_fields(row)
+        normalized = normalize_cultural_media(
+            image_url=row.image_url,
+            image_credit=row.image_credit,
+            photo_credit=row.photo_credit,
+        )
         return MapCulturalPlaceItem(
+            **media.model_dump(),
             id=row.id,
             slug=row.slug,
             name=row.name,
@@ -141,10 +186,9 @@ class CulturalPlaceService:
             neighborhood=self._neighborhood_summary(row),
             latitude=row.latitude,
             longitude=row.longitude,
-            image_url=row.image_url,
             image_alt=row.image_alt,
             source_name=row.source_name,
-            image_credit=row.image_credit,
+            image_credit=normalized.image_credit,
         )
 
     @staticmethod
