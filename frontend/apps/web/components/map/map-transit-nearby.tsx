@@ -6,6 +6,7 @@ import { useMapTransitNearby } from "@/hooks/use-map-transit-nearby";
 import {
   MAP_RAIL_TRANSIT_TITLE,
   MAP_TRANSIT_EMPTY,
+  MAP_TRANSIT_EMPTY_ALT,
   MAP_TRANSIT_ERROR,
   MAP_TRANSIT_STATUS_FLUIDE,
   MAP_TRANSIT_VIEW_SCHEDULES,
@@ -69,8 +70,22 @@ export function MapTransitNearby({
   emptyMessage?: string;
 }) {
   const { data, loading, error } = useMapTransitNearby(point);
+  const editorialEmptyMessage =
+    Math.round((point.lat + point.lon) * 10) % 2 === 0 ? MAP_TRANSIT_EMPTY : MAP_TRANSIT_EMPTY_ALT;
+  const resolvedEmptyMessage =
+    emptyMessage === MAP_TRANSIT_EMPTY ? editorialEmptyMessage : emptyMessage;
+  const usefulStops =
+    data?.stops
+      .map((stop) => {
+        const byRoute = groupTransitDeparturesByRoute(stop.departures);
+        const entries = Array.from(byRoute.entries()).filter(([, departures]) =>
+          Boolean(formatTransitDepartureMinutes(departures)),
+        );
+        return { stop, entries };
+      })
+      .filter((item) => item.entries.length > 0) ?? [];
 
-  const showFluideBadge = Boolean(data?.stops.length);
+  const showFluideBadge = usefulStops.length > 0;
 
   return (
     <WebContextPanel
@@ -89,22 +104,23 @@ export function MapTransitNearby({
         <p className="text-sm text-neutral-500">{MAP_TRANSIT_ERROR}</p>
       ) : null}
 
-      {!loading && !error && data && data.stops.length === 0 ? (
-        <p className="text-sm text-neutral-500">{emptyMessage}</p>
+      {!loading && !error && usefulStops.length === 0 ? (
+        <p className="text-sm text-neutral-500">{resolvedEmptyMessage}</p>
       ) : null}
 
-      {!error && data && data.stops.length > 0 ? (
+      {!error && usefulStops.length > 0 ? (
         <div className="space-y-2">
-          {data.disclaimer ? (
+          {data?.disclaimer ? (
             <p className="text-[11px] leading-snug text-neutral-500">{data.disclaimer}</p>
           ) : null}
           <ul className="space-y-2">
-            {data.stops.map((stop) => {
-              const byRoute = groupTransitDeparturesByRoute(stop.departures);
+            {usefulStops.map(({ stop, entries }) => {
               return (
                 <li key={stop.stop_id} className="space-y-1.5">
-                  {Array.from(byRoute.entries()).map(([routeKey, departures]) => {
+                  {entries.map(([routeKey, departures]) => {
                     const sample = departures[0]!;
+                    const departureLabel = formatTransitDepartureMinutes(departures);
+                    if (!departureLabel) return null;
                     return (
                       <div
                         key={`${stop.stop_id}-${routeKey}`}
@@ -121,11 +137,11 @@ export function MapTransitNearby({
                             <span className="flex min-w-0 items-center gap-1.5 truncate">
                               <TransitModeIcon routeType={sample.route_type} />
                               <span className="truncate">
-                              {transitRouteLabel(sample.route_type, sample.route_short_name)}
+                                {transitRouteLabel(sample.route_type, sample.route_short_name)}
                               </span>
                             </span>
                             <span className="shrink-0 tabular-nums text-yunicity-primary">
-                              {formatTransitDepartureMinutes(departures)}
+                              {departureLabel}
                             </span>
                           </p>
                           <p className="truncate text-[11px] text-neutral-500">

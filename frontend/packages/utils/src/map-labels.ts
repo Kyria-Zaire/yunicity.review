@@ -19,10 +19,13 @@ export const MAP_OFFER_CTA = "Ouvrir mon Passport";
 export const MAP_RAIL_LIVE_TITLE = "En ce moment à Reims";
 export const MAP_RAIL_LIVE_EMPTY = "Aucune activité mise en avant actuellement à Reims.";
 export const MAP_RAIL_TRANSIT_TITLE = "Transports à proximité";
-export const MAP_TRANSIT_EMPTY = "Aucun passage proche trouvé.";
+export const MAP_TRANSIT_EMPTY = "Le réseau reste calme actuellement autour du centre-ville.";
+export const MAP_TRANSIT_EMPTY_ALT = "Peu de passages circulent actuellement dans ce secteur.";
 export const MAP_TRANSIT_ERROR = "Horaires indisponibles pour le moment.";
 export const MAP_TRANSIT_VIEW_SCHEDULES = "Voir les horaires";
 export const MAP_TRANSIT_STATUS_FLUIDE = "Fluide";
+export const MAP_TRANSIT_NEARBY_MINUTES = 45;
+export const MAP_TRANSIT_CONTEXT_MAX_MINUTES = 360;
 
 export function transitRouteIcon(routeType: string): string {
   if (routeType === "tram") return "🚋";
@@ -36,8 +39,53 @@ export function transitRouteLabel(routeType: string, shortName: string): string 
   return `${kind} ${shortName}`;
 }
 
+function isValidTransitMinutes(minutes: number | null | undefined): minutes is number {
+  return typeof minutes === "number" && Number.isFinite(minutes) && minutes >= 0;
+}
+
+function parisDateKey(value: Date): string {
+  const parts = new Intl.DateTimeFormat("fr-FR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Europe/Paris",
+  }).formatToParts(value);
+  const year = parts.find((part) => part.type === "year")?.value ?? "";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  const day = parts.find((part) => part.type === "day")?.value ?? "";
+  return `${year}-${month}-${day}`;
+}
+
+function formatTransitScheduledTime(scheduledAt: string): string | null {
+  const date = new Date(scheduledAt);
+  if (Number.isNaN(date.getTime())) return null;
+  const now = new Date();
+  if (parisDateKey(date) !== parisDateKey(now)) return null;
+  return new Intl.DateTimeFormat("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Europe/Paris",
+  }).format(date);
+}
+
+export function formatContextualTransitTime(departure: TransitDeparture): string | null {
+  if (isValidTransitMinutes(departure.minutes)) {
+    if (departure.minutes <= MAP_TRANSIT_NEARBY_MINUTES) {
+      return `${departure.minutes} min`;
+    }
+    if (departure.minutes > MAP_TRANSIT_CONTEXT_MAX_MINUTES) {
+      return null;
+    }
+  }
+  return formatTransitScheduledTime(departure.scheduled_at);
+}
+
 export function formatTransitDepartureMinutes(departures: TransitDeparture[]): string {
-  return departures.map((d) => `${d.minutes} min`).join(" · ");
+  const labels = departures
+    .map((departure) => formatContextualTransitTime(departure))
+    .filter((label): label is string => Boolean(label));
+  return labels.join(" · ");
 }
 
 export function groupTransitDeparturesByRoute(
@@ -45,6 +93,9 @@ export function groupTransitDeparturesByRoute(
 ): Map<string, TransitDeparture[]> {
   const groups = new Map<string, TransitDeparture[]>();
   for (const dep of departures) {
+    if (!formatContextualTransitTime(dep)) {
+      continue;
+    }
     const key = `${dep.route_type}:${dep.route_short_name}`;
     const bucket = groups.get(key);
     if (bucket) {

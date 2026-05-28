@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.transit_constants import (
     TRANSIT_DEFAULT_LAT,
     TRANSIT_DEFAULT_LON,
+    TRANSIT_NEARBY_MAX_MINUTES_DEFAULT,
+    TRANSIT_NEARBY_MAX_MINUTES_MAX,
     TRANSIT_NEARBY_RADIUS_DEFAULT_M,
     TRANSIT_NEARBY_RADIUS_MAX_M,
     TRANSIT_NEARBY_STOPS_LIMIT,
@@ -33,6 +35,11 @@ async def transit_nearby(
         le=TRANSIT_NEARBY_RADIUS_MAX_M,
     ),
     limit: int = Query(default=TRANSIT_NEARBY_STOPS_LIMIT, ge=1, le=10),
+    max_minutes: int = Query(
+        default=TRANSIT_NEARBY_MAX_MINUTES_DEFAULT,
+        ge=1,
+        le=TRANSIT_NEARBY_MAX_MINUTES_MAX,
+    ),
 ) -> TransitNearbyResponse:
     """Prochains passages près d'un point carte (lat/lon) — pas de persistance position."""
     return await TransitService(session).get_nearby(
@@ -42,5 +49,6 @@ async def transit_nearby(
             city=city,
             radius_meters=radius_meters,
             limit=limit,
+            max_minutes=max_minutes,
         )
     )

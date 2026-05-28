@@ -16,6 +16,9 @@ export function buildTransitNearbyQuery(params: TransitNearbyParams): string {
   if (params.limit !== undefined) {
     search.set("limit", String(params.limit));
   }
+  if (params.max_minutes !== undefined) {
+    search.set("max_minutes", String(params.max_minutes));
+  }
   return `?${search.toString()}`;
 }
 

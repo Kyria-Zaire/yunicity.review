@@ -7,7 +7,7 @@ export type TransitDeparture = {
   route_type: string;
   headsign: string;
   scheduled_at: string;
-  minutes: number;
+  minutes?: number | null;
   realtime: boolean;
 };
 
@@ -24,6 +24,7 @@ export type TransitNearbyParams = {
   city?: string;
   radius_meters?: number;
   limit?: number;
+  max_minutes?: number;
 };
 
 export type TransitNearbyResponse = {

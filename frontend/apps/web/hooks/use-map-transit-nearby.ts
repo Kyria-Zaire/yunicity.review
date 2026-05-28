@@ -13,6 +13,7 @@ export type MapTransitQueryPoint = {
 
 const TRANSIT_RADIUS_METERS = 600;
 const TRANSIT_STOPS_LIMIT = 5;
+const TRANSIT_MAX_MINUTES = 360;
 
 function coordsKey(point: MapTransitQueryPoint): string {
   return `${point.city}:${point.lat.toFixed(3)}:${point.lon.toFixed(3)}`;
@@ -40,6 +41,7 @@ export function useMapTransitNearby(point: MapTransitQueryPoint | null) {
         city: point.city,
         radius_meters: TRANSIT_RADIUS_METERS,
         limit: TRANSIT_STOPS_LIMIT,
+        max_minutes: TRANSIT_MAX_MINUTES,
       })
       .then((response) => {
         if (requestId !== requestIdRef.current) return;

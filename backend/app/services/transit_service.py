@@ -17,6 +17,7 @@ from app.core.transit_constants import (
     TRANSIT_DISCLAIMER_SCHEDULED,
     TRANSIT_MODE_REALTIME,
     TRANSIT_MODE_SCHEDULED,
+    TRANSIT_NEARBY_MAX_MINUTES_DEFAULT,
     TRANSIT_SOURCE_GRAND_REIMS,
 )
 from app.repositories.transit_repository import TransitRepository
@@ -38,17 +39,22 @@ class TransitNearbyQuery:
     city: str
     radius_meters: int
     limit: int
+    max_minutes: int = TRANSIT_NEARBY_MAX_MINUTES_DEFAULT
 
 
 def _cache_key(query: TransitNearbyQuery) -> str:
     lat_r = round(query.lat, 3)
     lon_r = round(query.lon, 3)
-    return f"{query.city}:{lat_r}:{lon_r}:{query.radius_meters}:{query.limit}"
+    return f"{query.city}:{lat_r}:{lon_r}:{query.radius_meters}:{query.limit}:{query.max_minutes}"
 
 
 def _minutes_until(scheduled_at: datetime, now: datetime) -> int:
     delta = scheduled_at - now
     return max(0, int(math.ceil(delta.total_seconds() / 60.0)))
+
+
+def _is_departure_in_window(minutes: int, max_minutes: int) -> bool:
+    return 0 <= minutes <= max_minutes
 
 
 class TransitService:
@@ -102,25 +108,32 @@ class TransitService:
             deps = departures_by_stop.get(row.stop.id, [])
             if not deps:
                 continue
+            departures_out = []
+            for departure in deps:
+                minutes = _minutes_until(
+                    departure.scheduled_at.astimezone(_PARIS),
+                    now_paris,
+                )
+                if not _is_departure_in_window(minutes, query.max_minutes):
+                    continue
+                departures_out.append(
+                    TransitDepartureOut(
+                        route_short_name=departure.route_short_name,
+                        route_type=departure.route_type,
+                        headsign=departure.headsign,
+                        scheduled_at=departure.scheduled_at,
+                        minutes=minutes,
+                        realtime=departure.realtime,
+                    )
+                )
+            if not departures_out:
+                continue
             stops_out.append(
                 TransitStopNearbyOut(
                     stop_id=row.stop.external_stop_id,
                     name=row.stop.name,
                     distance_meters=int(round(row.distance_meters)),
-                    departures=[
-                        TransitDepartureOut(
-                            route_short_name=d.route_short_name,
-                            route_type=d.route_type,
-                            headsign=d.headsign,
-                            scheduled_at=d.scheduled_at,
-                            minutes=_minutes_until(
-                                d.scheduled_at.astimezone(_PARIS),
-                                now_paris,
-                            ),
-                            realtime=d.realtime,
-                        )
-                        for d in deps
-                    ],
+                    departures=departures_out,
                 )
             )
 
