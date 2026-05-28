@@ -2,7 +2,7 @@
 
 import type { NeighborhoodPortalMood } from "./neighborhood-portal";
 
-export const NEIGHBORHOODS_PORTAL_HERO_TITLE = "Reims par morceaux humains";
+export const NEIGHBORHOODS_PORTAL_HERO_TITLE = "Mini Reims";
 export const NEIGHBORHOODS_PORTAL_HERO_SUBTITLE =
   "Chaque quartier a son rythme, ses lieux, ses moments et ses habitudes.";
 export const NEIGHBORHOODS_PORTAL_HERO_CHIPS = [

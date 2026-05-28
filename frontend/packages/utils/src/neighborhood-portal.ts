@@ -127,7 +127,7 @@ function buildCardSignals(
   }
   if (signals.length < 2 && tribes[0]) {
     signals.push({
-      label: `Tribu: ${tribes[0].name}`,
+      label: `Tribus: ${tribes[0].name}`,
       href: tribeHref(tribes[0].slug, city),
     });
   }
@@ -261,7 +261,7 @@ export function buildNeighborhoodLifeSlices(input: {
     slices.push({
       id: `tribe-${tribe.id}`,
       title: tribe.name,
-      subtitle: "Tribu locale à découvrir",
+      subtitle: "Tribus locales à découvrir",
       href: tribeHref(tribe.slug, city),
       kind: "tribe",
     });

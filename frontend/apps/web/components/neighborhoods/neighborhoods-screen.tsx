@@ -114,10 +114,23 @@ export function NeighborhoodsScreen() {
     router.replace(`${pathname}?${params.toString()}`);
   }
 
+  function scrollToSection(sectionId: string) {
+    const el = document.getElementById(sectionId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   const hasEditorialSafety = neighborhoodPortalHasNoFakeMetrics([
     ...cityPulse.map((item) => item.line),
     ...cards.map((item) => item.tagline),
   ]);
+
+  const lifeKindLabel: Record<(typeof lifeSlices)[number]["kind"], string> = {
+    event: "moments",
+    place: "lieux",
+    tribe: "tribus",
+    offer: "passport",
+  };
 
   return (
     <WebAppShell
@@ -172,6 +185,10 @@ export function NeighborhoodsScreen() {
             <div className="mt-4 flex flex-wrap gap-2">
               <a
                 href="#neighborhood-cards"
+                onClick={(event) => {
+                  event.preventDefault();
+                  scrollToSection("neighborhood-cards");
+                }}
                 className="rounded-full bg-yunicity-primary px-4 py-2 text-sm font-semibold text-white hover:bg-yunicity-primary-hover"
               >
                 {NEIGHBORHOODS_PORTAL_CTA_EXPLORE}
@@ -184,6 +201,10 @@ export function NeighborhoodsScreen() {
               </Link>
               <a
                 href="#city-pulse"
+                onClick={(event) => {
+                  event.preventDefault();
+                  scrollToSection("city-pulse");
+                }}
                 className="rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:border-yunicity-primary/30 hover:text-yunicity-primary"
               >
                 {NEIGHBORHOODS_PORTAL_CTA_LIVE}
@@ -372,7 +393,7 @@ export function NeighborhoodsScreen() {
                         <p className="line-clamp-1 text-xs text-neutral-500">{item.subtitle}</p>
                       </div>
                       <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-yunicity-primary">
-                        {item.kind}
+                        {lifeKindLabel[item.kind]}
                       </span>
                     </Link>
                   </li>

@@ -18,8 +18,12 @@ export const EVENT_TYPE_FALLBACK_IMAGES: Record<string, string> = {
 const CULTURAL_PLACE_IMAGE_OVERRIDES: Record<string, string> = {
   "porte-de-mars":
     "https://th.bing.com/th/id/OIP.gQdEGwtjmHxBpBuiRqxHTAHaEI?w=310&h=180&c=7&r=0&o=7&pid=1.7&rm=3",
+  "bibliotheque-carnegie":
+    "https://tse3.mm.bing.net/th/id/OIP.cLDw55L0jijFkgopwKjCAgHaFj?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
   "basilique-saint-remi":
     "https://www.actualitix.com/wp-content/uploads/2016/11/basilique-saint-remi-a-reims.jpg",
+  "musee-des-beaux-arts":
+    "https://th.bing.com/th/id/OIP.hp2aszpxkbRTCe5IVMvDJgHaEL?w=312&h=180&c=7&r=0&o=7&pid=1.7&rm=3",
   "palais-du-tau":
     "https://img-4.linternaute.com/uQ_yW33guQHqdZTQdtIaFMhcK2Y=/1240x/smart/f4cad198146d41eb91fb8a9859ce5adc/ccmcms-linternaute/18659868.jpg",
   "cathedrale-notre-dame":
