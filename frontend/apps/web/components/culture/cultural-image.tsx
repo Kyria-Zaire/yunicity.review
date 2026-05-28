@@ -7,6 +7,7 @@ type CulturalImageProps = {
   alt: string;
   placeName: string;
   className?: string;
+  imageClassName?: string;
   sizes: string;
   priority?: boolean;
   showFallbackCaption?: boolean;
@@ -27,6 +28,7 @@ export function CulturalImage({
   alt,
   placeName,
   className,
+  imageClassName,
   sizes,
   priority = false,
   showFallbackCaption = true,
@@ -45,7 +47,7 @@ export function CulturalImage({
           <img
             src={safeSrc!}
             alt={alt}
-            className="absolute inset-0 h-full w-full object-cover"
+            className={`absolute inset-0 h-full w-full object-cover ${imageClassName ?? ""}`}
             sizes={sizes}
             loading={priority ? "eager" : "lazy"}
             decoding="async"

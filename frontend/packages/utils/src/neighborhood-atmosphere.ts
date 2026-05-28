@@ -182,6 +182,19 @@ function buildAtmosphereTags(signals: HoodSignals, hood: Neighborhood): Neighbor
   return [...new Set(tags)].slice(0, 3);
 }
 
+/** Ligne « L’ambiance du moment » pour la fiche quartier (WEB-NEIGHBORHOOD-DETAIL-01). */
+export function buildNeighborhoodMomentAtmosphereLine(
+  hood: Neighborhood,
+  events: LocalEvent[],
+  culturalPlaces: CulturalPlaceListItem[],
+  options?: { weatherCalm?: boolean; now?: Date },
+): string {
+  const now = options?.now ?? new Date();
+  const todayKey = eventCalendarDayKey(now.toISOString());
+  const signals = collectHoodSignals(hood, events, culturalPlaces, todayKey);
+  return buildNeighborhoodAtmosphereEditorialLine(hood, signals, options?.weatherCalm ?? true);
+}
+
 export function buildNeighborhoodAtmosphereEditorialLine(
   hood: Neighborhood,
   signals: HoodSignals,

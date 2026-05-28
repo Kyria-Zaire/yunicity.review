@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildMapEventUrl,
+  buildMapNeighborhoodUrl,
   buildMapPlaceUrl,
   buildSearchUrl,
   parseMapParams,
@@ -45,6 +46,18 @@ describe("map deep links", () => {
 
   it("parses map params with route flag", () => {
     const parsed = parseMapParams(new URLSearchParams("place=opera&route=1&city=Reims"));
-    expect(parsed).toEqual({ city: "Reims", place: "opera", event: "", route: true });
+    expect(parsed).toEqual({
+      city: "Reims",
+      place: "opera",
+      event: "",
+      neighborhood: "",
+      route: true,
+    });
+  });
+
+  it("builds neighborhood map URL", () => {
+    expect(buildMapNeighborhoodUrl("boulingrin", { city: "Reims" })).toBe(
+      "/map?neighborhood=boulingrin&city=Reims",
+    );
   });
 });

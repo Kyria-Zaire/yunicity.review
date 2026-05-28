@@ -12,6 +12,7 @@ export type ParsedMapParams = {
   city: string;
   place: string;
   event: string;
+  neighborhood: string;
   route: boolean;
 };
 
@@ -52,6 +53,19 @@ export function buildMapPlaceUrl(slug: string, options?: { city?: string | null;
   return `/map?${params.toString()}`;
 }
 
+export function buildMapNeighborhoodUrl(
+  slug: string,
+  options?: { city?: string | null; route?: boolean },
+): string {
+  const params = new URLSearchParams();
+  const cleanSlug = slug.trim();
+  if (cleanSlug) params.set("neighborhood", cleanSlug);
+  const city = options?.city?.trim();
+  if (city) params.set("city", city);
+  if (options?.route) params.set("route", "1");
+  return `/map?${params.toString()}`;
+}
+
 export function buildMapEventUrl(eventId: string, options?: { city?: string | null; route?: boolean }): string {
   const params = new URLSearchParams();
   const cleanEventId = eventId.trim();
@@ -68,6 +82,7 @@ export function parseMapParams(params: URLSearchParams): ParsedMapParams {
     city: params.get("city")?.trim() ?? "",
     place: params.get("place")?.trim() ?? "",
     event: params.get("event")?.trim() ?? "",
+    neighborhood: params.get("neighborhood")?.trim() ?? "",
     route: routeRaw === "1" || routeRaw === "true",
   };
 }
