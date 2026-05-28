@@ -168,7 +168,8 @@ export function MapCulturalRoutePanel({
         <button
           type="button"
           onClick={onClose}
-          className="shrink-0 rounded-full border border-neutral-200 px-2.5 py-1 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+          aria-label={MAP_CULTURE_CLOSE_ROUTE}
+          className="shrink-0 rounded-full border border-neutral-200 px-2.5 py-1 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
         >
           {MAP_CULTURE_CLOSE_ROUTE}
         </button>
