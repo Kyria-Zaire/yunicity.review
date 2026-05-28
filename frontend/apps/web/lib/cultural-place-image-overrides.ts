@@ -1,9 +1,9 @@
 import type { CulturalPlaceListItem } from "@yunicity/types";
-import { resolveCulturalPlaceImageOverride as resolveOverride } from "@yunicity/utils";
+import { resolveCulturalPlaceSlugImageOverride } from "@yunicity/utils";
 
-/** @deprecated Import depuis @yunicity/utils — conservé pour les imports web existants. */
+/** @deprecated Préférer resolveCulturalPlaceDisplayUrl depuis @yunicity/utils. */
 export function resolveCulturalPlaceImageOverride(
   place: Pick<CulturalPlaceListItem, "slug">,
 ): string | null {
-  return resolveOverride(place);
+  return resolveCulturalPlaceSlugImageOverride(place.slug);
 }

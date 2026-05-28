@@ -47,6 +47,8 @@ class CulturalPlaceListItem(CulturalPlaceMediaFields):
     source_name: str
     image_credit: str | None
     neighborhood: CulturalPlaceNeighborhoodSummary | None = None
+    is_featured: bool = False
+    created_at: str
 
 
 class CulturalPlaceDetail(CulturalPlaceListItem):
@@ -62,6 +64,16 @@ class CulturalPlaceListResponse(BaseModel):
     city: str
     items: list[CulturalPlaceListItem]
     count: int
+    total: int
+    offset: int
+    limit: int
+
+
+class CulturalPlaceStatsResponse(BaseModel):
+    city: str
+    total_places: int
+    new_this_month: int
+    category_count: int
 
 
 class MapCulturalPlaceItem(CulturalPlaceMediaFields):

@@ -1,7 +1,6 @@
 "use client";
 
 import { CulturalImage, CulturalImageCredit } from "@/components/culture/cultural-image";
-import { resolveCulturalPlaceImageOverride } from "@/lib/cultural-place-image-overrides";
 import type { CulturalPlaceListItem, LocalEvent } from "@yunicity/types";
 import {
   SEARCH_EXPLORER_HERO_CTA_EVENT,
@@ -12,7 +11,7 @@ import {
   formatEventDateRange,
   getCulturalPlaceImageCredit,
   pickExplorerHero,
-  resolveCulturalPlaceHeroUrl,
+  resolveCulturalPlaceDisplayUrl,
   resolveEventHeroImage,
 } from "@yunicity/utils";
 import Link from "next/link";
@@ -78,7 +77,7 @@ export function SearchExplorerHero({ events, culturalPlaces, city }: SearchExplo
 
   const { place } = hero;
   const credit = getCulturalPlaceImageCredit(place);
-  const heroImage = resolveCulturalPlaceImageOverride(place) ?? resolveCulturalPlaceHeroUrl(place);
+  const heroImage = resolveCulturalPlaceDisplayUrl(place, "hero");
   return (
     <article className="overflow-hidden rounded-3xl bg-neutral-950 text-white shadow-lg ring-1 ring-black/5">
       <CulturalImage

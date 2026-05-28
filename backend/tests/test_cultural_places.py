@@ -72,7 +72,11 @@ async def test_list_cultural_places_city(
     body = response.json()
     assert body["city"] == "Reims"
     assert body["count"] >= len(REIMS_CULTURAL_PLACES_SEED) - 2
-    assert all(item["image_url"] is None for item in body["items"])
+    cathedral = next(i for i in body["items"] if i["slug"] == "cathedrale-notre-dame")
+    assert cathedral["hero_image_url"]
+    assert cathedral["photo_credit"]
+    assert cathedral["image_source"] == "wikimedia_commons"
+    assert len(cathedral["gallery_images"]) >= 2
 
 
 @pytest.mark.integration
@@ -91,6 +95,8 @@ async def test_list_featured_filter(
     assert len(items) >= 4
     slugs = {item["slug"] for item in items}
     assert "cathedrale-notre-dame" in slugs
+    priorities = [item["slug"] for item in items]
+    assert priorities[0] == "cathedrale-notre-dame"
 
 
 @pytest.mark.integration
@@ -176,4 +182,7 @@ async def test_get_place_by_slug(
     assert body["slug"] == "cathedrale-notre-dame"
     assert body["name"]
     assert body["source_name"]
-    assert body["image_url"] is None
+    assert body["hero_image_url"]
+    assert body["editorial_excerpt"]
+    assert body["gallery_images"]
+    assert body["featured_priority"] >= 90

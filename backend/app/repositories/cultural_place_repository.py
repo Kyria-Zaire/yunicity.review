@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,26 +22,58 @@ class CulturalPlaceRepository:
             stmt = stmt.where(CulturalPlace.is_active.is_(True))
         return stmt
 
+    def _city_filters(
+        self,
+        *,
+        city: str,
+        featured_only: bool,
+        active_only: bool,
+        categories: list[str] | None,
+    ) -> list:
+        filters = [CulturalPlace.city == city]
+        if active_only:
+            filters.append(CulturalPlace.is_active.is_(True))
+        if featured_only:
+            filters.append(CulturalPlace.is_featured.is_(True))
+        if categories:
+            filters.append(CulturalPlace.category.in_(categories))
+        return filters
+
+    @staticmethod
+    def _order_for_sort(sort: str):
+        if sort == "name":
+            return (CulturalPlace.name.asc(),)
+        if sort == "recent":
+            return (CulturalPlace.created_at.desc(), CulturalPlace.name.asc())
+        return (
+            CulturalPlace.featured_priority.desc(),
+            CulturalPlace.is_featured.desc(),
+            CulturalPlace.name.asc(),
+        )
+
     async def list_for_city(
         self,
         *,
         city: str,
         featured_only: bool,
         active_only: bool,
+        categories: list[str] | None,
+        sort: str,
         limit: int,
+        offset: int,
     ) -> list[CulturalPlace]:
         stmt = (
             self._base_stmt(active_only=active_only)
-            .where(CulturalPlace.city == city)
-            .order_by(
-                CulturalPlace.featured_priority.desc(),
-                CulturalPlace.is_featured.desc(),
-                CulturalPlace.name.asc(),
-            )
+            .where(*self._city_filters(
+                city=city,
+                featured_only=featured_only,
+                active_only=active_only,
+                categories=categories,
+            ))
+            .order_by(*self._order_for_sort(sort))
+            .offset(max(offset, 0))
             .limit(limit)
         )
-        if featured_only:
-            stmt = stmt.where(CulturalPlace.is_featured.is_(True))
         result = await self._session.execute(stmt)
         return list(result.scalars().unique().all())
 
@@ -50,14 +83,48 @@ class CulturalPlaceRepository:
         city: str,
         featured_only: bool,
         active_only: bool,
+        categories: list[str] | None = None,
     ) -> int:
-        stmt = select(func.count()).select_from(CulturalPlace).where(CulturalPlace.city == city)
-        if active_only:
-            stmt = stmt.where(CulturalPlace.is_active.is_(True))
-        if featured_only:
-            stmt = stmt.where(CulturalPlace.is_featured.is_(True))
+        stmt = select(func.count()).select_from(CulturalPlace).where(
+            *self._city_filters(
+                city=city,
+                featured_only=featured_only,
+                active_only=active_only,
+                categories=categories,
+            ),
+        )
         result = await self._session.execute(stmt)
         return int(result.scalar_one())
+
+    async def count_new_since(
+        self,
+        *,
+        city: str,
+        since: datetime,
+        active_only: bool,
+    ) -> int:
+        stmt = select(func.count()).select_from(CulturalPlace).where(
+            CulturalPlace.city == city,
+            CulturalPlace.created_at >= since,
+        )
+        if active_only:
+            stmt = stmt.where(CulturalPlace.is_active.is_(True))
+        result = await self._session.execute(stmt)
+        return int(result.scalar_one())
+
+    async def count_distinct_categories(
+        self,
+        *,
+        city: str,
+        active_only: bool,
+    ) -> int:
+        stmt = select(func.count(func.distinct(CulturalPlace.category))).where(
+            CulturalPlace.city == city,
+        )
+        if active_only:
+            stmt = stmt.where(CulturalPlace.is_active.is_(True))
+        result = await self._session.execute(stmt)
+        return int(result.scalar_one() or 0)
 
     async def get_by_city_slug(
         self,

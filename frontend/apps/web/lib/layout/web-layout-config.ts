@@ -44,7 +44,7 @@ export const WEB_CITIZEN_NAV_PRIMARY: WebNavItem[] = [
 
 /** Entrées occasionnelles — footer sidebar, pas la barre mobile compacte. */
 export const WEB_CITIZEN_NAV_SECONDARY: WebNavItem[] = [
-  { href: "/organizations/me", label: "Lieux", icon: "organizations", match: "prefix", tier: "secondary" },
+  { href: "/places", label: "Lieux", icon: "place", match: "prefix", tier: "secondary" },
   {
     href: "/organizations/request",
     label: "Proposer un lieu",

@@ -1,14 +1,13 @@
 "use client";
 
 import { CulturalImage } from "@/components/culture/cultural-image";
-import { resolveCulturalPlaceImageOverride } from "@/lib/cultural-place-image-overrides";
 import type { CulturalPlaceListItem } from "@yunicity/types";
 import {
   NEIGHBORHOOD_DETAIL_PLACES_CALM,
   NEIGHBORHOOD_DETAIL_PLACES_SUBTITLE,
   NEIGHBORHOOD_DETAIL_PLACES_TITLE,
   buildMapPlaceUrl,
-  resolveCulturalPlaceHeroUrl,
+  resolveCulturalPlaceDisplayUrl,
 } from "@yunicity/utils";
 import Link from "next/link";
 
@@ -44,7 +43,7 @@ export function NeighborhoodDetailPlaces({ places, city }: NeighborhoodDetailPla
 
 function PlaceCard({ place, city }: { place: CulturalPlaceListItem; city: string }) {
   const imageUrl =
-    resolveCulturalPlaceImageOverride(place) ?? resolveCulturalPlaceHeroUrl(place);
+    resolveCulturalPlaceDisplayUrl(place, "hero");
 
   return (
     <Link

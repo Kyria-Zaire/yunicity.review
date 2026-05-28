@@ -62,9 +62,20 @@ def _normalize_url(url: str | None) -> str | None:
         return None
 
     path_lower = (parsed.path or "").lower()
-    if not any(path_lower.endswith(ext) for ext in ALLOWED_IMAGE_EXTENSIONS):
+    has_allowed_ext = any(path_lower.endswith(ext) for ext in ALLOWED_IMAGE_EXTENSIONS)
+    if not has_allowed_ext:
+        netloc = parsed.netloc.lower()
+        query_lower = parsed.query.lower()
+
+        # Unsplash image URLs often omit the extension in the path, while
+        # the format is specified via query params (e.g. `fm=jpg` + `auto=format`).
+        if "images.unsplash.com" in netloc:
+            if "auto=format" in query_lower or "fm=jpg" in query_lower or "fm=png" in query_lower:
+                return trimmed[:500]
+            return None
+
         # Wikimedia Special:FilePath redirects without file extension in path.
-        if "wikimedia.org" not in parsed.netloc and "commons.wikimedia.org" not in parsed.netloc:
+        if "wikimedia.org" not in netloc and "commons.wikimedia.org" not in netloc:
             return None
 
     return trimmed[:500]

@@ -150,3 +150,72 @@ body {
 .web-sidebar-footer {
   flex-shrink: 0;
 }
+
+/* Passport — sidebar compacte 480–1279px, top nav 1280px+ */
+@media (min-width: 1280px) {
+  .passport-shell-grid.web-three-col {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 0;
+  }
+
+  .passport-shell-grid .web-sidebar-aside {
+    display: none;
+  }
+
+  .passport-shell-grid .passport-top-nav,
+  .passport-shell-grid .citizen-top-nav {
+    display: block;
+  }
+}
+
+@media (max-width: 1279.98px) {
+  .passport-shell-grid .passport-top-nav,
+  .passport-shell-grid .citizen-top-nav {
+    display: none !important;
+  }
+}
+
+/* Notifications — sidebar compacte 480–1279px, top nav 1280px+ */
+@media (min-width: 1280px) {
+  .notifications-shell-grid.web-three-col {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 0;
+  }
+
+  .notifications-shell-grid .web-sidebar-aside {
+    display: none;
+  }
+
+  .notifications-shell-grid .citizen-top-nav {
+    display: block;
+  }
+}
+
+@media (max-width: 1279.98px) {
+  .notifications-shell-grid .citizen-top-nav {
+    display: none !important;
+  }
+}
+
+/* Lieux — sidebar interne + top nav desktop */
+@media (min-width: 1280px) {
+  .places-shell-grid.web-three-col {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 0;
+  }
+
+  .places-shell-grid .web-sidebar-aside {
+    display: none;
+  }
+
+  .places-shell-grid .citizen-top-nav {
+    display: block;
+  }
+}
+
+@media (max-width: 1279.98px) {
+  .places-shell-grid .citizen-top-nav {
+    display: none !important;
+  }
+}
+

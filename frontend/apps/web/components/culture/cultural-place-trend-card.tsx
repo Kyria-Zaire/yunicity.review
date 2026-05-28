@@ -1,7 +1,6 @@
 "use client";
 
 import { CulturalImageCredit } from "@/components/culture/cultural-image";
-import { resolveCulturalPlaceImageOverride } from "@/lib/cultural-place-image-overrides";
 import type { CulturalPlaceListItem } from "@yunicity/types";
 import {
   SEARCH_EXPLORER_CULTURE_BADGE,
@@ -11,7 +10,7 @@ import {
   buildMapPlaceUrl,
   culturalPlaceCategoryLabel,
   getCulturalPlaceImageCredit,
-  resolveCulturalPlaceThumbnailUrl,
+  resolveCulturalPlaceDisplayUrl,
 } from "@yunicity/utils";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
@@ -268,7 +267,7 @@ function TrendAction({
 }
 
 function PlaceThumb({ place, compact = false }: { place: CulturalPlaceListItem; compact?: boolean }) {
-  const src = resolveCulturalPlaceImageOverride(place) ?? resolveCulturalPlaceThumbnailUrl(place);
+  const src = resolveCulturalPlaceDisplayUrl(place, "thumbnail");
   const [failed, setFailed] = useState(false);
   const showImage = Boolean(src) && !failed;
   const sizeClass = compact ? "h-16 w-16" : "h-[72px] w-[72px] sm:h-20 sm:w-20";

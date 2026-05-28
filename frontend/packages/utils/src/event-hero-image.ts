@@ -15,26 +15,18 @@ export const EVENT_TYPE_FALLBACK_IMAGES: Record<string, string> = {
   workshop: EDITORIAL_IMAGE_ATELIER_PHOTO_URBAIN,
 };
 
-const CULTURAL_PLACE_IMAGE_OVERRIDES: Record<string, string> = {
-  "porte-de-mars":
-    "https://th.bing.com/th/id/OIP.gQdEGwtjmHxBpBuiRqxHTAHaEI?w=310&h=180&c=7&r=0&o=7&pid=1.7&rm=3",
-  "bibliotheque-carnegie":
-    "https://tse3.mm.bing.net/th/id/OIP.cLDw55L0jijFkgopwKjCAgHaFj?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
-  "basilique-saint-remi":
-    "https://www.actualitix.com/wp-content/uploads/2016/11/basilique-saint-remi-a-reims.jpg",
-  "musee-des-beaux-arts":
-    "https://th.bing.com/th/id/OIP.hp2aszpxkbRTCe5IVMvDJgHaEL?w=312&h=180&c=7&r=0&o=7&pid=1.7&rm=3",
-  "palais-du-tau":
-    "https://img-4.linternaute.com/uQ_yW33guQHqdZTQdtIaFMhcK2Y=/1240x/smart/f4cad198146d41eb91fb8a9859ce5adc/ccmcms-linternaute/18659868.jpg",
-  "cathedrale-notre-dame":
-    "https://cdn.elebase.io/173fe953-8a63-4a8a-8ca3-1bacb56d78a5/a016fa00-8eec-4399-bcb8-10f91b9acfd5-shutterstock_200545976.jpg?q=90",
-};
+import {
+  resolveCulturalPlaceDisplayUrl,
+  resolveCulturalPlaceImageOverride,
+} from "./cultural-place-display-image";
 
-export function resolveCulturalPlaceImageOverride(
-  place: Pick<CulturalPlaceListItem, "slug">,
-): string | null {
-  return CULTURAL_PLACE_IMAGE_OVERRIDES[place.slug] ?? null;
-}
+export {
+  GENERIC_CULTURAL_UNSPLASH_PHOTO_ID,
+  isGenericCulturalPlaceholderUrl,
+  resolveCulturalPlaceDisplayUrl,
+  resolveCulturalPlaceImageOverride,
+  resolveCulturalPlaceSlugImageOverride,
+} from "./cultural-place-display-image";
 
 function squaredDistance(latA: number, lonA: number, latB: number, lonB: number): number {
   const dLat = latA - latB;

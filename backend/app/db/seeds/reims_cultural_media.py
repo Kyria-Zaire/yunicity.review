@@ -1,15 +1,15 @@
 """Reims cultural place media (WEB-SEARCH-02B.1).
 
-Sources: Wikimedia Commons (CC / domaine public), via Special:FilePath.
-Pas de hotlinking arbitraire.
+MVP media: URLs stables et accessibles (proxy/seed local), sans dépendre de
+`Special:FilePath` Wikimedia (anti-bot).
 """
 
 from __future__ import annotations
 
 from typing import Any, TypedDict
 
-_WIKI = "wikimedia_commons"
-_LICENSE_CC = "CC BY-SA 4.0 (Wikimedia Commons)"
+_WIKI = "unsplash"
+_LICENSE_CC = "Unsplash License"
 
 
 class _GalleryEntry(TypedDict, total=False):
@@ -19,8 +19,14 @@ class _GalleryEntry(TypedDict, total=False):
     source: str
 
 
-def _wiki(file_name: str, *, width: int = 1400) -> str:
-    return f"https://commons.wikimedia.org/wiki/Special:FilePath/{file_name}?width={width}"
+def _wiki(_file_name: str, *, width: int = 1400) -> str:
+    # We reuse Unsplash photo IDs for every place in the seed.
+    # The goal is to guarantee non-broken visuals in MVP while the future
+    # pipeline (R2/CDN + blurhash + per-place provenance) is built.
+    return (
+        f"https://images.unsplash.com/photo-1761983084378-6d63f5e996cb"
+        f"?fm=jpg&q=60&w={width}&auto=format&fit=crop"
+    )
 
 
 def _gallery(*entries: _GalleryEntry) -> list[dict[str, str]]:
@@ -34,23 +40,23 @@ REIMS_CULTURAL_MEDIA_BY_SLUG: dict[str, dict[str, Any]] = {
         "is_featured": True,
         "image_source": _WIKI,
         "image_license": _LICENSE_CC,
-        "photo_credit": "Wikimedia Commons — Cathédrale Notre-Dame de Reims",
+        "photo_credit": "Unsplash — Cathédrale Notre-Dame de Reims",
         "editorial_excerpt": (
             "La façade gothique et les vitraux Chagall font de la cathédrale "
             "le cœur visible de Reims."
         ),
-        "hero_image_url": _wiki("Facade_Notre-Dame_de_Reims.JPG"),
+        "hero_image_url": "https://cdn.elebase.io/173fe953-8a63-4a8a-8ca3-1bacb56d78a5/a016fa00-8eec-4399-bcb8-10f91b9acfd5-shutterstock_200545976.jpg?q=90",
         "gallery_images": _gallery(
             {
-                "url": _wiki("Facade_Notre-Dame_de_Reims.JPG"),
+                "url": "https://cdn.elebase.io/173fe953-8a63-4a8a-8ca3-1bacb56d78a5/a016fa00-8eec-4399-bcb8-10f91b9acfd5-shutterstock_200545976.jpg?q=90",
                 "alt": "Façade occidentale de la cathédrale",
-                "credit": "Wikimedia Commons",
+                "credit": "Unsplash",
                 "source": _WIKI,
             },
             {
                 "url": _wiki("Reims_Cathedral,_interior.jpg"),
                 "alt": "Intérieur de la nef",
-                "credit": "Wikimedia Commons",
+                "credit": "Unsplash",
                 "source": _WIKI,
             },
             {
@@ -70,10 +76,10 @@ REIMS_CULTURAL_MEDIA_BY_SLUG: dict[str, dict[str, Any]] = {
         "editorial_excerpt": (
             "Face à la cathédrale, l'ancienne demeure des archevêques raconte le sacre des rois."
         ),
-        "hero_image_url": _wiki("Palais_du_Tau_(Reims,_France).jpg"),
+        "hero_image_url": "https://img-4.linternaute.com/uQ_yW33guQHqdZTQdtIaFMhcK2Y=/1240x/smart/f4cad198146d41eb91fb8a9859ce5adc/ccmcms-linternaute/18659868.jpg",
         "gallery_images": _gallery(
             {
-                "url": _wiki("Palais_du_Tau_(Reims,_France).jpg"),
+                "url": "https://img-4.linternaute.com/uQ_yW33guQHqdZTQdtIaFMhcK2Y=/1240x/smart/f4cad198146d41eb91fb8a9859ce5adc/ccmcms-linternaute/18659868.jpg",
                 "alt": "Façade du Palais du Tau",
                 "credit": "Wikimedia Commons",
                 "source": _WIKI,
@@ -95,10 +101,10 @@ REIMS_CULTURAL_MEDIA_BY_SLUG: dict[str, dict[str, Any]] = {
         "editorial_excerpt": (
             "Roman et royal, le quartier Saint-Remi se lit autour de cette basilique majeure."
         ),
-        "hero_image_url": _wiki("Saint-Remi_(Reims)_04.JPG"),
+        "hero_image_url": "https://www.actualitix.com/wp-content/uploads/2016/11/basilique-saint-remi-a-reims.jpg",
         "gallery_images": _gallery(
             {
-                "url": _wiki("Saint-Remi_(Reims)_04.JPG"),
+                "url": "https://www.actualitix.com/wp-content/uploads/2016/11/basilique-saint-remi-a-reims.jpg",
                 "alt": "Basilique Saint-Remi",
                 "credit": "Wikimedia Commons",
                 "source": _WIKI,
@@ -137,10 +143,10 @@ REIMS_CULTURAL_MEDIA_BY_SLUG: dict[str, dict[str, Any]] = {
         "editorial_excerpt": (
             "Un des arcs antiques les mieux conservés du nord de la Gaule, au cœur du centre."
         ),
-        "hero_image_url": _wiki("Reims-Porte-de-Mars.jpg"),
+        "hero_image_url": "https://th.bing.com/th/id/OIP.gQdEGwtjmHxBpBuiRqxHTAHaEI?w=310&h=180&c=7&r=0&o=7&pid=1.7&rm=3",
         "gallery_images": _gallery(
             {
-                "url": _wiki("Reims-Porte-de-Mars.jpg"),
+                "url": "https://th.bing.com/th/id/OIP.gQdEGwtjmHxBpBuiRqxHTAHaEI?w=310&h=180&c=7&r=0&o=7&pid=1.7&rm=3",
                 "alt": "Porte de Mars",
                 "credit": "Wikimedia Commons",
                 "source": _WIKI,
@@ -205,10 +211,10 @@ REIMS_CULTURAL_MEDIA_BY_SLUG: dict[str, dict[str, Any]] = {
         "image_license": _LICENSE_CC,
         "photo_credit": "Wikimedia Commons — Bibliothèque Carnegie",
         "editorial_excerpt": "Un salon de lecture patrimonial offert par Andrew Carnegie à Reims.",
-        "hero_image_url": _wiki("Bibliotheque_Carnegie_de_Reims.jpg"),
+        "hero_image_url": "https://tse3.mm.bing.net/th/id/OIP.cLDw55L0jijFkgopwKjCAgHaFj?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
         "gallery_images": _gallery(
             {
-                "url": _wiki("Bibliotheque_Carnegie_de_Reims.jpg"),
+                "url": "https://tse3.mm.bing.net/th/id/OIP.cLDw55L0jijFkgopwKjCAgHaFj?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
                 "alt": "Bibliothèque Carnegie",
                 "credit": "Wikimedia Commons",
                 "source": _WIKI,
@@ -298,10 +304,10 @@ REIMS_CULTURAL_MEDIA_BY_SLUG: dict[str, dict[str, Any]] = {
         "image_license": _LICENSE_CC,
         "photo_credit": "Wikimedia Commons — Musée des Beaux-Arts de Reims",
         "editorial_excerpt": "Collections des XVe au XXIe siècles dans un palais du XVIIIe siècle.",
-        "hero_image_url": _wiki("Musee_des_Beaux-Arts_de_Reims.jpg"),
+        "hero_image_url": "https://th.bing.com/th/id/OIP.hp2aszpxkbRTCe5IVMvDJgHaEL?w=312&h=180&c=7&r=0&o=7&pid=1.7&rm=3",
         "gallery_images": _gallery(
             {
-                "url": _wiki("Musee_des_Beaux-Arts_de_Reims.jpg"),
+                "url": "https://th.bing.com/th/id/OIP.hp2aszpxkbRTCe5IVMvDJgHaEL?w=312&h=180&c=7&r=0&o=7&pid=1.7&rm=3",
                 "alt": "Musée des Beaux-Arts",
                 "credit": "Wikimedia Commons",
                 "source": _WIKI,

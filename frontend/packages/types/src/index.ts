@@ -93,11 +93,13 @@ export type {
 } from "./notifications";
 
 export type {
+  NotificationInboxTab,
   SocialNotificationType,
   UserNotificationItem,
   UserNotificationListResponse,
   UserNotificationPreferences,
   UserNotificationPreferencesUpdate,
+  UserNotificationSummaryResponse,
 } from "./notifications-inbox";
 
 export type {
@@ -142,6 +144,8 @@ export type {
   CulturalPlaceListItem,
   CulturalPlaceListResponse,
   CulturalPlaceNeighborhoodSummary,
+  CulturalPlaceSort,
+  CulturalPlaceStatsResponse,
   MapCulturalPlaceItem,
   MapCulturalPlaceListResponse,
   MapCulturalPlacesListParams,

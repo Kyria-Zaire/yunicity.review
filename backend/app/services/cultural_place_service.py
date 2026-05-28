@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.cultural_place_constants import (
@@ -9,6 +11,9 @@ from app.core.cultural_place_constants import (
     CULTURAL_PLACE_LIST_LIMIT_MAX,
     CULTURAL_PLACE_MAP_LIMIT_DEFAULT,
     CULTURAL_PLACE_MAP_LIMIT_MAX,
+    CULTURAL_PLACE_SORT_FEATURED,
+    CULTURAL_PLACE_SORT_NAME,
+    CULTURAL_PLACE_SORT_RECENT,
 )
 from app.core.errors import AppError
 from app.models.cultural_place import CulturalPlace
@@ -20,6 +25,7 @@ from app.schemas.cultural_place import (
     CulturalPlaceListResponse,
     CulturalPlaceMediaFields,
     CulturalPlaceNeighborhoodSummary,
+    CulturalPlaceStatsResponse,
     MapCulturalPlaceItem,
     MapCulturalPlaceListResponse,
 )
@@ -37,21 +43,79 @@ class CulturalPlaceService:
         *,
         city: str,
         featured_only: bool,
+        categories: list[str] | None,
+        sort: str,
         limit: int,
+        offset: int,
     ) -> CulturalPlaceListResponse:
         trimmed_city = city.strip()
         capped_limit = min(max(limit, 1), CULTURAL_PLACE_LIST_LIMIT_MAX)
+        safe_offset = max(offset, 0)
+        resolved_sort = self._resolve_sort(sort)
+        normalized_categories = self._normalize_categories(categories)
+        total = await self._repo.count_for_city(
+            city=trimmed_city,
+            featured_only=featured_only,
+            active_only=True,
+            categories=normalized_categories,
+        )
         rows = await self._repo.list_for_city(
             city=trimmed_city,
             featured_only=featured_only,
             active_only=True,
+            categories=normalized_categories,
+            sort=resolved_sort,
             limit=capped_limit,
+            offset=safe_offset,
         )
         return CulturalPlaceListResponse(
             city=trimmed_city,
             items=[self._to_list_item(row) for row in rows],
             count=len(rows),
+            total=total,
+            offset=safe_offset,
+            limit=capped_limit,
         )
+
+    async def get_city_stats(self, *, city: str) -> CulturalPlaceStatsResponse:
+        trimmed_city = city.strip()
+        now = datetime.now(UTC)
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        total_places = await self._repo.count_for_city(
+            city=trimmed_city,
+            featured_only=False,
+            active_only=True,
+        )
+        new_this_month = await self._repo.count_new_since(
+            city=trimmed_city,
+            since=month_start,
+            active_only=True,
+        )
+        category_count = await self._repo.count_distinct_categories(
+            city=trimmed_city,
+            active_only=True,
+        )
+        return CulturalPlaceStatsResponse(
+            city=trimmed_city,
+            total_places=total_places,
+            new_this_month=new_this_month,
+            category_count=category_count,
+        )
+
+    @staticmethod
+    def _resolve_sort(sort: str) -> str:
+        if sort == CULTURAL_PLACE_SORT_NAME:
+            return CULTURAL_PLACE_SORT_NAME
+        if sort == CULTURAL_PLACE_SORT_RECENT:
+            return CULTURAL_PLACE_SORT_RECENT
+        return CULTURAL_PLACE_SORT_FEATURED
+
+    @staticmethod
+    def _normalize_categories(categories: list[str] | None) -> list[str] | None:
+        if not categories:
+            return None
+        cleaned = [item.strip().lower() for item in categories if item.strip()]
+        return cleaned or None
 
     async def get_public_by_slug(self, *, city: str, slug: str) -> CulturalPlaceDetail:
         row = await self._repo.get_by_city_slug(
@@ -154,6 +218,8 @@ class CulturalPlaceService:
             source_name=row.source_name,
             image_credit=normalized.image_credit,
             neighborhood=self._neighborhood_summary(row),
+            is_featured=row.is_featured,
+            created_at=row.created_at.isoformat(),
         )
 
     def _to_detail(self, row: CulturalPlace) -> CulturalPlaceDetail:

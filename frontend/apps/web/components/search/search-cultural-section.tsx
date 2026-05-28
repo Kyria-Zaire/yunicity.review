@@ -34,7 +34,7 @@ export function SearchCulturalSection({ places }: { places: CulturalPlaceListIte
           {SEARCH_EXPLORER_CULTURE_TITLE}
         </h2>
         <Link
-          href="/map"
+          href="/places"
           className="text-sm font-semibold text-yunicity-primary transition hover:text-yunicity-primary-hover"
         >
           {SEARCH_EXPLORER_VIEW_ALL_CULTURE}

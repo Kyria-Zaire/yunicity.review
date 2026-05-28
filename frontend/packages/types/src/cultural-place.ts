@@ -36,6 +36,8 @@ export type CulturalPlaceListItem = CulturalPlaceMediaFields & {
   source_name: string;
   image_credit: string | null;
   neighborhood: CulturalPlaceNeighborhoodSummary | null;
+  is_featured?: boolean;
+  created_at?: string;
 };
 
 export type CulturalPlaceDetail = CulturalPlaceListItem & {
@@ -51,7 +53,19 @@ export type CulturalPlaceListResponse = {
   city: string;
   items: CulturalPlaceListItem[];
   count: number;
+  total: number;
+  offset: number;
+  limit: number;
 };
+
+export type CulturalPlaceStatsResponse = {
+  city: string;
+  total_places: number;
+  new_this_month: number;
+  category_count: number;
+};
+
+export type CulturalPlaceSort = "featured" | "name" | "recent";
 
 export type MapCulturalPlaceItem = CulturalPlaceMediaFields & {
   id: string;
