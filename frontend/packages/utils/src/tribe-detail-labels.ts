@@ -1,0 +1,16 @@
+export const TRIBE_DETAIL_HERO_JOIN = "Rejoindre la tribu";
+export const TRIBE_DETAIL_HERO_MOMENTS = "Voir les moments";
+export const TRIBE_DETAIL_HERO_SHARE = "Partager";
+export const TRIBE_DETAIL_STORY_TITLE = "Récit de Tribu";
+export const TRIBE_DETAIL_HABITS_TITLE = "Leurs habitudes";
+export const TRIBE_DETAIL_LIGHT_SPOTS_TITLE = "Spots de lumière";
+export const TRIBE_DETAIL_AGENDA_TITLE = "Agenda de tribu";
+export const TRIBE_DETAIL_FEED_TITLE = "Micro-vie locale";
+export const TRIBE_DETAIL_PORTRAITS_TITLE = "Portraits humains";
+export const TRIBE_DETAIL_LIFESTYLE_TITLE = "Vie de tribu";
+export const TRIBE_DETAIL_MAP_TITLE = "Territoire de la tribu";
+export const TRIBE_DETAIL_MAP_CTA = "Voir sur la carte";
+export const TRIBE_DETAIL_RIGHT_RAIL_NEARBY_TRIBES = "Tribus proches";
+export const TRIBE_DETAIL_RIGHT_RAIL_UPCOMING = "Moments à venir";
+export const TRIBE_DETAIL_RIGHT_RAIL_NEIGHBORHOOD = "Quartier lié";
+export const TRIBE_DETAIL_CALM_EMPTY = "Les premiers instants de cette tribu prennent doucement forme.";

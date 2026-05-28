@@ -14,6 +14,12 @@ export const EDITORIAL_IMAGE_CAFES_LECTURE =
 export const EDITORIAL_IMAGE_MUSIQUE_LOCALE =
   "https://images.unsplash.com/photo-1779200929467-2a7e3245833b?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fE11c2lxdWUlMjBsb2NhbGV8ZW58MHx8MHx8fDA%3D";
 
+export const EDITORIAL_IMAGE_PHOTOGRAPHES_URBAINS =
+  "https://media.istockphoto.com/id/891567000/photo/pedestrian-street-illuminated-by-numerous-christmas-decoration-in-the-city-center-of-niort.jpg?s=612x612&w=0&k=20&c=I_8biv-6CEOaGinm0VV-AEQ55iln30m0jHtcNXl0cc0=";
+
+export const EDITORIAL_IMAGE_RUNNING_REIMS =
+  "https://images.unsplash.com/photo-1590333748338-d629e4564ad9?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8UnVubmluZyUyMFJlaW1zfGVufDB8fDB8fHww";
+
 const EVENT_TYPE_EDITORIAL_IMAGES: Record<string, string> = {
   meetup: EDITORIAL_IMAGE_CAFE_RENCONTRE_ENTREPRENEURS,
   workshop: EDITORIAL_IMAGE_ATELIER_PHOTO_URBAIN,
@@ -27,11 +33,15 @@ const EVENT_TITLE_EDITORIAL_IMAGES: Record<string, string> = {
 const TRIBE_SLUG_EDITORIAL_IMAGES: Record<string, string> = {
   "cafes-lecture": EDITORIAL_IMAGE_CAFES_LECTURE,
   "musique-locale": EDITORIAL_IMAGE_MUSIQUE_LOCALE,
+  "photographes-urbains": EDITORIAL_IMAGE_PHOTOGRAPHES_URBAINS,
+  "running-reims": EDITORIAL_IMAGE_RUNNING_REIMS,
 };
 
 const TRIBE_CATEGORY_EDITORIAL_IMAGES: Record<string, string> = {
   cafe_culture: EDITORIAL_IMAGE_CAFES_LECTURE,
   music: EDITORIAL_IMAGE_MUSIQUE_LOCALE,
+  photography: EDITORIAL_IMAGE_PHOTOGRAPHES_URBAINS,
+  sport_local: EDITORIAL_IMAGE_RUNNING_REIMS,
 };
 
 /** Images éditoriales quartiers Reims — section « L’ambiance des quartiers ». */
