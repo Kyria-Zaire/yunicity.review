@@ -1,23 +1,14 @@
-"use client";
-
-import { OrganizationRequestAside } from "@/components/layout/web-page-asides";
-import { WebAppShell } from "@/components/layout";
-import { OrganizationRequestForm } from "@/components/organization-request-form";
+import { OrganizationRequestScreen } from "@/components/organizations/organization-request-screen";
 import { ProtectedRoute } from "@/components/protected-route";
+import { ORG_REQUEST_LOADING } from "@yunicity/utils";
+import { Suspense } from "react";
 
 export default function OrganizationRequestPage() {
   return (
     <ProtectedRoute>
-      <WebAppShell
-        header={{
-          title: "Proposer un lieu",
-          subtitle: "Rejoins le réseau des acteurs locaux de Reims.",
-        }}
-        context={<OrganizationRequestAside />}
-        contentWidth="form"
-      >
-        <OrganizationRequestForm />
-      </WebAppShell>
+      <Suspense fallback={<p className="px-4 py-6 text-sm text-neutral-500">{ORG_REQUEST_LOADING}</p>}>
+        <OrganizationRequestScreen />
+      </Suspense>
     </ProtectedRoute>
   );
 }
