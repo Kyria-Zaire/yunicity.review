@@ -12,6 +12,7 @@ import type {
   TribePostCreatePayload,
   TribePostListResponse,
   TribeUpdatePayload,
+  TribeUserCreatePayload,
 } from "@yunicity/types";
 import type { FeedPost } from "@yunicity/types";
 
@@ -40,6 +41,10 @@ export class TribesApi extends ApiClientBase {
       search.set("page_size", String(params.page_size));
     }
     return this.getJson<TribeListResponse>(`/tribes?${search.toString()}`);
+  }
+
+  createTribe(payload: TribeUserCreatePayload): Promise<Tribe> {
+    return this.postJson<Tribe>("/tribes", payload);
   }
 
   getTribe(slug: string, city: string): Promise<Tribe> {

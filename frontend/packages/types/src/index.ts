@@ -198,6 +198,7 @@ export type {
   TribePostCreatePayload,
   TribePostListResponse,
   TribeUpdatePayload,
+  TribeUserCreatePayload,
   TribeVisibility,
 } from "./tribe";
 

@@ -109,3 +109,13 @@ export interface TribeUpdatePayload {
   is_featured?: boolean;
   member_limit?: number;
 }
+
+export interface TribeUserCreatePayload {
+  name: string;
+  description: string;
+  city: string;
+  category: string;
+  visibility: TribeVisibility;
+  cover_image_url?: string | null;
+  charter_accepted: boolean;
+}
