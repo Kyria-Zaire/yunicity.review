@@ -1,4 +1,4 @@
-"""Feed post ORM (TICKET-402)."""
+﻿"""Feed post ORM (TICKET-402)."""
 
 from __future__ import annotations
 
@@ -91,6 +91,13 @@ class Post(TimestampMixin, Base):
     story_expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True
     )
+    story_audience: Mapped[str] = mapped_column(
+        String(24), nullable=False, server_default="public"
+    )
+    story_tags: Mapped[list[str]] = mapped_column(
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
+    )
+    story_media_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
     view_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default="0"
     )
