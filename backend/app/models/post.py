@@ -6,7 +6,7 @@ import uuid
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, ForeignKey, Index, Integer, Numeric, String, Text, Uuid, text
-from sqlalchemy.dialects.postgresql import TSVECTOR
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -39,6 +39,10 @@ class Post(TimestampMixin, Base):
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     body: Mapped[str | None] = mapped_column(Text, nullable=True)
     media_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    discussion_category: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    discussion_tags: Mapped[list[str]] = mapped_column(
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
+    )
     latitude: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
     longitude: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
     like_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
@@ -72,6 +76,12 @@ class Post(TimestampMixin, Base):
         nullable=True,
         index=True,
     )
+    linked_tribe_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("tribes.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     search_vector: Mapped[str] = mapped_column(
         TSVECTOR,
         nullable=False,
@@ -90,7 +100,8 @@ class Post(TimestampMixin, Base):
         "Neighborhood",
         back_populates="posts",
     )
-    tribe: Mapped[Tribe | None] = relationship("Tribe", back_populates="posts")
+    tribe: Mapped[Tribe | None] = relationship("Tribe", back_populates="posts", foreign_keys=[tribe_id])
+    linked_tribe: Mapped[Tribe | None] = relationship("Tribe", foreign_keys=[linked_tribe_id])
     likes: Mapped[list[Like]] = relationship(
         "Like",
         back_populates="post",
