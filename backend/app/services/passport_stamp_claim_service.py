@@ -55,7 +55,11 @@ class PassportStampClaimService:
             else PartnerStatus(profile.partner_status)
         )
         if status not in PUBLIC_PARTNER_STATUSES:
-            raise AppError(403, "PARTNER_NOT_ACTIVE", "Ce partenaire n'est pas actif pour le moment.")
+            raise AppError(
+                403,
+                "PARTNER_NOT_ACTIVE",
+                "Ce partenaire n'est pas actif pour le moment.",
+            )
 
         # 3. Validate offer if present
         partner_offer_id: uuid.UUID | None = None
@@ -63,7 +67,11 @@ class PassportStampClaimService:
             partner_offer_id = uuid.UUID(partner_offer_id_str)
             offer = await self._offers.get_by_id(partner_offer_id)
             if offer is None or not offer.is_active:
-                raise AppError(410, "OFFER_NOT_ACTIVE_OR_EXPIRED", "Cette offre n'est plus disponible.")
+                raise AppError(
+                    410,
+                    "OFFER_NOT_ACTIVE_OR_EXPIRED",
+                    "Cette offre n'est plus disponible.",
+                )
             if offer.valid_until and offer.valid_until < now:
                 raise AppError(410, "OFFER_NOT_ACTIVE_OR_EXPIRED", "Cette offre a expiré.")
 
