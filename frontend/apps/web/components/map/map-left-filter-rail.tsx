@@ -1,5 +1,7 @@
 "use client";
 
+import { MapPartnersRail } from "@/components/map/map-partners-rail";
+import type { PartnerPublic } from "@yunicity/types";
 import type { MapPortalAmbianceId, MapPortalCategoryId, MapPortalFilters } from "@yunicity/utils";
 import {
   DEFAULT_MAP_PORTAL_FILTERS,
@@ -9,6 +11,7 @@ import {
   MAP_PORTAL_CATEGORY_EVENTS,
   MAP_PORTAL_CATEGORY_NATURE,
   MAP_PORTAL_CATEGORY_NEIGHBORHOODS,
+  MAP_PORTAL_CATEGORY_PARTNERS,
   MAP_PORTAL_CATEGORY_PLACES,
   MAP_PORTAL_CATEGORY_TRANSIT,
   MAP_PORTAL_CATEGORY_TRIBES,
@@ -34,6 +37,7 @@ import {
   Navigation,
   Sparkles,
   Star,
+  Store,
   TreePine,
   Users,
 } from "lucide-react";
@@ -52,6 +56,7 @@ const CATEGORIES: {
   { id: "tribes", label: MAP_PORTAL_CATEGORY_TRIBES, icon: Users },
   { id: "neighborhoods", label: MAP_PORTAL_CATEGORY_NEIGHBORHOODS, icon: MapPin },
   { id: "transit", label: MAP_PORTAL_CATEGORY_TRANSIT, icon: Bus },
+  { id: "partners", label: MAP_PORTAL_CATEGORY_PARTNERS, icon: Store },
 ];
 
 const AMBIANCES: { id: MapPortalAmbianceId; label: string }[] = [
@@ -68,6 +73,9 @@ type MapLeftFilterRailProps = {
   filters: MapPortalFilters;
   favoritesCount: number;
   visitedCount: number;
+  partners?: PartnerPublic[];
+  selectedPartnerSlug?: string | null;
+  onSelectPartner?: (slug: string) => void;
   onChangeFilters: (filters: MapPortalFilters) => void;
   onActivateGeolocation: () => void;
 };
@@ -77,6 +85,9 @@ export function MapLeftFilterRail({
   filters,
   favoritesCount,
   visitedCount,
+  partners = [],
+  selectedPartnerSlug = null,
+  onSelectPartner,
   onChangeFilters,
   onActivateGeolocation,
 }: MapLeftFilterRailProps) {
@@ -239,6 +250,16 @@ export function MapLeftFilterRail({
             {MAP_PORTAL_MORE_FILTERS}
           </Link>
         </section>
+
+        {onSelectPartner ? (
+          <section className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm">
+            <MapPartnersRail
+              partners={partners}
+              selectedSlug={selectedPartnerSlug}
+              onSelect={onSelectPartner}
+            />
+          </section>
+        ) : null}
 
         <section className="rounded-2xl bg-gradient-to-br from-yunicity-primary via-[#5B5CE6] to-[#7C3AED] p-5 text-white shadow-sm">
           <div className="flex items-center gap-2">

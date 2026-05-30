@@ -16,7 +16,8 @@ import type {
 } from "@yunicity/utils";
 import type { MapRouteProfile } from "@yunicity/utils";
 import { MAP_RECENTER, resolveCityMapCenter } from "@yunicity/utils";
-import { Users } from "lucide-react";
+import type { MapPartnerMarker } from "@/hooks/use-map-partners";
+import { Store, Users } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Map, {
   Layer,
@@ -38,23 +39,27 @@ const EVENT_MARKER_COLOR = "#2A2FFF";
 const CULTURAL_MARKER_COLOR = "#5C4D7D";
 const NEIGHBORHOOD_MARKER_COLOR = "#0F766E";
 const TRIBE_MARKER_COLOR = "#7C3AED";
+const PARTNER_MARKER_COLOR = "#FF2D78";
 
 type EventMapProps = {
   city: string;
   accessToken: string;
   events: MapEventItem[];
   culturalPlaces: MapCulturalPlaceItem[];
+  partnerMarkers?: MapPartnerMarker[];
   neighborhoodMarkers: MapNeighborhoodMarker[];
   tribeMarkers: MapTribeMarker[];
   selection: MapTerritorySelection | null;
   onBoundsChange: (bounds: MapBoundsLike) => void;
   onSelectEvent: (id: string) => void;
   onSelectPlace: (slug: string) => void;
+  onSelectPartner?: (slug: string) => void;
   onSelectNeighborhood: (slug: string) => void;
   onSelectTribe: (slug: string) => void;
   onClearSelection: () => void;
   focusedEventId?: string | null;
   selectedCulturalSlug?: string | null;
+  selectedPartnerSlug?: string | null;
   routeGeometry?: MapRouteGeometry | null;
   routeTargetName?: string | null;
   routeSummary?: MapRouteSummary | null;
@@ -96,17 +101,20 @@ export function EventMap({
   accessToken,
   events,
   culturalPlaces,
+  partnerMarkers = [],
   neighborhoodMarkers,
   tribeMarkers,
   selection,
   onBoundsChange,
   onSelectEvent,
   onSelectPlace,
+  onSelectPartner,
   onSelectNeighborhood,
   onSelectTribe,
   onClearSelection,
   focusedEventId = null,
   selectedCulturalSlug = null,
+  selectedPartnerSlug = null,
   routeGeometry = null,
   routeTargetName = null,
   routeSummary = null,
@@ -355,6 +363,30 @@ export function EventMap({
               style={{ backgroundColor: CULTURAL_MARKER_COLOR }}
             >
               ◆
+            </button>
+          </Marker>
+        ))}
+
+        {partnerMarkers.map((partner) => (
+          <Marker
+            key={partner.id}
+            latitude={partner.latitude}
+            longitude={partner.longitude}
+            anchor="center"
+          >
+            <button
+              type="button"
+              aria-label={partner.name}
+              onClick={(clickEvent) => {
+                clickEvent.stopPropagation();
+                onSelectPartner?.(partner.slug);
+              }}
+              className={`flex h-6 w-6 items-center justify-center rounded-full border-2 border-white shadow-md transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary ${
+                selectedPartnerSlug === partner.slug ? "scale-110" : ""
+              }`}
+              style={{ backgroundColor: PARTNER_MARKER_COLOR }}
+            >
+              <Store className="h-3 w-3 text-white" aria-hidden />
             </button>
           </Marker>
         ))}

@@ -27,6 +27,8 @@ import {
   filterTribeMarkersForLayer,
   geocodeMapboxAddress,
   mapLayerToUrlSlug,
+  MAP_PARTNER_GEO_NOTICE,
+  hasPartnerCoordinates,
   parseMapParams,
   resolveCityMapCenter,
   resolveMapPortalLayer,
@@ -45,12 +47,14 @@ import { EventMap } from "@/components/map/event-map";
 import { MapAroundYouCarousel } from "@/components/map/map-around-you-carousel";
 import { MapAppShell } from "@/components/map/map-app-shell";
 import { MapLeftFilterRail } from "@/components/map/map-left-filter-rail";
+import { MapPartnerDetailPanel } from "@/components/map/map-partner-detail-panel";
 import { MapPlaceDetailPanel } from "@/components/map/map-place-detail-panel";
 import { MapSearchChips } from "@/components/map/map-search-chips";
 import { MapSelectedPanel } from "@/components/map/map-selected-panel";
 import { useMapPortalStats } from "@/hooks/use-map-portal-stats";
 import { useMapBbox } from "@/hooks/use-map-bbox";
 import { useMapCulturalPlaces } from "@/hooks/use-map-cultural-places";
+import { useMapPartners } from "@/hooks/use-map-partners";
 import { useMapEvents } from "@/hooks/use-map-events";
 import { useMapPageContext } from "@/hooks/use-map-page-context";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
@@ -88,6 +92,7 @@ export function EventMapScreen() {
   const [profileCity, setProfileCity] = useState(user?.city ?? DEFAULT_MAP_CITY);
   const [focusedEventId, setFocusedEventId] = useState<string | null>(null);
   const [selectedCulturalSlug, setSelectedCulturalSlug] = useState<string | null>(null);
+  const [selectedPartnerSlug, setSelectedPartnerSlug] = useState<string | null>(null);
   const [selection, setSelection] = useState<MapTerritorySelection | null>(null);
   const [recenterSignal, setRecenterSignal] = useState(0);
   const [flyToTarget, setFlyToTarget] = useState<LatLon | null>(null);
@@ -127,6 +132,9 @@ export function EventMapScreen() {
     placeCategories,
   );
 
+  const city = profileCity || mapContext.city || DEFAULT_MAP_CITY;
+  const { partners: mapPartners, markers: partnerMarkers } = useMapPartners(city);
+
   useEffect(() => {
     void api.getProfileMe().then((profile) => {
       if (profile.city) setProfileCity(profile.city);
@@ -163,8 +171,11 @@ export function EventMapScreen() {
     [filteredNeighborhoods, layerVisibility],
   );
 
-  const city = profileCity || mapContext.city;
   const showInitialLoading = !hasLoaded && loading;
+
+  const showPartnerLayer =
+    portalFilters.category === "all" || portalFilters.category === "partners";
+  const visiblePartnerMarkers = showPartnerLayer ? partnerMarkers : [];
 
   const tribeMarkers = useMemo(
     () =>
@@ -214,7 +225,8 @@ export function EventMapScreen() {
     visibleEvents.length === 0 &&
     visiblePlaces.length === 0 &&
     neighborhoodMarkers.length === 0 &&
-    tribeMarkers.length === 0;
+    tribeMarkers.length === 0 &&
+    (portalFilters.category !== "partners" || visiblePartnerMarkers.length === 0);
 
   const culturalBySlug = useMemo(() => {
     const map = new Map<string, CulturalPlaceListItem>();
@@ -563,6 +575,22 @@ export function EventMapScreen() {
         return;
       }
 
+      if (mapParams.partner) {
+        try {
+          const partner = await api.getPartner(mapParams.partner, city);
+          if (cancelled) return;
+          setSelectedPartnerSlug(partner.slug);
+          if (hasPartnerCoordinates(partner)) {
+            setFlyToTarget({ latitude: partner.latitude!, longitude: partner.longitude! });
+          } else {
+            setMapNotice(MAP_PARTNER_GEO_NOTICE);
+          }
+        } catch {
+          if (!cancelled) setMapNotice("Ce partenaire est introuvable ou non public.");
+        }
+        return;
+      }
+
       if (mapParams.place) {
         const fromContext = culturalBySlug.get(mapParams.place);
         if (fromContext) {
@@ -660,14 +688,85 @@ export function EventMapScreen() {
     mapParams.neighborhood,
     mapParams.place,
     mapParams.route,
+    mapParams.partner,
     mapParams.tribe,
     resolveRoutePlaceFromEvent,
     tribeMarkers,
   ]);
 
-  const showDetailRail = selection?.kind === "place" || selection?.kind === "event";
+  const selectedPartner = useMemo(
+    () =>
+      selectedPartnerSlug
+        ? mapPartners.find((item) => item.slug === selectedPartnerSlug) ?? null
+        : null,
+    [mapPartners, selectedPartnerSlug],
+  );
 
-  const detailRail = showDetailRail ? (
+  const handleSelectPartner = useCallback(
+    (slug: string) => {
+      const partner = mapPartners.find((item) => item.slug === slug);
+      setSelectedPartnerSlug(slug);
+      setSelection(null);
+      setSelectedCulturalSlug(null);
+      clearRoute();
+      updateQuery((params) => {
+        params.set("partner", slug);
+        params.delete("place");
+        params.delete("event");
+      });
+      if (partner && hasPartnerCoordinates(partner)) {
+        setFlyToTarget({
+          latitude: partner.latitude as number,
+          longitude: partner.longitude as number,
+        });
+        setMapNotice(null);
+      } else {
+        setMapNotice(MAP_PARTNER_GEO_NOTICE);
+      }
+    },
+    [mapPartners, clearRoute, updateQuery],
+  );
+
+  const showDetailRail =
+    selection?.kind === "place" || selection?.kind === "event" || selectedPartner != null;
+
+  const detailRail = selectedPartner ? (
+    <MapPartnerDetailPanel
+      partner={selectedPartner}
+      onClose={() => {
+        setSelectedPartnerSlug(null);
+        updateQuery((params) => {
+          params.delete("partner");
+        });
+      }}
+      onStartRoute={() => {
+        if (!hasPartnerCoordinates(selectedPartner)) return;
+        const place = {
+          id: selectedPartner.id,
+          slug: selectedPartner.slug,
+          name: selectedPartner.name,
+          short_description: selectedPartner.description ?? "Partenaire Yunicity",
+          city: selectedPartner.city,
+          address: selectedPartner.address ?? selectedPartner.city,
+          category: selectedPartner.category ?? "partner",
+          latitude: selectedPartner.latitude as number,
+          longitude: selectedPartner.longitude as number,
+          image_url: selectedPartner.cover_image_url,
+          hero_image_url: selectedPartner.cover_image_url,
+          thumbnail_image_url: selectedPartner.logo_url,
+          gallery_images: [],
+          editorial_excerpt: null,
+          photo_credit: null,
+          image_source: null,
+          image_alt: null,
+          source_name: "Yunicity",
+          image_credit: null,
+          neighborhood: null,
+        };
+        void handleStartRoute(place);
+      }}
+    />
+  ) : showDetailRail ? (
     <MapPlaceDetailPanel
       city={city}
       selection={selection}
@@ -694,6 +793,9 @@ export function EventMapScreen() {
         filters={portalFilters}
         favoritesCount={portalStats.favoritesCount}
         visitedCount={portalStats.visitedCount}
+        partners={mapPartners}
+        selectedPartnerSlug={selectedPartnerSlug}
+        onSelectPartner={handleSelectPartner}
         onChangeFilters={setPortalFilters}
         onActivateGeolocation={handleUsePositionOnMap}
       />
@@ -720,17 +822,20 @@ export function EventMapScreen() {
               accessToken={MAPBOX_TOKEN}
               events={visibleEvents}
               culturalPlaces={visiblePlaces}
+              partnerMarkers={visiblePartnerMarkers}
               neighborhoodMarkers={neighborhoodMarkers}
               tribeMarkers={tribeMarkers}
               selection={selection}
               onBoundsChange={updateFromBounds}
               onSelectEvent={handleSelectEvent}
               onSelectPlace={handleMapSelectCulturalSlug}
+              onSelectPartner={handleSelectPartner}
               onSelectNeighborhood={handleSelectNeighborhood}
               onSelectTribe={handleSelectTribe}
               onClearSelection={() => setSelection(null)}
               focusedEventId={focusedEventId}
               selectedCulturalSlug={selectedCulturalSlug}
+              selectedPartnerSlug={selectedPartnerSlug}
               routeGeometry={routeGeometry}
               routeTargetName={routeTarget?.name ?? null}
               routeLoading={routeLoading}

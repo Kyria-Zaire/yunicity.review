@@ -5,6 +5,7 @@ import { PlacesFeaturedRail } from "@/components/places/places-featured-rail";
 import { PlacesInternalSidebar } from "@/components/places/places-internal-sidebar";
 import { PlacesPortalStats } from "@/components/places/places-portal-stats";
 import { PlacesPortalToolbar } from "@/components/places/places-portal-toolbar";
+import { PlacesPartnersRail } from "@/components/places/places-partners-rail";
 import { PlacesRecentGrid } from "@/components/places/places-recent-grid";
 import { usePlacesPortalContext } from "@/hooks/use-places-portal-context";
 import {
@@ -15,15 +16,23 @@ import {
   PLACES_PORTAL_RETRY,
   PLACES_PORTAL_SUBTITLE,
   PLACES_PORTAL_TITLE,
+  buildPartnerPlaceCards,
 } from "@yunicity/utils";
 import { ChevronDown } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
 export function PlacesScreen() {
   const searchParams = useSearchParams();
   const cityParam = searchParams.get("city")?.trim() ?? "";
+  const filterParam = searchParams.get("filter")?.trim();
   const ctx = usePlacesPortalContext(cityParam);
+
+  useEffect(() => {
+    if (filterParam === "partners") {
+      ctx.setCategoryFilter("partners");
+    }
+  }, [filterParam, ctx.setCategoryFilter]);
 
   const scrollToSection = useCallback((sectionId: string) => {
     document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -73,21 +82,26 @@ export function PlacesScreen() {
               <>
                 <PlacesPortalStats stats={ctx.stats} />
 
-                <PlacesFeaturedRail places={ctx.featured} city={ctx.city} />
-
-                <div id="places-recent" className="scroll-mt-24">
-                  <PlacesRecentGrid
-                    places={ctx.recentPlaces}
-                    city={ctx.city}
-                    newBadgeIds={ctx.newBadgeIds}
-                  />
-                </div>
-
-                {ctx.recentPlaces.length === 0 ? (
-                  <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-10 text-center text-sm text-neutral-600">
-                    {PLACES_PORTAL_EMPTY}
-                  </p>
-                ) : null}
+                {ctx.showPartnersOnly ? (
+                  <PlacesPartnersRail cards={buildPartnerPlaceCards(ctx.partners)} city={ctx.city} />
+                ) : (
+                  <>
+                    <PlacesPartnersRail cards={ctx.partnerCards} city={ctx.city} />
+                    <PlacesFeaturedRail places={ctx.featured} city={ctx.city} />
+                    <div id="places-recent" className="scroll-mt-24">
+                      <PlacesRecentGrid
+                        places={ctx.recentPlaces}
+                        city={ctx.city}
+                        newBadgeIds={ctx.newBadgeIds}
+                      />
+                    </div>
+                    {ctx.recentPlaces.length === 0 ? (
+                      <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-10 text-center text-sm text-neutral-600">
+                        {PLACES_PORTAL_EMPTY}
+                      </p>
+                    ) : null}
+                  </>
+                )}
 
                 {ctx.hasMore ? (
                   <button

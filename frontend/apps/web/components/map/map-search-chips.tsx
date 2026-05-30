@@ -6,10 +6,11 @@ import {
   MAP_PORTAL_CHIP_CULTURE,
   MAP_PORTAL_CHIP_EVENTS,
   MAP_PORTAL_CHIP_MORE,
+  MAP_PORTAL_CHIP_PARTNERS,
   MAP_PORTAL_CHIP_PLACES,
   MAP_PORTAL_SEARCH_PLACEHOLDER,
 } from "@yunicity/utils";
-import { Calendar, Landmark, MapPin, Search, SlidersHorizontal, Star } from "lucide-react";
+import { Calendar, Landmark, MapPin, Search, SlidersHorizontal, Star, Store } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -23,6 +24,7 @@ const CHIPS: {
   { id: "events", label: MAP_PORTAL_CHIP_EVENTS, icon: Calendar },
   { id: "places", label: MAP_PORTAL_CHIP_PLACES, icon: MapPin },
   { id: "culture", label: MAP_PORTAL_CHIP_CULTURE, icon: Landmark },
+  { id: "partners", label: MAP_PORTAL_CHIP_PARTNERS, icon: Store },
   { id: "more", label: MAP_PORTAL_CHIP_MORE, icon: SlidersHorizontal },
 ];
 

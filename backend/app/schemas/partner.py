@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -33,6 +34,7 @@ class PartnerPublicItem(BaseModel):
     phone: str | None = None
     instagram_url: str | None = None
     is_verified: bool
+    created_at: datetime
 
 
 class PartnerPublicDetail(PartnerPublicItem):

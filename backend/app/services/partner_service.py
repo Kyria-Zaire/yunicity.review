@@ -111,6 +111,7 @@ class PartnerService:
             phone=org.phone if expose_location else None,
             instagram_url=_instagram_from_social_links(org),
             is_verified=self._repo.is_verified_organization(org),
+            created_at=row.created_at,
         )
 
 

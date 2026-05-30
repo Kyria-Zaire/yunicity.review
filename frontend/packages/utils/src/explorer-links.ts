@@ -11,8 +11,11 @@ export type ParsedSearchParams = {
 export type ParsedMapParams = {
   city: string;
   place: string;
+  partner: string;
   event: string;
   neighborhood: string;
+  tribe: string;
+  layer: string;
   route: boolean;
 };
 
@@ -41,6 +44,19 @@ export function parseSearchParams(params: URLSearchParams): ParsedSearchParams {
     city: params.get("city")?.trim() ?? "",
     tab: searchTabFromUrlParam(params.get("tab")),
   };
+}
+
+export function buildPartnerMapUrl(
+  slug: string,
+  options?: { city?: string | null; route?: boolean },
+): string {
+  const params = new URLSearchParams();
+  const cleanSlug = slug.trim();
+  if (cleanSlug) params.set("partner", cleanSlug);
+  const city = options?.city?.trim();
+  if (city) params.set("city", city);
+  if (options?.route) params.set("route", "1");
+  return `/map?${params.toString()}`;
 }
 
 export function buildMapPlaceUrl(slug: string, options?: { city?: string | null; route?: boolean }): string {
@@ -81,8 +97,11 @@ export function parseMapParams(params: URLSearchParams): ParsedMapParams {
   return {
     city: params.get("city")?.trim() ?? "",
     place: params.get("place")?.trim() ?? "",
+    partner: params.get("partner")?.trim() ?? "",
     event: params.get("event")?.trim() ?? "",
     neighborhood: params.get("neighborhood")?.trim() ?? "",
+    tribe: params.get("tribe")?.trim() ?? "",
+    layer: params.get("layer")?.trim() ?? "",
     route: routeRaw === "1" || routeRaw === "true",
   };
 }

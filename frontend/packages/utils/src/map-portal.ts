@@ -13,7 +13,8 @@ export type MapPortalCategoryId =
   | "nature"
   | "tribes"
   | "neighborhoods"
-  | "transit";
+  | "transit"
+  | "partners";
 
 export type MapPortalAmbianceId =
   | "calm"
@@ -79,6 +80,7 @@ export function resolveMapPortalLayer(category: MapPortalCategoryId): MapTerrito
   if (category === "neighborhoods") return "quartiers";
   if (category === "tribes") return "tribus";
   if (category === "transit") return "transports";
+  if (category === "partners") return "all";
   return "all";
 }
 
@@ -137,6 +139,15 @@ export function resolveMapPortalLayerVisibility(
       showNeighborhoods: false,
       showTribes: false,
       emphasizeTransit: true,
+    };
+  }
+  if (category === "partners") {
+    return {
+      showEvents: false,
+      showPlaces: false,
+      showNeighborhoods: false,
+      showTribes: false,
+      emphasizeTransit: false,
     };
   }
   return {

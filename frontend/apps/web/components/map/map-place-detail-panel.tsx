@@ -11,6 +11,8 @@ import {
   MAP_PORTAL_DETAIL_LOADING,
   MAP_PORTAL_DETAIL_ROUTE,
   MAP_PORTAL_DETAIL_SEE_MORE,
+  MAP_PORTAL_PARTNER_SEE_PROFILE,
+  buildPublicPlaceHref,
   MAP_PORTAL_DETAIL_SHARE,
   MAP_PORTAL_DETAIL_SOURCE,
   MAP_PORTAL_DETAIL_WEBSITE,
@@ -210,6 +212,12 @@ export function MapPlaceDetailPanel({
               ? ` • ${placeDetail.neighborhood.display_name}`
               : ""}
           </p>
+          <Link
+            href={buildPublicPlaceHref(placeDetail.slug, city)}
+            className="mt-2 inline-flex text-sm font-semibold text-yunicity-primary hover:underline"
+          >
+            {MAP_PORTAL_PARTNER_SEE_PROFILE}
+          </Link>
         </div>
 
         <div className="grid grid-cols-4 gap-2 text-center">

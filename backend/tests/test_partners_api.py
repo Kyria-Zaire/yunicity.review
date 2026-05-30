@@ -242,3 +242,66 @@ async def test_signed_partner_has_no_sensitive_location_when_queried_via_db(
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get("/api/v1/partners/daiboken", params={"city": "Reims"})
     assert response.status_code == 404
+
+
+@pytest.mark.integration
+@pytest.mark.anyio
+async def test_public_partner_detail_includes_created_at(
+    partners_client: AsyncClient,
+    partners_ready: None,
+) -> None:
+    response = await partners_client.get(
+        "/api/v1/partners/pittaya",
+        params={"city": "Reims"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert "created_at" in body
+    assert body["created_at"] is not None
+
+
+@pytest.mark.integration
+@pytest.mark.anyio
+async def test_partner_without_coords_returns_null_coordinates(
+    partners_client: AsyncClient,
+    partners_ready: None,
+) -> None:
+    session_factory = get_session_factory()
+    assert session_factory is not None
+    org_id = uuid.UUID("d6040000-0000-4000-8000-000000000009")
+    async with session_factory() as session:
+        org = await session.get(Organization, org_id)
+        assert org is not None
+        org.latitude = None
+        org.longitude = None
+        await session.commit()
+
+    response = await partners_client.get(
+        "/api/v1/partners/belga-queen",
+        params={"city": "Reims"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["latitude"] is None
+    assert body["longitude"] is None
+
+
+@pytest.mark.integration
+@pytest.mark.anyio
+async def test_list_partners_active_status_filter(
+    partners_client: AsyncClient,
+    partners_ready: None,
+) -> None:
+    response = await partners_client.get(
+        "/api/v1/partners",
+        params={
+            "city": "Reims",
+            "status": PartnerStatus.ACTIVE.value,
+            "limit": 50,
+        },
+    )
+    assert response.status_code == 200
+    items = response.json()["items"]
+    assert len(items) >= 1
+    assert all(item["partner_status"] == PartnerStatus.ACTIVE.value for item in items)
+    assert any(item["slug"] == "pittaya" for item in items)

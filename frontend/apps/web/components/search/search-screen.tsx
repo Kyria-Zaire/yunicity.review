@@ -1,6 +1,8 @@
 "use client";
 
+import type { SearchTypeFilter } from "@yunicity/types";
 import {
+  type ExplorerCategoryId,
   SEARCH_EMPTY_BODY,
   SEARCH_EMPTY_TITLE,
   SEARCH_ERROR,
@@ -15,14 +17,14 @@ import {
   parseSearchParams,
   visibleSearchGroups,
 } from "@yunicity/utils";
-import type { SearchTypeFilter } from "@yunicity/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { WebAppShell } from "@/components/layout";
-import { SearchExplorerView } from "@/components/search/search-explorer-view";
+import { SearchAppShell } from "@/components/search/search-app-shell";
+import { SearchExplorerCategoryChips } from "@/components/search/search-explorer-category-chips";
+import { SearchExplorerLanding } from "@/components/search/search-explorer-landing";
+import { SearchExplorerSidebar } from "@/components/search/search-explorer-sidebar";
 import { SearchGroupSection } from "@/components/search/search-group-section";
-import { SearchRightRail } from "@/components/search/search-right-rail";
 import { SearchTopBar } from "@/components/search/search-top-bar";
 import { SearchTypeTabs } from "@/components/search/search-type-tabs";
 import { useSearch } from "@/hooks/use-search";
@@ -30,14 +32,6 @@ import { useSearchExplorerContext } from "@/hooks/use-search-explorer-context";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { GeoProvider, useGeo } from "@/providers/geo-provider";
-
-function formatTodayFr(): string {
-  return new Date().toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-}
 
 function SearchScreenInner({ urlQuery, urlCity, urlTab }: { urlQuery: string; urlCity: string; urlTab: string }) {
   const router = useRouter();
@@ -55,6 +49,7 @@ function SearchScreenInner({ urlQuery, urlCity, urlTab }: { urlQuery: string; ur
   });
 
   const explorer = useSearchExplorerContext(search.city);
+  const [explorerCategory, setExplorerCategory] = useState<ExplorerCategoryId>("all");
 
   useEffect(() => {
     const parsed = parseSearchParams(new URLSearchParams(searchParams.toString()));
@@ -97,89 +92,116 @@ function SearchScreenInner({ urlQuery, urlCity, urlTab }: { urlQuery: string; ur
   );
 
   return (
-    <WebAppShell context={<SearchRightRail explorer={explorer} />} contentWidth="feed">
-      <div className="space-y-6 pb-16 lg:space-y-7">
-        <header className="border-b border-neutral-100 pb-5">
-          <p className="text-sm font-medium text-yunicity-primary">{formatTodayFr()}</p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-neutral-900 sm:text-[1.75rem]">
-            {SEARCH_PAGE_TITLE}
-          </h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-neutral-600">
-            {SEARCH_PAGE_SUBTITLE}
-          </p>
-        </header>
+    <SearchAppShell>
+      <div className="mx-auto w-full max-w-[1400px] px-0 py-2 sm:py-4">
+        <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8 xl:grid-cols-[16rem_minmax(0,1fr)]">
+          {showExplorer ? (
+            <SearchExplorerSidebar
+              activeCategory={explorerCategory}
+              onCategoryChange={setExplorerCategory}
+              trends={explorer.trendLines}
+              city={explorer.city}
+            />
+          ) : null}
 
-        <SearchTopBar
-          city={search.city}
-          query={search.query}
-          onQueryChange={search.setQuery}
-          minQueryHint={
-            !search.isQueryReady && search.query.length > 0 ? SEARCH_MIN_QUERY_HINT : null
-          }
-        />
+          <div className="min-w-0 space-y-6 pb-16 lg:space-y-7">
+            <header className="border-b border-neutral-100 pb-5">
+              <h1 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-[1.75rem]">
+                {SEARCH_PAGE_TITLE}
+              </h1>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-neutral-600">
+                {SEARCH_PAGE_SUBTITLE}
+              </p>
+            </header>
 
-        <SearchTypeTabs value={search.typeFilter} onChange={handleTabChange} />
+            <SearchTopBar
+              city={search.city}
+              query={search.query}
+              onQueryChange={search.setQuery}
+              minQueryHint={
+                !search.isQueryReady && search.query.length > 0 ? SEARCH_MIN_QUERY_HINT : null
+              }
+            />
 
-        {showExplorer ? (
-          explorer.loading ? (
-            <p className="text-sm text-neutral-500" role="status">
-              {SEARCH_LOADING}
-            </p>
-          ) : (
-            <SearchExplorerView explorer={explorer} typeFilter={search.typeFilter} />
-          )
-        ) : null}
+            {!showExplorer ? <SearchTypeTabs value={search.typeFilter} onChange={handleTabChange} /> : null}
 
-        {!showExplorer && search.loading ? (
-          <p className="text-sm text-neutral-500" role="status">
-            {SEARCH_LOADING}
-          </p>
-        ) : null}
+            {showExplorer ? (
+              <SearchExplorerCategoryChips
+                activeCategory={explorerCategory}
+                onCategoryChange={setExplorerCategory}
+              />
+            ) : null}
 
-        {!showExplorer && search.error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-800">
-            <p>{SEARCH_ERROR}</p>
-            <button
-              type="button"
-              onClick={search.retry}
-              className="mt-3 font-medium underline underline-offset-2"
-            >
-              {SEARCH_RETRY}
-            </button>
+            {showExplorer ? (
+              explorer.loading ? (
+                <p className="text-sm text-neutral-500" role="status">
+                  {SEARCH_LOADING}
+                </p>
+              ) : explorer.error ? (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-800">
+                  <p>{SEARCH_ERROR}</p>
+                  <button
+                    type="button"
+                    onClick={explorer.reload}
+                    className="mt-3 font-medium underline underline-offset-2"
+                  >
+                    {SEARCH_RETRY}
+                  </button>
+                </div>
+              ) : (
+                <SearchExplorerLanding explorer={explorer} categoryId={explorerCategory} />
+              )
+            ) : null}
+
+            {!showExplorer && search.loading ? (
+              <p className="text-sm text-neutral-500" role="status">
+                {SEARCH_LOADING}
+              </p>
+            ) : null}
+
+            {!showExplorer && search.error ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-800">
+                <p>{SEARCH_ERROR}</p>
+                <button
+                  type="button"
+                  onClick={search.retry}
+                  className="mt-3 font-medium underline underline-offset-2"
+                >
+                  {SEARCH_RETRY}
+                </button>
+              </div>
+            ) : null}
+
+            {!showExplorer && showEmpty ? (
+              <div className="rounded-xl border border-neutral-200 bg-white px-4 py-8 text-center">
+                <p className="font-semibold text-neutral-900">{SEARCH_EMPTY_TITLE}</p>
+                <p className="mt-2 text-sm text-neutral-600">{SEARCH_EMPTY_BODY}</p>
+              </div>
+            ) : null}
+
+            {!showExplorer && hasResultSections ? (
+              <section className="space-y-6" aria-labelledby="search-results-title">
+                <h2 id="search-results-title" className="text-base font-semibold text-neutral-900">
+                  {SEARCH_EXPLORER_RESULTS_TITLE}
+                </h2>
+                <div className="space-y-8">
+                  {sections.map(({ key, group }) => (
+                    <SearchGroupSection
+                      key={key}
+                      groupKey={key}
+                      group={group}
+                      city={search.city}
+                      onLoadMore={() => search.loadMoreForGroup(key)}
+                      loadingMore={search.loading}
+                    />
+                  ))}
+                </div>
+              </section>
+            ) : null}
           </div>
-        ) : null}
-
-        {!showExplorer && showEmpty ? (
-          <div className="rounded-xl border border-neutral-200 bg-white px-4 py-8 text-center">
-            <p className="font-semibold text-neutral-900">{SEARCH_EMPTY_TITLE}</p>
-            <p className="mt-2 text-sm text-neutral-600">{SEARCH_EMPTY_BODY}</p>
-          </div>
-        ) : null}
-
-        {!showExplorer && hasResultSections ? (
-          <section className="space-y-6" aria-labelledby="search-results-title">
-            <h2
-              id="search-results-title"
-              className="text-base font-semibold text-neutral-900"
-            >
-              {SEARCH_EXPLORER_RESULTS_TITLE}
-            </h2>
-            <div className="space-y-8">
-              {sections.map(({ key, group }) => (
-                <SearchGroupSection
-                  key={key}
-                  groupKey={key}
-                  group={group}
-                  city={search.city}
-                  onLoadMore={() => search.loadMoreForGroup(key)}
-                  loadingMore={search.loading}
-                />
-              ))}
-            </div>
-          </section>
-        ) : null}
+        </div>
       </div>
-    </WebAppShell>
+    </SearchAppShell>
   );
 }
 

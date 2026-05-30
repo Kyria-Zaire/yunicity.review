@@ -49,8 +49,11 @@ describe("map deep links", () => {
     expect(parsed).toEqual({
       city: "Reims",
       place: "opera",
+      partner: "",
       event: "",
       neighborhood: "",
+      tribe: "",
+      layer: "",
       route: true,
     });
   });

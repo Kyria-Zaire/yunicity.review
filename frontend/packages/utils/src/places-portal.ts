@@ -1,7 +1,7 @@
 import type { CulturalPlaceListItem, CulturalPlaceSort, CulturalPlaceStatsResponse } from "@yunicity/types";
 
 import { culturalPlaceCategoryLabel } from "./cultural-place-labels";
-import { buildMapPlaceUrl } from "./explorer-links";
+import { buildPublicPlaceHref } from "./place-routing";
 import {
   PLACES_PORTAL_STAT_CATEGORIES,
   PLACES_PORTAL_STAT_NEW,
@@ -12,6 +12,7 @@ import {
 
 export type PlacesCategoryFilterId =
   | "all"
+  | "partners"
   | "culture"
   | "gastronomy"
   | "nature"
@@ -31,6 +32,7 @@ export type PlacesCategoryFilter = {
 
 export const PLACES_CATEGORY_FILTERS: PlacesCategoryFilter[] = [
   { id: "all", label: "Tous", categories: [] },
+  { id: "partners", label: "Partenaires", categories: [] },
   {
     id: "culture",
     label: "Culture",
@@ -151,6 +153,9 @@ export function filterPlacesByCategoryGroup(
   places: CulturalPlaceListItem[],
   filterId: PlacesCategoryFilterId,
 ): CulturalPlaceListItem[] {
+  if (filterId === "partners") {
+    return [];
+  }
   const filter = resolvePlacesCategoryFilter(filterId);
   if (filter.id === "all" || filter.categories.length === 0) {
     return places;
@@ -271,7 +276,7 @@ export function formatPlaceOpenedLabel(createdAt: string | undefined, now = Date
 }
 
 export function buildPlaceHref(place: CulturalPlaceListItem, city: string): string {
-  return buildMapPlaceUrl(place.slug, { city });
+  return buildPublicPlaceHref(place.slug, city);
 }
 
 export function formatPlaceTrustLine(place: CulturalPlaceListItem): string {

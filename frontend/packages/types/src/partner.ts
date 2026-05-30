@@ -40,6 +40,7 @@ export type PartnerPublic = {
   phone: string | null;
   instagram_url: string | null;
   is_verified: boolean;
+  created_at: string;
 };
 
 export type PartnerListResponse = {

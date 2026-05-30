@@ -1,6 +1,8 @@
 import type {
   CulturalPlaceDetail,
   CulturalPlaceListResponse,
+  CulturalPlaceSort,
+  CulturalPlaceStatsResponse,
   MapCulturalPlaceListResponse,
   MapCulturalPlacesListParams,
   MapEventsListParams,
@@ -71,6 +73,8 @@ import { WeatherApi, createWeatherApi } from "./weather-api";
 import { SubscriptionsApi, createSubscriptionsApi } from "./subscription-api";
 import { DiscussionsApi, createDiscussionsApi } from "./discussions-api";
 import { StoriesApi, createStoriesApi } from "./stories-api";
+import { PartnersApi, createPartnersApi } from "./partners-api";
+import type { PartnerListParams, PartnerListResponse, PartnerPublic } from "@yunicity/types";
 
 /** FaÃƒÆ’Ã‚Â§ade profile + organizations + passport. */
 export class YunicityApi {
@@ -92,6 +96,7 @@ export class YunicityApi {
   readonly subscriptions: SubscriptionsApi;
   readonly discussions: DiscussionsApi;
   readonly stories: StoriesApi;
+  readonly partners: PartnersApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.profile = createProfileApi(client, apiBaseUrl);
@@ -112,6 +117,15 @@ export class YunicityApi {
     this.subscriptions = createSubscriptionsApi(client, apiBaseUrl);
     this.discussions = createDiscussionsApi(client, apiBaseUrl);
     this.stories = createStoriesApi(client, apiBaseUrl);
+    this.partners = createPartnersApi(client, apiBaseUrl);
+  }
+
+  listPartners(params: PartnerListParams): Promise<PartnerListResponse> {
+    return this.partners.listPartners(params);
+  }
+
+  getPartner(slug: string, city: string): Promise<PartnerPublic> {
+    return this.partners.getPartner(slug, city);
   }
 
   listStories(params: StoryListParams = {}): Promise<StoryListResponse> {
@@ -171,9 +185,16 @@ export class YunicityApi {
   listCulturalPlaces(params: {
     city: string;
     featured?: boolean;
+    category?: string[];
+    sort?: CulturalPlaceSort;
     limit?: number;
+    offset?: number;
   }): Promise<CulturalPlaceListResponse> {
     return this.culturalPlaces.listPlaces(params);
+  }
+
+  getCulturalPlacesStats(city: string): Promise<CulturalPlaceStatsResponse> {
+    return this.culturalPlaces.getPlacesStats(city);
   }
 
   listMapCulturalPlaces(params: MapCulturalPlacesListParams): Promise<MapCulturalPlaceListResponse> {
@@ -218,6 +239,14 @@ export class YunicityApi {
 
   updateProfileMe(payload: ProfileUpdateRequest): Promise<UserProfile> {
     return this.profile.updateProfileMe(payload);
+  }
+
+  uploadProfileAvatar(file: File): Promise<UserProfile> {
+    return this.profile.uploadProfileAvatar(file);
+  }
+
+  uploadProfileBanner(file: File): Promise<UserProfile> {
+    return this.profile.uploadProfileBanner(file);
   }
 
   completeProfileOnboarding(payload: ProfileCompleteRequest): Promise<UserProfile> {

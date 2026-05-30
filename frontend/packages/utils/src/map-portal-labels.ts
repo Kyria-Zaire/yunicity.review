@@ -11,6 +11,11 @@ export const MAP_PORTAL_CATEGORY_NATURE = "Nature & balades";
 export const MAP_PORTAL_CATEGORY_TRIBES = "Tribus";
 export const MAP_PORTAL_CATEGORY_NEIGHBORHOODS = "Quartiers";
 export const MAP_PORTAL_CATEGORY_TRANSIT = "Transports";
+export const MAP_PORTAL_CATEGORY_PARTNERS = "Partenaires";
+
+export const MAP_PORTAL_PARTNER_TAG = "PARTENAIRE";
+export const MAP_PORTAL_PARTNER_SEE_PROFILE = "Voir la fiche";
+export const MAP_PORTAL_PARTNER_PANEL_ROUTE = "Itinéraire";
 
 export const MAP_PORTAL_FAVORITES = "Mes favoris";
 export const MAP_PORTAL_VISITED = "Mes lieux visités";
@@ -37,6 +42,7 @@ export const MAP_PORTAL_CHIP_EVENTS = "Événements";
 export const MAP_PORTAL_CHIP_PLACES = "Lieux";
 export const MAP_PORTAL_CHIP_CULTURE = "Culture";
 export const MAP_PORTAL_CHIP_MORE = "Plus de filtres";
+export const MAP_PORTAL_CHIP_PARTNERS = "Partenaires";
 
 export const MAP_PORTAL_AROUND_TITLE = "Autour de vous";
 export const MAP_PORTAL_AROUND_SEE_ALL = "Voir tout";

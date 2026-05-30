@@ -1,9 +1,15 @@
 "use client";
 
-import type { CulturalPlaceListItem, CulturalPlaceSort, CulturalPlaceStatsResponse } from "@yunicity/types";
-import type { PlacesCategoryFilterId } from "@yunicity/utils";
+import type {
+  CulturalPlaceListItem,
+  CulturalPlaceSort,
+  CulturalPlaceStatsResponse,
+  PartnerPublic,
+} from "@yunicity/types";
+import type { PartnerPlaceCard, PlacesCategoryFilterId } from "@yunicity/utils";
 import {
   PLACES_PAGE_SIZE,
+  buildPartnerPlaceCards,
   filterPlacesByCategoryGroup,
   filterPlacesBySearch,
   pickFeaturedPlaces,
@@ -31,6 +37,7 @@ export function usePlacesPortalContext(cityParam: string) {
   const [categoryFilter, setCategoryFilter] = useState<PlacesCategoryFilterId>("all");
   const [sort, setSort] = useState<CulturalPlaceSort>("featured");
   const [visibleCount, setVisibleCount] = useState(PLACES_PAGE_SIZE);
+  const [partners, setPartners] = useState<PartnerPublic[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -45,7 +52,7 @@ export function usePlacesPortalContext(cityParam: string) {
       }
       setCity(resolvedCity);
 
-      const [statsRes, featuredRes, catalogRes] = await Promise.all([
+      const [statsRes, featuredRes, catalogRes, partnersRes] = await Promise.all([
         api.getCulturalPlacesStats(resolvedCity),
         api.listCulturalPlaces({
           city: resolvedCity,
@@ -58,6 +65,7 @@ export function usePlacesPortalContext(cityParam: string) {
           limit: CATALOG_LIMIT,
           sort: "featured",
         }),
+        api.listPartners({ city: resolvedCity, limit: 50 }),
       ]);
 
       setStats(statsRes);
@@ -65,11 +73,13 @@ export function usePlacesPortalContext(cityParam: string) {
         featuredRes.items.length > 0 ? featuredRes.items : pickFeaturedPlaces(catalogRes.items, 8),
       );
       setCatalog(catalogRes.items);
+      setPartners(partnersRes.items);
       setVisibleCount(PLACES_PAGE_SIZE);
     } catch {
       setStats(null);
       setCatalog([]);
       setFeatured([]);
+      setPartners([]);
       setError("load_failed");
     } finally {
       setLoading(false);
@@ -101,6 +111,13 @@ export function usePlacesPortalContext(cityParam: string) {
     [filteredPlaces],
   );
 
+  const partnerCards: PartnerPlaceCard[] = useMemo(
+    () => buildPartnerPlaceCards(partners).slice(0, 6),
+    [partners],
+  );
+
+  const showPartnersOnly = categoryFilter === "partners";
+
   const loadMore = useCallback(() => {
     setVisibleCount((prev) => Math.min(prev + PLACES_PAGE_SIZE, filteredPlaces.length));
   }, [filteredPlaces.length]);
@@ -110,6 +127,9 @@ export function usePlacesPortalContext(cityParam: string) {
     stats,
     featured,
     recentPlaces,
+    partnerCards,
+    partners,
+    showPartnersOnly,
     newBadgeIds,
     totalFiltered: filteredPlaces.length,
     loading,

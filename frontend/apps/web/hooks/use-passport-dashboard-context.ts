@@ -1,6 +1,6 @@
 "use client";
 
-import type { LocalEvent, PassportStamp, Tribe } from "@yunicity/types";
+import type { LocalEvent, PartnerPublic, PassportStamp, Tribe } from "@yunicity/types";
 import {
   buildPassportAchievements,
   buildPassportLevel,
@@ -32,23 +32,36 @@ export function usePassportDashboardContext() {
 
   const [tribes, setTribes] = useState<Tribe[]>([]);
   const [savedEvents, setSavedEvents] = useState<LocalEvent[]>([]);
+  const [featuredPartners, setFeaturedPartners] = useState<PartnerPublic[]>([]);
   const [contextLoading, setContextLoading] = useState(false);
 
   const loadContext = useCallback(async () => {
     if (!hasPassport || !passportState.passport) {
       setTribes([]);
       setSavedEvents([]);
+      setFeaturedPartners([]);
       return;
     }
     const city = passportState.passport.city.trim() || "Reims";
     setContextLoading(true);
     try {
-      const [tribesRes, savedRes] = await Promise.allSettled([
+      const [tribesRes, savedRes, partnersRes] = await Promise.allSettled([
         api.tribes.listTribes({ city, page_size: 40 }),
         api.events.listSavedEvents(),
+        api.listPartners({ city, featured: true, limit: 8 }),
       ]);
       setTribes(tribesRes.status === "fulfilled" ? tribesRes.value.items : []);
       setSavedEvents(savedRes.status === "fulfilled" ? savedRes.value.items : []);
+      if (partnersRes.status === "fulfilled") {
+        setFeaturedPartners(partnersRes.value.items);
+      } else {
+        try {
+          const fallback = await api.listPartners({ city, limit: 8 });
+          setFeaturedPartners(fallback.items);
+        } catch {
+          setFeaturedPartners([]);
+        }
+      }
     } finally {
       setContextLoading(false);
     }
@@ -64,10 +77,10 @@ export function usePassportDashboardContext() {
       passport: passportState.passport,
       stamps,
       tribes,
-      savedEventsCount: savedEvents.length,
+      savedEvents,
       postsCount: null as number | null,
     };
-  }, [passportState.passport, stamps, tribes, savedEvents.length]);
+  }, [passportState.passport, stamps, tribes, savedEvents]);
 
   const levelView = useMemo(
     () => (passportState.passport ? buildPassportLevel(passportState.passport) : null),
@@ -106,6 +119,7 @@ export function usePassportDashboardContext() {
     badges,
     earnedBadgesCount,
     offers: offersState.offers,
+    featuredPartners,
     offersLoading: offersState.isLoading,
     stampsLoading,
     redeem: offersState.redeem,
