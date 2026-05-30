@@ -18,9 +18,10 @@ import {
 } from "@yunicity/utils";
 import { useCallback, useState } from "react";
 
+import { PassportPartnerOffersSection } from "./passport-partner-offers-section";
 import { PassportPartnersPanel } from "./passport-partners-panel";
 import { PassportOffersList } from "./passport-offers-section";
-import { PassportStampsList } from "./passport-stamps-section";
+import { PassportStampsList, PassportStampsSection } from "./passport-stamps-section";
 
 export function PassportDashboardScreen() {
   const ctx = usePassportDashboardContext();
@@ -82,7 +83,12 @@ export function PassportDashboardScreen() {
                 />
                 <PassportProgressionTrack steps={ctx.progression} />
                 <PassportRecentBadges badges={ctx.badges} onViewAll={() => goToNav("badges")} />
-                <PassportPartnersPanel partners={ctx.featuredPartners} offers={ctx.offers} />
+                <PassportPartnerOffersSection offers={ctx.publicOffers} />
+                <PassportPartnersPanel
+                  partners={ctx.featuredPartners}
+                  offers={ctx.publicOffers}
+                />
+                <PassportStampsSection stamps={ctx.stamps} isLoading={ctx.stampsLoading} />
               </>
             ) : null}
 
@@ -99,13 +105,7 @@ export function PassportDashboardScreen() {
 
             {activeNav === "privileges" ? (
               <section id="passport-privileges" className="scroll-mt-28">
-                <PassportOffersList
-                  offers={ctx.offers}
-                  isLoading={ctx.offersLoading}
-                  message={ctx.offerMessage}
-                  redeemingId={ctx.redeemingId}
-                  onRedeem={(id) => void ctx.redeem(id)}
-                />
+                <PassportOffersList offers={ctx.publicOffers} isLoading={ctx.offersLoading} />
               </section>
             ) : null}
 
