@@ -1,14 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import type { CulturalPlaceListItem, LocalEvent, Neighborhood, PartnerOffer, Tribe } from "@yunicity/types";
+import type { CulturalPlaceListItem, LocalEvent, Neighborhood, Tribe } from "@yunicity/types";
 
 import {
   buildCityNeighborhoodPulse,
   buildNeighborhoodCards,
+  buildNeighborhoodFeaturedCards,
   buildNeighborhoodLifeSlices,
+  buildNeighborhoodListCards,
+  buildNeighborhoodsPortalStats,
   filterNeighborhoodCardsByMood,
   neighborhoodPortalHasNoFakeMetrics,
+  resolveNeighborhoodFeaturedHeadline,
+  resolveNeighborhoodsPortalHeroImage,
 } from "./neighborhood-portal";
+import { NEIGHBORHOODS_PORTAL_HERO_IMAGE_URL } from "./editorial-fallback-images";
 
 const HOOD: Neighborhood = {
   id: "h1",
@@ -98,21 +104,27 @@ const TRIBE: Tribe = {
   updated_at: "",
 };
 
-const OFFER: PartnerOffer = {
+const OFFER = {
   id: "o1",
-  organization_id: "org-1",
+  slug: "brunch-local",
   title: "Brunch local",
   description: null,
-  offer_type: "discount",
+  value_label: null,
+  offer_type: "discount" as const,
+  conditions: null,
   tier_code_required: null,
   valid_from: null,
   valid_until: null,
-  organization: {
-    id: "org-1",
-    slug: "cafe-centre",
+  is_featured: false,
+  partner: {
     name: "Café du Centre",
-    city: "Reims",
+    slug: "cafe-centre",
     logo_url: null,
+    cover_image_url: null,
+    category: null,
+    city: "Reims",
+    is_verified: true,
+    partner_status: "active" as const,
   },
 };
 
@@ -179,6 +191,60 @@ describe("neighborhood-portal", () => {
       weatherCalm: true,
     });
     expect(pulse[0]?.line.toLowerCase()).toContain("calme");
+  });
+
+  it("resolveNeighborhoodsPortalHeroImage utilise l’URL éditoriale fixe", () => {
+    expect(resolveNeighborhoodsPortalHeroImage([], [])).toBe(NEIGHBORHOODS_PORTAL_HERO_IMAGE_URL);
+  });
+
+  it("buildNeighborhoodsPortalStats agrège des compteurs réels", () => {
+    const cafePlace: CulturalPlaceListItem = {
+      ...PLACE,
+      id: "p2",
+      slug: "cafe-boul",
+      name: "Café du marché",
+      category: "gastronomie",
+    };
+    const stats = buildNeighborhoodsPortalStats({
+      neighborhoods: [HOOD],
+      events: [event()],
+      culturalPlaces: [PLACE, cafePlace],
+    });
+    expect(stats.neighborhoodsCount).toBe(1);
+    expect(stats.activeMomentsCount).toBe(1);
+    expect(stats.cafesCount).toBe(1);
+    expect(stats.eventsThisWeek).toBeGreaterThanOrEqual(0);
+  });
+
+  it("buildNeighborhoodFeaturedCards expose stats par quartier", () => {
+    const cards = buildNeighborhoodFeaturedCards({
+      city: "Reims",
+      neighborhoods: [HOOD],
+      events: [event()],
+      culturalPlaces: [PLACE],
+    });
+    expect(cards).toHaveLength(1);
+    expect(cards[0]?.headline).toBe(resolveNeighborhoodFeaturedHeadline(HOOD));
+    expect(cards[0]?.momentsCount).toBe(1);
+    expect(cards[0]?.href).toContain("/neighborhoods/boulingrin");
+  });
+
+  it("buildNeighborhoodListCards exclut les slugs à la une", () => {
+    const other: Neighborhood = {
+      ...HOOD,
+      id: "h2",
+      slug: "cernay",
+      display_name: "Cernay",
+      is_featured: false,
+    };
+    const list = buildNeighborhoodListCards({
+      city: "Reims",
+      neighborhoods: [HOOD, other],
+      events: [event()],
+      excludeSlugs: ["boulingrin"],
+    });
+    expect(list).toHaveLength(1);
+    expect(list[0]?.slug).toBe("cernay");
   });
 });
 

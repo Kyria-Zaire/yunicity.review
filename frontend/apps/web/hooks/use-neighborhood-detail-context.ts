@@ -5,7 +5,7 @@ import type {
   LocalEvent,
   Neighborhood,
   NeighborhoodContextResponse,
-  PartnerOffer,
+  PartnerOfferPublic,
   Tribe,
 } from "@yunicity/types";
 import {
@@ -30,7 +30,7 @@ export type NeighborhoodDetailContextState = {
   cityCulturalPlaces: CulturalPlaceListItem[];
   nearbyPlaces: CulturalPlaceListItem[];
   tribes: Tribe[];
-  passportOffers: PartnerOffer[];
+  passportOffers: PartnerOfferPublic[];
   atmosphereLine: string;
   weatherCalm: boolean;
   setWeatherCalm: (calm: boolean) => void;
@@ -48,7 +48,7 @@ export function useNeighborhoodDetailContext(
   const [cityEvents, setCityEvents] = useState<LocalEvent[]>([]);
   const [culturalPlaces, setCulturalPlaces] = useState<CulturalPlaceListItem[]>([]);
   const [tribes, setTribes] = useState<Tribe[]>([]);
-  const [passportOffers, setPassportOffers] = useState<PartnerOffer[]>([]);
+  const [passportOffers, setPassportOffers] = useState<PartnerOfferPublic[]>([]);
   const [weatherCalm, setWeatherCalm] = useState(true);
 
   const activeCity = city.trim() || "Reims";
@@ -64,7 +64,7 @@ export function useNeighborhoodDetailContext(
 
       const [eventsRes, cultureRes, tribesRes, offersRes] = await Promise.allSettled([
         api.events.listEvents({ city: resolvedCity }),
-        api.listCulturalPlaces({ city: resolvedCity, limit: 24 }),
+        api.listCulturalPlaces({ city: resolvedCity, limit: 48 }),
         api.tribes.listTribes({ city: resolvedCity, page_size: 8 }),
         api.listPassportOffers(),
       ]);

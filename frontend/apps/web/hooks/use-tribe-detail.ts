@@ -1,7 +1,7 @@
 "use client";
 
 import type { Tribe, TribeMember } from "@yunicity/types";
-import type { CulturalPlaceListItem, LocalEvent, Neighborhood, PartnerOffer, PassportMe } from "@yunicity/types";
+import type { CulturalPlaceListItem, FeedPost, LocalEvent, Neighborhood, PartnerOfferPublic, PassportMe } from "@yunicity/types";
 import { TRIBE_NOT_FOUND, filterAgendaUpcomingEvents, isAuthError } from "@yunicity/utils";
 import { useCallback, useEffect, useState } from "react";
 
@@ -15,10 +15,13 @@ export function useTribeDetail(slug: string, city: string) {
   const [events, setEvents] = useState<LocalEvent[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [places, setPlaces] = useState<CulturalPlaceListItem[]>([]);
-  const [offers, setOffers] = useState<PartnerOffer[]>([]);
+  const [offers, setOffers] = useState<PartnerOfferPublic[]>([]);
   const [passport, setPassport] = useState<PassportMe | null>(null);
   const [members, setMembers] = useState<TribeMember[]>([]);
   const [relatedTribes, setRelatedTribes] = useState<Tribe[]>([]);
+  const [memberTribes, setMemberTribes] = useState<Tribe[]>([]);
+  const [postsPreview, setPostsPreview] = useState<FeedPost[]>([]);
+  const [membersTotal, setMembersTotal] = useState(0);
   const [actionError, setActionError] = useState<string | null>(null);
   const [joining, setJoining] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -52,11 +55,24 @@ export function useTribeDetail(slug: string, city: string) {
       setOffers(offersRes.status === "fulfilled" ? offersRes.value.items.slice(0, 3) : []);
       setPassport(passportRes.status === "fulfilled" ? passportRes.value : null);
       setMembers(membersRes.status === "fulfilled" ? membersRes.value.items : []);
-      setRelatedTribes(
+      setMembersTotal(membersRes.status === "fulfilled" ? membersRes.value.total : 0);
+      const allTribes =
         tribesRes.status === "fulfilled"
-          ? tribesRes.value.items.filter((item) => item.slug !== slug && !item.is_archived).slice(0, 3)
-          : [],
-      );
+          ? tribesRes.value.items.filter((item) => !item.is_archived)
+          : [];
+      setRelatedTribes(allTribes.filter((item) => item.slug !== slug).slice(0, 3));
+      setMemberTribes(allTribes.filter((item) => item.viewer_is_member));
+
+      if (tribeData.viewer_is_member && !tribeData.is_archived) {
+        try {
+          const postsRes = await api.tribes.listTribePosts(slug, city, { limit: 4 });
+          setPostsPreview(postsRes.items);
+        } catch {
+          setPostsPreview([]);
+        }
+      } else {
+        setPostsPreview([]);
+      }
     } catch (err) {
       if (!isAuthError(err)) {
         setError(TRIBE_NOT_FOUND);
@@ -119,6 +135,9 @@ export function useTribeDetail(slug: string, city: string) {
     offers,
     passport,
     members,
+    membersTotal,
+    memberTribes,
+    postsPreview,
     relatedTribes,
     actionError,
     joining,

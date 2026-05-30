@@ -4,7 +4,7 @@ import type {
   CulturalPlaceListItem,
   LocalEvent,
   Neighborhood,
-  PartnerOffer,
+  PartnerOfferPublic,
   PassportMe,
   ProfileMe,
   Tribe,
@@ -25,7 +25,7 @@ export type FeedPortalContextState = {
   neighborhoods: Neighborhood[];
   culturalPlaces: CulturalPlaceListItem[];
   passport: PassportMe | null;
-  highlightOffer: PartnerOffer | null;
+  highlightOffer: PartnerOfferPublic | null;
   reload: () => void;
 };
 
@@ -43,7 +43,7 @@ export function useFeedPortalContext(): FeedPortalContextState {
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [culturalPlaces, setCulturalPlaces] = useState<CulturalPlaceListItem[]>([]);
   const [passport, setPassport] = useState<PassportMe | null>(null);
-  const [highlightOffer, setHighlightOffer] = useState<PartnerOffer | null>(null);
+  const [highlightOffer, setHighlightOffer] = useState<PartnerOfferPublic | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);

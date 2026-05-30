@@ -4,7 +4,7 @@ import type {
   CulturalPlaceListItem,
   LocalEvent,
   Neighborhood,
-  PartnerOffer,
+  PartnerOfferPublic,
   PassportMe,
   Tribe,
 } from "@yunicity/types";
@@ -22,7 +22,7 @@ export type TribesPortalContextState = {
   events: LocalEvent[];
   neighborhoods: Neighborhood[];
   culturalPlaces: CulturalPlaceListItem[];
-  offers: PartnerOffer[];
+  offers: PartnerOfferPublic[];
   passport: PassportMe | null;
   reload: () => void;
 };
@@ -38,7 +38,7 @@ export function useTribesPortalContext(initialCity?: string): TribesPortalContex
   const [events, setEvents] = useState<LocalEvent[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [culturalPlaces, setCulturalPlaces] = useState<CulturalPlaceListItem[]>([]);
-  const [offers, setOffers] = useState<PartnerOffer[]>([]);
+  const [offers, setOffers] = useState<PartnerOfferPublic[]>([]);
   const [passport, setPassport] = useState<PassportMe | null>(null);
 
   const city = useMemo(

@@ -2,7 +2,7 @@ import type {
   CulturalPlaceListItem,
   LocalEvent,
   Neighborhood,
-  PartnerOffer,
+  PartnerOfferPublic,
 } from "@yunicity/types";
 
 import { buildMapEventUrl, buildMapPlaceUrl } from "./explorer-links";
@@ -26,7 +26,7 @@ type MapLiveDiscoveryInput = {
   city: string;
   events: LocalEvent[];
   culturalPlaces: CulturalPlaceListItem[];
-  passportOffers: PartnerOffer[];
+  passportOffers: PartnerOfferPublic[];
   neighborhoods: Neighborhood[];
   maxItems?: number;
   now?: Date;
@@ -102,11 +102,11 @@ export function buildMapLiveDiscoveryItems({
       id: `offer:${activeOffer.id}`,
       kind: "passport",
       title: activeOffer.title,
-      subtitle: activeOffer.organization.name,
+      subtitle: activeOffer.partner.name,
       badge: "Passport",
       ctaLabel: "Voir l'offre",
       href: "/passport",
-      imageUrl: activeOffer.organization.logo_url,
+      imageUrl: activeOffer.partner.logo_url,
     });
     usedIds.add(`offer:${activeOffer.id}`);
   }

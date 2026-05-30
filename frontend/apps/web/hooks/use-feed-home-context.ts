@@ -1,6 +1,6 @@
 "use client";
 
-import type { LocalEvent, Neighborhood, PartnerOffer, PassportMe, Tribe } from "@yunicity/types";
+import type { LocalEvent, Neighborhood, PartnerOfferPublic, PassportMe, Tribe } from "@yunicity/types";
 import { isEventWithinDays } from "@yunicity/utils";
 import { useCallback, useEffect, useState } from "react";
 
@@ -12,7 +12,7 @@ export type FeedHomeContextState = {
   loading: boolean;
   weekEvents: LocalEvent[];
   neighborhoods: Neighborhood[];
-  highlightOffer: PartnerOffer | null;
+  highlightOffer: PartnerOfferPublic | null;
   passport: PassportMe | null;
   featuredTribe: Tribe | null;
 };
@@ -26,7 +26,7 @@ export function useFeedHomeContext(): FeedHomeContextState {
   const [loading, setLoading] = useState(true);
   const [weekEvents, setWeekEvents] = useState<LocalEvent[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
-  const [highlightOffer, setHighlightOffer] = useState<PartnerOffer | null>(null);
+  const [highlightOffer, setHighlightOffer] = useState<PartnerOfferPublic | null>(null);
   const [passport, setPassport] = useState<PassportMe | null>(null);
   const [featuredTribe, setFeaturedTribe] = useState<Tribe | null>(null);
 

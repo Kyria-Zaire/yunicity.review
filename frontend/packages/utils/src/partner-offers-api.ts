@@ -1,6 +1,6 @@
 import type {
   PartnerOfferCreatePayload,
-  PartnerOfferListParams,
+  PartnerOfferManagementListParams,
   PartnerOfferManagement,
   PartnerOfferManagementListResponse,
   PartnerOfferUpdatePayload,
@@ -9,7 +9,7 @@ import type {
 import type { AuthClient } from "./auth/auth-client";
 import { ApiClientBase } from "./api-client";
 
-function buildListQuery(params?: PartnerOfferListParams): string {
+function buildListQuery(params?: PartnerOfferManagementListParams): string {
   if (!params) {
     return "";
   }
@@ -34,7 +34,7 @@ function buildListQuery(params?: PartnerOfferListParams): string {
 }
 
 export class PartnerOffersApi extends ApiClientBase {
-  listOffers(params?: PartnerOfferListParams): Promise<PartnerOfferManagementListResponse> {
+  listOffers(params?: PartnerOfferManagementListParams): Promise<PartnerOfferManagementListResponse> {
     return this.getJson<PartnerOfferManagementListResponse>(
       `/organizations/me/offers${buildListQuery(params)}`,
     );

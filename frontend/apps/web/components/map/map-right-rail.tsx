@@ -178,7 +178,7 @@ export function MapRightRail({
                     <span className="block line-clamp-1 text-sm font-medium text-neutral-800">
                       {offer.title}
                     </span>
-                    <span className="block text-xs text-neutral-500">{offer.organization.name}</span>
+                    <span className="block text-xs text-neutral-500">{offer.partner.name}</span>
                   </span>
                   <TicketPercent className="h-4 w-4 shrink-0 text-yunicity-primary" aria-hidden />
                 </Link>

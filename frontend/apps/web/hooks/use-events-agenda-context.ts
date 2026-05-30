@@ -4,7 +4,7 @@ import type {
   CulturalPlaceListItem,
   LocalEvent,
   Neighborhood,
-  PartnerOffer,
+  PartnerOfferPublic,
   Tribe,
 } from "@yunicity/types";
 import { filterAgendaUpcomingEvents } from "@yunicity/utils";
@@ -22,7 +22,9 @@ export type EventsAgendaContextState = {
   tribes: Tribe[];
   neighborhoods: Neighborhood[];
   culturalPlaces: CulturalPlaceListItem[];
-  passportOffers: PartnerOffer[];
+  passportOffers: PartnerOfferPublic[];
+  interests: string[];
+  passportStampsCount: number;
   reload: () => void;
 };
 
@@ -38,7 +40,9 @@ export function useEventsAgendaContext(city: string): EventsAgendaContextState {
   const [tribes, setTribes] = useState<Tribe[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [culturalPlaces, setCulturalPlaces] = useState<CulturalPlaceListItem[]>([]);
-  const [passportOffers, setPassportOffers] = useState<PartnerOffer[]>([]);
+  const [passportOffers, setPassportOffers] = useState<PartnerOfferPublic[]>([]);
+  const [interests, setInterests] = useState<string[]>([]);
+  const [passportStampsCount, setPassportStampsCount] = useState(0);
 
   const load = useCallback(async () => {
     const activeCity = city.trim() || user?.city?.trim() || DEFAULT_CITY;
@@ -46,29 +50,31 @@ export function useEventsAgendaContext(city: string): EventsAgendaContextState {
     setError(false);
 
     try {
-      const requests: [
-        Promise<unknown>,
-        Promise<unknown>,
-        Promise<unknown>,
-        Promise<unknown>,
-        Promise<unknown>,
-        Promise<unknown>?,
-      ] = [
+      const requests: Promise<unknown>[] = [
         api.events.listEvents({ city: activeCity }),
         api.neighborhoods.listNeighborhoods({ city: activeCity, page_size: 12 }),
-        api.listCulturalPlaces({ city: activeCity, featured: true, limit: 12 }),
+        api.listCulturalPlaces({ city: activeCity, featured: true, limit: 24 }),
         api.tribes.listTribes({ city: activeCity, page_size: 6 }),
         api.listPassportOffers(),
       ];
 
       if (user) {
         requests.push(api.events.listSavedEvents());
+        requests.push(api.profile.getProfileMe());
+        requests.push(api.getPassportMe());
       }
 
       const results = await Promise.allSettled(requests);
-      const [eventsRes, hoodsRes, cultureRes, tribesRes, offersRes, savedRes] = results;
+      const eventsRes = results[0];
+      const hoodsRes = results[1];
+      const cultureRes = results[2];
+      const tribesRes = results[3];
+      const offersRes = results[4];
+      const savedRes = user ? results[5] : undefined;
+      const profileRes = user ? results[6] : undefined;
+      const passportRes = user ? results[7] : undefined;
 
-      if (eventsRes.status === "fulfilled") {
+      if (eventsRes?.status === "fulfilled") {
         const value = eventsRes.value as Awaited<ReturnType<typeof api.events.listEvents>>;
         setEvents(filterAgendaUpcomingEvents(value.items));
       } else {
@@ -76,7 +82,7 @@ export function useEventsAgendaContext(city: string): EventsAgendaContextState {
         setError(true);
       }
 
-      if (hoodsRes.status === "fulfilled") {
+      if (hoodsRes?.status === "fulfilled") {
         const value = hoodsRes.value as Awaited<
           ReturnType<typeof api.neighborhoods.listNeighborhoods>
         >;
@@ -85,21 +91,21 @@ export function useEventsAgendaContext(city: string): EventsAgendaContextState {
         setNeighborhoods([]);
       }
 
-      if (cultureRes.status === "fulfilled") {
+      if (cultureRes?.status === "fulfilled") {
         const value = cultureRes.value as Awaited<ReturnType<typeof api.listCulturalPlaces>>;
         setCulturalPlaces(value.items);
       } else {
         setCulturalPlaces([]);
       }
 
-      if (tribesRes.status === "fulfilled") {
+      if (tribesRes?.status === "fulfilled") {
         const value = tribesRes.value as Awaited<ReturnType<typeof api.tribes.listTribes>>;
         setTribes(value.items.filter((tribe) => !tribe.is_archived));
       } else {
         setTribes([]);
       }
 
-      if (offersRes.status === "fulfilled") {
+      if (offersRes?.status === "fulfilled") {
         const value = offersRes.value as Awaited<ReturnType<typeof api.listPassportOffers>>;
         setPassportOffers(value.items);
       } else {
@@ -111,6 +117,20 @@ export function useEventsAgendaContext(city: string): EventsAgendaContextState {
         setSavedEvents(filterAgendaUpcomingEvents(value.items));
       } else {
         setSavedEvents([]);
+      }
+
+      if (profileRes?.status === "fulfilled") {
+        const value = profileRes.value as Awaited<ReturnType<typeof api.profile.getProfileMe>>;
+        setInterests(value.interests ?? []);
+      } else {
+        setInterests([]);
+      }
+
+      if (passportRes?.status === "fulfilled") {
+        const value = passportRes.value as Awaited<ReturnType<typeof api.getPassportMe>>;
+        setPassportStampsCount(value.stats.stamps_count);
+      } else {
+        setPassportStampsCount(0);
       }
     } finally {
       setLoading(false);
@@ -131,6 +151,8 @@ export function useEventsAgendaContext(city: string): EventsAgendaContextState {
     neighborhoods,
     culturalPlaces,
     passportOffers,
+    interests,
+    passportStampsCount,
     reload: load,
   };
 }

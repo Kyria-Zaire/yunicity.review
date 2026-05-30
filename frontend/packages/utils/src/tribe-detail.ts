@@ -2,7 +2,7 @@ import type {
   CulturalPlaceListItem,
   LocalEvent,
   Neighborhood,
-  PartnerOffer,
+  PartnerOfferPublic,
   Tribe,
   TribeMember,
 } from "@yunicity/types";
@@ -235,7 +235,7 @@ export function buildTribeLifestyleSlices(input: {
   tribe: Tribe;
   events: LocalEvent[];
   places: CulturalPlaceListItem[];
-  offers: PartnerOffer[];
+  offers: PartnerOfferPublic[];
   maxItems?: number;
 }): TribeLifestyleSlice[] {
   const maxItems = input.maxItems ?? 4;
@@ -266,7 +266,7 @@ export function buildTribeLifestyleSlices(input: {
     slices.push({
       id: `life-offer-${offer.id}`,
       title: offer.title,
-      subtitle: offer.organization.name,
+      subtitle: offer.partner.name,
       imageUrl: null,
       href: "/passport",
     });

@@ -4,7 +4,7 @@ import type {
   CulturalPlaceListItem,
   LocalEvent,
   Neighborhood,
-  PartnerOffer,
+  PartnerOfferPublic,
   Tribe,
 } from "@yunicity/types";
 import {
@@ -28,7 +28,7 @@ export type EventDetailContextState = {
   neighborhoods: Neighborhood[];
   neighborhoodContext: ReturnType<typeof resolveEventNeighborhoodContext>;
   tribes: Tribe[];
-  passportOffers: PartnerOffer[];
+  passportOffers: PartnerOfferPublic[];
   savedEvents: LocalEvent[];
   culturalPlaces: CulturalPlaceListItem[];
   patchEvent: (patch: Partial<LocalEvent>) => void;
@@ -47,7 +47,7 @@ export function useEventDetailContext(eventId: string): EventDetailContextState 
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [culturalPlaces, setCulturalPlaces] = useState<CulturalPlaceListItem[]>([]);
   const [tribes, setTribes] = useState<Tribe[]>([]);
-  const [passportOffers, setPassportOffers] = useState<PartnerOffer[]>([]);
+  const [passportOffers, setPassportOffers] = useState<PartnerOfferPublic[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);

@@ -4,7 +4,6 @@ import type {
   CulturalPlaceListItem,
   LocalEvent,
   Neighborhood,
-  PartnerOffer,
   PassportMe,
   Tribe,
 } from "@yunicity/types";
@@ -17,7 +16,12 @@ import {
   buildTribeLifeSlices,
   buildTribeMomentsTimeline,
   buildTribePortalCards,
+  buildTribesFeaturedCards,
+  buildTribesMeetupCards,
+  buildTribesPortalStats,
   filterTribePortalCardsByTheme,
+  filterTribesForPortalCategory,
+  filterTribesForPortalView,
   tribePortalHasNoFakeMetrics,
 } from "./tribe-portal";
 
@@ -106,16 +110,19 @@ const BASE_PLACE: CulturalPlaceListItem = {
   neighborhood: { slug: "centre-ville", display_name: "Centre-ville" },
 };
 
-const BASE_OFFER: PartnerOffer = {
+const BASE_OFFER = {
   id: "o1",
-  organization_id: "org",
+  slug: "offre-lecture",
   title: "Offre lecture",
   description: null,
-  offer_type: "discount",
+  value_label: null,
+  offer_type: "discount" as const,
+  conditions: null,
   tier_code_required: null,
   valid_from: null,
   valid_until: null,
-  organization: { id: "org", slug: "librairie", name: "Librairie locale", city: "Reims", logo_url: null },
+  is_featured: false,
+  partner: { name: "Librairie locale", slug: "librairie", logo_url: null, cover_image_url: null, category: null, city: "Reims", is_verified: true, partner_status: "active" as const },
 };
 
 describe("tribe-portal helpers", () => {
@@ -130,6 +137,8 @@ describe("tribe-portal helpers", () => {
       neighborhoods: [BASE_HOOD],
     });
     expect(cards).toHaveLength(1);
+    expect(cards[0]?.categoryLabel.length).toBeGreaterThan(0);
+    expect(cards[0]?.cta).toBe("Rejoindre");
     expect(filterTribePortalCardsByTheme(cards, "lecture")).toHaveLength(1);
     expect(filterTribePortalCardsByTheme(cards, "sport-doux")).toHaveLength(0);
   });
@@ -183,6 +192,39 @@ describe("tribe-portal helpers", () => {
       maxItems: 4,
     });
     expect(slices.length).toBeLessThanOrEqual(4);
+  });
+
+  it("builds portal stats from real tribe and event data", () => {
+    const stats = buildTribesPortalStats([BASE_TRIBE], [BASE_EVENT]);
+    expect(stats.activeTribes).toBe(1);
+    expect(stats.engagedMembers).toBe(16);
+    expect(stats.meetupsThisWeek).toBeGreaterThanOrEqual(0);
+  });
+
+  it("builds featured cards and meetups from linked events", () => {
+    const featured = buildTribesFeaturedCards({
+      city: "Reims",
+      tribes: [BASE_TRIBE],
+      events: [BASE_EVENT],
+    });
+    expect(featured).toHaveLength(1);
+    expect(featured[0]?.memberCount).toBe(16);
+
+    const meetups = buildTribesMeetupCards({
+      city: "Reims",
+      tribes: [BASE_TRIBE],
+      events: [BASE_EVENT],
+      culturalPlaces: [BASE_PLACE],
+    });
+    expect(meetups).toHaveLength(1);
+    expect(meetups[0]?.tribeName).toContain("Lecteurs");
+  });
+
+  it("filters tribes by portal view and category", () => {
+    const memberTribe = { ...BASE_TRIBE, viewer_is_member: true };
+    expect(filterTribesForPortalView([memberTribe], "mine", [])).toHaveLength(1);
+    expect(filterTribesForPortalCategory([BASE_TRIBE], "gastronomie")).toHaveLength(1);
+    expect(filterTribesForPortalCategory([BASE_TRIBE], "sport")).toHaveLength(0);
   });
 });
 

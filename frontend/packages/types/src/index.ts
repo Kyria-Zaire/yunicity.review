@@ -58,12 +58,19 @@ export type {
 
 export type {
   PartnerOfferCreatePayload,
-  PartnerOfferListParams,
+  PartnerOfferManagementListParams,
   PartnerOfferManagement,
   PartnerOfferManagementListResponse,
   PartnerOfferStatus,
   PartnerOfferUpdatePayload,
 } from "./partner_offer_management";
+
+export type {
+  PartnerOfferListParams,
+  PartnerOfferPartnerSummary,
+  PartnerOfferPublic,
+  PartnerOfferPublicListResponse,
+} from "./partner-offer-public";
 
 export type {
   OfferRedemptionStatus,

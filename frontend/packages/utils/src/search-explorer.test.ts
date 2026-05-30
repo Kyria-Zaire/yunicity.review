@@ -79,19 +79,25 @@ const basePlace = {
 
 const baseOffer = {
   id: "o1",
-  organization_id: "org1",
+  slug: "cafe-offert",
   title: "Café offert",
   description: null,
+  value_label: null,
   offer_type: "discount" as const,
+  conditions: null,
   tier_code_required: null,
   valid_from: null,
   valid_until: null,
-  organization: {
-    id: "org1",
-    slug: "cafe-local",
+  is_featured: false,
+  partner: {
     name: "Café Local",
-    city: "Reims",
+    slug: "cafe-local",
     logo_url: null,
+    cover_image_url: null,
+    category: null,
+    city: "Reims",
+    is_verified: true,
+    partner_status: "active" as const,
   },
 };
 

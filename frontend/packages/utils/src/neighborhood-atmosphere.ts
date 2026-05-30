@@ -2,7 +2,7 @@ import type {
   CulturalPlaceListItem,
   LocalEvent,
   Neighborhood,
-  PartnerOffer,
+  PartnerOfferPublic,
   Tribe,
 } from "@yunicity/types";
 
@@ -31,7 +31,7 @@ export type BuildNeighborhoodAtmosphereInput = {
   events: LocalEvent[];
   culturalPlaces: CulturalPlaceListItem[];
   tribes?: Tribe[];
-  passportOffers?: PartnerOffer[];
+  passportOffers?: PartnerOfferPublic[];
   weatherCalm?: boolean;
   maxItems?: number;
   now?: Date;

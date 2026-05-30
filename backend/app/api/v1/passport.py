@@ -5,14 +5,15 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, Request
+from fastapi import APIRouter, Body, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import require_authenticated_user
+from app.core.passport_constants import PARTNER_OFFER_TYPES, PartnerOfferType
 from app.core.rate_limit import enforce_rate_limit
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.partner_offer import PartnerOfferListResponse
+from app.schemas.partner_offer_public import PartnerOfferPublicListResponse
 from app.schemas.passport import (
     PassportActivateRequest,
     PassportMeResponse,
@@ -22,6 +23,16 @@ from app.schemas.passport import (
 from app.schemas.redemption import RedemptionResponse
 from app.schemas.scan import PassportQrResponse
 from app.services.passport_service import PassportService
+from app.services.public_partner_offer_service import PublicPartnerOfferService
+
+
+def _parse_offer_type(value: str | None) -> PartnerOfferType | None:
+    if value is None:
+        return None
+    normalized = value.strip().lower()
+    if normalized not in PARTNER_OFFER_TYPES:
+        return None
+    return PartnerOfferType(normalized)
 
 router = APIRouter(prefix="/passport", tags=["passport"])
 
@@ -78,12 +89,26 @@ async def list_passport_stamps(
     return await PassportService(session).list_stamps(current_user)
 
 
-@router.get("/offers", response_model=PartnerOfferListResponse)
+@router.get("/offers", response_model=PartnerOfferPublicListResponse)
 async def list_passport_offers(
     current_user: Annotated[User, Depends(require_authenticated_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
-) -> PartnerOfferListResponse:
-    return await PassportService(session).list_visible_offers(current_user)
+    city: str | None = Query(default=None, min_length=1, max_length=128),
+    partner_slug: str | None = Query(default=None),
+    featured: bool = Query(default=False),
+    type: str | None = Query(default=None, alias="type"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> PartnerOfferPublicListResponse:
+    return await PublicPartnerOfferService(session).list_for_passport_user(
+        current_user,
+        city=city,
+        partner_slug=partner_slug,
+        featured_only=featured,
+        offer_type=_parse_offer_type(type),
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.post("/offers/{offer_id}/redeem", response_model=RedemptionResponse)

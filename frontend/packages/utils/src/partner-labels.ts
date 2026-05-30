@@ -52,11 +52,13 @@ export function isPublicPartner(status: PartnerStatus): boolean {
   return PUBLIC_PARTNER_STATUSES.has(status);
 }
 
-export function partnerDisplayCategory(partner: Pick<PartnerPublic, "category" | "partnership_type">): string {
+export function partnerDisplayCategory(
+  partner: Pick<PartnerPublic, "category"> & { partnership_type?: PartnershipType | null },
+): string {
   if (partner.category) {
     return CATEGORY_LABELS[partner.category] ?? partner.category;
   }
-  return partnerTypeLabel(partner.partnership_type);
+  return partner.partnership_type ? partnerTypeLabel(partner.partnership_type) : "Partenaire local";
 }
 
 /** Guard for accidental internal field leaks in client code. */

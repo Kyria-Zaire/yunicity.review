@@ -2,17 +2,77 @@ import type {
   CulturalPlaceListItem,
   LocalEvent,
   Neighborhood,
-  PartnerOffer,
+  PartnerOfferPublic,
   Tribe,
 } from "@yunicity/types";
 
 import { formatEventDateRange } from "./event-labels";
-import { resolveNeighborhoodEditorialImage } from "./editorial-fallback-images";
+import {
+  NEIGHBORHOODS_PORTAL_HERO_IMAGE_URL,
+  resolveNeighborhoodEditorialImage,
+} from "./editorial-fallback-images";
 import { buildMapEventUrl, buildMapNeighborhoodUrl } from "./explorer-links";
-import { buildNeighborhoodMomentAtmosphereLine, eventBelongsToNeighborhood } from "./neighborhood-atmosphere";
+import {
+  buildNeighborhoodMomentAtmosphereLine,
+  culturalPlaceBelongsToNeighborhood,
+  eventBelongsToNeighborhood,
+} from "./neighborhood-atmosphere";
 import { neighborhoodAmbianceLabel, neighborhoodHref } from "./neighborhood-labels";
 import { neighborhoodHeroTagline } from "./neighborhood-detail";
 import { tribeHref } from "./tribe-labels";
+
+export type NeighborhoodsPortalStats = {
+  neighborhoodsCount: number;
+  activeMomentsCount: number;
+  cafesCount: number;
+  eventsThisWeek: number;
+};
+
+export type NeighborhoodFeaturedCard = {
+  id: string;
+  slug: string;
+  name: string;
+  imageUrl: string | null;
+  headline: string;
+  description: string;
+  themeSlug: string;
+  momentsCount: number;
+  cafesCount: number;
+  eventsThisWeek: number;
+  href: string;
+};
+
+export type NeighborhoodListCard = {
+  id: string;
+  slug: string;
+  name: string;
+  imageUrl: string | null;
+  tagline: string;
+  momentsCount: number;
+  href: string;
+};
+
+export const NEIGHBORHOOD_PORTAL_THEME_SLUGS = [
+  "saint-remi",
+  "centre-ville",
+  "boulingrin",
+  "cernay",
+  "clairmarais",
+  "croix-rouge",
+] as const;
+
+export type NeighborhoodPortalThemeSlug = (typeof NEIGHBORHOOD_PORTAL_THEME_SLUGS)[number];
+
+const FEATURED_HEADLINE_BY_SLUG: Record<string, string> = {
+  "centre-ville": "Le cœur historique",
+  "saint-remi": "Le quartier qui respire aujourd’hui",
+  boulingrin: "Le quartier gourmand",
+  cernay: "Esprit village en pleine ville",
+  clairmarais: "Vie locale au quotidien",
+  "croix-rouge": "Vie locale et esprit de quartier",
+};
+
+const CAFE_CATEGORY_PATTERN = /cafe|café|gastronomie|restaurant|brasserie|boulangerie|bar\b/i;
 
 export const NEIGHBORHOOD_PORTAL_MOODS = [
   "calme",
@@ -107,7 +167,7 @@ function buildCardSignals(
   events: LocalEvent[],
   places: CulturalPlaceListItem[],
   tribes: Tribe[],
-  offers: PartnerOffer[],
+  offers: PartnerOfferPublic[],
 ): NeighborhoodPortalSignal[] {
   const signals: NeighborhoodPortalSignal[] = [];
   const hoodEvent = events.find((event) => eventBelongsToNeighborhood(event, hood));
@@ -180,7 +240,7 @@ export function buildNeighborhoodCards(input: {
   events: LocalEvent[];
   culturalPlaces: CulturalPlaceListItem[];
   tribes: Tribe[];
-  offers: PartnerOffer[];
+  offers: PartnerOfferPublic[];
 }): NeighborhoodPortalCard[] {
   const city = input.city.trim() || "Reims";
   const upcoming = input.events.filter((event) => !event.is_cancelled);
@@ -228,7 +288,7 @@ export function buildNeighborhoodLifeSlices(input: {
   events: LocalEvent[];
   culturalPlaces: CulturalPlaceListItem[];
   tribes: Tribe[];
-  offers: PartnerOffer[];
+  offers: PartnerOfferPublic[];
   maxItems?: number;
 }): NeighborhoodLifeSlice[] {
   const city = input.city.trim() || "Reims";
@@ -270,7 +330,7 @@ export function buildNeighborhoodLifeSlices(input: {
     slices.push({
       id: `offer-${offer.id}`,
       title: offer.title,
-      subtitle: offer.organization.name,
+      subtitle: offer.partner.name,
       href: "/passport",
       kind: "offer",
     });
@@ -281,5 +341,169 @@ export function buildNeighborhoodLifeSlices(input: {
 
 export function neighborhoodPortalHasNoFakeMetrics(lines: string[]): boolean {
   return lines.every((line) => !BANNED_METRIC_PATTERN.test(line));
+}
+
+function isWithinNextDays(iso: string, days: number, now = new Date()): boolean {
+  const start = new Date(iso);
+  if (Number.isNaN(start.getTime())) return false;
+  const horizon = new Date(now);
+  horizon.setDate(horizon.getDate() + days);
+  return start >= now && start <= horizon;
+}
+
+function isCafeCulturalPlace(place: CulturalPlaceListItem): boolean {
+  return CAFE_CATEGORY_PATTERN.test(place.category);
+}
+
+function resolveFeaturedDescription(hood: Neighborhood): string {
+  const short = hood.short_description?.trim();
+  if (!short) {
+    return neighborhoodHeroTagline(hood);
+  }
+  const parts = short.split(/\s*[—–-]\s+/);
+  if (parts.length >= 2) {
+    return parts.slice(1).join(" — ").trim();
+  }
+  const sentences = short.split(/(?<=[.!?])\s+/).filter(Boolean);
+  if (sentences.length >= 2) {
+    return sentences.slice(1).join(" ");
+  }
+  return short;
+}
+
+export function resolveNeighborhoodFeaturedHeadline(hood: Neighborhood): string {
+  const slugKey = hood.slug.trim().toLowerCase();
+  if (FEATURED_HEADLINE_BY_SLUG[slugKey]) {
+    return FEATURED_HEADLINE_BY_SLUG[slugKey]!;
+  }
+  const short = hood.short_description?.trim();
+  if (short) {
+    const beforeDash = short.split(/\s*[—–-]\s+/)[0]?.trim();
+    if (beforeDash && beforeDash.length <= 72) {
+      return beforeDash.replace(/\s+de\s+Reims$/i, "").trim() || beforeDash;
+    }
+  }
+  return neighborhoodHeroTagline(hood);
+}
+
+export function resolveNeighborhoodPortalThemeSlug(hood: Neighborhood): NeighborhoodPortalThemeSlug {
+  const slug = hood.slug.trim().toLowerCase();
+  if (NEIGHBORHOOD_PORTAL_THEME_SLUGS.includes(slug as NeighborhoodPortalThemeSlug)) {
+    return slug as NeighborhoodPortalThemeSlug;
+  }
+  return "centre-ville";
+}
+
+function countHoodMoments(hood: Neighborhood, events: LocalEvent[]): number {
+  return events.filter(
+    (event) => !event.is_cancelled && eventBelongsToNeighborhood(event, hood),
+  ).length;
+}
+
+function countHoodCafes(hood: Neighborhood, places: CulturalPlaceListItem[]): number {
+  return places.filter(
+    (place) => culturalPlaceBelongsToNeighborhood(place, hood) && isCafeCulturalPlace(place),
+  ).length;
+}
+
+function countHoodEventsThisWeek(
+  hood: Neighborhood,
+  events: LocalEvent[],
+  now = new Date(),
+): number {
+  return events.filter(
+    (event) =>
+      !event.is_cancelled &&
+      eventBelongsToNeighborhood(event, hood) &&
+      isWithinNextDays(event.starts_at, 7, now),
+  ).length;
+}
+
+export function buildNeighborhoodsPortalStats(input: {
+  neighborhoods: Neighborhood[];
+  events: LocalEvent[];
+  culturalPlaces: CulturalPlaceListItem[];
+  now?: Date;
+}): NeighborhoodsPortalStats {
+  const now = input.now ?? new Date();
+  const active = input.neighborhoods.filter((hood) => hood.is_active);
+  const upcoming = input.events.filter((event) => !event.is_cancelled);
+
+  return {
+    neighborhoodsCount: active.length,
+    activeMomentsCount: upcoming.length,
+    cafesCount: input.culturalPlaces.filter(isCafeCulturalPlace).length,
+    eventsThisWeek: upcoming.filter((event) => isWithinNextDays(event.starts_at, 7, now)).length,
+  };
+}
+
+/** Image fixe du bandeau portail — indépendante du pick quartier/lieu du jour. */
+export function resolveNeighborhoodsPortalHeroImage(
+  _neighborhoods: Neighborhood[],
+  _culturalPlaces: CulturalPlaceListItem[],
+): string {
+  return NEIGHBORHOODS_PORTAL_HERO_IMAGE_URL;
+}
+
+export function buildNeighborhoodFeaturedCards(input: {
+  city: string;
+  neighborhoods: Neighborhood[];
+  events: LocalEvent[];
+  culturalPlaces: CulturalPlaceListItem[];
+  maxItems?: number;
+  now?: Date;
+}): NeighborhoodFeaturedCard[] {
+  const city = input.city.trim() || "Reims";
+  const maxItems = input.maxItems ?? 4;
+  const now = input.now ?? new Date();
+  const upcoming = input.events.filter((event) => !event.is_cancelled);
+
+  return input.neighborhoods
+    .filter((hood) => hood.is_active)
+    .sort((a, b) => {
+      if (a.is_featured !== b.is_featured) return a.is_featured ? -1 : 1;
+      return countHoodMoments(b, upcoming) - countHoodMoments(a, upcoming);
+    })
+    .slice(0, maxItems)
+    .map((hood) => ({
+      id: hood.id,
+      slug: hood.slug,
+      name: hood.display_name,
+      imageUrl: resolveNeighborhoodEditorialImage(hood),
+      headline: resolveNeighborhoodFeaturedHeadline(hood),
+      description: resolveFeaturedDescription(hood),
+      themeSlug: resolveNeighborhoodPortalThemeSlug(hood),
+      momentsCount: countHoodMoments(hood, upcoming),
+      cafesCount: countHoodCafes(hood, input.culturalPlaces),
+      eventsThisWeek: countHoodEventsThisWeek(hood, upcoming, now),
+      href: neighborhoodHref(hood.slug, city),
+    }));
+}
+
+export function buildNeighborhoodListCards(input: {
+  city: string;
+  neighborhoods: Neighborhood[];
+  events: LocalEvent[];
+  /** Si fourni, exclut ces slugs (ex. cartes déjà en « À découvrir »). */
+  excludeSlugs?: string[];
+  maxItems?: number;
+}): NeighborhoodListCard[] {
+  const city = input.city.trim() || "Reims";
+  const excluded = new Set((input.excludeSlugs ?? []).map((slug) => slug.trim().toLowerCase()));
+  const upcoming = input.events.filter((event) => !event.is_cancelled);
+
+  return input.neighborhoods
+    .filter((hood) => hood.is_active && !excluded.has(hood.slug.trim().toLowerCase()))
+    .sort((a, b) => a.display_name.localeCompare(b.display_name, "fr"))
+    .slice(0, input.maxItems ?? 12)
+    .map((hood) => ({
+      id: hood.id,
+      slug: hood.slug,
+      name: hood.display_name,
+      imageUrl: resolveNeighborhoodEditorialImage(hood),
+      tagline: neighborhoodHeroTagline(hood),
+      momentsCount: countHoodMoments(hood, upcoming),
+      href: neighborhoodHref(hood.slug, city),
+    }));
 }
 

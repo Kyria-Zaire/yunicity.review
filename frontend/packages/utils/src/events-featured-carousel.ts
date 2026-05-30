@@ -1,7 +1,7 @@
 import type {
   CulturalPlaceListItem,
   LocalEvent,
-  PartnerOffer,
+  PartnerOfferPublic,
   Tribe,
 } from "@yunicity/types";
 
@@ -41,7 +41,7 @@ type BuildFeaturedCarouselInput = {
   city: string;
   events: LocalEvent[];
   culturalPlaces: CulturalPlaceListItem[];
-  passportOffers: PartnerOffer[];
+  passportOffers: PartnerOfferPublic[];
   tribes: Tribe[];
   maxItems?: number;
   now?: Date;
@@ -51,7 +51,7 @@ function resolvePlaceImage(place: CulturalPlaceListItem): string | null {
   return resolveCulturalPlaceImageOverride(place) ?? resolveCulturalPlaceHeroUrl(place);
 }
 
-function isOfferActive(offer: PartnerOffer, now: Date): boolean {
+function isOfferActive(offer: PartnerOfferPublic, now: Date): boolean {
   if (offer.valid_until) {
     const until = Date.parse(offer.valid_until);
     if (Number.isFinite(until) && until < now.getTime()) return false;
@@ -168,11 +168,11 @@ export function buildFeaturedCarouselItems({
         id,
         kind: "passport",
         title: activeOffer.title,
-        subtitle: activeOffer.organization.name,
+        subtitle: activeOffer.partner.name,
         badge: "Privilège local",
         ctaLabel: FEATURED_CAROUSEL_CTA.passport,
         href: "/passport",
-        imageUrl: activeOffer.organization.logo_url,
+        imageUrl: activeOffer.partner.logo_url,
       });
     }
   }

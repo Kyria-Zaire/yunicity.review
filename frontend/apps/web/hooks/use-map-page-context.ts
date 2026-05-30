@@ -4,7 +4,7 @@ import type {
   CulturalPlaceListItem,
   LocalEvent,
   Neighborhood,
-  PartnerOffer,
+  PartnerOfferPublic,
   Tribe,
 } from "@yunicity/types";
 import { useCallback, useEffect, useState } from "react";
@@ -21,8 +21,8 @@ export type MapPageContextState = {
   tribes: Tribe[];
   culturalPlaces: CulturalPlaceListItem[];
   upcomingEvents: LocalEvent[];
-  passportOffers: PartnerOffer[];
-  highlightOffer: PartnerOffer | null;
+  passportOffers: PartnerOfferPublic[];
+  highlightOffer: PartnerOfferPublic | null;
 };
 
 export function useMapPageContext(): MapPageContextState {
@@ -34,8 +34,8 @@ export function useMapPageContext(): MapPageContextState {
   const [tribes, setTribes] = useState<Tribe[]>([]);
   const [culturalPlaces, setCulturalPlaces] = useState<CulturalPlaceListItem[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<LocalEvent[]>([]);
-  const [passportOffers, setPassportOffers] = useState<PartnerOffer[]>([]);
-  const [highlightOffer, setHighlightOffer] = useState<PartnerOffer | null>(null);
+  const [passportOffers, setPassportOffers] = useState<PartnerOfferPublic[]>([]);
+  const [highlightOffer, setHighlightOffer] = useState<PartnerOfferPublic | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);

@@ -4,7 +4,7 @@ import type {
   CulturalPlaceListItem,
   LocalEvent,
   Neighborhood,
-  PartnerOffer,
+  PartnerOfferPublic,
   Tribe,
 } from "@yunicity/types";
 import { filterAgendaUpcomingEvents } from "@yunicity/utils";
@@ -21,7 +21,7 @@ export type NeighborhoodsPortalContextState = {
   events: LocalEvent[];
   culturalPlaces: CulturalPlaceListItem[];
   tribes: Tribe[];
-  passportOffers: PartnerOffer[];
+  passportOffers: PartnerOfferPublic[];
   reload: () => void;
 };
 
@@ -36,7 +36,7 @@ export function useNeighborhoodsPortalContext(initialCity?: string): Neighborhoo
   const [events, setEvents] = useState<LocalEvent[]>([]);
   const [culturalPlaces, setCulturalPlaces] = useState<CulturalPlaceListItem[]>([]);
   const [tribes, setTribes] = useState<Tribe[]>([]);
-  const [passportOffers, setPassportOffers] = useState<PartnerOffer[]>([]);
+  const [passportOffers, setPassportOffers] = useState<PartnerOfferPublic[]>([]);
 
   const city = useMemo(
     () => initialCity?.trim() || user?.city?.trim() || DEFAULT_CITY,
@@ -50,7 +50,7 @@ export function useNeighborhoodsPortalContext(initialCity?: string): Neighborhoo
       const results = await Promise.allSettled([
         api.neighborhoods.listNeighborhoods({ city, page_size: 24 }),
         api.events.listEvents({ city }),
-        api.listCulturalPlaces({ city, limit: 24 }),
+        api.listCulturalPlaces({ city, limit: 48 }),
         api.tribes.listTribes({ city, page_size: 8 }),
         api.listPassportOffers(),
       ]);

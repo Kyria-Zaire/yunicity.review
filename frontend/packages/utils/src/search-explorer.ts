@@ -4,7 +4,7 @@ import type {
   CulturalPlaceListItem,
   LocalEvent,
   Neighborhood,
-  PartnerOffer,
+  PartnerOfferPublic,
   Tribe,
 } from "@yunicity/types";
 
@@ -49,7 +49,7 @@ export type LocalTrendContext = {
   events: LocalEvent[];
   culturalPlaces: CulturalPlaceListItem[];
   tribes: Tribe[];
-  passportOffers: PartnerOffer[];
+  passportOffers: PartnerOfferPublic[];
 };
 
 export const LOCAL_TREND_MAX_ITEMS = 5;
@@ -152,14 +152,14 @@ function trendFromNeighborhood(hood: Neighborhood, city: string): LocalTrendItem
   };
 }
 
-function trendFromOffer(offer: PartnerOffer): LocalTrendItem {
+function trendFromOffer(offer: PartnerOfferPublic): LocalTrendItem {
   return {
     id: `offer-${offer.id}`,
     type: "passport_offer",
     title: offer.title,
-    subtitle: offer.organization.name,
+    subtitle: offer.partner.name,
     meta: TREND_META.passport_offer,
-    imageUrl: offer.organization.logo_url,
+    imageUrl: offer.partner.logo_url,
     icon: TREND_ICON.passport_offer,
     href: "/passport",
     actionLabel: TREND_ACTION.passport_offer,
@@ -274,13 +274,13 @@ export function filterLocalTribes(tribes: Tribe[], query: string): Tribe[] {
   );
 }
 
-export function filterLocalOffers(offers: PartnerOffer[], query: string): PartnerOffer[] {
+export function filterLocalOffers(offers: PartnerOfferPublic[], query: string): PartnerOfferPublic[] {
   const q = query.trim().toLowerCase();
   if (q.length < 2) return offers;
   return offers.filter(
     (o) =>
       o.title.toLowerCase().includes(q) ||
-      o.organization.name.toLowerCase().includes(q) ||
+      o.partner.name.toLowerCase().includes(q) ||
       (o.description?.toLowerCase().includes(q) ?? false),
   );
 }

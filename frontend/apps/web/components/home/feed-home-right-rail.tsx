@@ -165,7 +165,7 @@ export function FeedHomeRightRail({ context }: { context: FeedHomeContextState }
 
       {highlightOffer ? (
         <WebContextPanel title={HOME_PRIVILEGE_TITLE}>
-          <p className="text-xs font-medium text-yunicity-primary">{highlightOffer.organization.name}</p>
+          <p className="text-xs font-medium text-yunicity-primary">{highlightOffer.partner.name}</p>
           <p className="font-semibold text-neutral-900">{highlightOffer.title}</p>
           {highlightOffer.description ? (
             <p className="line-clamp-2 text-neutral-600">{highlightOffer.description}</p>

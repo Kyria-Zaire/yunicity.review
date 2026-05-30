@@ -69,7 +69,7 @@ export interface PartnerOfferUpdatePayload {
   flash_ends_at?: string | null;
 }
 
-export interface PartnerOfferListParams {
+export interface PartnerOfferManagementListParams {
   organization_id?: string;
   status?: PartnerOfferStatus;
   offer_type?: PartnerOfferType;

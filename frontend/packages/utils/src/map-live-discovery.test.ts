@@ -2,7 +2,6 @@ import type {
   CulturalPlaceListItem,
   LocalEvent,
   Neighborhood,
-  PartnerOffer,
 } from "@yunicity/types";
 import { describe, expect, it } from "vitest";
 
@@ -55,21 +54,27 @@ const BASE_PLACE: CulturalPlaceListItem = {
   image_source: null,
 };
 
-const BASE_OFFER: PartnerOffer = {
+const BASE_OFFER = {
   id: "offer-1",
-  organization_id: "org-1",
+  slug: "cafe-offert",
   title: "Cafe offert",
   description: null,
-  offer_type: "drink",
+  value_label: null,
+  offer_type: "drink" as const,
+  conditions: null,
   tier_code_required: null,
   valid_from: "2026-05-01T00:00:00Z",
   valid_until: "2026-06-02T00:00:00Z",
-  organization: {
-    id: "org-1",
-    slug: "cafe-du-centre",
+  is_featured: false,
+  partner: {
     name: "Cafe du Centre",
-    city: "Reims",
+    slug: "cafe-du-centre",
     logo_url: "https://img.example/logo.jpg",
+    cover_image_url: null,
+    category: null,
+    city: "Reims",
+    is_verified: true,
+    partner_status: "active" as const,
   },
 };
 

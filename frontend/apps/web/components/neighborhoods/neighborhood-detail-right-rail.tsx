@@ -87,7 +87,7 @@ export function NeighborhoodDetailRightRail({
                   className="block rounded-xl border border-neutral-100 bg-neutral-50/80 px-3 py-2.5 hover:bg-white"
                 >
                   <p className="line-clamp-2 text-sm font-semibold text-neutral-900">{offer.title}</p>
-                  <p className="mt-0.5 text-xs text-neutral-500">{offer.organization.name}</p>
+                  <p className="mt-0.5 text-xs text-neutral-500">{offer.partner.name}</p>
                 </Link>
               </li>
             ))}
