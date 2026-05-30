@@ -1,4 +1,9 @@
-export { getApiBaseUrl, getExpoApiBaseUrl, getWebApiBaseUrl } from "./api-base-url";
+export {
+  BROWSER_PROXIED_API_BASE,
+  getApiBaseUrl,
+  getExpoApiBaseUrl,
+  getWebApiBaseUrl,
+} from "./api-base-url";
 export { getAppEnvironmentLabel, isEnvironmentName } from "./environment";
 export { safeFetch, type SafeFetchResult } from "./safe-fetch";
 export * from "./auth";
@@ -1736,7 +1741,6 @@ export {
   type DiscussionNewExample,
   type DiscussionNewFormState,
 } from "./discussion-new-portal";
-export { DiscussionsApi, createDiscussionsApi } from "./discussions-api";
 export { StoriesApi, createStoriesApi } from "./stories-api";
 export {
   STORY_CATEGORY_NAV,
