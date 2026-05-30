@@ -24,6 +24,7 @@ from app.api.v1 import (
     rbac_validation,
     scan,
     search,
+    stories,
     transit,
     tribe_invitations,
     tribes,
@@ -50,6 +51,7 @@ api_router.include_router(notifications.router)
 api_router.include_router(users.router)
 api_router.include_router(feed.router)
 api_router.include_router(discussions.router)
+api_router.include_router(stories.router)
 api_router.include_router(posts.router)
 api_router.include_router(comments.router)
 api_router.include_router(scan.router)

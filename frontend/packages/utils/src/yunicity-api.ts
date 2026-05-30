@@ -41,6 +41,13 @@ import type {
   DiscussionInsightsResponse,
   DiscussionListParams,
   DiscussionListResponse,
+  StoryCreatePayload,
+  StoryInsightsResponse,
+  StoryItem,
+  StoryListParams,
+  StoryListResponse,
+  StoryMediaUploadResponse,
+  StoryRingsResponse,
   ReportPostPayload,
   UserProfile,
 } from "@yunicity/types";
@@ -63,8 +70,9 @@ import { ProfileApi, createProfileApi } from "./profile-api";
 import { WeatherApi, createWeatherApi } from "./weather-api";
 import { SubscriptionsApi, createSubscriptionsApi } from "./subscription-api";
 import { DiscussionsApi, createDiscussionsApi } from "./discussions-api";
+import { StoriesApi, createStoriesApi } from "./stories-api";
 
-/** FaÃƒÂ§ade profile + organizations + passport. */
+/** FaÃƒÆ’Ã‚Â§ade profile + organizations + passport. */
 export class YunicityApi {
   readonly profile: ProfileApi;
   readonly organization: OrganizationApi;
@@ -83,6 +91,7 @@ export class YunicityApi {
   readonly weather: WeatherApi;
   readonly subscriptions: SubscriptionsApi;
   readonly discussions: DiscussionsApi;
+  readonly stories: StoriesApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.profile = createProfileApi(client, apiBaseUrl);
@@ -102,6 +111,31 @@ export class YunicityApi {
     this.weather = createWeatherApi(client, apiBaseUrl);
     this.subscriptions = createSubscriptionsApi(client, apiBaseUrl);
     this.discussions = createDiscussionsApi(client, apiBaseUrl);
+    this.stories = createStoriesApi(client, apiBaseUrl);
+  }
+
+  listStories(params: StoryListParams = {}): Promise<StoryListResponse> {
+    return this.stories.listStories(params);
+  }
+
+  listStoryRings(): Promise<StoryRingsResponse> {
+    return this.stories.listRings();
+  }
+
+  getStoryInsights(): Promise<StoryInsightsResponse> {
+    return this.stories.getInsights();
+  }
+
+  createStory(payload: StoryCreatePayload): Promise<StoryItem> {
+    return this.stories.createStory(payload);
+  }
+
+  uploadStoryMedia(file: File): Promise<StoryMediaUploadResponse> {
+    return this.stories.uploadMedia(file);
+  }
+
+  recordStoryView(storyId: string): Promise<void> {
+    return this.stories.recordView(storyId);
   }
 
   listDiscussions(params: DiscussionListParams = {}): Promise<DiscussionListResponse> {

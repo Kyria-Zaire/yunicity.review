@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, Index, Integer, Numeric, String, Text, Uuid, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, Uuid, text
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -81,6 +82,17 @@ class Post(TimestampMixin, Base):
         ForeignKey("tribes.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
+    )
+    is_story: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    story_category: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    story_location_label: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    story_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    view_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
     )
     search_vector: Mapped[str] = mapped_column(
         TSVECTOR,

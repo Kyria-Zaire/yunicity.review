@@ -113,6 +113,23 @@ export type {
 } from "./discussion";
 
 export type {
+  StoryCategoryId,
+  StoryContributorItem,
+  StoryAudienceId,
+  StoryCreatePayload,
+  StoryMediaUploadResponse,
+  StoryFeaturedItem,
+  StoryInsightsResponse,
+  StoryItem,
+  StoryListParams,
+  StoryListResponse,
+  StoryLiveItem,
+  StoryRingItem,
+  StoryRingsResponse,
+  StoryTabId,
+} from "./story";
+
+export type {
   PushPlatform,
   PushSubscription,
   PushSubscriptionListResponse,
