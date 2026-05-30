@@ -5,7 +5,8 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, Query, Request, Response as FastAPIResponse
+from fastapi import APIRouter, Body, Depends, Query, Request
+from fastapi import Response as FastAPIResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import require_authenticated_user
@@ -25,7 +26,9 @@ from app.schemas.redemption import RedemptionResponse
 from app.schemas.scan import PassportQrResponse
 from app.services.passport_service import PassportService
 from app.services.passport_stamp_claim_service import PassportStampClaimService
-from app.services.public_partner_offer_service import PublicPartnerOfferService
+from app.services.public_partner_offer_service import (
+    PublicPartnerOfferService,
+)
 
 
 def _parse_offer_type(value: str | None) -> PartnerOfferType | None:
@@ -102,6 +105,11 @@ async def claim_passport_stamp(
     await enforce_rate_limit(
         f"stamp:claim:{current_user.id}",
         limit=20,
+        window_seconds=3600,
+    )
+    await enforce_rate_limit(
+        f"stamp:claim:ip:{_client_ip(request)}",
+        limit=60,
         window_seconds=3600,
     )
     result, created = await PassportStampClaimService(session).claim(current_user, payload.token)
