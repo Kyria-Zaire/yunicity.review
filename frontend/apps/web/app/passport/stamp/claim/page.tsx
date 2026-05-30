@@ -163,6 +163,7 @@ function MessageCard({ title }: { title: string }) {
           href="/passport"
           className="flex items-center justify-center rounded-2xl border border-neutral-200 px-4 py-3 text-sm font-semibold text-neutral-700"
         >
+          {/* TODO(debt): extract to microcopy constant */}
           Mon Passport
         </Link>
       </div>
