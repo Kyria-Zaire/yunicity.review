@@ -37,6 +37,10 @@ import type {
   SubscriptionCommunityStats,
   SubscriptionMe,
   SubscriptionPlansResponse,
+  DiscussionCreatePayload,
+  DiscussionInsightsResponse,
+  DiscussionListParams,
+  DiscussionListResponse,
   ReportPostPayload,
   UserProfile,
 } from "@yunicity/types";
@@ -58,8 +62,9 @@ import { SearchApi, createSearchApi } from "./search-api";
 import { ProfileApi, createProfileApi } from "./profile-api";
 import { WeatherApi, createWeatherApi } from "./weather-api";
 import { SubscriptionsApi, createSubscriptionsApi } from "./subscription-api";
+import { DiscussionsApi, createDiscussionsApi } from "./discussions-api";
 
-/** FaÃ§ade profile + organizations + passport. */
+/** FaÃƒÂ§ade profile + organizations + passport. */
 export class YunicityApi {
   readonly profile: ProfileApi;
   readonly organization: OrganizationApi;
@@ -77,6 +82,7 @@ export class YunicityApi {
   readonly culturalPlaces: CulturalPlacesApi;
   readonly weather: WeatherApi;
   readonly subscriptions: SubscriptionsApi;
+  readonly discussions: DiscussionsApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.profile = createProfileApi(client, apiBaseUrl);
@@ -95,6 +101,19 @@ export class YunicityApi {
     this.culturalPlaces = createCulturalPlacesApi(client, apiBaseUrl);
     this.weather = createWeatherApi(client, apiBaseUrl);
     this.subscriptions = createSubscriptionsApi(client, apiBaseUrl);
+    this.discussions = createDiscussionsApi(client, apiBaseUrl);
+  }
+
+  listDiscussions(params: DiscussionListParams = {}): Promise<DiscussionListResponse> {
+    return this.discussions.listDiscussions(params);
+  }
+
+  getDiscussionInsights(): Promise<DiscussionInsightsResponse> {
+    return this.discussions.getInsights();
+  }
+
+  createDiscussion(payload: DiscussionCreatePayload) {
+    return this.discussions.createDiscussion(payload);
   }
 
   listSubscriptionPlans(): Promise<SubscriptionPlansResponse> {

@@ -101,6 +101,18 @@ export type {
 } from "./subscription";
 
 export type {
+  DiscussionActiveItem,
+  DiscussionCategoryId,
+  DiscussionCreatePayload,
+  DiscussionInsightsResponse,
+  DiscussionListParams,
+  DiscussionListResponse,
+  DiscussionParticipant,
+  DiscussionThread,
+  DiscussionTrendingTopic,
+} from "./discussion";
+
+export type {
   PushPlatform,
   PushSubscription,
   PushSubscriptionListResponse,

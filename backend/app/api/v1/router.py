@@ -8,6 +8,7 @@ from app.api.v1 import (
     auth,
     comments,
     cultural_places,
+    discussions,
     events,
     feed,
     health,
@@ -48,6 +49,7 @@ api_router.include_router(passport.router)
 api_router.include_router(notifications.router)
 api_router.include_router(users.router)
 api_router.include_router(feed.router)
+api_router.include_router(discussions.router)
 api_router.include_router(posts.router)
 api_router.include_router(comments.router)
 api_router.include_router(scan.router)
