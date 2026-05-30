@@ -1,5 +1,6 @@
 "use client";
 
+import { YunicityBrandLoader } from "@/components/brand";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
@@ -15,11 +16,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   }, [isAuthenticated, isLoading, router]);
 
   if (isLoading) {
-    return (
-      <p className="px-6 py-16 text-center text-sm text-neutral-600" role="status">
-        Chargement de la session…
-      </p>
-    );
+    return <YunicityBrandLoader message="Chargement de la session…" />;
   }
 
   if (!isAuthenticated) {

@@ -4,12 +4,15 @@ import { Link } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+
+const mascot = require("../assets/yunicity-mascot.png");
 
 export default function LoginScreen() {
   const { login, error, clearError } = useAuth();
@@ -21,13 +24,15 @@ export default function LoginScreen() {
   if (showAuthGate) {
     return (
       <View style={styles.gate}>
-        <ActivityIndicator size="large" />
+        <Image source={mascot} style={styles.mascotPulse} accessibilityLabel="Yunicity" />
+        <ActivityIndicator size="large" color="#2A2FFF" style={styles.gateSpinner} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      <Image source={mascot} style={styles.mascot} accessibilityLabel="Yunicity" />
       <Text style={styles.title}>Connexion</Text>
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <TextInput
@@ -72,7 +77,10 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  gate: { flex: 1, justifyContent: "center", alignItems: "center" },
+  gate: { flex: 1, justifyContent: "center", alignItems: "center", gap: 16 },
+  gateSpinner: { marginTop: 8 },
+  mascot: { width: 80, height: 80, alignSelf: "center", marginBottom: 8 },
+  mascotPulse: { width: 72, height: 72, opacity: 0.95 },
   container: { flex: 1, padding: 24, justifyContent: "center", gap: 12 },
   title: { fontSize: 24, fontWeight: "700" },
   error: { color: "#b91c1c", fontSize: 14 },

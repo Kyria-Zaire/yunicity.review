@@ -1,6 +1,7 @@
 "use client";
 
 import { ProfileAvatar } from "@/components/profile-avatar";
+import { YunicityLogo } from "@/components/brand";
 import { WebSidebarTooltip } from "@/components/layout/web-sidebar-tooltip";
 import {
   WEB_CITIZEN_NAV_PRIMARY,
@@ -168,21 +169,20 @@ export function WebSidebar() {
   return (
     <aside className="web-sidebar-aside" aria-label="Navigation Yunicity">
       <div className="web-sidebar-column">
-        <div className="flex shrink-0 flex-col items-center pb-2 pt-3 xl:items-stretch xl:pb-0 xl:pt-0">
+        <div className="flex shrink-0 flex-col items-center pb-2 pt-3 xl:mb-5 xl:items-stretch xl:pb-0 xl:pt-0">
           <WebSidebarTooltip label="Yunicity">
-            <Link
-              href="/feed"
-              aria-label="Yunicity — Fil local"
-              className="flex items-center justify-center rounded-full transition hover:bg-neutral-100 xl:mb-5 xl:h-auto xl:w-auto xl:justify-start xl:rounded-xl xl:hover:bg-transparent"
+            <span
+              className="flex items-center justify-center xl:justify-start"
               style={{ width: "var(--web-sidebar-icon-hit)", height: "var(--web-sidebar-icon-hit)" }}
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-yunicity-primary text-sm font-bold text-white">
-                Y
-              </span>
-              <span className="hidden text-xl font-bold tracking-tight text-neutral-900 xl:ml-2 xl:inline">
-                Yunicity
-              </span>
-            </Link>
+              <YunicityLogo
+                href="/feed"
+                size="md"
+                showWordmark
+                className="justify-center xl:justify-start"
+                wordmarkClassName="hidden xl:inline"
+              />
+            </span>
           </WebSidebarTooltip>
         </div>
 

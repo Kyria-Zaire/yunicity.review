@@ -4,6 +4,13 @@ export {
   getExpoApiBaseUrl,
   getWebApiBaseUrl,
 } from "./api-base-url";
+export {
+  YUNICITY_LOGO_SIZES,
+  YUNICITY_MASCOT_ALT,
+  YUNICITY_MASCOT_PATH,
+  YUNICITY_WORDMARK,
+  type YunicityLogoSize,
+} from "./brand-assets";
 export { getAppEnvironmentLabel, isEnvironmentName } from "./environment";
 export { safeFetch, type SafeFetchResult } from "./safe-fetch";
 export * from "./auth";

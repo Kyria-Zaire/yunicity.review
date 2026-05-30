@@ -4,6 +4,7 @@
     "slug": "yunicity-mobile",
     "version": "0.0.1",
     "orientation": "portrait",
+    "icon": "./assets/yunicity-mascot.png",
     "scheme": "yunicity",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -13,6 +14,7 @@
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/yunicity-mascot.png",
         "backgroundColor": "#fafafa"
       },
       "package": "com.yunicity.mobile"

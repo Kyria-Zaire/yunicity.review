@@ -1,5 +1,6 @@
 "use client";
 
+import { YunicityLogo } from "@/components/yunicity-logo";
 import { isStaffUser } from "@/lib/auth/staff-permissions";
 import { useAuth } from "@/lib/auth/auth-provider";
 import Link from "next/link";
@@ -51,9 +52,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-yunicity-background">
       <aside className="hidden w-56 shrink-0 border-r border-stone-200 bg-white/90 p-4 md:block">
-        <Link href={homeHref} className="text-sm font-semibold tracking-tight text-stone-900">
-          Yunicity
-        </Link>
+        <YunicityLogo href={homeHref} size="md" showWordmark />
         <p className="mt-1 text-xs text-stone-500">
           {staff ? "Cockpit modération" : "Espace partenaire"}
         </p>
