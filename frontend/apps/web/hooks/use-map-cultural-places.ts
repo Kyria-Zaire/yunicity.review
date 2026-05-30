@@ -9,18 +9,28 @@ import type { MapBbox } from "@yunicity/types";
 
 const MAP_CULTURAL_LIMIT = 50;
 
-export function useMapCulturalPlaces(city: string, bbox: MapBbox | null) {
+export function useMapCulturalPlaces(
+  city: string,
+  bbox: MapBbox | null,
+  categories: string[] | null = null,
+) {
   const api = useYunicityApi();
   const [places, setPlaces] = useState<MapCulturalPlaceItem[]>([]);
   const [loading, setLoading] = useState(false);
   const lastFetchedRef = useRef<MapBbox | null>(null);
+  const lastCategoriesRef = useRef<string | null>(null);
   const requestIdRef = useRef(0);
+
+  const categoriesKey = categories?.slice().sort().join(",") ?? "";
 
   const fetchPlaces = useCallback(
     async (targetBbox: MapBbox) => {
       const trimmedCity = city.trim();
       if (!trimmedCity) return;
-      if (!hasBboxChangedSignificantly(lastFetchedRef.current, targetBbox)) {
+      if (
+        !hasBboxChangedSignificantly(lastFetchedRef.current, targetBbox) &&
+        lastCategoriesRef.current === categoriesKey
+      ) {
         return;
       }
 
@@ -31,9 +41,11 @@ export function useMapCulturalPlaces(city: string, bbox: MapBbox | null) {
           ...targetBbox,
           city: trimmedCity,
           limit: MAP_CULTURAL_LIMIT,
+          category: categories ?? undefined,
         });
         if (requestId !== requestIdRef.current) return;
         lastFetchedRef.current = targetBbox;
+        lastCategoriesRef.current = categoriesKey;
         setPlaces(response.places);
       } catch {
         if (requestId !== requestIdRef.current) return;
@@ -44,13 +56,13 @@ export function useMapCulturalPlaces(city: string, bbox: MapBbox | null) {
         }
       }
     },
-    [api, city],
+    [api, categories, categoriesKey, city],
   );
 
   useEffect(() => {
     if (!bbox) return;
     void fetchPlaces(bbox);
-  }, [bbox, city, fetchPlaces]);
+  }, [bbox, city, categoriesKey, fetchPlaces]);
 
   return { places, loading };
 }

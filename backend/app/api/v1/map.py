@@ -83,6 +83,7 @@ async def list_map_cultural_places(
     lat_max: float = Query(ge=-90, le=90),
     lon_max: float = Query(ge=-180, le=180),
     city: str = Query(default="Reims", max_length=128),
+    category: list[str] | None = Query(default=None),
     limit: int = Query(default=CULTURAL_PLACE_MAP_LIMIT_DEFAULT, ge=1, le=100),
 ) -> MapCulturalPlaceListResponse:
     rate_key = (
@@ -104,4 +105,5 @@ async def list_map_cultural_places(
         ),
         city=city,
         limit=default_cultural_map_limit(limit),
+        categories=category,
     )

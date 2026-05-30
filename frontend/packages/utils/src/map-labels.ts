@@ -1,6 +1,6 @@
 /** Event map UI micro-copy (FEATURE-D / WEB-MAP-01, WEB-MAP-02). */
 
-import type { MapEventItem, TransitDeparture } from "@yunicity/types";
+import type { MapEventItem, TransitDeparture, TransitStopNearby } from "@yunicity/types";
 
 import { formatEventDateRange } from "./event-labels";
 
@@ -56,17 +56,23 @@ function parisDateKey(value: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function formatTransitScheduledTime(scheduledAt: string): string | null {
+function formatTransitClockTime(scheduledAt: string): string | null {
   const date = new Date(scheduledAt);
   if (Number.isNaN(date.getTime())) return null;
-  const now = new Date();
-  if (parisDateKey(date) !== parisDateKey(now)) return null;
   return new Intl.DateTimeFormat("fr-FR", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
     timeZone: "Europe/Paris",
   }).format(date);
+}
+
+function formatTransitScheduledTime(scheduledAt: string): string | null {
+  const date = new Date(scheduledAt);
+  if (Number.isNaN(date.getTime())) return null;
+  const now = new Date();
+  if (parisDateKey(date) !== parisDateKey(now)) return null;
+  return formatTransitClockTime(scheduledAt);
 }
 
 export function formatContextualTransitTime(departure: TransitDeparture): string | null {
@@ -77,6 +83,7 @@ export function formatContextualTransitTime(departure: TransitDeparture): string
     if (departure.minutes > MAP_TRANSIT_CONTEXT_MAX_MINUTES) {
       return null;
     }
+    return formatTransitClockTime(departure.scheduled_at);
   }
   return formatTransitScheduledTime(departure.scheduled_at);
 }
@@ -106,6 +113,43 @@ export function groupTransitDeparturesByRoute(
   }
   return groups;
 }
+
+export type TransitCarouselItem = {
+  id: string;
+  routeShortName: string;
+  routeType: string;
+  stopName: string;
+  headsign: string | null;
+  departureLabel: string;
+};
+
+/** Lignes utiles pour un rail horizontal (même logique que le panneau transports). */
+export function buildTransitCarouselItems(
+  stops: TransitStopNearby[] | undefined,
+): TransitCarouselItem[] {
+  if (!stops?.length) return [];
+
+  const items: TransitCarouselItem[] = [];
+  for (const stop of stops) {
+    const byRoute = groupTransitDeparturesByRoute(stop.departures);
+    for (const [routeKey, departures] of byRoute.entries()) {
+      const sample = departures[0];
+      if (!sample) continue;
+      const departureLabel = formatTransitDepartureMinutes(departures);
+      if (!departureLabel) continue;
+      items.push({
+        id: `${stop.stop_id}-${routeKey}`,
+        routeShortName: sample.route_short_name,
+        routeType: sample.route_type,
+        stopName: stop.name,
+        headsign: sample.headsign || null,
+        departureLabel,
+      });
+    }
+  }
+  return items;
+}
+
 export const MAP_RAIL_CULTURE_TITLE = "Lieux culturels";
 export const MAP_RAIL_CULTURE_EMPTY = "Aucun lieu culturel à afficher pour le moment.";
 export const MAP_RAIL_NEIGHBORHOODS_TITLE = "Quartiers à explorer";

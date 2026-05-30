@@ -137,10 +137,12 @@ class CulturalPlaceService:
         bbox: MapBbox,
         city: str,
         limit: int,
+        categories: list[str] | None = None,
     ) -> MapCulturalPlaceListResponse:
         self._validate_bbox(bbox)
         trimmed_city = city.strip()
         capped_limit = min(max(limit, 1), CULTURAL_PLACE_MAP_LIMIT_MAX)
+        normalized_categories = self._normalize_categories(categories)
         rows = await self._repo.list_in_bbox(
             city=trimmed_city,
             lat_min=bbox.lat_min,
@@ -148,6 +150,7 @@ class CulturalPlaceService:
             lat_max=bbox.lat_max,
             lon_max=bbox.lon_max,
             active_only=True,
+            categories=normalized_categories,
             limit=capped_limit,
         )
         return MapCulturalPlaceListResponse(

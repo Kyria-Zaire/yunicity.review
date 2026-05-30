@@ -50,6 +50,11 @@ export function buildMapCulturalPlacesQuery(params: MapCulturalPlacesListParams)
   if (params.limit !== undefined) {
     search.set("limit", String(params.limit));
   }
+  if (params.category?.length) {
+    for (const value of params.category) {
+      search.append("category", value);
+    }
+  }
   return `?${search.toString()}`;
 }
 

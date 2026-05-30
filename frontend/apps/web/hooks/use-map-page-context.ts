@@ -5,6 +5,7 @@ import type {
   LocalEvent,
   Neighborhood,
   PartnerOffer,
+  Tribe,
 } from "@yunicity/types";
 import { useCallback, useEffect, useState } from "react";
 
@@ -17,6 +18,7 @@ export type MapPageContextState = {
   city: string;
   loading: boolean;
   neighborhoods: Neighborhood[];
+  tribes: Tribe[];
   culturalPlaces: CulturalPlaceListItem[];
   upcomingEvents: LocalEvent[];
   passportOffers: PartnerOffer[];
@@ -29,6 +31,7 @@ export function useMapPageContext(): MapPageContextState {
   const [city, setCity] = useState(user?.city ?? DEFAULT_CITY);
   const [loading, setLoading] = useState(true);
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
+  const [tribes, setTribes] = useState<Tribe[]>([]);
   const [culturalPlaces, setCulturalPlaces] = useState<CulturalPlaceListItem[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<LocalEvent[]>([]);
   const [passportOffers, setPassportOffers] = useState<PartnerOffer[]>([]);
@@ -46,17 +49,24 @@ export function useMapPageContext(): MapPageContextState {
       }
       setCity(resolvedCity);
 
-      const [hoodsRes, cultureRes, offersRes, eventsRes] = await Promise.allSettled([
-        api.neighborhoods.listNeighborhoods({ city: resolvedCity, page_size: 8 }),
+      const [hoodsRes, tribesRes, cultureRes, offersRes, eventsRes] = await Promise.allSettled([
+        api.neighborhoods.listNeighborhoods({ city: resolvedCity, page_size: 12 }),
+        api.tribes.listTribes({ city: resolvedCity, page_size: 20 }),
         api.listCulturalPlaces({ city: resolvedCity, featured: true, limit: 4 }),
         api.listPassportOffers(),
         api.events.listEvents({ city: resolvedCity }),
       ]);
 
       if (hoodsRes.status === "fulfilled") {
-        setNeighborhoods(hoodsRes.value.items.slice(0, 6));
+        setNeighborhoods(hoodsRes.value.items);
       } else {
         setNeighborhoods([]);
+      }
+
+      if (tribesRes.status === "fulfilled") {
+        setTribes(tribesRes.value.items.filter((tribe) => !tribe.is_archived));
+      } else {
+        setTribes([]);
       }
 
       if (cultureRes.status === "fulfilled") {
@@ -105,6 +115,7 @@ export function useMapPageContext(): MapPageContextState {
     city,
     loading,
     neighborhoods,
+    tribes,
     culturalPlaces,
     upcomingEvents,
     passportOffers,

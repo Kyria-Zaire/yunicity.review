@@ -9,21 +9,19 @@ import type {
   MapRouteGeometry,
   MapRouteSummary,
 } from "@yunicity/types";
-import type { MapRouteProfile } from "@yunicity/utils";
-import {
-  MAP_RECENTER,
-  MAP_VIEW_EVENT,
-  mapEventPopupDate,
-  mapEventPopupLocation,
-  resolveCityMapCenter,
+import type {
+  MapNeighborhoodMarker,
+  MapTerritorySelection,
+  MapTribeMarker,
 } from "@yunicity/utils";
-import Link from "next/link";
+import type { MapRouteProfile } from "@yunicity/utils";
+import { MAP_RECENTER, resolveCityMapCenter } from "@yunicity/utils";
+import { Users } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Map, {
   Layer,
   Marker,
   NavigationControl,
-  Popup,
   Source,
   type MapEvent,
   type MapRef,
@@ -38,13 +36,23 @@ import type { MapBoundsLike } from "@/hooks/use-map-bbox";
 const MAP_STYLE = "mapbox://styles/mapbox/light-v11";
 const EVENT_MARKER_COLOR = "#2A2FFF";
 const CULTURAL_MARKER_COLOR = "#5C4D7D";
+const NEIGHBORHOOD_MARKER_COLOR = "#0F766E";
+const TRIBE_MARKER_COLOR = "#7C3AED";
 
 type EventMapProps = {
   city: string;
   accessToken: string;
   events: MapEventItem[];
   culturalPlaces: MapCulturalPlaceItem[];
+  neighborhoodMarkers: MapNeighborhoodMarker[];
+  tribeMarkers: MapTribeMarker[];
+  selection: MapTerritorySelection | null;
   onBoundsChange: (bounds: MapBoundsLike) => void;
+  onSelectEvent: (id: string) => void;
+  onSelectPlace: (slug: string) => void;
+  onSelectNeighborhood: (slug: string) => void;
+  onSelectTribe: (slug: string) => void;
+  onClearSelection: () => void;
   focusedEventId?: string | null;
   selectedCulturalSlug?: string | null;
   routeGeometry?: MapRouteGeometry | null;
@@ -52,7 +60,6 @@ type EventMapProps = {
   routeSummary?: MapRouteSummary | null;
   routeLoading?: boolean;
   routeError?: boolean;
-  onSelectCulturalPlace?: (slug: string) => void;
   onClearRoute?: () => void;
   routeTarget?: CulturalPlaceListItem | null;
   routePanelPhase?: CulturalRoutePanelPhase | null;
@@ -67,14 +74,37 @@ type EventMapProps = {
   onSubmitAddress?: () => void;
   onBackFromAddress?: () => void;
   onChangeProfile?: (profile: MapRouteProfile) => void;
+  recenterSignal?: number;
+  flyToTarget?: { latitude: number; longitude: number } | null;
+  fullHeight?: boolean;
 };
+
+function isSelectionActive(
+  selection: MapTerritorySelection | null,
+  kind: MapTerritorySelection["kind"],
+  id: string,
+): boolean {
+  if (!selection || selection.kind !== kind) return false;
+  if (selection.kind === "event") return selection.id === id;
+  if (selection.kind === "place") return selection.slug === id;
+  if (selection.kind === "neighborhood") return selection.slug === id;
+  return selection.slug === id;
+}
 
 export function EventMap({
   city,
   accessToken,
   events,
   culturalPlaces,
+  neighborhoodMarkers,
+  tribeMarkers,
+  selection,
   onBoundsChange,
+  onSelectEvent,
+  onSelectPlace,
+  onSelectNeighborhood,
+  onSelectTribe,
+  onClearSelection,
   focusedEventId = null,
   selectedCulturalSlug = null,
   routeGeometry = null,
@@ -82,7 +112,6 @@ export function EventMap({
   routeSummary = null,
   routeLoading = false,
   routeError = false,
-  onSelectCulturalPlace,
   onClearRoute,
   routeTarget = null,
   routePanelPhase = null,
@@ -97,10 +126,12 @@ export function EventMap({
   onSubmitAddress,
   onBackFromAddress,
   onChangeProfile,
+  recenterSignal = 0,
+  flyToTarget = null,
+  fullHeight = false,
 }: EventMapProps) {
   const mapRef = useRef<MapRef>(null);
   const center = resolveCityMapCenter(city);
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [viewState, setViewState] = useState({
     latitude: center.latitude,
     longitude: center.longitude,
@@ -130,6 +161,17 @@ export function EventMap({
     [emitBounds],
   );
 
+  const flyToPoint = useCallback(
+    (latitude: number, longitude: number, zoom = 14) => {
+      mapRef.current?.flyTo({
+        center: [longitude, latitude],
+        zoom: Math.max(viewState.zoom, zoom),
+        duration: 600,
+      });
+    },
+    [viewState.zoom],
+  );
+
   const handleRecenter = useCallback(() => {
     const next = resolveCityMapCenter(city);
     mapRef.current?.flyTo({
@@ -140,29 +182,51 @@ export function EventMap({
   }, [city]);
 
   useEffect(() => {
+    if (recenterSignal <= 0) return;
+    handleRecenter();
+  }, [recenterSignal, handleRecenter]);
+
+  useEffect(() => {
+    if (!flyToTarget) return;
+    flyToPoint(flyToTarget.latitude, flyToTarget.longitude, 13);
+  }, [flyToTarget, flyToPoint]);
+
+  useEffect(() => {
     if (!focusedEventId) return;
     const event = events.find((item) => item.id === focusedEventId);
     if (!event) return;
-    setSelectedEventId(event.id);
-    mapRef.current?.flyTo({
-      center: [event.longitude, event.latitude],
-      zoom: Math.max(viewState.zoom, 13),
-      duration: 600,
-    });
-  }, [focusedEventId, events, viewState.zoom]);
+    flyToPoint(event.latitude, event.longitude, 13);
+  }, [focusedEventId, events, flyToPoint]);
 
   useEffect(() => {
     if (!selectedCulturalSlug) return;
     const place = culturalPlaces.find((item) => item.slug === selectedCulturalSlug);
     if (!place) return;
-    mapRef.current?.flyTo({
-      center: [place.longitude, place.latitude],
-      zoom: Math.max(viewState.zoom, 14),
-      duration: 600,
-    });
-  }, [selectedCulturalSlug, culturalPlaces, viewState.zoom]);
+    flyToPoint(place.latitude, place.longitude, 14);
+  }, [selectedCulturalSlug, culturalPlaces, flyToPoint]);
 
-  const selectedEvent = events.find((item) => item.id === selectedEventId) ?? null;
+  useEffect(() => {
+    if (!selection) return;
+    if (selection.kind === "event") {
+      const event = events.find((item) => item.id === selection.id);
+      if (event) flyToPoint(event.latitude, event.longitude, 13);
+      return;
+    }
+    if (selection.kind === "place") {
+      const place = culturalPlaces.find((item) => item.slug === selection.slug);
+      if (place) flyToPoint(place.latitude, place.longitude, 14);
+      return;
+    }
+    if (selection.kind === "neighborhood") {
+      const hood = neighborhoodMarkers.find((item) => item.slug === selection.slug);
+      if (hood) flyToPoint(hood.latitude, hood.longitude, 13);
+      return;
+    }
+    if (selection.kind === "tribe") {
+      const tribe = tribeMarkers.find((item) => item.slug === selection.slug);
+      if (tribe) flyToPoint(tribe.latitude, tribe.longitude, 13);
+    }
+  }, [selection, events, culturalPlaces, neighborhoodMarkers, tribeMarkers, flyToPoint]);
 
   const routeFeature = routeGeometry
     ? {
@@ -173,7 +237,13 @@ export function EventMap({
     : null;
 
   return (
-    <div className="relative h-[min(58vh,640px)] w-full overflow-hidden rounded-2xl border border-neutral-200/90 bg-neutral-50 shadow-sm">
+    <div
+      className={`relative w-full overflow-hidden bg-neutral-50 ${
+        fullHeight
+          ? "h-full rounded-none border-0 shadow-none"
+          : "h-[min(58vh,640px)] rounded-2xl border border-neutral-200/90 shadow-sm"
+      }`}
+    >
       <MapCulturalRoutePanel
         target={routeTarget}
         phase={routePanelPhase}
@@ -202,7 +272,9 @@ export function EventMap({
         onMove={(evt) => setViewState(evt.viewState)}
         onMoveEnd={handleMoveEnd}
         onLoad={handleLoad}
-        onClick={() => setSelectedEventId(null)}
+        onClick={() => {
+          onClearSelection();
+        }}
         doubleClickZoom
         style={{ width: "100%", height: "100%" }}
       >
@@ -222,6 +294,44 @@ export function EventMap({
           </Source>
         ) : null}
 
+        {neighborhoodMarkers.map((hood) => (
+          <Marker key={hood.id} latitude={hood.latitude} longitude={hood.longitude} anchor="center">
+            <button
+              type="button"
+              aria-label={hood.name}
+              onClick={(clickEvent) => {
+                clickEvent.stopPropagation();
+                onSelectNeighborhood(hood.slug);
+              }}
+              className={`flex h-6 w-6 items-center justify-center rounded-lg border-2 border-white text-[8px] font-bold text-white shadow-md transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary ${
+                isSelectionActive(selection, "neighborhood", hood.slug) ? "scale-110" : ""
+              }`}
+              style={{ backgroundColor: NEIGHBORHOOD_MARKER_COLOR }}
+            >
+              Q
+            </button>
+          </Marker>
+        ))}
+
+        {tribeMarkers.map((tribe) => (
+          <Marker key={tribe.id} latitude={tribe.latitude} longitude={tribe.longitude} anchor="center">
+            <button
+              type="button"
+              aria-label={tribe.name}
+              onClick={(clickEvent) => {
+                clickEvent.stopPropagation();
+                onSelectTribe(tribe.slug);
+              }}
+              className={`flex h-7 w-7 items-center justify-center rounded-full border-2 border-white shadow-md transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary ${
+                isSelectionActive(selection, "tribe", tribe.slug) ? "scale-110" : ""
+              } ${tribe.isApproximate ? "opacity-90 ring-1 ring-dashed ring-white/80" : ""}`}
+              style={{ backgroundColor: TRIBE_MARKER_COLOR }}
+            >
+              <Users className="h-3.5 w-3.5 text-white" aria-hidden />
+            </button>
+          </Marker>
+        ))}
+
         {culturalPlaces.map((place) => (
           <Marker
             key={place.id}
@@ -234,10 +344,13 @@ export function EventMap({
               aria-label={place.name}
               onClick={(clickEvent) => {
                 clickEvent.stopPropagation();
-                onSelectCulturalPlace?.(place.slug);
+                onSelectPlace(place.slug);
               }}
               className={`flex h-5 w-5 items-center justify-center rounded-sm border-2 border-white text-[9px] font-bold text-white shadow-md transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary ${
-                selectedCulturalSlug === place.slug ? "scale-110" : ""
+                selectedCulturalSlug === place.slug ||
+                isSelectionActive(selection, "place", place.slug)
+                  ? "scale-110"
+                  : ""
               }`}
               style={{ backgroundColor: CULTURAL_MARKER_COLOR }}
             >
@@ -258,44 +371,18 @@ export function EventMap({
               aria-label={event.title}
               onClick={(clickEvent) => {
                 clickEvent.stopPropagation();
-                setSelectedEventId(event.id);
+                onSelectEvent(event.id);
               }}
               className={`block rounded-full border-2 border-white shadow-md transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary ${
-                selectedEventId === event.id ? "h-4 w-4" : "h-3 w-3"
+                isSelectionActive(selection, "event", event.id) ||
+                focusedEventId === event.id
+                  ? "h-4 w-4"
+                  : "h-3 w-3"
               }`}
               style={{ backgroundColor: EVENT_MARKER_COLOR }}
             />
           </Marker>
         ))}
-
-        {selectedEvent ? (
-          <Popup
-            latitude={selectedEvent.latitude}
-            longitude={selectedEvent.longitude}
-            anchor="top"
-            onClose={() => setSelectedEventId(null)}
-            closeOnClick={false}
-            offset={14}
-            className="map-event-popup"
-          >
-            <div className="max-w-[240px] space-y-2 p-0.5 text-sm text-neutral-800">
-              <p className="font-semibold leading-snug text-neutral-900">{selectedEvent.title}</p>
-              <p className="text-xs text-neutral-600">{mapEventPopupDate(selectedEvent)}</p>
-              <p className="text-xs text-neutral-500">{mapEventPopupLocation(selectedEvent)}</p>
-              {selectedEvent.description ? (
-                <p className="line-clamp-3 text-xs leading-relaxed text-neutral-600">
-                  {selectedEvent.description}
-                </p>
-              ) : null}
-              <Link
-                href={`/events/${selectedEvent.id}`}
-                className="inline-flex rounded-full bg-yunicity-primary px-3 py-1 text-xs font-semibold text-white hover:bg-yunicity-primary-hover"
-              >
-                {MAP_VIEW_EVENT}
-              </Link>
-            </div>
-          </Popup>
-        ) : null}
       </Map>
 
       {routeLoading && routeTargetName && routePanelPhase === "active" ? (

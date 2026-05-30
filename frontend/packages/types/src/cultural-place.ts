@@ -88,6 +88,7 @@ export type MapCulturalPlacesListParams = {
   lat_max: number;
   lon_max: number;
   city: string;
+  category?: string[];
   limit?: number;
 };
 

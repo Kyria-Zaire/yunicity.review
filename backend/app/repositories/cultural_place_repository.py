@@ -150,17 +150,21 @@ class CulturalPlaceRepository:
         lat_max: float,
         lon_max: float,
         active_only: bool,
+        categories: list[str] | None = None,
         limit: int,
     ) -> list[CulturalPlace]:
+        filters = [
+            CulturalPlace.city == city,
+            CulturalPlace.latitude >= lat_min,
+            CulturalPlace.latitude <= lat_max,
+            CulturalPlace.longitude >= lon_min,
+            CulturalPlace.longitude <= lon_max,
+        ]
+        if categories:
+            filters.append(CulturalPlace.category.in_(categories))
         stmt = (
             self._base_stmt(active_only=active_only)
-            .where(
-                CulturalPlace.city == city,
-                CulturalPlace.latitude >= lat_min,
-                CulturalPlace.latitude <= lat_max,
-                CulturalPlace.longitude >= lon_min,
-                CulturalPlace.longitude <= lon_max,
-            )
+            .where(*filters)
             .order_by(CulturalPlace.name.asc())
             .limit(limit)
         )
