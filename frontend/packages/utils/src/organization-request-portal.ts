@@ -69,6 +69,13 @@ export const ORGANIZATION_REQUEST_CATEGORY_OPTIONS: OrganizationRequestCategoryO
   { id: "cultural", label: "Lieux culturels", type: "association", category: "Lieux culturels" },
   { id: "leisure", label: "Loisirs & Activités", type: "commerce", category: "Loisirs & Activités" },
   { id: "services", label: "Services", type: "commerce", category: "Services" },
+  { id: "school", label: "Établissement scolaire", type: "school", category: "Établissement scolaire" },
+  {
+    id: "public_agency",
+    label: "Institution / Collectivité",
+    type: "public_agency",
+    category: "Service public",
+  },
   { id: "nature", label: "Nature & Plein air", type: "other", category: "Nature & Plein air" },
 ];
 

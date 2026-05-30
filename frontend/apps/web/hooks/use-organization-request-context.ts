@@ -1,6 +1,6 @@
 "use client";
 
-import type { Neighborhood } from "@yunicity/types";
+import type { Neighborhood, OrganizationType } from "@yunicity/types";
 import type {
   OrganizationRequestDraft,
   OrganizationRequestStepId,
@@ -8,10 +8,12 @@ import type {
 import {
   createEmptyOrganizationRequestDraft,
   nextOrganizationRequestStep,
+  ORGANIZATION_REQUEST_CATEGORY_OPTIONS,
   previousOrganizationRequestStep,
   resolveOrganizationRequestCategory,
   validateOrganizationRequestStep,
 } from "@yunicity/utils";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
@@ -19,9 +21,33 @@ import { useAuth } from "@/lib/auth/auth-provider";
 
 const DEFAULT_CITY = "Reims";
 
+const ORGANIZATION_TYPES = new Set<string>([
+  "commerce",
+  "association",
+  "school",
+  "freelance",
+  "public_agency",
+  "creator",
+  "other",
+]);
+
+function resolveIntentCategoryId(typeParam: string | null): string | null {
+  if (!typeParam || !ORGANIZATION_TYPES.has(typeParam)) return null;
+  const exact = ORGANIZATION_REQUEST_CATEGORY_OPTIONS.find(
+    (option) => option.id === typeParam,
+  );
+  if (exact) return exact.id;
+  const match = ORGANIZATION_REQUEST_CATEGORY_OPTIONS.find(
+    (option) => option.type === (typeParam as OrganizationType),
+  );
+  return match?.id ?? null;
+}
+
 export function useOrganizationRequestContext() {
   const api = useYunicityApi();
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const intentType = searchParams.get("type");
   const [draft, setDraft] = useState<OrganizationRequestDraft>(() =>
     createEmptyOrganizationRequestDraft(user?.city?.trim() || DEFAULT_CITY),
   );
@@ -32,6 +58,12 @@ export function useOrganizationRequestContext() {
   const [error, setError] = useState<string | null>(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [submittedSlug, setSubmittedSlug] = useState<string | null>(null);
+
+  useEffect(() => {
+    const categoryId = resolveIntentCategoryId(intentType);
+    if (!categoryId) return;
+    setDraft((prev) => (prev.categoryId ? prev : { ...prev, categoryId }));
+  }, [intentType]);
 
   useEffect(() => {
     let cancelled = false;
