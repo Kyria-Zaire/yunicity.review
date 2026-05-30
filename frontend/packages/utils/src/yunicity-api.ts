@@ -32,6 +32,11 @@ import type {
   PushSubscriptionListResponse,
   Redemption,
   RegisterPushDeviceRequest,
+  SubscriptionCheckoutRequest,
+  SubscriptionCheckoutResponse,
+  SubscriptionCommunityStats,
+  SubscriptionMe,
+  SubscriptionPlansResponse,
   ReportPostPayload,
   UserProfile,
 } from "@yunicity/types";
@@ -52,8 +57,9 @@ import { TransitApi, createTransitApi } from "./transit-api";
 import { SearchApi, createSearchApi } from "./search-api";
 import { ProfileApi, createProfileApi } from "./profile-api";
 import { WeatherApi, createWeatherApi } from "./weather-api";
+import { SubscriptionsApi, createSubscriptionsApi } from "./subscription-api";
 
-/** Façade profile + organizations + passport. */
+/** FaÃ§ade profile + organizations + passport. */
 export class YunicityApi {
   readonly profile: ProfileApi;
   readonly organization: OrganizationApi;
@@ -70,6 +76,7 @@ export class YunicityApi {
   readonly transit: TransitApi;
   readonly culturalPlaces: CulturalPlacesApi;
   readonly weather: WeatherApi;
+  readonly subscriptions: SubscriptionsApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.profile = createProfileApi(client, apiBaseUrl);
@@ -87,6 +94,25 @@ export class YunicityApi {
     this.transit = createTransitApi(client, apiBaseUrl);
     this.culturalPlaces = createCulturalPlacesApi(client, apiBaseUrl);
     this.weather = createWeatherApi(client, apiBaseUrl);
+    this.subscriptions = createSubscriptionsApi(client, apiBaseUrl);
+  }
+
+  listSubscriptionPlans(): Promise<SubscriptionPlansResponse> {
+    return this.subscriptions.listPlans();
+  }
+
+  getSubscriptionCommunityStats(): Promise<SubscriptionCommunityStats> {
+    return this.subscriptions.getCommunityStats();
+  }
+
+  getMySubscription(): Promise<SubscriptionMe> {
+    return this.subscriptions.getMySubscription();
+  }
+
+  startSubscriptionCheckout(
+    payload: SubscriptionCheckoutRequest,
+  ): Promise<SubscriptionCheckoutResponse> {
+    return this.subscriptions.startCheckout(payload);
   }
 
   listCulturalPlaces(params: {

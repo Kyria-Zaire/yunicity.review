@@ -27,6 +27,7 @@ from app.api.v1 import (
     tribe_invitations,
     tribes,
     users,
+    subscriptions,
 )
 
 api_router = APIRouter()
@@ -54,5 +55,6 @@ api_router.include_router(search.router)
 api_router.include_router(map.router)
 api_router.include_router(cultural_places.router)
 api_router.include_router(transit.router)
+api_router.include_router(subscriptions.router)
 api_router.include_router(weather.router)
 api_router.include_router(rbac_validation.router)

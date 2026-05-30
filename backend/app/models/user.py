@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from app.models.rbac import UserRole
     from app.models.refresh_token import RefreshToken
     from app.models.user_profile import UserProfile
+    from app.models.user_subscription import UserSubscription
 
 
 class User(TimestampMixin, Base):
@@ -55,5 +56,11 @@ class User(TimestampMixin, Base):
     push_subscriptions: Mapped[list["PushSubscription"]] = relationship(
         "PushSubscription",
         back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    subscription: Mapped["UserSubscription | None"] = relationship(
+        "UserSubscription",
+        back_populates="user",
+        uselist=False,
         cascade="all, delete-orphan",
     )

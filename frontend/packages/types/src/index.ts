@@ -86,6 +86,21 @@ export type {
 } from "./passport";
 
 export type {
+  MembershipBillingInterval,
+  MembershipPlanCode,
+  MembershipStatus,
+  SubscriptionCheckoutRequest,
+  SubscriptionCheckoutResponse,
+  SubscriptionCommunityStats,
+  SubscriptionMe,
+  SubscriptionPlan,
+  SubscriptionPlanFeature,
+  SubscriptionPlanPrice,
+  SubscriptionPlansResponse,
+  SubscriptionSupporterAvatar,
+} from "./subscription";
+
+export type {
   PushPlatform,
   PushSubscription,
   PushSubscriptionListResponse,

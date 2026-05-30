@@ -62,7 +62,31 @@ class Settings(BaseSettings):
         alias="GRAND_REIMS_GTFS_LOCAL_PATH",
     )
 
-    @field_validator("cors_origins", mode="before")
+    stripe_secret_key: str | None = Field(default=None, alias="STRIPE_SECRET_KEY")
+    stripe_price_plus_monthly: str | None = Field(default=None, alias="STRIPE_PRICE_PLUS_MONTHLY")
+    stripe_price_plus_annual: str | None = Field(default=None, alias="STRIPE_PRICE_PLUS_ANNUAL")
+    stripe_price_premium_monthly: str | None = Field(
+        default=None,
+        alias="STRIPE_PRICE_PREMIUM_MONTHLY",
+    )
+    stripe_price_premium_annual: str | None = Field(
+        default=None,
+        alias="STRIPE_PRICE_PREMIUM_ANNUAL",
+    )
+    stripe_checkout_success_url: str | None = Field(
+        default=None,
+        alias="STRIPE_CHECKOUT_SUCCESS_URL",
+    )
+    stripe_checkout_cancel_url: str | None = Field(
+        default=None,
+        alias="STRIPE_CHECKOUT_CANCEL_URL",
+    )
+
+    media_upload_dir: str = Field(default="uploads", alias="MEDIA_UPLOAD_DIR")
+    media_public_base_url: str = Field(
+        default="http://localhost:8000",
+        alias="MEDIA_PUBLIC_BASE_URL",
+    )
     @classmethod
     def parse_cors_origins(cls, value: object) -> list[str]:
         if value is None or value == "":

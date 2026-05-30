@@ -28,6 +28,7 @@ from app.models.report import Report
 from app.models.transit import TransitDeparture, TransitFeedMeta, TransitStop
 from app.models.tribe import Tribe, TribeInvitation, TribeMember, TribeModerationLog
 from app.models.user import User
+from app.models.user_subscription import UserSubscription
 from app.models.user_notification import UserNotification
 from app.models.user_profile import ProfileVisibility, UserProfile
 
