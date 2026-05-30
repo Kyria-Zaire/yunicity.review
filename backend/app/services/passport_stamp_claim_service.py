@@ -100,8 +100,7 @@ class PassportStampClaimService:
             await self._session.commit()
             await self._session.refresh(passport)
             await evaluate_passport_level_after_activity(self._session, passport.id)
-        else:
-            await self._session.refresh(passport)
+        # else: stamp already existed — no commit, passport data is accurate from initial load
 
         # 6. Build response — load stamp with org for display
         stamp = await self._passports.get_stamp_with_org(
