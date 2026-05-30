@@ -15,12 +15,14 @@ from app.core.partner_constants import (
 )
 from app.models.organization import Organization
 from app.models.partner_profile import PartnerProfile
+from app.models.user import User
 from app.repositories.partner_repository import PartnerRepository
 from app.schemas.partner import PartnerListResponse, PartnerPublicDetail, PartnerPublicItem
 
 
 class PartnerService:
     def __init__(self, session: AsyncSession) -> None:
+        self._session = session
         self._repo = PartnerRepository(session)
 
     async def list_public(
@@ -67,6 +69,34 @@ class PartnerService:
         if row is None or not is_public_partner_status(row.partner_status):
             raise AppError(404, "PARTNER_NOT_FOUND", "Partenaire introuvable")
         return PartnerPublicDetail.model_validate(self._to_public_item(row))
+
+    async def get_profile_for_qr(
+        self,
+        *,
+        slug: str,
+        city: str,
+        user: User,
+    ) -> PartnerProfile:
+        """Load partner profile and verify the calling user has org manager rights."""
+        from app.services.organization_membership_service import OrganizationMembershipService
+
+        profile = await self._repo.get_by_slug(city=city, slug=slug)
+        if profile is None:
+            raise AppError(404, "PARTNER_NOT_FOUND", "Partenaire introuvable.")
+
+        status = (
+            profile.partner_status
+            if isinstance(profile.partner_status, PartnerStatus)
+            else PartnerStatus(profile.partner_status)
+        )
+        if status not in PUBLIC_PARTNER_STATUSES:
+            raise AppError(403, "PARTNER_NOT_ACTIVE", "Ce partenaire ne peut pas émettre de QR.")
+
+        await OrganizationMembershipService(self._session).require_offer_manager(
+            organization_id=profile.organization_id,
+            user_id=user.id,
+        )
+        return profile
 
     @staticmethod
     def _resolve_status_filter(status: PartnerStatus | None) -> frozenset[PartnerStatus]:
