@@ -85,7 +85,12 @@ class LocalEventService:
         if user:
             row = await self._events.get_interest(user_id=user.id, event_id=event_id)
             interested = row is not None
-        return self._to_response(event, interested_by_me=interested)
+        interest_count = await self._events.count_interests_for_event(event_id)
+        return self._to_response(
+            event,
+            interested_by_me=interested,
+            interest_count=interest_count,
+        )
 
     async def list_saved(self, user: User, *, limit: int = 50) -> LocalEventListResponse:
         limit = min(max(limit, 1), LOCAL_EVENT_LIST_PAGE_SIZE_MAX)
@@ -103,14 +108,24 @@ class LocalEventService:
         if existing is not None:
             await self._events.delete_interest(existing)
             await self._session.commit()
-            return EventInterestToggleResponse(event_id=event.id, interested=False)
+            interest_count = await self._events.count_interests_for_event(event.id)
+            return EventInterestToggleResponse(
+                event_id=event.id,
+                interested=False,
+                interest_count=interest_count,
+            )
         await self._events.add_interest(EventInterest(user_id=user.id, event_id=event.id))
         await self._session.commit()
         logger.info(
             "event_interest_added",
             extra={"user_id": str(user.id), "event_id": str(event.id)},
         )
-        return EventInterestToggleResponse(event_id=event.id, interested=True)
+        interest_count = await self._events.count_interests_for_event(event.id)
+        return EventInterestToggleResponse(
+            event_id=event.id,
+            interested=True,
+            interest_count=interest_count,
+        )
 
     async def create_for_organization(
         self, actor: User, payload: LocalEventCreateRequest
@@ -364,10 +379,24 @@ class LocalEventService:
             )
 
     def _to_response(
-        self, event: LocalEvent, *, interested_by_me: bool = False
+        self,
+        event: LocalEvent,
+        *,
+        interested_by_me: bool = False,
+        interest_count: int = 0,
     ) -> LocalEventResponse:
         org = event.organization
-        org_summary = LocalEventOrganizationSummary.model_validate(org) if org is not None else None
+        org_summary = None
+        if org is not None:
+            org_summary = LocalEventOrganizationSummary(
+                id=org.id,
+                slug=org.slug,
+                name=org.name,
+                city=org.city,
+                logo_url=org.logo_url,
+                is_verified=org.verified_at is not None,
+                created_at=org.created_at,
+            )
         return LocalEventResponse(
             id=event.id,
             organization_id=event.organization_id,
@@ -387,6 +416,7 @@ class LocalEventService:
             moderation_status=event.moderation_status,
             is_cancelled=event.is_cancelled,
             interested_by_me=interested_by_me,
+            interest_count=interest_count,
             organization=org_summary,
             neighborhood_summary=neighborhood_summary_from_event(event),
             created_at=event.created_at,

@@ -1,14 +1,11 @@
 "use client";
 
 import type { LocalEvent } from "@yunicity/types";
-import { MapTransitNearby } from "@/components/map/map-transit-nearby";
 import {
   EVENT_DETAIL_GO_MAP_CTA,
   EVENT_DETAIL_GO_MAP_UNAVAILABLE,
   EVENT_DETAIL_GO_ROUTE_CTA,
   EVENT_DETAIL_GO_TITLE,
-  EVENT_DETAIL_TRANSIT_EMPTY,
-  EVENT_DETAIL_TRANSIT_TITLE,
   buildMapEventUrl,
   buildMapboxStaticPreviewUrl,
   eventHasMapCoordinates,
@@ -28,11 +25,6 @@ export function EventDetailGoThere({ event }: EventDetailGoThereProps) {
   const previewUrl =
     hasCoords && event.latitude != null && event.longitude != null
       ? buildMapboxStaticPreviewUrl(event.latitude, event.longitude, MAPBOX_TOKEN)
-      : null;
-
-  const transitPoint =
-    hasCoords && event.latitude != null && event.longitude != null
-      ? { lat: event.latitude, lon: event.longitude, city: event.city }
       : null;
 
   if (!hasCoords) {
@@ -76,14 +68,6 @@ export function EventDetailGoThere({ event }: EventDetailGoThereProps) {
           </Link>
         </div>
       </div>
-
-      {transitPoint ? (
-        <MapTransitNearby
-          point={transitPoint}
-          title={EVENT_DETAIL_TRANSIT_TITLE}
-          emptyMessage={EVENT_DETAIL_TRANSIT_EMPTY}
-        />
-      ) : null}
     </section>
   );
 }

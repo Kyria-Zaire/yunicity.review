@@ -8,6 +8,8 @@ export interface LocalEventOrganization {
   name: string;
   city: string;
   logo_url: string | null;
+  is_verified?: boolean;
+  created_at?: string | null;
 }
 
 export interface LocalEvent {
@@ -29,6 +31,7 @@ export interface LocalEvent {
   moderation_status: string;
   is_cancelled: boolean;
   interested_by_me: boolean;
+  interest_count: number;
   organization: LocalEventOrganization | null;
   neighborhood_summary?: FeedNeighborhoodSummary | null;
   created_at: string;
@@ -44,6 +47,7 @@ export interface LocalEventListResponse {
 export interface EventInterestToggleResponse {
   event_id: string;
   interested: boolean;
+  interest_count: number;
 }
 
 export interface FeedEventMeta {

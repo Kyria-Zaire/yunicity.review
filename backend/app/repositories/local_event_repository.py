@@ -160,6 +160,14 @@ class LocalEventRepository:
         )
         return result.scalar_one_or_none()
 
+    async def count_interests_for_event(self, event_id: uuid.UUID) -> int:
+        result = await self._session.execute(
+            select(func.count())
+            .select_from(EventInterest)
+            .where(EventInterest.event_id == event_id)
+        )
+        return int(result.scalar_one())
+
     async def add_interest(self, interest: EventInterest) -> EventInterest:
         self._session.add(interest)
         await self._session.flush()

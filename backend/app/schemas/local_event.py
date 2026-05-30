@@ -22,6 +22,8 @@ class LocalEventOrganizationSummary(BaseModel):
     name: str
     city: str
     logo_url: str | None = None
+    is_verified: bool = False
+    created_at: datetime | None = None
 
 
 class LocalEventResponse(BaseModel):
@@ -45,6 +47,7 @@ class LocalEventResponse(BaseModel):
     moderation_status: str
     is_cancelled: bool
     interested_by_me: bool = False
+    interest_count: int = 0
     organization: LocalEventOrganizationSummary | None = None
     neighborhood_summary: FeedNeighborhoodSummary | None = None
     created_at: datetime
@@ -112,6 +115,7 @@ class LocalEventRejectRequest(BaseModel):
 class EventInterestToggleResponse(BaseModel):
     event_id: uuid.UUID
     interested: bool
+    interest_count: int = 0
 
 
 class LocalEventTypeListResponse(BaseModel):

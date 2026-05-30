@@ -1,27 +1,48 @@
 "use client";
 
-import { EventDetailGoThere } from "@/components/events/event-detail-go-there";
-import { EventDetailHero } from "@/components/events/event-detail-hero";
-import { EventDetailNeighborhood } from "@/components/events/event-detail-neighborhood";
-import { EventDetailPractical } from "@/components/events/event-detail-practical";
-import { EventDetailRelated } from "@/components/events/event-detail-related";
-import { EventDetailRightRail } from "@/components/events/event-detail-right-rail";
-import { WebAppShell } from "@/components/layout";
+import { EventDetailAppShell } from "@/components/events/event-detail-app-shell";
+import { EventDetailLeftRail } from "@/components/events/event-detail-left-rail";
+import { EventDetailMainTabs } from "@/components/events/event-detail-main-tabs";
+import { EventDetailPortalHero } from "@/components/events/event-detail-portal-hero";
+import { EventDetailRightPortalRail } from "@/components/events/event-detail-right-portal-rail";
+import { TransitNearbyCarouselRail } from "@/components/map/transit-nearby-carousel-rail";
 import { useEventDetailContext } from "@/hooks/use-event-detail-context";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
+import { useAuth } from "@/lib/auth/auth-provider";
 import {
-  EVENT_DETAIL_DESCRIPTION_TITLE,
+  EVENT_DETAIL_BACK_SORTIR,
   EVENT_DETAIL_LOADING,
   EVENT_DETAIL_NOT_FOUND,
   EVENT_DETAIL_RETRY,
+  EVENT_DETAIL_TRANSIT_EMPTY,
+  EVENT_DETAIL_TRANSIT_TITLE,
+  eventHasMapCoordinates,
+  haversineMeters,
+  resolveEventVenuePlace,
 } from "@yunicity/utils";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export function EventDetailScreen({ eventId }: { eventId: string }) {
   const api = useYunicityApi();
+  const { user } = useAuth();
   const context = useEventDetailContext(eventId);
   const [toggling, setToggling] = useState(false);
+  const [userCoords, setUserCoords] = useState<{ lat: number; lon: number } | null>(null);
+
+  const event = context.event;
+
+  const venuePlace = useMemo(
+    () => (event ? resolveEventVenuePlace(event, context.culturalPlaces) : null),
+    [context.culturalPlaces, event],
+  );
+
+  const userDistanceMeters = useMemo(() => {
+    if (!event || userCoords == null || event.latitude == null || event.longitude == null) {
+      return null;
+    }
+    return haversineMeters(userCoords.lat, userCoords.lon, event.latitude, event.longitude);
+  }, [event, userCoords]);
 
   async function handleInterest() {
     if (!context.event) return;
@@ -29,77 +50,119 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
     try {
       const current = context.event;
       const result = await api.events.toggleInterest(current.id);
-      const interested = result.interested;
-      context.patchEvent({ interested_by_me: interested });
-      await context.syncPlanningAfterInterest(interested, {
+      context.patchEvent({
+        interested_by_me: result.interested,
+        interest_count: result.interest_count,
+      });
+      await context.syncPlanningAfterInterest(result.interested, {
         ...current,
-        interested_by_me: interested,
+        interested_by_me: result.interested,
+        interest_count: result.interest_count,
       });
     } finally {
       setToggling(false);
     }
   }
 
-  const event = context.event;
+  const transitPoint =
+    event &&
+    eventHasMapCoordinates(event) &&
+    event.latitude != null &&
+    event.longitude != null
+      ? { lat: event.latitude, lon: event.longitude, city: event.city }
+      : null;
+
+  useEffect(() => {
+    if (!event || typeof navigator === "undefined" || !navigator.geolocation) {
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserCoords({
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+        });
+      },
+      () => undefined,
+      { enableHighAccuracy: false, timeout: 10_000, maximumAge: 120_000 },
+    );
+  }, [event?.id]);
+
+  const main = (
+    <div className="space-y-6">
+      <nav>
+        <Link
+          href="/events"
+          className="inline-flex text-sm font-medium text-neutral-500 transition hover:text-yunicity-primary"
+        >
+          ← {EVENT_DETAIL_BACK_SORTIR}
+        </Link>
+      </nav>
+
+      {context.loading ? (
+        <p className="text-neutral-500" role="status">
+          {EVENT_DETAIL_LOADING}
+        </p>
+      ) : null}
+
+      {context.error || (!context.loading && !event) ? (
+        <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-6 text-center">
+          <p className="text-red-800">{EVENT_DETAIL_NOT_FOUND}</p>
+          <button
+            type="button"
+            onClick={() => context.reload()}
+            className="mt-3 text-sm font-semibold text-yunicity-primary hover:underline"
+          >
+            {EVENT_DETAIL_RETRY}
+          </button>
+        </div>
+      ) : null}
+
+      {event ? (
+        <>
+          <EventDetailPortalHero
+            event={event}
+            culturalPlaces={context.culturalPlaces}
+            toggling={toggling}
+            isAuthenticated={Boolean(user)}
+            onToggleInterest={() => void handleInterest()}
+          />
+
+          <EventDetailMainTabs event={event} context={context} venuePlace={venuePlace} />
+
+          {transitPoint ? (
+            <TransitNearbyCarouselRail
+              point={transitPoint}
+              title={EVENT_DETAIL_TRANSIT_TITLE}
+              emptyMessage={EVENT_DETAIL_TRANSIT_EMPTY}
+            />
+          ) : null}
+        </>
+      ) : null}
+    </div>
+  );
+
+  if (!event || context.loading) {
+    return (
+      <EventDetailAppShell>
+        {main}
+      </EventDetailAppShell>
+    );
+  }
 
   return (
-    <WebAppShell
-      contentWidth="wide"
-      context={<EventDetailRightRail context={context} currentEventId={eventId} />}
+    <EventDetailAppShell
+      leftRail={<EventDetailLeftRail context={context} event={event} />}
+      rightRail={
+        <EventDetailRightPortalRail
+          context={context}
+          event={event}
+          venuePlace={venuePlace}
+          userDistanceMeters={userDistanceMeters}
+        />
+      }
     >
-      <div className="space-y-8 pb-12">
-        <nav className="text-sm text-neutral-500">
-          <Link href="/events" className="font-medium text-yunicity-primary hover:underline">
-            ← Agenda des moments
-          </Link>
-        </nav>
-
-        {context.loading ? (
-          <p className="text-neutral-500">{EVENT_DETAIL_LOADING}</p>
-        ) : null}
-
-        {context.error || (!context.loading && !event) ? (
-          <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-6 text-center">
-            <p className="text-red-800">{EVENT_DETAIL_NOT_FOUND}</p>
-            <button
-              type="button"
-              onClick={() => context.reload()}
-              className="mt-3 text-sm font-semibold text-yunicity-primary hover:underline"
-            >
-              {EVENT_DETAIL_RETRY}
-            </button>
-          </div>
-        ) : null}
-
-        {event ? (
-          <>
-            <EventDetailHero
-              event={event}
-              culturalPlaces={context.culturalPlaces}
-              toggling={toggling}
-              onToggleInterest={() => void handleInterest()}
-            />
-
-            {event.description ? (
-              <section className="rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6">
-                <h2 className="text-lg font-bold text-neutral-900">{EVENT_DETAIL_DESCRIPTION_TITLE}</h2>
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-neutral-700 sm:text-base">
-                  {event.description}
-                </p>
-              </section>
-            ) : null}
-
-            <EventDetailPractical event={event} />
-            <EventDetailGoThere event={event} />
-
-            {context.neighborhoodContext ? (
-              <EventDetailNeighborhood context={context.neighborhoodContext} />
-            ) : null}
-
-            <EventDetailRelated events={context.relatedEvents} />
-          </>
-        ) : null}
-      </div>
-    </WebAppShell>
+      {main}
+    </EventDetailAppShell>
   );
 }
