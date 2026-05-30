@@ -247,6 +247,14 @@ export type {
 } from "./tribe";
 
 export type {
+  PartnerListParams,
+  PartnerListResponse,
+  PartnerPublic,
+  PartnerStatus,
+  PartnershipType,
+} from "./partner";
+
+export type {
   ConvertLeadPayload,
   PartnerLead,
   PartnerLeadListParams,

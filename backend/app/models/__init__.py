@@ -12,6 +12,7 @@ from app.models.organization import (
     OrganizationVerification,
 )
 from app.models.partner_lead import PartnerLead
+from app.models.partner_profile import PartnerProfile
 from app.models.passport import (
     PartnerOffer,
     Passport,
@@ -44,6 +45,7 @@ __all__ = [
     "LocalEvent",
     "Neighborhood",
     "PartnerLead",
+    "PartnerProfile",
     "StampDefinition",
     "Post",
     "Report",

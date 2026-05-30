@@ -35,6 +35,7 @@ from app.models._mixins import TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.neighborhood import Neighborhood
+    from app.models.partner_profile import PartnerProfile
     from app.models.passport import PartnerOffer, PassportStamp
     from app.models.user import User
 
@@ -146,6 +147,12 @@ class Organization(TimestampMixin, Base):
     partner_offers: Mapped[list[PartnerOffer]] = relationship(
         "PartnerOffer",
         back_populates="organization",
+        cascade="all, delete-orphan",
+    )
+    partner_profile: Mapped[PartnerProfile | None] = relationship(
+        "PartnerProfile",
+        back_populates="organization",
+        uselist=False,
         cascade="all, delete-orphan",
     )
 

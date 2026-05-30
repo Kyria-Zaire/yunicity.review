@@ -8,6 +8,10 @@ export {
   YUNICITY_LOGO_SIZES,
   YUNICITY_MASCOT_ALT,
   YUNICITY_MASCOT_PATH,
+  YUNICITY_REGISTER_MASCOT_ALT,
+  YUNICITY_REGISTER_MASCOT_PATH,
+  YUNICITY_WELCOME_MASCOT_ALT,
+  YUNICITY_WELCOME_MASCOT_PATH,
   YUNICITY_WORDMARK,
   type YunicityLogoSize,
 } from "./brand-assets";
@@ -333,6 +337,68 @@ export {
   type ProfileTribeCard,
 } from "./profile-portal";
 export {
+  PROFILE_EDIT_AVATAR_CHANGE,
+  PROFILE_EDIT_AVATAR_REMOVE,
+  PROFILE_EDIT_AVATAR_TIP,
+  PROFILE_EDIT_AVATAR_TITLE,
+  PROFILE_EDIT_BANNER_CHANGE,
+  PROFILE_EDIT_BANNER_TIP,
+  PROFILE_EDIT_BANNER_TITLE,
+  PROFILE_EDIT_BIO,
+  PROFILE_EDIT_CANCEL,
+  PROFILE_EDIT_CITY,
+  PROFILE_EDIT_CITY_HINT,
+  PROFILE_EDIT_COMPLETION_TITLE,
+  PROFILE_EDIT_ERROR,
+  PROFILE_EDIT_FIRST_NAME,
+  PROFILE_EDIT_HELP_BODY,
+  PROFILE_EDIT_HELP_CTA,
+  PROFILE_EDIT_HELP_TITLE,
+  PROFILE_EDIT_INTERESTS_BODY,
+  PROFILE_EDIT_INTERESTS_TITLE,
+  PROFILE_EDIT_LAST_NAME,
+  PROFILE_EDIT_LOADING,
+  PROFILE_EDIT_PAGE_SUBTITLE,
+  PROFILE_EDIT_PAGE_TITLE,
+  PROFILE_EDIT_PERSONAL_TITLE,
+  PROFILE_EDIT_PREVIEW_CTA,
+  PROFILE_EDIT_PREVIEW_TITLE,
+  PROFILE_EDIT_RETRY,
+  PROFILE_EDIT_SAVE,
+  PROFILE_EDIT_SAVED,
+  PROFILE_EDIT_SAVING,
+  PROFILE_EDIT_TAB_INFO,
+  PROFILE_EDIT_TAB_NOTIFICATIONS,
+  PROFILE_EDIT_TAB_PREFS,
+  PROFILE_EDIT_TAB_SECURITY,
+  PROFILE_EDIT_TIP_AUTHENTIC,
+  PROFILE_EDIT_TIP_LOCAL,
+  PROFILE_EDIT_TIP_REGULAR,
+  PROFILE_EDIT_TIP_TRIBES,
+  PROFILE_EDIT_TIPS_TITLE,
+  PROFILE_EDIT_TRIBES_CTA,
+  PROFILE_EDIT_TRIBES_EMPTY,
+  PROFILE_EDIT_TRIBES_TITLE,
+  PROFILE_EDIT_UPLOADING,
+  PROFILE_EDIT_USERNAME,
+  PROFILE_EDIT_USERNAME_HINT,
+} from "./profile-edit-portal-labels";
+export {
+  PROFILE_EDIT_BIO_MAX_LENGTH,
+  buildProfileEditCompletion,
+  buildProfileEditDraft,
+  buildProfileEditPreview,
+  buildProfileEditSavePayload,
+  joinDisplayName,
+  profileEditDraftEquals,
+  splitDisplayName,
+  type ProfileEditCompletionItem,
+  type ProfileEditCompletionItemId,
+  type ProfileEditDraft,
+  type ProfileEditPreviewStat,
+  type ProfileEditPreviewView,
+} from "./profile-edit-portal";
+export {
   SETTINGS_ABOUT_TAGLINE,
   SETTINGS_ABOUT_TITLE,
   SETTINGS_ABOUT_VERSION,
@@ -606,6 +672,8 @@ export {
   type EventDateBadgeParts,
   type EventDetailTabId,
 } from "./event-detail-portal";
+export * from "./sortir-portal-labels";
+export * from "./sortir-portal";
 export {
   buildNeighborhoodAtmosphereEditorialLine,
   buildNeighborhoodAtmosphereItems,
@@ -833,6 +901,18 @@ export {
   buildCulturalPlacesQuery,
   buildMapCulturalPlacesQuery,
 } from "./cultural-places-api";
+export {
+  PartnersApi,
+  createPartnersApi,
+  buildPartnersQuery,
+} from "./partners-api";
+export {
+  assertPartnerPublicShape,
+  isPublicPartner,
+  partnerDisplayCategory,
+  partnerStatusLabel,
+  partnerTypeLabel,
+} from "./partner-labels";
 export {
   PLACES_CATEGORY_FILTERS,
   PLACES_MORE_CATEGORY_FILTERS,
