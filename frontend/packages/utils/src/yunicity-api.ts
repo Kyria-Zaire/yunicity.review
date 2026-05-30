@@ -25,6 +25,7 @@ import type {
   PartnerOfferListResponse,
   PassportActivateRequest,
   PassportMe,
+  PassportStampClaimResult,
   PassportStampListResponse,
   PostCreatePayload,
   ProfileCompleteRequest,
@@ -74,7 +75,14 @@ import { SubscriptionsApi, createSubscriptionsApi } from "./subscription-api";
 import { DiscussionsApi, createDiscussionsApi } from "./discussions-api";
 import { StoriesApi, createStoriesApi } from "./stories-api";
 import { PartnersApi, createPartnersApi } from "./partners-api";
-import type { PartnerListParams, PartnerListResponse, PartnerPublic } from "@yunicity/types";
+import type {
+  PartnerListParams,
+  PartnerListResponse,
+  PartnerOfferListParams,
+  PartnerOfferPublicListResponse,
+  PartnerPublic,
+} from "@yunicity/types";
+import { fetchPublicPartnerOffers } from "./partners-api";
 
 /** FaÃƒÆ’Ã‚Â§ade profile + organizations + passport. */
 export class YunicityApi {
@@ -97,8 +105,10 @@ export class YunicityApi {
   readonly discussions: DiscussionsApi;
   readonly stories: StoriesApi;
   readonly partners: PartnersApi;
+  private readonly apiBaseUrl: string;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
+    this.apiBaseUrl = apiBaseUrl;
     this.profile = createProfileApi(client, apiBaseUrl);
     this.organization = createOrganizationApi(client, apiBaseUrl);
     this.partnerOffers = createPartnerOffersApi(client, apiBaseUrl);
@@ -283,8 +293,24 @@ export class YunicityApi {
     return this.passport.listStamps();
   }
 
-  listPassportOffers(): Promise<PartnerOfferListResponse> {
-    return this.passport.listOffers();
+  claimPassportStamp(token: string): Promise<PassportStampClaimResult> {
+    return this.passport.claimStamp(token);
+  }
+
+  listPassportOffers(params?: PartnerOfferListParams): Promise<PartnerOfferPublicListResponse> {
+    return this.passport.listOffers(params);
+  }
+
+  listPartnerOffers(
+    slug: string,
+    city: string,
+    params?: Pick<PartnerOfferListParams, "limit" | "offset">,
+  ): Promise<PartnerOfferPublicListResponse> {
+    return this.partners.listPartnerOffers(slug, city, params);
+  }
+
+  fetchPublicPartnerOffers(params: PartnerOfferListParams): Promise<PartnerOfferPublicListResponse> {
+    return fetchPublicPartnerOffers(this.apiBaseUrl, params);
   }
 
   redeemPassportOffer(offerId: string): Promise<Redemption> {
