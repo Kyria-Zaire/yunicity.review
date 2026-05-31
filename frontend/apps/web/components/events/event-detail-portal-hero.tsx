@@ -1,6 +1,7 @@
 "use client";
 
 import { CulturalImage } from "@/components/culture/cultural-image";
+import { PartnerEventBadge } from "@/components/events/partner-event-badge";
 import type { LocalEvent } from "@yunicity/types";
 import {
   EVENT_DETAIL_INTEREST_CTA,
@@ -9,6 +10,8 @@ import {
   EVENT_DETAIL_SHARE,
   EVENT_DETAIL_SHARE_COPIED,
   buildMapEventUrl,
+  buildPartnerPlaceHrefFromEvent,
+  eventIsPartnerEvent,
   eventTypeLabel,
   formatEventDateBadge,
   formatEventInterestSocialLine,
@@ -42,6 +45,8 @@ export function EventDetailPortalHero({
   const socialLine = formatEventInterestSocialLine(event.interest_count, event.interested_by_me);
   const mapHref = buildMapEventUrl(event.id, { city: event.city });
   const addressLine = [event.location_name, event.address].filter(Boolean).join(" · ");
+  const partnerPlaceHref = buildPartnerPlaceHrefFromEvent(event);
+  const isPartner = eventIsPartnerEvent(event);
 
   async function handleShare() {
     const url =
@@ -105,6 +110,12 @@ export function EventDetailPortalHero({
           </p>
         ) : null}
 
+        {isPartner ? (
+          <div className="mt-3">
+            <PartnerEventBadge event={event} variant="dark" />
+          </div>
+        ) : null}
+
         <h1 className="mt-3 max-w-3xl text-2xl font-bold leading-tight text-white sm:text-3xl md:text-4xl">
           {event.title}
         </h1>
@@ -115,12 +126,23 @@ export function EventDetailPortalHero({
         </p>
 
         {event.organization ? (
-          <p className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-white/85">
-            <span>Par {event.organization.name}</span>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-white/85">
+            <span>
+              {isPartner ? "Organisé par " : "Par "}
+              <span className="font-semibold text-white">{event.organization.name}</span>
+            </span>
             {event.organization.is_verified ? (
               <BadgeCheck className="h-4 w-4 text-sky-300" aria-label="Organisateur vérifié" />
             ) : null}
-          </p>
+            {isPartner && partnerPlaceHref ? (
+              <Link
+                href={partnerPlaceHref}
+                className="ml-1 text-xs font-semibold text-white/70 underline underline-offset-2 hover:text-white/90"
+              >
+                Voir le partenaire →
+              </Link>
+            ) : null}
+          </div>
         ) : null}
 
         {socialLine ? (
