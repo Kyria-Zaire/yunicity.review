@@ -13,9 +13,10 @@ from app.core.config import Settings, get_settings
 from app.db.seeds.auth_rbac import seed_auth_rbac
 from app.db.seeds.passport_tiers import seed_passport_tiers
 from app.db.seeds.reims_cultural_places import seed_reims_cultural_places
-from app.db.seeds.reims_signed_partners import seed_reims_signed_partners
 from app.db.seeds.reims_demo_content import seed_reims_demo_content
 from app.db.seeds.reims_neighborhoods import seed_reims_neighborhoods
+from app.db.seeds.reims_partner_events import seed_reims_partner_events
+from app.db.seeds.reims_signed_partners import seed_reims_signed_partners
 from app.db.seeds.reims_tribes import seed_reims_tribes
 from app.db.seeds.stamp_definitions import seed_stamp_definitions
 
@@ -57,6 +58,7 @@ async def run(*, demo: bool) -> None:
             await seed_reims_neighborhoods(session)
             await seed_reims_cultural_places(session)
             await seed_reims_signed_partners(session)
+            await seed_reims_partner_events(session)
             if demo:
                 await seed_reims_demo_content(session)
                 await seed_reims_tribes(session)
