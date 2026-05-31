@@ -10,8 +10,8 @@ export interface LocalEventOrganization {
   city: string;
   logo_url: string | null;
   is_verified?: boolean;
-  is_partner: boolean;
-  partner_status: PartnerStatus | null;
+  is_partner?: boolean;
+  partner_status?: PartnerStatus | null;
   created_at?: string | null;
 }
 

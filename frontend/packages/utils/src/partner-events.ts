@@ -7,11 +7,10 @@ const PUBLIC_PARTNER_STATUSES: ReadonlySet<PartnerStatus> = new Set([
 ]);
 
 export function eventIsPartnerEvent(event: LocalEvent): boolean {
-  return (
-    event.organization?.is_partner === true &&
-    event.organization.partner_status !== null &&
-    PUBLIC_PARTNER_STATUSES.has(event.organization.partner_status)
-  );
+  const org = event.organization;
+  if (!org?.is_partner) return false;
+  const status = org.partner_status;
+  return status != null && PUBLIC_PARTNER_STATUSES.has(status);
 }
 
 export function eventOrganizerLabel(event: LocalEvent): string {
