@@ -4,9 +4,11 @@ import type { LocalEvent } from "@yunicity/types";
 
 import {
   buildPartnerEventsUrl,
+  buildPartnerPlaceHrefFromEvent,
   eventIsPartnerEvent,
   eventOrganizerLabel,
   eventPartnerBadgeLabel,
+  getPartnerEventOrganization,
 } from "./partner-events";
 
 function baseEvent(overrides: Partial<LocalEvent> = {}): LocalEvent {
@@ -205,5 +207,101 @@ describe("buildPartnerEventsUrl", () => {
     expect(buildPartnerEventsUrl("garçon-barbiers")).toBe(
       "/partners/gar%C3%A7on-barbiers/events",
     );
+  });
+});
+
+describe("getPartnerEventOrganization", () => {
+  it("returns organization when event is partner event", () => {
+    const event = baseEvent({
+      organization: {
+        id: "org-1",
+        slug: "belga-queen",
+        name: "Belga Queen",
+        city: "Reims",
+        logo_url: null,
+        is_partner: true,
+        partner_status: "active",
+      },
+    });
+    const org = getPartnerEventOrganization(event);
+    expect(org).not.toBeNull();
+    expect(org?.slug).toBe("belga-queen");
+  });
+
+  it("returns null when event is not a partner event", () => {
+    expect(getPartnerEventOrganization(baseEvent())).toBeNull();
+  });
+
+  it("returns null when organization exists but is_partner is false", () => {
+    const event = baseEvent({
+      organization: {
+        id: "org-2",
+        slug: "classic-org",
+        name: "Classic Org",
+        city: "Reims",
+        logo_url: null,
+        is_partner: false,
+        partner_status: null,
+      },
+    });
+    expect(getPartnerEventOrganization(event)).toBeNull();
+  });
+});
+
+describe("buildPartnerPlaceHrefFromEvent", () => {
+  it("returns exact place href for partner event", () => {
+    const event = baseEvent({
+      organization: {
+        id: "org-1",
+        slug: "belga-queen",
+        name: "Belga Queen",
+        city: "Reims",
+        logo_url: null,
+        is_partner: true,
+        partner_status: "active",
+      },
+    });
+    expect(buildPartnerPlaceHrefFromEvent(event)).toBe("/places/belga-queen?city=Reims");
+  });
+
+  it("returns null for non-partner event", () => {
+    expect(buildPartnerPlaceHrefFromEvent(baseEvent())).toBeNull();
+  });
+
+  it("returns null when organization is null", () => {
+    const event = baseEvent({ organization: null });
+    expect(buildPartnerPlaceHrefFromEvent(event)).toBeNull();
+  });
+});
+
+describe("getPartnerEventOrganization — signed/paused return null", () => {
+  it("returns null for signed partner", () => {
+    const event = baseEvent({
+      organization: {
+        id: "org-5",
+        slug: "signed-org",
+        name: "Signed Org",
+        city: "Reims",
+        logo_url: null,
+        is_partner: true,
+        partner_status: "signed",
+      },
+    });
+    expect(getPartnerEventOrganization(event)).toBeNull();
+  });
+
+  it("returns null for paused partner", () => {
+    const event = baseEvent({
+      organization: {
+        id: "org-6",
+        slug: "paused-org",
+        name: "Paused Org",
+        city: "Reims",
+        logo_url: null,
+        is_partner: true,
+        partner_status: "paused",
+      },
+    });
+    expect(getPartnerEventOrganization(event)).toBeNull();
   });
 });
