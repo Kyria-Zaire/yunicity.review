@@ -22,6 +22,7 @@ from app.schemas.local_event import LocalEventListResponse
 from app.schemas.partner import PartnerListResponse, PartnerPublicDetail
 from app.schemas.partner_offer_public import PartnerOfferPublicListResponse
 from app.schemas.passport_stamp_claim import StampQrGenerateRequest, StampQrGenerateResponse
+from app.services.local_event_service import LocalEventService
 from app.services.partner_service import PartnerService, default_partner_list_limit
 from app.services.public_partner_offer_service import PublicPartnerOfferService
 
@@ -111,8 +112,6 @@ async def list_partner_events(
     limit: int = Query(default=20, ge=1, le=50),
     offset: int = Query(default=0, ge=0),
 ) -> LocalEventListResponse:
-    from app.services.local_event_service import LocalEventService
-
     return await LocalEventService(session).list_partner_events(
         slug=slug,
         upcoming_only=upcoming_only,
