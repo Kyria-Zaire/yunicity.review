@@ -1,6 +1,7 @@
 "use client";
 
 import { CulturalImage } from "@/components/culture/cultural-image";
+import { PartnerEventBadge } from "@/components/events/partner-event-badge";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import type { CulturalPlaceListItem, LocalEvent } from "@yunicity/types";
 import {
@@ -11,6 +12,8 @@ import {
   buildMapEventUrl,
   eventAgendaDistrictLine,
   eventAgendaVibeLine,
+  eventIsPartnerEvent,
+  eventOrganizerLabel,
   formatEventClockTime,
   formatEventDurationLabel,
   resolveEventHeroImage,
@@ -68,6 +71,16 @@ export function EventsMomentCard({
 
         <div className="flex flex-col justify-center p-5 sm:p-6">
           <h3 className="text-lg font-bold leading-snug text-neutral-900 sm:text-xl">{event.title}</h3>
+
+          {eventIsPartnerEvent(event) ? (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <PartnerEventBadge event={event} variant="light" />
+              <span className="text-xs text-neutral-500">
+                Par{" "}
+                <span className="font-medium text-neutral-700">{eventOrganizerLabel(event)}</span>
+              </span>
+            </div>
+          ) : null}
 
           {timeLine ? (
             <p className="mt-2 text-sm font-semibold tabular-nums text-neutral-800">{timeLine}</p>
