@@ -316,7 +316,18 @@ class LocalEventService:
         profile = await self._partners.get_by_organization_id(organization_id)
         if profile is None:
             return
-        status = PartnerStatus(profile.partner_status)
+        try:
+            status = PartnerStatus(profile.partner_status)
+        except ValueError:
+            logger.warning(
+                "unknown_partner_status_gate",
+                extra={"organization_id": str(organization_id), "status": profile.partner_status},
+            )
+            raise AppError(
+                status_code=403,
+                code="PARTNER_NOT_ACTIVE",
+                detail="Ce partenaire n'est pas encore actif.",
+            ) from None
         if status not in PUBLIC_PARTNER_STATUSES:
             raise AppError(
                 status_code=403,
