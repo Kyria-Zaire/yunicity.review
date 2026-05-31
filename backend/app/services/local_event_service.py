@@ -107,6 +107,31 @@ class LocalEventService:
             page_size=limit,
         )
 
+    async def list_for_partner(
+        self,
+        organization_id: uuid.UUID,
+        *,
+        upcoming_only: bool,
+        limit: int,
+        offset: int,
+    ) -> LocalEventListResponse:
+        limit = min(max(limit, 1), LOCAL_EVENT_LIST_PAGE_SIZE_MAX)
+        offset = max(offset, 0)
+        now = datetime.now(UTC)
+        rows = await self._events.list_for_partner(
+            organization_id=organization_id,
+            upcoming_only=upcoming_only,
+            limit=limit,
+            offset=offset,
+            now=now,
+        )
+        return LocalEventListResponse(
+            items=[self._to_response(e) for e in rows],
+            total=len(rows),
+            page=1,
+            page_size=limit,
+        )
+
     async def toggle_interest(self, user: User, event_id: uuid.UUID) -> EventInterestToggleResponse:
         event = await self._require_public_event(event_id)
         existing = await self._events.get_interest(user_id=user.id, event_id=event.id)
@@ -319,6 +344,7 @@ class LocalEventService:
         limit: int = 20,
         offset: int = 0,
     ) -> LocalEventListResponse:
+        # TODO(debt): WEB-PARTNERS-05A — city hardcodé MVP, à paramétrer quand multi-ville
         profile = await self._partners.get_by_slug(
             city="Reims",
             slug=slug.strip().lower(),
@@ -469,10 +495,16 @@ class LocalEventService:
         org_summary = None
         if org is not None:
             partner_profile = getattr(org, "partner_profile", None)
-            is_partner = partner_profile is not None
-            p_status: str | None = (
-                partner_profile.partner_status if partner_profile is not None else None
-            )
+            is_partner = False
+            p_status: str | None = None
+            if partner_profile is not None:
+                try:
+                    status = PartnerStatus(partner_profile.partner_status)
+                except ValueError:
+                    status = None
+                if status is not None:
+                    is_partner = status in PUBLIC_PARTNER_STATUSES
+                    p_status = status.value
             org_summary = LocalEventOrganizationSummary(
                 id=org.id,
                 slug=org.slug,
