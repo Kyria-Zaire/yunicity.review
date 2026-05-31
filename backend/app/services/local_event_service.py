@@ -311,6 +311,56 @@ class LocalEventService:
             page_size=page_size,
         )
 
+    async def list_partner_events(
+        self,
+        *,
+        slug: str,
+        upcoming_only: bool = True,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> LocalEventListResponse:
+        profile = await self._partners.get_by_slug(
+            city="Reims",
+            slug=slug.strip().lower(),
+        )
+        if profile is None:
+            raise AppError(
+                status_code=404,
+                code="PARTNER_NOT_FOUND",
+                detail="Partenaire introuvable.",
+            )
+        try:
+            status = PartnerStatus(profile.partner_status)
+        except ValueError:
+            raise AppError(
+                status_code=404,
+                code="PARTNER_NOT_FOUND",
+                detail="Partenaire introuvable.",
+            ) from None
+        if status not in PUBLIC_PARTNER_STATUSES:
+            raise AppError(
+                status_code=404,
+                code="PARTNER_NOT_FOUND",
+                detail="Partenaire introuvable.",
+            )
+
+        limit = min(max(limit, 1), LOCAL_EVENT_LIST_PAGE_SIZE_MAX)
+        offset = max(offset, 0)
+        now = datetime.now(UTC)
+        rows, total = await self._events.list_public_for_partner_org(
+            organization_id=profile.organization_id,
+            upcoming_only=upcoming_only,
+            limit=limit,
+            offset=offset,
+            now=now,
+        )
+        return LocalEventListResponse(
+            items=[self._to_response(e) for e in rows],
+            total=total,
+            page=1,
+            page_size=limit,
+        )
+
     async def _check_partner_status_gate(self, organization_id: uuid.UUID) -> None:
         """Bloque signed/paused si l'org a un PartnerProfile."""
         profile = await self._partners.get_by_organization_id(organization_id)
