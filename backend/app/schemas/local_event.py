@@ -23,6 +23,8 @@ class LocalEventOrganizationSummary(BaseModel):
     city: str
     logo_url: str | None = None
     is_verified: bool = False
+    is_partner: bool = False
+    partner_status: str | None = None
     created_at: datetime | None = None
 
 
