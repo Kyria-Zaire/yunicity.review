@@ -76,6 +76,8 @@ import { DiscussionsApi, createDiscussionsApi } from "./discussions-api";
 import { StoriesApi, createStoriesApi } from "./stories-api";
 import { PartnersApi, createPartnersApi } from "./partners-api";
 import type {
+  LocalEventListResponse,
+  PartnerEventsParams,
   PartnerListParams,
   PartnerListResponse,
   PartnerOfferListParams,
@@ -136,6 +138,13 @@ export class YunicityApi {
 
   getPartner(slug: string, city: string): Promise<PartnerPublic> {
     return this.partners.getPartner(slug, city);
+  }
+
+  listPartnerEvents(
+    slug: string,
+    params?: PartnerEventsParams,
+  ): Promise<LocalEventListResponse> {
+    return this.partners.listPartnerEvents(slug, params);
   }
 
   listStories(params: StoryListParams = {}): Promise<StoryListResponse> {

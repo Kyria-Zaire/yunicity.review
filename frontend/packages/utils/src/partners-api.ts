@@ -1,4 +1,10 @@
-import type { PartnerListParams, PartnerListResponse, PartnerPublic } from "@yunicity/types";
+import type {
+  LocalEventListResponse,
+  PartnerEventsParams,
+  PartnerListParams,
+  PartnerListResponse,
+  PartnerPublic,
+} from "@yunicity/types";
 
 import type { AuthClient } from "./auth/auth-client";
 import { ApiClientBase } from "./api-client";
@@ -32,6 +38,26 @@ export class PartnersApi extends ApiClientBase {
   getPartner(slug: string, city: string): Promise<PartnerPublic> {
     const search = new URLSearchParams({ city });
     return this.getJson<PartnerPublic>(`/partners/${slug}?${search.toString()}`);
+  }
+
+  listPartnerEvents(
+    slug: string,
+    params: PartnerEventsParams = {},
+  ): Promise<LocalEventListResponse> {
+    const search = new URLSearchParams();
+    if (params.upcoming_only !== undefined) {
+      search.set("upcoming_only", String(params.upcoming_only));
+    }
+    if (params.limit !== undefined) {
+      search.set("limit", String(params.limit));
+    }
+    if (params.offset !== undefined) {
+      search.set("offset", String(params.offset));
+    }
+    const qs = search.toString();
+    return this.getJson<LocalEventListResponse>(
+      `/partners/${encodeURIComponent(slug)}/events${qs ? `?${qs}` : ""}`,
+    );
   }
 }
 

@@ -182,6 +182,7 @@ export type {
   LocalEvent,
   LocalEventListResponse,
   LocalEventOrganization,
+  PartnerEventsParams,
 } from "./local-event";
 
 export type {

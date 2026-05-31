@@ -62,3 +62,9 @@ export interface FeedEventMeta {
   event_type: string | null;
   interested_by_me?: boolean;
 }
+
+export interface PartnerEventsParams {
+  upcoming_only?: boolean;
+  limit?: number;
+  offset?: number;
+}
