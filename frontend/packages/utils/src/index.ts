@@ -2156,6 +2156,12 @@ export {
   type DiscussionNewExample,
   type DiscussionNewFormState,
 } from "./discussion-new-portal";
+export {
+  buildPartnerEventsUrl,
+  eventIsPartnerEvent,
+  eventOrganizerLabel,
+  eventPartnerBadgeLabel,
+} from "./partner-events";
 export { StoriesApi, createStoriesApi } from "./stories-api";
 export {
   STORY_CATEGORY_NAV,

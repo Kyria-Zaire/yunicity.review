@@ -1,6 +1,7 @@
 /** Local events / city moments (TICKET-505). */
 
 import type { FeedNeighborhoodSummary } from "./neighborhood";
+import type { PartnerStatus } from "./partner";
 
 export interface LocalEventOrganization {
   id: string;
@@ -9,6 +10,8 @@ export interface LocalEventOrganization {
   city: string;
   logo_url: string | null;
   is_verified?: boolean;
+  is_partner: boolean;
+  partner_status: PartnerStatus | null;
   created_at?: string | null;
 }
 
