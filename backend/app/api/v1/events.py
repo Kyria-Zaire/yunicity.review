@@ -36,6 +36,7 @@ async def list_local_events(
     session: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User | None, Depends(get_current_user_optional)],
     city: str | None = Query(default=None),
+    organization_slug: str | None = Query(default=None),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(
         default=LOCAL_EVENT_LIST_PAGE_SIZE_DEFAULT,
@@ -44,7 +45,11 @@ async def list_local_events(
     ),
 ) -> LocalEventListResponse:
     return await LocalEventService(session).list_public(
-        current_user, city=city, page=page, page_size=page_size
+        current_user,
+        city=city,
+        page=page,
+        page_size=page_size,
+        organization_slug=organization_slug,
     )
 
 

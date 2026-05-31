@@ -18,10 +18,12 @@ class LocalEventRepository:
         self._session = session
 
     async def get_by_id(self, event_id: uuid.UUID) -> LocalEvent | None:
+        from app.models.organization import Organization  # local import évite circulaire
+
         result = await self._session.execute(
             select(LocalEvent)
             .options(
-                selectinload(LocalEvent.organization),
+                selectinload(LocalEvent.organization).selectinload(Organization.partner_profile),
                 selectinload(LocalEvent.neighborhood),
             )
             .where(LocalEvent.id == event_id)
@@ -45,11 +47,14 @@ class LocalEventRepository:
         limit: int,
         offset: int = 0,
         now: datetime | None = None,
+        organization_slug: str | None = None,
     ) -> list[LocalEvent]:
+        from app.models.organization import Organization  # local import évite circulaire
+
         stmt = (
             select(LocalEvent)
             .options(
-                selectinload(LocalEvent.organization),
+                selectinload(LocalEvent.organization).selectinload(Organization.partner_profile),
                 selectinload(LocalEvent.neighborhood),
             )
             .where(
@@ -65,6 +70,12 @@ class LocalEventRepository:
             stmt = stmt.where(func.lower(LocalEvent.city) == city.strip().lower())
         if now is not None:
             stmt = stmt.where(LocalEvent.starts_at >= now)
+        if organization_slug is not None:
+            stmt = (
+                stmt
+                .join(Organization, Organization.id == LocalEvent.organization_id)
+                .where(Organization.slug == organization_slug.strip().lower())
+            )
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
@@ -194,6 +205,45 @@ class LocalEventRepository:
             .limit(limit)
         )
         return list(result.scalars().all())
+
+    async def list_public_for_partner_org(
+        self,
+        *,
+        organization_id: uuid.UUID,
+        upcoming_only: bool,
+        limit: int,
+        offset: int,
+        now: datetime,
+    ) -> tuple[list[LocalEvent], int]:
+        from app.models.organization import Organization  # local import évite circulaire
+
+        base = (
+            select(LocalEvent)
+            .options(
+                selectinload(LocalEvent.organization).selectinload(Organization.partner_profile),
+                selectinload(LocalEvent.neighborhood),
+            )
+            .where(
+                LocalEvent.organization_id == organization_id,
+                LocalEvent.moderation_status == LocalEventModerationStatus.APPROVED.value,
+                LocalEvent.is_cancelled.is_(False),
+                LocalEvent.visibility == "public",
+            )
+        )
+        if upcoming_only:
+            base = base.where(LocalEvent.starts_at >= now)
+
+        count_result = await self._session.execute(
+            select(func.count()).select_from(base.subquery())
+        )
+        total = int(count_result.scalar_one())
+
+        result = await self._session.execute(
+            base.order_by(LocalEvent.starts_at.asc())
+            .limit(limit)
+            .offset(offset)
+        )
+        return list(result.scalars().all()), total
 
     async def interest_event_ids_for_user(
         self, user_id: uuid.UUID, event_ids: list[uuid.UUID]

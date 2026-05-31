@@ -16,12 +16,14 @@ from app.core.local_event_constants import (
 )
 from app.core.local_event_workflow import assert_event_transition_allowed
 from app.core.organization_constants import VerificationStatus
+from app.core.partner_constants import PUBLIC_PARTNER_STATUSES, PartnerStatus
 from app.models.local_event import EventInterest, LocalEvent
 from app.models.organization import Organization
 from app.models.user import User
 from app.repositories.local_event_repository import LocalEventRepository
 from app.repositories.organization_repository import OrganizationRepository
 from app.repositories.partner_offer_repository import PartnerOfferRepository
+from app.repositories.partner_repository import PartnerRepository
 from app.schemas.local_event import (
     EventInterestToggleResponse,
     LocalEventCreateRequest,
@@ -46,6 +48,7 @@ class LocalEventService:
         self._events = LocalEventRepository(session)
         self._orgs = OrganizationRepository(session)
         self._offers = PartnerOfferRepository(session)
+        self._partners = PartnerRepository(session)
         self._membership = OrganizationMembershipService(session)
 
     async def list_public(
@@ -55,6 +58,7 @@ class LocalEventService:
         city: str | None,
         page: int,
         page_size: int,
+        organization_slug: str | None = None,
     ) -> LocalEventListResponse:
         page_size = min(max(page_size, 1), LOCAL_EVENT_LIST_PAGE_SIZE_MAX)
         offset = (max(page, 1) - 1) * page_size
@@ -65,6 +69,7 @@ class LocalEventService:
             limit=page_size,
             offset=offset,
             now=now,
+            organization_slug=organization_slug,
         )
         interested_ids: set[uuid.UUID] = set()
         if user and rows:
@@ -134,6 +139,7 @@ class LocalEventService:
             organization_id=payload.organization_id,
             user_id=actor.id,
         )
+        await self._check_partner_status_gate(payload.organization_id)
         org = await self._require_organization(payload.organization_id)
         self._validate_event_type(payload.event_type)
         self._validate_dates(payload.starts_at, payload.ends_at)
@@ -305,6 +311,19 @@ class LocalEventService:
             page_size=page_size,
         )
 
+    async def _check_partner_status_gate(self, organization_id: uuid.UUID) -> None:
+        """Bloque signed/paused si l'org a un PartnerProfile."""
+        profile = await self._partners.get_by_organization_id(organization_id)
+        if profile is None:
+            return
+        status = PartnerStatus(profile.partner_status)
+        if status not in PUBLIC_PARTNER_STATUSES:
+            raise AppError(
+                status_code=403,
+                code="PARTNER_NOT_ACTIVE",
+                detail="Ce partenaire n'est pas encore actif.",
+            )
+
     async def _notify_published(self, event: LocalEvent) -> None:
         if event.created_by_user_id is None:
             return
@@ -388,6 +407,11 @@ class LocalEventService:
         org = event.organization
         org_summary = None
         if org is not None:
+            partner_profile = getattr(org, "partner_profile", None)
+            is_partner = partner_profile is not None
+            p_status: str | None = (
+                partner_profile.partner_status if partner_profile is not None else None
+            )
             org_summary = LocalEventOrganizationSummary(
                 id=org.id,
                 slug=org.slug,
@@ -395,6 +419,8 @@ class LocalEventService:
                 city=org.city,
                 logo_url=org.logo_url,
                 is_verified=org.verified_at is not None,
+                is_partner=is_partner,
+                partner_status=p_status,
                 created_at=org.created_at,
             )
         return LocalEventResponse(
