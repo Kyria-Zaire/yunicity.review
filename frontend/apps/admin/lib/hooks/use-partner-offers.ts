@@ -4,8 +4,8 @@ import { useAuth } from "@/lib/auth/auth-provider";
 import type {
   OrganizationMeItem,
   PartnerOfferCreatePayload,
-  PartnerOfferListParams,
   PartnerOfferManagement,
+  PartnerOfferManagementListParams,
   PartnerOfferUpdatePayload,
 } from "@yunicity/types";
 import {
@@ -42,7 +42,7 @@ export function usePartnerOrganizations() {
   return { organizations, manageable, isLoading, error, reload: load };
 }
 
-export function usePartnerOffersList(params?: PartnerOfferListParams) {
+export function usePartnerOffersList(params?: PartnerOfferManagementListParams) {
   const { partnerOffersApi } = useAuth();
   const [items, setItems] = useState<PartnerOfferManagement[]>([]);
   const [total, setTotal] = useState(0);
