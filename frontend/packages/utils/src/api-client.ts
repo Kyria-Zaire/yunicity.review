@@ -60,4 +60,12 @@ export class ApiClientBase {
     }
     return (await response.json()) as T;
   }
+
+  protected async postFormData<T>(segment: string, body: FormData): Promise<T> {
+    const response = await this.client.fetch(this.apiPath(segment), {
+      method: "POST",
+      body,
+    });
+    return this.readJson<T>(response);
+  }
 }

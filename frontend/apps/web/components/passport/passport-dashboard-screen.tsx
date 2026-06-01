@@ -1,11 +1,11 @@
 "use client";
 
 import { PassportAchievementsRow } from "@/components/passport/passport-achievements-row";
-import { PassportAppShell } from "@/components/passport/passport-app-shell";
 import { PassportDashboardHero } from "@/components/passport/passport-dashboard-hero";
 import { PassportInternalSidebar } from "@/components/passport/passport-internal-sidebar";
 import { PassportProgressionTrack } from "@/components/passport/passport-progression-track";
 import { PassportRecentBadges } from "@/components/passport/passport-recent-badges";
+import { WebAppShell } from "@/components/layout";
 import { PassportTipsAside } from "@/components/layout/web-page-asides";
 import type { PassportDashboardNavId } from "@/hooks/use-passport-dashboard-context";
 import { usePassportDashboardContext } from "@/hooks/use-passport-dashboard-context";
@@ -26,17 +26,33 @@ export function PassportDashboardScreen() {
   const ctx = usePassportDashboardContext();
   const [activeNav, setActiveNav] = useState<PassportDashboardNavId>("overview");
 
-  const scrollToId = useCallback((targetId: string) => {
+  const scrollTo = useCallback((targetId: string) => {
     const el = document.getElementById(targetId);
-    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (targetId === "passport-progression") {
+      setActiveNav("stats");
+      return;
+    }
+    if (targetId.startsWith("passport-")) {
+      const navId = targetId.replace("passport-", "") as PassportDashboardNavId;
+      if (
+        navId === "overview" ||
+        navId === "stats" ||
+        navId === "badges" ||
+        navId === "privileges" ||
+        navId === "history" ||
+        navId === "tips"
+      ) {
+        setActiveNav(navId);
+      }
+    }
   }, []);
 
-  const goToNav = useCallback((navId: PassportDashboardNavId) => {
-    setActiveNav(navId);
-  }, []);
+  const displayName = ctx.profile?.display_name ?? ctx.profile?.username ?? "Citoyen";
 
   return (
-    <PassportAppShell>
+    <WebAppShell contentWidth="wide">
       {ctx.isLoading ? (
         <p className="py-12 text-center text-sm text-neutral-500" role="status">
           {PASSPORT_LOADING}
@@ -60,42 +76,26 @@ export function PassportDashboardScreen() {
         </div>
       ) : (
         <div className="flex flex-col gap-8 pb-12 lg:flex-row lg:items-start lg:gap-10">
-          <PassportInternalSidebar
-            activeNav={activeNav}
-            onNavigate={goToNav}
-            onAmbassadorCta={() => {
-              goToNav("overview");
-              requestAnimationFrame(() => scrollToId("passport-progression"));
-            }}
-          />
+          <PassportInternalSidebar activeNav={activeNav} onNavigate={scrollTo} />
 
           <div className="min-w-0 flex-1 space-y-10">
             {activeNav === "overview" ? (
               <>
                 <PassportDashboardHero
                   levelView={ctx.levelView}
-                  onScrollProgression={() => scrollToId("passport-progression")}
+                  displayName={displayName}
+                  onScrollProgression={() => scrollTo("passport-progression")}
                 />
-                <PassportAchievementsRow
-                  items={ctx.achievements}
-                  onViewAllBadges={() => goToNav("badges")}
-                />
+                <PassportAchievementsRow items={ctx.achievements} />
                 <PassportProgressionTrack steps={ctx.progression} />
-                <PassportRecentBadges badges={ctx.badges} onViewAll={() => goToNav("badges")} />
+                <PassportRecentBadges badges={ctx.badges} />
                 <PassportPartnersPanel partners={ctx.featuredPartners} offers={ctx.offers} />
               </>
             ) : null}
 
-            {activeNav === "stats" ? (
-              <PassportAchievementsRow
-                items={ctx.achievements}
-                onViewAllBadges={() => goToNav("badges")}
-              />
-            ) : null}
+            {activeNav === "stats" ? <PassportAchievementsRow items={ctx.achievements} /> : null}
 
-            {activeNav === "badges" ? (
-              <PassportRecentBadges badges={ctx.badges} showAll onViewAll={() => goToNav("badges")} />
-            ) : null}
+            {activeNav === "badges" ? <PassportRecentBadges badges={ctx.badges} /> : null}
 
             {activeNav === "privileges" ? (
               <section id="passport-privileges" className="scroll-mt-28">
@@ -123,6 +123,6 @@ export function PassportDashboardScreen() {
           </div>
         </div>
       )}
-    </PassportAppShell>
+    </WebAppShell>
   );
 }

@@ -40,7 +40,7 @@ export function useFeedHomeContext(): FeedHomeContextState {
       const [eventsRes, hoodsRes, offersRes, passportRes, tribesRes] = await Promise.allSettled([
         api.events.listEvents({ city: resolvedCity }),
         api.neighborhoods.listNeighborhoods({ city: resolvedCity, page_size: 6 }),
-        api.listPassportOffers(),
+        api.fetchPublicPartnerOffers({ city: resolvedCity, limit: 8 }),
         api.getPassportMe(),
         api.tribes.listTribes({ city: resolvedCity, page_size: 1, featured_only: true }),
       ]);

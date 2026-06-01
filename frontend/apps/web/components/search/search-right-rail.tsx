@@ -253,7 +253,7 @@ export function SearchRightRail({ explorer }: { explorer: SearchExplorerContextS
       {highlightOffer ? (
         <WebContextPanel title={HOME_PRIVILEGE_TITLE}>
           <p className="text-xs font-medium text-yunicity-primary">
-            {highlightOffer.partner.name}
+            {highlightOffer.organization.name}
           </p>
           <p className="font-semibold text-neutral-900">{highlightOffer.title}</p>
           <Link href="/passport" className="text-xs font-semibold text-yunicity-primary hover:underline">

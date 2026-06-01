@@ -420,7 +420,11 @@ function resolveTribeListCategoryLabel(tribe: Tribe): {
   const categories = resolveTribePortalCategories(tribe);
   const primary = categories[0];
   if (primary) {
-    return { categoryId: primary, categoryLabel: TRIBES_PORTAL_CATEGORY_LABELS[primary] };
+    return {
+      categoryId: primary,
+      categoryLabel:
+        TRIBES_PORTAL_CATEGORY_LABELS[primary] ?? tribeCategoryLabel(tribe.category),
+    };
   }
   return { categoryId: "", categoryLabel: tribeCategoryLabel(tribe.category) };
 }

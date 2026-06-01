@@ -58,7 +58,7 @@ export function useFeedPortalContext(): FeedPortalContextState {
         api.neighborhoods.listNeighborhoods({ city: resolvedCity, page_size: 8 }),
         api.listCulturalPlaces({ city: resolvedCity, featured: true, limit: 12 }),
         api.tribes.listTribes({ city: resolvedCity, page_size: 12 }),
-        api.listPassportOffers(),
+        api.fetchPublicPartnerOffers({ city: resolvedCity, limit: 8 }),
         api.getPassportMe(),
         api.events.listSavedEvents(),
       ];
@@ -103,7 +103,7 @@ export function useFeedPortalContext(): FeedPortalContextState {
       }
 
       if (offersRes?.status === "fulfilled") {
-        const value = offersRes.value as Awaited<ReturnType<typeof api.listPassportOffers>>;
+        const value = offersRes.value as Awaited<ReturnType<typeof api.fetchPublicPartnerOffers>>;
         setHighlightOffer(value.items[0] ?? null);
       } else {
         setHighlightOffer(null);

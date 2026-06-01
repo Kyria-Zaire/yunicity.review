@@ -52,7 +52,7 @@ export function useNeighborhoodsPortalContext(initialCity?: string): Neighborhoo
         api.events.listEvents({ city }),
         api.listCulturalPlaces({ city, limit: 48 }),
         api.tribes.listTribes({ city, page_size: 8 }),
-        api.listPassportOffers(),
+        api.fetchPublicPartnerOffers({ city, limit: 8 }),
       ]);
 
       const [hoodsRes, eventsRes, placesRes, tribesRes, offersRes] = results;

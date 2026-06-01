@@ -77,7 +77,7 @@ export function usePassportDashboardContext() {
       passport: passportState.passport,
       stamps,
       tribes,
-      savedEvents,
+      savedEventsCount: savedEvents.length,
       postsCount: null as number | null,
     };
   }, [passportState.passport, stamps, tribes, savedEvents]);

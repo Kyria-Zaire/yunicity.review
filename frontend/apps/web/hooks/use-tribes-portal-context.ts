@@ -55,7 +55,7 @@ export function useTribesPortalContext(initialCity?: string): TribesPortalContex
         api.events.listEvents({ city }),
         api.neighborhoods.listNeighborhoods({ city, page_size: 20 }),
         api.listCulturalPlaces({ city, limit: 20 }),
-        api.listPassportOffers(),
+        api.fetchPublicPartnerOffers({ city, limit: 8 }),
         api.getPassportMe(),
       ]);
 

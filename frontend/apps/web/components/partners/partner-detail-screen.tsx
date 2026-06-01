@@ -125,7 +125,6 @@ export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
                     placeName={partner.name}
                     className="h-full w-full"
                     sizes="96px"
-                    overlay={false}
                     showFallbackCaption={false}
                   />
                 </div>

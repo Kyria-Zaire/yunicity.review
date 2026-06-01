@@ -22,7 +22,9 @@ import type {
   OrganizationMeListResponse,
   OrganizationPublic,
   OrganizationRequestPayload,
+  PartnerOfferListParams,
   PartnerOfferListResponse,
+  PartnerOfferPublicListResponse,
   PassportActivateRequest,
   PassportMe,
   PassportStampListResponse,
@@ -73,11 +75,13 @@ import { WeatherApi, createWeatherApi } from "./weather-api";
 import { SubscriptionsApi, createSubscriptionsApi } from "./subscription-api";
 import { DiscussionsApi, createDiscussionsApi } from "./discussions-api";
 import { StoriesApi, createStoriesApi } from "./stories-api";
-import { PartnersApi, createPartnersApi } from "./partners-api";
+import { PartnersApi, createPartnersApi, fetchPublicPartnerOffers } from "./partners-api";
 import type { PartnerListParams, PartnerListResponse, PartnerPublic } from "@yunicity/types";
 
 /** FaÃƒÆ’Ã‚Â§ade profile + organizations + passport. */
 export class YunicityApi {
+  private readonly apiBaseUrl: string;
+
   readonly profile: ProfileApi;
   readonly organization: OrganizationApi;
   readonly partnerOffers: PartnerOffersApi;
@@ -99,6 +103,7 @@ export class YunicityApi {
   readonly partners: PartnersApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
+    this.apiBaseUrl = apiBaseUrl;
     this.profile = createProfileApi(client, apiBaseUrl);
     this.organization = createOrganizationApi(client, apiBaseUrl);
     this.partnerOffers = createPartnerOffersApi(client, apiBaseUrl);
@@ -285,6 +290,18 @@ export class YunicityApi {
 
   listPassportOffers(): Promise<PartnerOfferListResponse> {
     return this.passport.listOffers();
+  }
+
+  listPartnerOffers(
+    slug: string,
+    city: string,
+    params?: Pick<PartnerOfferListParams, "limit" | "offset">,
+  ): Promise<PartnerOfferPublicListResponse> {
+    return this.partners.listPartnerOffers(slug, city, params);
+  }
+
+  fetchPublicPartnerOffers(params: PartnerOfferListParams): Promise<PartnerOfferPublicListResponse> {
+    return fetchPublicPartnerOffers(this.apiBaseUrl, params);
   }
 
   redeemPassportOffer(offerId: string): Promise<Redemption> {
