@@ -2,13 +2,12 @@
 
 import { WebAppShell } from "@/components/layout";
 import { ProtectedRoute } from "@/components/protected-route";
+import { usePartnerPortalContextOptional } from "@/hooks/use-partner-portal-context";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import type { OrganizationMeItem, StampQrGenerateResponse } from "@yunicity/types";
 import { buildPassportStampClaimUrl, isAuthError } from "@yunicity/utils";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-
-const MANAGER_ROLES = new Set(["owner", "admin"]);
 
 function formatExpiry(iso: string): string {
   const date = new Date(iso);
@@ -22,30 +21,32 @@ function formatExpiry(iso: string): string {
   });
 }
 
-function PartnerPassportQrContent() {
+/** QR tampon Passport — contenu réutilisable dans le portail partenaire (08C) ou en page autonome. */
+export function PartnerPassportQrPanel() {
+  const portal = usePartnerPortalContextOptional();
   const api = useYunicityApi();
-  const [organizations, setOrganizations] = useState<OrganizationMeItem[]>([]);
-  const [selectedSlug, setSelectedSlug] = useState<string>("");
+  const [standaloneOrgs, setStandaloneOrgs] = useState<OrganizationMeItem[]>([]);
+  const [standaloneSlug, setStandaloneSlug] = useState("");
   const [qrResult, setQrResult] = useState<StampQrGenerateResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoadingOrgs, setIsLoadingOrgs] = useState(true);
+  const [isLoadingOrgs, setIsLoadingOrgs] = useState(!portal?.organization);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copyHint, setCopyHint] = useState<string | null>(null);
 
-  const manageableOrgs = useMemo(
-    () =>
-      organizations.filter(
-        (org) =>
-          MANAGER_ROLES.has(org.member_role) &&
-          org.member_status === "active" &&
-          org.verification_status === "verified",
-      ),
-    [organizations],
-  );
-
-  const selectedOrg = manageableOrgs.find((org) => org.slug === selectedSlug) ?? manageableOrgs[0];
+  const manageableOrgs = portal?.manageableOrganizations ?? standaloneOrgs;
+  const selectedOrg = portal?.organization ??
+    manageableOrgs.find((org) => org.slug === standaloneSlug) ??
+    manageableOrgs[0];
 
   useEffect(() => {
+    if (portal?.organization) {
+      setIsLoadingOrgs(false);
+      return;
+    }
+    if (portal?.isLoading) {
+      setIsLoadingOrgs(true);
+      return;
+    }
     let cancelled = false;
     async function load() {
       setIsLoadingOrgs(true);
@@ -53,15 +54,15 @@ function PartnerPassportQrContent() {
       try {
         const data = await api.listMyOrganizations();
         if (!cancelled) {
-          setOrganizations(data.items);
           const managers = data.items.filter(
             (org) =>
-              MANAGER_ROLES.has(org.member_role) &&
+              (org.member_role === "owner" || org.member_role === "admin") &&
               org.member_status === "active" &&
               org.verification_status === "verified",
           );
+          setStandaloneOrgs(managers);
           if (managers[0]) {
-            setSelectedSlug(managers[0].slug);
+            setStandaloneSlug(managers[0].slug);
           }
         }
       } catch (err) {
@@ -78,7 +79,7 @@ function PartnerPassportQrContent() {
     return () => {
       cancelled = true;
     };
-  }, [api]);
+  }, [api, portal]);
 
   const generateQr = useCallback(async () => {
     if (!selectedOrg) return;
@@ -123,20 +124,8 @@ function PartnerPassportQrContent() {
     }
   }, [claimUrl]);
 
-  return (
-    <WebAppShell
-      header={{
-        title: "QR tampon Passport",
-        subtitle: "Générez un QR à présenter aux citoyens pour collecter un tampon (validité 24 h).",
-      }}
-      contentWidth="form"
-    >
-      <div className="mb-6">
-        <Link href="/organizations/me" className="text-sm font-semibold text-yunicity-primary hover:underline">
-          ← Mes lieux
-        </Link>
-      </div>
-
+  const body = (
+    <>
       {isLoadingOrgs ? (
         <p className="text-sm text-neutral-500">Chargement…</p>
       ) : manageableOrgs.length === 0 ? (
@@ -146,14 +135,14 @@ function PartnerPassportQrContent() {
         </p>
       ) : (
         <div className="space-y-6 rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-sm">
-          {manageableOrgs.length > 1 ? (
+          {manageableOrgs.length > 1 && !portal ? (
             <label className="block text-sm">
               <span className="font-semibold text-neutral-900">Lieu</span>
               <select
                 className="mt-2 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm"
                 value={selectedOrg?.slug ?? ""}
                 onChange={(event) => {
-                  setSelectedSlug(event.target.value);
+                  setStandaloneSlug(event.target.value);
                   setQrResult(null);
                 }}
               >
@@ -229,6 +218,27 @@ function PartnerPassportQrContent() {
           ) : null}
         </div>
       )}
+    </>
+  );
+
+  return body;
+}
+
+function PartnerPassportQrStandalone() {
+  return (
+    <WebAppShell
+      header={{
+        title: "QR tampon Passport",
+        subtitle: "Générez un QR à présenter aux citoyens pour collecter un tampon (validité 24 h).",
+      }}
+      contentWidth="form"
+    >
+      <div className="mb-6">
+        <Link href="/organizations/me" className="text-sm font-semibold text-yunicity-primary hover:underline">
+          ← Mes lieux
+        </Link>
+      </div>
+      <PartnerPassportQrPanel />
     </WebAppShell>
   );
 }
@@ -236,7 +246,7 @@ function PartnerPassportQrContent() {
 export function PartnerPassportQrScreen() {
   return (
     <ProtectedRoute>
-      <PartnerPassportQrContent />
+      <PartnerPassportQrStandalone />
     </ProtectedRoute>
   );
 }

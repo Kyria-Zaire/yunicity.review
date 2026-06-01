@@ -82,6 +82,14 @@ import { WeatherApi, createWeatherApi } from "./weather-api";
 import { SubscriptionsApi, createSubscriptionsApi } from "./subscription-api";
 import { DiscussionsApi, createDiscussionsApi } from "./discussions-api";
 import { StoriesApi, createStoriesApi } from "./stories-api";
+import {
+  OrganizationCreatorContentApi,
+  createOrganizationCreatorContentApi,
+} from "./organization-creator-content-api";
+import {
+  OrganizationEventsApi,
+  createOrganizationEventsApi,
+} from "./organization-events-api";
 import { PartnerPassportApi, createPartnerPassportApi } from "./partner-passport-api";
 import { PartnersApi, createPartnersApi, fetchPublicPartnerOffers } from "./partners-api";
 
@@ -109,6 +117,8 @@ export class YunicityApi {
   readonly stories: StoriesApi;
   readonly partners: PartnersApi;
   readonly partnerPassport: PartnerPassportApi;
+  readonly organizationEvents: OrganizationEventsApi;
+  readonly organizationCreatorContent: OrganizationCreatorContentApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.apiBaseUrl = apiBaseUrl;
@@ -132,6 +142,8 @@ export class YunicityApi {
     this.stories = createStoriesApi(client, apiBaseUrl);
     this.partners = createPartnersApi(client, apiBaseUrl);
     this.partnerPassport = createPartnerPassportApi(client, apiBaseUrl);
+    this.organizationEvents = createOrganizationEventsApi(client, apiBaseUrl);
+    this.organizationCreatorContent = createOrganizationCreatorContentApi(client, apiBaseUrl);
   }
 
   listPartners(params: PartnerListParams): Promise<PartnerListResponse> {
