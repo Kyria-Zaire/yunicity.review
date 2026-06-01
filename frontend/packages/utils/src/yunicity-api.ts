@@ -102,7 +102,6 @@ export class YunicityApi {
   readonly discussions: DiscussionsApi;
   readonly stories: StoriesApi;
   readonly partners: PartnersApi;
-  private readonly apiBaseUrl: string;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.apiBaseUrl = apiBaseUrl;

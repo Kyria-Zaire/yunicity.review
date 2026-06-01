@@ -1,6 +1,6 @@
 "use client";
 
-import { PassportAppShell } from "@/components/passport/passport-app-shell";
+import { WebAppShell } from "@/components/layout";
 import type { PassportStampClaimResult } from "@yunicity/types";
 import {
   PASSPORT_STAMP_CLAIM_ALREADY_CLAIMED_BODY,
@@ -136,7 +136,7 @@ function PassportStampClaimContent() {
 
 export default function PassportStampClaimPage() {
   return (
-    <PassportAppShell>
+    <WebAppShell contentWidth="readable">
       <Suspense
         fallback={
           <div className="mx-auto max-w-md px-4 py-12">
@@ -150,7 +150,7 @@ export default function PassportStampClaimPage() {
       >
         <PassportStampClaimContent />
       </Suspense>
-    </PassportAppShell>
+    </WebAppShell>
   );
 }
 

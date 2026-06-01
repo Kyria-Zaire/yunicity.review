@@ -100,7 +100,13 @@ export function PassportDashboardScreen() {
 
             {activeNav === "privileges" ? (
               <section id="passport-privileges" className="scroll-mt-28">
-                <PassportOffersList offers={ctx.publicOffers} isLoading={ctx.offersLoading} />
+                <PassportOffersList
+                  offers={ctx.offers}
+                  isLoading={ctx.offersLoading}
+                  message={ctx.offerMessage}
+                  redeemingId={ctx.redeemingId}
+                  onRedeem={(id) => void ctx.redeem(id)}
+                />
               </section>
             ) : null}
 
