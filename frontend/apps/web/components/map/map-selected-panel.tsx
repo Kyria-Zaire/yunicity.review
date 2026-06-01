@@ -50,6 +50,9 @@ export function MapSelectedPanel({ payload, onClose, onStartRoute }: MapSelected
 
       {payload.kind === "event" ? (
         <>
+          {/* TODO(WEB-PARTNERS-07): partner badge non disponible ici —
+              MapEventItem (GET /map/events) ne retourne pas organization.
+              À activer quand l'endpoint map exposera is_partner + partner_status. */}
           <p className="mt-2 text-xs text-neutral-500">{payload.location}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Link

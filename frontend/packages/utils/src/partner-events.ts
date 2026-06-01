@@ -1,4 +1,5 @@
-import type { LocalEvent, PartnerStatus } from "@yunicity/types";
+import type { LocalEvent, LocalEventOrganization, PartnerStatus } from "@yunicity/types";
+import { buildPublicPlaceHref } from "./place-routing";
 
 const PUBLIC_PARTNER_STATUSES: ReadonlySet<PartnerStatus> = new Set([
   "active",
@@ -34,4 +35,17 @@ export function buildPartnerEventsUrl(slug: string, city?: string): string {
   const base = `/partners/${encodeURIComponent(slug)}/events`;
   if (!city) return base;
   return `${base}?city=${encodeURIComponent(city)}`;
+}
+
+export function getPartnerEventOrganization(
+  event: LocalEvent,
+): LocalEventOrganization | null {
+  if (!eventIsPartnerEvent(event)) return null;
+  return event.organization ?? null;
+}
+
+export function buildPartnerPlaceHrefFromEvent(event: LocalEvent): string | null {
+  const org = getPartnerEventOrganization(event);
+  if (!org) return null;
+  return buildPublicPlaceHref(org.slug, org.city);
 }

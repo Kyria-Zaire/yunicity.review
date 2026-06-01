@@ -1,4 +1,6 @@
 import type {
+  LocalEventListResponse,
+  PartnerEventsParams,
   PartnerListParams,
   PartnerListResponse,
   PartnerOfferListParams,
@@ -54,6 +56,26 @@ export class PartnersApi extends ApiClientBase {
     }
     return this.getJson<PartnerOfferPublicListResponse>(
       `/partners/${encodeURIComponent(slug)}/offers?${search.toString()}`,
+    );
+  }
+
+  listPartnerEvents(
+    slug: string,
+    params: PartnerEventsParams = {},
+  ): Promise<LocalEventListResponse> {
+    const search = new URLSearchParams();
+    if (params.upcoming_only !== undefined) {
+      search.set("upcoming_only", String(params.upcoming_only));
+    }
+    if (params.limit !== undefined) {
+      search.set("limit", String(params.limit));
+    }
+    if (params.offset !== undefined) {
+      search.set("offset", String(params.offset));
+    }
+    const qs = search.toString();
+    return this.getJson<LocalEventListResponse>(
+      `/partners/${encodeURIComponent(slug)}/events${qs ? `?${qs}` : ""}`,
     );
   }
 }

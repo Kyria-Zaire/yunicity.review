@@ -5,6 +5,7 @@ import { PlacesAppShell } from "@/components/places/places-app-shell";
 import type { LocalEvent, PartnerOffer, PartnerPublic } from "@yunicity/types";
 import {
   PARTNER_DETAIL_EVENTS_CTA,
+  PARTNER_DETAIL_EVENTS_EMPTY,
   PARTNER_DETAIL_EVENTS_TITLE,
   PARTNER_DETAIL_MAP_NOTICE,
   PARTNER_DETAIL_PASSPORT_EMPTY,
@@ -13,8 +14,8 @@ import {
   PARTNER_DETAIL_VERIFIED,
   PARTNER_DETAIL_WHY_BODY,
   PARTNER_DETAIL_WHY_TITLE,
-  filterPartnerEvents,
   filterPartnerOffersForOrganization,
+  formatEventDateRange,
   formatOfferValidUntil,
   hasPartnerCoordinates,
   partnerBadgeLabel,
@@ -47,7 +48,9 @@ const BADGE_TONE_CLASS: Record<string, string> = {
 export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
   const api = useYunicityApi();
   const [offers, setOffers] = useState<PartnerOffer[]>([]);
-  const [events, setEvents] = useState<LocalEvent[]>([]);
+  const [partnerEvents, setPartnerEvents] = useState<LocalEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState(false);
   const [shareHint, setShareHint] = useState<string | null>(null);
 
   const heroUrl = resolvePartnerImage(partner, "hero");
@@ -57,26 +60,27 @@ export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
     () => filterPartnerOffersForOrganization(offers, partner.organization_id),
     [offers, partner.organization_id],
   );
-  const partnerEvents = useMemo(
-    () => filterPartnerEvents(events, partner.organization_id),
-    [events, partner.organization_id],
-  );
   const badgeTone = partnerBadgeTone(partner.partner_status);
 
   useEffect(() => {
     let cancelled = false;
     void Promise.allSettled([
       api.listPassportOffers(),
-      api.events.listEvents({ city: partner.city }),
+      api.listPartnerEvents(partner.slug, { upcoming_only: true, limit: 6 }),
     ]).then(([offersRes, eventsRes]) => {
       if (cancelled) return;
       if (offersRes.status === "fulfilled") setOffers(offersRes.value.items);
-      if (eventsRes.status === "fulfilled") setEvents(eventsRes.value.items);
+      if (eventsRes.status === "fulfilled") {
+        setPartnerEvents(eventsRes.value.items);
+      } else {
+        setEventsError(true);
+      }
+      setEventsLoading(false);
     });
     return () => {
       cancelled = true;
     };
-  }, [api, partner.city]);
+  }, [api, partner.slug]);
 
   async function handleShare() {
     const url = typeof window !== "undefined" ? window.location.href : partnerPublicHref(partner);
@@ -269,15 +273,27 @@ export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
           )}
         </section>
 
-        {partnerEvents.length > 0 ? (
-          <section className="rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-neutral-900">{PARTNER_DETAIL_EVENTS_TITLE}</h2>
+        <section className="rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-neutral-900">{PARTNER_DETAIL_EVENTS_TITLE}</h2>
+          {eventsLoading ? (
+            <p className="mt-3 text-sm text-neutral-500">Chargement…</p>
+          ) : eventsError ? (
+            <p className="mt-3 text-sm text-red-600">Impossible de charger les moments.</p>
+          ) : partnerEvents.length === 0 ? (
+            <p className="mt-3 text-sm text-neutral-600">{PARTNER_DETAIL_EVENTS_EMPTY}</p>
+          ) : (
             <ul className="mt-4 space-y-3">
               {partnerEvents.map((event) => (
-                <li key={event.id} className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-neutral-900">{event.title}</p>
-                    <p className="text-xs text-neutral-500">{event.location_name ?? event.city}</p>
+                <li
+                  key={event.id}
+                  className="flex items-start justify-between gap-3 rounded-xl border border-neutral-100 bg-neutral-50/60 px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-neutral-900">{event.title}</p>
+                    <p className="mt-0.5 text-xs font-medium text-yunicity-primary">
+                      {formatEventDateRange(event.starts_at, event.ends_at).split(" · ")[0]}
+                    </p>
+                    <p className="mt-0.5 text-xs text-neutral-500">{event.location_name}</p>
                   </div>
                   <Link
                     href={buildEventHref(event.id)}
@@ -288,8 +304,8 @@ export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
                 </li>
               ))}
             </ul>
-          </section>
-        ) : null}
+          )}
+        </section>
       </div>
     </PlacesAppShell>
   );

@@ -37,3 +37,8 @@ export const MAP_PARTNERS_RAIL_TITLE = "Partenaires Yunicity";
 export const MAP_PARTNERS_RAIL_EMPTY = "Aucun partenaire public pour cette ville.";
 export const MAP_PARTNER_GEO_NOTICE =
   "Ce partenaire n’a pas encore d’adresse géolocalisée.";
+
+export const PARTNER_DETAIL_EVENTS_EMPTY =
+  "Ce partenaire n’a pas encore de moment annoncé.";
+export const PARTNER_DETAIL_EVENTS_DATE_LABEL = "Le";
+export const PARTNER_DETAIL_PARTNER_CTA = "Voir le partenaire";

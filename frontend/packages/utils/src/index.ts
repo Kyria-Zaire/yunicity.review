@@ -947,9 +947,12 @@ export {
   MAP_PARTNERS_RAIL_TITLE,
   PARTNER_DETAIL_ERROR,
   PARTNER_DETAIL_EVENTS_CTA,
+  PARTNER_DETAIL_EVENTS_DATE_LABEL,
+  PARTNER_DETAIL_EVENTS_EMPTY,
   PARTNER_DETAIL_EVENTS_TITLE,
   PARTNER_DETAIL_LOADING,
   PARTNER_DETAIL_MAP_NOTICE,
+  PARTNER_DETAIL_PARTNER_CTA,
   PARTNER_DETAIL_PASSPORT_EMPTY,
   PARTNER_DETAIL_PASSPORT_TITLE,
   PARTNER_DETAIL_PRACTICAL_TITLE,
@@ -2143,9 +2146,11 @@ export {
 } from "./discussion-new-portal";
 export {
   buildPartnerEventsUrl,
+  buildPartnerPlaceHrefFromEvent,
   eventIsPartnerEvent,
   eventOrganizerLabel,
   eventPartnerBadgeLabel,
+  getPartnerEventOrganization,
 } from "./partner-events";
 export { StoriesApi, createStoriesApi } from "./stories-api";
 export {
