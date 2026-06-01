@@ -6,9 +6,8 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.services.local_event_service import LocalEventService
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @pytest.mark.unit

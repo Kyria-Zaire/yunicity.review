@@ -5,10 +5,9 @@ from __future__ import annotations
 from unittest.mock import AsyncMock
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.services.cultural_place_service import CulturalPlaceService
 from app.services.map_event_service import MapBbox
+from sqlalchemy.ext.asyncio import AsyncSession
 
 _REIMS_BBOX = MapBbox(
     lat_min=49.24,
