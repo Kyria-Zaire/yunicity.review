@@ -26,6 +26,7 @@ class PostRepository:
             .where(Post.id == post_id)
             .options(
                 selectinload(Post.partner_offer).selectinload(PartnerOffer.neighborhood),
+                selectinload(Post.partner_creator_content),
                 selectinload(Post.local_event).selectinload(LocalEvent.neighborhood),
                 selectinload(Post.neighborhood),
             )
@@ -41,6 +42,12 @@ class PostRepository:
 
     async def get_by_partner_offer_id(self, offer_id: uuid.UUID) -> Post | None:
         result = await self._session.execute(select(Post).where(Post.partner_offer_id == offer_id))
+        return result.scalar_one_or_none()
+
+    async def get_by_partner_creator_content_id(self, content_id: uuid.UUID) -> Post | None:
+        result = await self._session.execute(
+            select(Post).where(Post.partner_creator_content_id == content_id)
+        )
         return result.scalar_one_or_none()
 
     async def add(self, post: Post) -> Post:
@@ -73,6 +80,7 @@ class PostRepository:
             .where(Post.is_active.is_(True), Post.tribe_id.is_(None))
             .options(
                 selectinload(Post.partner_offer).selectinload(PartnerOffer.neighborhood),
+                selectinload(Post.partner_creator_content),
                 selectinload(Post.local_event).selectinload(LocalEvent.neighborhood),
                 selectinload(Post.neighborhood),
             )

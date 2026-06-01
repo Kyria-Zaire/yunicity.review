@@ -8,6 +8,7 @@ from app.core.flash_offer import build_flash_snapshot
 from app.models.post import Post
 from app.schemas.feed import (
     FeedAuthor,
+    FeedCreatorContentMeta,
     FeedEventMeta,
     FeedLocation,
     FeedOfferMeta,
@@ -29,6 +30,17 @@ def _event_meta(post: Post, *, interested_by_me: bool = False) -> FeedEventMeta 
         district=event.district,
         event_type=event.event_type,
         interested_by_me=interested_by_me,
+    )
+
+
+def _creator_content_meta(post: Post) -> FeedCreatorContentMeta | None:
+    if post.partner_creator_content_id is None:
+        return None
+    content = post.partner_creator_content
+    published_at = content.moderated_at if content is not None else None
+    return FeedCreatorContentMeta(
+        partner_creator_content_id=post.partner_creator_content_id,
+        published_at=published_at,
     )
 
 
@@ -81,6 +93,7 @@ def to_feed_item(
         liked_by_me=liked_by_me,
         offer=_offer_meta(post),
         event=_event_meta(post, interested_by_me=event_interested),
+        creator_content=_creator_content_meta(post),
         neighborhood_summary=resolve_feed_neighborhood_summary(post),
         created_at=post.created_at,
         updated_at=post.updated_at,
@@ -108,6 +121,7 @@ def to_post_response(
         liked_by_me=liked_by_me,
         offer=_offer_meta(post),
         event=_event_meta(post, interested_by_me=False),
+        creator_content=_creator_content_meta(post),
         neighborhood_summary=resolve_feed_neighborhood_summary(post),
         created_at=post.created_at,
         updated_at=post.updated_at,

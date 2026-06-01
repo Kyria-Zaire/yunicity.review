@@ -49,7 +49,8 @@ async def run_import() -> GtfsImportResult:
 
     t0 = time.perf_counter()
     stops, departures, meta = parse_gtfs_zip(data)
-    print(f"Parsed {len(stops)} stops, {len(departures)} departures in {time.perf_counter() - t0:.1f}s")
+    elapsed = time.perf_counter() - t0
+    print(f"Parsed {len(stops)} stops, {len(departures)} departures in {elapsed:.1f}s")
     meta.gtfs_url = source_url
 
     init_db(settings)

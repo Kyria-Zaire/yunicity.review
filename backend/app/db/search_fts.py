@@ -179,8 +179,14 @@ _BACKFILL: tuple[str, ...] = (
       name, description, category, slug
     );
     """,
-    "UPDATE partner_offers SET search_vector = yunicity_partner_offers_search_vector(title, description);",
-    "UPDATE tribes SET search_vector = yunicity_tribes_search_vector(name, description, slug, category);",
+    (
+        "UPDATE partner_offers SET search_vector = "
+        "yunicity_partner_offers_search_vector(title, description);"
+    ),
+    (
+        "UPDATE tribes SET search_vector = "
+        "yunicity_tribes_search_vector(name, description, slug, category);"
+    ),
     """
     UPDATE user_profiles SET search_vector = yunicity_user_profiles_search_vector(
       username, display_name, bio

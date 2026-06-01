@@ -35,7 +35,7 @@ async def list_cultural_places(
     session: Annotated[AsyncSession, Depends(get_db)],
     city: str = Query(default="Reims", min_length=1, max_length=128),
     featured: bool = Query(default=False),
-    category: list[str] | None = Query(default=None),
+    category: list[str] | None = Query(default=None),  # noqa: B008
     sort: str = Query(default=CULTURAL_PLACE_SORT_FEATURED),
     limit: int = Query(default=CULTURAL_PLACE_LIST_LIMIT_DEFAULT, ge=1, le=100),
     offset: int = Query(default=0, ge=0),

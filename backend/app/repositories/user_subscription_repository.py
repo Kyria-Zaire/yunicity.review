@@ -4,7 +4,6 @@ import uuid
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
 
 from app.core.subscription_constants import PAID_PLAN_CODES, MembershipStatus
 from app.models.user_profile import UserProfile

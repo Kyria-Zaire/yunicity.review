@@ -15,7 +15,7 @@ from app.core.organization_constants import (
     OrganizationVisibility,
     VerificationStatus,
 )
-from app.core.partner_constants import PartnerStatus, PartnershipType
+from app.core.partner_constants import PartnershipType, PartnerStatus
 from app.models.organization import Organization
 from app.models.partner_profile import PartnerProfile
 
@@ -292,7 +292,10 @@ def _build_partner_profile(entry: dict[str, Any]) -> PartnerProfile:
         public_partner_label=entry.get("public_partner_label"),
         is_featured=bool(entry.get("is_featured", False)),
         featured_priority=int(entry.get("featured_priority", 0)),
-        notes_internal=entry.get("notes_internal", "Seed WEB-PARTNERS-01 — données catalogue interne."),
+        notes_internal=entry.get(
+            "notes_internal",
+            "Seed WEB-PARTNERS-01 — données catalogue interne.",
+        ),
     )
 
 

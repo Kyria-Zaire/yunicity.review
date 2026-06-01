@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 
-export type FeedCardVariant = "default" | "event" | "offer" | "organization";
+export type FeedCardVariant = "default" | "event" | "offer" | "organization" | "partner_creator";
 
 const VARIANT_CLASS: Record<FeedCardVariant, string> = {
   default: "border-neutral-200/90",
   event: "border-neutral-200/90",
   offer: "border-neutral-200/90",
   organization: "border-neutral-200/90",
+  partner_creator: "border-neutral-200/90",
 };
 
 /** Enveloppe unique pour carte feed + barre d’actions — bordures neutres (WEB-HOME-01B). */

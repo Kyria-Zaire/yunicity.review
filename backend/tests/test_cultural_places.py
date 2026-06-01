@@ -8,13 +8,15 @@ from collections.abc import AsyncGenerator, Iterator
 
 import pytest
 from app.core.config import get_settings
-from app.db.seeds.reims_cultural_places import REIMS_CULTURAL_PLACES_SEED, seed_reims_cultural_places
+from app.db.seeds.reims_cultural_places import (
+    REIMS_CULTURAL_PLACES_SEED,
+    seed_reims_cultural_places,
+)
 from app.db.seeds.reims_neighborhoods import seed_reims_neighborhoods
 from app.db.session import dispose_db, get_session_factory, init_db
 from app.main import create_app
 from app.models.cultural_place import CulturalPlace
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
 _REIMS_LAT = 49.2538
 _REIMS_LON = 4.0340

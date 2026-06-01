@@ -1,6 +1,6 @@
 /** Citizen feed types (TICKET-402 / TICKET-403) — alignés sur l’API backend. */
 
-export type FeedPostType = "post" | "offer" | "event";
+export type FeedPostType = "post" | "offer" | "event" | "partner_creator";
 
 export type FeedAuthorType = "citizen" | "organization";
 
@@ -35,6 +35,11 @@ export interface FeedNeighborhoodSummary {
   display_name: string;
 }
 
+export interface FeedCreatorContentMeta {
+  partner_creator_content_id: string;
+  published_at: string | null;
+}
+
 export interface FeedOfferMeta {
   partner_offer_id: string;
   valid_from: string | null;
@@ -60,6 +65,7 @@ export interface FeedPost {
   liked_by_me: boolean;
   offer: FeedOfferMeta | null;
   event: FeedEventMeta | null;
+  creator_content: FeedCreatorContentMeta | null;
   neighborhood_summary: FeedNeighborhoodSummary | null;
   created_at: string;
   updated_at: string;

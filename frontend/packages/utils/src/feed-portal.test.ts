@@ -29,6 +29,7 @@ const BASE_POST: FeedPost = {
   liked_by_me: false,
   offer: null,
   event: null,
+  creator_content: null,
   neighborhood_summary: { slug: "centre-ville", display_name: "Centre-ville" },
   created_at: new Date().toISOString(),
   updated_at: "",

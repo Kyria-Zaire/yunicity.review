@@ -4,16 +4,18 @@ from __future__ import annotations
 
 import logging
 import uuid
+from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
-from app.core.organization_constants import VerificationStatus
+from app.core.organization_constants import OrganizationVisibility, VerificationStatus
 from app.core.partner_constants import PUBLIC_PARTNER_STATUSES, PartnerStatus
 from app.core.partner_creator_content_constants import PartnerCreatorContentStatus
 from app.core.partner_creator_content_workflow import (
     assert_creator_content_transition_allowed,
     assert_partner_can_edit_creator_content,
+    is_creator_content_published,
 )
 from app.models.organization import Organization
 from app.models.partner_creator_content import PartnerCreatorContent
@@ -22,6 +24,7 @@ from app.repositories.organization_repository import OrganizationRepository
 from app.repositories.partner_creator_content_repository import PartnerCreatorContentRepository
 from app.repositories.partner_offer_repository import PartnerOfferRepository
 from app.repositories.partner_repository import PartnerRepository
+from app.schemas.admin_partner_creator_content import PartnerCreatorContentRejectRequest
 from app.schemas.partner_creator_content_management import (
     PARTNER_CREATOR_CONTENT_LIST_PAGE_SIZE_MAX,
     PartnerCreatorContentCreateRequest,
@@ -30,6 +33,7 @@ from app.schemas.partner_creator_content_management import (
     PartnerCreatorContentOrganizationSummary,
     PartnerCreatorContentUpdateRequest,
 )
+from app.services.feed_creator_content_sync import FeedCreatorContentSyncService
 from app.services.organization_membership_service import OrganizationMembershipService
 
 logger = logging.getLogger(__name__)
@@ -139,6 +143,86 @@ class PartnerCreatorContentService:
             page=page,
             page_size=page_size,
         )
+
+    async def approve_content(
+        self,
+        moderator: User,
+        content_id: uuid.UUID,
+    ) -> PartnerCreatorContentManagementResponse:
+        content = await self._require_content(content_id)
+        org = await self._require_verified_organization(content.organization_id)
+        self._transition_content(
+            content,
+            PartnerCreatorContentStatus.PUBLISHED,
+            moderator=moderator,
+            clear_rejection=True,
+        )
+        org.visibility = OrganizationVisibility.PUBLIC
+        await FeedCreatorContentSyncService(self._session).upsert_creator_content_post(
+            content,
+            org,
+        )
+        await self._session.commit()
+        return await self._to_management_response(await self._require_content(content_id))
+
+    async def reject_content(
+        self,
+        moderator: User,
+        content_id: uuid.UUID,
+        payload: PartnerCreatorContentRejectRequest,
+    ) -> PartnerCreatorContentManagementResponse:
+        content = await self._require_content(content_id)
+        await self._require_verified_organization(content.organization_id)
+        self._transition_content(
+            content,
+            PartnerCreatorContentStatus.REJECTED,
+            moderator=moderator,
+            rejection_reason=payload.reason.strip(),
+        )
+        await FeedCreatorContentSyncService(self._session).deactivate_creator_content_post(
+            content.id
+        )
+        await self._session.commit()
+        return await self._to_management_response(await self._require_content(content_id))
+
+    async def archive_content(
+        self,
+        moderator: User,
+        content_id: uuid.UUID,
+    ) -> PartnerCreatorContentManagementResponse:
+        content = await self._require_content(content_id)
+        await self._require_verified_organization(content.organization_id)
+        self._transition_content(
+            content,
+            PartnerCreatorContentStatus.ARCHIVED,
+            moderator=moderator,
+            clear_rejection=True,
+        )
+        await FeedCreatorContentSyncService(self._session).deactivate_creator_content_post(
+            content.id
+        )
+        await self._session.commit()
+        return await self._to_management_response(await self._require_content(content_id))
+
+    def _transition_content(
+        self,
+        content: PartnerCreatorContent,
+        target: PartnerCreatorContentStatus,
+        *,
+        moderator: User | None = None,
+        rejection_reason: str | None = None,
+        clear_rejection: bool = False,
+    ) -> None:
+        assert_creator_content_transition_allowed(content.status, target)
+        content.status = target
+        content.is_active = is_creator_content_published(target)
+        if moderator is not None:
+            content.moderated_by_user_id = moderator.id
+            content.moderated_at = datetime.now(UTC)
+        if target == PartnerCreatorContentStatus.REJECTED:
+            content.rejection_reason = rejection_reason
+        elif clear_rejection:
+            content.rejection_reason = None
 
     async def _require_content(self, content_id: uuid.UUID) -> PartnerCreatorContent:
         content = await self._contents.get_by_id(content_id)

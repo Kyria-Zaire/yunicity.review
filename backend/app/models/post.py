@@ -6,7 +6,18 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, Uuid, text
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    Uuid,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -131,7 +142,11 @@ class Post(TimestampMixin, Base):
         "Neighborhood",
         back_populates="posts",
     )
-    tribe: Mapped[Tribe | None] = relationship("Tribe", back_populates="posts", foreign_keys=[tribe_id])
+    tribe: Mapped[Tribe | None] = relationship(
+        "Tribe",
+        back_populates="posts",
+        foreign_keys=[tribe_id],
+    )
     linked_tribe: Mapped[Tribe | None] = relationship("Tribe", foreign_keys=[linked_tribe_id])
     likes: Mapped[list[Like]] = relationship(
         "Like",

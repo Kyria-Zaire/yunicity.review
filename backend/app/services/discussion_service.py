@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.errors import AppError
 from app.core.discussion_category import infer_discussion_categories, post_matches_category
 from app.core.discussion_constants import (
     DISCUSSION_CATEGORY_LABELS,
@@ -12,6 +11,7 @@ from app.core.discussion_constants import (
     DiscussionCategory,
 )
 from app.core.discussion_cursor import decode_discussion_cursor, encode_discussion_cursor
+from app.core.errors import AppError
 from app.core.feed_constants import PostAuthorType, PostType
 from app.models.post import Post
 from app.models.user import User
