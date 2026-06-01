@@ -27,7 +27,9 @@ pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
 
 @pytest.fixture(autouse=True)
-async def _clear_redis_rate_limits() -> None:
+async def _clear_redis_rate_limits(auth_client: AsyncClient) -> None:
+    """Évite RATE_LIMITED quand la suite enchaîne plusieurs POST /auth/register."""
+    _ = auth_client
     redis = get_redis_client()
     if redis is not None:
         await redis.flushdb()
