@@ -743,6 +743,8 @@ Idempotent — rôles et permissions MVP uniquement (aucun utilisateur) :
 ```bash
 # Local ou conteneur backend, après migration
 python -m app.db.seeds
+# Pilotes Reims (comptes OWNER + données catalogue) — dev/recette only
+python -m app.db.seeds --pilot
 ```
 
 Docker :
@@ -750,6 +752,7 @@ Docker :
 ```bash
 docker compose exec backend alembic upgrade head
 docker compose exec backend python -m app.db.seeds
+docker compose exec backend python -m app.db.seeds --pilot
 ```
 
 ## Tests Auth/RBAC
