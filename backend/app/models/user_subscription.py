@@ -38,4 +38,4 @@ class UserSubscription(TimestampMixin, Base):
     )
     canceled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    user: Mapped["User"] = relationship("User", back_populates="subscription")
+    user: Mapped[User] = relationship("User", back_populates="subscription")

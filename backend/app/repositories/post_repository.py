@@ -12,7 +12,6 @@ from sqlalchemy.sql.elements import ColumnElement
 
 from app.core.feed_constants import PostAuthorType, PostType
 from app.models.local_event import LocalEvent
-from app.models.partner_creator_content import PartnerCreatorContent
 from app.models.passport import PartnerOffer
 from app.models.post import Post
 

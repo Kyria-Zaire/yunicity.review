@@ -10,13 +10,10 @@ from pydantic import BaseModel, Field, field_validator
 from app.core.story_constants import (
     STORY_CAPTION_MAX_LENGTH,
     STORY_LOCATION_LABEL_MAX_LENGTH,
-    STORY_PAGE_SIZE_DEFAULT,
-    STORY_PAGE_SIZE_MAX,
     STORY_TAG_MAX_LENGTH,
     STORY_TAGS_MAX_COUNT,
     StoryAudience,
     StoryCategory,
-    StoryTab,
 )
 from app.schemas.feed import FeedAuthor
 from app.schemas.post import PostLocationInput
