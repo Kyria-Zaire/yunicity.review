@@ -54,6 +54,7 @@ function event(overrides: Partial<LocalEvent> = {}): LocalEvent {
     moderation_status: "approved",
     is_cancelled: false,
     interested_by_me: false,
+    interest_count: 0,
     organization: null,
     neighborhood_summary: { slug: "boulingrin", display_name: "Boulingrin" },
     created_at: "",

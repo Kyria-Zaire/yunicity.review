@@ -4,7 +4,7 @@ import type {
   CulturalPlaceListItem,
   LocalEvent,
   Neighborhood,
-  PartnerOffer,
+  PartnerOfferPublic,
   Tribe,
   TribeMember,
 } from "@yunicity/types";
@@ -157,7 +157,7 @@ describe("tribe-detail helpers", () => {
   });
 
   it("construit des slices lifestyle réalistes", () => {
-    const offers: PartnerOffer[] = [];
+    const offers: PartnerOfferPublic[] = [];
     const slices = buildTribeLifestyleSlices({
       city: "Reims",
       tribe: tribe(),

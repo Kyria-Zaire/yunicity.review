@@ -34,7 +34,8 @@ export interface LocalEvent {
   moderation_status: string;
   is_cancelled: boolean;
   interested_by_me: boolean;
-  interest_count: number;
+  /** Présent sur les réponses API ; optionnel dans les mocks de tests. */
+  interest_count?: number;
   organization: LocalEventOrganization | null;
   neighborhood_summary?: FeedNeighborhoodSummary | null;
   created_at: string;

@@ -50,6 +50,7 @@ const baseEvent = {
   moderation_status: "approved" as const,
   is_cancelled: false,
   interested_by_me: false,
+  interest_count: 0,
   organization: null,
   created_at: new Date().toISOString(),
 };
