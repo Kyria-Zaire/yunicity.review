@@ -27,6 +27,7 @@ import type {
   PartnerOfferPublicListResponse,
   PassportActivateRequest,
   PassportMe,
+  PassportStampClaimResult,
   PassportStampListResponse,
   PostCreatePayload,
   ProfileCompleteRequest,
@@ -286,6 +287,10 @@ export class YunicityApi {
 
   listPassportStamps(): Promise<PassportStampListResponse> {
     return this.passport.listStamps();
+  }
+
+  claimPassportStamp(token: string): Promise<PassportStampClaimResult> {
+    return this.passport.claimStamp(token);
   }
 
   listPassportOffers(): Promise<PartnerOfferListResponse> {

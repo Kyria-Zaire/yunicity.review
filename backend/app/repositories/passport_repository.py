@@ -121,6 +121,8 @@ class PassportRepository:
         passport_id: uuid.UUID,
         organization_id: uuid.UUID,
         stamped_at: datetime,
+        stamp_source: PassportStampSource = PassportStampSource.ORGANIZATION,
+        metadata: dict[str, object] | None = None,
     ) -> bool:
         existing = await self._session.execute(
             select(PassportStamp.id).where(
@@ -138,14 +140,31 @@ class PassportRepository:
         stamp = PassportStamp(
             passport_id=passport_id,
             organization_id=organization_id,
-            stamp_source=PassportStampSource.ORGANIZATION,
+            stamp_source=stamp_source,
             stamped_at=stamped_at,
+            metadata_=metadata or {},
         )
         self._session.add(stamp)
         passport.stamps_count = passport.stamps_count + 1
         passport.last_stamp_at = stamped_at
         await self._session.flush()
         return True
+
+    async def get_stamp_with_org(
+        self,
+        *,
+        passport_id: uuid.UUID,
+        organization_id: uuid.UUID,
+    ) -> PassportStamp | None:
+        result = await self._session.execute(
+            select(PassportStamp)
+            .options(selectinload(PassportStamp.organization))
+            .where(
+                PassportStamp.passport_id == passport_id,
+                PassportStamp.organization_id == organization_id,
+            )
+        )
+        return result.scalar_one_or_none()
 
     async def touch_activated(self, passport: Passport, *, activated_at: datetime) -> None:
         passport.activated_at = activated_at

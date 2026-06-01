@@ -6,6 +6,7 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, Query, Request
+from fastapi import Response as FastAPIResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import require_authenticated_user
@@ -20,10 +21,14 @@ from app.schemas.passport import (
     PassportStampListResponse,
     PassportTierListResponse,
 )
+from app.schemas.passport_stamp_claim import StampClaimRequest, StampClaimResponse
 from app.schemas.redemption import RedemptionResponse
 from app.schemas.scan import PassportQrResponse
 from app.services.passport_service import PassportService
-from app.services.public_partner_offer_service import PublicPartnerOfferService
+from app.services.passport_stamp_claim_service import PassportStampClaimService
+from app.services.public_partner_offer_service import (
+    PublicPartnerOfferService,
+)
 
 
 def _parse_offer_type(value: str | None) -> PartnerOfferType | None:
@@ -87,6 +92,29 @@ async def list_passport_stamps(
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> PassportStampListResponse:
     return await PassportService(session).list_stamps(current_user)
+
+
+@router.post("/stamps/claim", response_model=StampClaimResponse)
+async def claim_passport_stamp(
+    payload: StampClaimRequest,
+    request: Request,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    response: FastAPIResponse,
+) -> StampClaimResponse:
+    await enforce_rate_limit(
+        f"stamp:claim:{current_user.id}",
+        limit=20,
+        window_seconds=3600,
+    )
+    await enforce_rate_limit(
+        f"stamp:claim:ip:{_client_ip(request)}",
+        limit=60,
+        window_seconds=3600,
+    )
+    result, created = await PassportStampClaimService(session).claim(current_user, payload.token)
+    response.status_code = 201 if created else 200
+    return result
 
 
 @router.get("/offers", response_model=PartnerOfferPublicListResponse)

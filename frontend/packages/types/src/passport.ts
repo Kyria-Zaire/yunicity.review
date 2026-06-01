@@ -8,7 +8,7 @@ export type PassportTierCode =
 
 export type PassportStatus = "active" | "suspended" | "revoked";
 
-export type PassportStampSource = "organization";
+export type PassportStampSource = "organization" | "qr";
 
 export type PassportStampKind = "visit" | "memory";
 
@@ -138,3 +138,36 @@ export interface Redemption {
   redeemed_at: string | null;
   created_at: string;
 }
+
+export type PassportStampClaimOrganization = {
+  id: string;
+  slug: string;
+  name: string;
+  city: string;
+  logo_url: string | null;
+};
+
+export type PassportStampClaimItem = {
+  id: string;
+  organization_id: string;
+  organization: PassportStampClaimOrganization;
+  stamp_source: PassportStampSource;
+  stamped_at: string;
+};
+
+export type PassportStampClaimPassportSummary = {
+  stamps_count: number;
+  tier_code: string;
+};
+
+export type PassportStampClaimResult = {
+  status: "created" | "already_claimed";
+  already_claimed: boolean;
+  stamp: PassportStampClaimItem;
+  passport: PassportStampClaimPassportSummary;
+};
+
+export type PassportQrTokenResponse = {
+  qr_url: string;
+  expires_at: string;
+};

@@ -114,6 +114,16 @@ class PartnerRepository:
         result = await self._session.execute(stmt)
         return result.scalars().unique().one_or_none()
 
+    async def get_by_partner_profile_id(self, profile_id: UUID) -> PartnerProfile | None:
+        stmt = (
+            select(PartnerProfile)
+            .options(joinedload(PartnerProfile.organization))
+            .where(PartnerProfile.id == profile_id)
+            .limit(1)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalars().unique().one_or_none()
+
     @staticmethod
     def default_public_statuses() -> frozenset[PartnerStatus]:
         return PUBLIC_PARTNER_STATUSES

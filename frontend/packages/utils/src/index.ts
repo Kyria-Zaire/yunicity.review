@@ -479,6 +479,14 @@ export {
   createPassportApi,
   fetchPassportTiersPublic,
 } from "./passport-api";
+export {
+  buildPassportStampClaimUrl,
+  formatPassportStampDate,
+  passportStampSourceLabel,
+  passportStampTypeLabel,
+  PassportStampClaimApi,
+  createPassportStampClaimApi,
+} from "./passport-stamp-claim";
 export { EventsApi, createEventsApi } from "./events-api";
 export {
   GENERIC_CULTURAL_UNSPLASH_PHOTO_ID,
@@ -921,6 +929,7 @@ export {
   culturalPlaceMapHref,
   filterPartnerEvents,
   filterPartnerOffersForOrganization,
+  filterPartnerOffersForPartnerSlug,
   hasPartnerCoordinates,
   partnerBadgeLabel,
   partnerBadgeTone,
@@ -1531,6 +1540,16 @@ export {
   PARTNER_OFFER_REJECTED_SECTION_TITLE,
   PARTNER_OFFER_TYPE_LABELS,
   PASSPORT_CITIZEN_OFFERS_EMPTY,
+  PASSPORT_STAMP_CLAIM_ALREADY_CLAIMED_BODY,
+  PASSPORT_STAMP_CLAIM_CTA_PARTNER,
+  PASSPORT_STAMP_CLAIM_CTA_PASSPORT,
+  PASSPORT_STAMP_CLAIM_ERROR_BODY,
+  PASSPORT_STAMP_CLAIM_EXPIRED_BODY,
+  PASSPORT_STAMP_CLAIM_INVALID_BODY,
+  PASSPORT_STAMP_CLAIM_LOADING,
+  PASSPORT_STAMP_CLAIM_PARTNER_INACTIVE_BODY,
+  PASSPORT_STAMP_CLAIM_SUCCESS_BODY,
+  PASSPORT_STAMP_CLAIM_SUCCESS_TITLE,
   PASSPORT_TIER_META,
   canEditPartnerOffer,
   canSubmitPartnerOffer,

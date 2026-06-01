@@ -33,9 +33,10 @@ class PassportStatus(StrEnum):
 
 
 class PassportStampSource(StrEnum):
-    """MVP: organization only — event/campaign reserved for future tickets."""
+    """MVP: ORGANIZATION = partner scanned user QR; QR = user claimed partner QR."""
 
     ORGANIZATION = "organization"
+    QR = "qr"
 
 
 class PartnerOfferType(StrEnum):

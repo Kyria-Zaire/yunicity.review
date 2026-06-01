@@ -140,3 +140,14 @@ export function isPassportNotActiveError(error: unknown): boolean {
     (error as { code: string }).code === "PASSPORT_NOT_ACTIVE"
   );
 }
+
+export const PASSPORT_STAMP_CLAIM_LOADING = "Validation de votre tampon…";
+export const PASSPORT_STAMP_CLAIM_SUCCESS_TITLE = "Tampon ajouté à votre Passport";
+export const PASSPORT_STAMP_CLAIM_SUCCESS_BODY = "Bienvenue chez {partner}. Votre tampon Passport a bien été enregistré.";
+export const PASSPORT_STAMP_CLAIM_ALREADY_CLAIMED_BODY = "Ce tampon est déjà dans votre Passport.";
+export const PASSPORT_STAMP_CLAIM_EXPIRED_BODY = "Ce QR a expiré. Demandez un nouveau QR au partenaire.";
+export const PASSPORT_STAMP_CLAIM_INVALID_BODY = "Ce QR n'est pas valide.";
+export const PASSPORT_STAMP_CLAIM_PARTNER_INACTIVE_BODY = "Ce partenaire n'est pas actif pour le moment.";
+export const PASSPORT_STAMP_CLAIM_ERROR_BODY = "Une erreur est survenue. Réessayez plus tard.";
+export const PASSPORT_STAMP_CLAIM_CTA_PASSPORT = "Voir mon Passport";
+export const PASSPORT_STAMP_CLAIM_CTA_PARTNER = "Voir le partenaire";

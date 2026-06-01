@@ -20,7 +20,7 @@ import { useCallback, useState } from "react";
 
 import { PassportPartnersPanel } from "./passport-partners-panel";
 import { PassportOffersList } from "./passport-offers-section";
-import { PassportStampsList } from "./passport-stamps-section";
+import { PassportStampsList, PassportStampsSection } from "./passport-stamps-section";
 
 export function PassportDashboardScreen() {
   const ctx = usePassportDashboardContext();
@@ -90,6 +90,7 @@ export function PassportDashboardScreen() {
                 <PassportProgressionTrack steps={ctx.progression} />
                 <PassportRecentBadges badges={ctx.badges} />
                 <PassportPartnersPanel partners={ctx.featuredPartners} offers={ctx.offers} />
+                <PassportStampsSection stamps={ctx.stamps} isLoading={ctx.stampsLoading} />
               </>
             ) : null}
 
