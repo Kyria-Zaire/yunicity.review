@@ -18,7 +18,9 @@ from app.db.seeds.reims_partner_events import (
     REIMS_PARTNER_EVENTS_SEED,
     seed_reims_partner_events,
 )
+from app.db.seeds.reims_signed_partners import seed_reims_signed_partners
 from app.db.session import get_engine
+from app.integrations.redis import get_redis_client
 from app.models.local_event import LocalEvent
 from app.models.organization import Organization, OrganizationMember
 from app.models.partner_profile import PartnerProfile
@@ -29,6 +31,14 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from tests.conftest_rbac import RbacUserFactory, auth_header
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
+
+
+@pytest.fixture(autouse=True)
+async def _clear_redis_rate_limits(auth_client: AsyncClient) -> None:
+    """Évite RATE_LIMITED quand la suite enchaîne plusieurs POST /auth/register."""
+    redis = get_redis_client()
+    if redis is not None:
+        await redis.flushdb()
 
 
 # ---------------------------------------------------------------------------
@@ -390,6 +400,7 @@ async def test_seed_partner_events_idempotent(
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with factory() as session:
+        await seed_reims_signed_partners(session)
         await seed_reims_partner_events(session)
         await seed_reims_partner_events(session)
         await session.commit()
