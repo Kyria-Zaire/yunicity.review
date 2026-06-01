@@ -24,7 +24,12 @@ from app.repositories.organization_repository import OrganizationRepository
 from app.repositories.partner_creator_content_repository import PartnerCreatorContentRepository
 from app.repositories.partner_offer_repository import PartnerOfferRepository
 from app.repositories.partner_repository import PartnerRepository
-from app.schemas.admin_partner_creator_content import PartnerCreatorContentRejectRequest
+from app.schemas.admin_partner_creator_content import (
+    PartnerCreatorContentAdminListResponse,
+    PartnerCreatorContentAdminResponse,
+    PartnerCreatorContentAuthorSummary,
+    PartnerCreatorContentRejectRequest,
+)
 from app.schemas.partner_creator_content_management import (
     PARTNER_CREATOR_CONTENT_LIST_PAGE_SIZE_MAX,
     PartnerCreatorContentCreateRequest,
@@ -144,11 +149,37 @@ class PartnerCreatorContentService:
             page_size=page_size,
         )
 
+    async def list_contents_admin(
+        self,
+        *,
+        status: str | None,
+        page: int,
+        page_size: int,
+        sort_newest: bool,
+    ) -> PartnerCreatorContentAdminListResponse:
+        page_size = min(page_size, PARTNER_CREATOR_CONTENT_LIST_PAGE_SIZE_MAX)
+        rows, total = await self._contents.list_admin(
+            status=status,
+            page=page,
+            page_size=page_size,
+            sort_newest=sort_newest,
+        )
+        return PartnerCreatorContentAdminListResponse(
+            items=[await self._to_admin_response(row) for row in rows],
+            total=total,
+            page=page,
+            page_size=page_size,
+        )
+
+    async def get_content_admin(self, content_id: uuid.UUID) -> PartnerCreatorContentAdminResponse:
+        content = await self._require_content(content_id)
+        return await self._to_admin_response(content)
+
     async def approve_content(
         self,
         moderator: User,
         content_id: uuid.UUID,
-    ) -> PartnerCreatorContentManagementResponse:
+    ) -> PartnerCreatorContentAdminResponse:
         content = await self._require_content(content_id)
         org = await self._require_verified_organization(content.organization_id)
         self._transition_content(
@@ -163,14 +194,14 @@ class PartnerCreatorContentService:
             org,
         )
         await self._session.commit()
-        return await self._to_management_response(await self._require_content(content_id))
+        return await self._to_admin_response(await self._require_content(content_id))
 
     async def reject_content(
         self,
         moderator: User,
         content_id: uuid.UUID,
         payload: PartnerCreatorContentRejectRequest,
-    ) -> PartnerCreatorContentManagementResponse:
+    ) -> PartnerCreatorContentAdminResponse:
         content = await self._require_content(content_id)
         await self._require_verified_organization(content.organization_id)
         self._transition_content(
@@ -183,13 +214,13 @@ class PartnerCreatorContentService:
             content.id
         )
         await self._session.commit()
-        return await self._to_management_response(await self._require_content(content_id))
+        return await self._to_admin_response(await self._require_content(content_id))
 
     async def archive_content(
         self,
         moderator: User,
         content_id: uuid.UUID,
-    ) -> PartnerCreatorContentManagementResponse:
+    ) -> PartnerCreatorContentAdminResponse:
         content = await self._require_content(content_id)
         await self._require_verified_organization(content.organization_id)
         self._transition_content(
@@ -202,7 +233,31 @@ class PartnerCreatorContentService:
             content.id
         )
         await self._session.commit()
-        return await self._to_management_response(await self._require_content(content_id))
+        return await self._to_admin_response(await self._require_content(content_id))
+
+    async def _to_admin_response(
+        self,
+        content: PartnerCreatorContent,
+    ) -> PartnerCreatorContentAdminResponse:
+        base = await self._to_management_response(content)
+        author: PartnerCreatorContentAuthorSummary | None = None
+        if content.created_by is not None:
+            author = PartnerCreatorContentAuthorSummary(
+                id=content.created_by.id,
+                email=content.created_by.email,
+                display_name=content.created_by.full_name.strip() or None,
+            )
+        status = (
+            content.status
+            if isinstance(content.status, PartnerCreatorContentStatus)
+            else PartnerCreatorContentStatus(content.status)
+        )
+        submitted_at = content.updated_at if status != PartnerCreatorContentStatus.DRAFT else None
+        return PartnerCreatorContentAdminResponse(
+            **base.model_dump(),
+            author=author,
+            submitted_at=submitted_at,
+        )
 
     def _transition_content(
         self,
@@ -226,6 +281,8 @@ class PartnerCreatorContentService:
 
     async def _require_content(self, content_id: uuid.UUID) -> PartnerCreatorContent:
         content = await self._contents.get_by_id(content_id)
+        if content is not None and content.created_by is None:
+            await self._session.refresh(content, attribute_names=["created_by"])
         if content is None:
             raise AppError(
                 status_code=404,

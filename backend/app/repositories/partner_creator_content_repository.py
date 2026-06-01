@@ -22,10 +22,47 @@ class PartnerCreatorContentRepository:
     async def get_by_id(self, content_id: uuid.UUID) -> PartnerCreatorContent | None:
         result = await self._session.execute(
             select(PartnerCreatorContent)
-            .options(selectinload(PartnerCreatorContent.organization))
+            .options(
+                selectinload(PartnerCreatorContent.organization),
+                selectinload(PartnerCreatorContent.created_by),
+            )
             .where(PartnerCreatorContent.id == content_id)
         )
         return result.scalar_one_or_none()
+
+    async def list_admin(
+        self,
+        *,
+        status: str | None,
+        page: int,
+        page_size: int,
+        sort_newest: bool = True,
+    ) -> tuple[list[PartnerCreatorContent], int]:
+        filters: list[Any] = []
+        if status is not None:
+            filters.append(PartnerCreatorContent.status == status)
+
+        count_stmt = select(func.count()).select_from(PartnerCreatorContent).where(*filters)
+        total = int((await self._session.execute(count_stmt)).scalar_one())
+
+        order = (
+            PartnerCreatorContent.created_at.desc()
+            if sort_newest
+            else PartnerCreatorContent.created_at.asc()
+        )
+        stmt = (
+            select(PartnerCreatorContent)
+            .options(
+                selectinload(PartnerCreatorContent.organization),
+                selectinload(PartnerCreatorContent.created_by),
+            )
+            .where(*filters)
+            .order_by(order)
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().unique().all()), total
 
     async def list_for_organization_ids(
         self,

@@ -73,6 +73,36 @@ export type PartnerCreatorContentManagementListParams = {
   page_size?: number;
 };
 
+export type PartnerCreatorContentAuthorSummary = {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+};
+
+/** Staff moderation queue (ADMIN-CREATOR-01). */
+export type PartnerCreatorContentAdmin = PartnerCreatorContentManagement & {
+  author: PartnerCreatorContentAuthorSummary | null;
+  submitted_at: string | null;
+};
+
+export type PartnerCreatorContentAdminListResponse = {
+  items: PartnerCreatorContentAdmin[];
+  total: number;
+  page: number;
+  page_size: number;
+};
+
+export type PartnerCreatorContentAdminListParams = {
+  status?: PartnerCreatorContentStatus;
+  sort?: "newest" | "oldest";
+  page?: number;
+  page_size?: number;
+};
+
+export type PartnerCreatorContentRejectPayload = {
+  reason: string;
+};
+
 export type PartnerCreatorContentPublicListResponse = {
   items: PartnerCreatorContentPublic[];
   total: number;
