@@ -18,13 +18,18 @@ import type {
   FeedListParams,
   FeedListResponse,
   FeedPost,
+  LocalEventListResponse,
   OrganizationCreateResponse,
   OrganizationMeListResponse,
   OrganizationPublic,
   OrganizationRequestPayload,
+  PartnerEventsParams,
+  PartnerListParams,
+  PartnerListResponse,
   PartnerOfferListParams,
   PartnerOfferListResponse,
   PartnerOfferPublicListResponse,
+  PartnerPublic,
   PassportActivateRequest,
   PassportMe,
   PassportStampClaimResult,
@@ -77,15 +82,6 @@ import { SubscriptionsApi, createSubscriptionsApi } from "./subscription-api";
 import { DiscussionsApi, createDiscussionsApi } from "./discussions-api";
 import { StoriesApi, createStoriesApi } from "./stories-api";
 import { PartnersApi, createPartnersApi, fetchPublicPartnerOffers } from "./partners-api";
-import type {
-  LocalEventListResponse,
-  PartnerEventsParams,
-  PartnerListParams,
-  PartnerListResponse,
-  PartnerOfferListParams,
-  PartnerOfferPublicListResponse,
-  PartnerPublic,
-} from "@yunicity/types";
 
 /** FaÃƒÆ’Ã‚Â§ade profile + organizations + passport. */
 export class YunicityApi {
