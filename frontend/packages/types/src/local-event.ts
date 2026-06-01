@@ -69,3 +69,47 @@ export interface PartnerEventsParams {
   limit?: number;
   offset?: number;
 }
+
+/** Organization self-service (TICKET-505 / WEB-PARTNERS-08C). */
+export interface LocalEventManagement extends LocalEvent {
+  rejection_reason?: string | null;
+}
+
+export type LocalEventManagementListResponse = LocalEventListResponse;
+
+export interface LocalEventCreatePayload {
+  organization_id: string;
+  title: string;
+  description?: string | null;
+  event_type?: string | null;
+  city: string;
+  district?: string | null;
+  starts_at: string;
+  ends_at?: string | null;
+  timezone?: string;
+  location_name: string;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  cover_image_url?: string | null;
+}
+
+export interface LocalEventUpdatePayload {
+  title?: string;
+  description?: string | null;
+  event_type?: string | null;
+  district?: string | null;
+  starts_at?: string;
+  ends_at?: string | null;
+  location_name?: string;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  cover_image_url?: string | null;
+}
+
+export interface LocalEventManagementListParams {
+  organization_id?: string;
+  page?: number;
+  page_size?: number;
+}

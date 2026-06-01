@@ -103,13 +103,22 @@ function OrganizationsMeContent() {
               {org.visibility === "private" ? " (non publique)" : ""}
             </p>
             {(org.member_role === "owner" || org.member_role === "admin") &&
+            org.member_status === "active" &&
             org.verification_status === "verified" ? (
-              <Link
-                href="/organizations/me/partner/passport"
-                className="mt-4 inline-block text-sm font-semibold text-yunicity-primary hover:underline"
-              >
-                QR tampon Passport
-              </Link>
+              <div className="mt-4 flex flex-wrap gap-4">
+                <Link
+                  href="/organizations/me/partner"
+                  className="text-sm font-semibold text-yunicity-primary hover:underline"
+                >
+                  Espace partenaire
+                </Link>
+                <Link
+                  href="/organizations/me/partner/passport"
+                  className="text-sm font-semibold text-neutral-700 hover:underline"
+                >
+                  QR Passport
+                </Link>
+              </div>
             ) : null}
           </li>
         ))}

@@ -68,6 +68,7 @@ export type {
 export type {
   PartnerCreatorContentCreatePayload,
   PartnerCreatorContentManagement,
+  PartnerCreatorContentManagementListParams,
   PartnerCreatorContentManagementListResponse,
   PartnerCreatorContentOrganizationSummary,
   PartnerCreatorContentStatus,
@@ -194,8 +195,13 @@ export type {
 export type {
   EventInterestToggleResponse,
   LocalEvent,
+  LocalEventCreatePayload,
   LocalEventListResponse,
+  LocalEventManagement,
+  LocalEventManagementListParams,
+  LocalEventManagementListResponse,
   LocalEventOrganization,
+  LocalEventUpdatePayload,
   PartnerEventsParams,
 } from "./local-event";
 

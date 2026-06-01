@@ -66,6 +66,13 @@ export type PartnerCreatorContentListParams = {
   offset?: number;
 };
 
+export type PartnerCreatorContentManagementListParams = {
+  organization_id?: string;
+  status?: PartnerCreatorContentStatus;
+  page?: number;
+  page_size?: number;
+};
+
 export type PartnerCreatorContentPublicListResponse = {
   items: PartnerCreatorContentPublic[];
   total: number;
