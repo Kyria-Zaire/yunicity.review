@@ -16,6 +16,7 @@ from app.core.organization_constants import (
     VerificationStatus,
 )
 from app.core.partner_constants import PartnershipType, PartnerStatus
+from app.db.seeds.reims_pilot_partner_public_data import merge_pilot_public_fields
 from app.models.organization import Organization
 from app.models.partner_profile import PartnerProfile
 
@@ -334,7 +335,8 @@ async def _upsert_partner_profile(session: AsyncSession, row: PartnerProfile) ->
 
 
 async def seed_reims_signed_partners(session: AsyncSession) -> None:
-    for entry in REIMS_SIGNED_PARTNERS_SEED:
+    for raw_entry in REIMS_SIGNED_PARTNERS_SEED:
+        entry = merge_pilot_public_fields(dict(raw_entry))
         org = _build_organization(entry)
         profile = _build_partner_profile(entry)
         await _upsert_organization(session, org)

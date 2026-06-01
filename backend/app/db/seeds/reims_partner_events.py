@@ -14,6 +14,7 @@ from app.core.local_event_constants import LocalEventModerationStatus, LocalEven
 from app.models.local_event import LocalEvent
 from app.models.organization import Organization
 from app.models.user import User
+from app.services.feed_event_sync import FeedEventSyncService
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +57,17 @@ REIMS_PARTNER_EVENTS_SEED: tuple[dict[str, Any], ...] = (
     },
 )
 
-_SYNC_FIELDS = ("title", "description", "event_type", "moderation_status")
+_SYNC_FIELDS = (
+    "title",
+    "description",
+    "event_type",
+    "moderation_status",
+    "location_name",
+    "address",
+    "latitude",
+    "longitude",
+    "starts_at",
+)
 
 
 async def _ensure_seed_system_user(session: AsyncSession) -> uuid.UUID:
@@ -106,6 +117,38 @@ def _build_event(entry: dict[str, Any], org: Organization, system_user_id: uuid.
     )
 
 
+async def _upsert_pilot_event(
+    session: AsyncSession,
+    entry: dict[str, Any],
+    org: Organization,
+    system_user_id: uuid.UUID,
+) -> LocalEvent:
+    existing = await session.get(LocalEvent, entry["id"])
+    built = _build_event(entry, org, system_user_id)
+    if existing is not None:
+        for field in _SYNC_FIELDS:
+            setattr(existing, field, getattr(built, field))
+        event = existing
+    else:
+        by_title = await session.execute(
+            select(LocalEvent).where(
+                LocalEvent.title == entry["title"],
+                LocalEvent.organization_id == entry["organization_id"],
+            )
+        )
+        found = by_title.scalar_one_or_none()
+        if found is not None:
+            for field in _SYNC_FIELDS:
+                setattr(found, field, getattr(built, field))
+            event = found
+        else:
+            event = _build_event(entry, org, system_user_id)
+            session.add(event)
+    await session.flush()
+    await FeedEventSyncService(session).upsert_event_post(event, org)
+    return event
+
+
 async def seed_reims_partner_events(session: AsyncSession) -> None:
     system_user_id = await _ensure_seed_system_user(session)
 
@@ -117,27 +160,9 @@ async def seed_reims_partner_events(session: AsyncSession) -> None:
             )
             continue
 
-        existing = await session.get(LocalEvent, entry["id"])
-        if existing is not None:
-            built = _build_event(entry, org, system_user_id)
-            for field in _SYNC_FIELDS:
-                setattr(existing, field, getattr(built, field))
-        else:
-            by_title = await session.execute(
-                select(LocalEvent).where(
-                    LocalEvent.title == entry["title"],
-                    LocalEvent.organization_id == entry["organization_id"],
-                )
-            )
-            found = by_title.scalar_one_or_none()
-            if found is not None:
-                built = _build_event(entry, org, system_user_id)
-                for field in _SYNC_FIELDS:
-                    setattr(found, field, getattr(built, field))
-            else:
-                session.add(_build_event(entry, org, system_user_id))
+        await _upsert_pilot_event(session, entry, org, system_user_id)
 
     logger.info(
-        "reims_partner_events_seed_completed count=%s",
+        "reims_partner_events_seed_completed count=%s feed_sync=true",
         len(REIMS_PARTNER_EVENTS_SEED),
     )

@@ -16,6 +16,7 @@ from app.db.seeds.reims_cultural_places import seed_reims_cultural_places
 from app.db.seeds.reims_demo_content import seed_reims_demo_content
 from app.db.seeds.reims_neighborhoods import seed_reims_neighborhoods
 from app.db.seeds.reims_partner_events import seed_reims_partner_events
+from app.db.seeds.reims_pilot_partner_memberships import seed_reims_pilot_partner_memberships
 from app.db.seeds.reims_signed_partners import seed_reims_signed_partners
 from app.db.seeds.reims_tribes import seed_reims_tribes
 from app.db.seeds.stamp_definitions import seed_stamp_definitions
@@ -35,10 +36,24 @@ def _assert_demo_seed_allowed(settings: Settings) -> None:
         raise SystemExit(2)
 
 
-async def run(*, demo: bool) -> None:
+def _assert_pilot_seed_allowed(settings: Settings) -> None:
+    """Pilot partner accounts must never be created in preprod or prod."""
+    app_env = settings.app_env
+    if app_env in ("preprod", "prod"):
+        print(
+            f"Refusing --pilot seed: APP_ENV={app_env}. "
+            "Pilot partner accounts are allowed only in dev or recette.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+
+
+async def run(*, demo: bool, pilot: bool) -> None:
     settings = get_settings()
     if demo:
         _assert_demo_seed_allowed(settings)
+    if pilot:
+        _assert_pilot_seed_allowed(settings)
     if not settings.database_url:
         print("DATABASE_URL is required to run seeds", file=sys.stderr)
         raise SystemExit(1)
@@ -59,11 +74,13 @@ async def run(*, demo: bool) -> None:
             await seed_reims_cultural_places(session)
             await seed_reims_signed_partners(session)
             await seed_reims_partner_events(session)
+            if pilot:
+                await seed_reims_pilot_partner_memberships(session)
             if demo:
                 await seed_reims_demo_content(session)
                 await seed_reims_tribes(session)
             await session.commit()
-        logger.info("Seed completed (demo=%s)", demo)
+        logger.info("Seed completed (demo=%s, pilot=%s)", demo, pilot)
     finally:
         await engine.dispose()
 
@@ -75,9 +92,14 @@ def main() -> None:
         action="store_true",
         help="Reims QA content (dev/recette only — blocked in preprod/prod)",
     )
+    parser.add_argument(
+        "--pilot",
+        action="store_true",
+        help="Reims pilot partner OWNER accounts (dev/recette only — blocked in preprod/prod)",
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
-    asyncio.run(run(demo=args.demo))
+    asyncio.run(run(demo=args.demo, pilot=args.pilot))
 
 
 if __name__ == "__main__":
