@@ -153,8 +153,12 @@ class StoryService:
         author_map = await self._authors.resolve_posts(page)
         items: list[StoryItem] = []
         for post in page:
-            author = author_map.get(post.author_id) or await self._authors.resolve_user(post.author_id)
-            items.append(self._to_item(post, author=author, liked_by_me=post.id in liked_ids, now=now))
+            author = author_map.get(post.author_id) or await self._authors.resolve_user(
+                post.author_id
+            )
+            items.append(
+                self._to_item(post, author=author, liked_by_me=post.id in liked_ids, now=now)
+            )
 
         next_cursor = None
         if has_more and page:
@@ -177,7 +181,9 @@ class StoryService:
             if post.author_id in seen:
                 continue
             seen.add(post.author_id)
-            author = author_map.get(post.author_id) or await self._authors.resolve_user(post.author_id)
+            author = author_map.get(post.author_id) or await self._authors.resolve_user(
+                post.author_id
+            )
             subtitle = post.story_location_label or _caption(post)[:40] or "Story locale"
             rings.append(
                 StoryRingItem(
@@ -210,14 +216,21 @@ class StoryService:
         author_map = await self._authors.resolve_posts(rows)
         live_items: list[StoryLiveItem] = []
         for post in rows[:5]:
-            author = author_map.get(post.author_id) or await self._authors.resolve_user(post.author_id)
+            author = author_map.get(post.author_id) or await self._authors.resolve_user(
+                post.author_id
+            )
+            subtitle = (
+                _caption(post)[:80]
+                or post.story_location_label
+                or author.display_name
+            )
             live_items.append(
                 StoryLiveItem(
                     story_id=post.id,
                     author_name=author.display_name,
                     author_avatar_url=author.logo_url,
                     location_label=post.story_location_label,
-                    subtitle=_caption(post)[:80] or post.story_location_label or author.display_name,
+                    subtitle=subtitle,
                     view_count=post.view_count,
                     is_recent=_is_recent(post, now),
                 )

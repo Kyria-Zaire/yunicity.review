@@ -13,7 +13,12 @@ from app.schemas.partner_creator_content_management import PartnerCreatorContent
 class PartnerCreatorContentRejectRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    reason: str = Field(min_length=1, max_length=PARTNER_CREATOR_CONTENT_REJECTION_REASON_MAX_LENGTH)
+    reason: str = Field(
+        min_length=1,
+        max_length=PARTNER_CREATOR_CONTENT_REJECTION_REASON_MAX_LENGTH,
+    )
 
 
-PartnerCreatorContentAdminResponse = PartnerCreatorContentManagementResponse
+PartnerCreatorContentAdminResponse = (
+    PartnerCreatorContentManagementResponse
+)

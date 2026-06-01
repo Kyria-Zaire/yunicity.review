@@ -399,7 +399,7 @@ async def seed_reims_demo_content(session: AsyncSession) -> None:
         owner_id=partner_cafe.id,
         neighborhood_id=hood_centre,
     )
-    org_caveau = await _ensure_organization(
+    await _ensure_organization(
         session,
         org_id=DEMO_ORG_CAVEAU_ID,
         slug="caveau-saint-pierre",

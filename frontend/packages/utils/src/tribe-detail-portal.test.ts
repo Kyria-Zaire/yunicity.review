@@ -128,6 +128,7 @@ describe("tribe-detail-portal", () => {
       liked_by_me: false,
       offer: null,
       event: null,
+      creator_content: null,
       neighborhood_summary: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

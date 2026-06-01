@@ -41,5 +41,9 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_index("ix_tribe_invitations_invited_user_pending", table_name="tribe_invitations")
-    op.drop_constraint("fk_tribe_invitations_invited_user_id", "tribe_invitations", type_="foreignkey")
+    op.drop_constraint(
+        "fk_tribe_invitations_invited_user_id",
+        "tribe_invitations",
+        type_="foreignkey",
+    )
     op.drop_column("tribe_invitations", "invited_user_id")
