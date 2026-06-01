@@ -66,6 +66,15 @@ export type {
 } from "./partner_offer_management";
 
 export type {
+  PartnerCreatorContentCreatePayload,
+  PartnerCreatorContentManagement,
+  PartnerCreatorContentManagementListResponse,
+  PartnerCreatorContentOrganizationSummary,
+  PartnerCreatorContentStatus,
+  PartnerCreatorContentUpdatePayload,
+} from "./partner-creator-content";
+
+export type {
   PartnerOfferListParams,
   PartnerOfferPartnerSummary,
   PartnerOfferPublic,

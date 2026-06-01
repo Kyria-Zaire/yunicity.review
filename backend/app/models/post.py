@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from app.models.like import Like
     from app.models.local_event import LocalEvent
     from app.models.neighborhood import Neighborhood
+    from app.models.partner_creator_content import PartnerCreatorContent
     from app.models.passport import PartnerOffer
     from app.models.report import Report
     from app.models.tribe import Tribe
@@ -56,6 +57,12 @@ class Post(TimestampMixin, Base):
     partner_offer_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid,
         ForeignKey("partner_offers.id", ondelete="SET NULL"),
+        nullable=True,
+        unique=True,
+    )
+    partner_creator_content_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("partner_creator_contents.id", ondelete="SET NULL"),
         nullable=True,
         unique=True,
     )
@@ -110,6 +117,11 @@ class Post(TimestampMixin, Base):
     partner_offer: Mapped[PartnerOffer | None] = relationship(
         "PartnerOffer",
         foreign_keys=[partner_offer_id],
+    )
+    partner_creator_content: Mapped[PartnerCreatorContent | None] = relationship(
+        "PartnerCreatorContent",
+        back_populates="post",
+        foreign_keys=[partner_creator_content_id],
     )
     local_event: Mapped[LocalEvent | None] = relationship(
         "LocalEvent",

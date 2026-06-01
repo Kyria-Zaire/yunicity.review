@@ -11,6 +11,7 @@ from app.models.organization import (
     OrganizationMember,
     OrganizationVerification,
 )
+from app.models.partner_creator_content import PartnerCreatorContent
 from app.models.partner_lead import PartnerLead
 from app.models.partner_profile import PartnerProfile
 from app.models.passport import (
@@ -44,6 +45,7 @@ __all__ = [
     "Like",
     "LocalEvent",
     "Neighborhood",
+    "PartnerCreatorContent",
     "PartnerLead",
     "PartnerProfile",
     "StampDefinition",
