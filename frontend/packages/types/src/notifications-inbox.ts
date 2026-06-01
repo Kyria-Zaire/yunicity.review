@@ -19,10 +19,35 @@ export interface UserNotificationItem {
   created_at: string;
 }
 
+export type NotificationInboxTab =
+  | "all"
+  | "unread"
+  | "mentions"
+  | "social"
+  | "events"
+  | "passport"
+  | "offers"
+  | "system"
+  | "achievements";
+
 export interface UserNotificationListResponse {
   items: UserNotificationItem[];
   unread_count: number;
   total: number;
+  next_cursor?: string | null;
+  has_more?: boolean;
+}
+
+export interface UserNotificationSummaryResponse {
+  unread_count: number;
+  by_tab?: Partial<Record<NotificationInboxTab, number>>;
+  unread_mentions?: number;
+  unread_social?: number;
+  unread_events?: number;
+  unread_passport?: number;
+  unread_system?: number;
+  count_this_week?: number;
+  count_this_month?: number;
 }
 
 export interface UserNotificationPreferences {

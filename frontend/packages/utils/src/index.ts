@@ -1,17 +1,8 @@
-export {
-  BROWSER_PROXIED_API_BASE,
-  getApiBaseUrl,
-  getExpoApiBaseUrl,
-  getWebApiBaseUrl,
-} from "./api-base-url";
+export { getApiBaseUrl, getExpoApiBaseUrl, getWebApiBaseUrl } from "./api-base-url";
 export {
   YUNICITY_LOGO_SIZES,
   YUNICITY_MASCOT_ALT,
   YUNICITY_MASCOT_PATH,
-  YUNICITY_REGISTER_MASCOT_ALT,
-  YUNICITY_REGISTER_MASCOT_PATH,
-  YUNICITY_WELCOME_MASCOT_ALT,
-  YUNICITY_WELCOME_MASCOT_PATH,
   YUNICITY_WORDMARK,
   type YunicityLogoSize,
 } from "./brand-assets";
@@ -500,7 +491,6 @@ export { EventsApi, createEventsApi } from "./events-api";
 export {
   GENERIC_CULTURAL_UNSPLASH_PHOTO_ID,
   isGenericCulturalPlaceholderUrl,
-  isLowQualityCulturalImageUrl,
   resolveCulturalPlaceDisplayUrl,
   resolveCulturalPlaceImageOverride,
   resolveCulturalPlaceSlugImageOverride,
@@ -913,7 +903,6 @@ export {
   PartnersApi,
   createPartnersApi,
   buildPartnersQuery,
-  buildPartnerOffersQuery,
   fetchPublicPartnerOffers,
 } from "./partners-api";
 export {
@@ -972,16 +961,10 @@ export {
   PARTNER_DETAIL_VERIFIED,
   PARTNER_DETAIL_WHY_BODY,
   PARTNER_DETAIL_WHY_TITLE,
-  PASSPORT_OFFERS_CTA_CONDITIONS,
-  PASSPORT_OFFERS_CTA_PARTNER,
-  PASSPORT_OFFERS_EMPTY,
-  PASSPORT_OFFERS_SECTION_SUBTITLE,
-  PASSPORT_OFFERS_SECTION_TITLE,
   PASSPORT_PARTNERS_RAIL_CTA,
   PASSPORT_PARTNERS_RAIL_EMPTY,
   PASSPORT_PARTNERS_RAIL_SUBTITLE,
   PASSPORT_PARTNERS_RAIL_TITLE,
-  PLACES_PARTNER_OFFER_BADGE,
   PLACES_PARTNERS_BADGE,
   PLACES_PARTNERS_CTA,
   PLACES_PARTNERS_FILTER_LABEL,
@@ -1612,7 +1595,13 @@ export {
   PASSPORT_NAV_STATS,
   PASSPORT_NAV_TIPS,
   PASSPORT_PROGRESSION_TITLE,
+  PASSPORT_OFFERS_CTA_CONDITIONS,
+  PASSPORT_OFFERS_CTA_PARTNER,
+  PASSPORT_OFFERS_EMPTY,
+  PASSPORT_OFFERS_SECTION_SUBTITLE,
+  PASSPORT_OFFERS_SECTION_TITLE,
   PASSPORT_TOP_NAV_ITEMS,
+  type PassportNavItem,
 } from "./passport-dashboard-labels";
 export {
   PASSPORT_JOURNEY_LEVELS,
@@ -1621,10 +1610,7 @@ export {
   buildPassportProgression,
   buildPassportRecentBadges,
   countEarnedPassportBadges,
-  formatPassportBadgeEarnedDate,
   formatPassportPoints,
-  formatPassportPointsProgress,
-  formatPassportPointsRange,
   passportDashboardHasNoFakeMetrics,
   type PassportAchievementCard,
   type PassportDerivedBadge,

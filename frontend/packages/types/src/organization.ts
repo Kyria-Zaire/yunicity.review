@@ -54,10 +54,17 @@ export interface OrganizationRequestPayload {
   name: string;
   type: OrganizationType;
   city: string;
+  category?: string | null;
   address?: string | null;
+  postal_code?: string | null;
+  phone?: string | null;
   website?: string | null;
   instagram?: string | null;
   description?: string | null;
+  /** Merged into API description when `description` is omitted. */
+  short_description?: string | null;
+  /** Hint for staff review — not persisted as a dedicated API field when unsupported. */
+  neighborhood_label?: string | null;
 }
 
 /** Alias produit — organization dans la liste membre. */

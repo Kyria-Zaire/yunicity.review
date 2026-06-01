@@ -2,7 +2,7 @@
 
 import { CulturalImage } from "@/components/culture/cultural-image";
 import { PlacesAppShell } from "@/components/places/places-app-shell";
-import type { LocalEvent, PartnerOffer, PartnerPublic } from "@yunicity/types";
+import type { LocalEvent, PartnerOfferPublic, PartnerPublic } from "@yunicity/types";
 import {
   PARTNER_DETAIL_EVENTS_CTA,
   PARTNER_DETAIL_EVENTS_EMPTY,
@@ -14,7 +14,6 @@ import {
   PARTNER_DETAIL_VERIFIED,
   PARTNER_DETAIL_WHY_BODY,
   PARTNER_DETAIL_WHY_TITLE,
-  filterPartnerOffersForOrganization,
   formatEventDateRange,
   formatOfferValidUntil,
   hasPartnerCoordinates,
@@ -47,7 +46,7 @@ const BADGE_TONE_CLASS: Record<string, string> = {
 
 export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
   const api = useYunicityApi();
-  const [offers, setOffers] = useState<PartnerOffer[]>([]);
+  const [offers, setOffers] = useState<PartnerOfferPublic[]>([]);
   const [partnerEvents, setPartnerEvents] = useState<LocalEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState(false);
@@ -56,16 +55,13 @@ export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
   const heroUrl = resolvePartnerImage(partner, "hero");
   const logoUrl = resolvePartnerImage(partner, "logo");
   const actions = useMemo(() => partnerContactActions(partner), [partner]);
-  const partnerOffers = useMemo(
-    () => filterPartnerOffersForOrganization(offers, partner.organization_id),
-    [offers, partner.organization_id],
-  );
+  const partnerOffers = offers;
   const badgeTone = partnerBadgeTone(partner.partner_status);
 
   useEffect(() => {
     let cancelled = false;
     void Promise.allSettled([
-      api.listPassportOffers(),
+      api.listPartnerOffers(partner.slug, partner.city),
       api.listPartnerEvents(partner.slug, { upcoming_only: true, limit: 6 }),
     ]).then(([offersRes, eventsRes]) => {
       if (cancelled) return;
@@ -80,7 +76,7 @@ export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
     return () => {
       cancelled = true;
     };
-  }, [api, partner.slug]);
+  }, [api, partner.slug, partner.city]);
 
   async function handleShare() {
     const url = typeof window !== "undefined" ? window.location.href : partnerPublicHref(partner);
@@ -129,7 +125,6 @@ export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
                     placeName={partner.name}
                     className="h-full w-full"
                     sizes="96px"
-                    overlay={false}
                     showFallbackCaption={false}
                   />
                 </div>

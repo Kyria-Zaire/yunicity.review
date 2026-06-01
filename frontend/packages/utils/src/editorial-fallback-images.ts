@@ -2,6 +2,9 @@ import type { LocalEvent, Neighborhood, Tribe } from "@yunicity/types";
 
 /** Images éditoriales Unsplash — carrousel « À la une » + cards moments (Reims demo). */
 
+export const NEIGHBORHOODS_PORTAL_HERO_IMAGE_URL =
+  "https://images.unsplash.com/photo-1444084316824-dc26d6657664?w=1200&auto=format&fit=crop&q=80";
+
 export const EDITORIAL_IMAGE_CAFE_RENCONTRE_ENTREPRENEURS =
   "https://images.unsplash.com/photo-1526547319484-63dce467060b?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fENhZiVDMyVBOS1yZW5jb250cmUlMjBkZXMlMjBlbnRyZXByZW5ldXJzfGVufDB8fDB8fHww";
 

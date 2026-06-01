@@ -11,6 +11,8 @@ type CulturalImageProps = {
   sizes: string;
   priority?: boolean;
   showFallbackCaption?: boolean;
+  /** @deprecated Ignoré — préférer un overlay via un conteneur parent. */
+  overlay?: boolean;
 };
 
 const FALLBACK_GRADIENT =

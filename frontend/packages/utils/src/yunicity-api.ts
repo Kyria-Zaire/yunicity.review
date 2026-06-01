@@ -306,8 +306,8 @@ export class YunicityApi {
     return this.passport.claimStamp(token);
   }
 
-  listPassportOffers(params?: PartnerOfferListParams): Promise<PartnerOfferPublicListResponse> {
-    return this.passport.listOffers(params);
+  listPassportOffers(): Promise<PartnerOfferListResponse> {
+    return this.passport.listOffers();
   }
 
   listPartnerOffers(

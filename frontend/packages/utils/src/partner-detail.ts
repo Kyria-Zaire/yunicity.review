@@ -1,6 +1,12 @@
 /** Signed partner detail helpers (WEB-PARTNERS-02). */
 
-import type { LocalEvent, PartnerOffer, PartnerPublic, PartnerStatus } from "@yunicity/types";
+import type {
+  LocalEvent,
+  PartnerOffer,
+  PartnerOfferPublic,
+  PartnerPublic,
+  PartnerStatus,
+} from "@yunicity/types";
 
 import { EDITORIAL_IMAGE_CAFE_RENCONTRE_ENTREPRENEURS } from "./editorial-fallback-images";
 import { buildMapPlaceUrl, buildPartnerMapUrl } from "./explorer-links";
@@ -159,6 +165,13 @@ export function filterPartnerOffersForOrganization(
   organizationId: string,
 ): PartnerOffer[] {
   return offers.filter((offer) => offer.organization_id === organizationId);
+}
+
+export function filterPartnerOffersForPartnerSlug(
+  offers: PartnerOfferPublic[],
+  partnerSlug: string,
+): PartnerOfferPublic[] {
+  return offers.filter((offer) => offer.partner.slug === partnerSlug);
 }
 
 export function filterPartnerEvents(
