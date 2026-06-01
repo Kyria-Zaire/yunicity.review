@@ -71,6 +71,7 @@ async def _create_test_user_with_passport(
             id=uuid.uuid4(),
             email=f"stamp_test_{uuid.uuid4().hex[:8]}@example.com",
             hashed_password=hash_password("TestPassword123!"),
+            full_name="Stamp QR Tester",
             is_active=True,
         )
         session.add(test_user)
@@ -267,7 +268,7 @@ async def test_claim_expired_token_returns_410(
         headers={"Authorization": f"Bearer {auth_token}"},
     )
     assert response.status_code == 410
-    assert response.json()["detail"]["code"] == "STAMP_TOKEN_EXPIRED"
+    assert response.json()["code"] == "STAMP_TOKEN_EXPIRED"
 
 
 @pytest.mark.integration
@@ -302,7 +303,7 @@ async def test_claim_invalid_signature_returns_400(
         headers={"Authorization": f"Bearer {auth_token}"},
     )
     assert response.status_code == 400
-    assert response.json()["detail"]["code"] == "STAMP_TOKEN_INVALID"
+    assert response.json()["code"] == "STAMP_TOKEN_INVALID"
 
 
 @pytest.mark.integration
@@ -335,7 +336,7 @@ async def test_claim_signed_partner_returns_403(
         headers={"Authorization": f"Bearer {auth_token}"},
     )
     assert response.status_code == 403
-    assert response.json()["detail"]["code"] == "PARTNER_NOT_ACTIVE"
+    assert response.json()["code"] == "PARTNER_NOT_ACTIVE"
 
 
 @pytest.mark.integration
