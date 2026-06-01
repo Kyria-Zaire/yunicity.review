@@ -246,6 +246,7 @@ class PartnerOffer(TimestampMixin, Base):
         Index("ix_partner_offers_organization_id", "organization_id"),
         Index("ix_partner_offers_status", "status"),
         Index("ix_partner_offers_offer_type", "offer_type"),
+        Index("ix_partner_offers_slug", "slug", unique=True),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
@@ -253,7 +254,16 @@ class PartnerOffer(TimestampMixin, Base):
         Uuid, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
     title: Mapped[str] = mapped_column(String(160), nullable=False)
+    slug: Mapped[str | None] = mapped_column(String(120), nullable=True, unique=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    value_label: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    conditions: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_featured: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+    )
     offer_type: Mapped[PartnerOfferType] = mapped_column(String(32), nullable=False)
     status: Mapped[PartnerOfferStatus] = mapped_column(
         String(32),

@@ -119,7 +119,7 @@ export async function fetchPublicPartnerOffers(
   if (params.limit !== undefined) search.set("limit", String(params.limit));
   if (params.offset !== undefined) search.set("offset", String(params.offset));
 
-  const response = await fetch(`${base}/api/v1/partners/offers?${search.toString()}`, {
+  const response = await fetch(`${base}/api/v1/partner-offers?${search.toString()}`, {
     method: "GET",
     headers: { Accept: "application/json" },
   });

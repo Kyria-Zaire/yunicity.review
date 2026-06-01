@@ -233,7 +233,7 @@ function PassportExplorer({ explorer }: { explorer: SearchExplorerContextState }
                 <span className="font-semibold text-neutral-900 group-hover:text-yunicity-primary">
                   {offer.title}
                 </span>
-                <span className="text-xs text-neutral-500">{offer.organization.name}</span>
+                <span className="text-xs text-neutral-500">{offer.partner.name}</span>
               </Link>
             </li>
           ))}

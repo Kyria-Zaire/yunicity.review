@@ -1,15 +1,15 @@
 "use client";
 
-import type { PartnerOffer } from "@yunicity/types";
+import type { PartnerOfferPublic } from "@yunicity/types";
 import {
   PARTNER_OFFER_TYPE_LABELS,
   PASSPORT_CITIZEN_OFFERS_EMPTY,
+  partnerOfferValueLabel,
 } from "@yunicity/utils";
-import { FlashOfferBadge } from "@/components/feed/flash-offer-badge";
 import { yunicityBtnPrimary } from "@/lib/brand-classes";
 
 type PassportOffersListProps = {
-  offers: PartnerOffer[];
+  offers: PartnerOfferPublic[];
   isLoading: boolean;
   message: string | null;
   redeemingId: string | null;
@@ -38,12 +38,12 @@ export function PassportOffersList({
         <ul className="mt-4 grid gap-3 sm:grid-cols-2">
           {offers.map((offer) => (
             <li key={offer.id} className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm">
-              <FlashOfferBadge offer={offer} />
               <p className="text-xs font-semibold uppercase text-yunicity-primary">
                 {PARTNER_OFFER_TYPE_LABELS[offer.offer_type]}
               </p>
               <p className="mt-1 font-semibold text-neutral-900">{offer.title}</p>
-              <p className="text-sm text-neutral-500">{offer.organization.name}</p>
+              <p className="text-sm font-medium text-neutral-700">{partnerOfferValueLabel(offer)}</p>
+              <p className="text-sm text-neutral-500">{offer.partner.name}</p>
               <button
                 type="button"
                 onClick={() => onRedeem(offer.id)}

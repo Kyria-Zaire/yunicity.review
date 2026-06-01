@@ -1,14 +1,14 @@
 "use client";
 
 import { CulturalImage } from "@/components/culture/cultural-image";
-import type { PartnerOffer, PartnerPublic } from "@yunicity/types";
+import type { PartnerOfferPublic, PartnerPublic } from "@yunicity/types";
 import {
   PASSPORT_PARTNERS_RAIL_CTA,
   PASSPORT_PARTNERS_RAIL_EMPTY,
   PASSPORT_PARTNERS_RAIL_SUBTITLE,
   PASSPORT_PARTNERS_RAIL_TITLE,
   buildPartnerPlaceCards,
-  filterPartnerOffersForOrganization,
+  filterPartnerOffersForPartnerSlug,
   partnerPublicHref,
   resolvePartnerImage,
 } from "@yunicity/utils";
@@ -16,7 +16,7 @@ import Link from "next/link";
 
 type PassportPartnersPanelProps = {
   partners: PartnerPublic[];
-  offers: PartnerOffer[];
+  offers: PartnerOfferPublic[];
 };
 
 export function PassportPartnersPanel({ partners, offers }: PassportPartnersPanelProps) {
@@ -37,7 +37,7 @@ export function PassportPartnersPanel({ partners, offers }: PassportPartnersPane
           {cards.map((card) => {
             const partner = partners.find((item) => item.slug === card.slug);
             const partnerOffers = partner
-              ? filterPartnerOffersForOrganization(offers, partner.organization_id)
+              ? filterPartnerOffersForPartnerSlug(offers, partner.slug)
               : [];
             return (
               <li key={card.id}>

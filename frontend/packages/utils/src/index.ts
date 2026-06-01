@@ -905,6 +905,7 @@ export {
   buildPartnersQuery,
   fetchPublicPartnerOffers,
 } from "./partners-api";
+export { PartnerPassportApi, createPartnerPassportApi } from "./partner-passport-api";
 export {
   assertNoInternalOfferFields,
   buildPartnerOfferHref,

@@ -18,6 +18,7 @@ import {
 } from "@yunicity/utils";
 import { useCallback, useState } from "react";
 
+import { PassportPartnerOffersSection } from "./passport-partner-offers-section";
 import { PassportPartnersPanel } from "./passport-partners-panel";
 import { PassportOffersList } from "./passport-offers-section";
 import { PassportStampsList, PassportStampsSection } from "./passport-stamps-section";
@@ -90,6 +91,7 @@ export function PassportDashboardScreen() {
                 <PassportProgressionTrack steps={ctx.progression} />
                 <PassportRecentBadges badges={ctx.badges} />
                 <PassportPartnersPanel partners={ctx.featuredPartners} offers={ctx.offers} />
+                <PassportPartnerOffersSection offers={ctx.offers} />
                 <PassportStampsSection stamps={ctx.stamps} isLoading={ctx.stampsLoading} />
               </>
             ) : null}

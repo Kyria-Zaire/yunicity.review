@@ -171,3 +171,10 @@ export type PassportQrTokenResponse = {
   qr_url: string;
   expires_at: string;
 };
+
+export type StampQrGenerateRequest = {
+  partner_offer_id?: string;
+  expires_in_minutes?: number;
+};
+
+export type StampQrGenerateResponse = PassportQrTokenResponse;

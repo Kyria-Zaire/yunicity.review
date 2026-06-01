@@ -5,7 +5,7 @@ import type {
   CulturalPlaceStatsResponse,
   LocalEvent,
   Neighborhood,
-  PartnerOffer,
+  PartnerOfferPublic,
   PartnerPublic,
   Tribe,
 } from "@yunicity/types";
@@ -37,8 +37,8 @@ export type SearchExplorerContextState = {
   catalog: CulturalPlaceListItem[];
   stats: CulturalPlaceStatsResponse | null;
   tribes: Tribe[];
-  highlightOffer: PartnerOffer | null;
-  passportOffers: PartnerOffer[];
+  highlightOffer: PartnerOfferPublic | null;
+  passportOffers: PartnerOfferPublic[];
   partners: PartnerPublic[];
   heroImageUrl: string | null;
   categoryCards: ExplorerCategoryCard[];
@@ -60,8 +60,8 @@ export function useSearchExplorerContext(city: string): SearchExplorerContextSta
   const [catalog, setCatalog] = useState<CulturalPlaceListItem[]>([]);
   const [stats, setStats] = useState<CulturalPlaceStatsResponse | null>(null);
   const [tribes, setTribes] = useState<Tribe[]>([]);
-  const [highlightOffer, setHighlightOffer] = useState<PartnerOffer | null>(null);
-  const [passportOffers, setPassportOffers] = useState<PartnerOffer[]>([]);
+  const [highlightOffer, setHighlightOffer] = useState<PartnerOfferPublic | null>(null);
+  const [passportOffers, setPassportOffers] = useState<PartnerOfferPublic[]>([]);
   const [partners, setPartners] = useState<PartnerPublic[]>([]);
 
   const load = useCallback(async () => {
