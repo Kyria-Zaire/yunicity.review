@@ -42,7 +42,10 @@ export function EventDetailPortalHero({
   const imageUrl = resolveEventHeroImage(event, culturalPlaces);
   const dateBadge = formatEventDateBadge(event.starts_at);
   const typeLabel = eventTypeLabel(event.event_type);
-  const socialLine = formatEventInterestSocialLine(event.interest_count, event.interested_by_me);
+  const socialLine = formatEventInterestSocialLine(
+    event.interest_count ?? 0,
+    event.interested_by_me,
+  );
   const mapHref = buildMapEventUrl(event.id, { city: event.city });
   const addressLine = [event.location_name, event.address].filter(Boolean).join(" · ");
   const partnerPlaceHref = buildPartnerPlaceHrefFromEvent(event);
