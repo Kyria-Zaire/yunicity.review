@@ -70,7 +70,11 @@ class Tribe(TimestampMixin, Base):
     members: Mapped[list[TribeMember]] = relationship(
         "TribeMember", back_populates="tribe", cascade="all, delete-orphan"
     )
-    posts: Mapped[list[Post]] = relationship("Post", back_populates="tribe")
+    posts: Mapped[list[Post]] = relationship(
+        "Post",
+        back_populates="tribe",
+        foreign_keys="Post.tribe_id",
+    )
 
 
 class TribeMember(Base):
