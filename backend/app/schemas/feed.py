@@ -35,6 +35,11 @@ class FeedOfferMeta(BaseModel):
     remaining_minutes: int | None = None
 
 
+class FeedCreatorContentMeta(BaseModel):
+    partner_creator_content_id: uuid.UUID
+    published_at: datetime | None = None
+
+
 class FeedEventMeta(BaseModel):
     local_event_id: uuid.UUID
     starts_at: datetime
@@ -59,6 +64,7 @@ class FeedPostItem(BaseModel):
     liked_by_me: bool
     offer: FeedOfferMeta | None = None
     event: FeedEventMeta | None = None
+    creator_content: FeedCreatorContentMeta | None = None
     neighborhood_summary: FeedNeighborhoodSummary | None = None
     created_at: datetime
     updated_at: datetime

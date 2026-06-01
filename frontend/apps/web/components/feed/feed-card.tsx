@@ -14,9 +14,12 @@ import { OrganizationPostCard } from "@/components/feed/organization-post-card";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
 
-function feedCardVariant(post: FeedPost): "default" | "event" | "offer" | "organization" {
+function feedCardVariant(
+  post: FeedPost,
+): "default" | "event" | "offer" | "organization" | "partner_creator" {
   if (post.type === "offer") return "offer";
   if (post.type === "event") return "event";
+  if (post.type === "partner_creator") return "partner_creator";
   if (post.author.type === "organization") return "organization";
   return "default";
 }
@@ -28,7 +31,7 @@ function FeedCardBody({ post }: { post: FeedPost }) {
   if (post.type === "event") {
     return <EventFeedCard post={post} />;
   }
-  if (post.author.type === "organization") {
+  if (post.type === "partner_creator" || post.author.type === "organization") {
     return <OrganizationPostCard post={post} />;
   }
   return <CitizenPostCard post={post} />;
