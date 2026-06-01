@@ -15,8 +15,10 @@ from app.core.organization_constants import (
     OrganizationVisibility,
     VerificationStatus,
 )
+from app.core.partner_constants import PUBLIC_PARTNER_STATUSES
 from app.core.passport_constants import OfferRedemptionStatus, PartnerOfferStatus
 from app.models.organization import Organization, OrganizationMember
+from app.models.partner_profile import PartnerProfile
 from app.models.passport import PartnerOffer, PassportOfferRedemption
 
 _OFFER_MANAGER_ROLES = (
@@ -62,6 +64,68 @@ class PartnerOfferRepository:
             .order_by(PartnerOffer.title.asc())
         )
         return list(result.scalars().unique().all())
+
+    def _public_catalog_filters(
+        self,
+        *,
+        city: str,
+        partner_slug: str | None,
+        featured_only: bool,
+        offer_type: str | None,
+        now: datetime,
+    ) -> tuple[Any, ...]:
+        filters: list[Any] = [
+            Organization.city == city,
+            PartnerProfile.partner_status.in_([s.value for s in PUBLIC_PARTNER_STATUSES]),
+            *self._visible_offer_filters(now=now),
+        ]
+        if partner_slug:
+            filters.append(Organization.slug == partner_slug)
+        if featured_only:
+            filters.append(PartnerOffer.is_featured.is_(True))
+        if offer_type:
+            filters.append(PartnerOffer.offer_type == offer_type)
+        return tuple(filters)
+
+    async def list_public_catalog(
+        self,
+        *,
+        city: str,
+        partner_slug: str | None,
+        featured_only: bool,
+        offer_type: str | None,
+        now: datetime,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[PartnerOffer], int]:
+        filters = self._public_catalog_filters(
+            city=city,
+            partner_slug=partner_slug,
+            featured_only=featured_only,
+            offer_type=offer_type,
+            now=now,
+        )
+        base = (
+            select(PartnerOffer)
+            .join(Organization, PartnerOffer.organization_id == Organization.id)
+            .join(PartnerProfile, PartnerProfile.organization_id == Organization.id)
+            .where(*filters)
+        )
+        count_stmt = select(func.count()).select_from(base.subquery())
+        total = int((await self._session.execute(count_stmt)).scalar_one())
+        stmt = (
+            base.options(
+                selectinload(PartnerOffer.organization).selectinload(Organization.partner_profile)
+            )
+            .order_by(
+                PartnerOffer.is_featured.desc(),
+                PartnerOffer.title.asc(),
+            )
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().unique().all()), total
 
     async def list_visible_offers(self, *, now: datetime) -> list[PartnerOffer]:
         result = await self._session.execute(

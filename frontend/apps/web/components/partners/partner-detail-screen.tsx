@@ -5,7 +5,7 @@ import { PlacesAppShell } from "@/components/places/places-app-shell";
 import type {
   LocalEvent,
   PartnerCreatorContentPublic,
-  PartnerOffer,
+  PartnerOfferPublic,
   PartnerPublic,
 } from "@yunicity/types";
 import {
@@ -21,9 +21,9 @@ import {
   PARTNER_DETAIL_VERIFIED,
   PARTNER_DETAIL_WHY_BODY,
   PARTNER_DETAIL_WHY_TITLE,
-  filterPartnerOffersForOrganization,
   formatEventDateRange,
   formatOfferValidUntil,
+  partnerOfferValueLabel,
   hasPartnerCoordinates,
   partnerBadgeLabel,
   partnerBadgeTone,
@@ -56,7 +56,7 @@ const BADGE_TONE_CLASS: Record<string, string> = {
 
 export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
   const api = useYunicityApi();
-  const [offers, setOffers] = useState<PartnerOffer[]>([]);
+  const [offers, setOffers] = useState<PartnerOfferPublic[]>([]);
   const [partnerEvents, setPartnerEvents] = useState<LocalEvent[]>([]);
   const [creatorContents, setCreatorContents] = useState<PartnerCreatorContentPublic[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
@@ -68,16 +68,13 @@ export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
   const heroUrl = resolvePartnerImage(partner, "hero");
   const logoUrl = resolvePartnerImage(partner, "logo");
   const actions = useMemo(() => partnerContactActions(partner), [partner]);
-  const partnerOffers = useMemo(
-    () => filterPartnerOffersForOrganization(offers, partner.organization_id),
-    [offers, partner.organization_id],
-  );
+  const partnerOffers = offers;
   const badgeTone = partnerBadgeTone(partner.partner_status);
 
   useEffect(() => {
     let cancelled = false;
     void Promise.allSettled([
-      api.listPassportOffers(),
+      api.listPartnerOffers(partner.slug, partner.city, { limit: 20 }),
       api.listPartnerEvents(partner.slug, { upcoming_only: true, limit: 6 }),
       api.listPartnerCreatorContent(partner.slug, { city: partner.city, limit: 6 }),
     ]).then(([offersRes, eventsRes, creatorRes]) => {
@@ -276,6 +273,9 @@ export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
                   className="rounded-xl border border-neutral-100 bg-neutral-50/80 px-4 py-3"
                 >
                   <p className="font-semibold text-neutral-900">{offer.title}</p>
+                  <p className="text-xs font-medium text-yunicity-primary">
+                    {partnerOfferValueLabel(offer)}
+                  </p>
                   {offer.description ? (
                     <p className="mt-1 text-sm text-neutral-600">{offer.description}</p>
                   ) : null}

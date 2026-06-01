@@ -29,7 +29,6 @@ import type {
   PartnerListParams,
   PartnerListResponse,
   PartnerOfferListParams,
-  PartnerOfferListResponse,
   PartnerOfferPublicListResponse,
   PartnerPublic,
   PassportActivateRequest,
@@ -83,6 +82,7 @@ import { WeatherApi, createWeatherApi } from "./weather-api";
 import { SubscriptionsApi, createSubscriptionsApi } from "./subscription-api";
 import { DiscussionsApi, createDiscussionsApi } from "./discussions-api";
 import { StoriesApi, createStoriesApi } from "./stories-api";
+import { PartnerPassportApi, createPartnerPassportApi } from "./partner-passport-api";
 import { PartnersApi, createPartnersApi, fetchPublicPartnerOffers } from "./partners-api";
 
 /** FaÃƒÆ’Ã‚Â§ade profile + organizations + passport. */
@@ -108,6 +108,7 @@ export class YunicityApi {
   readonly discussions: DiscussionsApi;
   readonly stories: StoriesApi;
   readonly partners: PartnersApi;
+  readonly partnerPassport: PartnerPassportApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.apiBaseUrl = apiBaseUrl;
@@ -130,6 +131,7 @@ export class YunicityApi {
     this.discussions = createDiscussionsApi(client, apiBaseUrl);
     this.stories = createStoriesApi(client, apiBaseUrl);
     this.partners = createPartnersApi(client, apiBaseUrl);
+    this.partnerPassport = createPartnerPassportApi(client, apiBaseUrl);
   }
 
   listPartners(params: PartnerListParams): Promise<PartnerListResponse> {
@@ -313,7 +315,7 @@ export class YunicityApi {
     return this.passport.claimStamp(token);
   }
 
-  listPassportOffers(): Promise<PartnerOfferListResponse> {
+  listPassportOffers(): Promise<PartnerOfferPublicListResponse> {
     return this.passport.listOffers();
   }
 

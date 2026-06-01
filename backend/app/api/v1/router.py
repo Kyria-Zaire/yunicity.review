@@ -18,6 +18,7 @@ from app.api.v1 import (
     notifications,
     organizations,
     partner_leads,
+    partner_offers_public,
     partners,
     passport,
     posts,
@@ -41,6 +42,7 @@ api_router.include_router(profile.router)
 api_router.include_router(organizations.router)
 api_router.include_router(partner_leads.router)
 api_router.include_router(partners.router)
+api_router.include_router(partner_offers_public.router)
 api_router.include_router(admin_partner_offers.router)
 api_router.include_router(admin_partner_creator_contents.router)
 api_router.include_router(admin_local_events.router)

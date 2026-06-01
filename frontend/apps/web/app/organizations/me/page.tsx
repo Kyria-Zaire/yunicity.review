@@ -102,6 +102,15 @@ function OrganizationsMeContent() {
               Visibilité {org.visibility}
               {org.visibility === "private" ? " (non publique)" : ""}
             </p>
+            {(org.member_role === "owner" || org.member_role === "admin") &&
+            org.verification_status === "verified" ? (
+              <Link
+                href="/organizations/me/partner/passport"
+                className="mt-4 inline-block text-sm font-semibold text-yunicity-primary hover:underline"
+              >
+                QR tampon Passport
+              </Link>
+            ) : null}
           </li>
         ))}
       </ul>

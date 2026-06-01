@@ -16,6 +16,7 @@ from app.db.seeds.reims_cultural_places import seed_reims_cultural_places
 from app.db.seeds.reims_demo_content import seed_reims_demo_content
 from app.db.seeds.reims_neighborhoods import seed_reims_neighborhoods
 from app.db.seeds.reims_partner_events import seed_reims_partner_events
+from app.db.seeds.reims_partner_offers import seed_reims_partner_offers
 from app.db.seeds.reims_pilot_partner_memberships import seed_reims_pilot_partner_memberships
 from app.db.seeds.reims_signed_partners import seed_reims_signed_partners
 from app.db.seeds.reims_tribes import seed_reims_tribes
@@ -73,6 +74,7 @@ async def run(*, demo: bool, pilot: bool) -> None:
             await seed_reims_neighborhoods(session)
             await seed_reims_cultural_places(session)
             await seed_reims_signed_partners(session)
+            await seed_reims_partner_offers(session)
             await seed_reims_partner_events(session)
             if pilot:
                 await seed_reims_pilot_partner_memberships(session)

@@ -93,6 +93,8 @@ export type {
   PassportActivateRequest,
   PassportMe,
   PassportQrTokenResponse,
+  StampQrGenerateRequest,
+  StampQrGenerateResponse,
   PassportStamp,
   PassportStampClaimItem,
   PassportStampClaimOrganization,

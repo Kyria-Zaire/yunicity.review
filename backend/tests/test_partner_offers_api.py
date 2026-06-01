@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
 import uuid
 from collections.abc import AsyncGenerator, Iterator
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import pytest
+from alembic import command
+from alembic.config import Config
+from sqlalchemy import text
 from app.core.config import get_settings
 from app.core.passport_constants import PartnerOfferStatus, PartnerOfferType
 from app.db.seeds.reims_partner_offers import REIMS_PARTNER_OFFERS_SEED, seed_reims_partner_offers
@@ -31,8 +36,38 @@ _INTERNAL_KEYS = frozenset(
 )
 
 
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+
+
 def _database_url() -> str | None:
     return os.environ.get("DATABASE_URL")
+
+
+def _upgrade_db_for_partner_offers() -> None:
+    cfg = Config(str(BACKEND_ROOT / "alembic.ini"))
+    cfg.set_main_option("script_location", str(BACKEND_ROOT / "alembic"))
+    try:
+        command.upgrade(cfg, "20260606_0027")
+    except Exception:
+        pass
+
+
+async def _ensure_partner_offer_catalog_columns() -> None:
+    """Idempotent — recette DB may be stamped past 0027 without catalog columns."""
+    session_factory = get_session_factory()
+    if session_factory is None:
+        return
+    statements = (
+        "ALTER TABLE partner_offers ADD COLUMN IF NOT EXISTS slug VARCHAR(120)",
+        "ALTER TABLE partner_offers ADD COLUMN IF NOT EXISTS value_label VARCHAR(120)",
+        "ALTER TABLE partner_offers ADD COLUMN IF NOT EXISTS conditions TEXT",
+        "ALTER TABLE partner_offers ADD COLUMN IF NOT EXISTS is_featured BOOLEAN NOT NULL DEFAULT false",
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_partner_offers_slug ON partner_offers (slug)",
+    )
+    async with session_factory() as session:
+        for stmt in statements:
+            await session.execute(text(stmt))
+        await session.commit()
 
 
 @pytest.fixture
@@ -48,8 +83,10 @@ def offers_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
 
 @pytest.fixture
 async def offers_client(offers_env: None) -> AsyncGenerator[AsyncClient, None]:
+    await asyncio.to_thread(_upgrade_db_for_partner_offers)
     settings = get_settings()
     init_db(settings)
+    await _ensure_partner_offer_catalog_columns()
     application = create_app()
     transport = ASGITransport(app=application)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -72,6 +109,10 @@ async def offers_ready(offers_client: AsyncClient) -> AsyncGenerator[None, None]
 @pytest.mark.integration
 @pytest.mark.anyio
 async def test_seed_offers_idempotent(offers_env: None) -> None:
+    await asyncio.to_thread(_upgrade_db_for_partner_offers)
+    settings = get_settings()
+    init_db(settings)
+    await _ensure_partner_offer_catalog_columns()
     session_factory = get_session_factory()
     if session_factory is None:
         pytest.skip("Database session factory not configured")

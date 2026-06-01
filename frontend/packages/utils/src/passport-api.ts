@@ -1,5 +1,5 @@
 import type {
-  PartnerOfferListResponse,
+  PartnerOfferPublicListResponse,
   PassportActivateRequest,
   PassportMe,
   PassportQr,
@@ -30,8 +30,8 @@ export class PassportApi extends ApiClientBase {
     return this.getJson<PassportStampListResponse>("/passport/stamps");
   }
 
-  listOffers(): Promise<PartnerOfferListResponse> {
-    return this.getJson<PartnerOfferListResponse>("/passport/offers");
+  listOffers(): Promise<PartnerOfferPublicListResponse> {
+    return this.getJson<PartnerOfferPublicListResponse>("/passport/offers");
   }
 
   claimStamp(token: string): Promise<PassportStampClaimResult> {
