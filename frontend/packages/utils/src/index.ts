@@ -947,6 +947,9 @@ export {
   MAP_PARTNERS_RAIL_TITLE,
   PARTNER_DETAIL_ERROR,
   PARTNER_DETAIL_EVENTS_CTA,
+  PARTNER_DETAIL_CREATOR_CONTENT_EMPTY,
+  PARTNER_DETAIL_CREATOR_CONTENT_PUBLISHED_LABEL,
+  PARTNER_DETAIL_CREATOR_CONTENT_TITLE,
   PARTNER_DETAIL_EVENTS_DATE_LABEL,
   PARTNER_DETAIL_EVENTS_EMPTY,
   PARTNER_DETAIL_EVENTS_TITLE,
@@ -2152,6 +2155,11 @@ export {
   eventPartnerBadgeLabel,
   getPartnerEventOrganization,
 } from "./partner-events";
+export {
+  formatPartnerCreatorContentExcerpt,
+  formatPartnerCreatorContentPublishedAt,
+  hasPartnerCreatorContentMedia,
+} from "./partner-creator-content";
 export { StoriesApi, createStoriesApi } from "./stories-api";
 export {
   STORY_CATEGORY_NAV,

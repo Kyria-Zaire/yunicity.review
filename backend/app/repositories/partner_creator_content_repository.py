@@ -9,6 +9,9 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.organization_constants import OrganizationVisibility, VerificationStatus
+from app.core.partner_creator_content_constants import PartnerCreatorContentStatus
+from app.models.organization import Organization
 from app.models.partner_creator_content import PartnerCreatorContent
 
 
@@ -50,6 +53,41 @@ class PartnerCreatorContentRepository:
             .order_by(PartnerCreatorContent.created_at.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().unique().all()), total
+
+    async def list_published_for_organization(
+        self,
+        organization_id: uuid.UUID,
+        *,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[PartnerCreatorContent], int]:
+        filters: list[Any] = [
+            PartnerCreatorContent.organization_id == organization_id,
+            PartnerCreatorContent.status == PartnerCreatorContentStatus.PUBLISHED.value,
+            PartnerCreatorContent.is_active.is_(True),
+            Organization.verification_status == VerificationStatus.VERIFIED.value,
+            Organization.visibility == OrganizationVisibility.PUBLIC.value,
+        ]
+        count_stmt = (
+            select(func.count())
+            .select_from(PartnerCreatorContent)
+            .join(Organization, PartnerCreatorContent.organization_id == Organization.id)
+            .where(*filters)
+        )
+        total = int((await self._session.execute(count_stmt)).scalar_one())
+        stmt = (
+            select(PartnerCreatorContent)
+            .join(Organization, PartnerCreatorContent.organization_id == Organization.id)
+            .where(*filters)
+            .order_by(
+                PartnerCreatorContent.moderated_at.desc().nullslast(),
+                PartnerCreatorContent.updated_at.desc(),
+            )
+            .offset(offset)
+            .limit(limit)
         )
         result = await self._session.execute(stmt)
         return list(result.scalars().unique().all()), total

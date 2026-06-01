@@ -40,5 +40,9 @@ export const MAP_PARTNER_GEO_NOTICE =
 
 export const PARTNER_DETAIL_EVENTS_EMPTY =
   "Ce partenaire n’a pas encore de moment annoncé.";
+export const PARTNER_DETAIL_CREATOR_CONTENT_TITLE = "Contenus du partenaire";
+export const PARTNER_DETAIL_CREATOR_CONTENT_EMPTY =
+  "Ce partenaire n’a pas encore publié de contenu créateur.";
+export const PARTNER_DETAIL_CREATOR_CONTENT_PUBLISHED_LABEL = "Publié le";
 export const PARTNER_DETAIL_EVENTS_DATE_LABEL = "Le";
 export const PARTNER_DETAIL_PARTNER_CTA = "Voir le partenaire";

@@ -51,3 +51,24 @@ export type PartnerCreatorContentManagementListResponse = {
   page: number;
   page_size: number;
 };
+
+export type PartnerCreatorContentPublic = {
+  id: string;
+  title: string;
+  body: string | null;
+  media_url: string | null;
+  published_at: string;
+};
+
+export type PartnerCreatorContentListParams = {
+  city?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export type PartnerCreatorContentPublicListResponse = {
+  items: PartnerCreatorContentPublic[];
+  total: number;
+  limit: number;
+  offset: number;
+};
