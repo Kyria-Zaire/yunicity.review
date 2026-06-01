@@ -15,6 +15,7 @@ const PARTNER_NAV = [
 const STAFF_NAV = [
   { href: "/partner-leads", label: "Partenaires terrain" },
   { href: "/passport-offers", label: "Modération offres" },
+  { href: "/creator-content", label: "Contenus créateurs" },
   { href: "/protected-admin", label: "Zone staff" },
 ] as const;
 

@@ -6,6 +6,7 @@ import {
   createAuthClient,
   createPartnerLeadsApi,
   createPartnerOffersAdminApi,
+  createPartnerCreatorContentAdminApi,
   createOrganizationApi,
   createPartnerOffersApi,
   createScanApi,
@@ -13,6 +14,7 @@ import {
   isAuthError,
   type OrganizationApi,
   type PartnerLeadsApi,
+  type PartnerCreatorContentAdminApi,
   type PartnerOffersAdminApi,
   type PartnerOffersApi,
   type ScanApi,
@@ -34,6 +36,7 @@ interface AuthContextValue {
   error: string | null;
   partnerLeadsApi: PartnerLeadsApi;
   partnerOffersAdminApi: PartnerOffersAdminApi;
+  partnerCreatorContentAdminApi: PartnerCreatorContentAdminApi;
   partnerOffersApi: PartnerOffersApi;
   organizationApi: OrganizationApi;
   scanApi: ScanApi;
@@ -69,6 +72,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const partnerOffersAdminApi = useMemo(
     () => createPartnerOffersAdminApi(client, apiBaseUrl),
+    [client, apiBaseUrl],
+  );
+
+  const partnerCreatorContentAdminApi = useMemo(
+    () => createPartnerCreatorContentAdminApi(client, apiBaseUrl),
     [client, apiBaseUrl],
   );
 
@@ -136,6 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     error,
     partnerLeadsApi,
     partnerOffersAdminApi,
+    partnerCreatorContentAdminApi,
     partnerOffersApi,
     organizationApi,
     scanApi,

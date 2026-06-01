@@ -66,11 +66,16 @@ export type {
 } from "./partner_offer_management";
 
 export type {
+  PartnerCreatorContentAdmin,
+  PartnerCreatorContentAdminListParams,
+  PartnerCreatorContentAdminListResponse,
+  PartnerCreatorContentAuthorSummary,
   PartnerCreatorContentCreatePayload,
   PartnerCreatorContentManagement,
   PartnerCreatorContentManagementListParams,
   PartnerCreatorContentManagementListResponse,
   PartnerCreatorContentOrganizationSummary,
+  PartnerCreatorContentRejectPayload,
   PartnerCreatorContentStatus,
   PartnerCreatorContentUpdatePayload,
   PartnerCreatorContentPublic,
