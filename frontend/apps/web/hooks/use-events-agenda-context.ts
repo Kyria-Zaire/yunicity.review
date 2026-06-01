@@ -55,7 +55,7 @@ export function useEventsAgendaContext(city: string): EventsAgendaContextState {
         api.neighborhoods.listNeighborhoods({ city: activeCity, page_size: 12 }),
         api.listCulturalPlaces({ city: activeCity, featured: true, limit: 24 }),
         api.tribes.listTribes({ city: activeCity, page_size: 6 }),
-        api.listPassportOffers(),
+        api.fetchPublicPartnerOffers({ city: activeCity, limit: 8 }),
       ];
 
       if (user) {
@@ -106,7 +106,7 @@ export function useEventsAgendaContext(city: string): EventsAgendaContextState {
       }
 
       if (offersRes?.status === "fulfilled") {
-        const value = offersRes.value as Awaited<ReturnType<typeof api.listPassportOffers>>;
+        const value = offersRes.value as Awaited<ReturnType<typeof api.fetchPublicPartnerOffers>>;
         setPassportOffers(value.items);
       } else {
         setPassportOffers([]);

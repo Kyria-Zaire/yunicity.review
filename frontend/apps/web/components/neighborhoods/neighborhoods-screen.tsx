@@ -164,7 +164,7 @@ export function NeighborhoodsScreen() {
             {context.passportOffers[0] ? (
               <Link href="/passport" className="block rounded-xl border border-neutral-100 bg-neutral-50/80 px-3 py-2.5 hover:bg-white">
                 <p className="line-clamp-2 text-sm font-semibold text-neutral-900">{context.passportOffers[0].title}</p>
-                <p className="mt-0.5 text-xs text-neutral-500">{context.passportOffers[0].organization.name}</p>
+                <p className="mt-0.5 text-xs text-neutral-500">{context.passportOffers[0].partner.name}</p>
               </Link>
             ) : (
               <p className="text-sm text-neutral-500">{NEIGHBORHOODS_PORTAL_RAIL_PASSPORT_EMPTY}</p>

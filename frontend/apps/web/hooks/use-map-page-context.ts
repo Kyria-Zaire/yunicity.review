@@ -53,7 +53,7 @@ export function useMapPageContext(): MapPageContextState {
         api.neighborhoods.listNeighborhoods({ city: resolvedCity, page_size: 12 }),
         api.tribes.listTribes({ city: resolvedCity, page_size: 20 }),
         api.listCulturalPlaces({ city: resolvedCity, featured: true, limit: 4 }),
-        api.listPassportOffers(),
+        api.fetchPublicPartnerOffers({ city: resolvedCity, limit: 8 }),
         api.events.listEvents({ city: resolvedCity }),
       ]);
 

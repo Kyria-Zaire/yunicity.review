@@ -66,7 +66,7 @@ export function useNeighborhoodDetailContext(
         api.events.listEvents({ city: resolvedCity }),
         api.listCulturalPlaces({ city: resolvedCity, limit: 48 }),
         api.tribes.listTribes({ city: resolvedCity, page_size: 8 }),
-        api.listPassportOffers(),
+        api.fetchPublicPartnerOffers({ city: resolvedCity, limit: 8 }),
       ]);
 
       if (eventsRes.status === "fulfilled") {

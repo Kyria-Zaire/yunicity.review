@@ -1,4 +1,10 @@
-import type { PartnerListParams, PartnerListResponse, PartnerPublic } from "@yunicity/types";
+import type {
+  PartnerListParams,
+  PartnerListResponse,
+  PartnerOfferListParams,
+  PartnerOfferPublicListResponse,
+  PartnerPublic,
+} from "@yunicity/types";
 
 import type { AuthClient } from "./auth/auth-client";
 import { ApiClientBase } from "./api-client";
@@ -33,8 +39,50 @@ export class PartnersApi extends ApiClientBase {
     const search = new URLSearchParams({ city });
     return this.getJson<PartnerPublic>(`/partners/${slug}?${search.toString()}`);
   }
+
+  listPartnerOffers(
+    slug: string,
+    city: string,
+    params: Pick<PartnerOfferListParams, "limit" | "offset"> = {},
+  ): Promise<PartnerOfferPublicListResponse> {
+    const search = new URLSearchParams({ city });
+    if (params.limit !== undefined) {
+      search.set("limit", String(params.limit));
+    }
+    if (params.offset !== undefined) {
+      search.set("offset", String(params.offset));
+    }
+    return this.getJson<PartnerOfferPublicListResponse>(
+      `/partners/${encodeURIComponent(slug)}/offers?${search.toString()}`,
+    );
+  }
 }
 
 export function createPartnersApi(client: AuthClient, apiBaseUrl: string): PartnersApi {
   return new PartnersApi(client, apiBaseUrl);
+}
+
+/** Fetch public offers without auth. */
+export async function fetchPublicPartnerOffers(
+  apiBaseUrl: string,
+  params: PartnerOfferListParams,
+): Promise<PartnerOfferPublicListResponse> {
+  const base = apiBaseUrl.replace(/\/$/, "");
+  const search = new URLSearchParams({ city: params.city });
+  if (params.partner_slug) search.set("partner_slug", params.partner_slug);
+  if (params.featured !== undefined) search.set("featured", String(params.featured));
+  if (params.type) search.set("type", params.type);
+  if (params.limit !== undefined) search.set("limit", String(params.limit));
+  if (params.offset !== undefined) search.set("offset", String(params.offset));
+
+  const response = await fetch(`${base}/api/v1/partners/offers?${search.toString()}`, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+  });
+
+  if (!response.ok) {
+    const { parseApiError } = await import("./auth/auth-errors");
+    throw await parseApiError(response);
+  }
+  return (await response.json()) as PartnerOfferPublicListResponse;
 }

@@ -26,6 +26,18 @@ export class ProfileApi extends ApiClientBase {
   getPublicProfile(username: string): Promise<ProfilePublic> {
     return this.getJson<ProfilePublic>(`/profile/${encodeURIComponent(username)}`);
   }
+
+  uploadProfileAvatar(file: File): Promise<UserProfile> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return this.postFormData<UserProfile>("/profile/me/avatar", formData);
+  }
+
+  uploadProfileBanner(file: File): Promise<UserProfile> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return this.postFormData<UserProfile>("/profile/me/banner", formData);
+  }
 }
 
 export function createProfileApi(client: AuthClient, apiBaseUrl: string): ProfileApi {

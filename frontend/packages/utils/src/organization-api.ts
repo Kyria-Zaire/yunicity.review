@@ -24,11 +24,18 @@ export function buildOrganizationCreateRequest(
     );
   }
 
+  if (payload.short_description?.trim() && descriptionParts.length === 0) {
+    descriptionParts.push(payload.short_description.trim());
+  }
+
   return {
     name: payload.name.trim(),
     type: payload.type,
     city: payload.city.trim(),
+    category: payload.category?.trim() || undefined,
     address: payload.address?.trim() || undefined,
+    postal_code: payload.postal_code?.trim() || undefined,
+    phone: payload.phone?.trim() || undefined,
     website: payload.website?.trim() || undefined,
     description: descriptionParts.length > 0 ? descriptionParts.join("\n") : undefined,
   };

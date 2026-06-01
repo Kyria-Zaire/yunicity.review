@@ -1,10 +1,12 @@
 import type {
+  NotificationInboxTab,
   PushSubscription,
   PushSubscriptionListResponse,
   RegisterPushDeviceRequest,
   UserNotificationListResponse,
   UserNotificationPreferences,
   UserNotificationPreferencesUpdate,
+  UserNotificationSummaryResponse,
 } from "@yunicity/types";
 
 import type { AuthClient } from "./auth/auth-client";
@@ -23,10 +25,27 @@ export class NotificationsApi extends ApiClientBase {
     return this.deleteVoid(`/notifications/subscriptions/${encodeURIComponent(subscriptionId)}`);
   }
 
-  listInbox(limit = 50): Promise<UserNotificationListResponse> {
-    return this.getJson<UserNotificationListResponse>(
-      `/notifications?limit=${encodeURIComponent(String(limit))}`,
-    );
+  getInboxSummary(): Promise<UserNotificationSummaryResponse> {
+    return this.getJson<UserNotificationSummaryResponse>("/notifications/summary");
+  }
+
+  listInbox(
+    limitOrParams:
+      | number
+      | { tab: NotificationInboxTab; cursor?: string; limit?: number } = 50,
+  ): Promise<UserNotificationListResponse> {
+    if (typeof limitOrParams === "number") {
+      return this.getJson<UserNotificationListResponse>(
+        `/notifications?limit=${encodeURIComponent(String(limitOrParams))}`,
+      );
+    }
+    const search = new URLSearchParams();
+    search.set("limit", String(limitOrParams.limit ?? 50));
+    search.set("tab", limitOrParams.tab);
+    if (limitOrParams.cursor) {
+      search.set("cursor", limitOrParams.cursor);
+    }
+    return this.getJson<UserNotificationListResponse>(`/notifications?${search.toString()}`);
   }
 
   markNotificationRead(notificationId: string): Promise<{ id: string; is_read: boolean }> {

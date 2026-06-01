@@ -33,3 +33,20 @@ export const PASSPORT_ACTIVATE_BODY =
 export const PASSPORT_ACTIVATE_CTA = "Activer mon passeport";
 
 export const PASSPORT_LOADING = "Chargement de votre passeport…";
+
+export type PassportNavItem = {
+  href: string;
+  label: string;
+  match?: "prefix" | "exact";
+};
+
+export const PASSPORT_TOP_NAV_ITEMS: PassportNavItem[] = [
+  { href: "/passport", label: "Passport", match: "prefix" },
+];
+
+export const PASSPORT_OFFERS_SECTION_TITLE = "Avantages partenaires";
+export const PASSPORT_OFFERS_SECTION_SUBTITLE =
+  "Offres locales liées à votre passeport citoyen.";
+export const PASSPORT_OFFERS_EMPTY = "Aucune offre partenaire pour le moment.";
+export const PASSPORT_OFFERS_CTA_PARTNER = "Voir le partenaire";
+export const PASSPORT_OFFERS_CTA_CONDITIONS = "Conditions";
