@@ -20,10 +20,12 @@ from app.db.session import get_db
 from app.models.user import User
 from app.schemas.local_event import LocalEventListResponse
 from app.schemas.partner import PartnerListResponse, PartnerPublicDetail
+from app.schemas.partner_creator_content_public import PartnerCreatorContentPublicListResponse
 from app.schemas.partner_offer_public import PartnerOfferPublicListResponse
 from app.schemas.passport_stamp_claim import StampQrGenerateRequest, StampQrGenerateResponse
 from app.services.local_event_service import LocalEventService
 from app.services.partner_service import PartnerService, default_partner_list_limit
+from app.services.public_partner_creator_content_service import PublicPartnerCreatorContentService
 from app.services.public_partner_offer_service import PublicPartnerOfferService
 
 router = APIRouter(prefix="/partners", tags=["partners"])
@@ -102,6 +104,22 @@ async def generate_partner_passport_qr(
     )
     qr_url = f"/passport/stamp/claim?token={token}"
     return StampQrGenerateResponse(qr_url=qr_url, expires_at=expires_at)
+
+
+@router.get("/{slug}/creator-content", response_model=PartnerCreatorContentPublicListResponse)
+async def list_partner_creator_content(
+    slug: str,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    city: str = Query(default="Reims", min_length=1, max_length=128),
+    limit: int = Query(default=12, ge=1, le=50),
+    offset: int = Query(default=0, ge=0),
+) -> PartnerCreatorContentPublicListResponse:
+    return await PublicPartnerCreatorContentService(session).list_for_partner_slug(
+        city=city,
+        slug=slug,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.get("/{slug}/events", response_model=LocalEventListResponse)

@@ -2,8 +2,15 @@
 
 import { CulturalImage } from "@/components/culture/cultural-image";
 import { PlacesAppShell } from "@/components/places/places-app-shell";
-import type { LocalEvent, PartnerOffer, PartnerPublic } from "@yunicity/types";
+import type {
+  LocalEvent,
+  PartnerCreatorContentPublic,
+  PartnerOffer,
+  PartnerPublic,
+} from "@yunicity/types";
 import {
+  PARTNER_DETAIL_CREATOR_CONTENT_EMPTY,
+  PARTNER_DETAIL_CREATOR_CONTENT_TITLE,
   PARTNER_DETAIL_EVENTS_CTA,
   PARTNER_DETAIL_EVENTS_EMPTY,
   PARTNER_DETAIL_EVENTS_TITLE,
@@ -31,6 +38,8 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 
+import { PartnerCreatorContentCard } from "./partner-creator-content-card";
+
 function buildEventHref(eventId: string): string {
   return `/events/${encodeURIComponent(eventId)}`;
 }
@@ -49,8 +58,11 @@ export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
   const api = useYunicityApi();
   const [offers, setOffers] = useState<PartnerOffer[]>([]);
   const [partnerEvents, setPartnerEvents] = useState<LocalEvent[]>([]);
+  const [creatorContents, setCreatorContents] = useState<PartnerCreatorContentPublic[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState(false);
+  const [creatorLoading, setCreatorLoading] = useState(true);
+  const [creatorError, setCreatorError] = useState(false);
   const [shareHint, setShareHint] = useState<string | null>(null);
 
   const heroUrl = resolvePartnerImage(partner, "hero");
@@ -67,7 +79,8 @@ export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
     void Promise.allSettled([
       api.listPassportOffers(),
       api.listPartnerEvents(partner.slug, { upcoming_only: true, limit: 6 }),
-    ]).then(([offersRes, eventsRes]) => {
+      api.listPartnerCreatorContent(partner.slug, { city: partner.city, limit: 6 }),
+    ]).then(([offersRes, eventsRes, creatorRes]) => {
       if (cancelled) return;
       if (offersRes.status === "fulfilled") setOffers(offersRes.value.items);
       if (eventsRes.status === "fulfilled") {
@@ -75,12 +88,18 @@ export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
       } else {
         setEventsError(true);
       }
+      if (creatorRes.status === "fulfilled") {
+        setCreatorContents(creatorRes.value.items);
+      } else {
+        setCreatorError(true);
+      }
       setEventsLoading(false);
+      setCreatorLoading(false);
     });
     return () => {
       cancelled = true;
     };
-  }, [api, partner.slug]);
+  }, [api, partner.city, partner.slug]);
 
   async function handleShare() {
     const url = typeof window !== "undefined" ? window.location.href : partnerPublicHref(partner);
@@ -270,6 +289,25 @@ export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
             </ul>
           ) : (
             <p className="mt-3 text-sm text-neutral-600">{PARTNER_DETAIL_PASSPORT_EMPTY}</p>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-neutral-900">{PARTNER_DETAIL_CREATOR_CONTENT_TITLE}</h2>
+          {creatorLoading ? (
+            <p className="mt-3 text-sm text-neutral-500">Chargement…</p>
+          ) : creatorError ? (
+            <p className="mt-3 text-sm text-red-600">Impossible de charger les contenus.</p>
+          ) : creatorContents.length === 0 ? (
+            <p className="mt-3 text-sm text-neutral-600">{PARTNER_DETAIL_CREATOR_CONTENT_EMPTY}</p>
+          ) : (
+            <ul className="mt-4 grid gap-4 sm:grid-cols-2">
+              {creatorContents.map((item) => (
+                <li key={item.id}>
+                  <PartnerCreatorContentCard item={item} partnerName={partner.name} />
+                </li>
+              ))}
+            </ul>
           )}
         </section>
 

@@ -23,6 +23,8 @@ import type {
   OrganizationMeListResponse,
   OrganizationPublic,
   OrganizationRequestPayload,
+  PartnerCreatorContentListParams,
+  PartnerCreatorContentPublicListResponse,
   PartnerEventsParams,
   PartnerListParams,
   PartnerListResponse,
@@ -143,6 +145,13 @@ export class YunicityApi {
     params?: PartnerEventsParams,
   ): Promise<LocalEventListResponse> {
     return this.partners.listPartnerEvents(slug, params);
+  }
+
+  listPartnerCreatorContent(
+    slug: string,
+    params?: PartnerCreatorContentListParams,
+  ): Promise<PartnerCreatorContentPublicListResponse> {
+    return this.partners.listPartnerCreatorContent(slug, params);
   }
 
   listStories(params: StoryListParams = {}): Promise<StoryListResponse> {

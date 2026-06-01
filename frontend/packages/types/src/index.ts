@@ -72,6 +72,9 @@ export type {
   PartnerCreatorContentOrganizationSummary,
   PartnerCreatorContentStatus,
   PartnerCreatorContentUpdatePayload,
+  PartnerCreatorContentPublic,
+  PartnerCreatorContentPublicListResponse,
+  PartnerCreatorContentListParams,
 } from "./partner-creator-content";
 
 export type {
