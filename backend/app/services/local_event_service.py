@@ -16,12 +16,14 @@ from app.core.local_event_constants import (
 )
 from app.core.local_event_workflow import assert_event_transition_allowed
 from app.core.organization_constants import VerificationStatus
+from app.core.partner_constants import PUBLIC_PARTNER_STATUSES, PartnerStatus
 from app.models.local_event import EventInterest, LocalEvent
 from app.models.organization import Organization
 from app.models.user import User
 from app.repositories.local_event_repository import LocalEventRepository
 from app.repositories.organization_repository import OrganizationRepository
 from app.repositories.partner_offer_repository import PartnerOfferRepository
+from app.repositories.partner_repository import PartnerRepository
 from app.schemas.local_event import (
     EventInterestToggleResponse,
     LocalEventCreateRequest,
@@ -46,6 +48,7 @@ class LocalEventService:
         self._events = LocalEventRepository(session)
         self._orgs = OrganizationRepository(session)
         self._offers = PartnerOfferRepository(session)
+        self._partners = PartnerRepository(session)
         self._membership = OrganizationMembershipService(session)
 
     async def list_public(
@@ -55,6 +58,7 @@ class LocalEventService:
         city: str | None,
         page: int,
         page_size: int,
+        organization_slug: str | None = None,
     ) -> LocalEventListResponse:
         page_size = min(max(page_size, 1), LOCAL_EVENT_LIST_PAGE_SIZE_MAX)
         offset = (max(page, 1) - 1) * page_size
@@ -65,6 +69,7 @@ class LocalEventService:
             limit=page_size,
             offset=offset,
             now=now,
+            organization_slug=organization_slug,
         )
         interested_ids: set[uuid.UUID] = set()
         if user and rows:
@@ -102,6 +107,31 @@ class LocalEventService:
             page_size=limit,
         )
 
+    async def list_for_partner(
+        self,
+        organization_id: uuid.UUID,
+        *,
+        upcoming_only: bool,
+        limit: int,
+        offset: int,
+    ) -> LocalEventListResponse:
+        limit = min(max(limit, 1), LOCAL_EVENT_LIST_PAGE_SIZE_MAX)
+        offset = max(offset, 0)
+        now = datetime.now(UTC)
+        rows = await self._events.list_for_partner(
+            organization_id=organization_id,
+            upcoming_only=upcoming_only,
+            limit=limit,
+            offset=offset,
+            now=now,
+        )
+        return LocalEventListResponse(
+            items=[self._to_response(e) for e in rows],
+            total=len(rows),
+            page=1,
+            page_size=limit,
+        )
+
     async def toggle_interest(self, user: User, event_id: uuid.UUID) -> EventInterestToggleResponse:
         event = await self._require_public_event(event_id)
         existing = await self._events.get_interest(user_id=user.id, event_id=event.id)
@@ -134,6 +164,7 @@ class LocalEventService:
             organization_id=payload.organization_id,
             user_id=actor.id,
         )
+        await self._check_partner_status_gate(payload.organization_id)
         org = await self._require_organization(payload.organization_id)
         self._validate_event_type(payload.event_type)
         self._validate_dates(payload.starts_at, payload.ends_at)
@@ -305,6 +336,81 @@ class LocalEventService:
             page_size=page_size,
         )
 
+    async def list_partner_events(
+        self,
+        *,
+        slug: str,
+        upcoming_only: bool = True,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> LocalEventListResponse:
+        # TODO(debt): WEB-PARTNERS-05A — city hardcodé MVP, à paramétrer quand multi-ville
+        profile = await self._partners.get_by_slug(
+            city="Reims",
+            slug=slug.strip().lower(),
+        )
+        if profile is None:
+            raise AppError(
+                status_code=404,
+                code="PARTNER_NOT_FOUND",
+                detail="Partenaire introuvable.",
+            )
+        try:
+            status = PartnerStatus(profile.partner_status)
+        except ValueError:
+            raise AppError(
+                status_code=404,
+                code="PARTNER_NOT_FOUND",
+                detail="Partenaire introuvable.",
+            ) from None
+        if status not in PUBLIC_PARTNER_STATUSES:
+            raise AppError(
+                status_code=404,
+                code="PARTNER_NOT_FOUND",
+                detail="Partenaire introuvable.",
+            )
+
+        limit = min(max(limit, 1), LOCAL_EVENT_LIST_PAGE_SIZE_MAX)
+        offset = max(offset, 0)
+        now = datetime.now(UTC)
+        rows, total = await self._events.list_public_for_partner_org(
+            organization_id=profile.organization_id,
+            upcoming_only=upcoming_only,
+            limit=limit,
+            offset=offset,
+            now=now,
+        )
+        return LocalEventListResponse(
+            items=[self._to_response(e) for e in rows],
+            total=total,
+            page=1,
+            page_size=limit,
+        )
+
+    async def _check_partner_status_gate(self, organization_id: uuid.UUID) -> None:
+        """Bloque signed/paused si l'org a un PartnerProfile."""
+        profile = await self._partners.get_by_organization_id(organization_id)
+        if profile is None:
+            return
+        try:
+            status = PartnerStatus(profile.partner_status)
+        except ValueError:
+            logger.warning(
+                "unknown_partner_status_gate",
+                extra={"organization_id": str(organization_id), "status": profile.partner_status},
+            )
+            raise AppError(
+                status_code=403,
+                code="PARTNER_NOT_ACTIVE",
+                detail="Ce partenaire n'est pas encore actif.",
+            ) from None
+        if status not in PUBLIC_PARTNER_STATUSES:
+            raise AppError(
+                status_code=403,
+                code="PARTNER_NOT_ACTIVE",
+                detail="Ce partenaire n'est pas encore actif.",
+            )
+
     async def _notify_published(self, event: LocalEvent) -> None:
         if event.created_by_user_id is None:
             return
@@ -388,6 +494,17 @@ class LocalEventService:
         org = event.organization
         org_summary = None
         if org is not None:
+            partner_profile = getattr(org, "partner_profile", None)
+            is_partner = False
+            p_status: str | None = None
+            if partner_profile is not None:
+                try:
+                    status = PartnerStatus(partner_profile.partner_status)
+                except ValueError:
+                    status = None
+                if status is not None:
+                    is_partner = status in PUBLIC_PARTNER_STATUSES
+                    p_status = status.value
             org_summary = LocalEventOrganizationSummary(
                 id=org.id,
                 slug=org.slug,
@@ -395,6 +512,8 @@ class LocalEventService:
                 city=org.city,
                 logo_url=org.logo_url,
                 is_verified=org.verified_at is not None,
+                is_partner=is_partner,
+                partner_status=p_status,
                 created_at=org.created_at,
             )
         return LocalEventResponse(

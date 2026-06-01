@@ -18,9 +18,11 @@ from app.core.partner_constants import (
 from app.core.passport_stamp_qr import generate_stamp_qr_token
 from app.db.session import get_db
 from app.models.user import User
+from app.schemas.local_event import LocalEventListResponse
 from app.schemas.partner import PartnerListResponse, PartnerPublicDetail
 from app.schemas.partner_offer_public import PartnerOfferPublicListResponse
 from app.schemas.passport_stamp_claim import StampQrGenerateRequest, StampQrGenerateResponse
+from app.services.local_event_service import LocalEventService
 from app.services.partner_service import PartnerService, default_partner_list_limit
 from app.services.public_partner_offer_service import PublicPartnerOfferService
 
@@ -100,6 +102,22 @@ async def generate_partner_passport_qr(
     )
     qr_url = f"/passport/stamp/claim?token={token}"
     return StampQrGenerateResponse(qr_url=qr_url, expires_at=expires_at)
+
+
+@router.get("/{slug}/events", response_model=LocalEventListResponse)
+async def list_partner_events(
+    slug: str,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    upcoming_only: bool = Query(default=True),
+    limit: int = Query(default=20, ge=1, le=50),
+    offset: int = Query(default=0, ge=0),
+) -> LocalEventListResponse:
+    return await LocalEventService(session).list_partner_events(
+        slug=slug,
+        upcoming_only=upcoming_only,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.get("/{slug}", response_model=PartnerPublicDetail)
