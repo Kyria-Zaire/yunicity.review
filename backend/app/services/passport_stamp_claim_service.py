@@ -99,7 +99,7 @@ class PassportStampClaimService:
                 "user_id": str(user.id),
                 "organization_id": str(organization_id),
                 "partner_profile_id": str(partner_profile_id),
-                "created": created,
+                "stamp_created": created,
                 "nonce": nonce,
             },
         )
