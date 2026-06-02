@@ -30,7 +30,11 @@ export function NeighborhoodDetailMoments({
   onInterestChange,
 }: NeighborhoodDetailMomentsProps) {
   return (
-    <section id="neighborhood-moments" className="space-y-4" aria-labelledby="hood-moments-title">
+    <section
+      id="neighborhood-moments"
+      className="scroll-mt-28 space-y-4"
+      aria-labelledby="hood-moments-title"
+    >
       <header>
         <h2 id="hood-moments-title" className="text-lg font-bold text-neutral-900">
           {NEIGHBORHOOD_DETAIL_MOMENTS_TITLE}
