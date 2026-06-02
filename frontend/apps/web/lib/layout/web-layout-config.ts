@@ -46,12 +46,12 @@ export const WEB_CITIZEN_NAV_PRIMARY: WebNavItem[] = [
 ];
 
 /**
- * Onglets centraux — barre haute xl (`CitizenTopNav`), alignés maquette citoyenne.
+ * Onglets centraux — barre haute xl (`CitizenTopNav`).
+ * Même périmètre que la sidebar primaire (hors compte / notifications).
  */
-export const WEB_CITIZEN_TOP_NAV_CENTER: WebNavItem[] = [
-  { href: "/sortir", label: "Sortir", icon: "sortir", match: "prefix" },
-  { href: "/passport", label: "Passport", icon: "passport", match: "prefix" },
-];
+export const WEB_CITIZEN_TOP_NAV_CENTER: WebNavItem[] = WEB_CITIZEN_NAV_PRIMARY.filter(
+  (item) => item.href !== "/notifications" && item.href !== "/profile/me",
+);
 
 /**
  * Liens texte à droite — barre haute xl (avant recherche et menu utilisateur).

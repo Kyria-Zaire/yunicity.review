@@ -12,7 +12,7 @@ import { useNotificationUnread } from "@/hooks/use-notification-unread";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { useEffect, useState } from "react";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -30,7 +30,7 @@ function TopNavLink({
     <Link
       href={item.href}
       aria-current={active ? "page" : undefined}
-      className={`relative whitespace-nowrap px-2.5 py-2 text-sm font-medium transition-colors xl:px-3 ${
+      className={`relative shrink-0 whitespace-nowrap px-2 py-2 text-sm font-medium transition-colors xl:px-2.5 ${
         active ? "text-yunicity-primary" : "text-neutral-600 hover:text-neutral-900"
       }`}
     >
@@ -77,7 +77,7 @@ export function CitizenTopNav() {
         <YunicityLogo href="/feed" size="sm" showWordmark priority />
 
         <nav
-          className="flex min-w-0 flex-1 items-center justify-center gap-1 xl:gap-2"
+          className="flex min-w-0 flex-1 items-center justify-center gap-0.5 overflow-x-auto px-1 [scrollbar-width:none] xl:gap-1.5 [&::-webkit-scrollbar]:hidden"
           aria-label="Navigation principale"
         >
           {WEB_CITIZEN_TOP_NAV_CENTER.map((item) => (
@@ -100,13 +100,6 @@ export function CitizenTopNav() {
             ))}
           </nav>
 
-          <Link
-            href="/search"
-            aria-label="Rechercher"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900"
-          >
-            <Search className="h-5 w-5" />
-          </Link>
           <Link
             href="/profile/me"
             className="inline-flex items-center gap-1 rounded-full py-1 pl-1 pr-2 transition hover:bg-neutral-100"
