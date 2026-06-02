@@ -34,14 +34,12 @@ describe("adminCreatorContentAuthorLabel", () => {
   it("prefers display name then email", () => {
     expect(
       adminCreatorContentAuthorLabel({
-        id: "1",
         display_name: "Marie",
         email: "m@example.com",
       }),
     ).toBe("Marie");
     expect(
       adminCreatorContentAuthorLabel({
-        id: "1",
         display_name: null,
         email: "belga@partner.yunicity.dev",
       }),

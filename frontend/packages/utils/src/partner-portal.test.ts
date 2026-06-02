@@ -36,6 +36,7 @@ const basePartner: PartnerPublic = {
   organization_id: "org-1",
   name: "Belga Queen",
   slug: "belga-queen",
+  public_partner_label: null,
   category: "nightlife",
   city: "Reims",
   description: "Brasserie",
