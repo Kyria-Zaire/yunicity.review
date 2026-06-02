@@ -9,6 +9,7 @@ from collections.abc import AsyncGenerator, Iterator
 import jwt
 import pytest
 from app.core.config import get_settings
+from app.core.logging import configure_logging
 from app.core.passport_constants import PassportStampSource
 from app.core.passport_stamp_qr import STAMP_QR_TOKEN_TYPE, generate_stamp_qr_token
 from app.db.seeds.reims_signed_partners import seed_reims_signed_partners
@@ -178,6 +179,40 @@ async def test_claim_valid_token_creates_stamp(
     assert body["already_claimed"] is False
     assert body["stamp"]["stamp_source"] == "qr"
     assert body["passport"]["stamps_count"] == 1
+
+
+@pytest.mark.integration
+@pytest.mark.anyio
+async def test_claim_persists_stamp_with_active_logging(
+    stamp_client: AsyncClient,
+    seeded_partners: None,
+) -> None:
+    """Regression PASSPORT-QR-FIX-01: reserved LogRecord key 'created' in extra crashed claim."""
+    configure_logging(get_settings())
+
+    session_factory = get_session_factory()
+    assert session_factory is not None
+
+    _, _, auth_token = await _create_test_user_with_passport(session_factory)
+    profile = await _get_active_profile(session_factory)
+    token = _make_valid_token(str(profile.organization_id), str(profile.id))
+
+    claim_response = await stamp_client.post(
+        "/api/v1/passport/stamps/claim",
+        json={"token": token},
+        headers={"Authorization": f"Bearer {auth_token}"},
+    )
+    assert claim_response.status_code == 201
+    assert claim_response.json()["status"] == "created"
+
+    list_response = await stamp_client.get(
+        "/api/v1/passport/stamps",
+        headers={"Authorization": f"Bearer {auth_token}"},
+    )
+    assert list_response.status_code == 200
+    stamps_body = list_response.json()
+    assert stamps_body["total"] == 1
+    assert stamps_body["items"][0]["stamp_source"] == "qr"
 
 
 @pytest.mark.integration
