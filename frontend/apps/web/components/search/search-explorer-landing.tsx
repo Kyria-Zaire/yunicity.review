@@ -22,7 +22,6 @@ import Link from "next/link";
 
 import { SearchExplorerEventsStrip } from "./search-explorer-events-strip";
 import { SearchExplorerPartnersStrip } from "./search-explorer-partners-strip";
-import { SearchExplorerPointsRail } from "./search-explorer-points-rail";
 import { SearchExplorerTransitRail } from "./search-explorer-transit-rail";
 
 type SearchExplorerLandingProps = {
@@ -204,8 +203,6 @@ export function SearchExplorerLanding({ explorer, categoryId }: SearchExplorerLa
           compact
         />
       ) : null}
-
-      {categoryId === "all" ? <SearchExplorerPointsRail /> : null}
     </div>
   );
 }
