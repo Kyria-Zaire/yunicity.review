@@ -1,4 +1,4 @@
-import type { PartnerOffer } from "@yunicity/types";
+import type { PartnerOfferPublic } from "@yunicity/types";
 import { PARTNER_OFFER_TYPE_LABELS } from "@yunicity/utils";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -11,17 +11,17 @@ export function OfferCard({
   isRedeeming,
   disabled,
 }: {
-  offer: PartnerOffer;
+  offer: PartnerOfferPublic;
   onRedeem: () => void;
   isRedeeming?: boolean;
   disabled?: boolean;
 }) {
   return (
     <View style={styles.card}>
-      <FlashOfferBadge offer={offer} />
+      <FlashOfferBadge offer={null} />
       <View style={styles.header}>
         <Text style={styles.type}>{PARTNER_OFFER_TYPE_LABELS[offer.offer_type]}</Text>
-        <Text style={styles.org}>{offer.organization.name}</Text>
+        <Text style={styles.org}>{offer.partner.name}</Text>
       </View>
       <Text style={styles.title}>{offer.title}</Text>
       {offer.description ? <Text style={styles.desc}>{offer.description}</Text> : null}

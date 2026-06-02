@@ -1,11 +1,11 @@
 import { useAuth } from "@/lib/auth-provider";
-import type { PartnerOffer } from "@yunicity/types";
+import type { PartnerOfferPublic } from "@yunicity/types";
 import { isAuthError } from "@yunicity/utils";
 import { useCallback, useEffect, useState } from "react";
 
 export function usePassportOffers(enabled: boolean) {
   const { yunicityApi } = useAuth();
-  const [offers, setOffers] = useState<PartnerOffer[]>([]);
+  const [offers, setOffers] = useState<PartnerOfferPublic[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
