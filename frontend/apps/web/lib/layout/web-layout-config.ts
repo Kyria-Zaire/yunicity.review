@@ -10,13 +10,16 @@ export type WebNavIconId =
   | "map"
   | "search"
   | "events"
+  | "sortir"
   | "neighborhoods"
   | "tribes"
   | "passport"
   | "notifications"
   | "profile"
+  | "settings"
   | "organizations"
   | "place"
+  | "proposePlace"
   | "publish";
 
 export type WebNavTier = "primary" | "secondary";
@@ -34,12 +37,36 @@ export const WEB_CITIZEN_NAV_PRIMARY: WebNavItem[] = [
   { href: "/feed", label: "Fil local", icon: "feed", match: "prefix", tier: "primary" },
   { href: "/map", label: "Carte", icon: "map", match: "prefix", tier: "primary" },
   { href: "/search", label: "Recherche", icon: "search", match: "prefix", tier: "primary" },
-  { href: "/events", label: "Moments", icon: "events", match: "prefix", tier: "primary" },
+  { href: "/sortir", label: "Sortir", icon: "sortir", match: "prefix", tier: "primary" },
   { href: "/neighborhoods", label: "Quartiers", icon: "neighborhoods", match: "prefix", tier: "primary" },
   { href: "/tribes", label: "Tribus", icon: "tribes", match: "prefix", tier: "primary" },
   { href: "/passport", label: "Passport", icon: "passport", match: "prefix", tier: "primary" },
   { href: "/notifications", label: "Notifications", icon: "notifications", match: "prefix", tier: "primary" },
   { href: "/profile/me", label: "Profil", icon: "profile", match: "prefix", tier: "primary" },
+];
+
+/**
+ * Onglets centraux — barre haute xl (`CitizenTopNav`), alignés maquette citoyenne.
+ */
+export const WEB_CITIZEN_TOP_NAV_CENTER: WebNavItem[] = [
+  { href: "/sortir", label: "Sortir", icon: "sortir", match: "prefix" },
+  { href: "/passport", label: "Passport", icon: "passport", match: "prefix" },
+];
+
+/**
+ * Liens texte à droite — barre haute xl (avant recherche et menu utilisateur).
+ */
+export const WEB_CITIZEN_TOP_NAV_UTILITY: WebNavItem[] = [
+  { href: "/notifications", label: "Notifications", icon: "notifications", match: "prefix" },
+  { href: "/profile/me", label: "Profil", icon: "profile", match: "prefix" },
+  { href: "/places", label: "Lieux", icon: "place", match: "prefix" },
+  {
+    href: "/organizations/request",
+    label: "Proposer un lieu",
+    icon: "proposePlace",
+    match: "prefix",
+  },
+  { href: "/settings", label: "Paramètres", icon: "settings", match: "prefix" },
 ];
 
 /** Entrées occasionnelles — footer sidebar, pas la barre mobile compacte. */
@@ -48,10 +75,11 @@ export const WEB_CITIZEN_NAV_SECONDARY: WebNavItem[] = [
   {
     href: "/organizations/request",
     label: "Proposer un lieu",
-    icon: "place",
+    icon: "proposePlace",
     match: "prefix",
     tier: "secondary",
   },
+  { href: "/settings", label: "Paramètres", icon: "settings", match: "prefix", tier: "secondary" },
 ];
 
 /** Liste complète — compat routes & mobile chrome legacy. */

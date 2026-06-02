@@ -219,3 +219,25 @@ body {
   }
 }
 
+/* Recherche — même comportement que lieux / notifications (xl+ top nav) */
+@media (min-width: 1280px) {
+  .search-shell-grid.web-three-col {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 0;
+  }
+
+  .search-shell-grid .web-sidebar-aside {
+    display: none;
+  }
+
+  .search-shell-grid .citizen-top-nav {
+    display: block;
+  }
+}
+
+@media (max-width: 1279.98px) {
+  .search-shell-grid .citizen-top-nav {
+    display: none !important;
+  }
+}
+

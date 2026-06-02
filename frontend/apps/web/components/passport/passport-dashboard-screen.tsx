@@ -5,7 +5,7 @@ import { PassportDashboardHero } from "@/components/passport/passport-dashboard-
 import { PassportInternalSidebar } from "@/components/passport/passport-internal-sidebar";
 import { PassportProgressionTrack } from "@/components/passport/passport-progression-track";
 import { PassportRecentBadges } from "@/components/passport/passport-recent-badges";
-import { WebAppShell } from "@/components/layout";
+import { PassportAppShell } from "@/components/passport/passport-app-shell";
 import { PassportTipsAside } from "@/components/layout/web-page-asides";
 import type { PassportDashboardNavId } from "@/hooks/use-passport-dashboard-context";
 import { usePassportDashboardContext } from "@/hooks/use-passport-dashboard-context";
@@ -53,7 +53,7 @@ export function PassportDashboardScreen() {
   const displayName = ctx.profile?.display_name ?? ctx.profile?.username ?? "Citoyen";
 
   return (
-    <WebAppShell contentWidth="wide">
+    <PassportAppShell>
       {ctx.isLoading ? (
         <p className="py-12 text-center text-sm text-neutral-500" role="status">
           {PASSPORT_LOADING}
@@ -126,6 +126,6 @@ export function PassportDashboardScreen() {
           </div>
         </div>
       )}
-    </WebAppShell>
+    </PassportAppShell>
   );
 }

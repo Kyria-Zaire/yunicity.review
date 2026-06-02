@@ -224,7 +224,7 @@ export function WebSidebar() {
             ))}
           </nav>
 
-          <div className="mt-2 flex justify-center xl:mt-4">
+          <div className="mt-8 flex justify-center xl:mt-10">
             <WebSidebarTooltip label={HOME_PUBLISH_MOMENT}>
               <button
                 type="button"

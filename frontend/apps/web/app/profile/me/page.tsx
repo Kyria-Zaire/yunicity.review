@@ -3,6 +3,7 @@
 import { ProfilePageAside } from "@/components/layout/web-page-asides";
 import { WebAppShell } from "@/components/layout";
 import { InterestPicker } from "@/components/interest-picker";
+import { ProfilePortalScreen } from "@/components/profile/profile-portal-screen";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { ProtectedRoute } from "@/components/protected-route";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
@@ -232,7 +233,10 @@ function ProfileMeContent() {
 export default function ProfileMePage() {
   return (
     <ProtectedRoute>
-      <ProfileMeContent />
+      <ProfilePortalScreen />
     </ProtectedRoute>
   );
 }
+
+/** Ancien écran inline (formulaire) — conservé pour référence ; édition via /profile/me/edit. */
+export { ProfileMeContent };

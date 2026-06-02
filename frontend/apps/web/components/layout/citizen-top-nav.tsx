@@ -3,8 +3,8 @@
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { YunicityLogo } from "@/components/brand";
 import {
-  WEB_CITIZEN_NAV_PRIMARY,
-  WEB_CITIZEN_NAV_SECONDARY,
+  WEB_CITIZEN_TOP_NAV_CENTER,
+  WEB_CITIZEN_TOP_NAV_UTILITY,
   isWebNavActive,
   type WebNavItem,
 } from "@/lib/layout/web-layout-config";
@@ -12,28 +12,20 @@ import { useNotificationUnread } from "@/hooks/use-notification-unread";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { useEffect, useState } from "react";
-import { PASSPORT_TOP_NAV_ITEMS, type PassportNavItem } from "@yunicity/utils";
 import { ChevronDown, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const TOP_NAV_UTILITY: WebNavItem[] = [
-  ...WEB_CITIZEN_NAV_PRIMARY.filter((item) =>
-    ["/notifications", "/profile/me"].includes(item.href),
-  ),
-  ...WEB_CITIZEN_NAV_SECONDARY,
-];
 
 function TopNavLink({
   item,
   pathname,
   badge,
 }: {
-  item: { href: string; label: string };
+  item: WebNavItem;
   pathname: string;
   badge?: number;
 }) {
-  const active = isWebNavActive(pathname, { ...item, icon: "profile", match: "prefix" });
+  const active = isWebNavActive(pathname, item);
   return (
     <Link
       href={item.href}
@@ -60,7 +52,7 @@ function TopNavLink({
   );
 }
 
-/** Top nav maquette — Passport, Notifications, etc. (xl+). */
+/** Top nav maquette — Sortir, Passport, Notifications, Paramètres, etc. (xl+). */
 export function CitizenTopNav() {
   const pathname = usePathname();
   const { user } = useAuth();
@@ -88,29 +80,9 @@ export function CitizenTopNav() {
           className="flex min-w-0 flex-1 items-center justify-center gap-1 xl:gap-2"
           aria-label="Navigation principale"
         >
-          {PASSPORT_TOP_NAV_ITEMS.map((item: PassportNavItem) => {
-            const active = isWebNavActive(pathname, { ...item, icon: "passport", match: "prefix" });
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={`relative px-3 py-2 text-sm font-medium transition-colors ${
-                  active
-                    ? "text-yunicity-primary"
-                    : "text-neutral-600 hover:text-neutral-900"
-                }`}
-              >
-                {item.label}
-                {active ? (
-                  <span
-                    className="absolute inset-x-2 -bottom-[1.125rem] h-0.5 rounded-full bg-yunicity-primary"
-                    aria-hidden
-                  />
-                ) : null}
-              </Link>
-            );
-          })}
+          {WEB_CITIZEN_TOP_NAV_CENTER.map((item) => (
+            <TopNavLink key={item.href} item={item} pathname={pathname} />
+          ))}
         </nav>
 
         <div className="flex shrink-0 items-center gap-2 xl:gap-3">
@@ -118,7 +90,7 @@ export function CitizenTopNav() {
             className="hidden items-center gap-0.5 border-r border-neutral-200 pr-2 lg:flex xl:gap-1 xl:pr-3"
             aria-label="Compte et lieux"
           >
-            {TOP_NAV_UTILITY.map((item) => (
+            {WEB_CITIZEN_TOP_NAV_UTILITY.map((item) => (
               <TopNavLink
                 key={item.href}
                 item={item}
