@@ -47,9 +47,9 @@ const ICONS: Record<WebNavIconId, (props: IconProps) => ReactElement> = {
   ),
   sortir: (p) => (
     <IconBase {...p}>
-      <path d="M9 18V5l12-2v13" />
-      <circle cx="6" cy="18" r="3" />
-      <circle cx="18" cy="16" r="3" />
+      <path d="M12 3a6 6 0 109 9 9 9 0 01-9-9z" />
+      <path d="M18 4l.8 1.6L20.5 6l-1.7.8L18 8.5l-.8-1.7L15.5 6l1.7-.8L18 4z" />
+      <path d="M5 16l.6 1.2L6.8 18l-1.2.6L5 19.8l-.6-1.2L3.2 18l1.2-.6L5 16z" />
     </IconBase>
   ),
   neighborhoods: (p) => (
@@ -89,7 +89,7 @@ const ICONS: Record<WebNavIconId, (props: IconProps) => ReactElement> = {
   settings: (p) => (
     <IconBase {...p}>
       <circle cx="12" cy="12" r="3" />
-      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
     </IconBase>
   ),
   organizations: (p) => (
@@ -101,8 +101,19 @@ const ICONS: Record<WebNavIconId, (props: IconProps) => ReactElement> = {
   ),
   place: (p) => (
     <IconBase {...p}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 8v8M8 12h8" />
+      <path d="M4 7h16l-1.5-3H5.5L4 7z" />
+      <path d="M5 7v12" />
+      <path d="M19 7v12" />
+      <path d="M5 19h14" />
+      <path d="M8 12h8" />
+      <path d="M9 19v-5a3 3 0 016 0v5" />
+    </IconBase>
+  ),
+  proposePlace: (p) => (
+    <IconBase {...p}>
+      <path d="M12 21s-5.5-4.5-5.5-9.5a5.5 5.5 0 019.2-3.9" />
+      <circle cx="12" cy="10.5" r="2" />
+      <path d="M19 4v5M16.5 6.5H21.5" />
     </IconBase>
   ),
   publish: (p) => (

@@ -19,6 +19,7 @@ export type WebNavIconId =
   | "settings"
   | "organizations"
   | "place"
+  | "proposePlace"
   | "publish";
 
 export type WebNavTier = "primary" | "secondary";
@@ -62,7 +63,7 @@ export const WEB_CITIZEN_TOP_NAV_UTILITY: WebNavItem[] = [
   {
     href: "/organizations/request",
     label: "Proposer un lieu",
-    icon: "place",
+    icon: "proposePlace",
     match: "prefix",
   },
   { href: "/settings", label: "Paramètres", icon: "settings", match: "prefix" },
@@ -74,7 +75,7 @@ export const WEB_CITIZEN_NAV_SECONDARY: WebNavItem[] = [
   {
     href: "/organizations/request",
     label: "Proposer un lieu",
-    icon: "place",
+    icon: "proposePlace",
     match: "prefix",
     tier: "secondary",
   },
