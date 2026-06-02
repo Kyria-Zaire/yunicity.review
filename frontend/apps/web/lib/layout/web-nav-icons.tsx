@@ -45,6 +45,13 @@ const ICONS: Record<WebNavIconId, (props: IconProps) => ReactElement> = {
       <path d="M16 3v4M8 3v4M3 11h18M8 15h4" />
     </IconBase>
   ),
+  sortir: (p) => (
+    <IconBase {...p}>
+      <path d="M9 18V5l12-2v13" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
+    </IconBase>
+  ),
   neighborhoods: (p) => (
     <IconBase {...p}>
       <rect x="3" y="3" width="7" height="7" rx="1.5" />
@@ -77,6 +84,12 @@ const ICONS: Record<WebNavIconId, (props: IconProps) => ReactElement> = {
     <IconBase {...p}>
       <circle cx="12" cy="8" r="4" />
       <path d="M5 20a7 7 0 0114 0" />
+    </IconBase>
+  ),
+  settings: (p) => (
+    <IconBase {...p}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
     </IconBase>
   ),
   organizations: (p) => (

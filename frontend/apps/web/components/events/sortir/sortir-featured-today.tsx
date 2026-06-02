@@ -28,7 +28,7 @@ export function SortirFeaturedToday({ featured }: SortirFeaturedTodayProps) {
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-neutral-900">{SORTIR_FEATURED_TODAY_TITLE}</h2>
         {featured.kind === "events" ? (
-          <Link href="/events" className="text-sm font-semibold text-yunicity-primary hover:underline">
+          <Link href="/sortir" className="text-sm font-semibold text-yunicity-primary hover:underline">
             {SORTIR_FEATURED_TODAY_CTA}
           </Link>
         ) : null}

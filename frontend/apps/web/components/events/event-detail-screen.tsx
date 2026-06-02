@@ -92,7 +92,7 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
     <div className="space-y-6">
       <nav>
         <Link
-          href="/events"
+          href="/sortir"
           className="inline-flex text-sm font-medium text-neutral-500 transition hover:text-yunicity-primary"
         >
           ← {EVENT_DETAIL_BACK_SORTIR}

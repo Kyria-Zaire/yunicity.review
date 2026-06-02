@@ -1,5 +1,6 @@
-import { EventsScreen } from "@/components/events/events-screen";
+import { redirect } from "next/navigation";
 
+/** Agenda legacy — l’entrée produit principale est /sortir. */
 export default function EventsPage() {
-  return <EventsScreen />;
+  redirect("/sortir");
 }
