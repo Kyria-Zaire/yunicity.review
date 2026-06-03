@@ -1,11 +1,13 @@
 "use client";
 
+import { PartnerDetailActionsSection } from "@/components/partners/detail/partner-detail-actions-section";
 import { PartnerDetailCapabilities } from "@/components/partners/detail/partner-detail-capabilities";
 import { PartnerDetailCounters } from "@/components/partners/detail/partner-detail-counters";
 import { PartnerDetailHeader } from "@/components/partners/detail/partner-detail-header";
 import { PartnerDetailIdentityCard } from "@/components/partners/detail/partner-detail-identity-card";
 import { PartnerDetailLinks } from "@/components/partners/detail/partner-detail-links";
 import { PartnerDetailProfileCard } from "@/components/partners/detail/partner-detail-profile-card";
+import { PartnerDetailSettingsPanel } from "@/components/partners/detail/partner-detail-settings-panel";
 import { useAdminPartnerDetail } from "@/lib/hooks/use-admin-partner-detail";
 import Link from "next/link";
 import { useState } from "react";
@@ -15,11 +17,27 @@ interface PartnerDetailViewProps {
 }
 
 export function PartnerDetailView({ organizationId }: PartnerDetailViewProps) {
-  const { data, isLoading, error, isNotFound, reload } = useAdminPartnerDetail(organizationId);
+  const {
+    data,
+    isLoading,
+    error,
+    isNotFound,
+    reload,
+    isSubmitting,
+    actionError,
+    actionSuccess,
+    clearActionFeedback,
+    createProfile,
+    activate,
+    pause,
+    upgradePremium,
+    patchSettings,
+  } = useAdminPartnerDetail(organizationId);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   async function handleRefresh() {
     setIsRefreshing(true);
+    clearActionFeedback();
     try {
       await reload();
     } finally {
@@ -86,17 +104,57 @@ export function PartnerDetailView({ organizationId }: PartnerDetailViewProps) {
         onRefresh={() => void handleRefresh()}
       />
 
-      <div className="rounded-xl border border-stone-200 bg-stone-50/80 px-4 py-3 text-sm text-stone-700">
-        <p className="font-medium text-stone-900">Fiche partenaire 360° (lecture seule)</p>
-        <p className="mt-1">
-          Source : <code className="text-xs">GET /api/v1/admin/partners/&#123;organization_id&#125;</code>
-        </p>
-      </div>
+      {actionSuccess ? (
+        <div
+          className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+          role="status"
+        >
+          {actionSuccess}
+          <button
+            type="button"
+            onClick={clearActionFeedback}
+            className="ml-3 font-medium underline"
+          >
+            Fermer
+          </button>
+        </div>
+      ) : null}
+      {actionError ? (
+        <div
+          className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+          role="alert"
+        >
+          {actionError}
+          <button
+            type="button"
+            onClick={clearActionFeedback}
+            className="ml-3 font-medium underline"
+          >
+            Fermer
+          </button>
+        </div>
+      ) : null}
+
+      <PartnerDetailActionsSection
+        organizationName={data.organization.name}
+        capabilities={data.capabilities}
+        isSubmitting={isSubmitting}
+        onCreateProfile={createProfile}
+        onActivate={activate}
+        onPause={pause}
+        onUpgradePremium={upgradePremium}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <PartnerDetailIdentityCard organization={data.organization} />
         <PartnerDetailProfileCard profile={data.partner_profile} />
       </div>
+
+      <PartnerDetailSettingsPanel
+        data={data}
+        isSubmitting={isSubmitting}
+        onPatch={patchSettings}
+      />
 
       <PartnerDetailCounters counters={data.counters} />
       <PartnerDetailLinks links={data.links} city={data.organization.city} />

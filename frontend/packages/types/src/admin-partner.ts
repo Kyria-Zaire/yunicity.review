@@ -53,6 +53,32 @@ export interface AdminPartnerCapabilities {
   can_pause: boolean;
   can_upgrade_premium: boolean;
   can_create_profile: boolean;
+  can_update_settings: boolean;
+}
+
+export interface AdminPartnerCreateProfilePayload {
+  partnership_type?: PartnershipType;
+  public_partner_label?: string | null;
+  reason?: string | null;
+}
+
+export interface AdminPartnerActivatePayload {
+  visibility?: OrganizationVisibility | null;
+  reason?: string | null;
+}
+
+export interface AdminPartnerPausePayload {
+  reason?: string | null;
+}
+
+export interface AdminPartnerUpgradePremiumPayload {
+  reason?: string | null;
+}
+
+export interface AdminPartnerPatchPayload {
+  visibility?: OrganizationVisibility;
+  is_featured?: boolean;
+  public_partner_label?: string | null;
 }
 
 export interface AdminPartnerDetailResponse {

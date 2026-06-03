@@ -27,6 +27,13 @@ const TYPE_LABELS: Record<PartnershipType, string> = {
   internal_project: "Projet interne",
 };
 
+export const PARTNERSHIP_TYPE_SELECT_OPTIONS: { value: PartnershipType; label: string }[] = (
+  Object.keys(TYPE_LABELS) as PartnershipType[]
+).map((value) => ({
+  value,
+  label: TYPE_LABELS[value],
+}));
+
 const CATEGORY_LABELS: Record<string, string> = {
   sport: "Sport",
   services: "Services",

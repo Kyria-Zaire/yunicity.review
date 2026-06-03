@@ -11,6 +11,7 @@ const CAPABILITY_KEYS: AdminPartnerCapabilityKey[] = [
   "can_activate",
   "can_pause",
   "can_upgrade_premium",
+  "can_update_settings",
 ];
 
 interface PartnerDetailCapabilitiesProps {
@@ -24,8 +25,8 @@ export function PartnerDetailCapabilities({ capabilities }: PartnerDetailCapabil
         Capacités (informatif)
       </h2>
       <p className="mt-2 text-sm text-stone-600">
-        Actions disponibles dans <strong>ADMIN-02D3</strong>. Aucune action n&apos;est exécutable
-        depuis cette fiche.
+        Miroir des capacités renvoyées par l&apos;API — les boutons ci-dessus ne s&apos;affichent
+        que si la valeur est <strong>Oui</strong>.
       </p>
       <ul className="mt-4 space-y-2">
         {CAPABILITY_KEYS.map((key) => {

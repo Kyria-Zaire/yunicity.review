@@ -25,6 +25,14 @@ export function visibilityLabel(visibility: OrganizationVisibility): string {
   return ORGANIZATION_VISIBILITY_LABELS[visibility] ?? visibility;
 }
 
+export const ORGANIZATION_VISIBILITY_SELECT_OPTIONS: {
+  value: OrganizationVisibility;
+  label: string;
+}[] = (["private", "public", "unlisted"] as OrganizationVisibility[]).map((value) => ({
+  value,
+  label: visibilityLabel(value),
+}));
+
 export function verificationStatusLabel(status: VerificationStatus): string {
   return VERIFICATION_STATUS_LABELS[status] ?? status;
 }
@@ -54,6 +62,7 @@ const CAPABILITY_LABELS: Record<AdminPartnerCapabilityKey, string> = {
   can_activate: "Activer le partenaire (signed → active)",
   can_pause: "Mettre en pause",
   can_upgrade_premium: "Passer en premium",
+  can_update_settings: "Modifier visibilité / mise en avant / libellé",
 };
 
 export function capabilityLabel(key: AdminPartnerCapabilityKey): string {

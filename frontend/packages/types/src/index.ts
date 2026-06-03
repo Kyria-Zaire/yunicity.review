@@ -64,12 +64,17 @@ export type {
 } from "./admin-organization";
 
 export type {
+  AdminPartnerActivatePayload,
   AdminPartnerCapabilities,
   AdminPartnerCounters,
+  AdminPartnerCreateProfilePayload,
   AdminPartnerDetailResponse,
   AdminPartnerLinks,
   AdminPartnerOrganizationDetail,
+  AdminPartnerPatchPayload,
+  AdminPartnerPausePayload,
   AdminPartnerProfileDetail,
+  AdminPartnerUpgradePremiumPayload,
 } from "./admin-partner";
 
 export type {
