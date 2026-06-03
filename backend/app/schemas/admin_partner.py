@@ -65,6 +65,34 @@ class AdminPartnerDetailCapabilities(BaseModel):
     can_pause: bool = False
     can_upgrade_premium: bool = False
     can_create_profile: bool = False
+    can_update_settings: bool = False
+
+
+class AdminPartnerCreateProfileRequest(BaseModel):
+    partnership_type: PartnershipType = PartnershipType.LOCAL_BUSINESS
+    public_partner_label: str | None = Field(default=None, max_length=160)
+    reason: str | None = Field(default=None, max_length=1000)
+
+
+class AdminPartnerActivateRequest(BaseModel):
+    visibility: OrganizationVisibility | None = None
+    reason: str | None = Field(default=None, max_length=1000)
+
+
+class AdminPartnerPauseRequest(BaseModel):
+    reason: str | None = Field(default=None, max_length=1000)
+
+
+class AdminPartnerUpgradePremiumRequest(BaseModel):
+    reason: str | None = Field(default=None, max_length=1000)
+
+
+class AdminPartnerPatchRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    visibility: OrganizationVisibility | None = None
+    is_featured: bool | None = None
+    public_partner_label: str | None = Field(default=None, max_length=160)
 
 
 class AdminPartnerDetailResponse(BaseModel):

@@ -444,6 +444,7 @@ async def test_capabilities_without_profile_verified_org(
     assert caps["can_activate"] is False
     assert caps["can_pause"] is False
     assert caps["can_upgrade_premium"] is False
+    assert caps["can_update_settings"] is False
 
 
 @pytest.mark.asyncio
@@ -476,6 +477,7 @@ async def test_capabilities_signed_partner(
     assert caps["can_pause"] is False
     assert caps["can_upgrade_premium"] is False
     assert caps["can_create_profile"] is False
+    assert caps["can_update_settings"] is True
 
 
 @pytest.mark.asyncio
@@ -508,6 +510,38 @@ async def test_capabilities_active_partner(
     assert caps["can_pause"] is True
     assert caps["can_upgrade_premium"] is True
     assert caps["can_create_profile"] is False
+    assert caps["can_update_settings"] is True
+
+
+@pytest.mark.asyncio
+async def test_capabilities_paused_partner(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    moderator = await rbac_user_factory("MODERATOR")
+    suffix = uuid.uuid4().hex[:8]
+    engine = get_engine()
+    assert engine is not None
+    factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async with factory() as session:
+        org = await _seed_org(
+            session,
+            suffix=suffix,
+            with_partner_profile=True,
+            partner_status=PartnerStatus.PAUSED,
+        )
+        await session.commit()
+        org_id = org.id
+
+    response = await auth_client.get(
+        _detail_url(org_id),
+        headers=auth_header(moderator.access_token),
+    )
+    assert response.status_code == 200, response.text
+    caps = response.json()["capabilities"]
+    assert caps["can_activate"] is True
+    assert caps["can_pause"] is False
+    assert caps["can_upgrade_premium"] is False
 
 
 @pytest.mark.asyncio
