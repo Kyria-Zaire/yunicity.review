@@ -32,6 +32,20 @@ export {
   createAdminOrganizationsApi,
 } from "./admin-organizations-api";
 export {
+  AdminPartnersApi,
+  createAdminPartnersApi,
+} from "./admin-partners-api";
+export {
+  adminPartnerDetailPath,
+  capabilityLabel,
+  formatPartnerDate,
+  organizationTypeLabel,
+  partnershipTypeLabel,
+  verificationStatusLabel,
+  visibilityLabel,
+  type AdminPartnerCapabilityKey,
+} from "./admin-partner";
+export {
   ADMIN_ORGANIZATION_STATUS_FILTER_OPTIONS,
   ORGANIZATION_REVIEW_ACTION_LABELS,
   ORGANIZATION_REVIEW_TRANSITIONS,

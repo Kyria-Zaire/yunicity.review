@@ -64,6 +64,15 @@ export type {
 } from "./admin-organization";
 
 export type {
+  AdminPartnerCapabilities,
+  AdminPartnerCounters,
+  AdminPartnerDetailResponse,
+  AdminPartnerLinks,
+  AdminPartnerOrganizationDetail,
+  AdminPartnerProfileDetail,
+} from "./admin-partner";
+
+export type {
   PassportQr,
   ScanPassportPreview,
   ScanRedeemableOffer,

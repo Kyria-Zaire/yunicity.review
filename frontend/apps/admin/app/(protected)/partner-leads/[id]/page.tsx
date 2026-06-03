@@ -19,6 +19,7 @@ import type {
 import {
   PARTNER_LEAD_SOURCE_LABELS,
   PARTNER_LEAD_STATUS_LABELS,
+  adminPartnerDetailPath,
   isAuthError,
 } from "@yunicity/utils";
 import Link from "next/link";
@@ -238,12 +239,20 @@ export default function PartnerLeadDetailPage() {
             Statut attendu après conversion : <VerificationBadge status="pending" /> — reste
             privée jusqu&apos;à validation modération (<VerificationBadge status="verified" />).
           </p>
-          <Link
-            href={`/partners?tab=verification&organization_id=${encodeURIComponent(lead.converted_organization_id)}`}
-            className="mt-3 inline-flex text-sm font-medium text-violet-900 underline-offset-2 hover:underline"
-          >
-            Ouvrir dans la file de vérification →
-          </Link>
+          <div className="mt-3 flex flex-wrap gap-4">
+            <Link
+              href={adminPartnerDetailPath(lead.converted_organization_id)}
+              className="inline-flex text-sm font-medium text-violet-900 underline-offset-2 hover:underline"
+            >
+              Ouvrir fiche partenaire →
+            </Link>
+            <Link
+              href={`/partners?tab=verification&organization_id=${encodeURIComponent(lead.converted_organization_id)}`}
+              className="inline-flex text-sm font-medium text-stone-700 underline-offset-2 hover:underline"
+            >
+              File de vérification →
+            </Link>
+          </div>
         </section>
       ) : null}
 

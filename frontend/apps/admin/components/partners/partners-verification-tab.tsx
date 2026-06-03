@@ -9,12 +9,14 @@ import {
   ORGANIZATION_REVIEW_ACTION_LABELS,
   ORGANIZATION_TYPE_OPTIONS,
   ORGANIZATION_VISIBILITY_LABELS,
+  adminPartnerDetailPath,
   allowedOrganizationReviewActions,
   isAuthError,
   partnerStatusLabel,
   type OrganizationReviewAction,
 } from "@yunicity/utils";
 import { useAuth } from "@/lib/auth/auth-provider";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -208,7 +210,7 @@ export function PartnersVerificationTab() {
       {!isLoading && !error && items.length > 0 ? (
         <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] text-left text-sm">
+            <table className="w-full min-w-[1080px] text-left text-sm">
               <thead className="border-b border-stone-200 bg-stone-50 text-xs uppercase tracking-wide text-stone-500">
                 <tr>
                   <th className="px-4 py-3 font-medium">Organisation</th>
@@ -218,6 +220,7 @@ export function PartnersVerificationTab() {
                   <th className="px-4 py-3 font-medium">Vérification</th>
                   <th className="px-4 py-3 font-medium">Partenaire</th>
                   <th className="px-4 py-3 font-medium">MAJ</th>
+                  <th className="px-4 py-3 font-medium">Fiche</th>
                   <th className="px-4 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
@@ -255,6 +258,14 @@ export function PartnersVerificationTab() {
                       </td>
                       <td className="px-4 py-3 text-xs text-stone-500">
                         {formatDateTime(org.updated_at)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Link
+                          href={adminPartnerDetailPath(org.id)}
+                          className="text-sm font-medium text-violet-900 underline-offset-2 hover:underline"
+                        >
+                          Ouvrir fiche partenaire
+                        </Link>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1.5">
