@@ -18,7 +18,7 @@ export function CockpitPartnersSnapshot({ partners }: { partners: AdminCockpitPa
           <p className="mt-1 text-xs text-stone-500">Répartition statuts et visibilité</p>
         </div>
         <Link
-          href="/partner-leads"
+          href="/partners"
           className="rounded-lg bg-stone-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-stone-800"
         >
           Gérer partenaires

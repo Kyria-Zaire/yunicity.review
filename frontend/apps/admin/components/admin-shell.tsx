@@ -12,30 +12,79 @@ const PARTNER_NAV = [
   { href: "/partner-offers", label: "Mes offres pour la ville" },
 ] as const;
 
-const STAFF_NAV = [
-  { href: "/", label: "Cockpit" },
-  { href: "/partner-leads", label: "Partenaires terrain" },
-  { href: "/passport-offers", label: "Modération offres" },
-  { href: "/creator-content", label: "Contenus créateurs" },
-  { href: "/protected-admin", label: "Zone staff" },
-] as const;
+type StaffNavLink = { kind: "link"; href: string; label: string };
+type StaffNavDisabled = { kind: "disabled"; label: string; hint: string };
 
-function NavLinks({
-  items,
+const STAFF_NAV_ITEMS: readonly (StaffNavLink | StaffNavDisabled)[] = [
+  { kind: "link", href: "/", label: "Cockpit" },
+  { kind: "link", href: "/partners", label: "Partenaires" },
+  { kind: "link", href: "/partner-scan", label: "Passport Ops" },
+  { kind: "link", href: "/passport-offers", label: "Offres" },
+  { kind: "disabled", label: "Events", hint: "Bientôt" },
+  { kind: "link", href: "/creator-content", label: "Creators" },
+  { kind: "disabled", label: "Moderation", hint: "Hub à venir" },
+  { kind: "link", href: "/protected-admin", label: "Staff" },
+];
+
+function isStaffNavActive(pathname: string, href: string): boolean {
+  if (href === "/") {
+    return pathname === "/";
+  }
+  if (href === "/partners") {
+    return pathname === "/partners" || pathname.startsWith("/partners/");
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function StaffNavLinks({
   pathname,
   className,
 }: {
-  items: readonly { href: string; label: string }[];
+  pathname: string;
+  className: { active: string; idle: string; disabled: string };
+}) {
+  return (
+    <>
+      {STAFF_NAV_ITEMS.map((item) => {
+        if (item.kind === "disabled") {
+          return (
+            <span
+              key={item.label}
+              title={item.hint}
+              className={className.disabled}
+              aria-disabled="true"
+            >
+              {item.label}
+              <span className="ml-1 text-[10px] font-normal opacity-70">({item.hint})</span>
+            </span>
+          );
+        }
+        const active = isStaffNavActive(pathname, item.href);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={active ? className.active : className.idle}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
+    </>
+  );
+}
+
+function PartnerNavLinks({
+  pathname,
+  className,
+}: {
   pathname: string;
   className: { active: string; idle: string };
 }) {
   return (
     <>
-      {items.map((item) => {
-        const active =
-          item.href === "/"
-            ? pathname === "/"
-            : pathname === item.href || pathname.startsWith(`${item.href}/`);
+      {PARTNER_NAV.map((item) => {
+        const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
           <Link key={item.href} href={item.href} className={active ? className.active : className.idle}>
             {item.label}
@@ -46,6 +95,34 @@ function NavLinks({
   );
 }
 
+function staffPageTitle(pathname: string, isPartnerArea: boolean): string {
+  if (pathname === "/") {
+    return "Cockpit Yunicity";
+  }
+  if (pathname === "/partners" || pathname.startsWith("/partners")) {
+    return "Partenaires";
+  }
+  if (pathname.startsWith("/partner-leads")) {
+    return "Leads terrain";
+  }
+  if (pathname.startsWith("/partner-scan")) {
+    return "Passport Ops";
+  }
+  if (pathname.startsWith("/passport-offers")) {
+    return "Modération offres";
+  }
+  if (pathname.startsWith("/creator-content")) {
+    return "Contenus créateurs";
+  }
+  if (pathname.startsWith("/protected-admin")) {
+    return "Zone staff";
+  }
+  if (isPartnerArea) {
+    return "Offres pour ta ville";
+  }
+  return "Administration";
+}
+
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
@@ -53,6 +130,13 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const isPartnerArea =
     pathname.startsWith("/partner-offers") || pathname.startsWith("/partner-scan");
   const homeHref = staff ? "/" : "/partner-offers";
+
+  const staffNavClass = {
+    active: "block rounded-lg bg-stone-800 px-3 py-2 text-sm font-medium text-white",
+    idle: "block rounded-lg px-3 py-2 text-sm text-stone-600 hover:bg-stone-100 hover:text-stone-900",
+    disabled:
+      "block cursor-not-allowed rounded-lg px-3 py-2 text-sm text-stone-400",
+  };
 
   return (
     <div className="flex min-h-screen bg-yunicity-background">
@@ -62,8 +146,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           {staff ? "Cockpit modération" : "Espace partenaire"}
         </p>
         <nav className="mt-6 space-y-1" aria-label="Navigation">
-          <NavLinks
-            items={PARTNER_NAV}
+          <PartnerNavLinks
             pathname={pathname}
             className={{
               active: "block rounded-lg bg-stone-900 px-3 py-2 text-sm font-medium text-white",
@@ -76,15 +159,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-stone-400">
                 Staff
               </p>
-              <NavLinks
-                items={STAFF_NAV}
-                pathname={pathname}
-                className={{
-                  active: "block rounded-lg bg-stone-800 px-3 py-2 text-sm font-medium text-white",
-                  idle:
-                    "block rounded-lg px-3 py-2 text-sm text-stone-600 hover:bg-stone-100 hover:text-stone-900",
-                }}
-              />
+              <StaffNavLinks pathname={pathname} className={staffNavClass} />
             </div>
           ) : null}
         </nav>
@@ -94,13 +169,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-stone-900">
-                {pathname === "/"
-                  ? "Cockpit Yunicity"
-                  : pathname.startsWith("/partner-scan")
-                    ? "Validation sur place"
-                    : isPartnerArea
-                      ? "Offres pour ta ville"
-                      : "Administration"}
+                {staffPageTitle(pathname, isPartnerArea)}
               </h1>
               {user ? <p className="text-xs text-stone-500">{user.email}</p> : null}
             </div>
@@ -115,8 +184,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             ) : null}
           </div>
           <nav className="mt-3 flex flex-wrap gap-2 md:hidden" aria-label="Navigation mobile">
-            <NavLinks
-              items={PARTNER_NAV}
+            <PartnerNavLinks
               pathname={pathname}
               className={{
                 active: "rounded-full bg-stone-900 px-3 py-1 text-xs text-white",
@@ -124,11 +192,19 @@ export function AdminShell({ children }: { children: ReactNode }) {
               }}
             />
             {staff
-              ? STAFF_NAV.map((item) => {
-                  const active =
-                    item.href === "/"
-                      ? pathname === "/"
-                      : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              ? STAFF_NAV_ITEMS.map((item) => {
+                  if (item.kind === "disabled") {
+                    return (
+                      <span
+                        key={item.label}
+                        className="rounded-full bg-stone-50 px-3 py-1 text-xs text-stone-400"
+                        title={item.hint}
+                      >
+                        {item.label}
+                      </span>
+                    );
+                  }
+                  const active = isStaffNavActive(pathname, item.href);
                   return (
                     <Link
                       key={item.href}
