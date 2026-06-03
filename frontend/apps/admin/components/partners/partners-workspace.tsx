@@ -3,6 +3,7 @@
 import { PartnersDirectoryTab } from "@/components/partners/partners-directory-tab";
 import { PartnersLeadsTab } from "@/components/partners/partners-leads-tab";
 import { PartnersPlaceholderTab } from "@/components/partners/partners-placeholder-tab";
+import { PartnersVerificationTab } from "@/components/partners/partners-verification-tab";
 import { PartnersWorkspaceTabs } from "@/components/partners/partners-workspace-tabs";
 import {
   parsePartnersWorkspaceTab,
@@ -51,17 +52,7 @@ export function PartnersWorkspace() {
       <div className="rounded-b-2xl border border-t-0 border-stone-200 bg-white p-4 shadow-sm md:p-6">
         {activeTab === "leads" ? <PartnersLeadsTab /> : null}
         {activeTab === "partners" ? <PartnersDirectoryTab /> : null}
-        {activeTab === "verification" ? (
-          <PartnersPlaceholderTab
-            title="Vérifications organisations"
-            description="La file de vérification (organizations pending / under_review) sera branchée dans ADMIN-02B."
-            bullets={[
-              "Review via POST /organizations/{id}/review",
-              "Historique organization_verifications",
-              "Lien depuis les leads convertis",
-            ]}
-          />
-        ) : null}
+        {activeTab === "verification" ? <PartnersVerificationTab /> : null}
         {activeTab === "activation" ? (
           <PartnersPlaceholderTab
             title="Activation Waves"

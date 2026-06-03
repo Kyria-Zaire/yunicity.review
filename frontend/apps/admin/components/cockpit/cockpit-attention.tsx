@@ -93,8 +93,7 @@ export function CockpitAttention({ attention }: { attention: AdminCockpitAttenti
     {
       key: "organizations_pending_review",
       count: attention.organizations_pending_review,
-      disabled: true,
-      disabledReason: "Vérification organisations — bientôt",
+      href: "/partners?tab=verification",
     },
   ];
 

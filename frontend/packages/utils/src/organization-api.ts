@@ -4,6 +4,8 @@ import type {
   OrganizationMeListResponse,
   OrganizationPublic,
   OrganizationRequestPayload,
+  OrganizationReviewPayload,
+  OrganizationReviewResponse,
   OrganizationSummary,
 } from "@yunicity/types";
 
@@ -58,6 +60,16 @@ export class OrganizationApi extends ApiClientBase {
   getOrganizationBySlug(slug: string): Promise<OrganizationPublic> {
     return this.getJson<OrganizationPublic>(
       `/organizations/${encodeURIComponent(slug)}`,
+    );
+  }
+
+  reviewOrganization(
+    organizationId: string,
+    payload: OrganizationReviewPayload,
+  ): Promise<OrganizationReviewResponse> {
+    return this.postJson<OrganizationReviewResponse>(
+      `/organizations/${encodeURIComponent(organizationId)}/review`,
+      payload,
     );
   }
 }

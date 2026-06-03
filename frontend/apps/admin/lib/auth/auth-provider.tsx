@@ -4,6 +4,7 @@ import type { AuthUser, LoginRequest } from "@yunicity/types";
 import { createAdminCockpitApi, type AdminCockpitApi } from "@/lib/admin-cockpit-api";
 import {
   MemoryTokenStorage,
+  createAdminOrganizationsApi,
   createAuthClient,
   createPartnerLeadsApi,
   createPartnerOffersAdminApi,
@@ -14,6 +15,7 @@ import {
   createScanApi,
   getWebApiBaseUrl,
   isAuthError,
+  type AdminOrganizationsApi,
   type OrganizationApi,
   type PartnerLeadsApi,
   type PartnerCreatorContentAdminApi,
@@ -45,6 +47,7 @@ interface AuthContextValue {
   scanApi: ScanApi;
   partnersApi: PartnersApi;
   adminCockpitApi: AdminCockpitApi;
+  adminOrganizationsApi: AdminOrganizationsApi;
   login: (payload: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
@@ -101,6 +104,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const adminCockpitApi = useMemo(
     () => createAdminCockpitApi(client, apiBaseUrl),
+    [client, apiBaseUrl],
+  );
+
+  const adminOrganizationsApi = useMemo(
+    () => createAdminOrganizationsApi(client, apiBaseUrl),
     [client, apiBaseUrl],
   );
 
@@ -162,6 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     scanApi,
     partnersApi,
     adminCockpitApi,
+    adminOrganizationsApi,
     login,
     logout,
     clearError: () => setError(null),
