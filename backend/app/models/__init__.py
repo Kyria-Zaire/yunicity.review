@@ -1,5 +1,6 @@
 """ORM models — import all modules so Alembic sees Base.metadata."""
 
+from app.models.activation_wave import ActivationWave, ActivationWaveItem
 from app.models.comment import Comment
 from app.models.cultural_place import CulturalPlace
 from app.models.like import Like
@@ -36,6 +37,8 @@ from app.models.user_profile import ProfileVisibility, UserProfile
 from app.models.user_subscription import UserSubscription
 
 __all__ = [
+    "ActivationWave",
+    "ActivationWaveItem",
     "Organization",
     "OrganizationMember",
     "OrganizationVerification",
