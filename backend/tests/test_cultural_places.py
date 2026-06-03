@@ -142,7 +142,7 @@ async def test_map_bbox_filters_places(
     cultural_client: AsyncClient,
     cultural_ready: None,
 ) -> None:
-    tight = {
+    tight: dict[str, str | int | float] = {
         "lat_min": 49.252,
         "lon_min": 4.032,
         "lat_max": 49.255,
@@ -158,7 +158,7 @@ async def test_map_bbox_filters_places(
         assert tight["lat_min"] <= place["latitude"] <= tight["lat_max"]
         assert tight["lon_min"] <= place["longitude"] <= tight["lon_max"]
 
-    wide_empty = {
+    wide_empty: dict[str, str | float] = {
         "lat_min": 48.0,
         "lon_min": 2.0,
         "lat_max": 48.5,

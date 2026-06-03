@@ -6,7 +6,7 @@ MVP media: URLs stables et accessibles (proxy/seed local), sans dépendre de
 
 from __future__ import annotations
 
-from typing import Any, TypedDict
+from typing import Any, TypedDict, cast
 
 _WIKI = "unsplash"
 _LICENSE_CC = "Unsplash License"
@@ -30,7 +30,7 @@ def _wiki(_file_name: str, *, width: int = 1400) -> str:
 
 
 def _gallery(*entries: _GalleryEntry) -> list[dict[str, str]]:
-    return [dict(entry) for entry in entries]
+    return [cast(dict[str, str], dict(entry)) for entry in entries]
 
 
 # Clé = slug cultural_places

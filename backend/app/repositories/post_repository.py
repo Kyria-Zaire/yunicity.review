@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -274,7 +275,7 @@ class PostRepository:
     ) -> list[Post]:
         now = datetime.now(UTC)
         city_priority = self._city_priority_expr(user_city)
-        order_cols: list[ColumnElement] = []
+        order_cols: list[ColumnElement[Any]] = []
         if order_by_engagement:
             order_cols.extend([Post.like_count.desc(), Post.view_count.desc()])
         order_cols.extend([city_priority.desc(), Post.created_at.desc(), Post.id.desc()])
