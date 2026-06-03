@@ -13,6 +13,7 @@ const PARTNER_NAV = [
 ] as const;
 
 const STAFF_NAV = [
+  { href: "/", label: "Cockpit" },
   { href: "/partner-leads", label: "Partenaires terrain" },
   { href: "/passport-offers", label: "Modération offres" },
   { href: "/creator-content", label: "Contenus créateurs" },
@@ -31,7 +32,10 @@ function NavLinks({
   return (
     <>
       {items.map((item) => {
-        const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        const active =
+          item.href === "/"
+            ? pathname === "/"
+            : pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
           <Link key={item.href} href={item.href} className={active ? className.active : className.idle}>
             {item.label}
@@ -48,7 +52,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const staff = isStaffUser(user);
   const isPartnerArea =
     pathname.startsWith("/partner-offers") || pathname.startsWith("/partner-scan");
-  const homeHref = staff ? "/partner-leads" : "/partner-offers";
+  const homeHref = staff ? "/" : "/partner-offers";
 
   return (
     <div className="flex min-h-screen bg-yunicity-background">
@@ -90,11 +94,13 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-lg font-semibold tracking-tight text-stone-900">
-                {pathname.startsWith("/partner-scan")
-                  ? "Validation sur place"
-                  : isPartnerArea
-                    ? "Offres pour ta ville"
-                    : "Administration"}
+                {pathname === "/"
+                  ? "Cockpit Yunicity"
+                  : pathname.startsWith("/partner-scan")
+                    ? "Validation sur place"
+                    : isPartnerArea
+                      ? "Offres pour ta ville"
+                      : "Administration"}
               </h1>
               {user ? <p className="text-xs text-stone-500">{user.email}</p> : null}
             </div>
@@ -120,7 +126,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
             {staff
               ? STAFF_NAV.map((item) => {
                   const active =
-                    pathname === item.href || pathname.startsWith(`${item.href}/`);
+                    item.href === "/"
+                      ? pathname === "/"
+                      : pathname === item.href || pathname.startsWith(`${item.href}/`);
                   return (
                     <Link
                       key={item.href}

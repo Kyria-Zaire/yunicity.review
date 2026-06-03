@@ -47,6 +47,15 @@ export type {
 } from "./admin_partner_offer";
 
 export type {
+  AdminCockpitAttention,
+  AdminCockpitExecutive,
+  AdminCockpitPartners,
+  AdminCockpitPassport,
+  AdminCockpitSummaryParams,
+  AdminCockpitSummaryResponse,
+} from "./admin-cockpit";
+
+export type {
   PassportQr,
   ScanPassportPreview,
   ScanRedeemableOffer,
