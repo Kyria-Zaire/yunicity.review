@@ -147,11 +147,10 @@ class TransitRepository:
         await self._session.execute(delete(TransitFeedMeta))
         self._session.add_all(stops)
         await self._session.flush()
-        table = TransitDeparture.__table__
         for offset in range(0, len(departures), departure_batch_size):
             batch = departures[offset : offset + departure_batch_size]
             await self._session.execute(
-                insert(table),
+                insert(TransitDeparture),
                 [
                     {
                         "id": row.id,

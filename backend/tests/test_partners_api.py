@@ -84,6 +84,7 @@ async def test_seed_idempotent(partners_env: None) -> None:
         await session.commit()
         count_second = await session.scalar(select(func.count()).select_from(PartnerProfile))
     assert count_first == count_second
+    assert count_second is not None
     assert count_second >= len(REIMS_SIGNED_PARTNERS_SEED)
 
 

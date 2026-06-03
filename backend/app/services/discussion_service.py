@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import uuid
+from datetime import datetime
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.discussion_category import infer_discussion_categories, post_matches_category
@@ -30,6 +33,7 @@ from app.schemas.discussion import (
     DiscussionThreadItem,
     DiscussionTrendingTopic,
 )
+from app.schemas.feed import FeedAuthor
 from app.services.feed_author_resolver import FeedAuthorResolver
 from app.services.feed_post_mapper import to_feed_item
 
@@ -122,11 +126,11 @@ class DiscussionService:
         self,
         post: Post,
         *,
-        author,
+        author: FeedAuthor,
         liked_by_me: bool,
         participants: list[tuple[str | None, str]],
         participants_overflow: int,
-        last_activity_at,
+        last_activity_at: datetime,
         linked_tribe_name: str | None = None,
     ) -> DiscussionThreadItem:
         feed_item = to_feed_item(post, author=author, liked_by_me=liked_by_me)
@@ -194,7 +198,7 @@ class DiscussionService:
         participants_map = await self._comments.recent_participants_by_post(post_ids)
 
         linked_tribe_ids = {post.linked_tribe_id for post in page if post.linked_tribe_id}
-        tribe_names: dict = {}
+        tribe_names: dict[uuid.UUID, str] = {}
         for tribe_id in linked_tribe_ids:
             tribe = await self._tribes.get_by_id(tribe_id)
             if tribe is not None:

@@ -28,6 +28,7 @@ from app.models.user import User
 from app.repositories.like_repository import LikeRepository
 from app.repositories.post_repository import PostRepository
 from app.repositories.profile_repository import ProfileRepository
+from app.schemas.feed import FeedAuthor
 from app.schemas.story import (
     StoryContributorItem,
     StoryCreateRequest,
@@ -87,7 +88,9 @@ class StoryService:
             return True
         return post.author_id in co_members
 
-    def _to_item(self, post: Post, *, author, liked_by_me: bool, now: datetime) -> StoryItem:
+    def _to_item(
+        self, post: Post, *, author: FeedAuthor, liked_by_me: bool, now: datetime
+    ) -> StoryItem:
         categories = infer_story_categories(post)
         return StoryItem(
             id=post.id,

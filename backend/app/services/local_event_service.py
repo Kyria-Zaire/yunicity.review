@@ -118,7 +118,7 @@ class LocalEventService:
         limit = min(max(limit, 1), LOCAL_EVENT_LIST_PAGE_SIZE_MAX)
         offset = max(offset, 0)
         now = datetime.now(UTC)
-        rows = await self._events.list_for_partner(
+        rows, total = await self._events.list_public_for_partner_org(
             organization_id=organization_id,
             upcoming_only=upcoming_only,
             limit=limit,
@@ -127,7 +127,7 @@ class LocalEventService:
         )
         return LocalEventListResponse(
             items=[self._to_response(e) for e in rows],
-            total=len(rows),
+            total=total,
             page=1,
             page_size=limit,
         )

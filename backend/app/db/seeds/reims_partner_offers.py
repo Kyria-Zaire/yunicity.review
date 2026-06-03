@@ -97,7 +97,9 @@ _SYNC_FIELDS = (
 )
 
 
-async def _resolve_organization_id(session: AsyncSession, entry: dict[str, Any]) -> uuid.UUID | None:
+async def _resolve_organization_id(
+    session: AsyncSession, entry: dict[str, Any]
+) -> uuid.UUID | None:
     org = await session.get(Organization, entry["organization_id"])
     if org is not None:
         return org.id
@@ -127,7 +129,9 @@ def _build_offer(entry: dict[str, Any], *, organization_id: uuid.UUID) -> Partne
     )
 
 
-async def _upsert_offer(session: AsyncSession, entry: dict[str, Any], organization_id: uuid.UUID) -> None:
+async def _upsert_offer(
+    session: AsyncSession, entry: dict[str, Any], organization_id: uuid.UUID
+) -> None:
     existing = await session.get(PartnerOffer, entry["id"])
     built = _build_offer(entry, organization_id=organization_id)
     if existing is not None:

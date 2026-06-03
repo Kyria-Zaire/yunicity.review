@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql import Select
+from sqlalchemy.sql.elements import ColumnElement
 
 from app.models.cultural_place import CulturalPlace
 
@@ -15,7 +18,7 @@ class CulturalPlaceRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    def _base_stmt(self, *, active_only: bool) -> select[tuple[CulturalPlace]]:
+    def _base_stmt(self, *, active_only: bool) -> Select[tuple[CulturalPlace]]:
         stmt = select(CulturalPlace).options(selectinload(CulturalPlace.neighborhood))
         if active_only:
             stmt = stmt.where(CulturalPlace.is_active.is_(True))
@@ -28,7 +31,7 @@ class CulturalPlaceRepository:
         featured_only: bool,
         active_only: bool,
         categories: list[str] | None,
-    ) -> list:
+    ) -> list[ColumnElement[bool]]:
         filters = [CulturalPlace.city == city]
         if active_only:
             filters.append(CulturalPlace.is_active.is_(True))
@@ -39,7 +42,7 @@ class CulturalPlaceRepository:
         return filters
 
     @staticmethod
-    def _order_for_sort(sort: str):
+    def _order_for_sort(sort: str) -> tuple[ColumnElement[Any], ...]:
         if sort == "name":
             return (CulturalPlace.name.asc(),)
         if sort == "recent":
