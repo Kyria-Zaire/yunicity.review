@@ -2,7 +2,7 @@
 
 import { usePublicPartnersList } from "@/lib/hooks/use-public-partners-list";
 import { partnerPublicPlaceUrl } from "@/lib/partners-workspace";
-import { partnerStatusLabel } from "@yunicity/utils";
+import { adminPartnerDetailPath, partnerStatusLabel } from "@yunicity/utils";
 import Link from "next/link";
 
 export function PartnersDirectoryTab() {
@@ -89,14 +89,22 @@ export function PartnersDirectoryTab() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <Link
-                          href={partnerPublicPlaceUrl(partner.slug, partner.city)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm font-medium text-stone-900 underline-offset-2 hover:underline"
-                        >
-                          Fiche publique
-                        </Link>
+                        <div className="flex flex-col gap-1">
+                          <Link
+                            href={adminPartnerDetailPath(partner.organization_id)}
+                            className="text-sm font-medium text-violet-900 underline-offset-2 hover:underline"
+                          >
+                            Fiche admin 360°
+                          </Link>
+                          <Link
+                            href={partnerPublicPlaceUrl(partner.slug, partner.city)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-stone-700 underline-offset-2 hover:underline"
+                          >
+                            Fiche publique
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))}

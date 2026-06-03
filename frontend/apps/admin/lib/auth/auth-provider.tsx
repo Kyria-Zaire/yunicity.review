@@ -5,6 +5,7 @@ import { createAdminCockpitApi, type AdminCockpitApi } from "@/lib/admin-cockpit
 import {
   MemoryTokenStorage,
   createAdminOrganizationsApi,
+  createAdminPartnersApi,
   createAuthClient,
   createPartnerLeadsApi,
   createPartnerOffersAdminApi,
@@ -16,6 +17,7 @@ import {
   getWebApiBaseUrl,
   isAuthError,
   type AdminOrganizationsApi,
+  type AdminPartnersApi,
   type OrganizationApi,
   type PartnerLeadsApi,
   type PartnerCreatorContentAdminApi,
@@ -48,6 +50,7 @@ interface AuthContextValue {
   partnersApi: PartnersApi;
   adminCockpitApi: AdminCockpitApi;
   adminOrganizationsApi: AdminOrganizationsApi;
+  adminPartnersApi: AdminPartnersApi;
   login: (payload: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
@@ -112,6 +115,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [client, apiBaseUrl],
   );
 
+  const adminPartnersApi = useMemo(
+    () => createAdminPartnersApi(client, apiBaseUrl),
+    [client, apiBaseUrl],
+  );
+
   useEffect(() => {
     let cancelled = false;
     async function bootstrap() {
@@ -171,6 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     partnersApi,
     adminCockpitApi,
     adminOrganizationsApi,
+    adminPartnersApi,
     login,
     logout,
     clearError: () => setError(null),
