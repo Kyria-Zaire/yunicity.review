@@ -2,9 +2,9 @@ from fastapi import APIRouter
 
 from app.api.v1 import (
     admin_cockpit,
-    admin_organizations,
     admin_local_events,
     admin_neighborhoods,
+    admin_organizations,
     admin_partner_creator_contents,
     admin_partner_offers,
     admin_tribes,
