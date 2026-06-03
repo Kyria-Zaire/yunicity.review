@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import AsyncIterator
 
 import pytest
 from app.core.organization_constants import (
@@ -19,7 +20,9 @@ from app.integrations.redis import get_redis_client
 from app.models.organization import Organization, OrganizationMember
 from app.models.partner_profile import PartnerProfile
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.orm import joinedload
 
 from tests.conftest_rbac import RbacUserFactory, auth_header
 
@@ -27,6 +30,23 @@ pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
 ADMIN_BASE = "/api/v1/admin/partner-creator-content"
 PARTNER_BASE = "/api/v1/organizations/me/creator-content"
+_TEST_ORG_SLUG_PREFIX = "admin-creator-org-"
+_created_test_org_slugs: list[str] = []
+
+
+@pytest.fixture(autouse=True)
+async def _retire_created_test_partner_orgs() -> AsyncIterator[None]:
+    """Retire test orgs from public surfaces (TEST-HYGIENE-01)."""
+    _created_test_org_slugs.clear()
+    yield
+    engine = get_engine()
+    if engine is None or not _created_test_org_slugs:
+        return
+    factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async with factory() as session:
+        for slug in _created_test_org_slugs:
+            await _retire_test_partner_org(session, slug)
+        await session.commit()
 
 
 @pytest.fixture(autouse=True)
@@ -37,13 +57,29 @@ async def _clear_redis_rate_limits(auth_client: AsyncClient) -> None:
         await redis.flushdb()
 
 
+async def _retire_test_partner_org(session: AsyncSession, slug: str) -> None:
+    result = await session.execute(
+        select(PartnerProfile)
+        .join(PartnerProfile.organization)
+        .options(joinedload(PartnerProfile.organization))
+        .where(Organization.slug == slug)
+    )
+    profile = result.scalars().unique().one_or_none()
+    if profile is None:
+        return
+    profile.partner_status = PartnerStatus.SIGNED
+    profile.organization.visibility = OrganizationVisibility.PRIVATE
+
+
 async def _partner_org_owner(
     session: AsyncSession,
     user_id: uuid.UUID,
     suffix: str,
 ) -> uuid.UUID:
+    slug = f"{_TEST_ORG_SLUG_PREFIX}{suffix}"
+    _created_test_org_slugs.append(slug)
     org = Organization(
-        slug=f"admin-creator-org-{suffix}",
+        slug=slug,
         name=f"Admin Creator Org {suffix}",
         type=OrganizationType.COMMERCE,
         city="Reims",
