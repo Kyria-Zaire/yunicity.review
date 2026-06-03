@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
+from typing import Any
 
 from sqlalchemy import Select, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,6 +18,7 @@ from app.models.passport import (
     PassportStamp,
     PassportTier,
 )
+from app.models.passport_admin_action import PassportAdminAction
 from app.models.user import User
 from app.models.user_profile import UserProfile
 from app.schemas.admin_passport import AdminPassportSearchMode
@@ -214,3 +216,32 @@ class AdminPassportRepository:
         )
         result = await self._session.execute(stmt)
         return list(result.scalars().all()), total
+
+    async def update_passport(self, passport: Passport) -> None:
+        await self._session.flush()
+
+    async def record_admin_action(
+        self,
+        *,
+        passport_id: uuid.UUID,
+        user_id: uuid.UUID,
+        action: str,
+        actor_user_id: uuid.UUID,
+        previous_status: str,
+        new_status: str,
+        reason: str,
+        metadata: dict[str, Any] | None = None,
+    ) -> PassportAdminAction:
+        entry = PassportAdminAction(
+            passport_id=passport_id,
+            user_id=user_id,
+            action=action,
+            actor_user_id=actor_user_id,
+            previous_status=previous_status,
+            new_status=new_status,
+            reason=reason,
+            metadata_=metadata,
+        )
+        self._session.add(entry)
+        await self._session.flush()
+        return entry

@@ -9,6 +9,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.core.passport_admin_constants import (
+    ADMIN_PASSPORT_REASON_MAX_LENGTH,
+    ADMIN_PASSPORT_REASON_MIN_LENGTH,
+)
 from app.core.passport_constants import OfferRedemptionStatus, PassportStampSource, PassportTierCode
 from app.schemas.admin_cockpit import DEFAULT_COCKPIT_CITY
 
@@ -72,6 +76,16 @@ class AdminPassportDetailStats(BaseModel):
     stamps_total: int = Field(ge=0)
     redemptions_total: int = Field(ge=0)
     redemptions_completed: int = Field(ge=0)
+
+
+class AdminPassportStatusPatchRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: AdminStaffPassportStatus
+    reason: str = Field(
+        min_length=ADMIN_PASSPORT_REASON_MIN_LENGTH,
+        max_length=ADMIN_PASSPORT_REASON_MAX_LENGTH,
+    )
 
 
 class AdminPassportDetailResponse(BaseModel):

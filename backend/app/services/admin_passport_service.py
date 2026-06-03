@@ -3,12 +3,18 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
+from app.core.passport_admin_constants import (
+    ADMIN_PASSPORT_REASON_MIN_LENGTH,
+    PassportAdminAction,
+)
 from app.core.passport_constants import PassportStatus, PassportTierCode
 from app.models.passport import PassportOfferRedemption, PassportStamp
+from app.models.user import User
 from app.repositories.admin_passport_repository import (
     AdminPassportListRow,
     AdminPassportRepository,
@@ -28,6 +34,7 @@ from app.schemas.admin_passport import (
     AdminPassportSearchMode,
     AdminPassportStampListItem,
     AdminPassportStampListResponse,
+    AdminPassportStatusPatchRequest,
     AdminPassportTierDetail,
     AdminStaffPassportStatus,
 )
@@ -44,6 +51,7 @@ class AdminPassportService:
     """
 
     def __init__(self, session: AsyncSession) -> None:
+        self._session = session
         self._repo = AdminPassportRepository(session)
 
     async def list_passports(
@@ -90,41 +98,65 @@ class AdminPassportService:
         )
 
     async def get_passport_detail(self, passport_id: uuid.UUID) -> AdminPassportDetailResponse:
-        row = await self._repo.get_passport_detail(passport_id)
-        if row is None:
-            raise AppError(
-                status_code=404,
-                code="PASSPORT_NOT_FOUND",
-                detail="Passport introuvable.",
-            )
+        row = await self._require_passport(passport_id)
+        return await self._build_detail_response(row)
+
+    async def patch_passport_status(
+        self,
+        passport_id: uuid.UUID,
+        actor: User,
+        payload: AdminPassportStatusPatchRequest,
+    ) -> AdminPassportDetailResponse:
+        row = await self._require_passport(passport_id)
         passport = row.passport
-        redemptions_completed = await self._repo.count_redemptions_completed(passport.id)
-        return AdminPassportDetailResponse(
-            id=passport.id,
-            passport_number=passport.passport_number,
-            city=passport.city,
-            status=self._staff_status(passport.status),
-            qr_token=passport.qr_token,
-            tier=AdminPassportTierDetail(
-                code=PassportTierCode(row.tier.code),
-                label=row.tier.name,
-            ),
-            user=AdminPassportDetailUser(
-                id=row.user.id,
-                email=row.user.email,
-                display_name=self._display_name(row),
-                is_active=row.user.is_active,
-            ),
-            stats=AdminPassportDetailStats(
-                stamps_total=passport.stamps_count,
-                redemptions_total=passport.redemptions_count,
-                redemptions_completed=redemptions_completed,
-            ),
-            activated_at=passport.activated_at,
-            suspended_at=passport.suspended_at,
-            created_at=passport.created_at,
-            updated_at=passport.updated_at,
+        reason = payload.reason.strip()
+        if len(reason) < ADMIN_PASSPORT_REASON_MIN_LENGTH:
+            raise AppError(
+                status_code=422,
+                code="INVALID_PASSPORT_REASON",
+                detail="Le motif doit contenir au moins 3 caractères.",
+            )
+
+        previous_status = self._raw_status(passport.status)
+        if previous_status == PassportStatus.REVOKED:
+            raise AppError(
+                status_code=422,
+                code="PASSPORT_STATUS_NOT_MUTABLE",
+                detail="Ce passport révoqué ne peut pas être modifié via l'admin V1.",
+            )
+
+        target_status = self._staff_status_to_db(payload.status)
+        if previous_status == target_status:
+            raise AppError(
+                status_code=422,
+                code="PASSPORT_STATUS_UNCHANGED",
+                detail="Le passport est déjà dans ce statut.",
+            )
+
+        action = self._action_for_transition(previous_status, target_status)
+        now = datetime.now(UTC)
+        passport.status = target_status
+        if target_status == PassportStatus.SUSPENDED:
+            passport.suspended_at = now
+        else:
+            passport.suspended_at = None
+
+        await self._repo.update_passport(passport)
+        await self._repo.record_admin_action(
+            passport_id=passport.id,
+            user_id=passport.user_id,
+            action=action.value,
+            actor_user_id=actor.id,
+            previous_status=previous_status.value,
+            new_status=target_status.value,
+            reason=reason,
         )
+        await self._session.commit()
+        await self._session.refresh(passport)
+
+        refreshed = await self._repo.get_passport_detail(passport_id)
+        assert refreshed is not None
+        return await self._build_detail_response(refreshed)
 
     async def list_stamps(
         self,
@@ -224,6 +256,63 @@ class AdminPassportService:
                 code="INVALID_PASSPORT_SEARCH",
                 detail="Le fragment QR requiert au moins 12 caractères.",
             )
+
+    async def _build_detail_response(
+        self, row: AdminPassportListRow
+    ) -> AdminPassportDetailResponse:
+        passport = row.passport
+        redemptions_completed = await self._repo.count_redemptions_completed(passport.id)
+        return AdminPassportDetailResponse(
+            id=passport.id,
+            passport_number=passport.passport_number,
+            city=passport.city,
+            status=self._staff_status(passport.status),
+            qr_token=passport.qr_token,
+            tier=AdminPassportTierDetail(
+                code=PassportTierCode(row.tier.code),
+                label=row.tier.name,
+            ),
+            user=AdminPassportDetailUser(
+                id=row.user.id,
+                email=row.user.email,
+                display_name=self._display_name(row),
+                is_active=row.user.is_active,
+            ),
+            stats=AdminPassportDetailStats(
+                stamps_total=passport.stamps_count,
+                redemptions_total=passport.redemptions_count,
+                redemptions_completed=redemptions_completed,
+            ),
+            activated_at=passport.activated_at,
+            suspended_at=passport.suspended_at,
+            created_at=passport.created_at,
+            updated_at=passport.updated_at,
+        )
+
+    @staticmethod
+    def _raw_status(raw_status: str) -> PassportStatus:
+        return raw_status if isinstance(raw_status, PassportStatus) else PassportStatus(raw_status)
+
+    @staticmethod
+    def _staff_status_to_db(status: AdminStaffPassportStatus) -> PassportStatus:
+        if status == "suspended":
+            return PassportStatus.SUSPENDED
+        return PassportStatus.ACTIVE
+
+    @staticmethod
+    def _action_for_transition(
+        previous: PassportStatus,
+        target: PassportStatus,
+    ) -> PassportAdminAction:
+        if previous == PassportStatus.ACTIVE and target == PassportStatus.SUSPENDED:
+            return PassportAdminAction.SUSPEND
+        if previous == PassportStatus.SUSPENDED and target == PassportStatus.ACTIVE:
+            return PassportAdminAction.REACTIVATE
+        raise AppError(
+            status_code=422,
+            code="INVALID_PASSPORT_STATUS_TRANSITION",
+            detail="Transition de statut non autorisée.",
+        )
 
     @staticmethod
     def _staff_status(raw_status: str) -> AdminStaffPassportStatus:

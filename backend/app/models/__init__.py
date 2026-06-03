@@ -24,6 +24,7 @@ from app.models.passport import (
     PassportTier,
     PassportTierEvent,
 )
+from app.models.passport_admin_action import PassportAdminAction
 from app.models.post import Post
 from app.models.push_subscription import PushSubscription
 from app.models.rbac import Permission, Role, RolePermission, UserRole
@@ -52,6 +53,7 @@ __all__ = [
     "PartnerCreatorContent",
     "PartnerLead",
     "PartnerAdminAction",
+    "PassportAdminAction",
     "PartnerProfile",
     "StampDefinition",
     "Post",
