@@ -14,7 +14,7 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
-      router.replace(isStaffUser(user) ? "/partner-leads" : "/unauthorized");
+      router.replace(isStaffUser(user) ? "/" : "/unauthorized");
     }
   }, [isAuthenticated, isLoading, user, router]);
 
