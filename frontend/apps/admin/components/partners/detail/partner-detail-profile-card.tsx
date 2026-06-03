@@ -19,16 +19,9 @@ export function PartnerDetailProfileCard({ profile }: PartnerDetailProfileCardPr
           Profil partenaire
         </h2>
         <p className="mt-3 text-sm text-amber-950/90">
-          Cette organisation n&apos;a pas encore de profil partenaire.
+          Cette organisation n&apos;a pas encore de profil partenaire. Utilisez la section{" "}
+          <strong>Actions métier</strong> ci-dessous pour le créer (organisation vérifiée requise).
         </p>
-        <button
-          type="button"
-          disabled
-          className="mt-4 cursor-not-allowed rounded-lg border border-amber-200 bg-white px-4 py-2 text-sm font-medium text-stone-500 opacity-70"
-          title="Disponible dans ADMIN-02D3"
-        >
-          Créer le profil partenaire — ADMIN-02D3
-        </button>
       </section>
     );
   }
