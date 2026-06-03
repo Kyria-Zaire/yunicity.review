@@ -12,7 +12,6 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import text
 from app.core.config import get_settings
 from app.core.passport_constants import PartnerOfferStatus, PartnerOfferType
 from app.db.seeds.reims_partner_offers import REIMS_PARTNER_OFFERS_SEED, seed_reims_partner_offers
@@ -21,7 +20,7 @@ from app.db.session import dispose_db, get_session_factory, init_db
 from app.main import create_app
 from app.models.passport import PartnerOffer
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 
 _INTERNAL_KEYS = frozenset(
     {
@@ -61,7 +60,10 @@ async def _ensure_partner_offer_catalog_columns() -> None:
         "ALTER TABLE partner_offers ADD COLUMN IF NOT EXISTS slug VARCHAR(120)",
         "ALTER TABLE partner_offers ADD COLUMN IF NOT EXISTS value_label VARCHAR(120)",
         "ALTER TABLE partner_offers ADD COLUMN IF NOT EXISTS conditions TEXT",
-        "ALTER TABLE partner_offers ADD COLUMN IF NOT EXISTS is_featured BOOLEAN NOT NULL DEFAULT false",
+        (
+            "ALTER TABLE partner_offers ADD COLUMN IF NOT EXISTS "
+            "is_featured BOOLEAN NOT NULL DEFAULT false"
+        ),
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_partner_offers_slug ON partner_offers (slug)",
     )
     async with session_factory() as session:

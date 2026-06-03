@@ -10,7 +10,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.core.partner_creator_content_constants import (
     PARTNER_CREATOR_CONTENT_REJECTION_REASON_MAX_LENGTH,
 )
-from app.core.partner_creator_content_constants import PartnerCreatorContentStatus
 from app.schemas.partner_creator_content_management import (
     PARTNER_CREATOR_CONTENT_LIST_PAGE_SIZE_DEFAULT,
     PARTNER_CREATOR_CONTENT_LIST_PAGE_SIZE_MAX,
