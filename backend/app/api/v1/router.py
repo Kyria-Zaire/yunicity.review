@@ -1,6 +1,8 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    admin_activation_wave_items,
+    admin_activation_waves,
     admin_cockpit,
     admin_local_events,
     admin_neighborhoods,
@@ -48,6 +50,8 @@ api_router.include_router(partners.router)
 api_router.include_router(partner_offers_public.router)
 api_router.include_router(admin_partner_offers.router)
 api_router.include_router(admin_cockpit.router)
+api_router.include_router(admin_activation_waves.router)
+api_router.include_router(admin_activation_wave_items.router)
 api_router.include_router(admin_organizations.router)
 api_router.include_router(admin_partners.router)
 api_router.include_router(admin_partner_creator_contents.router)
