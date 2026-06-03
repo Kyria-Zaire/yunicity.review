@@ -7,6 +7,7 @@ from app.api.v1 import (
     admin_local_events,
     admin_neighborhoods,
     admin_organizations,
+    admin_passports,
     admin_partner_creator_contents,
     admin_partner_offers,
     admin_partners,
@@ -53,6 +54,7 @@ api_router.include_router(admin_cockpit.router)
 api_router.include_router(admin_activation_waves.router)
 api_router.include_router(admin_activation_wave_items.router)
 api_router.include_router(admin_organizations.router)
+api_router.include_router(admin_passports.router)
 api_router.include_router(admin_partners.router)
 api_router.include_router(admin_partner_creator_contents.router)
 api_router.include_router(admin_local_events.router)
