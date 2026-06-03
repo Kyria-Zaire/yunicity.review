@@ -56,6 +56,14 @@ export type {
 } from "./admin-cockpit";
 
 export type {
+  AdminOrganizationListItem,
+  AdminOrganizationListParams,
+  AdminOrganizationListResponse,
+  OrganizationReviewPayload,
+  OrganizationReviewResponse,
+} from "./admin-organization";
+
+export type {
   PassportQr,
   ScanPassportPreview,
   ScanRedeemableOffer,

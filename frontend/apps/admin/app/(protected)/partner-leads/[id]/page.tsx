@@ -238,6 +238,12 @@ export default function PartnerLeadDetailPage() {
             Statut attendu après conversion : <VerificationBadge status="pending" /> — reste
             privée jusqu&apos;à validation modération (<VerificationBadge status="verified" />).
           </p>
+          <Link
+            href={`/partners?tab=verification&organization_id=${encodeURIComponent(lead.converted_organization_id)}`}
+            className="mt-3 inline-flex text-sm font-medium text-violet-900 underline-offset-2 hover:underline"
+          >
+            Ouvrir dans la file de vérification →
+          </Link>
         </section>
       ) : null}
 
