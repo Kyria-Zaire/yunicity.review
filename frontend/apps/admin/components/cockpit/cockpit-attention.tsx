@@ -88,7 +88,7 @@ export function CockpitAttention({ attention }: { attention: AdminCockpitAttenti
     {
       key: "partner_leads_open",
       count: attention.partner_leads_open,
-      href: "/partner-leads",
+      href: "/partners?tab=leads",
     },
     {
       key: "organizations_pending_review",

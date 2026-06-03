@@ -10,6 +10,7 @@ import {
   createPartnerCreatorContentAdminApi,
   createOrganizationApi,
   createPartnerOffersApi,
+  createPartnersApi,
   createScanApi,
   getWebApiBaseUrl,
   isAuthError,
@@ -18,6 +19,7 @@ import {
   type PartnerCreatorContentAdminApi,
   type PartnerOffersAdminApi,
   type PartnerOffersApi,
+  type PartnersApi,
   type ScanApi,
 } from "@yunicity/utils";
 import {
@@ -41,6 +43,7 @@ interface AuthContextValue {
   partnerOffersApi: PartnerOffersApi;
   organizationApi: OrganizationApi;
   scanApi: ScanApi;
+  partnersApi: PartnersApi;
   adminCockpitApi: AdminCockpitApi;
   login: (payload: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
@@ -93,6 +96,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const scanApi = useMemo(() => createScanApi(client, apiBaseUrl), [client, apiBaseUrl]);
+
+  const partnersApi = useMemo(() => createPartnersApi(client, apiBaseUrl), [client, apiBaseUrl]);
 
   const adminCockpitApi = useMemo(
     () => createAdminCockpitApi(client, apiBaseUrl),
@@ -155,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     partnerOffersApi,
     organizationApi,
     scanApi,
+    partnersApi,
     adminCockpitApi,
     login,
     logout,

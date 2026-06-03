@@ -3,7 +3,7 @@ import Link from "next/link";
 const ACTIONS = [
   { href: "/passport-offers", label: "Modérer offres" },
   { href: "/creator-content", label: "Modérer contenus" },
-  { href: "/partner-leads", label: "Leads terrain" },
+  { href: "/partners?tab=leads", label: "Leads terrain" },
   { href: "/partner-scan", label: "Scanner offre" },
   { href: "/passport-offers/new", label: "Créer offre admin" },
 ] as const;
