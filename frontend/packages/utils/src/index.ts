@@ -36,6 +36,28 @@ export {
   createAdminPartnersApi,
 } from "./admin-partners-api";
 export {
+  AdminActivationWavesApi,
+  createAdminActivationWavesApi,
+} from "./admin-activation-waves-api";
+export {
+  ACTIVATION_WAVE_CHECKLIST_KEYS,
+  ACTIVATION_WAVE_CHECKLIST_LABELS,
+  ACTIVATION_WAVE_ITEM_STATUS_LABELS,
+  ACTIVATION_WAVE_ITEM_STATUS_OPTIONS,
+  ACTIVATION_WAVE_STATUS_LABELS,
+  activationWaveChecklistLabel,
+  activationWaveItemStatusLabel,
+  activationWaveStatusLabel,
+  checklistCompletionCount,
+  checklistCompletionPercentage,
+  defaultActivationChecklist,
+  isWaveReadyCandidate,
+  mergeChecklistKey,
+  normalizeActivationWaveItemPatchPayload,
+  waveActivationProgressPercent,
+  type ActivationWaveChecklistKey,
+} from "./admin-activation-wave";
+export {
   adminPartnerDetailPath,
   capabilityLabel,
   formatPartnerDate,
