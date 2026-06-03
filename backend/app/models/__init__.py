@@ -13,7 +13,6 @@ from app.models.organization import (
     OrganizationVerification,
 )
 from app.models.partner_admin_action import PartnerAdminAction
-from app.models.passport_admin_action import PassportAdminAction
 from app.models.partner_creator_content import PartnerCreatorContent
 from app.models.partner_lead import PartnerLead
 from app.models.partner_profile import PartnerProfile
@@ -25,6 +24,7 @@ from app.models.passport import (
     PassportTier,
     PassportTierEvent,
 )
+from app.models.passport_admin_action import PassportAdminAction
 from app.models.post import Post
 from app.models.push_subscription import PushSubscription
 from app.models.rbac import Permission, Role, RolePermission, UserRole
