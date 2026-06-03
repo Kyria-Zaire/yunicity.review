@@ -2,7 +2,7 @@
 
 import { PartnersDirectoryTab } from "@/components/partners/partners-directory-tab";
 import { PartnersLeadsTab } from "@/components/partners/partners-leads-tab";
-import { PartnersPlaceholderTab } from "@/components/partners/partners-placeholder-tab";
+import { PartnersActivationTab } from "@/components/partners/partners-activation-tab";
 import { PartnersVerificationTab } from "@/components/partners/partners-verification-tab";
 import { PartnersWorkspaceTabs } from "@/components/partners/partners-workspace-tabs";
 import {
@@ -53,16 +53,7 @@ export function PartnersWorkspace() {
         {activeTab === "leads" ? <PartnersLeadsTab /> : null}
         {activeTab === "partners" ? <PartnersDirectoryTab /> : null}
         {activeTab === "verification" ? <PartnersVerificationTab /> : null}
-        {activeTab === "activation" ? (
-          <PartnersPlaceholderTab
-            title="Activation Waves"
-            description="Les vagues d'activation (signed → active, batch staff) seront traitées après le cycle partenaire complet."
-            bullets={[
-              "Wave 1 — partenaires actifs sur le territoire (catalogue public)",
-              "Wave 2 — partenaires signés à valider (ADMIN-02C / 02D)",
-            ]}
-          />
-        ) : null}
+        {activeTab === "activation" ? <PartnersActivationTab /> : null}
       </div>
     </div>
   );

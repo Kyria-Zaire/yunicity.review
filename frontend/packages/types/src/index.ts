@@ -64,6 +64,17 @@ export type {
 } from "./admin-organization";
 
 export type {
+  ActivationWaveItemStatus,
+  ActivationWaveStatus,
+  AdminActivationWaveChecklist,
+  AdminActivationWaveDetail,
+  AdminActivationWaveItem,
+  AdminActivationWaveListItem,
+  AdminActivationWaveSummary,
+  AdminActivationWaveUpdatePayload,
+} from "./admin-activation-wave";
+
+export type {
   AdminPartnerActivatePayload,
   AdminPartnerCapabilities,
   AdminPartnerCounters,

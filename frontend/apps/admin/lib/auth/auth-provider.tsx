@@ -2,6 +2,7 @@
 
 import type { AuthUser, LoginRequest } from "@yunicity/types";
 import { createAdminCockpitApi, type AdminCockpitApi } from "@/lib/admin-cockpit-api";
+import { createAdminActivationWavesApi } from "@/lib/admin-activation-waves-api";
 import {
   MemoryTokenStorage,
   createAdminOrganizationsApi,
@@ -16,6 +17,7 @@ import {
   createScanApi,
   getWebApiBaseUrl,
   isAuthError,
+  type AdminActivationWavesApi,
   type AdminOrganizationsApi,
   type AdminPartnersApi,
   type OrganizationApi,
@@ -51,6 +53,7 @@ interface AuthContextValue {
   adminCockpitApi: AdminCockpitApi;
   adminOrganizationsApi: AdminOrganizationsApi;
   adminPartnersApi: AdminPartnersApi;
+  adminActivationWavesApi: AdminActivationWavesApi;
   login: (payload: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
@@ -120,6 +123,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [client, apiBaseUrl],
   );
 
+  const adminActivationWavesApi = useMemo(
+    () => createAdminActivationWavesApi(client, apiBaseUrl),
+    [client, apiBaseUrl],
+  );
+
   useEffect(() => {
     let cancelled = false;
     async function bootstrap() {
@@ -180,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     adminCockpitApi,
     adminOrganizationsApi,
     adminPartnersApi,
+    adminActivationWavesApi,
     login,
     logout,
     clearError: () => setError(null),
