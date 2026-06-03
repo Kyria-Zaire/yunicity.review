@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -15,6 +16,7 @@ from app.core.partner_creator_content_constants import PartnerCreatorContentStat
 from app.core.passport_constants import OfferRedemptionStatus, PartnerOfferStatus
 from app.models.local_event import LocalEvent
 from app.models.organization import Organization
+from app.models.partner_admin_action import PartnerAdminAction
 from app.models.partner_creator_content import PartnerCreatorContent
 from app.models.partner_profile import PartnerProfile
 from app.models.passport import PartnerOffer, PassportOfferRedemption, PassportStamp
@@ -158,3 +160,67 @@ class AdminPartnerRepository:
         if status is not None:
             stmt = stmt.where(PassportOfferRedemption.status == status)
         return await self._scalar_count(stmt)
+
+    async def add_partner_profile(self, profile: PartnerProfile) -> PartnerProfile:
+        self._session.add(profile)
+        await self._session.flush()
+        return profile
+
+    async def update_organization(self, organization: Organization) -> Organization:
+        await self._session.flush()
+        return organization
+
+    async def update_partner_profile(self, profile: PartnerProfile) -> PartnerProfile:
+        await self._session.flush()
+        return profile
+
+    async def record_admin_action(
+        self,
+        *,
+        organization_id: UUID,
+        partner_profile_id: UUID | None,
+        action: str,
+        actor_user_id: UUID,
+        previous_status: str | None = None,
+        new_status: str | None = None,
+        previous_visibility: str | None = None,
+        new_visibility: str | None = None,
+        reason: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> PartnerAdminAction:
+        entry = PartnerAdminAction(
+            organization_id=organization_id,
+            partner_profile_id=partner_profile_id,
+            action=action,
+            actor_user_id=actor_user_id,
+            previous_status=previous_status,
+            new_status=new_status,
+            previous_visibility=previous_visibility,
+            new_visibility=new_visibility,
+            reason=reason,
+            metadata_=metadata,
+        )
+        self._session.add(entry)
+        await self._session.flush()
+        return entry
+
+    async def count_admin_actions(self, organization_id: UUID) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(PartnerAdminAction)
+            .where(PartnerAdminAction.organization_id == organization_id)
+        )
+        return await self._scalar_count(stmt)
+
+    async def get_latest_admin_action(
+        self,
+        organization_id: UUID,
+    ) -> PartnerAdminAction | None:
+        stmt = (
+            select(PartnerAdminAction)
+            .where(PartnerAdminAction.organization_id == organization_id)
+            .order_by(PartnerAdminAction.created_at.desc())
+            .limit(1)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()

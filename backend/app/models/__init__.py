@@ -13,6 +13,7 @@ from app.models.organization import (
 )
 from app.models.partner_creator_content import PartnerCreatorContent
 from app.models.partner_lead import PartnerLead
+from app.models.partner_admin_action import PartnerAdminAction
 from app.models.partner_profile import PartnerProfile
 from app.models.passport import (
     PartnerOffer,
@@ -47,6 +48,7 @@ __all__ = [
     "Neighborhood",
     "PartnerCreatorContent",
     "PartnerLead",
+    "PartnerAdminAction",
     "PartnerProfile",
     "StampDefinition",
     "Post",
