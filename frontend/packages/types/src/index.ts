@@ -89,6 +89,15 @@ export type {
 } from "./admin-partner";
 
 export type {
+  AdminPassportListItem,
+  AdminPassportListParams,
+  AdminPassportListResponse,
+  AdminPassportSearchMode,
+  AdminPassportStatus,
+  AdminPassportUserSummary,
+} from "./admin-passport";
+
+export type {
   PassportQr,
   ScanPassportPreview,
   ScanRedeemableOffer,

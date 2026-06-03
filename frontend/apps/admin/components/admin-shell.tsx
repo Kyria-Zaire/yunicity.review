@@ -18,7 +18,8 @@ type StaffNavDisabled = { kind: "disabled"; label: string; hint: string };
 const STAFF_NAV_ITEMS: readonly (StaffNavLink | StaffNavDisabled)[] = [
   { kind: "link", href: "/", label: "Cockpit" },
   { kind: "link", href: "/partners", label: "Partenaires" },
-  { kind: "link", href: "/partner-scan", label: "Passport Ops" },
+  { kind: "link", href: "/passport-ops", label: "Passport Ops" },
+  { kind: "link", href: "/partner-scan", label: "Scanner Passport" },
   { kind: "link", href: "/passport-offers", label: "Offres" },
   { kind: "disabled", label: "Events", hint: "Bientôt" },
   { kind: "link", href: "/creator-content", label: "Creators" },
@@ -32,6 +33,9 @@ function isStaffNavActive(pathname: string, href: string): boolean {
   }
   if (href === "/partners") {
     return pathname === "/partners" || pathname.startsWith("/partners/");
+  }
+  if (href === "/passport-ops") {
+    return pathname === "/passport-ops" || pathname.startsWith("/passport-ops/");
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -105,8 +109,11 @@ function staffPageTitle(pathname: string, isPartnerArea: boolean): string {
   if (pathname.startsWith("/partner-leads")) {
     return "Leads terrain";
   }
-  if (pathname.startsWith("/partner-scan")) {
+  if (pathname === "/passport-ops" || pathname.startsWith("/passport-ops/")) {
     return "Passport Ops";
+  }
+  if (pathname.startsWith("/partner-scan")) {
+    return "Scanner Passport";
   }
   if (pathname.startsWith("/passport-offers")) {
     return "Modération offres";

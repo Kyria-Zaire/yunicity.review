@@ -17,12 +17,20 @@ export function CockpitPassportSnapshot({ passport }: { passport: AdminCockpitPa
           </h2>
           <p className="mt-1 text-xs text-stone-500">Engagement citoyen sur le territoire</p>
         </div>
-        <Link
-          href="/partner-scan"
-          className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50"
-        >
-          Scanner une offre
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/passport-ops"
+            className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50"
+          >
+            Passport Ops
+          </Link>
+          <Link
+            href="/partner-scan"
+            className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50"
+          >
+            Scanner une offre
+          </Link>
+        </div>
       </div>
       <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {PASSPORT_KEYS.map((key) => (
