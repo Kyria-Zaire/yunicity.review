@@ -13,6 +13,7 @@ from app.models.organization import (
     OrganizationVerification,
 )
 from app.models.partner_admin_action import PartnerAdminAction
+from app.models.passport_admin_action import PassportAdminAction
 from app.models.partner_creator_content import PartnerCreatorContent
 from app.models.partner_lead import PartnerLead
 from app.models.partner_profile import PartnerProfile
@@ -52,6 +53,7 @@ __all__ = [
     "PartnerCreatorContent",
     "PartnerLead",
     "PartnerAdminAction",
+    "PassportAdminAction",
     "PartnerProfile",
     "StampDefinition",
     "Post",

@@ -21,6 +21,7 @@ from app.schemas.admin_passport import (
     AdminPassportRedemptionListResponse,
     AdminPassportSearchMode,
     AdminPassportStampListResponse,
+    AdminPassportStatusPatchRequest,
     AdminStaffPassportStatus,
 )
 from app.services.admin_passport_service import AdminPassportService
@@ -68,6 +69,20 @@ async def get_admin_passport_detail(
 ) -> AdminPassportDetailResponse:
     _ = current_user
     return await AdminPassportService(session).get_passport_detail(passport_id)
+
+
+@router.patch("/{passport_id}", response_model=AdminPassportDetailResponse)
+async def patch_admin_passport_status(
+    passport_id: uuid.UUID,
+    payload: AdminPassportStatusPatchRequest,
+    current_user: Annotated[User, Depends(_staff_guard)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> AdminPassportDetailResponse:
+    return await AdminPassportService(session).patch_passport_status(
+        passport_id,
+        current_user,
+        payload,
+    )
 
 
 @router.get("/{passport_id}/stamps", response_model=AdminPassportStampListResponse)
