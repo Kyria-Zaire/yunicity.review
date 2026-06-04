@@ -8,7 +8,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.core.report_admin_constants import REPORT_ADMIN_LIST_PAGE_SIZE_MAX
+from app.core.report_admin_constants import (
+    REPORT_ADMIN_ACTION_LIST_PAGE_SIZE_MAX,
+    REPORT_ADMIN_LIST_PAGE_SIZE_MAX,
+    REPORT_RESOLUTION_NOTE_MAX_LENGTH,
+)
 
 AdminReportStatus = Literal["pending", "reviewed", "dismissed", "action_taken"]
 AdminReportReason = Literal["spam", "inappropriate", "other"]
@@ -75,8 +79,44 @@ class AdminReportDetailResponse(BaseModel):
     status: AdminReportStatus
     created_at: datetime
     resolved_at: datetime | None = None
+    resolution_note: str | None = None
     reporter: AdminReportReporterSummary
     resolver: AdminReportResolverSummary | None = None
     target_type: AdminReportTargetType
     target_id: UUID
     target_post: AdminReportTargetPostSummary
+
+
+class AdminReportDismissRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str | None = Field(default=None, max_length=REPORT_RESOLUTION_NOTE_MAX_LENGTH)
+
+
+class AdminReportResolveRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str | None = Field(default=None, max_length=REPORT_RESOLUTION_NOTE_MAX_LENGTH)
+    hide_post: bool = False
+
+
+class AdminReportActionActorSummary(BaseModel):
+    id: UUID
+    email: str
+    display_name: str | None = None
+
+
+class AdminReportActionListItem(BaseModel):
+    action: str
+    previous_status: str | None = None
+    new_status: str | None = None
+    reason: str | None = None
+    actor_user: AdminReportActionActorSummary | None = None
+    created_at: datetime
+
+
+class AdminReportActionListResponse(BaseModel):
+    items: list[AdminReportActionListItem]
+    total: int = Field(ge=0)
+    page: int = Field(ge=1)
+    page_size: int = Field(ge=1, le=REPORT_ADMIN_ACTION_LIST_PAGE_SIZE_MAX)
