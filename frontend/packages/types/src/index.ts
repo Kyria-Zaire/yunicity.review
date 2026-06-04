@@ -67,6 +67,11 @@ export type {
 export type {
   AdminEventModerationStatus,
   AdminEventModerationStatusFilter,
+  AdminLocalEventAction,
+  AdminLocalEventActionItem,
+  AdminLocalEventActionListParams,
+  AdminLocalEventActionListResponse,
+  AdminLocalEventActorSummary,
   AdminLocalEventDetail,
   AdminLocalEventListItem,
   AdminLocalEventListParams,

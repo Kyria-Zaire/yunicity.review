@@ -4,10 +4,12 @@ import {
   buildAdminEventDetailPath,
   buildEventsListBackPath,
   buildEventsListPath,
+  eventAdminActionLabel,
   eventModerationStatusLabel,
   eventTemporalStatus,
   eventTemporalStatusLabel,
   eventVisibilityLabel,
+  formatEventAdminActionStatusTransition,
   formatEventDate,
 } from "./admin-event";
 
@@ -53,5 +55,17 @@ describe("admin-event helpers", () => {
       eventTemporalStatus("2026-06-01T12:00:00.000Z", "2026-06-10T12:00:00.000Z", now),
     ).toBe("past");
     expect(eventTemporalStatusLabel("upcoming")).toBe("À venir");
+  });
+
+  it("labels event admin audit actions", () => {
+    expect(eventAdminActionLabel("approve")).toBe("Approbation");
+    expect(eventAdminActionLabel("reject")).toBe("Rejet");
+  });
+
+  it("formats event admin action status transitions", () => {
+    expect(formatEventAdminActionStatusTransition("pending_review", "approved")).toBe(
+      "En attente de validation → Approuvé",
+    );
+    expect(formatEventAdminActionStatusTransition(null, null)).toBe("— → —");
   });
 });

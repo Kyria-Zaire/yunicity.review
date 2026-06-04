@@ -1,4 +1,6 @@
 import type {
+  AdminLocalEventActionListParams,
+  AdminLocalEventActionListResponse,
   AdminLocalEventDetail,
   AdminLocalEventListItem,
   AdminLocalEventListParams,
@@ -8,6 +10,21 @@ import type {
 
 import type { AuthClient } from "./auth/auth-client";
 import { ApiClientBase } from "./api-client";
+
+function buildPagedQuery(params?: { page?: number; page_size?: number }): string {
+  if (!params) {
+    return "";
+  }
+  const search = new URLSearchParams();
+  if (params.page !== undefined) {
+    search.set("page", String(params.page));
+  }
+  if (params.page_size !== undefined) {
+    search.set("page_size", String(params.page_size));
+  }
+  const qs = search.toString();
+  return qs ? `?${qs}` : "";
+}
 
 function buildListQuery(params?: AdminLocalEventListParams): string {
   if (!params) {
@@ -54,6 +71,15 @@ export class AdminEventsApi extends ApiClientBase {
     return this.postJson<AdminLocalEventListItem>(
       `/admin/local-events/${encodeURIComponent(eventId)}/reject`,
       payload,
+    );
+  }
+
+  listEventActions(
+    eventId: string,
+    params?: AdminLocalEventActionListParams,
+  ): Promise<AdminLocalEventActionListResponse> {
+    return this.getJson<AdminLocalEventActionListResponse>(
+      `/admin/local-events/${encodeURIComponent(eventId)}/actions${buildPagedQuery(params)}`,
     );
   }
 }

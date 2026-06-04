@@ -50,3 +50,33 @@ export interface AdminLocalEventDetail {
   created_at: string;
   updated_at: string;
 }
+
+export type AdminLocalEventAction = "approve" | "reject";
+
+export interface AdminLocalEventActorSummary {
+  id: string;
+  email: string;
+  display_name: string | null;
+}
+
+export interface AdminLocalEventActionItem {
+  id: string;
+  action: AdminLocalEventAction;
+  previous_status: string | null;
+  new_status: string | null;
+  reason: string | null;
+  actor_user: AdminLocalEventActorSummary;
+  created_at: string;
+}
+
+export interface AdminLocalEventActionListResponse {
+  items: AdminLocalEventActionItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface AdminLocalEventActionListParams {
+  page?: number;
+  page_size?: number;
+}

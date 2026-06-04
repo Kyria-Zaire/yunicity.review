@@ -1,6 +1,6 @@
 "use client";
 
-import { EventDetailAuditPlaceholder } from "@/components/events/detail/event-detail-audit-placeholder";
+import { EventDetailAuditSection } from "@/components/events/detail/event-detail-audit-section";
 import { EventDetailEngagementCard } from "@/components/events/detail/event-detail-engagement-card";
 import { EventDetailHeader } from "@/components/events/detail/event-detail-header";
 import { EventDetailIdentityCard } from "@/components/events/detail/event-detail-identity-card";
@@ -9,6 +9,7 @@ import { EventDetailLocationCard } from "@/components/events/detail/event-detail
 import { EventDetailModerationSection } from "@/components/events/detail/event-detail-moderation-section";
 import { EventDetailOrganizationCard } from "@/components/events/detail/event-detail-organization-card";
 import { EventDetailScheduleCard } from "@/components/events/detail/event-detail-schedule-card";
+import { useAdminEventActions } from "@/lib/hooks/use-admin-event-actions";
 import { useAdminEventDetail } from "@/lib/hooks/use-admin-event-detail";
 import { buildEventsListPath } from "@yunicity/utils";
 import Link from "next/link";
@@ -33,25 +34,29 @@ export function EventDetailView({ eventId }: EventDetailViewProps) {
     rejectEvent,
   } = useAdminEventDetail(eventId);
 
+  const detailReady = !isLoading && !isNotFound && !error && !!event;
+  const actions = useAdminEventActions(eventId, detailReady);
+
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     if (!actionSuccess) {
       return;
     }
+    void actions.reload();
     const timer = window.setTimeout(() => clearActionFeedback(), 5000);
     return () => window.clearTimeout(timer);
-  }, [actionSuccess, clearActionFeedback]);
+  }, [actionSuccess, actions.reload, clearActionFeedback]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     clearActionFeedback();
     try {
-      await reload();
+      await Promise.all([reload(), actions.reload()]);
     } finally {
       setIsRefreshing(false);
     }
-  }, [clearActionFeedback, reload]);
+  }, [actions, clearActionFeedback, reload]);
 
   if (isLoading) {
     return (
@@ -130,7 +135,17 @@ export function EventDetailView({ eventId }: EventDetailViewProps) {
       </div>
 
       <EventDetailLinksSection event={event} />
-      <EventDetailAuditPlaceholder />
+      <EventDetailAuditSection
+        items={actions.items}
+        total={actions.total}
+        page={actions.page}
+        pageSize={actions.pageSize}
+        totalPages={actions.totalPages}
+        isLoading={actions.isLoading}
+        error={actions.error}
+        onRetry={actions.reload}
+        onPageChange={actions.goToPage}
+      />
     </div>
   );
 }
