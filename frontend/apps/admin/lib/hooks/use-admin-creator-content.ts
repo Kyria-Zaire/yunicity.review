@@ -9,34 +9,6 @@ import type {
 import { isAuthError } from "@yunicity/utils";
 import { useCallback, useEffect, useState } from "react";
 
-export function useAdminCreatorContentList(params?: PartnerCreatorContentAdminListParams) {
-  const { partnerCreatorContentAdminApi } = useAuth();
-  const [items, setItems] = useState<PartnerCreatorContentAdmin[]>([]);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const reload = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await partnerCreatorContentAdminApi.listContents(params);
-      setItems(data.items);
-      setTotal(data.total);
-    } catch (err) {
-      setError(isAuthError(err) ? err.message : "Impossible de charger les contenus.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [partnerCreatorContentAdminApi, params]);
-
-  useEffect(() => {
-    void reload();
-  }, [reload]);
-
-  return { items, total, isLoading, error, reload };
-}
-
 export function useAdminCreatorContentDetail(contentId: string) {
   const { partnerCreatorContentAdminApi } = useAuth();
   const [content, setContent] = useState<PartnerCreatorContentAdmin | null>(null);

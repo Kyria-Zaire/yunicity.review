@@ -1,6 +1,16 @@
-/** Admin creator content moderation helpers (ADMIN-CREATOR-01). */
+/** Admin creator content moderation helpers (ADMIN-CREATOR-01 / ADMIN-06B). */
 
-import type { PartnerCreatorContentStatus } from "@yunicity/types";
+import type { PartnerCreatorContentAdmin, PartnerCreatorContentStatus } from "@yunicity/types";
+
+export const CREATOR_CONTENT_DEFAULT_PAGE_SIZE = 20;
+export const CREATOR_CONTENT_MAX_PAGE_SIZE = 100;
+
+export const CREATOR_CONTENT_LIST_CONTEXT_KEYS = [
+  "status",
+  "organization_id",
+  "page",
+  "page_size",
+] as const;
 
 export const ADMIN_CREATOR_CONTENT_STATUS_LABELS: Record<PartnerCreatorContentStatus, string> = {
   draft: "Brouillon",
@@ -39,6 +49,94 @@ export const ADMIN_CREATOR_CONTENT_STATUS_FILTER_OPTIONS: {
 
 export function adminCreatorContentStatusLabel(status: PartnerCreatorContentStatus): string {
   return ADMIN_CREATOR_CONTENT_STATUS_LABELS[status] ?? status;
+}
+
+/** Alias produit (KPI « approuvé » = statut `published`). */
+export function creatorContentStatusLabel(status: PartnerCreatorContentStatus | string): string {
+  if (status === "published") {
+    return "Approuvé";
+  }
+  if (status in ADMIN_CREATOR_CONTENT_STATUS_LABELS) {
+    return ADMIN_CREATOR_CONTENT_STATUS_LABELS[status as PartnerCreatorContentStatus];
+  }
+  return status;
+}
+
+export function creatorContentStatusBadgeVariant(
+  status: PartnerCreatorContentStatus | string,
+): keyof typeof ADMIN_CREATOR_CONTENT_STATUS_TONES | "unknown" {
+  if (status in ADMIN_CREATOR_CONTENT_STATUS_TONES) {
+    return status as keyof typeof ADMIN_CREATOR_CONTENT_STATUS_TONES;
+  }
+  return "unknown";
+}
+
+export function buildCreatorContentListPath(query?: Record<string, string | undefined>): string {
+  if (!query) {
+    return "/creator-content";
+  }
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value?.trim()) {
+      search.set(key, value.trim());
+    }
+  }
+  const qs = search.toString();
+  return qs ? `/creator-content?${qs}` : "/creator-content";
+}
+
+export function buildCreatorContentDetailPath(contentId: string): string {
+  return `/creator-content/${encodeURIComponent(contentId)}`;
+}
+
+export function buildCreatorContentDetailPathWithListContext(
+  contentId: string,
+  listQuery: URLSearchParams,
+): string {
+  const base = buildCreatorContentDetailPath(contentId);
+  const qs = listQuery.toString();
+  return qs ? `${base}?${qs}` : base;
+}
+
+export function buildCreatorContentListBackPath(detailSearchParams: URLSearchParams): string {
+  const query: Record<string, string> = {};
+  for (const key of CREATOR_CONTENT_LIST_CONTEXT_KEYS) {
+    const value = detailSearchParams.get(key);
+    if (value) {
+      query[key] = value;
+    }
+  }
+  return buildCreatorContentListPath(query);
+}
+
+export type CreatorContentKpiCounts = {
+  total: number;
+  pendingReview: number;
+  approved: number;
+  rejected: number;
+};
+
+export function countCreatorContentKpis(
+  items: Pick<PartnerCreatorContentAdmin, "status">[],
+): CreatorContentKpiCounts {
+  let pendingReview = 0;
+  let approved = 0;
+  let rejected = 0;
+  for (const item of items) {
+    if (item.status === "pending_review") {
+      pendingReview += 1;
+    } else if (item.status === "published") {
+      approved += 1;
+    } else if (item.status === "rejected") {
+      rejected += 1;
+    }
+  }
+  return {
+    total: items.length,
+    pendingReview,
+    approved,
+    rejected,
+  };
 }
 
 export function adminCreatorContentAuthorLabel(
