@@ -1,4 +1,4 @@
-"""Admin partner offer read service (ADMIN-04E-A)."""
+"""Admin partner offer staff read service (ADMIN-04E-A / 04E-B1)."""
 
 from __future__ import annotations
 
@@ -8,8 +8,10 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
+from app.core.offer_admin_constants import OFFER_ADMIN_ACTIONS
 from app.core.passport_constants import OfferRedemptionStatus
 from app.repositories.admin_partner_offer_repository import (
+    AdminOfferActionRow,
     AdminOfferRedemptionRow,
     AdminPartnerOfferRepository,
 )
@@ -18,6 +20,9 @@ from app.schemas.admin_partner_offer import (
     AdminOfferRedemptionChannel,
     AdminOfferRedemptionCitizen,
     AdminOfferRedemptionPassport,
+    AdminPartnerOfferActionItem,
+    AdminPartnerOfferActionListResponse,
+    AdminPartnerOfferActorSummary,
     PartnerOfferAdminRedemptionListItem,
     PartnerOfferAdminRedemptionListResponse,
 )
@@ -61,6 +66,34 @@ class AdminPartnerOfferService:
         )
         return PartnerOfferAdminRedemptionListResponse(
             items=[self._to_redemption_item(row) for row in rows],
+            total=total,
+            page=resolved_page,
+            page_size=resolved_page_size,
+        )
+
+    async def list_offer_actions(
+        self,
+        *,
+        offer_id: uuid.UUID,
+        page: int,
+        page_size: int,
+    ) -> AdminPartnerOfferActionListResponse:
+        if not await self._repo.offer_exists(offer_id):
+            raise AppError(
+                status_code=404,
+                code="OFFER_NOT_FOUND",
+                detail="Offre introuvable.",
+            )
+
+        resolved_page_size = min(max(page_size, 1), ADMIN_OFFER_REDEMPTION_LIST_PAGE_SIZE_MAX)
+        resolved_page = max(page, 1)
+        rows, total = await self._repo.list_admin_actions(
+            partner_offer_id=offer_id,
+            page=resolved_page,
+            page_size=resolved_page_size,
+        )
+        return AdminPartnerOfferActionListResponse(
+            items=[self._to_action_item(row) for row in rows],
             total=total,
             page=resolved_page,
             page_size=resolved_page_size,
@@ -120,4 +153,43 @@ class AdminPartnerOfferService:
             ),
             status=status_value,  # type: ignore[arg-type]
             redeemed_at=row.redemption.redeemed_at,
+        )
+
+    def _to_action_item(self, row: AdminOfferActionRow) -> AdminPartnerOfferActionItem:
+        entry = row.action
+        if entry.action not in OFFER_ADMIN_ACTIONS:
+            raise AppError(
+                status_code=500,
+                code="INVALID_OFFER_ADMIN_ACTION",
+                detail="Action staff offre invalide en base.",
+            )
+        return AdminPartnerOfferActionItem(
+            id=entry.id,
+            action=entry.action,  # type: ignore[arg-type]
+            previous_status=entry.previous_status,
+            new_status=entry.new_status,
+            reason=entry.reason,
+            actor_user=self._to_action_actor(row),
+            created_at=entry.created_at,
+        )
+
+    @staticmethod
+    def _to_action_actor(row: AdminOfferActionRow) -> AdminPartnerOfferActorSummary:
+        actor = row.actor
+        if actor is None:
+            assert row.action.actor_user_id is not None
+            return AdminPartnerOfferActorSummary(
+                id=row.action.actor_user_id,
+                email="Compte staff supprimé",
+                display_name=None,
+            )
+        display_name: str | None = None
+        if row.actor_profile is not None and row.actor_profile.display_name:
+            display_name = row.actor_profile.display_name
+        elif actor.full_name:
+            display_name = actor.full_name
+        return AdminPartnerOfferActorSummary(
+            id=actor.id,
+            email=actor.email,
+            display_name=display_name,
         )

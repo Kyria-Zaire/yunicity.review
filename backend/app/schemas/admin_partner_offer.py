@@ -35,6 +35,9 @@ __all__ = [
     "PartnerOfferAdminListResponse",
     "PartnerOfferAdminRedemptionListResponse",
     "PartnerOfferAdminRedemptionListItem",
+    "AdminPartnerOfferActionItem",
+    "AdminPartnerOfferActionListResponse",
+    "AdminPartnerOfferActorSummary",
     "VerifiedOrganizationOption",
     "VerifiedOrganizationListResponse",
     "PartnerOfferRejectRequest",
@@ -188,6 +191,36 @@ class PartnerOfferAdminRedemptionListItem(BaseModel):
 
 class PartnerOfferAdminRedemptionListResponse(BaseModel):
     items: list[PartnerOfferAdminRedemptionListItem]
+    total: int = Field(ge=0)
+    page: int = Field(ge=1)
+    page_size: int = Field(ge=1, le=ADMIN_OFFER_REDEMPTION_LIST_PAGE_SIZE_MAX)
+
+
+AdminPartnerOfferActionKind = Literal["approve", "reject", "archive"]
+
+
+class AdminPartnerOfferActorSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    email: str
+    display_name: str | None = None
+
+
+class AdminPartnerOfferActionItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    action: AdminPartnerOfferActionKind
+    previous_status: str | None = None
+    new_status: str | None = None
+    reason: str | None = None
+    actor_user: AdminPartnerOfferActorSummary
+    created_at: datetime
+
+
+class AdminPartnerOfferActionListResponse(BaseModel):
+    items: list[AdminPartnerOfferActionItem]
     total: int = Field(ge=0)
     page: int = Field(ge=1)
     page_size: int = Field(ge=1, le=ADMIN_OFFER_REDEMPTION_LIST_PAGE_SIZE_MAX)

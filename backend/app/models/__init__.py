@@ -12,6 +12,7 @@ from app.models.organization import (
     OrganizationMember,
     OrganizationVerification,
 )
+from app.models.offer_admin_action import OfferAdminAction
 from app.models.partner_admin_action import PartnerAdminAction
 from app.models.partner_creator_content import PartnerCreatorContent
 from app.models.partner_lead import PartnerLead
@@ -52,6 +53,7 @@ __all__ = [
     "Neighborhood",
     "PartnerCreatorContent",
     "PartnerLead",
+    "OfferAdminAction",
     "PartnerAdminAction",
     "PassportAdminAction",
     "PartnerProfile",
