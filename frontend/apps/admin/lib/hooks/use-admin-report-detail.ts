@@ -1,7 +1,11 @@
 "use client";
 
 import { useAuth } from "@/lib/auth/auth-provider";
-import type { AdminReportDetailResponse } from "@yunicity/types";
+import type {
+  AdminReportDetailResponse,
+  AdminReportDismissPayload,
+  AdminReportResolvePayload,
+} from "@yunicity/types";
 import { isAuthError } from "@yunicity/utils";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -12,6 +16,9 @@ export function useAdminReportDetail(reportId: string) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isNotFound, setIsNotFound] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const hasLoadedRef = useRef(false);
 
   const reload = useCallback(async () => {
@@ -49,12 +56,78 @@ export function useAdminReportDetail(reportId: string) {
     void reload();
   }, [reload]);
 
+  const clearActionFeedback = useCallback(() => {
+    setActionError(null);
+    setSuccessMessage(null);
+  }, []);
+
+  const clearActionError = useCallback(() => {
+    setActionError(null);
+  }, []);
+
+  const dismissReport = useCallback(
+    async (payload: AdminReportDismissPayload = {}) => {
+      setIsSubmitting(true);
+      setActionError(null);
+      setSuccessMessage(null);
+      try {
+        const updated = await adminReportsApi.dismissReport(reportId, payload);
+        setReport(updated);
+        setSuccessMessage("Signalement classé sans suite.");
+        return true;
+      } catch (err) {
+        setActionError(
+          isAuthError(err)
+            ? err.message
+            : "Impossible de classer ce signalement sans suite.",
+        );
+        return false;
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [adminReportsApi, reportId],
+  );
+
+  const resolveReport = useCallback(
+    async (payload: AdminReportResolvePayload) => {
+      setIsSubmitting(true);
+      setActionError(null);
+      setSuccessMessage(null);
+      try {
+        const updated = await adminReportsApi.resolveReport(reportId, payload);
+        setReport(updated);
+        setSuccessMessage(
+          payload.hide_post
+            ? "Signalement résolu — le post a été masqué du feed."
+            : "Signalement résolu.",
+        );
+        return true;
+      } catch (err) {
+        setActionError(
+          isAuthError(err) ? err.message : "Impossible de résoudre ce signalement.",
+        );
+        return false;
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [adminReportsApi, reportId],
+  );
+
   return {
     report,
     isLoading,
     isRefreshing,
     error,
     isNotFound,
+    isSubmitting,
+    actionError,
+    successMessage,
     reload,
+    clearActionFeedback,
+    clearActionError,
+    dismissReport,
+    resolveReport,
   };
 }

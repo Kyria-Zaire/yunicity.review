@@ -1,7 +1,9 @@
 import type {
   AdminReportDetailResponse,
+  AdminReportDismissPayload,
   AdminReportListParams,
   AdminReportListResponse,
+  AdminReportResolvePayload,
 } from "@yunicity/types";
 
 import type { AuthClient } from "./auth/auth-client";
@@ -41,6 +43,26 @@ export class AdminReportsApi extends ApiClientBase {
 
   getReportDetail(reportId: string): Promise<AdminReportDetailResponse> {
     return this.getReport(reportId);
+  }
+
+  dismissReport(
+    reportId: string,
+    payload: AdminReportDismissPayload = {},
+  ): Promise<AdminReportDetailResponse> {
+    return this.postJson<AdminReportDetailResponse>(
+      `/admin/reports/${encodeURIComponent(reportId)}/dismiss`,
+      payload,
+    );
+  }
+
+  resolveReport(
+    reportId: string,
+    payload: AdminReportResolvePayload,
+  ): Promise<AdminReportDetailResponse> {
+    return this.postJson<AdminReportDetailResponse>(
+      `/admin/reports/${encodeURIComponent(reportId)}/resolve`,
+      payload,
+    );
   }
 }
 

@@ -45,6 +45,20 @@ export function ModerationReportDetailSummaryCard({
           label="Résolu le"
           value={formatReportDate(report.resolved_at)}
         />
+        {report.resolver ? (
+          <ModerationReportDetailField
+            label="Traité par"
+            value={
+              report.resolver.display_name?.trim() || report.resolver.email
+            }
+          />
+        ) : null}
+        {report.resolution_note?.trim() ? (
+          <ModerationReportDetailField
+            label="Note de résolution"
+            value={report.resolution_note.trim()}
+          />
+        ) : null}
         <ModerationReportDetailField
           label="Mis à jour"
           value="—"

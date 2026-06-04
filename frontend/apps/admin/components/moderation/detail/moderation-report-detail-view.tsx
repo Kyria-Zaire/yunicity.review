@@ -1,16 +1,17 @@
 "use client";
 
-import { ModerationReportDetailActionsPlaceholder } from "@/components/moderation/detail/moderation-report-detail-actions-placeholder";
 import { ModerationReportDetailContextCard } from "@/components/moderation/detail/moderation-report-detail-context-card";
 import { ModerationReportDetailHeader } from "@/components/moderation/detail/moderation-report-detail-header";
 import { ModerationReportDetailReporterCard } from "@/components/moderation/detail/moderation-report-detail-reporter-card";
 import { ModerationReportDetailRiskCard } from "@/components/moderation/detail/moderation-report-detail-risk-card";
+import { ModerationReportDetailStaffActions } from "@/components/moderation/detail/moderation-report-detail-staff-actions";
 import { ModerationReportDetailSummaryCard } from "@/components/moderation/detail/moderation-report-detail-summary-card";
 import { ModerationReportDetailTargetCard } from "@/components/moderation/detail/moderation-report-detail-target-card";
 import { useAdminReportDetail } from "@/lib/hooks/use-admin-report-detail";
 import { buildModerationListBackPath } from "@yunicity/utils";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 
 interface ModerationReportDetailViewProps {
   reportId: string;
@@ -19,8 +20,31 @@ interface ModerationReportDetailViewProps {
 export function ModerationReportDetailView({ reportId }: ModerationReportDetailViewProps) {
   const searchParams = useSearchParams();
   const backHref = buildModerationListBackPath(searchParams);
-  const { report, isLoading, isRefreshing, error, isNotFound, reload } =
-    useAdminReportDetail(reportId);
+  const {
+    report,
+    isLoading,
+    isRefreshing,
+    error,
+    isNotFound,
+    isSubmitting,
+    actionError,
+    successMessage,
+    reload,
+    clearActionFeedback,
+    clearActionError,
+    dismissReport,
+    resolveReport,
+  } = useAdminReportDetail(reportId);
+
+  useEffect(() => {
+    if (!successMessage) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      clearActionFeedback();
+    }, 6000);
+    return () => window.clearTimeout(timer);
+  }, [successMessage, clearActionFeedback]);
 
   if (isLoading) {
     return (
@@ -80,6 +104,11 @@ export function ModerationReportDetailView({ reportId }: ModerationReportDetailV
         isRefreshing={isRefreshing}
         onRefresh={() => void reload()}
       />
+      {successMessage ? (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          {successMessage}
+        </div>
+      ) : null}
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
           <ModerationReportDetailSummaryCard report={report} />
@@ -89,15 +118,16 @@ export function ModerationReportDetailView({ reportId }: ModerationReportDetailV
         <div className="space-y-6">
           <ModerationReportDetailTargetCard report={report} />
           <ModerationReportDetailContextCard report={report} />
-          <ModerationReportDetailActionsPlaceholder />
+          <ModerationReportDetailStaffActions
+            report={report}
+            isSubmitting={isSubmitting}
+            actionError={actionError}
+            onDismiss={dismissReport}
+            onResolve={resolveReport}
+            onClearActionError={clearActionError}
+          />
         </div>
       </div>
-      {report.resolver ? (
-        <section className="rounded-2xl border border-stone-200 bg-white p-5 text-sm text-stone-600 shadow-sm">
-          Traité par : {report.resolver.display_name?.trim() || report.resolver.email} (
-          {report.resolver.email})
-        </section>
-      ) : null}
     </div>
   );
 }

@@ -65,9 +65,19 @@ export interface AdminReportDetailResponse {
   status: AdminReportStatus;
   created_at: string;
   resolved_at: string | null;
+  resolution_note: string | null;
   reporter: AdminReportReporterSummary;
   resolver: AdminReportResolverSummary | null;
   target_type: AdminReportTargetType;
   target_id: string;
   target_post: AdminReportTargetPostSummary;
+}
+
+export interface AdminReportDismissPayload {
+  reason?: string | null;
+}
+
+export interface AdminReportResolvePayload {
+  reason?: string | null;
+  hide_post: boolean;
 }
