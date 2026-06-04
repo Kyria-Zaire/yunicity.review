@@ -1,24 +1,34 @@
-"""Admin citizen reports read service (ADMIN-07B)."""
+"""Admin citizen reports service (ADMIN-07B / ADMIN-07D-A)."""
 
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
-from app.core.feed_constants import PostType
+from app.core.feed_constants import PostType, ReportStatus
 from app.core.report_admin_constants import (
+    REPORT_ADMIN_ACTION_LIST_PAGE_SIZE_MAX,
     REPORT_ADMIN_LIST_PAGE_SIZE_MAX,
     REPORT_REASONS,
+    REPORT_RESOLUTION_NOTE_HIDE_POST_MIN_LENGTH,
+    REPORT_RESOLUTION_NOTE_MAX_LENGTH,
     REPORT_STATUSES,
+    ReportAdminActionType,
 )
+from app.models.user import User
 from app.repositories.admin_report_repository import (
+    AdminReportActionListRow,
     AdminReportDetailRow,
     AdminReportListRow,
     AdminReportRepository,
 )
 from app.schemas.admin_report import (
+    AdminReportActionActorSummary,
+    AdminReportActionListItem,
+    AdminReportActionListResponse,
     AdminReportDetailResponse,
     AdminReportListItem,
     AdminReportListResponse,
@@ -39,6 +49,7 @@ _POST_TYPE_TO_TARGET: dict[str, AdminReportTargetType] = {
 
 class AdminReportService:
     def __init__(self, session: AsyncSession) -> None:
+        self._session = session
         self._repo = AdminReportRepository(session)
 
     async def list_reports(
@@ -93,6 +104,184 @@ class AdminReportService:
                 detail="Signalement introuvable.",
             )
         return self._to_detail(row)
+
+    async def dismiss_report(
+        self,
+        actor: User,
+        report_id: uuid.UUID,
+        *,
+        reason: str | None,
+    ) -> AdminReportDetailResponse:
+        normalized_reason = self._normalize_resolution_note(reason)
+        return await self._close_report(
+            actor=actor,
+            report_id=report_id,
+            action=ReportAdminActionType.DISMISS,
+            new_status=ReportStatus.DISMISSED.value,
+            hide_post=False,
+            reason=normalized_reason,
+        )
+
+    async def resolve_report(
+        self,
+        actor: User,
+        report_id: uuid.UUID,
+        *,
+        reason: str | None,
+        hide_post: bool,
+    ) -> AdminReportDetailResponse:
+        normalized_reason = self._normalize_resolution_note(reason)
+        if hide_post:
+            self._require_hide_post_reason(normalized_reason)
+            action = ReportAdminActionType.RESOLVE_HIDE_POST
+            new_status = ReportStatus.ACTION_TAKEN.value
+        else:
+            action = ReportAdminActionType.RESOLVE
+            new_status = ReportStatus.REVIEWED.value
+        return await self._close_report(
+            actor=actor,
+            report_id=report_id,
+            action=action,
+            new_status=new_status,
+            hide_post=hide_post,
+            reason=normalized_reason,
+        )
+
+    async def list_report_actions(
+        self,
+        report_id: uuid.UUID,
+        *,
+        page: int,
+        page_size: int,
+    ) -> AdminReportActionListResponse:
+        if not await self._repo.report_exists(report_id):
+            raise AppError(
+                status_code=404,
+                code="REPORT_NOT_FOUND",
+                detail="Signalement introuvable.",
+            )
+        resolved_page_size = min(max(page_size, 1), REPORT_ADMIN_ACTION_LIST_PAGE_SIZE_MAX)
+        resolved_page = max(page, 1)
+        rows, total = await self._repo.list_admin_actions(
+            report_id=report_id,
+            page=resolved_page,
+            page_size=resolved_page_size,
+        )
+        return AdminReportActionListResponse(
+            items=[self._to_action_item(row) for row in rows],
+            total=total,
+            page=resolved_page,
+            page_size=resolved_page_size,
+        )
+
+    async def _close_report(
+        self,
+        *,
+        actor: User,
+        report_id: uuid.UUID,
+        action: ReportAdminActionType,
+        new_status: str,
+        hide_post: bool,
+        reason: str | None,
+    ) -> AdminReportDetailResponse:
+        report = await self._repo.get_report_for_update(report_id)
+        if report is None:
+            raise AppError(
+                status_code=404,
+                code="REPORT_NOT_FOUND",
+                detail="Signalement introuvable.",
+            )
+        if report.status != ReportStatus.PENDING.value:
+            raise AppError(
+                status_code=409,
+                code="REPORT_ALREADY_CLOSED",
+                detail="Ce signalement a déjà été traité.",
+            )
+        post = report.post
+        if post is None:
+            raise AppError(
+                status_code=404,
+                code="REPORT_NOT_FOUND",
+                detail="Signalement introuvable.",
+            )
+
+        previous_status = report.status
+        now = datetime.now(UTC)
+        report.status = new_status
+        report.resolved_at = now
+        report.resolved_by = actor.id
+        report.resolution_note = reason
+
+        metadata: dict[str, object] | None = None
+        if hide_post:
+            post.is_active = False
+            metadata = {
+                "hide_post": True,
+                "post_id": str(post.id),
+            }
+
+        await self._repo.add_admin_action(
+            report_id=report.id,
+            actor_user_id=actor.id,
+            action=action.value,
+            previous_status=previous_status,
+            new_status=new_status,
+            reason=reason,
+            metadata=metadata,
+        )
+        await self._session.commit()
+
+        row = await self._repo.get_report_detail(report_id)
+        assert row is not None
+        return self._to_detail(row)
+
+    @staticmethod
+    def _normalize_resolution_note(raw: str | None) -> str | None:
+        if raw is None:
+            return None
+        trimmed = raw.strip()
+        if not trimmed:
+            return None
+        if len(trimmed) > REPORT_RESOLUTION_NOTE_MAX_LENGTH:
+            raise AppError(
+                status_code=422,
+                code="REPORT_REASON_TOO_LONG",
+                detail="La note de résolution est trop longue.",
+            )
+        return trimmed
+
+    @staticmethod
+    def _require_hide_post_reason(reason: str | None) -> None:
+        if reason is None:
+            raise AppError(
+                status_code=422,
+                code="REPORT_REASON_REQUIRED",
+                detail="Une note staff est requise pour masquer le contenu.",
+            )
+        if len(reason) < REPORT_RESOLUTION_NOTE_HIDE_POST_MIN_LENGTH:
+            raise AppError(
+                status_code=422,
+                code="REPORT_REASON_TOO_SHORT",
+                detail="La note staff doit contenir au moins 3 caractères.",
+            )
+
+    @classmethod
+    def _to_action_item(cls, row: AdminReportActionListRow) -> AdminReportActionListItem:
+        actor_summary: AdminReportActionActorSummary | None = None
+        if row.actor is not None:
+            actor_summary = AdminReportActionActorSummary(
+                id=row.actor.id,
+                email=row.actor.email,
+                display_name=cls._user_display_name(row.actor, row.actor_profile),
+            )
+        return AdminReportActionListItem(
+            action=row.action.action,
+            previous_status=row.action.previous_status,
+            new_status=row.action.new_status,
+            reason=row.action.reason,
+            actor_user=actor_summary,
+            created_at=row.action.created_at,
+        )
 
     @staticmethod
     def _user_display_name(
@@ -176,6 +365,7 @@ class AdminReportService:
             status=report.status,  # type: ignore[arg-type]
             created_at=report.created_at,
             resolved_at=report.resolved_at,
+            resolution_note=report.resolution_note,
             reporter=cls._to_reporter(row),
             resolver=cls._to_resolver(row),
             target_type=target_type,
