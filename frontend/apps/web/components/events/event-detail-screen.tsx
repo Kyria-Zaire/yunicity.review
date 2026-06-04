@@ -1,6 +1,7 @@
 "use client";
 
 import { EventDetailAppShell } from "@/components/events/event-detail-app-shell";
+import { EventDetailCancelledState } from "@/components/events/event-detail-cancelled-state";
 import { EventDetailLeftRail } from "@/components/events/event-detail-left-rail";
 import { EventDetailMainTabs } from "@/components/events/event-detail-main-tabs";
 import { EventDetailPortalHero } from "@/components/events/event-detail-portal-hero";
@@ -105,7 +106,9 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
         </p>
       ) : null}
 
-      {context.error || (!context.loading && !event) ? (
+      {context.isCancelled ? <EventDetailCancelledState /> : null}
+
+      {!context.isCancelled && (context.error || context.isNotFound || (!context.loading && !event)) ? (
         <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-6 text-center">
           <p className="text-red-800">{EVENT_DETAIL_NOT_FOUND}</p>
           <button
@@ -142,7 +145,7 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
     </div>
   );
 
-  if (!event || context.loading) {
+  if (!event || context.loading || context.isCancelled) {
     return (
       <EventDetailAppShell>
         {main}

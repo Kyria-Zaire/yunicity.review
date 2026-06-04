@@ -1,5 +1,6 @@
 import type { CulturalPlaceListItem, LocalEvent, Neighborhood } from "@yunicity/types";
 
+import { isAuthError } from "./auth/auth-errors";
 import { eventCalendarDayKey } from "./events-agenda";
 import { EVENT_DETAIL_ACCESS_FREE } from "./event-detail-labels";
 import { eventBelongsToNeighborhood } from "./neighborhood-atmosphere";
@@ -208,4 +209,9 @@ export function buildMapboxStaticPreviewUrl(
 
 export function eventHasMapCoordinates(event: LocalEvent): boolean {
   return event.latitude != null && event.longitude != null;
+}
+
+/** Public event detail: staff/org cancel (API 410 EVENT_CANCELLED). */
+export function isEventCancelledError(err: unknown): boolean {
+  return isAuthError(err) && err.status === 410 && err.code === "EVENT_CANCELLED";
 }
