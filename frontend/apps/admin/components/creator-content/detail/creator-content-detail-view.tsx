@@ -1,6 +1,6 @@
 "use client";
 
-import { CreatorContentDetailAuditPlaceholder } from "@/components/creator-content/detail/creator-content-detail-audit-placeholder";
+import { CreatorContentDetailAuditSection } from "@/components/creator-content/detail/creator-content-detail-audit-section";
 import { CreatorContentDetailFeedSyncCard } from "@/components/creator-content/detail/creator-content-detail-feed-sync-card";
 import { CreatorContentDetailHeader } from "@/components/creator-content/detail/creator-content-detail-header";
 import { CreatorContentDetailIdentityCard } from "@/components/creator-content/detail/creator-content-detail-identity-card";
@@ -8,6 +8,7 @@ import { CreatorContentDetailModerationSection } from "@/components/creator-cont
 import { CreatorContentDetailOrganizationCard } from "@/components/creator-content/detail/creator-content-detail-organization-card";
 import { CreatorContentDetailPreviewCard } from "@/components/creator-content/detail/creator-content-detail-preview-card";
 import { CreatorContentDetailPublicExposureCard } from "@/components/creator-content/detail/creator-content-detail-public-exposure-card";
+import { useAdminCreatorContentActions } from "@/lib/hooks/use-admin-creator-content-actions";
 import { useAdminCreatorContentDetail } from "@/lib/hooks/use-admin-creator-content";
 import { buildCreatorContentListBackPath } from "@yunicity/utils";
 import Link from "next/link";
@@ -38,23 +39,27 @@ export function CreatorContentDetailView({ contentId }: CreatorContentDetailView
     archive,
   } = useAdminCreatorContentDetail(contentId);
 
+  const detailReady = !isLoading && !isNotFound && !error && !!content;
+  const auditActions = useAdminCreatorContentActions(contentId, detailReady);
+
   useEffect(() => {
     if (!successMessage) {
       return;
     }
+    void auditActions.reload();
     const timer = window.setTimeout(() => clearActionFeedback(), 5000);
     return () => window.clearTimeout(timer);
-  }, [successMessage, clearActionFeedback]);
+  }, [successMessage, auditActions.reload, clearActionFeedback]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     clearActionFeedback();
     try {
-      await reload();
+      await Promise.all([reload(), auditActions.reload()]);
     } finally {
       setIsRefreshing(false);
     }
-  }, [clearActionFeedback, reload]);
+  }, [auditActions, clearActionFeedback, reload]);
 
   if (isLoading) {
     return (
@@ -143,7 +148,17 @@ export function CreatorContentDetailView({ contentId }: CreatorContentDetailView
         onClearActionError={clearActionFeedback}
       />
 
-      <CreatorContentDetailAuditPlaceholder />
+      <CreatorContentDetailAuditSection
+        items={auditActions.items}
+        total={auditActions.total}
+        page={auditActions.page}
+        pageSize={auditActions.pageSize}
+        totalPages={auditActions.totalPages}
+        isLoading={auditActions.isLoading}
+        error={auditActions.error}
+        onRetry={auditActions.reload}
+        onPageChange={auditActions.goToPage}
+      />
     </div>
   );
 }
