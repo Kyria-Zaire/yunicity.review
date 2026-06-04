@@ -48,8 +48,14 @@ export {
   adminPassportSearchModeLabel,
   adminPassportStatusLabel,
   adminPassportTierLabel,
+  buildPartnerDetailPath,
+  buildPassportOfferAdminPath,
   buildPassportOpsDetailPath,
   buildPassportOpsListPath,
+  buildPassportOpsPath,
+  maskStaffQrToken,
+  offerRedemptionStatusLabel,
+  OFFER_REDEMPTION_STATUS_LABELS,
   type AdminPassportSearchModeOption,
 } from "./admin-passport";
 export {

@@ -89,11 +89,20 @@ export type {
 } from "./admin-partner";
 
 export type {
+  AdminPassportDetailResponse,
+  AdminPassportDetailStats,
+  AdminPassportDetailUser,
   AdminPassportListItem,
   AdminPassportListParams,
   AdminPassportListResponse,
+  AdminPassportRedemptionItem,
+  AdminPassportRedemptionListResponse,
   AdminPassportSearchMode,
+  AdminPassportStampItem,
+  AdminPassportStampListResponse,
   AdminPassportStatus,
+  AdminPassportSubresourceListParams,
+  AdminPassportTierDetail,
   AdminPassportUserSummary,
 } from "./admin-passport";
 

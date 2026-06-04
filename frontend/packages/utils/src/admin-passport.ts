@@ -3,9 +3,11 @@
 import type {
   AdminPassportSearchMode,
   AdminPassportStatus,
+  OfferRedemptionStatus,
   PassportTierCode,
 } from "@yunicity/types";
 
+import { adminPartnerDetailPath } from "./admin-partner";
 import { PASSPORT_TIER_LABELS } from "./passport-level-labels";
 
 export const DEFAULT_PASSPORT_OPS_CITY = "Reims";
@@ -53,8 +55,41 @@ export function adminPassportTierLabel(code: PassportTierCode): string {
   return PASSPORT_TIER_LABELS[code] ?? code;
 }
 
+export const OFFER_REDEMPTION_STATUS_LABELS: Record<OfferRedemptionStatus, string> = {
+  pending: "En attente",
+  completed: "Validée",
+  cancelled: "Annulée",
+  failed: "Échouée",
+};
+
+export function offerRedemptionStatusLabel(status: OfferRedemptionStatus): string {
+  return OFFER_REDEMPTION_STATUS_LABELS[status] ?? status;
+}
+
+export function maskStaffQrToken(token: string, revealed: boolean): string {
+  if (revealed || token.length <= 16) {
+    return token;
+  }
+  const head = token.slice(0, 8);
+  const tail = token.slice(-4);
+  return `${head}…${tail}`;
+}
+
 export function buildPassportOpsDetailPath(passportId: string): string {
   return `/passport-ops/${encodeURIComponent(passportId)}`;
+}
+
+/** Alias workspace liste (ADMIN-03C). */
+export function buildPassportOpsPath(query?: Record<string, string | undefined>): string {
+  return buildPassportOpsListPath(query);
+}
+
+export function buildPartnerDetailPath(organizationId: string): string {
+  return adminPartnerDetailPath(organizationId);
+}
+
+export function buildPassportOfferAdminPath(offerId: string): string {
+  return `/passport-offers/${encodeURIComponent(offerId)}`;
 }
 
 export function buildPassportOpsListPath(query?: Record<string, string | undefined>): string {
