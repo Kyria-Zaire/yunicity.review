@@ -46,6 +46,30 @@ class RbacRepository:
         await self._session.flush()
         return user_role
 
+    async def remove_role_from_user(
+        self,
+        user_id: uuid.UUID,
+        role_key: str,
+    ) -> bool:
+        role = await self.get_role_by_key(role_key)
+        if role is None:
+            raise ValueError(f"Role not found: {role_key}")
+
+        result = await self._session.execute(
+            select(UserRole).where(
+                UserRole.user_id == user_id,
+                UserRole.role_id == role.id,
+                UserRole.scope_type.is_(None),
+                UserRole.scope_id.is_(None),
+            )
+        )
+        user_role = result.scalar_one_or_none()
+        if user_role is None:
+            return False
+        await self._session.delete(user_role)
+        await self._session.flush()
+        return True
+
     async def get_role_keys_for_user(self, user_id: uuid.UUID) -> list[str]:
         result = await self._session.execute(
             select(Role.key)

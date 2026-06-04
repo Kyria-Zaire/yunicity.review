@@ -50,6 +50,16 @@ class RbacService:
         await self._repo.assign_role_to_user(user_id, role_key, assigned_by=assigned_by)
         self._invalidate_user_cache(user_id)
 
+    async def remove_role_from_user(
+        self,
+        user_id: uuid.UUID,
+        role_key: str,
+    ) -> bool:
+        removed = await self._repo.remove_role_from_user(user_id, role_key)
+        if removed:
+            self._invalidate_user_cache(user_id)
+        return removed
+
     async def _get_role_keys_cached(self, user_id: uuid.UUID) -> list[str]:
         cache = _role_cache_var.get() or {}
         if user_id in cache:
