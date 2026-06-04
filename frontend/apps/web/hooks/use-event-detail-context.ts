@@ -9,6 +9,8 @@ import type {
 } from "@yunicity/types";
 import {
   filterAgendaUpcomingEvents,
+  isAuthError,
+  isEventCancelledError,
   pickNearbyCulturalPlaces,
   pickRelatedEvents,
   resolveEventNeighborhoodContext,
@@ -21,6 +23,8 @@ import { useAuth } from "@/lib/auth/auth-provider";
 export type EventDetailContextState = {
   loading: boolean;
   error: boolean;
+  isCancelled: boolean;
+  isNotFound: boolean;
   event: LocalEvent | null;
   city: string;
   relatedEvents: LocalEvent[];
@@ -41,6 +45,8 @@ export function useEventDetailContext(eventId: string): EventDetailContextState 
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [isCancelled, setIsCancelled] = useState(false);
+  const [isNotFound, setIsNotFound] = useState(false);
   const [event, setEvent] = useState<LocalEvent | null>(null);
   const [cityEvents, setCityEvents] = useState<LocalEvent[]>([]);
   const [savedEvents, setSavedEvents] = useState<LocalEvent[]>([]);
@@ -52,6 +58,8 @@ export function useEventDetailContext(eventId: string): EventDetailContextState 
   const load = useCallback(async () => {
     setLoading(true);
     setError(false);
+    setIsCancelled(false);
+    setIsNotFound(false);
 
     try {
       const detail = await api.events.getEvent(eventId);
@@ -123,9 +131,21 @@ export function useEventDetailContext(eventId: string): EventDetailContextState 
       } else {
         setSavedEvents([]);
       }
-    } catch {
+    } catch (err) {
       setEvent(null);
-      setError(true);
+      if (isEventCancelledError(err)) {
+        setIsCancelled(true);
+        setIsNotFound(false);
+        setError(false);
+      } else if (isAuthError(err) && err.status === 404) {
+        setIsCancelled(false);
+        setIsNotFound(true);
+        setError(false);
+      } else {
+        setIsCancelled(false);
+        setIsNotFound(false);
+        setError(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -186,6 +206,8 @@ export function useEventDetailContext(eventId: string): EventDetailContextState 
   return {
     loading,
     error,
+    isCancelled,
+    isNotFound,
     event,
     city,
     relatedEvents,

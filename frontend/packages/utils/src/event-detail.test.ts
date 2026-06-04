@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import type { CulturalPlaceListItem, LocalEvent, Neighborhood } from "@yunicity/types";
 
+import { AuthError } from "./auth/auth-errors";
 import {
   buildEventPracticalRows,
   eventsShareSameWeek,
   eventWeekStartKey,
+  isEventCancelledError,
   pickNearbyCulturalPlaces,
   pickRelatedEvents,
   resolveEventNeighborhoodContext,
@@ -128,5 +130,15 @@ describe("event-detail", () => {
     const rows = buildEventPracticalRows(baseEvent(), "Concert local");
     expect(rows.some((r) => r.label === "Tarif" && r.value.includes("libre"))).toBe(true);
     expect(rows.some((r) => r.label === "Catégorie" && r.value === "Concert local")).toBe(true);
+  });
+
+  it("isEventCancelledError détecte 410 EVENT_CANCELLED", () => {
+    expect(
+      isEventCancelledError(
+        new AuthError("EVENT_CANCELLED", "Cet événement a été annulé.", 410),
+      ),
+    ).toBe(true);
+    expect(isEventCancelledError(new AuthError("EVENT_NOT_FOUND", "x", 404))).toBe(false);
+    expect(isEventCancelledError(new Error("fail"))).toBe(false);
   });
 });

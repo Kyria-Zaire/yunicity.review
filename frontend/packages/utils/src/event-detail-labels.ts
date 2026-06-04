@@ -4,6 +4,12 @@ export const EVENT_DETAIL_LOADING = "Chargement du moment…";
 export const EVENT_DETAIL_NOT_FOUND = "Ce moment n’est pas disponible.";
 export const EVENT_DETAIL_RETRY = "Réessayer";
 
+export const EVENT_DETAIL_CANCELLED_TITLE = "Événement annulé";
+export const EVENT_DETAIL_CANCELLED_BODY =
+  "Cet événement n’est plus disponible car il a été annulé par son organisateur ou l’équipe Yunicity.";
+export const EVENT_DETAIL_CANCELLED_BACK_EVENTS = "Retour aux événements";
+export const EVENT_DETAIL_CANCELLED_DISCOVER_SORTIR = "Découvrir d’autres sorties";
+
 export const EVENT_DETAIL_PRACTICAL_TITLE = "Infos pratiques";
 export const EVENT_DETAIL_GO_TITLE = "Y aller";
 export const EVENT_DETAIL_GO_MAP_CTA = "Voir sur la carte";
