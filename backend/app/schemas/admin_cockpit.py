@@ -24,6 +24,7 @@ class AdminCockpitAttentionMetrics(BaseModel):
     offers_pending: int = Field(ge=0)
     creator_contents_pending: int = Field(ge=0)
     events_pending: int = Field(ge=0)
+    reports_pending: int = Field(ge=0)
     partner_leads_open: int = Field(ge=0)
     organizations_pending_review: int = Field(ge=0)
 

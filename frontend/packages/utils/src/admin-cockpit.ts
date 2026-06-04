@@ -6,6 +6,7 @@ export type CockpitAttentionKey = keyof {
   offers_pending: number;
   creator_contents_pending: number;
   events_pending: number;
+  reports_pending: number;
   partner_leads_open: number;
   organizations_pending_review: number;
 };
@@ -16,6 +17,7 @@ const ATTENTION_LABELS: Record<CockpitAttentionKey, string> = {
   offers_pending: "Offres en attente",
   creator_contents_pending: "Contenus créateurs",
   events_pending: "Événements en attente",
+  reports_pending: "Signalements citoyens",
   partner_leads_open: "Leads ouverts",
   organizations_pending_review: "Organisations à vérifier",
 };

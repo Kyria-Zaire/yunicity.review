@@ -15,6 +15,7 @@ export interface AdminCockpitAttention {
   offers_pending: number;
   creator_contents_pending: number;
   events_pending: number;
+  reports_pending: number;
   partner_leads_open: number;
   organizations_pending_review: number;
 }
