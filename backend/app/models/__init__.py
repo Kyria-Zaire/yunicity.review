@@ -3,6 +3,7 @@
 from app.models.activation_wave import ActivationWave, ActivationWaveItem
 from app.models.comment import Comment
 from app.models.cultural_place import CulturalPlace
+from app.models.event_admin_action import EventAdminAction
 from app.models.like import Like
 from app.models.local_event import EventInterest, LocalEvent
 from app.models.local_stamp import CitizenLocalStamp, StampDefinition
@@ -47,6 +48,7 @@ __all__ = [
     "CitizenLocalStamp",
     "CulturalPlace",
     "Comment",
+    "EventAdminAction",
     "EventInterest",
     "Like",
     "LocalEvent",

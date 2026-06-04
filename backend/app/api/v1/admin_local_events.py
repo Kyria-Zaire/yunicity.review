@@ -9,13 +9,20 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import require_any_permission
+from app.core.event_admin_constants import (
+    EVENT_ADMIN_ACTION_LIST_PAGE_SIZE_DEFAULT,
+    EVENT_ADMIN_ACTION_LIST_PAGE_SIZE_MAX,
+)
 from app.core.local_event_constants import (
     LOCAL_EVENT_LIST_PAGE_SIZE_DEFAULT,
     LOCAL_EVENT_LIST_PAGE_SIZE_MAX,
 )
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.admin_local_event import AdminLocalEventDetailResponse
+from app.schemas.admin_local_event import (
+    AdminLocalEventActionListResponse,
+    AdminLocalEventDetailResponse,
+)
 from app.schemas.local_event import (
     LocalEventManagementListResponse,
     LocalEventManagementResponse,
@@ -59,6 +66,26 @@ async def get_local_event_admin(
 ) -> AdminLocalEventDetailResponse:
     _ = current_user
     return await AdminLocalEventService(session).get_event_detail(event_id)
+
+
+@router.get("/{event_id}/actions", response_model=AdminLocalEventActionListResponse)
+async def list_local_event_actions_admin(
+    event_id: uuid.UUID,
+    current_user: Annotated[User, Depends(_staff_guard)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(
+        default=EVENT_ADMIN_ACTION_LIST_PAGE_SIZE_DEFAULT,
+        ge=1,
+        le=EVENT_ADMIN_ACTION_LIST_PAGE_SIZE_MAX,
+    ),
+) -> AdminLocalEventActionListResponse:
+    _ = current_user
+    return await AdminLocalEventService(session).list_event_actions(
+        event_id=event_id,
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.post("/{event_id}/approve", response_model=LocalEventManagementResponse)

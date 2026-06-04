@@ -9,6 +9,10 @@ from datetime import UTC, datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
+from app.core.event_admin_constants import (
+    EVENT_ADMIN_APPROVE_REASON,
+    EventAdminAction,
+)
 from app.core.local_event_constants import (
     LOCAL_EVENT_LIST_PAGE_SIZE_MAX,
     MVP_LOCAL_EVENT_TYPES,
@@ -20,6 +24,7 @@ from app.core.partner_constants import PUBLIC_PARTNER_STATUSES, PartnerStatus
 from app.models.local_event import EventInterest, LocalEvent
 from app.models.organization import Organization
 from app.models.user import User
+from app.repositories.admin_local_event_repository import AdminLocalEventRepository
 from app.repositories.local_event_repository import LocalEventRepository
 from app.repositories.organization_repository import OrganizationRepository
 from app.repositories.partner_offer_repository import PartnerOfferRepository
@@ -46,6 +51,7 @@ class LocalEventService:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
         self._events = LocalEventRepository(session)
+        self._admin_events = AdminLocalEventRepository(session)
         self._orgs = OrganizationRepository(session)
         self._offers = PartnerOfferRepository(session)
         self._partners = PartnerRepository(session)
@@ -281,6 +287,7 @@ class LocalEventService:
         self, moderator: User, event_id: uuid.UUID
     ) -> LocalEventManagementResponse:
         event = await self._require_event(event_id)
+        previous_status = event.moderation_status
         assert_event_transition_allowed(
             event.moderation_status, LocalEventModerationStatus.APPROVED
         )
@@ -291,6 +298,14 @@ class LocalEventService:
         event.moderated_by_user_id = moderator.id
         event.moderated_at = datetime.now(UTC)
         event.rejection_reason = None
+        await self._record_event_admin_action(
+            event_id=event.id,
+            moderator=moderator,
+            action=EventAdminAction.APPROVE,
+            previous_status=previous_status,
+            new_status=event.moderation_status,
+            reason=EVENT_ADMIN_APPROVE_REASON,
+        )
         await FeedEventSyncService(self._session).upsert_event_post(event, org)
         await self._session.commit()
         await self._notify_published(event)
@@ -303,13 +318,23 @@ class LocalEventService:
         payload: LocalEventRejectRequest,
     ) -> LocalEventManagementResponse:
         event = await self._require_event(event_id)
+        previous_status = event.moderation_status
+        reason = payload.reason.strip()
         assert_event_transition_allowed(
             event.moderation_status, LocalEventModerationStatus.REJECTED
         )
         event.moderation_status = LocalEventModerationStatus.REJECTED.value
         event.moderated_by_user_id = moderator.id
         event.moderated_at = datetime.now(UTC)
-        event.rejection_reason = payload.reason.strip()
+        event.rejection_reason = reason
+        await self._record_event_admin_action(
+            event_id=event.id,
+            moderator=moderator,
+            action=EventAdminAction.REJECT,
+            previous_status=previous_status,
+            new_status=event.moderation_status,
+            reason=reason,
+        )
         await FeedEventSyncService(self._session).deactivate_event_post(event.id)
         await self._session.commit()
         return self._to_management_response(await self._require_event(event_id))
@@ -420,6 +445,25 @@ class LocalEventService:
             target_user_id=event.created_by_user_id,
             event_title=event.title,
             city=event.city,
+        )
+
+    async def _record_event_admin_action(
+        self,
+        *,
+        event_id: uuid.UUID,
+        moderator: User,
+        action: EventAdminAction,
+        previous_status: str,
+        new_status: str,
+        reason: str,
+    ) -> None:
+        await self._admin_events.record_admin_action(
+            local_event_id=event_id,
+            action=action.value,
+            actor_user_id=moderator.id,
+            previous_status=previous_status,
+            new_status=new_status,
+            reason=reason,
         )
 
     async def _require_event(self, event_id: uuid.UUID) -> LocalEvent:
