@@ -7,8 +7,14 @@ import {
   buildPassportOpsDetailPath,
   buildPassportOpsListPath,
   buildPassportOpsPath,
+  canReactivatePassport,
+  canSuspendPassport,
+  isPassportReasonValid,
   maskStaffQrToken,
   offerRedemptionStatusLabel,
+  passportStatusActionCopy,
+  passportStatusActionKind,
+  passportStatusActionSuccessMessage,
 } from "./admin-passport";
 
 describe("admin-passport helpers", () => {
@@ -47,5 +53,35 @@ describe("admin-passport helpers", () => {
   it("labels offer redemption status", () => {
     expect(offerRedemptionStatusLabel("completed")).toBe("Validée");
     expect(offerRedemptionStatusLabel("pending")).toBe("En attente");
+  });
+
+  it("gates suspend and reactivate by status", () => {
+    expect(canSuspendPassport("active")).toBe(true);
+    expect(canSuspendPassport("suspended")).toBe(false);
+    expect(canReactivatePassport("suspended")).toBe(true);
+    expect(canReactivatePassport("active")).toBe(false);
+  });
+
+  it("resolves action kind only for modifiable statuses", () => {
+    expect(passportStatusActionKind("active")).toBe("suspend");
+    expect(passportStatusActionKind("suspended")).toBe("reactivate");
+  });
+
+  it("exposes action copy for suspend and reactivate", () => {
+    expect(passportStatusActionCopy("suspend").title).toBe("Suspendre ce Passport");
+    expect(passportStatusActionCopy("reactivate").title).toBe("Réactiver ce Passport");
+    expect(passportStatusActionCopy("suspend").confirmTone).toBe("danger");
+    expect(passportStatusActionCopy("reactivate").confirmTone).toBe("primary");
+  });
+
+  it("validates passport action reason length", () => {
+    expect(isPassportReasonValid("ab")).toBe(false);
+    expect(isPassportReasonValid("abc")).toBe(true);
+    expect(isPassportReasonValid("   motif valide   ")).toBe(true);
+  });
+
+  it("builds success messages per action", () => {
+    expect(passportStatusActionSuccessMessage("suspend")).toContain("suspendu");
+    expect(passportStatusActionSuccessMessage("reactivate")).toContain("réactivé");
   });
 });

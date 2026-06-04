@@ -1,5 +1,6 @@
 "use client";
 
+import { PassportDetailActionsSection } from "@/components/passport-ops/detail/passport-detail-actions-section";
 import { PassportDetailHeader } from "@/components/passport-ops/detail/passport-detail-header";
 import { PassportDetailIdentityCard } from "@/components/passport-ops/detail/passport-detail-identity-card";
 import { PassportDetailQrCard } from "@/components/passport-ops/detail/passport-detail-qr-card";
@@ -11,14 +12,27 @@ import { useAdminPassportRedemptions } from "@/lib/hooks/use-admin-passport-rede
 import { useAdminPassportStamps } from "@/lib/hooks/use-admin-passport-stamps";
 import { buildPassportOpsListPath } from "@yunicity/utils";
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface PassportDetailViewProps {
   passportId: string;
 }
 
 export function PassportDetailView({ passportId }: PassportDetailViewProps) {
-  const { data, isLoading, error, isNotFound, reload } = useAdminPassportDetail(passportId);
+  const {
+    data,
+    isLoading,
+    error,
+    isNotFound,
+    reload,
+    isSubmitting,
+    actionError,
+    actionSuccess,
+    clearActionFeedback,
+    clearActionError,
+    suspendPassport,
+    reactivatePassport,
+  } = useAdminPassportDetail(passportId);
   const detailReady = Boolean(data) && !isNotFound && !isLoading;
 
   const stamps = useAdminPassportStamps(passportId, detailReady);
@@ -26,15 +40,24 @@ export function PassportDetailView({ passportId }: PassportDetailViewProps) {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  useEffect(() => {
+    if (!actionSuccess) {
+      return;
+    }
+    const timer = window.setTimeout(() => clearActionFeedback(), 5000);
+    return () => window.clearTimeout(timer);
+  }, [actionSuccess, clearActionFeedback]);
+
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
+    clearActionFeedback();
     try {
       await reload();
       await Promise.all([stamps.reload(), redemptions.reload()]);
     } finally {
       setIsRefreshing(false);
     }
-  }, [redemptions, reload, stamps]);
+  }, [clearActionFeedback, redemptions, reload, stamps]);
 
   if (isLoading) {
     return (
@@ -91,9 +114,35 @@ export function PassportDetailView({ passportId }: PassportDetailViewProps) {
     <div className="mx-auto max-w-5xl space-y-8 pb-12">
       <PassportDetailHeader
         data={data}
-        isRefreshing={isRefreshing}
+        isRefreshing={isRefreshing || isSubmitting}
         onRefresh={() => void handleRefresh()}
       />
+
+      {actionSuccess ? (
+        <div
+          className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+          role="status"
+        >
+          {actionSuccess}
+          <button
+            type="button"
+            onClick={clearActionFeedback}
+            className="ml-3 font-medium underline"
+          >
+            Fermer
+          </button>
+        </div>
+      ) : null}
+
+      <PassportDetailActionsSection
+        status={data.status}
+        isSubmitting={isSubmitting}
+        actionError={actionError}
+        onClearActionError={clearActionError}
+        onSuspend={suspendPassport}
+        onReactivate={reactivatePassport}
+      />
+
       <PassportDetailIdentityCard data={data} />
       <PassportDetailQrCard qrToken={data.qr_token} />
       <PassportDetailStats stats={data.stats} />

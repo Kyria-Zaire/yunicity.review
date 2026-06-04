@@ -64,6 +64,11 @@ export interface AdminPassportDetailStats {
   redemptions_completed: number;
 }
 
+export interface AdminPassportStatusPatchPayload {
+  status: AdminPassportStatus;
+  reason: string;
+}
+
 export interface AdminPassportDetailResponse {
   id: string;
   passport_number: string;

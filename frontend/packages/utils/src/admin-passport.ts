@@ -12,6 +12,72 @@ import { PASSPORT_TIER_LABELS } from "./passport-level-labels";
 
 export const DEFAULT_PASSPORT_OPS_CITY = "Reims";
 
+export const ADMIN_PASSPORT_REASON_MIN_LENGTH = 3;
+export const ADMIN_PASSPORT_REASON_MAX_LENGTH = 1000;
+
+export type PassportStatusActionKind = "suspend" | "reactivate";
+
+const PASSPORT_STATUS_ACTION_COPY: Record<
+  PassportStatusActionKind,
+  { title: string; description: string; confirmLabel: string; confirmTone: "danger" | "primary" }
+> = {
+  suspend: {
+    title: "Suspendre ce Passport",
+    description:
+      "Le scan et les redemptions seront bloqués tant que le Passport est suspendu.",
+    confirmLabel: "Suspendre",
+    confirmTone: "danger",
+  },
+  reactivate: {
+    title: "Réactiver ce Passport",
+    description: "Le Passport pourra de nouveau être utilisé.",
+    confirmLabel: "Réactiver",
+    confirmTone: "primary",
+  },
+};
+
+export function canSuspendPassport(status: AdminPassportStatus): boolean {
+  return status === "active";
+}
+
+export function canReactivatePassport(status: AdminPassportStatus): boolean {
+  return status === "suspended";
+}
+
+export function canModifyPassportStatus(status: AdminPassportStatus): boolean {
+  return canSuspendPassport(status) || canReactivatePassport(status);
+}
+
+export function passportStatusActionKind(
+  status: AdminPassportStatus,
+): PassportStatusActionKind | null {
+  if (canSuspendPassport(status)) {
+    return "suspend";
+  }
+  if (canReactivatePassport(status)) {
+    return "reactivate";
+  }
+  return null;
+}
+
+export function passportStatusActionCopy(kind: PassportStatusActionKind) {
+  return PASSPORT_STATUS_ACTION_COPY[kind];
+}
+
+export function isPassportReasonValid(reason: string): boolean {
+  const trimmed = reason.trim();
+  return (
+    trimmed.length >= ADMIN_PASSPORT_REASON_MIN_LENGTH &&
+    trimmed.length <= ADMIN_PASSPORT_REASON_MAX_LENGTH
+  );
+}
+
+export function passportStatusActionSuccessMessage(kind: PassportStatusActionKind): string {
+  return kind === "suspend"
+    ? "Passport suspendu. Le scan terrain est bloqué jusqu’à réactivation."
+    : "Passport réactivé. Le citoyen peut à nouveau utiliser son Passport.";
+}
+
 export const ADMIN_PASSPORT_STATUS_LABELS: Record<AdminPassportStatus, string> = {
   active: "Actif",
   suspended: "Suspendu",
