@@ -3,10 +3,18 @@ import { describe, expect, it } from "vitest";
 import {
   adminReportReasonLabel,
   adminReportReporterLabel,
+  adminReportSafetyGuidance,
   adminReportStatusLabel,
   adminReportTargetTypeLabel,
   buildModerationDetailPath,
+  buildModerationListBackPath,
   buildModerationListPath,
+  buildModerationReportDetailPath,
+  formatReportDate,
+  reportReasonLabel,
+  reportStatusLabel,
+  shortReportId,
+  targetTypeLabel,
 } from "./admin-moderation";
 describe("adminReportStatusLabel", () => {
   it("maps known statuses", () => {
@@ -53,5 +61,43 @@ describe("moderation paths", () => {
     expect(buildModerationDetailPath("abc-123", params)).toBe(
       "/moderation/abc-123?status=pending&page=1",
     );
+    expect(buildModerationReportDetailPath("abc-123", params)).toBe(
+      "/moderation/abc-123?status=pending&page=1",
+    );
+  });
+
+  it("builds list back path from search params", () => {
+    const params = new URLSearchParams({
+      status: "pending",
+      reason: "spam",
+      page: "2",
+    });
+    expect(buildModerationListBackPath(params)).toBe(
+      "/moderation?status=pending&reason=spam&page=2",
+    );
+    expect(buildModerationListBackPath(null)).toBe("/moderation?status=pending");
+  });
+});
+
+describe("07C helper aliases", () => {
+  it("exposes stable label aliases", () => {
+    expect(reportStatusLabel("pending")).toBe(adminReportStatusLabel("pending"));
+    expect(reportReasonLabel("spam")).toBe(adminReportReasonLabel("spam"));
+    expect(targetTypeLabel("post")).toBe(adminReportTargetTypeLabel("post"));
+  });
+
+  it("shortens report ids", () => {
+    expect(shortReportId("abcdef12-3456")).toBe("abcdef12…");
+    expect(shortReportId("short")).toBe("short");
+  });
+
+  it("formats report dates", () => {
+    expect(formatReportDate(null)).toBe("—");
+    expect(formatReportDate("2026-01-15T10:00:00.000Z")).not.toBe("—");
+  });
+
+  it("provides safety guidance per reason", () => {
+    expect(adminReportSafetyGuidance("spam")).toContain("Vérifiez le contenu");
+    expect(adminReportSafetyGuidance("other")).toContain("autre");
   });
 });
