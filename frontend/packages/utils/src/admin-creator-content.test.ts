@@ -15,9 +15,11 @@ import {
   canArchiveCreatorContent,
   canRejectCreatorContent,
   countCreatorContentKpis,
+  creatorContentAdminActionLabel,
   creatorContentApproveSideEffectCopy,
   creatorContentApproveSideEffectWarningCopy,
   creatorContentStatusBadgeVariant,
+  formatCreatorContentAdminActionStatusTransition,
   creatorContentStatusLabel,
   formatCreatorContentPublishedAt,
   isCreatorContentMediaImageUrl,
@@ -29,6 +31,23 @@ describe("adminCreatorContentStatusLabel", () => {
     expect(adminCreatorContentStatusLabel("pending_review")).toContain("attente");
     expect(adminCreatorContentStatusLabel("published")).toBe("Publié");
     expect(adminCreatorContentStatusLabel("rejected")).toBe("Refusé");
+  });
+});
+
+describe("creatorContentAdminActionLabel", () => {
+  it("maps staff audit actions", () => {
+    expect(creatorContentAdminActionLabel("approve")).toBe("Approbation");
+    expect(creatorContentAdminActionLabel("reject")).toBe("Rejet");
+    expect(creatorContentAdminActionLabel("archive")).toBe("Archivage");
+  });
+});
+
+describe("formatCreatorContentAdminActionStatusTransition", () => {
+  it("formats status labels with arrow", () => {
+    expect(
+      formatCreatorContentAdminActionStatusTransition("pending_review", "published"),
+    ).toBe("En attente de validation → Publié");
+    expect(formatCreatorContentAdminActionStatusTransition(null, null)).toBe("— → —");
   });
 });
 

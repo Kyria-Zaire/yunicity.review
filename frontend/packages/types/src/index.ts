@@ -166,7 +166,12 @@ export type {
 } from "./partner_offer_management";
 
 export type {
+  AdminCreatorContentAction,
+  AdminCreatorContentActionActor,
+  AdminCreatorContentActionItem,
+  AdminCreatorContentActionListResponse,
   PartnerCreatorContentAdmin,
+  PartnerCreatorContentAdminActionListParams,
   PartnerCreatorContentAdminListParams,
   PartnerCreatorContentAdminListResponse,
   PartnerCreatorContentAuthorSummary,

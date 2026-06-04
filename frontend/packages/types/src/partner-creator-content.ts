@@ -103,6 +103,36 @@ export type PartnerCreatorContentRejectPayload = {
   reason: string;
 };
 
+export type AdminCreatorContentAction = "approve" | "reject" | "archive";
+
+export interface AdminCreatorContentActionActor {
+  id: string;
+  email: string;
+  display_name: string | null;
+}
+
+export interface AdminCreatorContentActionItem {
+  id: string;
+  action: AdminCreatorContentAction;
+  previous_status: string | null;
+  new_status: string | null;
+  reason: string | null;
+  actor_user: AdminCreatorContentActionActor;
+  created_at: string;
+}
+
+export interface AdminCreatorContentActionListResponse {
+  items: AdminCreatorContentActionItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export type PartnerCreatorContentAdminActionListParams = {
+  page?: number;
+  page_size?: number;
+};
+
 export type PartnerCreatorContentPublicListResponse = {
   items: PartnerCreatorContentPublic[];
   total: number;
