@@ -21,6 +21,7 @@ __all__ = [
     "AdminLocalEventActionItem",
     "AdminLocalEventActionListResponse",
     "AdminLocalEventActorSummary",
+    "AdminLocalEventCancelRequest",
     "AdminLocalEventDetailResponse",
     "AdminLocalEventOrganizationDetail",
 ]
@@ -51,6 +52,8 @@ class AdminLocalEventDetailResponse(BaseModel):
     visibility: str
     moderation_status: str
     is_cancelled: bool
+    cancelled_at: datetime | None = None
+    cancelled_by_user_id: uuid.UUID | None = None
     interest_count: int = Field(ge=0)
     rejection_reason: str | None = None
     organization: AdminLocalEventOrganizationDetail | None = None
@@ -58,7 +61,13 @@ class AdminLocalEventDetailResponse(BaseModel):
     updated_at: datetime
 
 
-AdminLocalEventActionKind = Literal["approve", "reject"]
+class AdminLocalEventCancelRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str = Field(min_length=3, max_length=1000)
+
+
+AdminLocalEventActionKind = Literal["approve", "reject", "cancel"]
 
 
 class AdminLocalEventActorSummary(BaseModel):
