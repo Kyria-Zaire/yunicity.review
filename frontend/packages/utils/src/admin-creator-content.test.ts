@@ -7,11 +7,21 @@ import {
   buildCreatorContentDetailPathWithListContext,
   buildCreatorContentListBackPath,
   buildCreatorContentListPath,
+  buildCreatorContentPublicPath,
   canAdminApproveCreatorContent,
+  canAdminArchiveCreatorContent,
   canAdminRejectCreatorContent,
+  canApproveCreatorContent,
+  canArchiveCreatorContent,
+  canRejectCreatorContent,
   countCreatorContentKpis,
+  creatorContentApproveSideEffectCopy,
+  creatorContentApproveSideEffectWarningCopy,
   creatorContentStatusBadgeVariant,
   creatorContentStatusLabel,
+  formatCreatorContentPublishedAt,
+  isCreatorContentMediaImageUrl,
+  shouldShowCreatorContentApproveSideEffectWarning,
 } from "./admin-creator-content";
 
 describe("adminCreatorContentStatusLabel", () => {
@@ -113,5 +123,58 @@ describe("countCreatorContentKpis", () => {
     expect(counts.pendingReview).toBe(1);
     expect(counts.approved).toBe(2);
     expect(counts.rejected).toBe(1);
+  });
+});
+
+describe("creator content capabilities", () => {
+  it("exposes alias helpers aligned with workflow", () => {
+    expect(canApproveCreatorContent("pending_review")).toBe(true);
+    expect(canRejectCreatorContent("published")).toBe(true);
+    expect(canArchiveCreatorContent("published")).toBe(true);
+    expect(canArchiveCreatorContent("pending_review")).toBe(false);
+  });
+
+  it("matches canAdmin* helpers", () => {
+    expect(canApproveCreatorContent("draft")).toBe(canAdminApproveCreatorContent("draft"));
+    expect(canArchiveCreatorContent("published")).toBe(
+      canAdminArchiveCreatorContent("published"),
+    );
+  });
+});
+
+describe("buildCreatorContentPublicPath", () => {
+  it("builds place href with optional web base", () => {
+    expect(buildCreatorContentPublicPath("belga", "Reims")).toBe("/places/belga?city=Reims");
+    expect(buildCreatorContentPublicPath("belga", "Reims", "https://app.yunicity.fr")).toBe(
+      "https://app.yunicity.fr/places/belga?city=Reims",
+    );
+  });
+});
+
+describe("approve side-effect copy", () => {
+  it("warns when approve is available", () => {
+    expect(shouldShowCreatorContentApproveSideEffectWarning("pending_review")).toBe(true);
+    expect(shouldShowCreatorContentApproveSideEffectWarning("published")).toBe(false);
+    expect(creatorContentApproveSideEffectWarningCopy).toContain("organisation");
+    expect(creatorContentApproveSideEffectCopy).toContain("feed");
+  });
+});
+
+describe("formatCreatorContentPublishedAt", () => {
+  it("returns dash when not published", () => {
+    expect(
+      formatCreatorContentPublishedAt({
+        status: "pending_review",
+        submitted_at: "2026-06-01T10:00:00Z",
+        updated_at: "2026-06-01T11:00:00Z",
+      }),
+    ).toBe("—");
+  });
+});
+
+describe("isCreatorContentMediaImageUrl", () => {
+  it("detects image extensions", () => {
+    expect(isCreatorContentMediaImageUrl("https://cdn.example/a.jpg")).toBe(true);
+    expect(isCreatorContentMediaImageUrl("https://cdn.example/doc.pdf")).toBe(false);
   });
 });

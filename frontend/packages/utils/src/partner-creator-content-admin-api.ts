@@ -57,6 +57,13 @@ export class PartnerCreatorContentAdminApi extends ApiClientBase {
       payload,
     );
   }
+
+  archiveContent(id: string): Promise<PartnerCreatorContentAdmin> {
+    return this.postJson<PartnerCreatorContentAdmin>(
+      `/admin/partner-creator-content/${encodeURIComponent(id)}/archive`,
+      {},
+    );
+  }
 }
 
 export function createPartnerCreatorContentAdminApi(
