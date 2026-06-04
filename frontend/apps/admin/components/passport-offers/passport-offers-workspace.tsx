@@ -6,6 +6,7 @@ import { PassportOffersKpiStrip } from "@/components/passport-offers/passport-of
 import { PassportOffersList } from "@/components/passport-offers/passport-offers-list";
 import { PassportOpsPagination } from "@/components/passport-ops/passport-ops-pagination";
 import { useAdminOffersList } from "@/lib/hooks/use-admin-offers-list";
+import { passportOffersStateToSearchParams } from "@/lib/passport-offers-url";
 
 export function PassportOffersWorkspace() {
   const {
@@ -26,6 +27,8 @@ export function PassportOffersWorkspace() {
     goToPage,
   } = useAdminOffersList();
 
+  const listSearchQuery = passportOffersStateToSearchParams(state);
+
   return (
     <div className="mx-auto max-w-6xl space-y-6 pb-12">
       <PassportOffersHeader />
@@ -45,6 +48,7 @@ export function PassportOffersWorkspace() {
       />
       <PassportOffersList
         items={items}
+        listSearchQuery={listSearchQuery}
         isLoading={isLoading}
         error={error}
         onRetry={reload}
