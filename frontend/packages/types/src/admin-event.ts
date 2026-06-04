@@ -22,6 +22,10 @@ export interface LocalEventRejectPayload {
   reason: string;
 }
 
+export interface LocalEventCancelPayload {
+  reason: string;
+}
+
 export interface AdminLocalEventOrganizationDetail {
   id: string;
   name: string;
@@ -44,6 +48,8 @@ export interface AdminLocalEventDetail {
   visibility: string;
   moderation_status: AdminEventModerationStatus | string;
   is_cancelled: boolean;
+  cancelled_at: string | null;
+  cancelled_by_user_id: string | null;
   interest_count: number;
   rejection_reason?: string | null;
   organization: AdminLocalEventOrganizationDetail | null;
@@ -51,7 +57,7 @@ export interface AdminLocalEventDetail {
   updated_at: string;
 }
 
-export type AdminLocalEventAction = "approve" | "reject";
+export type AdminLocalEventAction = "approve" | "reject" | "cancel";
 
 export interface AdminLocalEventActorSummary {
   id: string;

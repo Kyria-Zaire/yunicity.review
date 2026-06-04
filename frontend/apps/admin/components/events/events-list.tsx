@@ -97,8 +97,14 @@ export function EventsList({
             <tbody className="divide-y divide-stone-100">
               {items.map((event) => {
                 const isRowBusy = moderatingEventId === event.id;
-                const showApprove = canAdminApproveEvent(event.moderation_status);
-                const showReject = canAdminRejectEvent(event.moderation_status);
+                const showApprove = canAdminApproveEvent(
+                  event.moderation_status,
+                  event.is_cancelled,
+                );
+                const showReject = canAdminRejectEvent(
+                  event.moderation_status,
+                  event.is_cancelled,
+                );
                 const interestCount = event.interest_count ?? 0;
 
                 return (

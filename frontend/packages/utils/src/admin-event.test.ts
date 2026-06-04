@@ -4,13 +4,19 @@ import {
   buildAdminEventDetailPath,
   buildEventsListBackPath,
   buildEventsListPath,
+  canAdminApproveEvent,
+  canAdminRejectEvent,
+  canCancelEvent,
   eventAdminActionLabel,
+  eventCancelledBadgeLabel,
+  eventCancelWarningCopy,
   eventModerationStatusLabel,
   eventTemporalStatus,
   eventTemporalStatusLabel,
   eventVisibilityLabel,
   formatEventAdminActionStatusTransition,
   formatEventDate,
+  validateEventCancelReason,
 } from "./admin-event";
 
 describe("admin-event helpers", () => {
@@ -60,6 +66,42 @@ describe("admin-event helpers", () => {
   it("labels event admin audit actions", () => {
     expect(eventAdminActionLabel("approve")).toBe("Approbation");
     expect(eventAdminActionLabel("reject")).toBe("Rejet");
+    expect(eventAdminActionLabel("cancel")).toBe("Annulation");
+  });
+
+  it("gates cancel for approved non-cancelled events only", () => {
+    expect(
+      canCancelEvent({ moderation_status: "approved", is_cancelled: false }),
+    ).toBe(true);
+    expect(
+      canCancelEvent({ moderation_status: "pending_review", is_cancelled: false }),
+    ).toBe(false);
+    expect(canCancelEvent({ moderation_status: "rejected", is_cancelled: false })).toBe(
+      false,
+    );
+    expect(canCancelEvent({ moderation_status: "approved", is_cancelled: true })).toBe(
+      false,
+    );
+  });
+
+  it("blocks approve/reject when event is cancelled", () => {
+    expect(canAdminApproveEvent("pending_review", true)).toBe(false);
+    expect(canAdminRejectEvent("approved", true)).toBe(false);
+    expect(canAdminApproveEvent("pending_review", false)).toBe(true);
+    expect(canAdminRejectEvent("approved", false)).toBe(true);
+  });
+
+  it("validates cancel reason length", () => {
+    expect(validateEventCancelReason("")).toBe("Le motif est obligatoire.");
+    expect(validateEventCancelReason("ab")).toBe(
+      "Le motif doit contenir au moins 3 caractères.",
+    );
+    expect(validateEventCancelReason("Motif valide")).toBeNull();
+  });
+
+  it("exposes cancel copy constants", () => {
+    expect(eventCancelledBadgeLabel).toBe("Annulé");
+    expect(eventCancelWarningCopy).toContain("410");
   });
 
   it("formats event admin action status transitions", () => {
