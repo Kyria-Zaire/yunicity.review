@@ -7,7 +7,7 @@ import {
   adminReportReporterLabel,
   adminReportStatusLabel,
   adminReportTargetTypeLabel,
-  buildModerationDetailPath,
+  buildModerationReportDetailPath,
   formatModerationDate,
   truncateReportId,
 } from "@yunicity/utils";
@@ -98,7 +98,7 @@ export function ModerationReportsList({
                 </td>
                 <td className="px-4 py-3">
                   <Link
-                    href={buildModerationDetailPath(item.id, listSearchQuery)}
+                    href={buildModerationReportDetailPath(item.id, listSearchQuery)}
                     className="text-sm font-medium text-stone-900 underline-offset-2 hover:underline"
                   >
                     Voir

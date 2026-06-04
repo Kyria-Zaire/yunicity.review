@@ -118,3 +118,74 @@ export function formatModerationDate(iso: string | null | undefined): string {
 export function truncateReportId(id: string): string {
   return id.length > 8 ? `${id.slice(0, 8)}…` : id;
 }
+
+/** ADMIN-07C aliases (stable names for detail workspace). */
+export const reportStatusLabel = adminReportStatusLabel;
+export const reportReasonLabel = adminReportReasonLabel;
+export const targetTypeLabel = adminReportTargetTypeLabel;
+export const formatReportDate = formatModerationDate;
+export const shortReportId = truncateReportId;
+export const buildModerationReportDetailPath = buildModerationDetailPath;
+
+const MODERATION_LIST_QUERY_KEYS = ["status", "reason", "page", "page_size"] as const;
+
+export function buildModerationListBackPath(
+  listQuery?: URLSearchParams | string | null,
+): string {
+  if (!listQuery) {
+    return buildModerationListPath();
+  }
+  const params =
+    typeof listQuery === "string" ? new URLSearchParams(listQuery) : listQuery;
+  const record: Record<string, string | undefined> = {};
+  for (const key of MODERATION_LIST_QUERY_KEYS) {
+    const value = params.get(key);
+    if (value?.trim()) {
+      record[key] = value.trim();
+    }
+  }
+  return buildModerationListPath(record);
+}
+
+const REPORT_AUTHOR_TYPE_LABELS: Record<string, string> = {
+  citizen: "Citoyen",
+  partner: "Partenaire",
+  organization: "Organisation",
+};
+
+export function adminReportAuthorLabel(authorType: string, authorId: string): string {
+  const typeLabel = REPORT_AUTHOR_TYPE_LABELS[authorType] ?? authorType;
+  return `${typeLabel} · ${shortReportId(authorId)}`;
+}
+
+export function adminReportSafetyGuidance(reason: AdminReportReason): string {
+  const base = "Vérifiez le contenu et le contexte avant toute décision.";
+  switch (reason) {
+    case "spam":
+      return `${base} Méfiez-vous des contenus répétitifs, promotionnels ou automatisés.`;
+    case "inappropriate":
+      return `${base} Évaluez le contenu signalé dans son contexte local et communautaire.`;
+    case "other":
+      return `${base} Le motif « autre » nécessite une lecture attentive du contexte.`;
+    default:
+      return base;
+  }
+}
+
+export function isAdminReportTargetUnavailable(
+  target: { is_active: boolean; title: string | null; body_excerpt: string | null },
+): boolean {
+  if (!target.is_active) {
+    return true;
+  }
+  const hasTitle = Boolean(target.title?.trim());
+  const hasBody = Boolean(target.body_excerpt?.trim());
+  return !hasTitle && !hasBody;
+}
+
+/** No dedicated public post route in web V1 — feed-only. */
+export function buildPublicPostUrl(postId: string, webBase?: string | null): string | null {
+  void postId;
+  void webBase;
+  return null;
+}

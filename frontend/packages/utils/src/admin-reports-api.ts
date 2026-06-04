@@ -38,6 +38,10 @@ export class AdminReportsApi extends ApiClientBase {
       `/admin/reports/${encodeURIComponent(reportId)}`,
     );
   }
+
+  getReportDetail(reportId: string): Promise<AdminReportDetailResponse> {
+    return this.getReport(reportId);
+  }
 }
 
 export function createAdminReportsApi(client: AuthClient, apiBaseUrl: string): AdminReportsApi {
