@@ -98,6 +98,7 @@ export type {
   AdminPassportRedemptionItem,
   AdminPassportRedemptionListResponse,
   AdminPassportSearchMode,
+  AdminPassportStatusPatchPayload,
   AdminPassportStampItem,
   AdminPassportStampListResponse,
   AdminPassportStatus,

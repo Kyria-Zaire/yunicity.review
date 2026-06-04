@@ -40,6 +40,8 @@ export {
   createAdminPassportsApi,
 } from "./admin-passports-api";
 export {
+  ADMIN_PASSPORT_REASON_MAX_LENGTH,
+  ADMIN_PASSPORT_REASON_MIN_LENGTH,
   ADMIN_PASSPORT_SEARCH_MODE_AUTO,
   ADMIN_PASSPORT_SEARCH_MODE_LABELS,
   ADMIN_PASSPORT_SEARCH_MODE_OPTIONS,
@@ -48,6 +50,13 @@ export {
   adminPassportSearchModeLabel,
   adminPassportStatusLabel,
   adminPassportTierLabel,
+  canModifyPassportStatus,
+  canReactivatePassport,
+  canSuspendPassport,
+  isPassportReasonValid,
+  passportStatusActionCopy,
+  passportStatusActionKind,
+  passportStatusActionSuccessMessage,
   buildPartnerDetailPath,
   buildPassportOfferAdminPath,
   buildPassportOpsDetailPath,
@@ -57,6 +66,7 @@ export {
   offerRedemptionStatusLabel,
   OFFER_REDEMPTION_STATUS_LABELS,
   type AdminPassportSearchModeOption,
+  type PassportStatusActionKind,
 } from "./admin-passport";
 export {
   AdminActivationWavesApi,

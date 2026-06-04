@@ -4,6 +4,7 @@ import type {
   AdminPassportListResponse,
   AdminPassportRedemptionListResponse,
   AdminPassportStampListResponse,
+  AdminPassportStatusPatchPayload,
   AdminPassportSubresourceListParams,
 } from "@yunicity/types";
 
@@ -78,6 +79,16 @@ export class AdminPassportsApi extends ApiClientBase {
   ): Promise<AdminPassportRedemptionListResponse> {
     return this.getJson<AdminPassportRedemptionListResponse>(
       `/admin/passports/${encodeURIComponent(passportId)}/redemptions${buildSubresourceQuery(params)}`,
+    );
+  }
+
+  patchPassportStatus(
+    passportId: string,
+    payload: AdminPassportStatusPatchPayload,
+  ): Promise<AdminPassportDetailResponse> {
+    return this.patchJson<AdminPassportDetailResponse>(
+      `/admin/passports/${encodeURIComponent(passportId)}`,
+      payload,
     );
   }
 }
