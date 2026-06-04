@@ -14,6 +14,11 @@ from app.core.flash_offer import (
     build_flash_snapshot,
     validate_flash_fields,
 )
+from app.core.offer_admin_constants import (
+    OFFER_ADMIN_APPROVE_REASON,
+    OFFER_ADMIN_ARCHIVE_REASON,
+    OfferAdminAction,
+)
 from app.core.organization_constants import OrganizationVisibility, VerificationStatus
 from app.core.partner_offer_workflow import (
     assert_partner_can_edit,
@@ -24,6 +29,7 @@ from app.core.passport_constants import PartnerOfferStatus
 from app.models.organization import Organization
 from app.models.passport import PartnerOffer
 from app.models.user import User
+from app.repositories.admin_partner_offer_repository import AdminPartnerOfferRepository
 from app.repositories.organization_repository import OrganizationRepository
 from app.repositories.partner_offer_repository import PartnerOfferRepository
 from app.schemas.admin_partner_offer import (
@@ -54,6 +60,7 @@ class PartnerOfferService:
         self._offers = PartnerOfferRepository(session)
         self._orgs = OrganizationRepository(session)
         self._membership = OrganizationMembershipService(session)
+        self._offer_admin = AdminPartnerOfferRepository(session)
 
     # --- Partner self-service ---
 
@@ -269,11 +276,20 @@ class PartnerOfferService:
         offer = await self._require_offer(offer_id)
         org = await self._require_verified_organization(offer.organization_id)
         self._validate_dates(offer.valid_from, offer.valid_until)
+        previous_status = self._offer_status_value(offer.status)
         self._transition_offer(
             offer,
             PartnerOfferStatus.PUBLISHED,
             moderator=moderator,
             clear_rejection=True,
+        )
+        await self._record_offer_admin_action(
+            offer_id=offer.id,
+            moderator=moderator,
+            action=OfferAdminAction.APPROVE,
+            previous_status=previous_status,
+            new_status=self._offer_status_value(offer.status),
+            reason=OFFER_ADMIN_APPROVE_REASON,
         )
         org.visibility = OrganizationVisibility.PUBLIC
         await FeedOfferSyncService(self._session).upsert_offer_post(offer, org)
@@ -290,11 +306,21 @@ class PartnerOfferService:
     ) -> PartnerOfferAdminResponse:
         offer = await self._require_offer(offer_id)
         await self._require_verified_organization(offer.organization_id)
+        reason = payload.reason.strip()
+        previous_status = self._offer_status_value(offer.status)
         self._transition_offer(
             offer,
             PartnerOfferStatus.REJECTED,
             moderator=moderator,
-            rejection_reason=payload.reason.strip(),
+            rejection_reason=reason,
+        )
+        await self._record_offer_admin_action(
+            offer_id=offer.id,
+            moderator=moderator,
+            action=OfferAdminAction.REJECT,
+            previous_status=previous_status,
+            new_status=self._offer_status_value(offer.status),
+            reason=reason,
         )
         await FeedOfferSyncService(self._session).deactivate_offer_post(offer.id)
         await self._session.commit()
@@ -309,17 +335,52 @@ class PartnerOfferService:
     ) -> PartnerOfferAdminResponse:
         offer = await self._require_offer(offer_id)
         await self._require_verified_organization(offer.organization_id)
+        previous_status = self._offer_status_value(offer.status)
         self._transition_offer(
             offer,
             PartnerOfferStatus.ARCHIVED,
             moderator=moderator,
             clear_rejection=True,
         )
+        await self._record_offer_admin_action(
+            offer_id=offer.id,
+            moderator=moderator,
+            action=OfferAdminAction.ARCHIVE,
+            previous_status=previous_status,
+            new_status=self._offer_status_value(offer.status),
+            reason=OFFER_ADMIN_ARCHIVE_REASON,
+        )
         await FeedOfferSyncService(self._session).deactivate_offer_post(offer.id)
         await self._session.commit()
         return await self.get_offer_admin(offer_id)
 
     # --- Internals ---
+
+    @staticmethod
+    def _offer_status_value(status: PartnerOfferStatus | str) -> str:
+        if isinstance(status, PartnerOfferStatus):
+            return status.value
+        return str(status)
+
+    async def _record_offer_admin_action(
+        self,
+        *,
+        offer_id: uuid.UUID,
+        moderator: User,
+        action: OfferAdminAction,
+        previous_status: str,
+        new_status: str,
+        reason: str,
+    ) -> None:
+        await self._offer_admin.record_admin_action(
+            partner_offer_id=offer_id,
+            action=action.value,
+            actor_user_id=moderator.id,
+            previous_status=previous_status,
+            new_status=new_status,
+            reason=reason,
+            created_at=datetime.now(UTC),
+        )
 
     async def _require_offer(self, offer_id: uuid.UUID) -> PartnerOffer:
         offer = await self._offers.get_by_id(offer_id)

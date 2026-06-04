@@ -16,6 +16,7 @@ from app.schemas.admin_partner_offer import (
     ADMIN_OFFER_REDEMPTION_LIST_PAGE_SIZE_MAX,
     PARTNER_OFFER_LIST_PAGE_SIZE_DEFAULT,
     PARTNER_OFFER_LIST_PAGE_SIZE_MAX,
+    AdminPartnerOfferActionListResponse,
     PartnerOfferAdminCreateRequest,
     PartnerOfferAdminListResponse,
     PartnerOfferAdminRedemptionListResponse,
@@ -102,6 +103,26 @@ async def list_partner_offer_redemptions_admin(
 ) -> PartnerOfferAdminRedemptionListResponse:
     _ = current_user
     return await AdminPartnerOfferService(session).list_offer_redemptions(
+        offer_id=offer_id,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.get("/{offer_id}/actions", response_model=AdminPartnerOfferActionListResponse)
+async def list_partner_offer_actions_admin(
+    offer_id: uuid.UUID,
+    current_user: Annotated[User, Depends(_staff_guard)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(
+        default=ADMIN_OFFER_REDEMPTION_LIST_PAGE_SIZE_DEFAULT,
+        ge=1,
+        le=ADMIN_OFFER_REDEMPTION_LIST_PAGE_SIZE_MAX,
+    ),
+) -> AdminPartnerOfferActionListResponse:
+    _ = current_user
+    return await AdminPartnerOfferService(session).list_offer_actions(
         offer_id=offer_id,
         page=page,
         page_size=page_size,
