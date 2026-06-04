@@ -7,12 +7,12 @@ from app.models.like import Like
 from app.models.local_event import EventInterest, LocalEvent
 from app.models.local_stamp import CitizenLocalStamp, StampDefinition
 from app.models.neighborhood import Neighborhood
+from app.models.offer_admin_action import OfferAdminAction
 from app.models.organization import (
     Organization,
     OrganizationMember,
     OrganizationVerification,
 )
-from app.models.offer_admin_action import OfferAdminAction
 from app.models.partner_admin_action import PartnerAdminAction
 from app.models.partner_creator_content import PartnerCreatorContent
 from app.models.partner_lead import PartnerLead
