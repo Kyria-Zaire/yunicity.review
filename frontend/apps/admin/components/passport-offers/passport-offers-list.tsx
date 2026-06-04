@@ -4,11 +4,12 @@ import { OfferStatusBadge } from "@/components/offer-status-badge";
 import { formatDateTime } from "@/lib/format";
 import type { AdminOfferListItem } from "@yunicity/types";
 import type { PassportTierCode } from "@yunicity/types";
-import { adminPassportTierLabel, buildOfferDetailPath } from "@yunicity/utils";
+import { adminPassportTierLabel, buildOfferDetailPathWithListContext } from "@yunicity/utils";
 import Link from "next/link";
 
 interface PassportOffersListProps {
   items: AdminOfferListItem[];
+  listSearchQuery: URLSearchParams;
   isLoading: boolean;
   error: string | null;
   onRetry: () => void;
@@ -23,6 +24,7 @@ function tierRequirementLabel(tierCode: string | null): string {
 
 export function PassportOffersList({
   items,
+  listSearchQuery,
   isLoading,
   error,
   onRetry,
@@ -93,7 +95,7 @@ export function PassportOffersList({
                 </td>
                 <td className="px-4 py-3">
                   <Link
-                    href={buildOfferDetailPath(offer.id)}
+                    href={buildOfferDetailPathWithListContext(offer.id, listSearchQuery)}
                     className="text-sm font-medium text-stone-800 underline-offset-2 hover:underline"
                   >
                     Voir
