@@ -124,3 +124,33 @@ export interface PartnerOfferAdminRedemptionListParams {
   page?: number;
   page_size?: number;
 }
+
+export type AdminPartnerOfferAction = "approve" | "reject" | "archive";
+
+export interface AdminPartnerOfferActorSummary {
+  id: string;
+  email: string;
+  display_name: string | null;
+}
+
+export interface AdminPartnerOfferActionItem {
+  id: string;
+  action: AdminPartnerOfferAction;
+  previous_status: string | null;
+  new_status: string | null;
+  reason: string | null;
+  actor_user: AdminPartnerOfferActorSummary;
+  created_at: string;
+}
+
+export interface AdminPartnerOfferActionListResponse {
+  items: AdminPartnerOfferActionItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface PartnerOfferAdminActionListParams {
+  page?: number;
+  page_size?: number;
+}

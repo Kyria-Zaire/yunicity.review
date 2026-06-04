@@ -1,6 +1,11 @@
 /** Admin offers workspace helpers (ADMIN-04B / 04C). */
 
-import type { AdminOfferListItem, AdminOfferStatus, AdminOfferRedemptionChannel } from "@yunicity/types";
+import type {
+  AdminOfferListItem,
+  AdminOfferStatus,
+  AdminOfferRedemptionChannel,
+  AdminPartnerOfferAction,
+} from "@yunicity/types";
 
 import { adminPartnerDetailPath } from "./admin-partner";
 import { buildPassportOfferAdminPath } from "./admin-passport";
@@ -208,4 +213,31 @@ export const OFFER_REDEMPTION_CHANNEL_LABELS: Record<AdminOfferRedemptionChannel
 
 export function offerRedemptionChannelLabel(channel: AdminOfferRedemptionChannel): string {
   return OFFER_REDEMPTION_CHANNEL_LABELS[channel] ?? channel;
+}
+
+export const OFFER_ADMIN_ACTION_LABELS: Record<AdminPartnerOfferAction, string> = {
+  approve: "Approbation",
+  reject: "Rejet",
+  archive: "Archivage",
+};
+
+export function offerAdminActionLabel(action: AdminPartnerOfferAction): string {
+  return OFFER_ADMIN_ACTION_LABELS[action] ?? action;
+}
+
+function offerStaffStatusLabel(status: string | null | undefined): string {
+  if (!status) {
+    return "—";
+  }
+  if (status in ADMIN_OFFER_STATUS_LABELS) {
+    return offerStatusLabel(status as AdminOfferStatus);
+  }
+  return status;
+}
+
+export function formatOfferAdminActionStatusTransition(
+  previousStatus: string | null,
+  newStatus: string | null,
+): string {
+  return `${offerStaffStatusLabel(previousStatus)} → ${offerStaffStatusLabel(newStatus)}`;
 }

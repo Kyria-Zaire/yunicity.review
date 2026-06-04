@@ -6,9 +6,10 @@ import { OfferDetailIdentityCard } from "@/components/passport-offers/detail/off
 import { OfferDetailModerationSection } from "@/components/passport-offers/detail/offer-detail-moderation-section";
 import { OfferDetailPartnerCard } from "@/components/passport-offers/detail/offer-detail-partner-card";
 import { OfferDetailPassportConditionsCard } from "@/components/passport-offers/detail/offer-detail-passport-conditions-card";
-import { OfferDetailPreviewSection } from "@/components/passport-offers/detail/offer-detail-preview-section";
+import { OfferDetailAuditSection } from "@/components/passport-offers/detail/offer-detail-audit-section";
 import { OfferDetailPublicExposureCard } from "@/components/passport-offers/detail/offer-detail-public-exposure-card";
 import { OfferDetailRedemptionsSection } from "@/components/passport-offers/detail/offer-detail-redemptions-section";
+import { useAdminOfferActions } from "@/lib/hooks/use-admin-offer-actions";
 import { useAdminOfferDetail } from "@/lib/hooks/use-admin-offer-detail";
 import { useAdminOfferRedemptions } from "@/lib/hooks/use-admin-offer-redemptions";
 import { buildOffersListPath } from "@yunicity/utils";
@@ -42,6 +43,7 @@ export function OfferDetailView({ offerId }: OfferDetailViewProps) {
 
   const detailReady = !isLoading && !isNotFound && !error && !!offer;
   const redemptions = useAdminOfferRedemptions(offerId, detailReady);
+  const actions = useAdminOfferActions(offerId, detailReady);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -49,19 +51,20 @@ export function OfferDetailView({ offerId }: OfferDetailViewProps) {
     if (!actionSuccess) {
       return;
     }
+    void actions.reload();
     const timer = window.setTimeout(() => clearActionFeedback(), 5000);
     return () => window.clearTimeout(timer);
-  }, [actionSuccess, clearActionFeedback]);
+  }, [actionSuccess, actions.reload, clearActionFeedback]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     clearActionFeedback();
     try {
-      await Promise.all([reload(), redemptions.reload()]);
+      await Promise.all([reload(), redemptions.reload(), actions.reload()]);
     } finally {
       setIsRefreshing(false);
     }
-  }, [clearActionFeedback, redemptions, reload]);
+  }, [actions, clearActionFeedback, redemptions, reload]);
 
   if (isLoading) {
     return (
@@ -169,9 +172,16 @@ export function OfferDetailView({ offerId }: OfferDetailViewProps) {
         onRetry={redemptions.reload}
         onPageChange={redemptions.goToPage}
       />
-      <OfferDetailPreviewSection
-        title="Historique staff"
-        message="Timeline offre prévue en ADMIN-04E-B."
+      <OfferDetailAuditSection
+        items={actions.items}
+        total={actions.total}
+        page={actions.page}
+        pageSize={actions.pageSize}
+        totalPages={actions.totalPages}
+        isLoading={actions.isLoading}
+        error={actions.error}
+        onRetry={actions.reload}
+        onPageChange={actions.goToPage}
       />
     </div>
   );
