@@ -89,6 +89,10 @@ export type {
 } from "./admin-partner";
 
 export type {
+  AdminPassportActionActorUser,
+  AdminPassportActionItem,
+  AdminPassportActionKind,
+  AdminPassportActionListResponse,
   AdminPassportDetailResponse,
   AdminPassportDetailStats,
   AdminPassportDetailUser,

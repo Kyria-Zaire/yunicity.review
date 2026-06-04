@@ -122,3 +122,28 @@ export interface AdminPassportRedemptionListResponse {
   page: number;
   page_size: number;
 }
+
+export type AdminPassportActionKind = "suspend" | "reactivate";
+
+export interface AdminPassportActionActorUser {
+  id: string;
+  email: string;
+  display_name: string | null;
+}
+
+export interface AdminPassportActionItem {
+  id: string;
+  action: AdminPassportActionKind;
+  previous_status: string | null;
+  new_status: string | null;
+  reason: string;
+  actor_user: AdminPassportActionActorUser;
+  created_at: string;
+}
+
+export interface AdminPassportActionListResponse {
+  items: AdminPassportActionItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}

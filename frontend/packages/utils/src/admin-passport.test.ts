@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  adminPassportActionLabel,
   adminPassportSearchModeLabel,
   adminPassportStatusLabel,
   buildPartnerDetailPath,
@@ -9,6 +10,7 @@ import {
   buildPassportOpsPath,
   canReactivatePassport,
   canSuspendPassport,
+  formatAdminPassportActionStatusTransition,
   isPassportReasonValid,
   maskStaffQrToken,
   offerRedemptionStatusLabel,
@@ -83,5 +85,19 @@ describe("admin-passport helpers", () => {
   it("builds success messages per action", () => {
     expect(passportStatusActionSuccessMessage("suspend")).toContain("suspendu");
     expect(passportStatusActionSuccessMessage("reactivate")).toContain("réactivé");
+  });
+
+  it("labels audit actions suspend and reactivate", () => {
+    expect(adminPassportActionLabel("suspend")).toBe("Suspension");
+    expect(adminPassportActionLabel("reactivate")).toBe("Réactivation");
+  });
+
+  it("formats audit status transition", () => {
+    expect(formatAdminPassportActionStatusTransition("active", "suspended")).toBe(
+      "Actif → Suspendu",
+    );
+    expect(formatAdminPassportActionStatusTransition("suspended", "active")).toBe(
+      "Suspendu → Actif",
+    );
   });
 });

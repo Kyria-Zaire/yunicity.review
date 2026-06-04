@@ -1,4 +1,5 @@
 import type {
+  AdminPassportActionListResponse,
   AdminPassportDetailResponse,
   AdminPassportListParams,
   AdminPassportListResponse,
@@ -79,6 +80,15 @@ export class AdminPassportsApi extends ApiClientBase {
   ): Promise<AdminPassportRedemptionListResponse> {
     return this.getJson<AdminPassportRedemptionListResponse>(
       `/admin/passports/${encodeURIComponent(passportId)}/redemptions${buildSubresourceQuery(params)}`,
+    );
+  }
+
+  listPassportActions(
+    passportId: string,
+    params?: AdminPassportSubresourceListParams,
+  ): Promise<AdminPassportActionListResponse> {
+    return this.getJson<AdminPassportActionListResponse>(
+      `/admin/passports/${encodeURIComponent(passportId)}/actions${buildSubresourceQuery(params)}`,
     );
   }
 

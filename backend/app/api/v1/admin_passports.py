@@ -16,6 +16,7 @@ from app.schemas.admin_passport import (
     ADMIN_PASSPORT_LIST_PAGE_SIZE_MAX,
     ADMIN_PASSPORT_SUBRESOURCE_PAGE_SIZE_DEFAULT,
     ADMIN_PASSPORT_SUBRESOURCE_PAGE_SIZE_MAX,
+    AdminPassportActionListResponse,
     AdminPassportDetailResponse,
     AdminPassportListResponse,
     AdminPassportRedemptionListResponse,
@@ -119,6 +120,26 @@ async def list_admin_passport_redemptions(
 ) -> AdminPassportRedemptionListResponse:
     _ = current_user
     return await AdminPassportService(session).list_redemptions(
+        passport_id=passport_id,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.get("/{passport_id}/actions", response_model=AdminPassportActionListResponse)
+async def list_admin_passport_actions(
+    passport_id: uuid.UUID,
+    current_user: Annotated[User, Depends(_staff_guard)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(
+        default=ADMIN_PASSPORT_SUBRESOURCE_PAGE_SIZE_DEFAULT,
+        ge=1,
+        le=ADMIN_PASSPORT_SUBRESOURCE_PAGE_SIZE_MAX,
+    ),
+) -> AdminPassportActionListResponse:
+    _ = current_user
+    return await AdminPassportService(session).list_actions(
         passport_id=passport_id,
         page=page,
         page_size=page_size,

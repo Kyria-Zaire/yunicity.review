@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import Select, func, or_, select
@@ -30,6 +31,13 @@ class AdminPassportListRow:
     user: User
     profile: UserProfile | None
     tier: PassportTier
+
+
+@dataclass(frozen=True, slots=True)
+class AdminPassportActionRow:
+    action: PassportAdminAction
+    actor: User | None
+    actor_profile: UserProfile | None
 
 
 ListPassportRow = tuple[Passport, User, UserProfile, PassportTier]
@@ -231,6 +239,7 @@ class AdminPassportRepository:
         new_status: str,
         reason: str,
         metadata: dict[str, Any] | None = None,
+        created_at: datetime | None = None,
     ) -> PassportAdminAction:
         entry = PassportAdminAction(
             passport_id=passport_id,
@@ -241,7 +250,40 @@ class AdminPassportRepository:
             new_status=new_status,
             reason=reason,
             metadata_=metadata,
+            created_at=created_at or datetime.now(UTC),
         )
         self._session.add(entry)
         await self._session.flush()
         return entry
+
+    async def list_admin_actions(
+        self,
+        *,
+        passport_id: uuid.UUID,
+        page: int,
+        page_size: int,
+    ) -> tuple[list[AdminPassportActionRow], int]:
+        filters = [PassportAdminAction.passport_id == passport_id]
+
+        count_stmt = select(func.count()).select_from(PassportAdminAction).where(*filters)
+        total = int((await self._session.execute(count_stmt)).scalar_one())
+
+        stmt = (
+            select(PassportAdminAction, User, UserProfile)
+            .outerjoin(User, PassportAdminAction.actor_user_id == User.id)
+            .outerjoin(UserProfile, UserProfile.user_id == User.id)
+            .where(*filters)
+            .order_by(PassportAdminAction.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        result = await self._session.execute(stmt)
+        rows = [
+            AdminPassportActionRow(
+                action=row[0],
+                actor=row[1] if isinstance(row[1], User) else None,
+                actor_profile=row[2] if isinstance(row[2], UserProfile) else None,
+            )
+            for row in result.all()
+        ]
+        return rows, total
