@@ -6,17 +6,20 @@ import { formatDate } from "@/lib/format";
 import {
   adminCreatorContentAuthorLabel,
   adminCreatorContentExcerpt,
+  buildCreatorContentListBackPath,
   canAdminApproveCreatorContent,
   canAdminRejectCreatorContent,
 } from "@yunicity/utils";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useMemo, useState } from "react";
 
-export default function CreatorContentDetailPage() {
+function CreatorContentDetailPageContent() {
   const params = useParams<{ id: string }>();
   const contentId = params.id;
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const backHref = useMemo(() => buildCreatorContentListBackPath(searchParams), [searchParams]);
   const [showReject, setShowReject] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
 
@@ -38,7 +41,7 @@ export default function CreatorContentDetailPage() {
   if (error || !content) {
     return (
       <div className="space-y-4">
-        <Link href="/creator-content" className="text-sm text-muted-foreground hover:underline">
+        <Link href={backHref} className="text-sm text-muted-foreground hover:underline">
           ← Contenus créateurs
         </Link>
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -53,7 +56,7 @@ export default function CreatorContentDetailPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <Link href="/creator-content" className="text-sm text-muted-foreground hover:underline">
+      <Link href={backHref} className="text-sm text-muted-foreground hover:underline">
         ← Contenus créateurs
       </Link>
 
@@ -205,11 +208,21 @@ export default function CreatorContentDetailPage() {
 
       <button
         type="button"
-        onClick={() => router.push("/creator-content")}
+        onClick={() => router.push(backHref)}
         className="text-sm text-muted-foreground hover:underline"
       >
         Retour à la liste
       </button>
     </div>
+  );
+}
+
+export default function CreatorContentDetailPage() {
+  return (
+    <Suspense
+      fallback={<p className="text-sm text-muted-foreground">Chargement du contenu…</p>}
+    >
+      <CreatorContentDetailPageContent />
+    </Suspense>
   );
 }
