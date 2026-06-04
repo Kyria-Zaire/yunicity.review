@@ -10,6 +10,8 @@ import {
   canApproveOffer,
   canArchiveOffer,
   canRejectOffer,
+  formatOfferAdminActionStatusTransition,
+  offerAdminActionLabel,
   offerRedemptionChannelLabel,
   offerStatusBadgeVariant,
   offerStatusLabel,
@@ -63,5 +65,17 @@ describe("admin-offer helpers", () => {
     expect(offerRedemptionChannelLabel("self")).toBe("App citoyen");
     expect(offerRedemptionChannelLabel("scan")).toBe("Scan partenaire");
     expect(offerRedemptionChannelLabel("unknown")).toBe("Inconnu");
+  });
+
+  it("labels offer admin audit actions", () => {
+    expect(offerAdminActionLabel("approve")).toBe("Approbation");
+    expect(offerAdminActionLabel("reject")).toBe("Rejet");
+    expect(offerAdminActionLabel("archive")).toBe("Archivage");
+  });
+
+  it("formats offer admin status transitions", () => {
+    expect(formatOfferAdminActionStatusTransition("pending_review", "published")).toBe(
+      "En attente de validation → Publiée",
+    );
   });
 });

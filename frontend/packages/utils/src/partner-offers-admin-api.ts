@@ -1,5 +1,7 @@
 import type {
+  AdminPartnerOfferActionListResponse,
   PartnerOfferAdmin,
+  PartnerOfferAdminActionListParams,
   PartnerOfferAdminCreatePayload,
   PartnerOfferAdminListParams,
   PartnerOfferAdminListResponse,
@@ -37,7 +39,9 @@ function buildListQuery(params?: PartnerOfferAdminListParams): string {
   return qs ? `?${qs}` : "";
 }
 
-function buildRedemptionsQuery(params?: PartnerOfferAdminRedemptionListParams): string {
+function buildPagedQuery(
+  params?: PartnerOfferAdminRedemptionListParams | PartnerOfferAdminActionListParams,
+): string {
   if (!params) {
     return "";
   }
@@ -106,7 +110,16 @@ export class PartnerOffersAdminApi extends ApiClientBase {
     params?: PartnerOfferAdminRedemptionListParams,
   ): Promise<PartnerOfferAdminRedemptionListResponse> {
     return this.getJson<PartnerOfferAdminRedemptionListResponse>(
-      `/admin/partner-offers/${encodeURIComponent(offerId)}/redemptions${buildRedemptionsQuery(params)}`,
+      `/admin/partner-offers/${encodeURIComponent(offerId)}/redemptions${buildPagedQuery(params)}`,
+    );
+  }
+
+  listOfferActions(
+    offerId: string,
+    params?: PartnerOfferAdminActionListParams,
+  ): Promise<AdminPartnerOfferActionListResponse> {
+    return this.getJson<AdminPartnerOfferActionListResponse>(
+      `/admin/partner-offers/${encodeURIComponent(offerId)}/actions${buildPagedQuery(params)}`,
     );
   }
 }

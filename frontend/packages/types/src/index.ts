@@ -55,6 +55,11 @@ export type {
   AdminOfferRedemptionCitizen,
   AdminOfferRedemptionPassport,
   PartnerOfferRejectPayload,
+  AdminPartnerOfferAction,
+  AdminPartnerOfferActionItem,
+  AdminPartnerOfferActionListResponse,
+  AdminPartnerOfferActorSummary,
+  PartnerOfferAdminActionListParams,
   VerifiedOrganizationListResponse,
   VerifiedOrganizationOption,
 } from "./admin_partner_offer";
