@@ -21,7 +21,7 @@ const STAFF_NAV_ITEMS: readonly (StaffNavLink | StaffNavDisabled)[] = [
   { kind: "link", href: "/passport-ops", label: "Passport Ops" },
   { kind: "link", href: "/partner-scan", label: "Scanner Passport" },
   { kind: "link", href: "/passport-offers", label: "Offres" },
-  { kind: "disabled", label: "Events", hint: "Bientôt" },
+  { kind: "link", href: "/events", label: "Events" },
   { kind: "link", href: "/creator-content", label: "Creators" },
   { kind: "disabled", label: "Moderation", hint: "Hub à venir" },
   { kind: "link", href: "/protected-admin", label: "Staff" },
@@ -36,6 +36,9 @@ function isStaffNavActive(pathname: string, href: string): boolean {
   }
   if (href === "/passport-ops") {
     return pathname === "/passport-ops" || pathname.startsWith("/passport-ops/");
+  }
+  if (href === "/events") {
+    return pathname === "/events" || pathname.startsWith("/events/");
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -117,6 +120,9 @@ function staffPageTitle(pathname: string, isPartnerArea: boolean): string {
   }
   if (pathname.startsWith("/passport-offers")) {
     return "Modération offres";
+  }
+  if (pathname === "/events" || pathname.startsWith("/events/")) {
+    return "Events";
   }
   if (pathname.startsWith("/creator-content")) {
     return "Contenus créateurs";

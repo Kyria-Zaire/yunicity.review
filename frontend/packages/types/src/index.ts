@@ -65,6 +65,15 @@ export type {
 } from "./admin_partner_offer";
 
 export type {
+  AdminEventModerationStatus,
+  AdminEventModerationStatusFilter,
+  AdminLocalEventListItem,
+  AdminLocalEventListParams,
+  AdminLocalEventListResponse,
+  LocalEventRejectPayload,
+} from "./admin-event";
+
+export type {
   AdminCockpitAttention,
   AdminCockpitExecutive,
   AdminCockpitPartners,

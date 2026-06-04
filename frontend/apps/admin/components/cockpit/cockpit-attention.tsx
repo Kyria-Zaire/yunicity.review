@@ -82,8 +82,7 @@ export function CockpitAttention({ attention }: { attention: AdminCockpitAttenti
     {
       key: "events_pending",
       count: attention.events_pending,
-      disabled: true,
-      disabledReason: "Modération événements — route à venir",
+      href: "/events?status=pending_review",
     },
     {
       key: "partner_leads_open",
