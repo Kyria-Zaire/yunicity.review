@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildAdminEventDetailPath,
+  buildEventsListBackPath,
   buildEventsListPath,
   eventModerationStatusLabel,
+  eventTemporalStatus,
+  eventTemporalStatusLabel,
   eventVisibilityLabel,
   formatEventDate,
 } from "./admin-event";
@@ -31,5 +34,24 @@ describe("admin-event helpers", () => {
       "/events?status=pending_review",
     );
     expect(buildEventsListPath()).toBe("/events");
+  });
+
+  it("builds list back path from detail query context", () => {
+    const params = new URLSearchParams("status=approved&city=Lyon&page=2");
+    expect(buildEventsListBackPath(params)).toBe("/events?status=approved&city=Lyon&page=2");
+  });
+
+  it("resolves temporal status from schedule", () => {
+    const now = new Date("2026-06-15T12:00:00.000Z");
+    expect(
+      eventTemporalStatus("2026-06-20T12:00:00.000Z", "2026-06-21T12:00:00.000Z", now),
+    ).toBe("upcoming");
+    expect(
+      eventTemporalStatus("2026-06-10T12:00:00.000Z", "2026-06-20T12:00:00.000Z", now),
+    ).toBe("ongoing");
+    expect(
+      eventTemporalStatus("2026-06-01T12:00:00.000Z", "2026-06-10T12:00:00.000Z", now),
+    ).toBe("past");
+    expect(eventTemporalStatusLabel("upcoming")).toBe("À venir");
   });
 });

@@ -67,9 +67,11 @@ export type {
 export type {
   AdminEventModerationStatus,
   AdminEventModerationStatusFilter,
+  AdminLocalEventDetail,
   AdminLocalEventListItem,
   AdminLocalEventListParams,
   AdminLocalEventListResponse,
+  AdminLocalEventOrganizationDetail,
   LocalEventRejectPayload,
 } from "./admin-event";
 
