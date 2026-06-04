@@ -8,6 +8,11 @@ from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.creator_content_admin_constants import (
+    CREATOR_CONTENT_ADMIN_APPROVE_REASON,
+    CREATOR_CONTENT_ADMIN_ARCHIVE_REASON,
+    CreatorContentAdminAction,
+)
 from app.core.errors import AppError
 from app.core.organization_constants import OrganizationVisibility, VerificationStatus
 from app.core.partner_constants import PUBLIC_PARTNER_STATUSES, PartnerStatus
@@ -20,6 +25,9 @@ from app.core.partner_creator_content_workflow import (
 from app.models.organization import Organization
 from app.models.partner_creator_content import PartnerCreatorContent
 from app.models.user import User
+from app.repositories.admin_partner_creator_content_repository import (
+    AdminPartnerCreatorContentRepository,
+)
 from app.repositories.organization_repository import OrganizationRepository
 from app.repositories.partner_creator_content_repository import PartnerCreatorContentRepository
 from app.repositories.partner_offer_repository import PartnerOfferRepository
@@ -52,6 +60,7 @@ class PartnerCreatorContentService:
         self._orgs = OrganizationRepository(session)
         self._partners = PartnerRepository(session)
         self._membership = OrganizationMembershipService(session)
+        self._creator_content_admin = AdminPartnerCreatorContentRepository(session)
 
     async def create_draft(
         self,
@@ -182,11 +191,20 @@ class PartnerCreatorContentService:
     ) -> PartnerCreatorContentAdminResponse:
         content = await self._require_content(content_id)
         org = await self._require_verified_organization(content.organization_id)
+        previous_status = self._content_status_value(content.status)
         self._transition_content(
             content,
             PartnerCreatorContentStatus.PUBLISHED,
             moderator=moderator,
             clear_rejection=True,
+        )
+        await self._record_creator_content_admin_action(
+            content_id=content.id,
+            moderator=moderator,
+            action=CreatorContentAdminAction.APPROVE,
+            previous_status=previous_status,
+            new_status=self._content_status_value(content.status),
+            reason=CREATOR_CONTENT_ADMIN_APPROVE_REASON,
         )
         org.visibility = OrganizationVisibility.PUBLIC
         await FeedCreatorContentSyncService(self._session).upsert_creator_content_post(
@@ -204,11 +222,21 @@ class PartnerCreatorContentService:
     ) -> PartnerCreatorContentAdminResponse:
         content = await self._require_content(content_id)
         await self._require_verified_organization(content.organization_id)
+        reason = payload.reason.strip()
+        previous_status = self._content_status_value(content.status)
         self._transition_content(
             content,
             PartnerCreatorContentStatus.REJECTED,
             moderator=moderator,
-            rejection_reason=payload.reason.strip(),
+            rejection_reason=reason,
+        )
+        await self._record_creator_content_admin_action(
+            content_id=content.id,
+            moderator=moderator,
+            action=CreatorContentAdminAction.REJECT,
+            previous_status=previous_status,
+            new_status=self._content_status_value(content.status),
+            reason=reason,
         )
         await FeedCreatorContentSyncService(self._session).deactivate_creator_content_post(
             content.id
@@ -223,11 +251,20 @@ class PartnerCreatorContentService:
     ) -> PartnerCreatorContentAdminResponse:
         content = await self._require_content(content_id)
         await self._require_verified_organization(content.organization_id)
+        previous_status = self._content_status_value(content.status)
         self._transition_content(
             content,
             PartnerCreatorContentStatus.ARCHIVED,
             moderator=moderator,
             clear_rejection=True,
+        )
+        await self._record_creator_content_admin_action(
+            content_id=content.id,
+            moderator=moderator,
+            action=CreatorContentAdminAction.ARCHIVE,
+            previous_status=previous_status,
+            new_status=self._content_status_value(content.status),
+            reason=CREATOR_CONTENT_ADMIN_ARCHIVE_REASON,
         )
         await FeedCreatorContentSyncService(self._session).deactivate_creator_content_post(
             content.id
@@ -257,6 +294,32 @@ class PartnerCreatorContentService:
             **base.model_dump(),
             author=author,
             submitted_at=submitted_at,
+        )
+
+    @staticmethod
+    def _content_status_value(status: PartnerCreatorContentStatus | str) -> str:
+        if isinstance(status, PartnerCreatorContentStatus):
+            return status.value
+        return str(status)
+
+    async def _record_creator_content_admin_action(
+        self,
+        *,
+        content_id: uuid.UUID,
+        moderator: User,
+        action: CreatorContentAdminAction,
+        previous_status: str,
+        new_status: str,
+        reason: str,
+    ) -> None:
+        await self._creator_content_admin.record_admin_action(
+            creator_content_id=content_id,
+            action=action.value,
+            actor_user_id=moderator.id,
+            previous_status=previous_status,
+            new_status=new_status,
+            reason=reason,
+            created_at=datetime.now(UTC),
         )
 
     def _transition_content(

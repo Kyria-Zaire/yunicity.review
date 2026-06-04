@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.core.creator_content_admin_constants import (
+    CREATOR_CONTENT_ADMIN_ACTION_LIST_PAGE_SIZE_DEFAULT,
+    CREATOR_CONTENT_ADMIN_ACTION_LIST_PAGE_SIZE_MAX,
+)
 from app.core.partner_creator_content_constants import (
     PARTNER_CREATOR_CONTENT_REJECTION_REASON_MAX_LENGTH,
 )
@@ -19,10 +24,16 @@ from app.schemas.partner_creator_content_management import (
 __all__ = [
     "PARTNER_CREATOR_CONTENT_LIST_PAGE_SIZE_DEFAULT",
     "PARTNER_CREATOR_CONTENT_LIST_PAGE_SIZE_MAX",
+    "CREATOR_CONTENT_ADMIN_ACTION_LIST_PAGE_SIZE_DEFAULT",
+    "CREATOR_CONTENT_ADMIN_ACTION_LIST_PAGE_SIZE_MAX",
     "PartnerCreatorContentRejectRequest",
     "PartnerCreatorContentAuthorSummary",
     "PartnerCreatorContentAdminResponse",
     "PartnerCreatorContentAdminListResponse",
+    "AdminPartnerCreatorContentActionKind",
+    "AdminPartnerCreatorContentActorSummary",
+    "AdminPartnerCreatorContentActionItem",
+    "AdminPartnerCreatorContentActionListResponse",
 ]
 
 
@@ -53,3 +64,33 @@ class PartnerCreatorContentAdminListResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+AdminPartnerCreatorContentActionKind = Literal["approve", "reject", "archive"]
+
+
+class AdminPartnerCreatorContentActorSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    email: str
+    display_name: str | None = None
+
+
+class AdminPartnerCreatorContentActionItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    action: AdminPartnerCreatorContentActionKind
+    previous_status: str | None = None
+    new_status: str | None = None
+    reason: str | None = None
+    actor_user: AdminPartnerCreatorContentActorSummary
+    created_at: datetime
+
+
+class AdminPartnerCreatorContentActionListResponse(BaseModel):
+    items: list[AdminPartnerCreatorContentActionItem]
+    total: int = Field(ge=0)
+    page: int = Field(ge=1)
+    page_size: int = Field(ge=1, le=CREATOR_CONTENT_ADMIN_ACTION_LIST_PAGE_SIZE_MAX)
