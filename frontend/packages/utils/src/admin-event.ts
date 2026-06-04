@@ -1,6 +1,10 @@
 /** Admin local events workspace helpers (ADMIN-05B). */
 
-import type { AdminEventModerationStatus, AdminEventModerationStatusFilter } from "@yunicity/types";
+import type {
+  AdminEventModerationStatus,
+  AdminEventModerationStatusFilter,
+  AdminLocalEventAction,
+} from "@yunicity/types";
 
 import { formatPassportDate } from "./passport-labels";
 
@@ -150,4 +154,30 @@ export function canAdminApproveEvent(status: string): boolean {
 
 export function canAdminRejectEvent(status: string): boolean {
   return status === "pending_review" || status === "approved";
+}
+
+export const EVENT_ADMIN_ACTION_LABELS: Record<AdminLocalEventAction, string> = {
+  approve: "Approbation",
+  reject: "Rejet",
+};
+
+export function eventAdminActionLabel(action: AdminLocalEventAction | string): string {
+  if (action in EVENT_ADMIN_ACTION_LABELS) {
+    return EVENT_ADMIN_ACTION_LABELS[action as AdminLocalEventAction];
+  }
+  return action;
+}
+
+function eventStaffStatusLabel(status: string | null | undefined): string {
+  if (!status?.trim()) {
+    return "—";
+  }
+  return eventModerationStatusLabel(status);
+}
+
+export function formatEventAdminActionStatusTransition(
+  previousStatus: string | null,
+  newStatus: string | null,
+): string {
+  return `${eventStaffStatusLabel(previousStatus)} → ${eventStaffStatusLabel(newStatus)}`;
 }

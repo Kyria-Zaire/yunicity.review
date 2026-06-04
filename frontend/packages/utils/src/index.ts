@@ -39,10 +39,12 @@ export {
   buildPublicEventUrl,
   canAdminApproveEvent,
   canAdminRejectEvent,
+  eventAdminActionLabel,
   eventModerationStatusLabel,
   eventTemporalStatus,
   eventTemporalStatusLabel,
   eventVisibilityLabel,
+  formatEventAdminActionStatusTransition,
   formatEventDate,
   formatEventDuration,
 } from "./admin-event";
