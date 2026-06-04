@@ -1,6 +1,7 @@
 /** Admin passport ops UI helpers (ADMIN-03C). */
 
 import type {
+  AdminPassportActionKind,
   AdminPassportSearchMode,
   AdminPassportStatus,
   OfferRedemptionStatus,
@@ -78,10 +79,39 @@ export function passportStatusActionSuccessMessage(kind: PassportStatusActionKin
     : "Passport réactivé. Le citoyen peut à nouveau utiliser son Passport.";
 }
 
+export const ADMIN_PASSPORT_ACTION_LABELS: Record<AdminPassportActionKind, string> = {
+  suspend: "Suspension",
+  reactivate: "Réactivation",
+};
+
+export function adminPassportActionLabel(action: AdminPassportActionKind): string {
+  return ADMIN_PASSPORT_ACTION_LABELS[action] ?? action;
+}
+
 export const ADMIN_PASSPORT_STATUS_LABELS: Record<AdminPassportStatus, string> = {
   active: "Actif",
   suspended: "Suspendu",
 };
+
+function staffDbStatusLabel(status: string | null | undefined): string {
+  if (status === "active") {
+    return ADMIN_PASSPORT_STATUS_LABELS.active;
+  }
+  if (status === "suspended") {
+    return ADMIN_PASSPORT_STATUS_LABELS.suspended;
+  }
+  if (status === "revoked") {
+    return "Révoqué";
+  }
+  return status ?? "—";
+}
+
+export function formatAdminPassportActionStatusTransition(
+  previousStatus: string | null,
+  newStatus: string | null,
+): string {
+  return `${staffDbStatusLabel(previousStatus)} → ${staffDbStatusLabel(newStatus)}`;
+}
 
 export const ADMIN_PASSPORT_SEARCH_MODE_LABELS: Record<AdminPassportSearchMode, string> = {
   email: "Email",

@@ -1,6 +1,7 @@
 "use client";
 
 import { PassportDetailActionsSection } from "@/components/passport-ops/detail/passport-detail-actions-section";
+import { PassportDetailAuditSection } from "@/components/passport-ops/detail/passport-detail-audit-section";
 import { PassportDetailHeader } from "@/components/passport-ops/detail/passport-detail-header";
 import { PassportDetailIdentityCard } from "@/components/passport-ops/detail/passport-detail-identity-card";
 import { PassportDetailQrCard } from "@/components/passport-ops/detail/passport-detail-qr-card";
@@ -8,6 +9,7 @@ import { PassportDetailRedemptionsSection } from "@/components/passport-ops/deta
 import { PassportDetailStats } from "@/components/passport-ops/detail/passport-detail-stats";
 import { PassportDetailStampsSection } from "@/components/passport-ops/detail/passport-detail-stamps-section";
 import { useAdminPassportDetail } from "@/lib/hooks/use-admin-passport-detail";
+import { useAdminPassportActions } from "@/lib/hooks/use-admin-passport-actions";
 import { useAdminPassportRedemptions } from "@/lib/hooks/use-admin-passport-redemptions";
 import { useAdminPassportStamps } from "@/lib/hooks/use-admin-passport-stamps";
 import { buildPassportOpsListPath } from "@yunicity/utils";
@@ -37,6 +39,7 @@ export function PassportDetailView({ passportId }: PassportDetailViewProps) {
 
   const stamps = useAdminPassportStamps(passportId, detailReady);
   const redemptions = useAdminPassportRedemptions(passportId, detailReady);
+  const actions = useAdminPassportActions(passportId, detailReady);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -44,20 +47,21 @@ export function PassportDetailView({ passportId }: PassportDetailViewProps) {
     if (!actionSuccess) {
       return;
     }
+    void actions.reload();
     const timer = window.setTimeout(() => clearActionFeedback(), 5000);
     return () => window.clearTimeout(timer);
-  }, [actionSuccess, clearActionFeedback]);
+  }, [actionSuccess, actions.reload, clearActionFeedback]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     clearActionFeedback();
     try {
       await reload();
-      await Promise.all([stamps.reload(), redemptions.reload()]);
+      await Promise.all([stamps.reload(), redemptions.reload(), actions.reload()]);
     } finally {
       setIsRefreshing(false);
     }
-  }, [clearActionFeedback, redemptions, reload, stamps]);
+  }, [actions, clearActionFeedback, redemptions, reload, stamps]);
 
   if (isLoading) {
     return (
@@ -167,6 +171,17 @@ export function PassportDetailView({ passportId }: PassportDetailViewProps) {
         error={redemptions.error}
         onRetry={redemptions.reload}
         onPageChange={redemptions.goToPage}
+      />
+      <PassportDetailAuditSection
+        items={actions.items}
+        total={actions.total}
+        page={actions.page}
+        pageSize={actions.pageSize}
+        totalPages={actions.totalPages}
+        isLoading={actions.isLoading}
+        error={actions.error}
+        onRetry={actions.reload}
+        onPageChange={actions.goToPage}
       />
     </div>
   );

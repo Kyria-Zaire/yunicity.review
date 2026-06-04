@@ -100,6 +100,10 @@ def _patch_url(passport_id: uuid.UUID) -> str:
     return f"{BASE}/{passport_id}"
 
 
+def _actions_url(passport_id: uuid.UUID) -> str:
+    return f"{BASE}/{passport_id}/actions"
+
+
 @pytest.mark.asyncio
 async def test_moderator_can_suspend_active_passport(
     auth_client: AsyncClient,
@@ -402,3 +406,224 @@ async def test_suspended_passport_not_resolved_by_scan(
     )
     assert resolve.status_code == 404
     assert resolve.json()["code"] == "PASSPORT_NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_moderator_can_list_passport_actions(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    factory = await _session_factory()
+    async with factory() as session:
+        passport, _ = await _seed_active_passport(session)
+        await session.commit()
+        passport_id = passport.id
+
+    response = await auth_client.get(
+        _actions_url(passport_id),
+        headers=auth_header((await rbac_user_factory("MODERATOR")).access_token),
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["items"] == []
+    assert body["total"] == 0
+    assert body["page"] == 1
+    assert body["page_size"] == 20
+
+
+@pytest.mark.asyncio
+async def test_regular_user_denied_list_actions(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    factory = await _session_factory()
+    async with factory() as session:
+        passport, _ = await _seed_active_passport(session)
+        await session.commit()
+        passport_id = passport.id
+
+    user = await rbac_user_factory()
+    response = await auth_client.get(
+        _actions_url(passport_id),
+        headers=auth_header(user.access_token),
+    )
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_actions_are_paginated(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    factory = await _session_factory()
+    async with factory() as session:
+        passport, _ = await _seed_active_passport(session)
+        await session.commit()
+        passport_id = passport.id
+
+    moderator = await rbac_user_factory("MODERATOR")
+    headers = auth_header(moderator.access_token)
+    for index in range(3):
+        await auth_client.patch(
+            _patch_url(passport_id),
+            headers=headers,
+            json={
+                "status": "suspended" if index % 2 == 0 else "active",
+                "reason": f"Audit pagination {index}",
+            },
+        )
+
+    page1 = await auth_client.get(
+        f"{_actions_url(passport_id)}?page=1&page_size=2",
+        headers=headers,
+    )
+    assert page1.status_code == 200, page1.text
+    body1 = page1.json()
+    assert body1["total"] == 3
+    assert len(body1["items"]) == 2
+    assert body1["page"] == 1
+    assert body1["page_size"] == 2
+
+    page2 = await auth_client.get(
+        f"{_actions_url(passport_id)}?page=2&page_size=2",
+        headers=headers,
+    )
+    assert page2.status_code == 200
+    assert len(page2.json()["items"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_actions_sorted_desc_by_created_at(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    factory = await _session_factory()
+    async with factory() as session:
+        passport, _ = await _seed_active_passport(session)
+        await session.commit()
+        passport_id = passport.id
+
+    moderator = await rbac_user_factory("MODERATOR")
+    headers = auth_header(moderator.access_token)
+    await auth_client.patch(
+        _patch_url(passport_id),
+        headers=headers,
+        json={"status": "suspended", "reason": "First suspend for sort"},
+    )
+    await auth_client.patch(
+        _patch_url(passport_id),
+        headers=headers,
+        json={"status": "active", "reason": "Reactivate for sort"},
+    )
+
+    response = await auth_client.get(_actions_url(passport_id), headers=headers)
+    assert response.status_code == 200
+    items = response.json()["items"]
+    assert len(items) == 2
+    assert items[0]["action"] == "reactivate"
+    assert items[1]["action"] == "suspend"
+    assert items[0]["created_at"] >= items[1]["created_at"]
+
+
+@pytest.mark.asyncio
+async def test_get_actions_after_suspend_contains_suspend(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    factory = await _session_factory()
+    async with factory() as session:
+        passport, _ = await _seed_active_passport(session)
+        await session.commit()
+        passport_id = passport.id
+
+    moderator = await rbac_user_factory("MODERATOR")
+    headers = auth_header(moderator.access_token)
+    suspend = await auth_client.patch(
+        _patch_url(passport_id),
+        headers=headers,
+        json={"status": "suspended", "reason": "Visible in audit list"},
+    )
+    assert suspend.status_code == 200
+
+    response = await auth_client.get(_actions_url(passport_id), headers=headers)
+    assert response.status_code == 200
+    items = response.json()["items"]
+    assert len(items) == 1
+    assert items[0]["action"] == "suspend"
+    assert items[0]["previous_status"] == PassportStatus.ACTIVE.value
+    assert items[0]["new_status"] == PassportStatus.SUSPENDED.value
+    assert items[0]["reason"] == "Visible in audit list"
+
+
+@pytest.mark.asyncio
+async def test_get_actions_after_reactivate_contains_reactivate(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    factory = await _session_factory()
+    async with factory() as session:
+        passport, _ = await _seed_active_passport(session)
+        await session.commit()
+        passport_id = passport.id
+
+    moderator = await rbac_user_factory("MODERATOR")
+    headers = auth_header(moderator.access_token)
+    await auth_client.patch(
+        _patch_url(passport_id),
+        headers=headers,
+        json={"status": "suspended", "reason": "Before reactivate audit read"},
+    )
+    await auth_client.patch(
+        _patch_url(passport_id),
+        headers=headers,
+        json={"status": "active", "reason": "Reactivate visible in audit"},
+    )
+
+    response = await auth_client.get(_actions_url(passport_id), headers=headers)
+    assert response.status_code == 200
+    items = response.json()["items"]
+    assert items[0]["action"] == "reactivate"
+    assert items[0]["previous_status"] == PassportStatus.SUSPENDED.value
+    assert items[0]["new_status"] == PassportStatus.ACTIVE.value
+    assert items[0]["reason"] == "Reactivate visible in audit"
+
+
+@pytest.mark.asyncio
+async def test_action_actor_email_and_display_name_present(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    factory = await _session_factory()
+    async with factory() as session:
+        passport, _ = await _seed_active_passport(session)
+        await session.commit()
+        passport_id = passport.id
+
+    moderator = await rbac_user_factory("MODERATOR")
+    headers = auth_header(moderator.access_token)
+    await auth_client.patch(
+        _patch_url(passport_id),
+        headers=headers,
+        json={"status": "suspended", "reason": "Actor metadata audit read"},
+    )
+
+    response = await auth_client.get(_actions_url(passport_id), headers=headers)
+    assert response.status_code == 200
+    actor = response.json()["items"][0]["actor_user"]
+    assert actor["id"] == str(moderator.user_id)
+    assert actor["email"]
+    assert actor["display_name"] is not None
+
+
+@pytest.mark.asyncio
+async def test_list_actions_unknown_passport_returns_404(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    moderator = await rbac_user_factory("MODERATOR")
+    response = await auth_client.get(
+        _actions_url(uuid.uuid4()),
+        headers=auth_header(moderator.access_token),
+    )
+    assert response.status_code == 404
+    assert response.json()["code"] == "PASSPORT_NOT_FOUND"

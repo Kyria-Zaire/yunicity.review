@@ -10,12 +10,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import AppError
 from app.core.passport_admin_constants import (
     ADMIN_PASSPORT_REASON_MIN_LENGTH,
+    PASSPORT_ADMIN_ACTIONS,
     PassportAdminAction,
 )
 from app.core.passport_constants import PassportStatus, PassportTierCode
 from app.models.passport import PassportOfferRedemption, PassportStamp
 from app.models.user import User
 from app.repositories.admin_passport_repository import (
+    AdminPassportActionRow,
     AdminPassportListRow,
     AdminPassportRepository,
 )
@@ -23,6 +25,9 @@ from app.schemas.admin_passport import (
     ADMIN_PASSPORT_LIST_PAGE_SIZE_MAX,
     ADMIN_PASSPORT_SUBRESOURCE_PAGE_SIZE_MAX,
     DEFAULT_ADMIN_PASSPORTS_CITY,
+    AdminPassportActionActorUser,
+    AdminPassportActionItem,
+    AdminPassportActionListResponse,
     AdminPassportDetailResponse,
     AdminPassportDetailStats,
     AdminPassportDetailUser,
@@ -150,6 +155,7 @@ class AdminPassportService:
             previous_status=previous_status.value,
             new_status=target_status.value,
             reason=reason,
+            created_at=now,
         )
         await self._session.commit()
         await self._session.refresh(passport)
@@ -197,6 +203,28 @@ class AdminPassportService:
         )
         return AdminPassportRedemptionListResponse(
             items=[self._to_redemption_item(redemption) for redemption in redemptions],
+            total=total,
+            page=resolved_page,
+            page_size=resolved_page_size,
+        )
+
+    async def list_actions(
+        self,
+        *,
+        passport_id: uuid.UUID,
+        page: int,
+        page_size: int,
+    ) -> AdminPassportActionListResponse:
+        await self._require_passport(passport_id)
+        resolved_page_size = min(max(page_size, 1), ADMIN_PASSPORT_SUBRESOURCE_PAGE_SIZE_MAX)
+        resolved_page = max(page, 1)
+        rows, total = await self._repo.list_admin_actions(
+            passport_id=passport_id,
+            page=resolved_page,
+            page_size=resolved_page_size,
+        )
+        return AdminPassportActionListResponse(
+            items=[self._to_action_item(row) for row in rows],
             total=total,
             page=resolved_page,
             page_size=resolved_page_size,
@@ -373,4 +401,43 @@ class AdminPassportService:
             status=redemption.status,
             redeemed_at=redemption.redeemed_at,
             created_at=redemption.created_at,
+        )
+
+    def _to_action_item(self, row: AdminPassportActionRow) -> AdminPassportActionItem:
+        entry = row.action
+        if entry.action not in PASSPORT_ADMIN_ACTIONS:
+            raise AppError(
+                status_code=500,
+                code="INVALID_PASSPORT_ADMIN_ACTION",
+                detail="Action staff passport invalide en base.",
+            )
+        return AdminPassportActionItem(
+            id=entry.id,
+            action=entry.action,  # type: ignore[arg-type]
+            previous_status=entry.previous_status,
+            new_status=entry.new_status,
+            reason=entry.reason,
+            actor_user=self._to_action_actor(row),
+            created_at=entry.created_at,
+        )
+
+    @staticmethod
+    def _to_action_actor(row: AdminPassportActionRow) -> AdminPassportActionActorUser:
+        actor = row.actor
+        if actor is None:
+            assert row.action.actor_user_id is not None
+            return AdminPassportActionActorUser(
+                id=row.action.actor_user_id,
+                email="Compte staff supprimé",
+                display_name=None,
+            )
+        display_name: str | None = None
+        if row.actor_profile is not None and row.actor_profile.display_name:
+            display_name = row.actor_profile.display_name
+        elif actor.full_name:
+            display_name = actor.full_name
+        return AdminPassportActionActorUser(
+            id=actor.id,
+            email=actor.email,
+            display_name=display_name,
         )

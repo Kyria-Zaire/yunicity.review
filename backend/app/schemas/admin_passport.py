@@ -137,3 +137,29 @@ class AdminPassportRedemptionListResponse(BaseModel):
     total: int = Field(ge=0)
     page: int = Field(ge=1)
     page_size: int = Field(ge=1, le=ADMIN_PASSPORT_SUBRESOURCE_PAGE_SIZE_MAX)
+
+
+AdminPassportActionKind = Literal["suspend", "reactivate"]
+
+
+class AdminPassportActionActorUser(BaseModel):
+    id: UUID
+    email: str
+    display_name: str | None = None
+
+
+class AdminPassportActionItem(BaseModel):
+    id: UUID
+    action: AdminPassportActionKind
+    previous_status: str | None = None
+    new_status: str | None = None
+    reason: str
+    actor_user: AdminPassportActionActorUser
+    created_at: datetime
+
+
+class AdminPassportActionListResponse(BaseModel):
+    items: list[AdminPassportActionItem]
+    total: int = Field(ge=0)
+    page: int = Field(ge=1)
+    page_size: int = Field(ge=1, le=ADMIN_PASSPORT_SUBRESOURCE_PAGE_SIZE_MAX)
