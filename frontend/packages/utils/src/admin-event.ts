@@ -48,6 +48,79 @@ export function buildAdminEventDetailPath(eventId: string): string {
   return `/events/${encodeURIComponent(eventId)}`;
 }
 
+export type EventTemporalStatus = "upcoming" | "ongoing" | "past";
+
+const EVENTS_LIST_CONTEXT_KEYS = ["status", "city", "page", "page_size"] as const;
+
+export const EVENT_TEMPORAL_STATUS_LABELS: Record<EventTemporalStatus, string> = {
+  upcoming: "À venir",
+  ongoing: "En cours",
+  past: "Terminé",
+};
+
+export function eventTemporalStatus(
+  startsAt: string,
+  endsAt: string | null | undefined,
+  now: Date = new Date(),
+): EventTemporalStatus {
+  const startMs = new Date(startsAt).getTime();
+  const nowMs = now.getTime();
+  if (!Number.isFinite(startMs)) {
+    return "upcoming";
+  }
+  if (nowMs < startMs) {
+    return "upcoming";
+  }
+  if (endsAt) {
+    const endMs = new Date(endsAt).getTime();
+    if (Number.isFinite(endMs) && nowMs >= endMs) {
+      return "past";
+    }
+  }
+  return "ongoing";
+}
+
+export function eventTemporalStatusLabel(status: EventTemporalStatus): string {
+  return EVENT_TEMPORAL_STATUS_LABELS[status];
+}
+
+export function formatEventDuration(
+  startsAt: string,
+  endsAt: string | null | undefined,
+): string {
+  if (!endsAt?.trim()) {
+    return "—";
+  }
+  const startMs = new Date(startsAt).getTime();
+  const endMs = new Date(endsAt).getTime();
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
+    return "—";
+  }
+  const hours = Math.round((endMs - startMs) / 3_600_000);
+  if (hours < 24) {
+    return `${hours} h`;
+  }
+  const days = Math.round(hours / 24);
+  return `${days} j`;
+}
+
+export function buildEventsListBackPath(detailSearchParams: URLSearchParams): string {
+  const query: Record<string, string> = {};
+  for (const key of EVENTS_LIST_CONTEXT_KEYS) {
+    const value = detailSearchParams.get(key);
+    if (value) {
+      query[key] = value;
+    }
+  }
+  return buildEventsListPath(query);
+}
+
+export function buildPublicEventUrl(eventId: string, webAppBaseUrl?: string): string {
+  const path = `/events/${encodeURIComponent(eventId)}`;
+  const base = webAppBaseUrl?.replace(/\/$/, "") ?? "";
+  return base ? `${base}${path}` : path;
+}
+
 export function buildEventsListPath(query?: Record<string, string | undefined>): string {
   if (!query) {
     return "/events";

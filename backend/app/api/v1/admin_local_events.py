@@ -15,11 +15,13 @@ from app.core.local_event_constants import (
 )
 from app.db.session import get_db
 from app.models.user import User
+from app.schemas.admin_local_event import AdminLocalEventDetailResponse
 from app.schemas.local_event import (
     LocalEventManagementListResponse,
     LocalEventManagementResponse,
     LocalEventRejectRequest,
 )
+from app.services.admin_local_event_service import AdminLocalEventService
 from app.services.local_event_service import LocalEventService
 
 router = APIRouter(prefix="/admin/local-events", tags=["admin-local-events"])
@@ -47,6 +49,16 @@ async def list_local_events_admin(
         page=page,
         page_size=page_size,
     )
+
+
+@router.get("/{event_id}", response_model=AdminLocalEventDetailResponse)
+async def get_local_event_admin(
+    event_id: uuid.UUID,
+    current_user: Annotated[User, Depends(_staff_guard)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> AdminLocalEventDetailResponse:
+    _ = current_user
+    return await AdminLocalEventService(session).get_event_detail(event_id)
 
 
 @router.post("/{event_id}/approve", response_model=LocalEventManagementResponse)

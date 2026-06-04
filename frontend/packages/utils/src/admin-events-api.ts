@@ -1,4 +1,5 @@
 import type {
+  AdminLocalEventDetail,
   AdminLocalEventListItem,
   AdminLocalEventListParams,
   AdminLocalEventListResponse,
@@ -33,6 +34,12 @@ export class AdminEventsApi extends ApiClientBase {
   listEvents(params?: AdminLocalEventListParams): Promise<AdminLocalEventListResponse> {
     return this.getJson<AdminLocalEventListResponse>(
       `/admin/local-events${buildListQuery(params)}`,
+    );
+  }
+
+  getEventDetail(eventId: string): Promise<AdminLocalEventDetail> {
+    return this.getJson<AdminLocalEventDetail>(
+      `/admin/local-events/${encodeURIComponent(eventId)}`,
     );
   }
 
