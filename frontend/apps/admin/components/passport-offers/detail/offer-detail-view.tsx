@@ -8,7 +8,9 @@ import { OfferDetailPartnerCard } from "@/components/passport-offers/detail/offe
 import { OfferDetailPassportConditionsCard } from "@/components/passport-offers/detail/offer-detail-passport-conditions-card";
 import { OfferDetailPreviewSection } from "@/components/passport-offers/detail/offer-detail-preview-section";
 import { OfferDetailPublicExposureCard } from "@/components/passport-offers/detail/offer-detail-public-exposure-card";
+import { OfferDetailRedemptionsSection } from "@/components/passport-offers/detail/offer-detail-redemptions-section";
 import { useAdminOfferDetail } from "@/lib/hooks/use-admin-offer-detail";
+import { useAdminOfferRedemptions } from "@/lib/hooks/use-admin-offer-redemptions";
 import { buildOffersListPath } from "@yunicity/utils";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -38,6 +40,9 @@ export function OfferDetailView({ offerId }: OfferDetailViewProps) {
     archiveOffer,
   } = useAdminOfferDetail(offerId);
 
+  const detailReady = !isLoading && !isNotFound && !error && !!offer;
+  const redemptions = useAdminOfferRedemptions(offerId, detailReady);
+
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
@@ -52,11 +57,11 @@ export function OfferDetailView({ offerId }: OfferDetailViewProps) {
     setIsRefreshing(true);
     clearActionFeedback();
     try {
-      await reload();
+      await Promise.all([reload(), redemptions.reload()]);
     } finally {
       setIsRefreshing(false);
     }
-  }, [clearActionFeedback, reload]);
+  }, [clearActionFeedback, redemptions, reload]);
 
   if (isLoading) {
     return (
@@ -153,13 +158,20 @@ export function OfferDetailView({ offerId }: OfferDetailViewProps) {
         onChange={updateForm}
         onSave={saveOffer}
       />
-      <OfferDetailPreviewSection
-        title="Redemptions"
-        message="Historique des utilisations prévu en ADMIN-04E."
+      <OfferDetailRedemptionsSection
+        items={redemptions.items}
+        total={redemptions.total}
+        page={redemptions.page}
+        pageSize={redemptions.pageSize}
+        totalPages={redemptions.totalPages}
+        isLoading={redemptions.isLoading}
+        error={redemptions.error}
+        onRetry={redemptions.reload}
+        onPageChange={redemptions.goToPage}
       />
       <OfferDetailPreviewSection
         title="Historique staff"
-        message="Timeline offre prévue en ADMIN-04E."
+        message="Timeline offre prévue en ADMIN-04E-B."
       />
     </div>
   );
