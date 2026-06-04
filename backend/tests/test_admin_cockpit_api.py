@@ -303,6 +303,7 @@ async def test_cockpit_summary_counts_match_isolated_city_fixtures(
     assert attention["offers_pending"] == 1
     assert attention["creator_contents_pending"] == 1
     assert attention["events_pending"] == 1
+    assert attention["reports_pending"] == 0
     assert attention["partner_leads_open"] == 1
     assert attention["organizations_pending_review"] == 1
 

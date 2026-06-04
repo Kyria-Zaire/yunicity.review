@@ -41,6 +41,7 @@ class AdminCockpitService:
                 offers_pending=counts.offers_pending,
                 creator_contents_pending=counts.creator_contents_pending,
                 events_pending=counts.events_pending,
+                reports_pending=counts.reports_pending,
                 partner_leads_open=counts.partner_leads_open,
                 organizations_pending_review=counts.organizations_pending_review,
             ),

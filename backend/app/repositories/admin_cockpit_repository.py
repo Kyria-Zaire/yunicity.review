@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Select
 
+from app.core.feed_constants import ReportStatus
 from app.core.local_event_constants import LocalEventModerationStatus
 from app.core.organization_constants import (
     OrganizationVisibility,
@@ -32,6 +33,7 @@ from app.models.passport import (
     PassportOfferRedemption,
     PassportStamp,
 )
+from app.models.report import Report
 from app.models.user import User
 
 # Open pipeline leads — excludes signed, converted, rejected, archived.
@@ -65,6 +67,7 @@ class AdminCockpitRawCounts:
     offers_pending: int
     creator_contents_pending: int
     events_pending: int
+    reports_pending: int
     partner_leads_open: int
     organizations_pending_review: int
     partner_status_active: int
@@ -111,6 +114,7 @@ class AdminCockpitRepository:
                 city=city,
                 moderation_status=LocalEventModerationStatus.PENDING_REVIEW.value,
             ),
+            reports_pending=await self._count_reports_pending(),
             partner_leads_open=await self._count_leads(
                 city=city,
                 statuses=OPEN_PARTNER_LEAD_STATUSES,
@@ -303,6 +307,12 @@ class AdminCockpitRepository:
         )
         if stamp_source is not None:
             stmt = stmt.where(PassportStamp.stamp_source == stamp_source)
+        return await self._scalar_count(stmt)
+
+    async def _count_reports_pending(self) -> int:
+        stmt = select(func.count()).select_from(Report).where(
+            Report.status == ReportStatus.PENDING.value
+        )
         return await self._scalar_count(stmt)
 
     async def _count_redemptions(

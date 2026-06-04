@@ -82,6 +82,20 @@ export type {
 } from "./admin-event";
 
 export type {
+  AdminReportDetailResponse,
+  AdminReportListItem,
+  AdminReportListParams,
+  AdminReportListResponse,
+  AdminReportReason,
+  AdminReportReporterSummary,
+  AdminReportResolverSummary,
+  AdminReportStatus,
+  AdminReportStatusSummary,
+  AdminReportTargetPostSummary,
+  AdminReportTargetType,
+} from "./admin-report";
+
+export type {
   AdminCockpitAttention,
   AdminCockpitExecutive,
   AdminCockpitPartners,

@@ -23,7 +23,7 @@ const STAFF_NAV_ITEMS: readonly (StaffNavLink | StaffNavDisabled)[] = [
   { kind: "link", href: "/passport-offers", label: "Offres" },
   { kind: "link", href: "/events", label: "Events" },
   { kind: "link", href: "/creator-content", label: "Creator Content" },
-  { kind: "disabled", label: "Moderation", hint: "Hub à venir" },
+  { kind: "link", href: "/moderation", label: "Moderation" },
   { kind: "link", href: "/protected-admin", label: "Staff" },
 ];
 
@@ -42,6 +42,9 @@ function isStaffNavActive(pathname: string, href: string): boolean {
   }
   if (href === "/creator-content") {
     return pathname === "/creator-content" || pathname.startsWith("/creator-content/");
+  }
+  if (href === "/moderation") {
+    return pathname === "/moderation" || pathname.startsWith("/moderation/");
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -129,6 +132,9 @@ function staffPageTitle(pathname: string, isPartnerArea: boolean): string {
   }
   if (pathname.startsWith("/creator-content")) {
     return "Contenus créateurs";
+  }
+  if (pathname.startsWith("/moderation")) {
+    return "Modération";
   }
   if (pathname.startsWith("/protected-admin")) {
     return "Zone staff";
