@@ -36,6 +36,23 @@ export {
   createAdminPartnersApi,
 } from "./admin-partners-api";
 export {
+  AdminPassportsApi,
+  createAdminPassportsApi,
+} from "./admin-passports-api";
+export {
+  ADMIN_PASSPORT_SEARCH_MODE_AUTO,
+  ADMIN_PASSPORT_SEARCH_MODE_LABELS,
+  ADMIN_PASSPORT_SEARCH_MODE_OPTIONS,
+  ADMIN_PASSPORT_STATUS_LABELS,
+  DEFAULT_PASSPORT_OPS_CITY,
+  adminPassportSearchModeLabel,
+  adminPassportStatusLabel,
+  adminPassportTierLabel,
+  buildPassportOpsDetailPath,
+  buildPassportOpsListPath,
+  type AdminPassportSearchModeOption,
+} from "./admin-passport";
+export {
   AdminActivationWavesApi,
   createAdminActivationWavesApi,
 } from "./admin-activation-waves-api";

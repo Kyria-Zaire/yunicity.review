@@ -7,6 +7,7 @@ import {
   MemoryTokenStorage,
   createAdminOrganizationsApi,
   createAdminPartnersApi,
+  createAdminPassportsApi,
   createAuthClient,
   createPartnerLeadsApi,
   createPartnerOffersAdminApi,
@@ -20,6 +21,7 @@ import {
   type AdminActivationWavesApi,
   type AdminOrganizationsApi,
   type AdminPartnersApi,
+  type AdminPassportsApi,
   type OrganizationApi,
   type PartnerLeadsApi,
   type PartnerCreatorContentAdminApi,
@@ -53,6 +55,7 @@ interface AuthContextValue {
   adminCockpitApi: AdminCockpitApi;
   adminOrganizationsApi: AdminOrganizationsApi;
   adminPartnersApi: AdminPartnersApi;
+  adminPassportsApi: AdminPassportsApi;
   adminActivationWavesApi: AdminActivationWavesApi;
   login: (payload: LoginRequest) => Promise<void>;
   logout: () => Promise<void>;
@@ -123,6 +126,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [client, apiBaseUrl],
   );
 
+  const adminPassportsApi = useMemo(
+    () => createAdminPassportsApi(client, apiBaseUrl),
+    [client, apiBaseUrl],
+  );
+
   const adminActivationWavesApi = useMemo(
     () => createAdminActivationWavesApi(client, apiBaseUrl),
     [client, apiBaseUrl],
@@ -188,6 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     adminCockpitApi,
     adminOrganizationsApi,
     adminPartnersApi,
+    adminPassportsApi,
     adminActivationWavesApi,
     login,
     logout,
