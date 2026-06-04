@@ -12,15 +12,19 @@ from app.core.dependencies import require_any_permission
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.admin_partner_offer import (
+    ADMIN_OFFER_REDEMPTION_LIST_PAGE_SIZE_DEFAULT,
+    ADMIN_OFFER_REDEMPTION_LIST_PAGE_SIZE_MAX,
     PARTNER_OFFER_LIST_PAGE_SIZE_DEFAULT,
     PARTNER_OFFER_LIST_PAGE_SIZE_MAX,
     PartnerOfferAdminCreateRequest,
     PartnerOfferAdminListResponse,
+    PartnerOfferAdminRedemptionListResponse,
     PartnerOfferAdminResponse,
     PartnerOfferAdminUpdateRequest,
     PartnerOfferRejectRequest,
     VerifiedOrganizationListResponse,
 )
+from app.services.admin_partner_offer_service import AdminPartnerOfferService
 from app.services.partner_offer_service import PartnerOfferService
 
 router = APIRouter(prefix="/admin/partner-offers", tags=["admin-partner-offers"])
@@ -82,6 +86,26 @@ async def get_partner_offer_admin(
 ) -> PartnerOfferAdminResponse:
     _ = current_user
     return await PartnerOfferService(session).get_offer_admin(offer_id)
+
+
+@router.get("/{offer_id}/redemptions", response_model=PartnerOfferAdminRedemptionListResponse)
+async def list_partner_offer_redemptions_admin(
+    offer_id: uuid.UUID,
+    current_user: Annotated[User, Depends(_staff_guard)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(
+        default=ADMIN_OFFER_REDEMPTION_LIST_PAGE_SIZE_DEFAULT,
+        ge=1,
+        le=ADMIN_OFFER_REDEMPTION_LIST_PAGE_SIZE_MAX,
+    ),
+) -> PartnerOfferAdminRedemptionListResponse:
+    _ = current_user
+    return await AdminPartnerOfferService(session).list_offer_redemptions(
+        offer_id=offer_id,
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.patch("/{offer_id}", response_model=PartnerOfferAdminResponse)

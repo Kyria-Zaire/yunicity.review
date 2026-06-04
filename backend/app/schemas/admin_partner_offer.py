@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.core.passport_constants import (
     DEFAULT_MAX_REDEMPTIONS_PER_PASSPORT,
+    OFFER_REDEMPTION_STATUSES,
     PARTNER_OFFER_TYPES,
+    OfferRedemptionStatus,
     PartnerOfferStatus,
     PartnerOfferType,
 )
@@ -18,13 +21,20 @@ from app.schemas.partner_offer_management import (
     PARTNER_OFFER_LIST_PAGE_SIZE_MAX,
 )
 
+ADMIN_OFFER_REDEMPTION_LIST_PAGE_SIZE_DEFAULT = 20
+ADMIN_OFFER_REDEMPTION_LIST_PAGE_SIZE_MAX = 50
+
 __all__ = [
+    "ADMIN_OFFER_REDEMPTION_LIST_PAGE_SIZE_DEFAULT",
+    "ADMIN_OFFER_REDEMPTION_LIST_PAGE_SIZE_MAX",
     "PARTNER_OFFER_LIST_PAGE_SIZE_DEFAULT",
     "PARTNER_OFFER_LIST_PAGE_SIZE_MAX",
     "PartnerOfferAdminCreateRequest",
     "PartnerOfferAdminUpdateRequest",
     "PartnerOfferAdminResponse",
     "PartnerOfferAdminListResponse",
+    "PartnerOfferAdminRedemptionListResponse",
+    "PartnerOfferAdminRedemptionListItem",
     "VerifiedOrganizationOption",
     "VerifiedOrganizationListResponse",
     "PartnerOfferRejectRequest",
@@ -138,3 +148,46 @@ class VerifiedOrganizationOption(BaseModel):
 
 class VerifiedOrganizationListResponse(BaseModel):
     items: list[VerifiedOrganizationOption]
+
+
+AdminOfferRedemptionChannel = Literal["self", "scan", "unknown"]
+
+
+class AdminOfferRedemptionPassport(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    passport_number: str
+
+
+class AdminOfferRedemptionCitizen(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    display_name: str | None = None
+    email: str
+
+
+class PartnerOfferAdminRedemptionListItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    passport: AdminOfferRedemptionPassport
+    citizen: AdminOfferRedemptionCitizen
+    channel: AdminOfferRedemptionChannel
+    status: OfferRedemptionStatus
+    redeemed_at: datetime | None = None
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def validate_status(cls, value: object) -> object:
+        if isinstance(value, str) and value not in OFFER_REDEMPTION_STATUSES:
+            raise ValueError("Statut de redemption invalide.")
+        return value
+
+
+class PartnerOfferAdminRedemptionListResponse(BaseModel):
+    items: list[PartnerOfferAdminRedemptionListItem]
+    total: int = Field(ge=0)
+    page: int = Field(ge=1)
+    page_size: int = Field(ge=1, le=ADMIN_OFFER_REDEMPTION_LIST_PAGE_SIZE_MAX)
