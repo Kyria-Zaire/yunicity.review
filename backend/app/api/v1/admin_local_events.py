@@ -21,6 +21,7 @@ from app.db.session import get_db
 from app.models.user import User
 from app.schemas.admin_local_event import (
     AdminLocalEventActionListResponse,
+    AdminLocalEventCancelRequest,
     AdminLocalEventDetailResponse,
 )
 from app.schemas.local_event import (
@@ -85,6 +86,20 @@ async def list_local_event_actions_admin(
         event_id=event_id,
         page=page,
         page_size=page_size,
+    )
+
+
+@router.post("/{event_id}/cancel", response_model=AdminLocalEventDetailResponse)
+async def cancel_local_event_admin(
+    event_id: uuid.UUID,
+    payload: AdminLocalEventCancelRequest,
+    current_user: Annotated[User, Depends(_staff_guard)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> AdminLocalEventDetailResponse:
+    return await AdminLocalEventService(session).cancel_event(
+        current_user,
+        event_id,
+        payload,
     )
 
 
