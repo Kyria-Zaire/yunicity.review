@@ -148,17 +148,44 @@ export function buildEventDetailPathWithListContext(
   return qs ? `${base}?${qs}` : base;
 }
 
-export function canAdminApproveEvent(status: string): boolean {
-  return status === "pending_review";
+export const eventCancelledBadgeLabel = "Annulé";
+
+export const eventCancelWarningCopy =
+  "L'événement sera retiré du feed, de la carte et des listes publiques. Le lien public renverra une erreur 410.";
+
+export const eventModerationBlockedWhenCancelledCopy =
+  "Cet événement est annulé. Les actions de modération sont bloquées.";
+
+export function validateEventCancelReason(reason: string): string | null {
+  const trimmed = reason.trim();
+  if (!trimmed) {
+    return "Le motif est obligatoire.";
+  }
+  if (trimmed.length < 3) {
+    return "Le motif doit contenir au moins 3 caractères.";
+  }
+  return null;
 }
 
-export function canAdminRejectEvent(status: string): boolean {
-  return status === "pending_review" || status === "approved";
+export function canCancelEvent(event: {
+  moderation_status: string;
+  is_cancelled: boolean;
+}): boolean {
+  return event.moderation_status === "approved" && !event.is_cancelled;
+}
+
+export function canAdminApproveEvent(status: string, isCancelled = false): boolean {
+  return !isCancelled && status === "pending_review";
+}
+
+export function canAdminRejectEvent(status: string, isCancelled = false): boolean {
+  return !isCancelled && (status === "pending_review" || status === "approved");
 }
 
 export const EVENT_ADMIN_ACTION_LABELS: Record<AdminLocalEventAction, string> = {
   approve: "Approbation",
   reject: "Rejet",
+  cancel: "Annulation",
 };
 
 export function eventAdminActionLabel(action: AdminLocalEventAction | string): string {

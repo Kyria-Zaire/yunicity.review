@@ -1,7 +1,11 @@
 "use client";
 
 import { useAuth } from "@/lib/auth/auth-provider";
-import type { AdminLocalEventDetail, LocalEventRejectPayload } from "@yunicity/types";
+import type {
+  AdminLocalEventDetail,
+  LocalEventCancelPayload,
+  LocalEventRejectPayload,
+} from "@yunicity/types";
 import { isAuthError } from "@yunicity/utils";
 import { useCallback, useEffect, useState } from "react";
 
@@ -99,6 +103,29 @@ export function useAdminEventDetail(eventId: string) {
     [adminEventsApi, event, load],
   );
 
+  const cancelEvent = useCallback(
+    async (payload: LocalEventCancelPayload) => {
+      if (!event || !payload.reason.trim()) {
+        return false;
+      }
+      setIsModerating(true);
+      setActionError(null);
+      setActionSuccess(null);
+      try {
+        const updated = await adminEventsApi.cancelEvent(event.id, payload);
+        setEvent(updated);
+        setActionSuccess("Événement annulé.");
+        return true;
+      } catch (err) {
+        setActionError(isAuthError(err) ? err.message : "Annulation impossible.");
+        return false;
+      } finally {
+        setIsModerating(false);
+      }
+    },
+    [adminEventsApi, event],
+  );
+
   return {
     event,
     isLoading,
@@ -111,5 +138,6 @@ export function useAdminEventDetail(eventId: string) {
     clearActionFeedback,
     approveEvent,
     rejectEvent,
+    cancelEvent,
   };
 }

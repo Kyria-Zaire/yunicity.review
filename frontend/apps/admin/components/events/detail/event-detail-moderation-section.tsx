@@ -1,8 +1,14 @@
 "use client";
 
+import { EventCancelDialog } from "@/components/events/event-cancel-dialog";
 import { EventRejectDialog } from "@/components/events/event-reject-dialog";
 import type { AdminLocalEventDetail } from "@yunicity/types";
-import { canAdminApproveEvent, canAdminRejectEvent } from "@yunicity/utils";
+import {
+  canAdminApproveEvent,
+  canAdminRejectEvent,
+  canCancelEvent,
+  eventModerationBlockedWhenCancelledCopy,
+} from "@yunicity/utils";
 import { useState } from "react";
 
 interface EventDetailModerationSectionProps {
@@ -11,6 +17,8 @@ interface EventDetailModerationSectionProps {
   actionError: string | null;
   onApprove: () => Promise<boolean>;
   onReject: (reason: string) => Promise<boolean>;
+  onCancel: (reason: string) => Promise<boolean>;
+  onClearActionError?: () => void;
 }
 
 export function EventDetailModerationSection({
@@ -19,17 +27,23 @@ export function EventDetailModerationSection({
   actionError,
   onApprove,
   onReject,
+  onCancel,
+  onClearActionError,
 }: EventDetailModerationSectionProps) {
   const [rejectOpen, setRejectOpen] = useState(false);
-  const showApprove = canAdminApproveEvent(event.moderation_status);
-  const showReject = canAdminRejectEvent(event.moderation_status);
-  const hasAnyAction = showApprove || showReject;
+  const [cancelOpen, setCancelOpen] = useState(false);
+
+  const isCancelled = event.is_cancelled;
+  const showApprove = canAdminApproveEvent(event.moderation_status, isCancelled);
+  const showReject = canAdminRejectEvent(event.moderation_status, isCancelled);
+  const showCancel = canCancelEvent(event);
+  const hasModerationAction = showApprove || showReject;
 
   return (
     <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Modération</h2>
       <p className="mt-2 text-xs text-stone-500">
-        Actions staff existantes — alignées sur le workflow backend (approve / reject).
+        Actions staff — approbation, refus et annulation (événements approuvés).
       </p>
 
       {event.rejection_reason ? (
@@ -38,17 +52,19 @@ export function EventDetailModerationSection({
         </p>
       ) : null}
 
-      {actionError ? (
+      {isCancelled ? (
+        <p className="mt-3 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-700">
+          {eventModerationBlockedWhenCancelledCopy}
+        </p>
+      ) : null}
+
+      {actionError && !cancelOpen ? (
         <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
           {actionError}
         </p>
       ) : null}
 
-      {!hasAnyAction ? (
-        <p className="mt-4 text-sm text-stone-600">
-          Aucune action de modération disponible pour le statut actuel.
-        </p>
-      ) : (
+      {hasModerationAction ? (
         <div className="mt-4 flex flex-wrap gap-2">
           {showApprove ? (
             <button
@@ -71,7 +87,27 @@ export function EventDetailModerationSection({
             </button>
           ) : null}
         </div>
-      )}
+      ) : !isCancelled ? (
+        <p className="mt-4 text-sm text-stone-600">
+          Aucune action de modération disponible pour le statut actuel.
+        </p>
+      ) : null}
+
+      {showCancel ? (
+        <div className="mt-4 border-t border-stone-100 pt-4">
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={() => {
+              onClearActionError?.();
+              setCancelOpen(true);
+            }}
+            className="rounded-lg bg-rose-700 px-4 py-2 text-sm font-medium text-white hover:bg-rose-800 disabled:opacity-50"
+          >
+            Annuler l&apos;événement
+          </button>
+        </div>
+      ) : null}
 
       <EventRejectDialog
         eventTitle={event.title}
@@ -82,6 +118,21 @@ export function EventDetailModerationSection({
           void onReject(reason).then((ok) => {
             if (ok) {
               setRejectOpen(false);
+            }
+          });
+        }}
+      />
+
+      <EventCancelDialog
+        eventTitle={event.title}
+        isOpen={cancelOpen}
+        isSubmitting={isSubmitting}
+        apiError={cancelOpen ? actionError : null}
+        onClose={() => setCancelOpen(false)}
+        onConfirm={(reason) => {
+          void onCancel(reason).then((ok) => {
+            if (ok) {
+              setCancelOpen(false);
             }
           });
         }}

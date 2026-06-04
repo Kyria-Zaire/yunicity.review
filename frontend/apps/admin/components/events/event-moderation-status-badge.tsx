@@ -1,5 +1,5 @@
 import type { AdminEventModerationStatus } from "@yunicity/types";
-import { eventModerationStatusLabel } from "@yunicity/utils";
+import { eventCancelledBadgeLabel, eventModerationStatusLabel } from "@yunicity/utils";
 
 const TONES: Record<AdminEventModerationStatus, { bg: string; text: string; border: string }> = {
   pending_review: { bg: "#fef3c7", text: "#92400e", border: "#fde68a" },
@@ -32,7 +32,7 @@ export function EventModerationStatusBadge({ status, isCancelled }: EventModerat
       </span>
       {isCancelled ? (
         <span className="inline-flex rounded-full border border-stone-300 bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">
-          Annulé
+          {eventCancelledBadgeLabel}
         </span>
       ) : null}
     </span>

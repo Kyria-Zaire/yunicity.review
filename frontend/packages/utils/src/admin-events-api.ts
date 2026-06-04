@@ -5,6 +5,7 @@ import type {
   AdminLocalEventListItem,
   AdminLocalEventListParams,
   AdminLocalEventListResponse,
+  LocalEventCancelPayload,
   LocalEventRejectPayload,
 } from "@yunicity/types";
 
@@ -70,6 +71,13 @@ export class AdminEventsApi extends ApiClientBase {
   rejectEvent(eventId: string, payload: LocalEventRejectPayload): Promise<AdminLocalEventListItem> {
     return this.postJson<AdminLocalEventListItem>(
       `/admin/local-events/${encodeURIComponent(eventId)}/reject`,
+      payload,
+    );
+  }
+
+  cancelEvent(eventId: string, payload: LocalEventCancelPayload): Promise<AdminLocalEventDetail> {
+    return this.postJson<AdminLocalEventDetail>(
+      `/admin/local-events/${encodeURIComponent(eventId)}/cancel`,
       payload,
     );
   }

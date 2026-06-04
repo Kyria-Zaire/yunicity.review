@@ -1,4 +1,5 @@
 import { EventDetailField } from "@/components/events/detail/event-detail-field";
+import { EventModerationStatusBadge } from "@/components/events/event-moderation-status-badge";
 import type { AdminLocalEventDetail } from "@yunicity/types";
 import { eventModerationStatusLabel, eventVisibilityLabel, formatEventDate } from "@yunicity/utils";
 
@@ -9,9 +10,15 @@ interface EventDetailIdentityCardProps {
 export function EventDetailIdentityCard({ event }: EventDetailIdentityCardProps) {
   return (
     <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
-        Identité événement
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
+          Identité événement
+        </h2>
+        <EventModerationStatusBadge
+          status={event.moderation_status}
+          isCancelled={event.is_cancelled}
+        />
+      </div>
       <dl className="mt-4 grid gap-4 sm:grid-cols-2">
         <EventDetailField label="ID" value={event.id} />
         <EventDetailField label="Titre" value={event.title} />

@@ -62,7 +62,7 @@ export function EventDetailAuditSection({
         <div className="rounded-2xl border border-dashed border-stone-200 bg-white px-6 py-12 text-center">
           <p className="text-sm font-medium text-stone-900">Aucune action staff enregistrée.</p>
           <p className="mt-2 text-sm text-stone-500">
-            Les approbations et refus apparaîtront ici après modération.
+            Les approbations, refus et annulations apparaîtront ici après action staff.
           </p>
         </div>
       ) : null}

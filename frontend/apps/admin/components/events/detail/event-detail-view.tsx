@@ -32,6 +32,7 @@ export function EventDetailView({ eventId }: EventDetailViewProps) {
     clearActionFeedback,
     approveEvent,
     rejectEvent,
+    cancelEvent,
   } = useAdminEventDetail(eventId);
 
   const detailReady = !isLoading && !isNotFound && !error && !!event;
@@ -130,6 +131,8 @@ export function EventDetailView({ eventId }: EventDetailViewProps) {
           actionError={actionError}
           onApprove={approveEvent}
           onReject={(reason) => rejectEvent({ reason })}
+          onCancel={(reason) => cancelEvent({ reason })}
+          onClearActionError={clearActionFeedback}
         />
         <EventDetailEngagementCard event={event} />
       </div>
