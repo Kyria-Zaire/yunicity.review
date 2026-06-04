@@ -1,5 +1,7 @@
 import type {
+  AdminCreatorContentActionListResponse,
   PartnerCreatorContentAdmin,
+  PartnerCreatorContentAdminActionListParams,
   PartnerCreatorContentAdminListParams,
   PartnerCreatorContentAdminListResponse,
   PartnerCreatorContentRejectPayload,
@@ -19,6 +21,21 @@ function buildListQuery(params?: PartnerCreatorContentAdminListParams): string {
   if (params.sort) {
     search.set("sort", params.sort);
   }
+  if (params.page !== undefined) {
+    search.set("page", String(params.page));
+  }
+  if (params.page_size !== undefined) {
+    search.set("page_size", String(params.page_size));
+  }
+  const qs = search.toString();
+  return qs ? `?${qs}` : "";
+}
+
+function buildPagedQuery(params?: PartnerCreatorContentAdminActionListParams): string {
+  if (!params) {
+    return "";
+  }
+  const search = new URLSearchParams();
   if (params.page !== undefined) {
     search.set("page", String(params.page));
   }
@@ -62,6 +79,15 @@ export class PartnerCreatorContentAdminApi extends ApiClientBase {
     return this.postJson<PartnerCreatorContentAdmin>(
       `/admin/partner-creator-content/${encodeURIComponent(id)}/archive`,
       {},
+    );
+  }
+
+  listContentActions(
+    contentId: string,
+    params?: PartnerCreatorContentAdminActionListParams,
+  ): Promise<AdminCreatorContentActionListResponse> {
+    return this.getJson<AdminCreatorContentActionListResponse>(
+      `/admin/partner-creator-content/${encodeURIComponent(contentId)}/actions${buildPagedQuery(params)}`,
     );
   }
 }

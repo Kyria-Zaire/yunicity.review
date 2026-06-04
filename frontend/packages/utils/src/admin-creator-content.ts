@@ -1,6 +1,10 @@
 /** Admin creator content moderation helpers (ADMIN-CREATOR-01 / ADMIN-06B / ADMIN-06C). */
 
-import type { PartnerCreatorContentAdmin, PartnerCreatorContentStatus } from "@yunicity/types";
+import type {
+  AdminCreatorContentAction,
+  PartnerCreatorContentAdmin,
+  PartnerCreatorContentStatus,
+} from "@yunicity/types";
 
 import { buildPublicPlaceHref } from "./place-routing";
 import { formatPassportDate } from "./passport-labels";
@@ -19,9 +23,6 @@ export const creatorContentApproveSideEffectWarningCopy =
 
 export const creatorContentFeedSyncCopy =
   "La publication peut apparaître dans le feed local (type partner_creator) après validation staff.";
-
-export const creatorContentAuditPlaceholderCopy =
-  "Timeline contenu prévue en ADMIN-06D — pas d'historique staff persisté dans cette version.";
 
 export const creatorContentMediaPreviewDisclaimerCopy =
   "Aperçu staff — les médias externes peuvent être indisponibles.";
@@ -233,6 +234,33 @@ export function creatorContentIsPartnerPageVisible(
 
 export function formatCreatorContentDate(iso: string | null | undefined): string {
   return formatPassportDate(iso);
+}
+
+export const CREATOR_CONTENT_ADMIN_ACTION_LABELS: Record<AdminCreatorContentAction, string> = {
+  approve: "Approbation",
+  reject: "Rejet",
+  archive: "Archivage",
+};
+
+export function creatorContentAdminActionLabel(action: AdminCreatorContentAction): string {
+  return CREATOR_CONTENT_ADMIN_ACTION_LABELS[action] ?? action;
+}
+
+function creatorContentStaffStatusLabel(status: string | null | undefined): string {
+  if (!status) {
+    return "—";
+  }
+  if (status in ADMIN_CREATOR_CONTENT_STATUS_LABELS) {
+    return adminCreatorContentStatusLabel(status as PartnerCreatorContentStatus);
+  }
+  return status;
+}
+
+export function formatCreatorContentAdminActionStatusTransition(
+  previousStatus: string | null,
+  newStatus: string | null,
+): string {
+  return `${creatorContentStaffStatusLabel(previousStatus)} → ${creatorContentStaffStatusLabel(newStatus)}`;
 }
 
 export function formatCreatorContentPublishedAt(
