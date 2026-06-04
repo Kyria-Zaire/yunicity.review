@@ -1,6 +1,30 @@
-/** Admin creator content moderation helpers (ADMIN-CREATOR-01 / ADMIN-06B). */
+/** Admin creator content moderation helpers (ADMIN-CREATOR-01 / ADMIN-06B / ADMIN-06C). */
 
 import type { PartnerCreatorContentAdmin, PartnerCreatorContentStatus } from "@yunicity/types";
+
+import { buildPublicPlaceHref } from "./place-routing";
+import { formatPassportDate } from "./passport-labels";
+import { adminPartnerDetailPath } from "./admin-partner";
+
+export const ADMIN_CREATOR_CONTENT_TYPE_LABEL = "Contenu éditorial partenaire";
+
+/** Confirmé dans PartnerCreatorContentService.approve_content (org.visibility = PUBLIC). */
+export const CREATOR_CONTENT_APPROVE_FORCES_ORG_PUBLIC = true;
+
+export const creatorContentApproveSideEffectCopy =
+  "L'approbation staff publie le contenu, synchronise le feed local et peut forcer l'organisation en visibilité publique (règle backend actuelle).";
+
+export const creatorContentApproveSideEffectWarningCopy =
+  "Attention : approuver ce contenu peut rendre l'organisation publique si le backend applique organization.visibility = PUBLIC.";
+
+export const creatorContentFeedSyncCopy =
+  "La publication peut apparaître dans le feed local (type partner_creator) après validation staff.";
+
+export const creatorContentAuditPlaceholderCopy =
+  "Timeline contenu prévue en ADMIN-06D — pas d'historique staff persisté dans cette version.";
+
+export const creatorContentMediaPreviewDisclaimerCopy =
+  "Aperçu staff — les médias externes peuvent être indisponibles.";
 
 export const CREATOR_CONTENT_DEFAULT_PAGE_SIZE = 20;
 export const CREATOR_CONTENT_MAX_PAGE_SIZE = 100;
@@ -98,6 +122,20 @@ export function buildCreatorContentDetailPathWithListContext(
   return qs ? `${base}?${qs}` : base;
 }
 
+export function buildCreatorContentPublicPath(
+  slug: string,
+  city: string,
+  webAppBaseUrl?: string,
+): string {
+  const path = buildPublicPlaceHref(slug, city);
+  const base = webAppBaseUrl?.replace(/\/$/, "") ?? "";
+  return base ? `${base}${path}` : path;
+}
+
+export function buildCreatorContentOrganizationAdminPath(organizationId: string): string {
+  return adminPartnerDetailPath(organizationId);
+}
+
 export function buildCreatorContentListBackPath(detailSearchParams: URLSearchParams): string {
   const query: Record<string, string> = {};
   for (const key of CREATOR_CONTENT_LIST_CONTEXT_KEYS) {
@@ -171,4 +209,51 @@ export function canAdminApproveCreatorContent(status: PartnerCreatorContentStatu
 
 export function canAdminRejectCreatorContent(status: PartnerCreatorContentStatus): boolean {
   return status === "pending_review" || status === "published";
+}
+
+export function canAdminArchiveCreatorContent(status: PartnerCreatorContentStatus): boolean {
+  return status === "published";
+}
+
+/** Alias alignés ticket ADMIN-06C. */
+export const canApproveCreatorContent = canAdminApproveCreatorContent;
+export const canRejectCreatorContent = canAdminRejectCreatorContent;
+export const canArchiveCreatorContent = canAdminArchiveCreatorContent;
+
+export function creatorContentIsFeedDistributed(status: PartnerCreatorContentStatus): boolean {
+  return status === "published";
+}
+
+export function creatorContentIsPartnerPageVisible(
+  status: PartnerCreatorContentStatus,
+  isActive: boolean,
+): boolean {
+  return status === "published" && isActive;
+}
+
+export function formatCreatorContentDate(iso: string | null | undefined): string {
+  return formatPassportDate(iso);
+}
+
+export function formatCreatorContentPublishedAt(
+  content: Pick<PartnerCreatorContentAdmin, "status" | "submitted_at" | "updated_at">,
+): string {
+  if (content.status !== "published") {
+    return "—";
+  }
+  const iso = content.submitted_at ?? content.updated_at;
+  return formatCreatorContentDate(iso);
+}
+
+export function isCreatorContentMediaImageUrl(mediaUrl: string | null | undefined): boolean {
+  if (!mediaUrl?.trim()) {
+    return false;
+  }
+  return /\.(png|jpe?g|gif|webp)(\?|$)/i.test(mediaUrl.trim());
+}
+
+export function shouldShowCreatorContentApproveSideEffectWarning(
+  status: PartnerCreatorContentStatus,
+): boolean {
+  return CREATOR_CONTENT_APPROVE_FORCES_ORG_PUBLIC && canAdminApproveCreatorContent(status);
 }
