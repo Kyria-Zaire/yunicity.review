@@ -10,11 +10,16 @@ import {
   buildModerationListBackPath,
   buildModerationListPath,
   buildModerationReportDetailPath,
+  canDismissReport,
+  canResolveReport,
   formatReportDate,
   reportReasonLabel,
+  reportResolutionActionCopy,
+  reportResolutionStatusLabel,
   reportStatusLabel,
   shortReportId,
   targetTypeLabel,
+  validateReportResolutionReason,
 } from "./admin-moderation";
 describe("adminReportStatusLabel", () => {
   it("maps known statuses", () => {
@@ -99,5 +104,53 @@ describe("07C helper aliases", () => {
   it("provides safety guidance per reason", () => {
     expect(adminReportSafetyGuidance("spam")).toContain("Vérifiez le contenu");
     expect(adminReportSafetyGuidance("other")).toContain("autre");
+  });
+});
+
+describe("report resolution guards", () => {
+  it("allows resolve only when pending", () => {
+    expect(canResolveReport("pending")).toBe(true);
+    expect(canResolveReport("reviewed")).toBe(false);
+    expect(canResolveReport("dismissed")).toBe(false);
+    expect(canResolveReport("action_taken")).toBe(false);
+  });
+
+  it("allows dismiss only when pending", () => {
+    expect(canDismissReport("pending")).toBe(true);
+    expect(canDismissReport("dismissed")).toBe(false);
+  });
+});
+
+describe("validateReportResolutionReason", () => {
+  it("requires reason when hide_post is true", () => {
+    expect(validateReportResolutionReason("", true).valid).toBe(false);
+    expect(validateReportResolutionReason("ab", true).valid).toBe(false);
+    expect(validateReportResolutionReason("abc", true)).toEqual({
+      valid: true,
+      normalized: "abc",
+    });
+  });
+
+  it("allows optional note when hide_post is false", () => {
+    expect(validateReportResolutionReason("", false)).toEqual({
+      valid: true,
+      normalized: null,
+    });
+    expect(validateReportResolutionReason("  note  ", false)).toEqual({
+      valid: true,
+      normalized: "note",
+    });
+  });
+});
+
+describe("reportResolutionActionCopy", () => {
+  it("returns French copy for staff actions", () => {
+    expect(reportResolutionActionCopy("dismiss").title).toContain("sans suite");
+    expect(reportResolutionActionCopy("dismiss").confirmLabel).toBe("Classer sans suite");
+    expect(reportResolutionActionCopy("resolve_hide").description).toContain("feed");
+  });
+
+  it("maps resolution status labels via status helper", () => {
+    expect(reportResolutionStatusLabel("action_taken")).toBe("Action prise");
   });
 });

@@ -11,6 +11,9 @@ import type {
 export const MODERATION_DEFAULT_PAGE_SIZE = 20;
 export const MODERATION_MAX_PAGE_SIZE = 50;
 
+export const REPORT_RESOLUTION_NOTE_MAX_LENGTH = 1000;
+export const REPORT_RESOLUTION_NOTE_HIDE_POST_MIN_LENGTH = 3;
+
 export type AdminReportStatusFilter = "" | AdminReportStatus | "all";
 export type AdminReportReasonFilter = "" | AdminReportReason;
 
@@ -188,4 +191,78 @@ export function buildPublicPostUrl(postId: string, webBase?: string | null): str
   void postId;
   void webBase;
   return null;
+}
+
+export function canDismissReport(status: AdminReportStatus | string): boolean {
+  return status === "pending";
+}
+
+export function canResolveReport(status: AdminReportStatus | string): boolean {
+  return status === "pending";
+}
+
+export function reportResolutionStatusLabel(status: AdminReportStatus | string): string {
+  return adminReportStatusLabel(status);
+}
+
+export type ReportResolutionValidationResult =
+  | { valid: true; normalized: string | null }
+  | { valid: false; message: string };
+
+export function validateReportResolutionReason(
+  reason: string | null | undefined,
+  hidePost: boolean,
+): ReportResolutionValidationResult {
+  const trimmed = reason?.trim() ?? "";
+  if (!trimmed) {
+    if (hidePost) {
+      return {
+        valid: false,
+        message: "Une note staff est requise pour masquer le contenu (minimum 3 caractères).",
+      };
+    }
+    return { valid: true, normalized: null };
+  }
+  if (trimmed.length > REPORT_RESOLUTION_NOTE_MAX_LENGTH) {
+    return {
+      valid: false,
+      message: `La note ne peut pas dépasser ${REPORT_RESOLUTION_NOTE_MAX_LENGTH} caractères.`,
+    };
+  }
+  if (hidePost && trimmed.length < REPORT_RESOLUTION_NOTE_HIDE_POST_MIN_LENGTH) {
+    return {
+      valid: false,
+      message: `La note doit contenir au moins ${REPORT_RESOLUTION_NOTE_HIDE_POST_MIN_LENGTH} caractères.`,
+    };
+  }
+  return { valid: true, normalized: trimmed };
+}
+
+export type ReportResolutionActionKey = "dismiss" | "resolve" | "resolve_hide";
+
+export function reportResolutionActionCopy(action: ReportResolutionActionKey): {
+  title: string;
+  description: string;
+  confirmLabel: string;
+} {
+  switch (action) {
+    case "dismiss":
+      return {
+        title: "Classer ce signalement sans suite",
+        description: "Aucune action ne sera appliquée au contenu signalé.",
+        confirmLabel: "Classer sans suite",
+      };
+    case "resolve":
+      return {
+        title: "Résoudre ce signalement",
+        description: "Le contenu signalé restera visible dans le feed.",
+        confirmLabel: "Confirmer la résolution",
+      };
+    case "resolve_hide":
+      return {
+        title: "Résoudre et masquer le post",
+        description: "Le post ne sera plus actif dans le feed.",
+        confirmLabel: "Confirmer la résolution",
+      };
+  }
 }

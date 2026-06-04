@@ -83,11 +83,13 @@ export type {
 
 export type {
   AdminReportDetailResponse,
+  AdminReportDismissPayload,
   AdminReportListItem,
   AdminReportListParams,
   AdminReportListResponse,
   AdminReportReason,
   AdminReportReporterSummary,
+  AdminReportResolvePayload,
   AdminReportResolverSummary,
   AdminReportStatus,
   AdminReportStatusSummary,
