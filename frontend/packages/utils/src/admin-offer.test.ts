@@ -10,6 +10,7 @@ import {
   canApproveOffer,
   canArchiveOffer,
   canRejectOffer,
+  offerRedemptionChannelLabel,
   offerStatusBadgeVariant,
   offerStatusLabel,
 } from "./admin-offer";
@@ -56,5 +57,11 @@ describe("admin-offer helpers", () => {
     expect(buildOffersListBackPath(params)).toBe(
       "/passport-offers?status=published&organization_id=org-1&page=2",
     );
+  });
+
+  it("labels redemption channels for staff", () => {
+    expect(offerRedemptionChannelLabel("self")).toBe("App citoyen");
+    expect(offerRedemptionChannelLabel("scan")).toBe("Scan partenaire");
+    expect(offerRedemptionChannelLabel("unknown")).toBe("Inconnu");
   });
 });

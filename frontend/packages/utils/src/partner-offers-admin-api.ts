@@ -3,6 +3,8 @@ import type {
   PartnerOfferAdminCreatePayload,
   PartnerOfferAdminListParams,
   PartnerOfferAdminListResponse,
+  PartnerOfferAdminRedemptionListParams,
+  PartnerOfferAdminRedemptionListResponse,
   PartnerOfferAdminUpdatePayload,
   PartnerOfferRejectPayload,
   VerifiedOrganizationListResponse,
@@ -25,6 +27,21 @@ function buildListQuery(params?: PartnerOfferAdminListParams): string {
   if (params.organization_id) {
     search.set("organization_id", params.organization_id);
   }
+  if (params.page !== undefined) {
+    search.set("page", String(params.page));
+  }
+  if (params.page_size !== undefined) {
+    search.set("page_size", String(params.page_size));
+  }
+  const qs = search.toString();
+  return qs ? `?${qs}` : "";
+}
+
+function buildRedemptionsQuery(params?: PartnerOfferAdminRedemptionListParams): string {
+  if (!params) {
+    return "";
+  }
+  const search = new URLSearchParams();
   if (params.page !== undefined) {
     search.set("page", String(params.page));
   }
@@ -81,6 +98,15 @@ export class PartnerOffersAdminApi extends ApiClientBase {
     return this.postJson<PartnerOfferAdmin>(
       `/admin/partner-offers/${encodeURIComponent(id)}/archive`,
       {},
+    );
+  }
+
+  listOfferRedemptions(
+    offerId: string,
+    params?: PartnerOfferAdminRedemptionListParams,
+  ): Promise<PartnerOfferAdminRedemptionListResponse> {
+    return this.getJson<PartnerOfferAdminRedemptionListResponse>(
+      `/admin/partner-offers/${encodeURIComponent(offerId)}/redemptions${buildRedemptionsQuery(params)}`,
     );
   }
 }

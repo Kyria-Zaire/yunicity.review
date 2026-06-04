@@ -1,6 +1,6 @@
 /** Admin offers workspace helpers (ADMIN-04B / 04C). */
 
-import type { AdminOfferListItem, AdminOfferStatus } from "@yunicity/types";
+import type { AdminOfferListItem, AdminOfferStatus, AdminOfferRedemptionChannel } from "@yunicity/types";
 
 import { adminPartnerDetailPath } from "./admin-partner";
 import { buildPassportOfferAdminPath } from "./admin-passport";
@@ -199,3 +199,13 @@ export const ADMIN_OFFER_STATUS_FILTER_OPTIONS: { value: "" | AdminOfferStatus; 
       Object.entries(ADMIN_OFFER_STATUS_LABELS) as [AdminOfferStatus, string][]
     ).map(([value, label]) => ({ value, label })),
   ];
+
+export const OFFER_REDEMPTION_CHANNEL_LABELS: Record<AdminOfferRedemptionChannel, string> = {
+  self: "App citoyen",
+  scan: "Scan partenaire",
+  unknown: "Inconnu",
+};
+
+export function offerRedemptionChannelLabel(channel: AdminOfferRedemptionChannel): string {
+  return OFFER_REDEMPTION_CHANNEL_LABELS[channel] ?? channel;
+}

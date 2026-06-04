@@ -1,4 +1,5 @@
 import type { PartnerOfferType } from "./passport";
+import type { OfferRedemptionStatus } from "./passport";
 import type { PartnerOfferStatus } from "./partner_offer_management";
 
 /** Alias admin — même enum produit que self-service (TICKET-305A). */
@@ -86,6 +87,40 @@ export interface PartnerOfferAdminListParams {
   status?: PartnerOfferAdminStatus;
   offer_type?: PartnerOfferType;
   organization_id?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export type AdminOfferRedemptionChannel = "self" | "scan" | "unknown";
+
+export interface AdminOfferRedemptionPassport {
+  id: string;
+  passport_number: string;
+}
+
+export interface AdminOfferRedemptionCitizen {
+  id: string;
+  display_name: string | null;
+  email: string;
+}
+
+export interface PartnerOfferAdminRedemptionItem {
+  id: string;
+  passport: AdminOfferRedemptionPassport;
+  citizen: AdminOfferRedemptionCitizen;
+  channel: AdminOfferRedemptionChannel;
+  status: OfferRedemptionStatus;
+  redeemed_at: string | null;
+}
+
+export interface PartnerOfferAdminRedemptionListResponse {
+  items: PartnerOfferAdminRedemptionItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface PartnerOfferAdminRedemptionListParams {
   page?: number;
   page_size?: number;
 }

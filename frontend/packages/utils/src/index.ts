@@ -53,6 +53,7 @@ export {
   canRejectOffer,
   formatOfferDate,
   isOfferPubliclyVisible,
+  offerRedemptionChannelLabel,
   offerStatusBadgeTone,
   offerStatusBadgeVariant,
   offerStatusLabel,
