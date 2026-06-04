@@ -34,6 +34,7 @@ from app.models.rbac import Permission, Role, RolePermission, UserRole
 from app.models.refresh_token import RefreshToken
 from app.models.report import Report
 from app.models.report_admin_action import ReportAdminAction
+from app.models.staff_admin_action import StaffAdminAction
 from app.models.transit import TransitDeparture, TransitFeedMeta, TransitStop
 from app.models.tribe import Tribe, TribeInvitation, TribeMember, TribeModerationLog
 from app.models.user import User
@@ -66,6 +67,7 @@ __all__ = [
     "Post",
     "Report",
     "ReportAdminAction",
+    "StaffAdminAction",
     "TransitDeparture",
     "TransitFeedMeta",
     "TransitStop",
