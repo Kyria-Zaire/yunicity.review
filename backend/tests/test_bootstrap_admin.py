@@ -6,7 +6,7 @@ import uuid
 from collections.abc import AsyncIterator
 
 import pytest
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.core.errors import AppError
 from app.core.security import verify_password
 from app.db.session import get_engine
@@ -38,7 +38,7 @@ async def _clear_redis_rate_limits(auth_client: AsyncClient) -> AsyncIterator[No
         await redis.flushdb()
 
 
-def _bootstrap_settings():
+def _bootstrap_settings() -> Settings:
     base = get_settings()
     return base.model_copy(
         update={
@@ -110,13 +110,13 @@ async def test_bootstrap_repairs_disabled_admin(auth_client: AsyncClient) -> Non
     assert result.role_restored is True
 
     async with factory() as session:
-        user = await UserRepository(session).get_by_email(BOOTSTRAP_EMAIL)
-        assert user is not None
-        assert user.is_active is True
-        assert user.is_verified is True
-        assert user.is_system_account is True
-        assert verify_password(BOOTSTRAP_PASSWORD, user.hashed_password)
-        roles = await RbacRepository(session).get_role_keys_for_user(user.id)
+        repaired = await UserRepository(session).get_by_email(BOOTSTRAP_EMAIL)
+        assert repaired is not None
+        assert repaired.is_active is True
+        assert repaired.is_verified is True
+        assert repaired.is_system_account is True
+        assert verify_password(BOOTSTRAP_PASSWORD, repaired.hashed_password)
+        roles = await RbacRepository(session).get_role_keys_for_user(repaired.id)
         assert "SUPER_ADMIN" in roles
 
 
