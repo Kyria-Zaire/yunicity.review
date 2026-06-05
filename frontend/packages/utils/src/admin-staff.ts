@@ -1,6 +1,10 @@
-/** Admin platform staff helpers (ADMIN-08C). */
+/** Admin platform staff helpers (ADMIN-08C / ADMIN-08D). */
 
-import type { AdminStaffActionType, AdminStaffPlatformRole } from "@yunicity/types";
+import type {
+  AdminStaffActionType,
+  AdminStaffDetailResponse,
+  AdminStaffPlatformRole,
+} from "@yunicity/types";
 
 export const STAFF_DEFAULT_PAGE_SIZE = 20;
 export const STAFF_MAX_PAGE_SIZE = 50;
@@ -39,6 +43,24 @@ export const STAFF_ACTION_LABELS: Record<AdminStaffActionType, string> = {
   suspend: "Suspension du compte",
   reactivate: "Réactivation du compte",
 };
+
+/** Rôles staff assignables en V1 (aligné backend 08B). */
+export const STAFF_ASSIGNABLE_ROLES: readonly AdminStaffPlatformRole[] = [
+  "MODERATOR",
+  "CITY_ADMIN",
+  "SUPER_ADMIN",
+];
+
+export const STAFF_SELF_MODIFY_COPY =
+  "Vous ne pouvez pas modifier votre propre accès staff.";
+
+export const STAFF_REVOKE_SECURITY_COPY =
+  "La suppression du dernier super administrateur actif est bloquée par le système.";
+
+export const STAFF_SUSPEND_WARNING_COPY =
+  "Le compte ne pourra plus accéder à l'admin.";
+
+export const STAFF_REASON_MAX_LENGTH = 1000;
 
 export function staffRoleLabel(role: string): string {
   if (role in STAFF_ROLE_LABELS) {
@@ -90,6 +112,70 @@ export function buildStaffListBackPath(searchParams: URLSearchParams | null): st
     }
   }
   return buildStaffListPath(params);
+}
+
+export function isStaffSelfTarget(
+  currentUserId: string | null | undefined,
+  targetStaffId: string,
+): boolean {
+  return Boolean(currentUserId && currentUserId === targetStaffId);
+}
+
+export function availableStaffRolesForAssignment(
+  assignedRoles: string[] | null | undefined,
+): AdminStaffPlatformRole[] {
+  const assigned = new Set(assignedRoles ?? []);
+  return STAFF_ASSIGNABLE_ROLES.filter((role) => !assigned.has(role));
+}
+
+export function canAssignStaffRole(
+  staff: Pick<AdminStaffDetailResponse, "id">,
+  currentUserId: string | null | undefined,
+  role: AdminStaffPlatformRole,
+  assignedRoles: string[],
+): boolean {
+  if (isStaffSelfTarget(currentUserId, staff.id)) {
+    return false;
+  }
+  if (assignedRoles.includes(role)) {
+    return false;
+  }
+  return STAFF_ASSIGNABLE_ROLES.includes(role);
+}
+
+export function canRevokeStaffRole(
+  staff: Pick<AdminStaffDetailResponse, "id">,
+  currentUserId: string | null | undefined,
+  role: string,
+  assignedRoles: string[],
+): boolean {
+  if (isStaffSelfTarget(currentUserId, staff.id)) {
+    return false;
+  }
+  return (
+    assignedRoles.includes(role) &&
+    STAFF_ASSIGNABLE_ROLES.includes(role as AdminStaffPlatformRole)
+  );
+}
+
+export function canSuspendStaffUser(
+  staff: Pick<AdminStaffDetailResponse, "id" | "is_active">,
+  currentUserId: string | null | undefined,
+): boolean {
+  if (isStaffSelfTarget(currentUserId, staff.id)) {
+    return false;
+  }
+  return staff.is_active;
+}
+
+export function canReactivateStaffUser(
+  staff: Pick<AdminStaffDetailResponse, "id" | "is_active">,
+  currentUserId: string | null | undefined,
+): boolean {
+  if (isStaffSelfTarget(currentUserId, staff.id)) {
+    return false;
+  }
+  return !staff.is_active;
 }
 
 export function formatStaffDate(value: string | null | undefined): string {

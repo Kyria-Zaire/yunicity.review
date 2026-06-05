@@ -1,8 +1,12 @@
 "use client";
 
 import { useAuth } from "@/lib/auth/auth-provider";
-import type { AdminStaffActionItem, AdminStaffDetailResponse } from "@yunicity/types";
-import { isAuthError } from "@yunicity/utils";
+import type {
+  AdminStaffActionItem,
+  AdminStaffDetailResponse,
+  AdminStaffPlatformRole,
+} from "@yunicity/types";
+import { isAuthError, staffRoleLabel } from "@yunicity/utils";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export const STAFF_ACTIONS_PAGE_SIZE = 20;
@@ -53,6 +57,11 @@ export function useAdminStaffDetail(staffId: string) {
     void reload();
   }, [reload]);
 
+  const applyStaffDetail = useCallback((detail: AdminStaffDetailResponse) => {
+    setStaff(detail);
+    hasLoadedRef.current = true;
+  }, []);
+
   return {
     staff,
     isLoading,
@@ -60,6 +69,7 @@ export function useAdminStaffDetail(staffId: string) {
     error,
     isNotFound,
     reload,
+    applyStaffDetail,
   };
 }
 
@@ -72,34 +82,37 @@ export function useAdminStaffActions(staffId: string, enabled: boolean) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!enabled || !staffId.trim()) {
-      return;
-    }
+  const load = useCallback(
+    async (targetPage = page) => {
+      if (!enabled || !staffId.trim()) {
+        return;
+      }
 
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await adminStaffApi.listStaffActions(staffId, {
-        page,
-        page_size: STAFF_ACTIONS_PAGE_SIZE,
-      });
-      setItems(response.items);
-      setTotal(response.total);
-      setPage(response.page);
-      setPageSize(response.page_size);
-    } catch (err) {
-      setItems([]);
-      setTotal(0);
-      setError(
-        isAuthError(err)
-          ? err.message
-          : "Impossible de charger l'historique staff pour le moment.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [adminStaffApi, enabled, page, staffId]);
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await adminStaffApi.listStaffActions(staffId, {
+          page: targetPage,
+          page_size: STAFF_ACTIONS_PAGE_SIZE,
+        });
+        setItems(response.items);
+        setTotal(response.total);
+        setPage(response.page);
+        setPageSize(response.page_size);
+      } catch (err) {
+        setItems([]);
+        setTotal(0);
+        setError(
+          isAuthError(err)
+            ? err.message
+            : "Impossible de charger l'historique staff pour le moment.",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [adminStaffApi, enabled, page, staffId],
+  );
 
   useEffect(() => {
     setPage(1);
@@ -113,6 +126,11 @@ export function useAdminStaffActions(staffId: string, enabled: boolean) {
     setPage(Math.max(1, nextPage));
   }, []);
 
+  const resetAndReload = useCallback(async () => {
+    setPage(1);
+    await load(1);
+  }, [load]);
+
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return {
@@ -123,7 +141,108 @@ export function useAdminStaffActions(staffId: string, enabled: boolean) {
     totalPages,
     isLoading,
     error,
-    reload: load,
+    reload: () => load(),
+    resetAndReload,
     goToPage,
+  };
+}
+
+export function useAdminStaffMutations(
+  staffId: string,
+  onStaffUpdated: (detail: AdminStaffDetailResponse) => void,
+  onAuditRefresh: () => Promise<void>,
+) {
+  const { adminStaffApi } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const isSubmittingRef = useRef(false);
+
+  const clearActionFeedback = useCallback(() => {
+    setActionError(null);
+    setActionSuccess(null);
+  }, []);
+
+  const runMutation = useCallback(
+    async (
+      successMessage: string,
+      action: () => Promise<AdminStaffDetailResponse>,
+    ): Promise<boolean> => {
+      if (isSubmittingRef.current) {
+        return false;
+      }
+      isSubmittingRef.current = true;
+      setIsSubmitting(true);
+      setActionError(null);
+      setActionSuccess(null);
+      try {
+        const updated = await action();
+        onStaffUpdated(updated);
+        await onAuditRefresh();
+        setActionSuccess(successMessage);
+        return true;
+      } catch (err) {
+        setActionError(
+          isAuthError(err)
+            ? err.message
+            : "Impossible d'exécuter l'action pour le moment.",
+        );
+        return false;
+      } finally {
+        isSubmittingRef.current = false;
+        setIsSubmitting(false);
+      }
+    },
+    [onAuditRefresh, onStaffUpdated],
+  );
+
+  const assignRole = useCallback(
+    async (role: AdminStaffPlatformRole, reason?: string | null) =>
+      runMutation(`Rôle ${staffRoleLabel(role)} attribué.`, () =>
+        adminStaffApi.assignRole(staffId, {
+          role,
+          reason: reason?.trim() || undefined,
+        }),
+      ),
+    [adminStaffApi, runMutation, staffId],
+  );
+
+  const revokeRole = useCallback(
+    async (role: string) =>
+      runMutation(`Rôle ${staffRoleLabel(role)} retiré.`, () =>
+        adminStaffApi.revokeRole(staffId, role),
+      ),
+    [adminStaffApi, runMutation, staffId],
+  );
+
+  const suspendStaff = useCallback(
+    async (reason?: string | null) =>
+      runMutation("Compte suspendu.", () =>
+        adminStaffApi.suspendStaff(staffId, {
+          reason: reason?.trim() || undefined,
+        }),
+      ),
+    [adminStaffApi, runMutation, staffId],
+  );
+
+  const reactivateStaff = useCallback(
+    async (reason?: string | null) =>
+      runMutation("Compte réactivé.", () =>
+        adminStaffApi.reactivateStaff(staffId, {
+          reason: reason?.trim() || undefined,
+        }),
+      ),
+    [adminStaffApi, runMutation, staffId],
+  );
+
+  return {
+    isSubmitting,
+    actionError,
+    actionSuccess,
+    clearActionFeedback,
+    assignRole,
+    revokeRole,
+    suspendStaff,
+    reactivateStaff,
   };
 }

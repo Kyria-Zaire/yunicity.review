@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  availableStaffRolesForAssignment,
   buildStaffDetailPath,
   buildStaffListBackPath,
   buildStaffListPath,
+  canAssignStaffRole,
+  canReactivateStaffUser,
+  canSuspendStaffUser,
   formatStaffRolesList,
   staffActionLabel,
   staffRoleLabel,
@@ -40,6 +44,43 @@ describe("formatStaffRolesList", () => {
       "Modérateur, Admin ville",
     );
     expect(formatStaffRolesList(null)).toBe("—");
+  });
+});
+
+describe("availableStaffRolesForAssignment", () => {
+  it("excludes roles already assigned", () => {
+    expect(availableStaffRolesForAssignment(["MODERATOR", "SUPER_ADMIN"])).toEqual([
+      "CITY_ADMIN",
+    ]);
+    expect(availableStaffRolesForAssignment([])).toEqual([
+      "MODERATOR",
+      "CITY_ADMIN",
+      "SUPER_ADMIN",
+    ]);
+  });
+});
+
+describe("staff action guards", () => {
+  const staff = { id: "target-1", is_active: true };
+
+  it("disables assign when role is already assigned", () => {
+    expect(
+      canAssignStaffRole(staff, "actor-1", "MODERATOR", ["MODERATOR", "CITY_ADMIN"]),
+    ).toBe(false);
+    expect(
+      canAssignStaffRole(staff, "actor-1", "SUPER_ADMIN", ["MODERATOR"]),
+    ).toBe(true);
+  });
+
+  it("disables suspend for self target", () => {
+    expect(canSuspendStaffUser(staff, "target-1")).toBe(false);
+    expect(canSuspendStaffUser(staff, "actor-1")).toBe(true);
+  });
+
+  it("allows reactivate only when account is suspended", () => {
+    expect(canReactivateStaffUser({ ...staff, is_active: false }, "actor-1")).toBe(true);
+    expect(canReactivateStaffUser(staff, "actor-1")).toBe(false);
+    expect(canReactivateStaffUser({ ...staff, is_active: false }, "target-1")).toBe(false);
   });
 });
 
