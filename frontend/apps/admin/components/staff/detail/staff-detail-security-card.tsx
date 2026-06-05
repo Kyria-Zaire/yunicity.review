@@ -15,9 +15,6 @@ export function StaffDetailSecurityCard({ staff }: { staff: AdminStaffDetailResp
           <dd className="mt-1 text-stone-900">{staff.is_verified ? "Oui" : "Non"}</dd>
         </div>
       </dl>
-      <p className="mt-4 rounded-lg border border-dashed border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600">
-        Les actions de gestion seront disponibles en ADMIN-08D.
-      </p>
     </section>
   );
 }

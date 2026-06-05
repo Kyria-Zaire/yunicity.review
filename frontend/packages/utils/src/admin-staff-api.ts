@@ -1,9 +1,11 @@
 import type {
   AdminStaffActionListParams,
   AdminStaffActionListResponse,
+  AdminStaffAssignRolePayload,
   AdminStaffDetailResponse,
   AdminStaffListParams,
   AdminStaffListResponse,
+  AdminStaffReasonPayload,
 } from "@yunicity/types";
 
 import type { AuthClient } from "./auth/auth-client";
@@ -63,6 +65,51 @@ export class AdminStaffApi extends ApiClientBase {
     return this.getJson<AdminStaffActionListResponse>(
       `/admin/staff/${encodeURIComponent(staffId)}/actions${buildStaffActionsQuery(params)}`,
     );
+  }
+
+  assignRole(
+    staffId: string,
+    payload: AdminStaffAssignRolePayload,
+  ): Promise<AdminStaffDetailResponse> {
+    return this.postJson<AdminStaffDetailResponse>(
+      `/admin/staff/${encodeURIComponent(staffId)}/roles`,
+      payload,
+    );
+  }
+
+  revokeRole(
+    staffId: string,
+    role: string,
+    _payload?: AdminStaffReasonPayload,
+  ): Promise<AdminStaffDetailResponse> {
+    return this.deleteJson<AdminStaffDetailResponse>(
+      `/admin/staff/${encodeURIComponent(staffId)}/roles/${encodeURIComponent(role)}`,
+    );
+  }
+
+  suspendStaff(
+    staffId: string,
+    payload: AdminStaffReasonPayload = {},
+  ): Promise<AdminStaffDetailResponse> {
+    return this.postJson<AdminStaffDetailResponse>(
+      `/admin/staff/${encodeURIComponent(staffId)}/suspend`,
+      payload,
+    );
+  }
+
+  reactivateStaff(
+    staffId: string,
+    payload: AdminStaffReasonPayload = {},
+  ): Promise<AdminStaffDetailResponse> {
+    return this.postJson<AdminStaffDetailResponse>(
+      `/admin/staff/${encodeURIComponent(staffId)}/reactivate`,
+      payload,
+    );
+  }
+
+  private async deleteJson<T>(segment: string): Promise<T> {
+    const response = await this.client.fetch(this.apiPath(segment), { method: "DELETE" });
+    return this.readJson<T>(response);
   }
 }
 

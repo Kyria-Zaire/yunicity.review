@@ -77,3 +77,12 @@ export interface AdminStaffActionListParams {
   page?: number;
   page_size?: number;
 }
+
+export interface AdminStaffAssignRolePayload {
+  role: AdminStaffPlatformRole | string;
+  reason?: string;
+}
+
+export interface AdminStaffReasonPayload {
+  reason?: string;
+}
