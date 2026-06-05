@@ -6,6 +6,7 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.bootstrap_constants import SYSTEM_ACCOUNT_PROTECTED_MSG
 from app.core.errors import AppError
 from app.core.staff_admin_constants import (
     ASSIGNABLE_STAFF_ROLE_KEYS,
@@ -116,6 +117,7 @@ class AdminStaffService:
         reason: str | None = None,
     ) -> AdminStaffDetailResponse:
         self._forbid_self_modify(actor.id, user_id)
+        await self._forbid_system_account_modification(user_id)
         normalized_role = self._normalize_assignable_role(role_key)
         normalized_reason = self._normalize_reason(reason)
         target = await self._get_existing_user(user_id)
@@ -164,6 +166,7 @@ class AdminStaffService:
         reason: str | None,
     ) -> AdminStaffDetailResponse:
         self._forbid_self_modify(actor.id, user_id)
+        await self._forbid_system_account_modification(user_id)
         normalized_reason = self._normalize_reason(reason)
         target = await self._get_existing_user(user_id)
 
@@ -326,6 +329,15 @@ class AdminStaffService:
             actor_user=actor_summary,
             created_at=row.action.created_at,
         )
+
+    async def _forbid_system_account_modification(self, user_id: uuid.UUID) -> None:
+        user = await self._repo.get_user_by_id(user_id)
+        if user is not None and user.is_system_account:
+            raise AppError(
+                status_code=409,
+                code="STAFF_SYSTEM_ACCOUNT_PROTECTED",
+                detail=SYSTEM_ACCOUNT_PROTECTED_MSG,
+            )
 
     async def _ensure_not_last_system_admin(
         self,

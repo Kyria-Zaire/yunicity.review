@@ -87,6 +87,20 @@ class Settings(BaseSettings):
         default="http://localhost:8000",
         alias="MEDIA_PUBLIC_BASE_URL",
     )
+
+    bootstrap_admin_email: str | None = Field(
+        default=None,
+        alias="YUNICITY_BOOTSTRAP_ADMIN_EMAIL",
+    )
+    bootstrap_admin_password: str | None = Field(
+        default=None,
+        alias="YUNICITY_BOOTSTRAP_ADMIN_PASSWORD",
+    )
+    bootstrap_admin_full_name: str = Field(
+        default="Yunicity Bootstrap Admin",
+        alias="YUNICITY_BOOTSTRAP_ADMIN_FULL_NAME",
+    )
+
     @classmethod
     def parse_cors_origins(cls, value: object) -> list[str]:
         if value is None or value == "":

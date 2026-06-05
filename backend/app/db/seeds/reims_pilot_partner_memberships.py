@@ -70,6 +70,9 @@ async def _ensure_pilot_user(
 ) -> User:
     existing = await session.get(User, user_id)
     if existing is not None:
+        if existing.is_system_account:
+            logger.info("Pilot seed skipped system account user_id=%s", user_id)
+            return existing
         existing.email = email
         existing.full_name = full_name
         existing.city = "Reims"
@@ -83,6 +86,9 @@ async def _ensure_pilot_user(
     by_email = await session.execute(select(User).where(User.email == email))
     found = by_email.scalar_one_or_none()
     if found is not None:
+        if found.is_system_account:
+            logger.info("Pilot seed skipped system account email=%s", email)
+            return found
         found.full_name = full_name
         found.city = "Reims"
         found.is_active = True

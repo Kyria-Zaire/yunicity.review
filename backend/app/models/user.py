@@ -30,6 +30,9 @@ class User(TimestampMixin, Base):
     is_verified: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
+    is_system_account: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
 
     roles: Mapped[list["UserRole"]] = relationship(
         "UserRole",
