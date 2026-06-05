@@ -19,3 +19,7 @@ export function hasAnyPermission(
 export function isStaffUser(user: AuthUser | null): boolean {
   return hasAnyPermission(user, STAFF_PERMISSIONS);
 }
+
+export function isSystemAdminUser(user: AuthUser | null): boolean {
+  return hasAnyPermission(user, ["system.admin"]);
+}

@@ -24,7 +24,7 @@ const STAFF_NAV_ITEMS: readonly (StaffNavLink | StaffNavDisabled)[] = [
   { kind: "link", href: "/events", label: "Events" },
   { kind: "link", href: "/creator-content", label: "Creator Content" },
   { kind: "link", href: "/moderation", label: "Moderation" },
-  { kind: "link", href: "/protected-admin", label: "Staff" },
+  { kind: "link", href: "/staff", label: "Staff" },
 ];
 
 function isStaffNavActive(pathname: string, href: string): boolean {
@@ -135,6 +135,9 @@ function staffPageTitle(pathname: string, isPartnerArea: boolean): string {
   }
   if (pathname.startsWith("/moderation")) {
     return "Modération";
+  }
+  if (pathname === "/staff" || pathname.startsWith("/staff/")) {
+    return "Staff";
   }
   if (pathname.startsWith("/protected-admin")) {
     return "Zone staff";
