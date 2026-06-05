@@ -96,6 +96,18 @@ export type {
   AdminReportTargetPostSummary,
   AdminReportTargetType,
 } from "./admin-report";
+export type {
+  AdminStaffActionActor,
+  AdminStaffActionItem,
+  AdminStaffActionListParams,
+  AdminStaffActionListResponse,
+  AdminStaffActionType,
+  AdminStaffDetailResponse,
+  AdminStaffListItem,
+  AdminStaffListParams,
+  AdminStaffListResponse,
+  AdminStaffPlatformRole,
+} from "./admin-staff";
 
 export type {
   AdminCockpitAttention,
