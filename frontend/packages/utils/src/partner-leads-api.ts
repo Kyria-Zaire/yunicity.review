@@ -1,6 +1,7 @@
 import type {
   ConvertLeadPayload,
   PartnerLead,
+  PartnerLeadCreatePayload,
   PartnerLeadListParams,
   PartnerLeadListResponse,
   PartnerLeadUpdatePayload,
@@ -36,6 +37,10 @@ function buildListQuery(params?: PartnerLeadListParams): string {
 export class PartnerLeadsApi extends ApiClientBase {
   listPartnerLeads(params?: PartnerLeadListParams): Promise<PartnerLeadListResponse> {
     return this.getJson<PartnerLeadListResponse>(`/partner-leads${buildListQuery(params)}`);
+  }
+
+  createPartnerLead(payload: PartnerLeadCreatePayload): Promise<PartnerLead> {
+    return this.postJson<PartnerLead>("/partner-leads", payload);
   }
 
   getPartnerLead(id: string): Promise<PartnerLead> {

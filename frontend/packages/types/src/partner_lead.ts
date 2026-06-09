@@ -83,3 +83,19 @@ export interface ConvertLeadPayload {
   owner_user_id: string;
   organization_id?: string | null;
 }
+
+export interface PartnerLeadCreatePayload {
+  name: string;
+  organization_type?: OrganizationType | null;
+  contact_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  instagram?: string | null;
+  city?: string | null;
+  address?: string | null;
+  source?: PartnerLeadSource;
+  status?: PartnerLeadStatus;
+  tags?: string[];
+  notes?: string | null;
+}

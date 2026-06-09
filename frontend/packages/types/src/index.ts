@@ -445,6 +445,7 @@ export type {
 export type {
   ConvertLeadPayload,
   PartnerLead,
+  PartnerLeadCreatePayload,
   PartnerLeadListParams,
   PartnerLeadListResponse,
   PartnerLeadSource,

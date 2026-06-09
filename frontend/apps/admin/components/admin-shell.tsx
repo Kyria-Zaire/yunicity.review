@@ -14,7 +14,7 @@ function staffPageTitle(pathname: string, isPartnerArea: boolean): string {
     return "Partenaires";
   }
   if (pathname.startsWith("/partner-leads")) {
-    return "Leads terrain";
+    return "Prospects partenaires";
   }
   if (pathname === "/passport-ops" || pathname.startsWith("/passport-ops/")) {
     return "Passport Ops";

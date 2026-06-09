@@ -1,7 +1,7 @@
 "use client";
 
-import { PartnerLeadsList } from "@/components/partners/partner-leads-list";
+import { PartnerLeadsCommandPage } from "@/components/partners/leads/partner-leads-command-page";
 
 export function PartnersLeadsTab({ city = "Reims" }: { city?: string }) {
-  return <PartnerLeadsList variant="embedded" city={city} />;
+  return <PartnerLeadsCommandPage variant="embedded" city={city} />;
 }

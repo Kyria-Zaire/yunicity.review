@@ -1,11 +1,11 @@
 "use client";
 
-import { PartnerLeadsList } from "@/components/partners/partner-leads-list";
+import { PartnerLeadsCommandPage } from "@/components/partners/leads/partner-leads-command-page";
 
 export default function PartnerLeadsPage() {
   return (
-    <div className="mx-auto max-w-6xl space-y-6 py-2">
-      <PartnerLeadsList variant="page" />
+    <div className="py-2">
+      <PartnerLeadsCommandPage variant="page" />
     </div>
   );
 }
