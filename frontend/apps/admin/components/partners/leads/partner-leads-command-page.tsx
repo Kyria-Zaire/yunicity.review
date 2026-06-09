@@ -1,5 +1,6 @@
 "use client";
 
+import { PartnerLeadsCaptureToast } from "@/components/partners/leads/partner-leads-capture-toast";
 import { PartnerLeadsCreateModal } from "@/components/partners/leads/partner-leads-create-modal";
 import { PartnerLeadsEmptyState } from "@/components/partners/leads/partner-leads-empty-state";
 import { PartnerLeadsHero } from "@/components/partners/leads/partner-leads-hero";
@@ -54,6 +55,8 @@ export function PartnerLeadsCommandPage({
   const [source, setSource] = useState<"" | PartnerLeadSource>(initialSource);
   const [organizationType, setOrganizationType] = useState<"" | OrganizationType>("");
   const [createOpen, setCreateOpen] = useState(false);
+  const [captureSuccessLeadId, setCaptureSuccessLeadId] = useState<string | null>(null);
+  const [anotherCaptureToken, setAnotherCaptureToken] = useState(0);
 
   const { leads, isLoading, error, reload } = usePartnerLeadsPipeline(city);
 
@@ -87,6 +90,16 @@ export function PartnerLeadsCommandPage({
 
   const canCreate = true;
   const openCreate = () => setCreateOpen(true);
+
+  function handleCaptureSuccess(leadId: string) {
+    setCaptureSuccessLeadId(leadId);
+    void reload();
+  }
+
+  function handleAddAnotherCapture() {
+    setAnotherCaptureToken((token) => token + 1);
+    setCreateOpen(true);
+  }
 
   if (isLoading && leads.length === 0) {
     return (
@@ -212,8 +225,17 @@ export function PartnerLeadsCommandPage({
         city={city}
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        onCreated={() => void reload()}
+        onCreated={handleCaptureSuccess}
+        anotherCaptureToken={anotherCaptureToken}
       />
+
+      {captureSuccessLeadId ? (
+        <PartnerLeadsCaptureToast
+          leadId={captureSuccessLeadId}
+          onDismiss={() => setCaptureSuccessLeadId(null)}
+          onAddAnother={handleAddAnotherCapture}
+        />
+      ) : null}
     </div>
   );
 }
