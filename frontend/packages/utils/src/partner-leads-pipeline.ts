@@ -29,6 +29,7 @@ export interface PartnerLeadPipelineColumn {
   label: string;
   shortLabel: string;
   hint: string;
+  emptyNarrative: string;
   count: number;
   preview: PartnerLead[];
   filterHref: string;
@@ -71,6 +72,33 @@ export interface PartnerLeadInsightsResult {
   hasData: boolean;
 }
 
+export interface PartnerLeadPilotMomentum {
+  city: string;
+  qualifiedCount: number;
+  goal: number;
+  progressPercent: number;
+  progressRatio: number;
+  microcopy: string;
+  title: string;
+  description: string;
+}
+
+export interface PartnerLeadInsightsEmptyCopy {
+  title: string;
+  promises: string[];
+  footnote: string;
+}
+
+export const PARTNER_LEAD_PILOT_QUALIFIED_GOAL = 25;
+
+export const PARTNER_LEAD_QUALIFIED_STATUSES: PartnerLeadStatus[] = [
+  "contacted",
+  "interested",
+  "meeting_scheduled",
+  "signed",
+  "converted",
+];
+
 const OPEN_STATUSES: PartnerLeadStatus[] = [
   "new",
   "contacted",
@@ -103,12 +131,86 @@ const PIPELINE_COLUMN_HINTS: Record<PartnerLeadPipelineStatus, string> = {
   converted: "Intégrés au réseau",
 };
 
+const PIPELINE_COLUMN_EMPTY_NARRATIVES: Record<PartnerLeadPipelineStatus, string> = {
+  new: "Premiers contacts terrain",
+  contacted: "Les premiers échanges lanceront la dynamique.",
+  interested: "Les opportunités émergeront ici.",
+  meeting_scheduled: "Les rencontres alimenteront le pipeline.",
+  signed: "Les premiers accords apparaîtront ici.",
+  converted: "Les partenaires intégrés clôtureront le cycle.",
+};
+
 export function partnerLeadStatusLabel(status: PartnerLeadStatus): string {
   return PARTNER_LEAD_STATUS_LABELS[status];
 }
 
 export function partnerLeadPipelineStatusLabel(status: PartnerLeadPipelineStatus): string {
   return PARTNER_LEAD_STATUS_LABELS[status];
+}
+
+export function partnerLeadQualifiedCount(leads: PartnerLead[]): number {
+  return leads.filter((lead) => PARTNER_LEAD_QUALIFIED_STATUSES.includes(lead.status)).length;
+}
+
+export function partnerLeadPilotMomentumProgress(
+  qualifiedCount: number,
+  goal: number = PARTNER_LEAD_PILOT_QUALIFIED_GOAL,
+): number {
+  if (goal <= 0) {
+    return 0;
+  }
+  return Math.min(Math.round((qualifiedCount / goal) * 100), 100);
+}
+
+export function partnerLeadPilotMomentumMicrocopy(qualifiedCount: number): string {
+  if (qualifiedCount === 0) {
+    return "Le pilote attend ses premiers échanges.";
+  }
+  if (qualifiedCount <= 9) {
+    return "La prospection prend forme.";
+  }
+  if (qualifiedCount <= 24) {
+    return "Le territoire commence à révéler ses opportunités.";
+  }
+  return "Le pilote dispose d'une base solide.";
+}
+
+export function buildPartnerLeadPilotMomentum(
+  leads: PartnerLead[],
+  city: string,
+): PartnerLeadPilotMomentum {
+  const qualifiedCount = partnerLeadQualifiedCount(leads);
+  const goal = PARTNER_LEAD_PILOT_QUALIFIED_GOAL;
+  const progressRatio = Math.min(qualifiedCount / goal, 1);
+
+  return {
+    city,
+    qualifiedCount,
+    goal,
+    progressPercent: partnerLeadPilotMomentumProgress(qualifiedCount, goal),
+    progressRatio,
+    microcopy: partnerLeadPilotMomentumMicrocopy(qualifiedCount),
+    title: "Objectif du pilote",
+    description: `Construisez progressivement le réseau terrain de ${city}.`,
+  };
+}
+
+export function partnerLeadInsightsEmptyCopy(): PartnerLeadInsightsEmptyCopy {
+  return {
+    title: "Intelligence terrain",
+    promises: [
+      "Les sources qui convertissent le mieux",
+      "Les organisations les plus réceptives",
+      "Les relances les plus efficaces",
+    ],
+    footnote: "Les premiers échanges enrichiront ces analyses.",
+  };
+}
+
+export function partnerLeadPipelineColumnEmptyNarrative(
+  status: PartnerLeadPipelineStatus,
+): string {
+  return PIPELINE_COLUMN_EMPTY_NARRATIVES[status];
 }
 
 function countByStatus(leads: PartnerLead[]): Record<PartnerLeadStatus, number> {
@@ -214,6 +316,7 @@ export function buildPartnerLeadPipeline(
       label: partnerLeadPipelineStatusLabel(status),
       shortLabel: PIPELINE_FUNNEL_LABELS[status],
       hint: PIPELINE_COLUMN_HINTS[status],
+      emptyNarrative: PIPELINE_COLUMN_EMPTY_NARRATIVES[status],
       count: inColumn.length,
       preview: inColumn.slice(0, 2),
       filterHref: `/partner-leads?${params.toString()}`,

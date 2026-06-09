@@ -1,19 +1,27 @@
 import { LeadStatusBadge } from "@/components/lead-status-badge";
 import { formatDate } from "@/lib/format";
 import type { PartnerLeadInsightsResult } from "@yunicity/utils";
-import { organizationTypeLabel } from "@yunicity/utils";
+import { organizationTypeLabel, partnerLeadInsightsEmptyCopy } from "@yunicity/utils";
 import Link from "next/link";
 
 export function PartnerLeadsInsights({ insights }: { insights: PartnerLeadInsightsResult }) {
+  const emptyCopy = partnerLeadInsightsEmptyCopy();
+
   if (!insights.hasData) {
     return (
       <section className="rounded-xl border border-dashed border-stone-200 bg-stone-50/30 px-4 py-5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400">
-          Intelligence terrain
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">
+          {emptyCopy.title}
         </p>
-        <p className="mt-2 text-sm text-stone-500">
-          Les tendances du pipeline apparaîtront dès les premiers contacts.
+        <p className="mt-3 text-sm text-stone-700">
+          Le pipeline révélera automatiquement :
         </p>
+        <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-stone-600">
+          {emptyCopy.promises.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <p className="mt-3 text-sm text-stone-500">{emptyCopy.footnote}</p>
       </section>
     );
   }

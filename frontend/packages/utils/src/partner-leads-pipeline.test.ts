@@ -4,12 +4,18 @@ import type { PartnerLead } from "@yunicity/types";
 
 import {
   buildPartnerLeadInsights,
+  buildPartnerLeadPilotMomentum,
   buildPartnerLeadPipeline,
   buildPartnerLeadRecommendedAction,
   buildPartnerLeadSignal,
   partnerLeadDueFollowups,
   partnerLeadEmptyStateCopy,
   partnerLeadFocusKpiCards,
+  partnerLeadInsightsEmptyCopy,
+  partnerLeadPilotMomentumMicrocopy,
+  partnerLeadPilotMomentumProgress,
+  partnerLeadPipelineColumnEmptyNarrative,
+  partnerLeadQualifiedCount,
   partnerLeadStatusLabel,
 } from "./partner-leads-pipeline";
 
@@ -114,6 +120,15 @@ describe("buildPartnerLeadPipeline", () => {
     expect(nouveau?.filterHref).toContain("status=new");
     expect(nouveau?.filterHref).toContain("city=Reims");
   });
+
+  it("expose une narration vide distincte par colonne", () => {
+    const pipeline = buildPartnerLeadPipeline([], "Reims");
+    const contacted = pipeline.columns.find((c) => c.status === "contacted");
+    const converted = pipeline.columns.find((c) => c.status === "converted");
+    expect(contacted?.emptyNarrative).toContain("premiers échanges");
+    expect(converted?.emptyNarrative).toContain("partenaires intégrés");
+    expect(partnerLeadPipelineColumnEmptyNarrative("interested")).toContain("opportunités");
+  });
 });
 
 describe("partnerLeadFocusKpiCards", () => {
@@ -201,5 +216,52 @@ describe("buildPartnerLeadInsights", () => {
     expect(insights.topSources[0]?.source).toBe("event");
     expect(insights.hotProspects.length).toBeGreaterThan(0);
     expect(insights.hasData).toBe(true);
+  });
+});
+
+describe("partnerLeadPilotMomentum", () => {
+  it("compte les prospects qualifiés hors statut new", () => {
+    expect(
+      partnerLeadQualifiedCount([
+        lead({ status: "new" }),
+        lead({ id: "2", status: "contacted" }),
+        lead({ id: "3", status: "interested" }),
+      ]),
+    ).toBe(2);
+  });
+
+  it("calcule la progression pilote", () => {
+    expect(partnerLeadPilotMomentumProgress(0)).toBe(0);
+    expect(partnerLeadPilotMomentumProgress(3)).toBe(12);
+    expect(partnerLeadPilotMomentumProgress(12)).toBe(48);
+    expect(partnerLeadPilotMomentumProgress(25)).toBe(100);
+    expect(partnerLeadPilotMomentumProgress(30)).toBe(100);
+  });
+
+  it("adapte la microcopy momentum", () => {
+    expect(partnerLeadPilotMomentumMicrocopy(0)).toContain("premiers échanges");
+    expect(partnerLeadPilotMomentumMicrocopy(5)).toContain("prend forme");
+    expect(partnerLeadPilotMomentumMicrocopy(15)).toContain("opportunités");
+    expect(partnerLeadPilotMomentumMicrocopy(25)).toContain("base solide");
+  });
+
+  it("construit le bloc momentum complet", () => {
+    const momentum = buildPartnerLeadPilotMomentum(
+      [lead({ status: "contacted" }), lead({ id: "2", status: "signed" })],
+      "Reims",
+    );
+    expect(momentum.qualifiedCount).toBe(2);
+    expect(momentum.goal).toBe(25);
+    expect(momentum.progressPercent).toBe(8);
+    expect(momentum.description).toContain("Reims");
+  });
+});
+
+describe("partnerLeadInsightsEmptyCopy", () => {
+  it("oriente la promesse produit intelligence terrain", () => {
+    const copy = partnerLeadInsightsEmptyCopy();
+    expect(copy.title).toBe("Intelligence terrain");
+    expect(copy.promises).toHaveLength(3);
+    expect(copy.footnote).toContain("premiers échanges");
   });
 });

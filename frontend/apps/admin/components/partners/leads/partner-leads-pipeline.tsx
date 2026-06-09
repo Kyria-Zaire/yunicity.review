@@ -49,7 +49,7 @@ export function PartnerLeadsPipeline({ pipeline }: { pipeline: PartnerLeadPipeli
                       </li>
                     ))
                   ) : (
-                    <li className="text-sm text-stone-400">Aucun prospect</li>
+                    <li className="text-sm leading-snug text-stone-500">{column.emptyNarrative}</li>
                   )}
                 </ul>
                 <Link

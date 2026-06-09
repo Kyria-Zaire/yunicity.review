@@ -6,6 +6,7 @@ import { PartnerLeadsEmptyState } from "@/components/partners/leads/partner-lead
 import { PartnerLeadsHero } from "@/components/partners/leads/partner-leads-hero";
 import { PartnerLeadsInsights } from "@/components/partners/leads/partner-leads-insights";
 import { PartnerLeadsKpiStrip } from "@/components/partners/leads/partner-leads-kpi-strip";
+import { PartnerLeadsPilotMomentum } from "@/components/partners/leads/partner-leads-pilot-momentum";
 import { PartnerLeadsPipeline } from "@/components/partners/leads/partner-leads-pipeline";
 import { PartnerLeadsRecommendedAction } from "@/components/partners/leads/partner-leads-recommended-action";
 import { PartnerLeadsSignal } from "@/components/partners/leads/partner-leads-signal";
@@ -15,6 +16,7 @@ import { usePartnerLeadsPipeline } from "@/lib/hooks/use-partner-leads-pipeline"
 import type { OrganizationType, PartnerLeadSource, PartnerLeadStatus } from "@yunicity/types";
 import {
   buildPartnerLeadInsights,
+  buildPartnerLeadPilotMomentum,
   buildPartnerLeadPipeline,
   buildPartnerLeadRecommendedAction,
   buildPartnerLeadSignal,
@@ -67,6 +69,7 @@ export function PartnerLeadsCommandPage({
     () => buildPartnerLeadRecommendedAction(leads, city),
     [leads, city],
   );
+  const pilotMomentum = useMemo(() => buildPartnerLeadPilotMomentum(leads, city), [leads, city]);
   const insights = useMemo(() => buildPartnerLeadInsights(leads), [leads]);
 
   const filtered = Boolean(search || status || source || organizationType);
@@ -154,6 +157,8 @@ export function PartnerLeadsCommandPage({
       <PartnerLeadsSignal signal={signal} />
 
       <PartnerLeadsRecommendedAction action={recommended} onAddProspect={openCreate} />
+
+      {variant === "page" ? <PartnerLeadsPilotMomentum momentum={pilotMomentum} /> : null}
 
       {variant === "page" ? (
         <>
