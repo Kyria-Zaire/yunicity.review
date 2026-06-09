@@ -6,6 +6,7 @@ import {
   buildPartnerNetworkSignal,
   partnerEmptyStateCopy,
   partnerNetworkActiveTotal,
+  partnerNetworkActionItems,
   partnerNetworkLaunchStatus,
   partnerPilotMomentumObjectiveCopy,
   partnerPilotMomentumProgress,
@@ -276,6 +277,20 @@ describe("partnerPilotMomentumProgressLabel", () => {
   });
 });
 
+describe("partnerNetworkActionItems", () => {
+  it("utilise le vocabulaire prospect pour les liens vers /partner-leads", () => {
+    const actions = partnerNetworkActionItems(emptySummary());
+    const add = actions.find((a) => a.id === "add");
+    const prospects = actions.find((a) => a.id === "export");
+    expect(add?.label).toBe("Ajouter un prospect");
+    expect(add?.href).toBe("/partner-leads");
+    expect(add?.description).toContain("pipeline territorial");
+    expect(prospects?.label).toBe("Voir les prospects");
+    expect(prospects?.href).toBe("/partner-leads");
+    expect(prospects?.label).not.toContain("Exporter");
+  });
+});
+
 describe("partnerRecommendedAction", () => {
   it("priorise la vérification", () => {
     const action = partnerRecommendedAction(
@@ -291,9 +306,10 @@ describe("partnerRecommendedAction", () => {
     expect(action.title).toContain("activations");
   });
 
-  it("invite à ajouter un partenaire sur pilote vide", () => {
+  it("invite à ajouter un prospect sur pilote vide", () => {
     const action = partnerRecommendedAction(emptySummary());
-    expect(action.title).toContain("Ajouter");
+    expect(action.title).toBe("Ajouter un prospect");
+    expect(action.ctaLabel).toBe("Ajouter un prospect");
     expect(action.description).toContain("Reims");
   });
 

@@ -224,10 +224,10 @@ export function partnerRecommendedAction(
   if (summary.partners_total === 0) {
     return {
       id: "add",
-      title: "Ajouter un partenaire",
-      description: `Lancez le premier réseau Yunicity de ${city}.`,
+      title: "Ajouter un prospect",
+      description: `Lancez la première piste partenaire pour ${city}.`,
       href: "/partner-leads",
-      ctaLabel: "Ajouter un partenaire",
+      ctaLabel: "Ajouter un prospect",
     };
   }
 
@@ -366,8 +366,8 @@ export function partnerNetworkActionItems(
   return [
     {
       id: "add",
-      label: "Ajouter un partenaire",
-      description: "Intégrez un nouveau prospect au réseau territorial.",
+      label: "Ajouter un prospect",
+      description: "Intégrez un nouveau contact au pipeline territorial.",
       href: "/partner-leads",
     },
     {
@@ -387,8 +387,8 @@ export function partnerNetworkActionItems(
     },
     {
       id: "export",
-      label: "Exporter le réseau",
-      description: "Consultez et exportez les prospects du territoire.",
+      label: "Voir les prospects",
+      description: "Consultez le pipeline de prospection du territoire.",
       href: "/partner-leads",
     },
     {

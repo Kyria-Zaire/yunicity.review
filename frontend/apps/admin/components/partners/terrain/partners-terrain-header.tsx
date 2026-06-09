@@ -31,12 +31,12 @@ export function PartnersTerrainHeader({
         <div className="flex flex-wrap gap-2 sm:shrink-0">
           {exportDisabled ? (
             <span
-              title="Disponible dès qu'un partenaire est enregistré."
+              title="Disponible dès qu'un prospect est enregistré."
               className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-sm font-medium text-stone-400"
               aria-disabled="true"
             >
               <Upload className="h-4 w-4" aria-hidden />
-              Exporter
+              Voir les prospects
             </span>
           ) : (
             <Link
@@ -44,7 +44,7 @@ export function PartnersTerrainHeader({
               className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-800 shadow-sm hover:bg-stone-50"
             >
               <Upload className="h-4 w-4" aria-hidden />
-              Exporter
+              Voir les prospects
             </Link>
           )}
           <Link
@@ -52,7 +52,7 @@ export function PartnersTerrainHeader({
             className="inline-flex items-center gap-2 rounded-xl bg-yunicity-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-95"
           >
             <Plus className="h-4 w-4" aria-hidden />
-            Ajouter un partenaire
+            Ajouter un prospect
           </Link>
         </div>
       </div>

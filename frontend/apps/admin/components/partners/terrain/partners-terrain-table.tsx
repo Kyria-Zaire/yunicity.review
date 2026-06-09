@@ -79,7 +79,7 @@ export function PartnersTerrainTable({
         action={
           filtered
             ? { label: "Réinitialiser les filtres", onClick: onResetFilters }
-            : { label: "Ajouter un partenaire", href: "/partner-leads" }
+            : { label: "Ajouter un prospect", href: "/partner-leads" }
         }
       />
     );
