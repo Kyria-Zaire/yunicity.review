@@ -13,6 +13,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import { shouldShowPartnerNavBlock } from "@/lib/admin-sidebar-nav";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -118,19 +119,23 @@ export function AdminSidebar({ staff, homeHref, variant = "sidebar" }: AdminSide
   const pathname = usePathname();
   const compact = variant === "mobile";
 
+  const showPartnerNav = shouldShowPartnerNavBlock(staff);
+
   if (compact) {
     return (
       <nav className="flex flex-wrap gap-2" aria-label="Navigation mobile">
-        {PARTNER_NAV.map((item) => (
-          <NavLink
-            key={item.href}
-            href={item.href}
-            label={item.label}
-            icon={item.icon}
-            active={isStaffNavActive(pathname, item.href)}
-            compact
-          />
-        ))}
+        {showPartnerNav
+          ? PARTNER_NAV.map((item) => (
+              <NavLink
+                key={item.href}
+                href={item.href}
+                label={item.label}
+                icon={item.icon}
+                active={isStaffNavActive(pathname, item.href)}
+                compact
+              />
+            ))
+          : null}
         {staff
           ? STAFF_NAV_GROUPS.flatMap((group) =>
               group.items.map((item) => (
@@ -159,25 +164,27 @@ export function AdminSidebar({ staff, homeHref, variant = "sidebar" }: AdminSide
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Navigation principale">
-        <div className="rounded-lg border border-stone-100 bg-stone-50/60 p-2">
-          <p className="px-2 pb-1.5 text-[10px] font-medium uppercase tracking-widest text-stone-400">
-            Partenaire
-          </p>
-          <div className="space-y-0.5">
-            {PARTNER_NAV.map((item) => (
-              <NavLink
-                key={item.href}
-                href={item.href}
-                label={item.label}
-                icon={item.icon}
-                active={isStaffNavActive(pathname, item.href)}
-              />
-            ))}
+        {showPartnerNav ? (
+          <div className="rounded-lg border border-stone-100 bg-stone-50/60 p-2">
+            <p className="px-2 pb-1.5 text-[10px] font-medium uppercase tracking-widest text-stone-400">
+              Partenaire
+            </p>
+            <div className="space-y-0.5">
+              {PARTNER_NAV.map((item) => (
+                <NavLink
+                  key={item.href}
+                  href={item.href}
+                  label={item.label}
+                  icon={item.icon}
+                  active={isStaffNavActive(pathname, item.href)}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
 
         {staff ? (
-          <div className="mt-5 space-y-5">
+          <div className={showPartnerNav ? "mt-5 space-y-5" : "space-y-5"}>
             {STAFF_NAV_GROUPS.map((group) => (
               <div key={group.id}>
                 <p className="px-3 pb-1.5 text-[10px] font-medium uppercase tracking-widest text-stone-400">
