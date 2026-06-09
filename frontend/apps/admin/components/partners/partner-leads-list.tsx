@@ -8,7 +8,8 @@ import type {
   PartnerLeadSource,
   PartnerLeadStatus,
 } from "@yunicity/types";
-import { PARTNER_LEAD_SOURCE_LABELS, isAuthError } from "@yunicity/utils";
+import { PartnersEmptyState } from "@/components/partners/command/partners-empty-state";
+import { PARTNER_LEAD_SOURCE_LABELS, isAuthError, partnerEmptyStateCopy } from "@yunicity/utils";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -47,9 +48,13 @@ function matchesSearch(lead: PartnerLead, query: string): boolean {
 
 type PartnerLeadsListProps = {
   variant?: "page" | "embedded";
+  city?: string;
 };
 
-export function PartnerLeadsList({ variant = "page" }: PartnerLeadsListProps) {
+export function PartnerLeadsList({
+  variant = "page",
+  city = "Reims",
+}: PartnerLeadsListProps) {
   const { partnerLeadsApi } = useAuth();
   const [items, setItems] = useState<PartnerLead[]>([]);
   const [total, setTotal] = useState(0);
@@ -92,20 +97,22 @@ export function PartnerLeadsList({ variant = "page" }: PartnerLeadsListProps) {
   return (
     <div className="space-y-6">
       {variant === "page" ? (
-        <header>
-          <h2 className="text-2xl font-bold tracking-tight">Partenaires terrain</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Cockpit CRM — {total} lead{total > 1 ? "s" : ""} au total
-          </p>
+        <header className="space-y-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-stone-950">Prospects</h1>
+            <p className="mt-1 text-sm text-stone-600">
+              {total} prospect{total > 1 ? "s" : ""} au total
+            </p>
+          </div>
         </header>
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-stone-600">
-            CRM terrain — {total} lead{total > 1 ? "s" : ""} chargé{total > 1 ? "s" : ""}
+            {total} prospect{total > 1 ? "s" : ""} chargé{total > 1 ? "s" : ""} pour {city}
           </p>
           <Link
             href="/partner-leads"
-            className="text-sm font-medium text-stone-900 underline-offset-2 hover:underline"
+            className="text-sm font-medium text-yunicity-primary underline-offset-2 hover:underline"
           >
             Ouvrir en plein écran
           </Link>
@@ -120,7 +127,7 @@ export function PartnerLeadsList({ variant = "page" }: PartnerLeadsListProps) {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Nom ou ville…"
+              placeholder="Nom, ville ou contact"
               className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm"
             />
           </label>
@@ -153,18 +160,18 @@ export function PartnerLeadsList({ variant = "page" }: PartnerLeadsListProps) {
             </select>
           </label>
           <label className="text-sm">
-            <span className="font-medium text-stone-700">Ville (API)</span>
+            <span className="font-medium text-stone-700">Territoire</span>
             <input
               type="text"
               value={cityFilter}
               onChange={(e) => setCityFilter(e.target.value)}
-              placeholder="ex. Reims"
+              placeholder={city}
               className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm"
             />
           </label>
         </div>
         <p className="mt-2 text-xs text-stone-500">
-          La recherche nom/ville s&apos;applique sur les 100 premiers résultats chargés.
+          Les filtres affinent les partenaires chargés pour le territoire sélectionné.
         </p>
       </section>
 
@@ -186,12 +193,13 @@ export function PartnerLeadsList({ variant = "page" }: PartnerLeadsListProps) {
       ) : null}
 
       {!isLoading && !error && visibleItems.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-stone-200 bg-white px-6 py-16 text-center">
-          <p className="text-lg font-medium text-stone-900">Aucun lead pour ces filtres.</p>
-          <p className="mt-2 text-sm text-stone-500">
-            Créez ou importez des leads via l&apos;API staff ou le script backend.
-          </p>
-        </div>
+        <PartnersEmptyState
+          {...partnerEmptyStateCopy(
+            "leads",
+            city,
+            Boolean(search || statusFilter || sourceFilter || cityFilter),
+          )}
+        />
       ) : null}
 
       {!isLoading && !error && visibleItems.length > 0 ? (

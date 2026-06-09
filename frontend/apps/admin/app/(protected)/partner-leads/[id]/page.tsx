@@ -117,9 +117,6 @@ export default function PartnerLeadDetailPage() {
   if (error || !lead) {
     return (
       <div className="space-y-4">
-        <Link href="/partner-leads" className="text-sm text-muted-foreground hover:underline">
-          ← Retour à la liste
-        </Link>
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {error ?? "Lead introuvable."}
         </div>
@@ -132,13 +129,9 @@ export default function PartnerLeadDetailPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <Link href="/partner-leads" className="text-sm text-muted-foreground hover:underline">
-        ← Partenaires terrain
-      </Link>
-
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">{lead.name}</h2>
+          <h1 className="text-2xl font-bold tracking-tight text-stone-950">{lead.name}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {lead.city ?? "Ville non renseignée"} ·{" "}
             {PARTNER_LEAD_SOURCE_LABELS[lead.source]}

@@ -20,7 +20,7 @@ import {
   createPartnersApi,
   createScanApi,
   getWebApiBaseUrl,
-  isAuthError,
+  humanizeAuthFailure,
   type AdminActivationWavesApi,
   type AdminEventsApi,
   type AdminReportsApi,
@@ -192,8 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const response = await client.login(payload);
         setUser(response.user);
       } catch (err) {
-        setError(isAuthError(err) ? err.message : "Connexion impossible.");
-        throw err;
+        setError(humanizeAuthFailure(err, "Connexion impossible."));
       }
     },
     [client],

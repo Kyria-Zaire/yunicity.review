@@ -1,25 +1,19 @@
 "use client";
 
+import { PartnersEmptyState } from "@/components/partners/command/partners-empty-state";
 import { usePublicPartnersList } from "@/lib/hooks/use-public-partners-list";
 import { partnerPublicPlaceUrl } from "@/lib/partners-workspace";
-import { adminPartnerDetailPath, partnerStatusLabel } from "@yunicity/utils";
+import { adminPartnerDetailPath, partnerEmptyStateCopy, partnerStatusLabel } from "@yunicity/utils";
 import Link from "next/link";
 
-export function PartnersDirectoryTab() {
-  const { items, total, isLoading, error, reload, city } = usePublicPartnersList();
+export function PartnersDirectoryTab({ city = "Reims" }: { city?: string }) {
+  const { items, total, isLoading, error, reload, city: listCity } = usePublicPartnersList(city);
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-950">
-        <p className="font-medium">Périmètre API actuel (catalogue public)</p>
-        <p className="mt-1 text-amber-900/90">
-          Cette liste provient de <code className="text-xs">GET /api/v1/partners</code> et
-          n&apos;affiche que les partenaires au statut public (
-          <strong>active</strong>, <strong>premium</strong>, <strong>founding_partner</strong>
-          ). Les partenaires <strong>signed</strong> ou <strong>privés</strong> seront
-          disponibles après ADMIN-02D.
-        </p>
-      </div>
+      <p className="text-sm text-stone-600">
+        Partenaires visibles sur le territoire — catalogue public {listCity}.
+      </p>
 
       {isLoading ? (
         <p className="text-sm text-stone-500">Chargement des partenaires…</p>
@@ -39,12 +33,7 @@ export function PartnersDirectoryTab() {
       ) : null}
 
       {!isLoading && !error && items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-stone-200 bg-white px-6 py-16 text-center">
-          <p className="text-lg font-medium text-stone-900">Aucun partenaire public à Reims.</p>
-          <p className="mt-2 text-sm text-stone-500">
-            Les profils signés ou en attente d&apos;activation n&apos;apparaissent pas encore ici.
-          </p>
-        </div>
+        <PartnersEmptyState {...partnerEmptyStateCopy("partners", listCity)} />
       ) : null}
 
       {!isLoading && !error && items.length > 0 ? (

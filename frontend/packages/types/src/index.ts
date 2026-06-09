@@ -156,6 +156,19 @@ export type {
 } from "./admin-partner";
 
 export type {
+  AdminPartnersCategoryBreakdownItem,
+  AdminPartnersEvolutionPoint,
+  AdminPartnersMapPin,
+  AdminPartnersPendingRequestItem,
+  AdminPartnersTerrainListItem,
+  AdminPartnersTerrainListParams,
+  AdminPartnersTerrainListResponse,
+  AdminPartnersTopActiveItem,
+  AdminPartnersWorkspaceSummary,
+  AdminPartnersWorkspaceSummaryParams,
+} from "./admin-partners-workspace";
+
+export type {
   AdminPassportActionActorUser,
   AdminPassportActionItem,
   AdminPassportActionKind,

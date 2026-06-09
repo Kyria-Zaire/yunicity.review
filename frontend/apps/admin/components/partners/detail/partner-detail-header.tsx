@@ -6,8 +6,6 @@ import {
   ORGANIZATION_VISIBILITY_LABELS,
   partnerStatusLabel,
 } from "@yunicity/utils";
-import Link from "next/link";
-
 interface PartnerDetailHeaderProps {
   data: AdminPartnerDetailResponse;
   isRefreshing: boolean;
@@ -25,12 +23,6 @@ export function PartnerDetailHeader({
   return (
     <header className="flex flex-wrap items-start justify-between gap-4 border-b border-stone-200 pb-6">
       <div className="space-y-3">
-        <Link
-          href="/partners"
-          className="text-sm font-medium text-stone-600 underline-offset-2 hover:text-stone-900 hover:underline"
-        >
-          ← Retour aux partenaires
-        </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-stone-900">{org.name}</h1>
           <p className="mt-1 text-sm text-stone-600">{org.city}</p>

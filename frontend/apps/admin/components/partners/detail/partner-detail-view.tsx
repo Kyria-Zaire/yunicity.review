@@ -9,7 +9,6 @@ import { PartnerDetailLinks } from "@/components/partners/detail/partner-detail-
 import { PartnerDetailProfileCard } from "@/components/partners/detail/partner-detail-profile-card";
 import { PartnerDetailSettingsPanel } from "@/components/partners/detail/partner-detail-settings-panel";
 import { useAdminPartnerDetail } from "@/lib/hooks/use-admin-partner-detail";
-import Link from "next/link";
 import { useState } from "react";
 
 interface PartnerDetailViewProps {
@@ -56,12 +55,6 @@ export function PartnerDetailView({ organizationId }: PartnerDetailViewProps) {
   if (isNotFound) {
     return (
       <div className="mx-auto max-w-5xl space-y-4">
-        <Link
-          href="/partners"
-          className="text-sm font-medium text-stone-600 underline-offset-2 hover:underline"
-        >
-          ← Retour aux partenaires
-        </Link>
         <div className="rounded-2xl border border-stone-200 bg-white px-6 py-16 text-center shadow-sm">
           <p className="text-lg font-medium text-stone-900">Organisation introuvable</p>
           <p className="mt-2 text-sm text-stone-500">
@@ -76,12 +69,6 @@ export function PartnerDetailView({ organizationId }: PartnerDetailViewProps) {
   if (error || !data) {
     return (
       <div className="mx-auto max-w-5xl space-y-4">
-        <Link
-          href="/partners"
-          className="text-sm font-medium text-stone-600 underline-offset-2 hover:underline"
-        >
-          ← Retour aux partenaires
-        </Link>
         <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
           {error ?? "Erreur inconnue."}
           <button

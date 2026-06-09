@@ -1,25 +1,25 @@
 "use client";
 
+import { PartnersEmptyState } from "@/components/partners/command/partners-empty-state";
 import { ActivationWaveCard } from "@/components/partners/activation-waves/activation-wave-card";
 import type { AdminActivationWaveListItem } from "@yunicity/types";
+import { partnerEmptyStateCopy } from "@yunicity/utils";
 
 interface ActivationWavesListProps {
   waves: AdminActivationWaveListItem[];
   selectedWaveId: string | null;
   onSelectWave: (waveId: string) => void;
+  city?: string;
 }
 
 export function ActivationWavesList({
   waves,
   selectedWaveId,
   onSelectWave,
+  city = "Reims",
 }: ActivationWavesListProps) {
   if (waves.length === 0) {
-    return (
-      <p className="rounded-lg border border-dashed border-stone-200 bg-stone-50 px-4 py-8 text-center text-sm text-stone-600">
-        Aucune vague d&apos;activation pour le moment.
-      </p>
-    );
+    return <PartnersEmptyState {...partnerEmptyStateCopy("activation", city)} />;
   }
 
   return (

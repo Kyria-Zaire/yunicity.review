@@ -1,5 +1,6 @@
 "use client";
 
+import { PartnersEmptyState } from "@/components/partners/command/partners-empty-state";
 import { OrganizationReviewRejectDialog } from "@/components/partners/organization-review-reject-dialog";
 import { VerificationBadge } from "@/components/verification-badge";
 import { useAdminOrganizationsList } from "@/lib/hooks/use-admin-organizations-list";
@@ -12,6 +13,7 @@ import {
   adminPartnerDetailPath,
   allowedOrganizationReviewActions,
   isAuthError,
+  partnerEmptyStateCopy,
   partnerStatusLabel,
   type OrganizationReviewAction,
 } from "@yunicity/utils";
@@ -135,16 +137,10 @@ export function PartnersVerificationTab() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-stone-200 bg-stone-50/80 px-4 py-3 text-sm text-stone-700">
-        <p className="font-medium text-stone-900">File de vérification organisations</p>
-        <p className="mt-1">
-          Données : <code className="text-xs">GET /api/v1/admin/organizations</code> — actions :{" "}
-          <code className="text-xs">POST /api/v1/organizations/&#123;id&#125;/review</code>
-        </p>
-        <p className="mt-1 text-xs text-stone-500">
-          La vérification ne rend pas l&apos;organisation publique automatiquement.
-        </p>
-      </div>
+      <p className="text-sm text-stone-600">
+        Contrôlez les organisations avant leur entrée dans le réseau Yunicity. La vérification
+        ne rend pas l&apos;organisation publique automatiquement.
+      </p>
 
       <div className="flex flex-wrap items-end gap-3">
         <label className="text-sm">
@@ -199,12 +195,9 @@ export function PartnersVerificationTab() {
       ) : null}
 
       {!isLoading && !error && items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-stone-200 bg-white px-6 py-16 text-center">
-          <p className="text-lg font-medium text-stone-900">Aucune organisation dans ce filtre.</p>
-          <p className="mt-2 text-sm text-stone-500">
-            Essayez « En attente » ou « En revue » pour la file active.
-          </p>
-        </div>
+        <PartnersEmptyState
+          {...partnerEmptyStateCopy("verification", DEFAULT_CITY, Boolean(statusFilter))}
+        />
       ) : null}
 
       {!isLoading && !error && items.length > 0 ? (

@@ -8,7 +8,7 @@ import { useAdminActivationWaves } from "@/lib/hooks/use-admin-activation-waves"
 import type { AdminActivationWaveUpdatePayload } from "@yunicity/types";
 import { useCallback, useEffect, useState } from "react";
 
-export function PartnersActivationTab() {
+export function PartnersActivationTab({ city = "Reims" }: { city?: string }) {
   const { waves, isLoading: wavesLoading, error: wavesError, reload: reloadWaves } =
     useAdminActivationWaves();
   const [selectedWaveId, setSelectedWaveId] = useState<string | null>(null);
@@ -50,7 +50,7 @@ export function PartnersActivationTab() {
 
   return (
     <div className="space-y-6">
-      <ActivationWavesHeader />
+      <ActivationWavesHeader city={city} />
 
       {patchSuccess ? (
         <p
@@ -93,6 +93,7 @@ export function PartnersActivationTab() {
               waves={waves}
               selectedWaveId={selectedWaveId}
               onSelectWave={setSelectedWaveId}
+              city={city}
             />
           ) : null}
         </>

@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import require_any_permission
@@ -19,11 +19,67 @@ from app.schemas.admin_partner import (
     AdminPartnerPauseRequest,
     AdminPartnerUpgradePremiumRequest,
 )
+from app.schemas.admin_partners_terrain import (
+    TERRAIN_LIST_PAGE_SIZE_DEFAULT,
+    TERRAIN_LIST_PAGE_SIZE_MAX,
+    AdminPartnersTerrainListResponse,
+)
+from app.schemas.admin_partners_workspace import (
+    DEFAULT_PARTNERS_WORKSPACE_CITY,
+    AdminPartnersWorkspaceSummaryResponse,
+)
 from app.services.admin_partner_service import AdminPartnerService
+from app.services.admin_partners_terrain_service import AdminPartnersTerrainService
+from app.services.admin_partners_workspace_service import AdminPartnersWorkspaceService
 
 router = APIRouter(prefix="/admin/partners", tags=["admin-partners"])
 
 _staff_guard = require_any_permission("moderation.manage", "system.admin")
+
+
+@router.get("/terrain", response_model=AdminPartnersTerrainListResponse)
+async def list_admin_partners_terrain(
+    current_user: Annotated[User, Depends(_staff_guard)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    city: str = Query(default=DEFAULT_PARTNERS_WORKSPACE_CITY, max_length=128),
+    search: str | None = Query(default=None, max_length=160),
+    status: str | None = Query(
+        default=None,
+        pattern="^(active|pending|verified|inactive)$",
+    ),
+    partnership_type: str | None = Query(default=None, max_length=32),
+    organization_type: str | None = Query(default=None, max_length=32),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(
+        default=TERRAIN_LIST_PAGE_SIZE_DEFAULT,
+        ge=1,
+        le=TERRAIN_LIST_PAGE_SIZE_MAX,
+    ),
+) -> AdminPartnersTerrainListResponse:
+    _ = current_user
+    return await AdminPartnersTerrainService(session).list_terrain(
+        city=city,
+        search=search,
+        status=status,
+        partnership_type=partnership_type,
+        organization_type=organization_type,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.get("/workspace-summary", response_model=AdminPartnersWorkspaceSummaryResponse)
+async def get_admin_partners_workspace_summary(
+    current_user: Annotated[User, Depends(_staff_guard)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    city: str | None = Query(
+        default=None,
+        max_length=128,
+        description=f"Ville pilote (défaut : {DEFAULT_PARTNERS_WORKSPACE_CITY})",
+    ),
+) -> AdminPartnersWorkspaceSummaryResponse:
+    _ = current_user
+    return await AdminPartnersWorkspaceService(session).get_workspace_summary(city=city)
 
 
 @router.get("/{organization_id}", response_model=AdminPartnerDetailResponse)
