@@ -1,6 +1,7 @@
 "use client";
 
 import { EventCancelDialog } from "@/components/events/event-cancel-dialog";
+import { EventDetailCard } from "@/components/events/detail/event-detail-card";
 import { EventRejectDialog } from "@/components/events/event-reject-dialog";
 import type { AdminLocalEventDetail } from "@yunicity/types";
 import {
@@ -38,22 +39,22 @@ export function EventDetailModerationSection({
   const showReject = canAdminRejectEvent(event.moderation_status, isCancelled);
   const showCancel = canCancelEvent(event);
   const hasModerationAction = showApprove || showReject;
+  const needsAttention = showApprove;
 
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Modération</h2>
-      <p className="mt-2 text-xs text-stone-500">
-        Actions staff — approbation, refus et annulation (événements approuvés).
-      </p>
-
+    <EventDetailCard
+      title="Modération staff"
+      subtitle="Approbation, refus et annulation — actions branchées sur l'API"
+      className={needsAttention ? "border-amber-200 bg-amber-50/30" : undefined}
+    >
       {event.rejection_reason ? (
-        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
           Dernier refus : {event.rejection_reason}
         </p>
       ) : null}
 
       {isCancelled ? (
-        <p className="mt-3 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-700">
+        <p className="mt-3 rounded-lg border border-yunicity-border bg-yunicity-surface px-3 py-2 text-sm text-yunicity-ink-muted">
           {eventModerationBlockedWhenCancelledCopy}
         </p>
       ) : null}
@@ -70,31 +71,40 @@ export function EventDetailModerationSection({
             <button
               type="button"
               disabled={isSubmitting}
-              onClick={() => void onApprove()}
-              className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50"
+              onClick={() => {
+                onClearActionError?.();
+                void onApprove();
+              }}
+              className="rounded-lg bg-yunicity-primary px-4 py-2 text-sm font-medium text-white hover:bg-yunicity-primary-hover disabled:opacity-50"
             >
-              Approuver
+              Approuver et publier
             </button>
           ) : null}
           {showReject ? (
             <button
               type="button"
               disabled={isSubmitting}
-              onClick={() => setRejectOpen(true)}
-              className="rounded-lg border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-900 disabled:opacity-50"
+              onClick={() => {
+                onClearActionError?.();
+                setRejectOpen(true);
+              }}
+              className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-900 hover:bg-rose-100 disabled:opacity-50"
             >
               Refuser
             </button>
           ) : null}
         </div>
       ) : !isCancelled ? (
-        <p className="mt-4 text-sm text-stone-600">
+        <p className="mt-2 text-sm text-yunicity-ink-muted">
           Aucune action de modération disponible pour le statut actuel.
         </p>
       ) : null}
 
       {showCancel ? (
-        <div className="mt-4 border-t border-stone-100 pt-4">
+        <div className="mt-4 border-t border-yunicity-border pt-4">
+          <p className="text-xs text-yunicity-ink-muted">
+            Annulation irréversible côté public (erreur 410, retrait feed et carte).
+          </p>
           <button
             type="button"
             disabled={isSubmitting}
@@ -102,7 +112,7 @@ export function EventDetailModerationSection({
               onClearActionError?.();
               setCancelOpen(true);
             }}
-            className="rounded-lg bg-rose-700 px-4 py-2 text-sm font-medium text-white hover:bg-rose-800 disabled:opacity-50"
+            className="mt-3 rounded-lg bg-yunicity-danger px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
             Annuler l&apos;événement
           </button>
@@ -137,6 +147,6 @@ export function EventDetailModerationSection({
           });
         }}
       />
-    </section>
+    </EventDetailCard>
   );
 }

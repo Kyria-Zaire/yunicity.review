@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -85,6 +86,14 @@ class AdminCockpitRawCounts:
     partner_stamps: int
     redemptions_total: int
     redemptions_completed: int
+    offers_published: int
+    stamps_today: int
+    redemptions_today: int
+    passports_last_7_days: int
+    events_upcoming: int
+    top_stamp_partner_org_id: str | None
+    top_stamp_partner_name: str | None
+    top_stamp_partner_stamps: int
 
 
 class AdminCockpitRepository:
@@ -93,6 +102,7 @@ class AdminCockpitRepository:
 
     async def fetch_counts(self, city: str) -> AdminCockpitRawCounts:
         """Aggregate cockpit metrics. Users are global; territorial entities use ``city``."""
+        top_partner = await self._fetch_top_stamp_partner(city=city)
         return AdminCockpitRawCounts(
             users_total=await self._count_users_total(),
             users_active=await self._count_users_active(),
@@ -171,7 +181,47 @@ class AdminCockpitRepository:
                 city=city,
                 status=OfferRedemptionStatus.COMPLETED.value,
             ),
+            offers_published=await self._count_offers(
+                city=city,
+                status=PartnerOfferStatus.PUBLISHED.value,
+            ),
+            stamps_today=await self._count_stamps_since(city=city, since=_start_of_utc_day()),
+            redemptions_today=await self._count_redemptions_since(
+                city=city,
+                since=_start_of_utc_day(),
+                status=OfferRedemptionStatus.COMPLETED.value,
+            ),
+            passports_last_7_days=await self._count_passports_since(
+                city=city,
+                since=datetime.now(UTC) - timedelta(days=7),
+            ),
+            events_upcoming=await self._count_events_upcoming(city=city),
+            top_stamp_partner_org_id=top_partner[0],
+            top_stamp_partner_name=top_partner[1],
+            top_stamp_partner_stamps=top_partner[2],
         )
+
+    async def _fetch_top_stamp_partner(self, *, city: str) -> tuple[str | None, str | None, int]:
+        stmt = (
+            select(
+                Organization.id,
+                Organization.name,
+                func.count().label("stamp_count"),
+            )
+            .select_from(PassportStamp)
+            .join(Passport, PassportStamp.passport_id == Passport.id)
+            .join(Organization, PassportStamp.organization_id == Organization.id)
+            .where(Passport.city == city)
+            .group_by(Organization.id, Organization.name)
+            .order_by(func.count().desc())
+            .limit(1)
+        )
+        result = await self._session.execute(stmt)
+        row = result.first()
+        if row is None:
+            return None, None, 0
+        org_id, name, count = row
+        return str(org_id), str(name), int(count or 0)
 
     async def _scalar_count(self, stmt: Select[tuple[int]]) -> int:
         result = await self._session.execute(stmt)
@@ -330,3 +380,60 @@ class AdminCockpitRepository:
         if status is not None:
             stmt = stmt.where(PassportOfferRedemption.status == status)
         return await self._scalar_count(stmt)
+
+    async def _count_stamps_since(self, *, city: str, since: datetime) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(PassportStamp)
+            .join(Passport, PassportStamp.passport_id == Passport.id)
+            .where(Passport.city == city, PassportStamp.stamped_at >= since)
+        )
+        return await self._scalar_count(stmt)
+
+    async def _count_passports_since(self, *, city: str, since: datetime) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(Passport)
+            .where(Passport.city == city, Passport.created_at >= since)
+        )
+        return await self._scalar_count(stmt)
+
+    async def _count_redemptions_since(
+        self,
+        *,
+        city: str,
+        since: datetime,
+        status: str | None = None,
+    ) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(PassportOfferRedemption)
+            .join(Passport, PassportOfferRedemption.passport_id == Passport.id)
+            .where(
+                Passport.city == city,
+                PassportOfferRedemption.redeemed_at.is_not(None),
+                PassportOfferRedemption.redeemed_at >= since,
+            )
+        )
+        if status is not None:
+            stmt = stmt.where(PassportOfferRedemption.status == status)
+        return await self._scalar_count(stmt)
+
+    async def _count_events_upcoming(self, *, city: str) -> int:
+        now = datetime.now(UTC)
+        stmt = (
+            select(func.count())
+            .select_from(LocalEvent)
+            .where(
+                LocalEvent.city == city,
+                LocalEvent.is_cancelled.is_(False),
+                LocalEvent.moderation_status == LocalEventModerationStatus.APPROVED.value,
+                LocalEvent.starts_at >= now,
+            )
+        )
+        return await self._scalar_count(stmt)
+
+
+def _start_of_utc_day() -> datetime:
+    now = datetime.now(UTC)
+    return now.replace(hour=0, minute=0, second=0, microsecond=0)

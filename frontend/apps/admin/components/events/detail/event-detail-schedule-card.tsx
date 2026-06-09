@@ -1,3 +1,4 @@
+import { EventDetailCard } from "@/components/events/detail/event-detail-card";
 import { EventDetailField } from "@/components/events/detail/event-detail-field";
 import type { AdminLocalEventDetail } from "@yunicity/types";
 import {
@@ -6,6 +7,7 @@ import {
   formatEventDate,
   formatEventDuration,
 } from "@yunicity/utils";
+import { Clock } from "lucide-react";
 
 interface EventDetailScheduleCardProps {
   event: AdminLocalEventDetail;
@@ -15,9 +17,16 @@ export function EventDetailScheduleCard({ event }: EventDetailScheduleCardProps)
   const temporal = eventTemporalStatus(event.starts_at, event.ends_at);
 
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Dates</h2>
-      <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+    <EventDetailCard
+      title="Dates & horaires"
+      subtitle="Fuseau horaire partenaire et fenêtre de l'événement"
+      headerAction={
+        <span className="inline-flex rounded-lg bg-yunicity-primary-soft p-2 text-yunicity-primary">
+          <Clock className="h-4 w-4" aria-hidden />
+        </span>
+      }
+    >
+      <dl className="grid gap-4 sm:grid-cols-2">
         <EventDetailField label="Début" value={formatEventDate(event.starts_at)} />
         <EventDetailField label="Fin" value={formatEventDate(event.ends_at)} />
         <EventDetailField
@@ -29,7 +38,8 @@ export function EventDetailScheduleCard({ event }: EventDetailScheduleCardProps)
           value={eventTemporalStatusLabel(temporal)}
         />
         <EventDetailField label="Fuseau horaire" value={event.timezone} />
+        <EventDetailField label="Visibilité" value={event.visibility} />
       </dl>
-    </section>
+    </EventDetailCard>
   );
 }

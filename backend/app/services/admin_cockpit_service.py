@@ -13,7 +13,9 @@ from app.schemas.admin_cockpit import (
     AdminCockpitExecutiveMetrics,
     AdminCockpitPartnersMetrics,
     AdminCockpitPassportMetrics,
+    AdminCockpitSignalsMetrics,
     AdminCockpitSummaryResponse,
+    AdminCockpitTopStampPartner,
 )
 
 
@@ -63,5 +65,17 @@ class AdminCockpitService:
                 partner_stamps=counts.partner_stamps,
                 redemptions_total=counts.redemptions_total,
                 redemptions_completed=counts.redemptions_completed,
+            ),
+            signals=AdminCockpitSignalsMetrics(
+                offers_published=counts.offers_published,
+                stamps_today=counts.stamps_today,
+                redemptions_today=counts.redemptions_today,
+                passports_last_7_days=counts.passports_last_7_days,
+                events_upcoming=counts.events_upcoming,
+                top_stamp_partner=AdminCockpitTopStampPartner(
+                    organization_id=counts.top_stamp_partner_org_id,
+                    name=counts.top_stamp_partner_name,
+                    stamps_count=counts.top_stamp_partner_stamps,
+                ),
             ),
         )

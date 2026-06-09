@@ -50,6 +50,23 @@ class AdminCockpitPassportMetrics(BaseModel):
     redemptions_completed: int = Field(ge=0)
 
 
+class AdminCockpitTopStampPartner(BaseModel):
+    organization_id: str | None = None
+    name: str | None = None
+    stamps_count: int = Field(ge=0)
+
+
+class AdminCockpitSignalsMetrics(BaseModel):
+    """Derived cockpit signals — real aggregates for dashboard hints (ADMIN-01B+)."""
+
+    offers_published: int = Field(ge=0)
+    stamps_today: int = Field(ge=0)
+    redemptions_today: int = Field(ge=0)
+    passports_last_7_days: int = Field(ge=0)
+    events_upcoming: int = Field(ge=0)
+    top_stamp_partner: AdminCockpitTopStampPartner
+
+
 class AdminCockpitSummaryResponse(BaseModel):
     generated_at: datetime
     city: str
@@ -57,3 +74,4 @@ class AdminCockpitSummaryResponse(BaseModel):
     attention: AdminCockpitAttentionMetrics
     partners: AdminCockpitPartnersMetrics
     passport: AdminCockpitPassportMetrics
+    signals: AdminCockpitSignalsMetrics

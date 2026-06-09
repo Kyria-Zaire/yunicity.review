@@ -41,6 +41,21 @@ export interface AdminCockpitPassport {
   redemptions_completed: number;
 }
 
+export interface AdminCockpitTopStampPartner {
+  organization_id: string | null;
+  name: string | null;
+  stamps_count: number;
+}
+
+export interface AdminCockpitSignals {
+  offers_published: number;
+  stamps_today: number;
+  redemptions_today: number;
+  passports_last_7_days: number;
+  events_upcoming: number;
+  top_stamp_partner: AdminCockpitTopStampPartner;
+}
+
 export interface AdminCockpitSummaryResponse {
   generated_at: string;
   city: string;
@@ -48,6 +63,7 @@ export interface AdminCockpitSummaryResponse {
   attention: AdminCockpitAttention;
   partners: AdminCockpitPartners;
   passport: AdminCockpitPassport;
+  signals: AdminCockpitSignals;
 }
 
 export interface AdminCockpitSummaryParams {

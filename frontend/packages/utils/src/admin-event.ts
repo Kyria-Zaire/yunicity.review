@@ -208,3 +208,23 @@ export function formatEventAdminActionStatusTransition(
 ): string {
   return `${eventStaffStatusLabel(previousStatus)} → ${eventStaffStatusLabel(newStatus)}`;
 }
+
+export function eventIsPubliclyVisible(event: {
+  moderation_status: string;
+  is_cancelled: boolean;
+}): boolean {
+  return event.moderation_status === "approved" && !event.is_cancelled;
+}
+
+export function eventIsFeedDistributed(event: {
+  moderation_status: string;
+  is_cancelled: boolean;
+}): boolean {
+  return eventIsPubliclyVisible(event);
+}
+
+export const eventFeedSyncCopy =
+  "L'approbation staff synchronise l'événement vers le feed local et la carte citoyenne.";
+
+export const eventPublicExposureCopy =
+  "Vérifiez la cohérence avec ce que les citoyens verront sur le web et le feed.";
