@@ -4,6 +4,8 @@ import type {
   PartnerCreatorContentAdminActionListParams,
   PartnerCreatorContentAdminListParams,
   PartnerCreatorContentAdminListResponse,
+  PartnerCreatorContentAdminSummaryParams,
+  PartnerCreatorContentAdminSummaryResponse,
   PartnerCreatorContentRejectPayload,
 } from "@yunicity/types";
 
@@ -17,6 +19,15 @@ function buildListQuery(params?: PartnerCreatorContentAdminListParams): string {
   const search = new URLSearchParams();
   if (params.status) {
     search.set("status", params.status);
+  }
+  if (params.city) {
+    search.set("city", params.city);
+  }
+  if (params.organization_id) {
+    search.set("organization_id", params.organization_id);
+  }
+  if (params.q) {
+    search.set("q", params.q);
   }
   if (params.sort) {
     search.set("sort", params.sort);
@@ -46,7 +57,25 @@ function buildPagedQuery(params?: PartnerCreatorContentAdminActionListParams): s
   return qs ? `?${qs}` : "";
 }
 
+function buildSummaryQuery(params?: PartnerCreatorContentAdminSummaryParams): string {
+  if (!params?.city) {
+    return "";
+  }
+  const search = new URLSearchParams();
+  search.set("city", params.city);
+  const qs = search.toString();
+  return qs ? `?${qs}` : "";
+}
+
 export class PartnerCreatorContentAdminApi extends ApiClientBase {
+  getSummary(
+    params?: PartnerCreatorContentAdminSummaryParams,
+  ): Promise<PartnerCreatorContentAdminSummaryResponse> {
+    return this.getJson<PartnerCreatorContentAdminSummaryResponse>(
+      `/admin/partner-creator-content/summary${buildSummaryQuery(params)}`,
+    );
+  }
+
   listContents(
     params?: PartnerCreatorContentAdminListParams,
   ): Promise<PartnerCreatorContentAdminListResponse> {

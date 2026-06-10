@@ -94,9 +94,28 @@ export type PartnerCreatorContentAdminListResponse = {
 
 export type PartnerCreatorContentAdminListParams = {
   status?: PartnerCreatorContentStatus;
+  city?: string;
+  organization_id?: string;
+  q?: string;
   sort?: "newest" | "oldest";
   page?: number;
   page_size?: number;
+};
+
+export type PartnerCreatorContentAdminSummaryParams = {
+  city?: string;
+};
+
+export type PartnerCreatorContentAdminSummaryResponse = {
+  city: string;
+  generated_at: string;
+  total: number;
+  pending_review: number;
+  published: number;
+  rejected: number;
+  archived: number;
+  draft: number;
+  contributing_partners: number;
 };
 
 export type PartnerCreatorContentRejectPayload = {

@@ -33,6 +33,8 @@ export const CREATOR_CONTENT_MAX_PAGE_SIZE = 100;
 export const CREATOR_CONTENT_LIST_CONTEXT_KEYS = [
   "status",
   "organization_id",
+  "city",
+  "q",
   "page",
   "page_size",
 ] as const;

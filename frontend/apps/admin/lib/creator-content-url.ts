@@ -2,15 +2,27 @@ import type { PartnerCreatorContentStatus } from "@yunicity/types";
 import {
   CREATOR_CONTENT_DEFAULT_PAGE_SIZE,
   CREATOR_CONTENT_MAX_PAGE_SIZE,
+  DEFAULT_ADMIN_CREATOR_CONTENT_CITY,
   type AdminCreatorContentStatusFilter,
 } from "@yunicity/utils";
 
 export interface AdminCreatorContentListState {
   status: AdminCreatorContentStatusFilter;
   organizationId: string;
+  city: string;
+  q: string;
   page: number;
   pageSize: number;
 }
+
+export const CREATOR_CONTENT_DEFAULT_LIST_STATE: AdminCreatorContentListState = {
+  status: "pending_review",
+  organizationId: "",
+  city: DEFAULT_ADMIN_CREATOR_CONTENT_CITY,
+  q: "",
+  page: 1,
+  pageSize: CREATOR_CONTENT_DEFAULT_PAGE_SIZE,
+};
 
 const CONTENT_STATUSES: PartnerCreatorContentStatus[] = [
   "draft",
@@ -56,6 +68,8 @@ export function parseCreatorContentSearchParams(
   return {
     status: parseStatus(params.get("status"), organizationId.length > 0),
     organizationId,
+    city: params.get("city")?.trim() || DEFAULT_ADMIN_CREATOR_CONTENT_CITY,
+    q: params.get("q")?.trim() ?? "",
     page: parsePage(params.get("page")),
     pageSize: parsePageSize(params.get("page_size")),
   };
@@ -67,11 +81,22 @@ export function creatorContentStateToSearchParams(
   const params = new URLSearchParams();
   if (state.status) {
     params.set("status", state.status);
-  } else if (state.organizationId || state.page > 1) {
+  } else if (
+    state.organizationId ||
+    state.page > 1 ||
+    state.city !== DEFAULT_ADMIN_CREATOR_CONTENT_CITY ||
+    state.q
+  ) {
     params.set("status", "all");
   }
   if (state.organizationId) {
     params.set("organization_id", state.organizationId);
+  }
+  if (state.city && state.city !== DEFAULT_ADMIN_CREATOR_CONTENT_CITY) {
+    params.set("city", state.city);
+  }
+  if (state.q) {
+    params.set("q", state.q);
   }
   if (state.page > 1) {
     params.set("page", String(state.page));
@@ -84,12 +109,18 @@ export function creatorContentStateToSearchParams(
 
 export function toAdminCreatorContentListParams(state: AdminCreatorContentListState): {
   status?: PartnerCreatorContentStatus;
+  city?: string;
+  organization_id?: string;
+  q?: string;
   page: number;
   page_size: number;
   sort: "newest" | "oldest";
 } {
   return {
     status: state.status || undefined,
+    city: state.city.trim() || undefined,
+    organization_id: state.organizationId || undefined,
+    q: state.q.trim() || undefined,
     page: state.page,
     page_size: state.pageSize,
     sort: "newest",

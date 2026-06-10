@@ -22,10 +22,14 @@ from app.schemas.admin_partner_creator_content import (
     AdminPartnerCreatorContentActionListResponse,
     PartnerCreatorContentAdminListResponse,
     PartnerCreatorContentAdminResponse,
+    PartnerCreatorContentAdminSummaryResponse,
     PartnerCreatorContentRejectRequest,
 )
 from app.schemas.partner_creator_content_management import parse_creator_content_status_filter
 from app.services.admin_partner_creator_content_service import AdminPartnerCreatorContentService
+from app.services.partner_creator_content_admin_queries import (
+    normalize_admin_creator_content_title_query,
+)
 from app.services.partner_creator_content_service import PartnerCreatorContentService
 
 router = APIRouter(
@@ -36,6 +40,18 @@ router = APIRouter(
 _staff_guard = require_any_permission("moderation.manage", "system.admin")
 
 
+@router.get("/summary", response_model=PartnerCreatorContentAdminSummaryResponse)
+async def get_partner_creator_content_admin_summary(
+    current_user: Annotated[User, Depends(_staff_guard)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    city: str = Query(default="Reims", min_length=1, max_length=120),
+) -> PartnerCreatorContentAdminSummaryResponse:
+    _ = current_user
+    return await PartnerCreatorContentService(session).get_creator_content_admin_summary(
+        city=city,
+    )
+
+
 @router.get("", response_model=PartnerCreatorContentAdminListResponse)
 async def list_partner_creator_contents_admin(
     current_user: Annotated[User, Depends(_staff_guard)],
@@ -44,6 +60,9 @@ async def list_partner_creator_contents_admin(
         default=None,
         description="draft | pending_review | published | rejected | archived",
     ),
+    city: str | None = Query(default=None),
+    organization_id: str | None = Query(default=None),
+    q: str | None = Query(default=None, min_length=1, max_length=160),
     sort: str = Query(default="newest", description="newest | oldest"),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(
@@ -64,8 +83,22 @@ async def list_partner_creator_contents_admin(
                 detail=str(exc),
             ) from exc
     sort_newest = sort.strip().lower() != "oldest"
+    title_query = normalize_admin_creator_content_title_query(q)
+    parsed_organization_id: uuid.UUID | None = None
+    if organization_id is not None and organization_id.strip():
+        try:
+            parsed_organization_id = uuid.UUID(organization_id.strip())
+        except ValueError as exc:
+            raise AppError(
+                status_code=422,
+                code="CREATOR_CONTENT_ORGANIZATION_INVALID",
+                detail="organization_id invalide",
+            ) from exc
     return await PartnerCreatorContentService(session).list_contents_admin(
         status=parsed_status,
+        city=city,
+        organization_id=parsed_organization_id,
+        title_query=title_query,
         page=page,
         page_size=page_size,
         sort_newest=sort_newest,

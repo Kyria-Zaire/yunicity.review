@@ -223,6 +223,8 @@ export type {
   PartnerCreatorContentAdminActionListParams,
   PartnerCreatorContentAdminListParams,
   PartnerCreatorContentAdminListResponse,
+  PartnerCreatorContentAdminSummaryParams,
+  PartnerCreatorContentAdminSummaryResponse,
   PartnerCreatorContentAuthorSummary,
   PartnerCreatorContentCreatePayload,
   PartnerCreatorContentManagement,

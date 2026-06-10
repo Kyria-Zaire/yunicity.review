@@ -2,30 +2,16 @@
 
 import { useAuth } from "@/lib/auth/auth-provider";
 import {
+  CREATOR_CONTENT_DEFAULT_LIST_STATE,
   creatorContentStateToSearchParams,
   parseCreatorContentSearchParams,
   toAdminCreatorContentListParams,
   type AdminCreatorContentListState,
 } from "@/lib/creator-content-url";
-import type { PartnerCreatorContentAdmin, VerifiedOrganizationOption } from "@yunicity/types";
-import { CREATOR_CONTENT_MAX_PAGE_SIZE, isAuthError } from "@yunicity/utils";
+import type { PartnerCreatorContentAdmin, PartnerCreatorContentRejectPayload, VerifiedOrganizationOption } from "@yunicity/types";
+import { creatorContentHasActiveFilters, isAuthError } from "@yunicity/utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-
-function filterByOrganization(
-  items: PartnerCreatorContentAdmin[],
-  organizationId: string,
-): PartnerCreatorContentAdmin[] {
-  if (!organizationId) {
-    return items;
-  }
-  return items.filter((item) => item.organization_id === organizationId);
-}
-
-function paginateClient<T>(items: T[], page: number, pageSize: number): T[] {
-  const start = (page - 1) * pageSize;
-  return items.slice(start, start + pageSize);
-}
 
 export function useAdminCreatorContentList() {
   const { partnerCreatorContentAdminApi, partnerOffersAdminApi } = useAuth();
@@ -43,6 +29,8 @@ export function useAdminCreatorContentList() {
   const [pageSize, setPageSize] = useState(state.pageSize);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [moderatingContentId, setModeratingContentId] = useState<string | null>(null);
   const [organizations, setOrganizations] = useState<VerifiedOrganizationOption[]>([]);
 
   useEffect(() => {
@@ -64,21 +52,13 @@ export function useAdminCreatorContentList() {
     setIsLoading(true);
     setError(null);
     try {
-      const usesClientOrgFilter = Boolean(state.organizationId);
-      const requestState = usesClientOrgFilter
-        ? { ...state, page: 1, pageSize: CREATOR_CONTENT_MAX_PAGE_SIZE }
-        : state;
       const response = await partnerCreatorContentAdminApi.listContents(
-        toAdminCreatorContentListParams(requestState),
+        toAdminCreatorContentListParams(state),
       );
-      const filtered = filterByOrganization(response.items, state.organizationId);
-      const visible = usesClientOrgFilter
-        ? paginateClient(filtered, state.page, state.pageSize)
-        : filtered;
-      setItems(visible);
-      setTotal(usesClientOrgFilter ? filtered.length : response.total);
-      setPage(usesClientOrgFilter ? state.page : response.page);
-      setPageSize(usesClientOrgFilter ? state.pageSize : response.page_size);
+      setItems(response.items);
+      setTotal(response.total);
+      setPage(response.page);
+      setPageSize(response.page_size);
     } catch (err) {
       setItems([]);
       setTotal(0);
@@ -108,11 +88,56 @@ export function useAdminCreatorContentList() {
     [replaceState, state],
   );
 
+  const setSearchQuery = useCallback(
+    (q: string) => {
+      replaceState({ ...state, q: q.trim(), page: 1 });
+    },
+    [replaceState, state],
+  );
+
+  const resetFilters = useCallback(() => {
+    replaceState({ ...CREATOR_CONTENT_DEFAULT_LIST_STATE });
+  }, [replaceState]);
+
+  const hasActiveFilters = useMemo(() => creatorContentHasActiveFilters(state), [state]);
+
   const goToPage = useCallback(
     (nextPage: number) => {
       replaceState({ ...state, page: Math.max(1, nextPage) });
     },
     [replaceState, state],
+  );
+
+  const approveContent = useCallback(
+    async (contentId: string) => {
+      setModeratingContentId(contentId);
+      setActionError(null);
+      try {
+        await partnerCreatorContentAdminApi.approveContent(contentId);
+        await load();
+      } catch (err) {
+        setActionError(isAuthError(err) ? err.message : "Approbation impossible.");
+      } finally {
+        setModeratingContentId(null);
+      }
+    },
+    [load, partnerCreatorContentAdminApi],
+  );
+
+  const rejectContent = useCallback(
+    async (contentId: string, payload: PartnerCreatorContentRejectPayload) => {
+      setModeratingContentId(contentId);
+      setActionError(null);
+      try {
+        await partnerCreatorContentAdminApi.rejectContent(contentId, payload);
+        await load();
+      } catch (err) {
+        setActionError(isAuthError(err) ? err.message : "Refus impossible.");
+      } finally {
+        setModeratingContentId(null);
+      }
+    },
+    [load, partnerCreatorContentAdminApi],
   );
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -126,11 +151,19 @@ export function useAdminCreatorContentList() {
     totalPages,
     isLoading,
     error,
+    actionError,
+    clearActionError: () => setActionError(null),
+    moderatingContentId,
     organizations,
-    usesClientOrganizationFilter: Boolean(state.organizationId),
+    activeCity: state.city,
     reload: load,
     setStatusFilter,
     setOrganizationFilter,
+    setSearchQuery,
+    resetFilters,
+    hasActiveFilters,
     goToPage,
+    approveContent,
+    rejectContent,
   };
 }

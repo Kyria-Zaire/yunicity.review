@@ -35,6 +35,7 @@ from app.repositories.partner_repository import PartnerRepository
 from app.schemas.admin_partner_creator_content import (
     PartnerCreatorContentAdminListResponse,
     PartnerCreatorContentAdminResponse,
+    PartnerCreatorContentAdminSummaryResponse,
     PartnerCreatorContentAuthorSummary,
     PartnerCreatorContentRejectRequest,
 )
@@ -48,6 +49,9 @@ from app.schemas.partner_creator_content_management import (
 )
 from app.services.feed_creator_content_sync import FeedCreatorContentSyncService
 from app.services.organization_membership_service import OrganizationMembershipService
+from app.services.partner_creator_content_admin_queries import (
+    normalize_admin_creator_content_title_query,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -158,17 +162,42 @@ class PartnerCreatorContentService:
             page_size=page_size,
         )
 
+    async def get_creator_content_admin_summary(
+        self,
+        *,
+        city: str,
+    ) -> PartnerCreatorContentAdminSummaryResponse:
+        counts = await self._contents.fetch_admin_summary(city=city)
+        return PartnerCreatorContentAdminSummaryResponse(
+            city=city,
+            generated_at=datetime.now(UTC),
+            total=counts.total,
+            pending_review=counts.pending_review,
+            published=counts.published,
+            rejected=counts.rejected,
+            archived=counts.archived,
+            draft=counts.draft,
+            contributing_partners=counts.contributing_partners,
+        )
+
     async def list_contents_admin(
         self,
         *,
         status: str | None,
+        city: str | None = None,
+        organization_id: uuid.UUID | None = None,
+        title_query: str | None = None,
         page: int,
         page_size: int,
         sort_newest: bool,
     ) -> PartnerCreatorContentAdminListResponse:
         page_size = min(page_size, PARTNER_CREATOR_CONTENT_LIST_PAGE_SIZE_MAX)
+        normalized_title = normalize_admin_creator_content_title_query(title_query)
         rows, total = await self._contents.list_admin(
             status=status,
+            city=city,
+            organization_id=organization_id,
+            title_query=normalized_title,
             page=page,
             page_size=page_size,
             sort_newest=sort_newest,

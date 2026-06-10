@@ -30,11 +30,28 @@ __all__ = [
     "PartnerCreatorContentAuthorSummary",
     "PartnerCreatorContentAdminResponse",
     "PartnerCreatorContentAdminListResponse",
+    "PartnerCreatorContentAdminSummaryResponse",
     "AdminPartnerCreatorContentActionKind",
     "AdminPartnerCreatorContentActorSummary",
     "AdminPartnerCreatorContentActionItem",
     "AdminPartnerCreatorContentActionListResponse",
 ]
+
+
+class PartnerCreatorContentAdminSummaryResponse(BaseModel):
+    """Aggregated editorial metrics for admin command center (CREATOR-CONTENT-V2-01)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    city: str
+    generated_at: datetime
+    total: int = Field(ge=0)
+    pending_review: int = Field(ge=0)
+    published: int = Field(ge=0)
+    rejected: int = Field(ge=0)
+    archived: int = Field(ge=0)
+    draft: int = Field(ge=0)
+    contributing_partners: int = Field(ge=0)
 
 
 class PartnerCreatorContentRejectRequest(BaseModel):

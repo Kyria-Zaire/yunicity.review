@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
 from typing import Any
 
 from sqlalchemy import func, select
@@ -13,6 +14,20 @@ from app.core.organization_constants import OrganizationVisibility, Verification
 from app.core.partner_creator_content_constants import PartnerCreatorContentStatus
 from app.models.organization import Organization
 from app.models.partner_creator_content import PartnerCreatorContent
+from app.services.partner_creator_content_admin_queries import (
+    normalize_admin_creator_content_title_query,
+)
+
+
+@dataclass(frozen=True, slots=True)
+class PartnerCreatorContentAdminSummaryCounts:
+    total: int
+    pending_review: int
+    published: int
+    rejected: int
+    archived: int
+    draft: int
+    contributing_partners: int
 
 
 class PartnerCreatorContentRepository:
@@ -30,10 +45,56 @@ class PartnerCreatorContentRepository:
         )
         return result.scalar_one_or_none()
 
+    async def fetch_admin_summary(self, *, city: str) -> PartnerCreatorContentAdminSummaryCounts:
+        city_filter = func.lower(Organization.city) == city.strip().lower()
+        org_join = PartnerCreatorContent.organization_id == Organization.id
+
+        async def _count(*extra: Any) -> int:
+            stmt = (
+                select(func.count())
+                .select_from(PartnerCreatorContent)
+                .join(Organization, org_join)
+                .where(city_filter, *extra)
+            )
+            return int((await self._session.execute(stmt)).scalar_one())
+
+        contributing_stmt = (
+            select(func.count(func.distinct(PartnerCreatorContent.organization_id)))
+            .select_from(PartnerCreatorContent)
+            .join(Organization, org_join)
+            .where(city_filter)
+        )
+        contributing_partners = int(
+            (await self._session.execute(contributing_stmt)).scalar_one()
+        )
+
+        return PartnerCreatorContentAdminSummaryCounts(
+            total=await _count(),
+            pending_review=await _count(
+                PartnerCreatorContent.status == PartnerCreatorContentStatus.PENDING_REVIEW.value,
+            ),
+            published=await _count(
+                PartnerCreatorContent.status == PartnerCreatorContentStatus.PUBLISHED.value,
+            ),
+            rejected=await _count(
+                PartnerCreatorContent.status == PartnerCreatorContentStatus.REJECTED.value,
+            ),
+            archived=await _count(
+                PartnerCreatorContent.status == PartnerCreatorContentStatus.ARCHIVED.value,
+            ),
+            draft=await _count(
+                PartnerCreatorContent.status == PartnerCreatorContentStatus.DRAFT.value,
+            ),
+            contributing_partners=contributing_partners,
+        )
+
     async def list_admin(
         self,
         *,
         status: str | None,
+        city: str | None = None,
+        organization_id: uuid.UUID | None = None,
+        title_query: str | None = None,
         page: int,
         page_size: int,
         sort_newest: bool = True,
@@ -41,9 +102,24 @@ class PartnerCreatorContentRepository:
         filters: list[Any] = []
         if status is not None:
             filters.append(PartnerCreatorContent.status == status)
+        if organization_id is not None:
+            filters.append(PartnerCreatorContent.organization_id == organization_id)
+        normalized_title = normalize_admin_creator_content_title_query(title_query)
+        if normalized_title:
+            filters.append(PartnerCreatorContent.title.ilike(f"%{normalized_title}%"))
 
-        count_stmt = select(func.count()).select_from(PartnerCreatorContent).where(*filters)
-        total = int((await self._session.execute(count_stmt)).scalar_one())
+        base = select(PartnerCreatorContent)
+        if city:
+            base = base.join(Organization, PartnerCreatorContent.organization_id == Organization.id)
+            filters.append(func.lower(Organization.city) == city.strip().lower())
+
+        if filters:
+            base = base.where(*filters)
+
+        count_result = await self._session.execute(
+            select(func.count()).select_from(base.subquery())
+        )
+        total = int(count_result.scalar_one())
 
         order = (
             PartnerCreatorContent.created_at.desc()
@@ -51,12 +127,10 @@ class PartnerCreatorContentRepository:
             else PartnerCreatorContent.created_at.asc()
         )
         stmt = (
-            select(PartnerCreatorContent)
-            .options(
+            base.options(
                 selectinload(PartnerCreatorContent.organization),
                 selectinload(PartnerCreatorContent.created_by),
             )
-            .where(*filters)
             .order_by(order)
             .offset((page - 1) * page_size)
             .limit(page_size)
