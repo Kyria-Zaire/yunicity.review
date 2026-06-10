@@ -6,7 +6,7 @@ import { Suspense } from "react";
 export default function EventsPage() {
   return (
     <Suspense
-      fallback={<p className="text-sm text-stone-500">Chargement du workspace Events…</p>}
+      fallback={<p className="text-sm text-stone-500">Chargement de l&apos;agenda…</p>}
     >
       <EventsWorkspace />
     </Suspense>

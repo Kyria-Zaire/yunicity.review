@@ -23,6 +23,7 @@ from app.schemas.admin_local_event import (
     AdminLocalEventActionListResponse,
     AdminLocalEventCancelRequest,
     AdminLocalEventDetailResponse,
+    LocalEventAdminSummaryResponse,
 )
 from app.schemas.local_event import (
     LocalEventManagementListResponse,
@@ -30,11 +31,22 @@ from app.schemas.local_event import (
     LocalEventRejectRequest,
 )
 from app.services.admin_local_event_service import AdminLocalEventService
+from app.services.local_event_admin_queries import normalize_admin_event_title_query
 from app.services.local_event_service import LocalEventService
 
 router = APIRouter(prefix="/admin/local-events", tags=["admin-local-events"])
 
 _staff_guard = require_any_permission("moderation.manage", "system.admin")
+
+
+@router.get("/summary", response_model=LocalEventAdminSummaryResponse)
+async def get_local_events_admin_summary(
+    current_user: Annotated[User, Depends(_staff_guard)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    city: str = Query(default="Reims", min_length=1, max_length=120),
+) -> LocalEventAdminSummaryResponse:
+    _ = current_user
+    return await LocalEventService(session).get_events_admin_summary(city=city)
 
 
 @router.get("", response_model=LocalEventManagementListResponse)
@@ -43,6 +55,8 @@ async def list_local_events_admin(
     session: Annotated[AsyncSession, Depends(get_db)],
     status: str | None = Query(default=None, description="moderation_status filter"),
     city: str | None = Query(default=None),
+    event_type: str | None = Query(default=None),
+    q: str | None = Query(default=None, min_length=1, max_length=160),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(
         default=LOCAL_EVENT_LIST_PAGE_SIZE_DEFAULT,
@@ -51,9 +65,12 @@ async def list_local_events_admin(
     ),
 ) -> LocalEventManagementListResponse:
     _ = current_user
+    title_query = normalize_admin_event_title_query(q)
     return await LocalEventService(session).list_admin(
         moderation_status=status,
         city=city,
+        title_query=title_query,
+        event_type=event_type,
         page=page,
         page_size=page_size,
     )

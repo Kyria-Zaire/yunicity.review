@@ -29,6 +29,7 @@ from app.repositories.local_event_repository import LocalEventRepository
 from app.repositories.organization_repository import OrganizationRepository
 from app.repositories.partner_offer_repository import PartnerOfferRepository
 from app.repositories.partner_repository import PartnerRepository
+from app.schemas.admin_local_event import LocalEventAdminSummaryResponse
 from app.schemas.local_event import (
     EventInterestToggleResponse,
     LocalEventCreateRequest,
@@ -339,11 +340,26 @@ class LocalEventService:
         await self._session.commit()
         return self._to_management_response(await self._require_event(event_id))
 
+    async def get_events_admin_summary(self, *, city: str) -> LocalEventAdminSummaryResponse:
+        counts = await self._events.fetch_admin_summary(city=city)
+        return LocalEventAdminSummaryResponse(
+            city=city,
+            generated_at=datetime.now(UTC),
+            total=counts.total,
+            pending_review=counts.pending_review,
+            published=counts.published,
+            upcoming_published=counts.upcoming_published,
+            cancelled_or_archived=counts.cancelled_or_archived,
+            rejected=counts.rejected,
+        )
+
     async def list_admin(
         self,
         *,
         moderation_status: str | None,
         city: str | None,
+        title_query: str | None,
+        event_type: str | None,
         page: int,
         page_size: int,
     ) -> LocalEventManagementListResponse:
@@ -351,6 +367,8 @@ class LocalEventService:
         rows, total = await self._events.list_admin(
             moderation_status=moderation_status,
             city=city,
+            title_query=title_query,
+            event_type=event_type,
             page=page,
             page_size=page_size,
         )

@@ -4,12 +4,25 @@ import { DEFAULT_ADMIN_EVENTS_CITY } from "@yunicity/utils";
 export const EVENTS_DEFAULT_PAGE_SIZE = 20;
 export const EVENTS_MAX_PAGE_SIZE = 50;
 
+export type AdminEventTypeFilter = "" | string;
+
 export interface AdminEventsListState {
   status: AdminEventModerationStatusFilter;
   city: string;
+  q: string;
+  eventType: AdminEventTypeFilter;
   page: number;
   pageSize: number;
 }
+
+export const EVENTS_DEFAULT_LIST_STATE: AdminEventsListState = {
+  status: "pending_review",
+  city: DEFAULT_ADMIN_EVENTS_CITY,
+  q: "",
+  eventType: "",
+  page: 1,
+  pageSize: EVENTS_DEFAULT_PAGE_SIZE,
+};
 
 const MODERATION_STATUSES: AdminEventModerationStatus[] = [
   "pending_review",
@@ -48,6 +61,8 @@ export function parseEventsSearchParams(params: URLSearchParams): AdminEventsLis
   return {
     status: parseStatus(params.get("status")),
     city,
+    q: params.get("q")?.trim() ?? "",
+    eventType: params.get("event_type")?.trim() ?? "",
     page: parsePage(params.get("page")),
     pageSize: parsePageSize(params.get("page_size")),
   };
@@ -57,11 +72,17 @@ export function eventsStateToSearchParams(state: AdminEventsListState): URLSearc
   const params = new URLSearchParams();
   if (state.status) {
     params.set("status", state.status);
-  } else if (state.page > 1 || state.city !== DEFAULT_ADMIN_EVENTS_CITY) {
+  } else if (state.page > 1 || state.city !== DEFAULT_ADMIN_EVENTS_CITY || state.q || state.eventType) {
     params.set("status", "all");
   }
   if (state.city && state.city !== DEFAULT_ADMIN_EVENTS_CITY) {
     params.set("city", state.city);
+  }
+  if (state.q) {
+    params.set("q", state.q);
+  }
+  if (state.eventType) {
+    params.set("event_type", state.eventType);
   }
   if (state.page > 1) {
     params.set("page", String(state.page));
@@ -75,12 +96,16 @@ export function eventsStateToSearchParams(state: AdminEventsListState): URLSearc
 export function toAdminLocalEventListParams(state: AdminEventsListState): {
   status?: AdminEventModerationStatus;
   city?: string;
+  event_type?: string;
+  q?: string;
   page: number;
   page_size: number;
 } {
   return {
     status: state.status || undefined,
     city: state.city || undefined,
+    event_type: state.eventType || undefined,
+    q: state.q || undefined,
     page: state.page,
     page_size: state.pageSize,
   };

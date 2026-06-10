@@ -54,7 +54,7 @@ export function buildAdminEventDetailPath(eventId: string): string {
 
 export type EventTemporalStatus = "upcoming" | "ongoing" | "past";
 
-const EVENTS_LIST_CONTEXT_KEYS = ["status", "city", "page", "page_size"] as const;
+const EVENTS_LIST_CONTEXT_KEYS = ["status", "city", "q", "event_type", "page", "page_size"] as const;
 
 export const EVENT_TEMPORAL_STATUS_LABELS: Record<EventTemporalStatus, string> = {
   upcoming: "À venir",

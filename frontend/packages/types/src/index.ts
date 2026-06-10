@@ -79,6 +79,8 @@ export type {
   AdminLocalEventListParams,
   AdminLocalEventListResponse,
   AdminLocalEventOrganizationDetail,
+  LocalEventAdminSummaryParams,
+  LocalEventAdminSummaryResponse,
   LocalEventCancelPayload,
   LocalEventRejectPayload,
 } from "./admin-event";

@@ -5,6 +5,8 @@ import type {
   AdminLocalEventListItem,
   AdminLocalEventListParams,
   AdminLocalEventListResponse,
+  LocalEventAdminSummaryParams,
+  LocalEventAdminSummaryResponse,
   LocalEventCancelPayload,
   LocalEventRejectPayload,
 } from "@yunicity/types";
@@ -38,6 +40,12 @@ function buildListQuery(params?: AdminLocalEventListParams): string {
   if (params.city) {
     search.set("city", params.city);
   }
+  if (params.event_type) {
+    search.set("event_type", params.event_type);
+  }
+  if (params.q) {
+    search.set("q", params.q);
+  }
   if (params.page !== undefined) {
     search.set("page", String(params.page));
   }
@@ -49,6 +57,17 @@ function buildListQuery(params?: AdminLocalEventListParams): string {
 }
 
 export class AdminEventsApi extends ApiClientBase {
+  getSummary(params?: LocalEventAdminSummaryParams): Promise<LocalEventAdminSummaryResponse> {
+    const search = new URLSearchParams();
+    if (params?.city) {
+      search.set("city", params.city);
+    }
+    const qs = search.toString();
+    return this.getJson<LocalEventAdminSummaryResponse>(
+      `/admin/local-events/summary${qs ? `?${qs}` : ""}`,
+    );
+  }
+
   listEvents(params?: AdminLocalEventListParams): Promise<AdminLocalEventListResponse> {
     return this.getJson<AdminLocalEventListResponse>(
       `/admin/local-events${buildListQuery(params)}`,

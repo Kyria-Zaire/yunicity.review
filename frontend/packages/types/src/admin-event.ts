@@ -14,8 +14,25 @@ export interface AdminLocalEventListParams {
   /** Query param `status` on GET /admin/local-events (moderation_status). */
   status?: AdminEventModerationStatus;
   city?: string;
+  event_type?: string;
+  q?: string;
   page?: number;
   page_size?: number;
+}
+
+export interface LocalEventAdminSummaryResponse {
+  city: string;
+  generated_at: string;
+  total: number;
+  pending_review: number;
+  published: number;
+  upcoming_published: number;
+  cancelled_or_archived: number;
+  rejected: number;
+}
+
+export interface LocalEventAdminSummaryParams {
+  city?: string;
 }
 
 export interface LocalEventRejectPayload {

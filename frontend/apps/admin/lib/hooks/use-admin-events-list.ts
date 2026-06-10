@@ -2,13 +2,14 @@
 
 import { useAuth } from "@/lib/auth/auth-provider";
 import {
+  EVENTS_DEFAULT_LIST_STATE,
   eventsStateToSearchParams,
   parseEventsSearchParams,
   toAdminLocalEventListParams,
   type AdminEventsListState,
 } from "@/lib/events-url";
 import type { AdminLocalEventListItem, LocalEventRejectPayload } from "@yunicity/types";
-import { isAuthError } from "@yunicity/utils";
+import { eventsHasActiveFilters, isAuthError } from "@yunicity/utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -75,6 +76,26 @@ export function useAdminEventsList() {
     [replaceState, state],
   );
 
+  const setSearchQuery = useCallback(
+    (q: string) => {
+      replaceState({ ...state, q: q.trim(), page: 1 });
+    },
+    [replaceState, state],
+  );
+
+  const setEventTypeFilter = useCallback(
+    (eventType: AdminEventsListState["eventType"]) => {
+      replaceState({ ...state, eventType, page: 1 });
+    },
+    [replaceState, state],
+  );
+
+  const resetFilters = useCallback(() => {
+    replaceState({ ...EVENTS_DEFAULT_LIST_STATE });
+  }, [replaceState]);
+
+  const hasActiveFilters = useMemo(() => eventsHasActiveFilters(state), [state]);
+
   const goToPage = useCallback(
     (nextPage: number) => {
       replaceState({ ...state, page: Math.max(1, nextPage) });
@@ -132,6 +153,10 @@ export function useAdminEventsList() {
     reload: load,
     setStatusFilter,
     setCityFilter,
+    setSearchQuery,
+    setEventTypeFilter,
+    resetFilters,
+    hasActiveFilters,
     goToPage,
     approveEvent,
     rejectEvent,

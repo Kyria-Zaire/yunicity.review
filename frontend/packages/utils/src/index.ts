@@ -142,6 +142,25 @@ export {
   formatEventDuration,
 } from "./admin-event";
 export {
+  EVENTS_AGENDA_PILOT_GOAL,
+  buildEventsAgendaConseilMessage,
+  buildEventsAgendaKpiCards,
+  buildEventsAgendaMetricsFromSummary,
+  buildEventsAgendaMomentum,
+  buildEventsAgendaNextAction,
+  buildEventsAgendaRecommendedAction,
+  buildEventsAgendaSignal,
+  eventsAgendaMomentumMicrocopy,
+  eventsAgendaMomentumProgress,
+  eventsHasActiveFilters,
+  type EventsAgendaKpiCard,
+  type EventsAgendaMetrics,
+  type EventsAgendaMomentum,
+  type EventsAgendaNextAction,
+  type EventsAgendaSignal,
+  type EventsAgendaSignalType,
+} from "./admin-events-command";
+export {
   AdminOrganizationsApi,
   createAdminOrganizationsApi,
 } from "./admin-organizations-api";

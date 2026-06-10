@@ -24,7 +24,23 @@ __all__ = [
     "AdminLocalEventCancelRequest",
     "AdminLocalEventDetailResponse",
     "AdminLocalEventOrganizationDetail",
+    "LocalEventAdminSummaryResponse",
 ]
+
+
+class LocalEventAdminSummaryResponse(BaseModel):
+    """Aggregated agenda metrics for admin command center (EVENTS-V2-01)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    city: str
+    generated_at: datetime
+    total: int = Field(ge=0)
+    pending_review: int = Field(ge=0)
+    published: int = Field(ge=0)
+    upcoming_published: int = Field(ge=0)
+    cancelled_or_archived: int = Field(ge=0)
+    rejected: int = Field(ge=0)
 
 
 class AdminLocalEventOrganizationDetail(BaseModel):

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +13,17 @@ from sqlalchemy.orm import selectinload
 
 from app.core.local_event_constants import LocalEventModerationStatus
 from app.models.local_event import EventInterest, LocalEvent
+from app.services.local_event_admin_queries import normalize_admin_event_title_query
+
+
+@dataclass(frozen=True)
+class LocalEventAdminSummaryCounts:
+    total: int
+    pending_review: int
+    published: int
+    upcoming_published: int
+    cancelled_or_archived: int
+    rejected: int
 
 
 class LocalEventRepository:
@@ -135,25 +148,74 @@ class LocalEventRepository:
         )
         return list(result.scalars().all()), total
 
+    async def fetch_admin_summary(
+        self,
+        *,
+        city: str,
+        now: datetime | None = None,
+    ) -> LocalEventAdminSummaryCounts:
+        moment = now or datetime.now(UTC)
+        city_filter = func.lower(LocalEvent.city) == city.strip().lower()
+        published_filters = (
+            LocalEvent.moderation_status == LocalEventModerationStatus.APPROVED.value,
+            LocalEvent.is_cancelled.is_(False),
+        )
+
+        async def _count(*extra: Any) -> int:
+            stmt = select(func.count()).select_from(LocalEvent).where(city_filter, *extra)
+            return int((await self._session.execute(stmt)).scalar_one())
+
+        upcoming_filters = (
+            *published_filters,
+            LocalEvent.starts_at >= moment,
+        )
+
+        return LocalEventAdminSummaryCounts(
+            total=await _count(),
+            pending_review=await _count(
+                LocalEvent.moderation_status == LocalEventModerationStatus.PENDING_REVIEW.value,
+            ),
+            published=await _count(*published_filters),
+            upcoming_published=await _count(*upcoming_filters),
+            cancelled_or_archived=await _count(LocalEvent.is_cancelled.is_(True)),
+            rejected=await _count(
+                LocalEvent.moderation_status == LocalEventModerationStatus.REJECTED.value,
+            ),
+        )
+
     async def list_admin(
         self,
         *,
         moderation_status: str | None,
         city: str | None,
+        title_query: str | None,
+        event_type: str | None,
         page: int,
         page_size: int,
     ) -> tuple[list[LocalEvent], int]:
-        base = select(LocalEvent)
+        filters: list[Any] = []
         if moderation_status:
-            base = base.where(LocalEvent.moderation_status == moderation_status)
+            filters.append(LocalEvent.moderation_status == moderation_status)
         if city:
-            base = base.where(func.lower(LocalEvent.city) == city.strip().lower())
+            filters.append(func.lower(LocalEvent.city) == city.strip().lower())
+        normalized_title = normalize_admin_event_title_query(title_query)
+        if normalized_title:
+            filters.append(LocalEvent.title.ilike(f"%{normalized_title}%"))
+        if event_type:
+            filters.append(LocalEvent.event_type == event_type)
+
+        base = select(LocalEvent)
+        if filters:
+            base = base.where(*filters)
         count_result = await self._session.execute(
             select(func.count()).select_from(base.subquery())
         )
         total = int(count_result.scalar_one())
         result = await self._session.execute(
-            base.options(selectinload(LocalEvent.organization))
+            base.options(
+                selectinload(LocalEvent.organization),
+                selectinload(LocalEvent.neighborhood),
+            )
             .order_by(LocalEvent.created_at.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
