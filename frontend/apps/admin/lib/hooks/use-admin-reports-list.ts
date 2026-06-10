@@ -2,13 +2,14 @@
 
 import { useAuth } from "@/lib/auth/auth-provider";
 import {
+  MODERATION_DEFAULT_LIST_STATE,
   moderationStateToSearchParams,
   parseModerationSearchParams,
   toAdminReportListParams,
   type AdminModerationListState,
 } from "@/lib/moderation-url";
 import type { AdminReportListItem, AdminReportStatusSummary } from "@yunicity/types";
-import { isAuthError } from "@yunicity/utils";
+import { isAuthError, moderationHasActiveFilters } from "@yunicity/utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -95,7 +96,12 @@ export function useAdminReportsList() {
     [replaceState, state],
   );
 
+  const resetFilters = useCallback(() => {
+    replaceState(MODERATION_DEFAULT_LIST_STATE);
+  }, [replaceState]);
+
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const hasActiveFilters = moderationHasActiveFilters(state);
 
   return {
     state,
@@ -107,9 +113,11 @@ export function useAdminReportsList() {
     summary,
     isLoading,
     error,
+    hasActiveFilters,
     reload: load,
     setStatusFilter,
     setReasonFilter,
+    resetFilters,
     goToPage,
   };
 }

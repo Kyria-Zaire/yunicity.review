@@ -27,6 +27,15 @@ export interface AdminReportStatusSummary {
   dismissed: number;
 }
 
+export interface AdminReportAdminSummaryResponse {
+  generated_at: string;
+  total: number;
+  pending: number;
+  resolved: number;
+  dismissed: number;
+  dominant_reason: AdminReportReason | null;
+}
+
 export interface AdminReportListResponse {
   items: AdminReportListItem[];
   total: number;

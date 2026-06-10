@@ -16,6 +16,7 @@ from app.models.report import Report
 from app.models.report_admin_action import ReportAdminAction
 from app.models.user import User
 from app.models.user_profile import UserProfile
+from app.services.admin_report_queries import resolve_dominant_report_reason
 
 
 @dataclass(frozen=True)
@@ -42,6 +43,15 @@ class AdminReportStatusCounts:
     pending: int
     resolved: int
     dismissed: int
+
+
+@dataclass(frozen=True)
+class AdminReportAdminSummaryCounts:
+    total: int
+    pending: int
+    resolved: int
+    dismissed: int
+    dominant_reason: str | None
 
 
 @dataclass(frozen=True)
@@ -72,6 +82,26 @@ class AdminReportRepository:
             pending=pending,
             resolved=reviewed + action_taken,
             dismissed=dismissed,
+        )
+
+    async def fetch_admin_summary(self) -> AdminReportAdminSummaryCounts:
+        status_counts = await self.fetch_status_summary()
+        reason_stmt = (
+            select(Report.reason, func.count())
+            .group_by(Report.reason)
+            .order_by(func.count().desc(), Report.reason.asc())
+        )
+        reason_rows = (await self._session.execute(reason_stmt)).all()
+        reason_counts = {
+            row[0]: int(row[1]) for row in reason_rows if int(row[1]) > 0
+        }
+        dominant_reason = resolve_dominant_report_reason(reason_counts)
+        return AdminReportAdminSummaryCounts(
+            total=status_counts.total,
+            pending=status_counts.pending,
+            resolved=status_counts.resolved,
+            dismissed=status_counts.dismissed,
+            dominant_reason=dominant_reason,
         )
 
     async def list_reports(

@@ -86,6 +86,7 @@ export type {
 } from "./admin-event";
 
 export type {
+  AdminReportAdminSummaryResponse,
   AdminReportDetailResponse,
   AdminReportDismissPayload,
   AdminReportListItem,

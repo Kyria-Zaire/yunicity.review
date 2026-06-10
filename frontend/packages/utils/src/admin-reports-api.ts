@@ -1,4 +1,5 @@
 import type {
+  AdminReportAdminSummaryResponse,
   AdminReportDetailResponse,
   AdminReportDismissPayload,
   AdminReportListParams,
@@ -31,6 +32,10 @@ function buildListQuery(params?: AdminReportListParams): string {
 }
 
 export class AdminReportsApi extends ApiClientBase {
+  getSummary(): Promise<AdminReportAdminSummaryResponse> {
+    return this.getJson<AdminReportAdminSummaryResponse>("/admin/reports/summary");
+  }
+
   listReports(params?: AdminReportListParams): Promise<AdminReportListResponse> {
     return this.getJson<AdminReportListResponse>(`/admin/reports${buildListQuery(params)}`);
   }

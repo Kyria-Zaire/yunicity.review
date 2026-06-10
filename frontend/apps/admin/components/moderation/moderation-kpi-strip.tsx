@@ -1,40 +1,62 @@
-import type { AdminReportStatusSummary } from "@yunicity/types";
+import type { ModerationTrustSafetyKpiCard } from "@yunicity/utils";
+import {
+  AlertCircle,
+  Ban,
+  CheckCircle2,
+  Flag,
+  Layers,
+  Tag,
+} from "lucide-react";
 
-interface ModerationKpiStripProps {
-  summary: AdminReportStatusSummary;
-  filteredTotal: number;
+function KpiIcon({ id }: { id: string }) {
+  const className = "h-4 w-4";
+  switch (id) {
+    case "total":
+      return <Layers className={className} aria-hidden />;
+    case "pending":
+      return <AlertCircle className={className} aria-hidden />;
+    case "resolved":
+      return <CheckCircle2 className={className} aria-hidden />;
+    case "dismissed":
+      return <Ban className={className} aria-hidden />;
+    case "dominant_reason":
+      return <Tag className={className} aria-hidden />;
+    default:
+      return <Flag className={className} aria-hidden />;
+  }
 }
 
-export function ModerationKpiStrip({ summary, filteredTotal }: ModerationKpiStripProps) {
+export function ModerationKpiStrip({ cards }: { cards: ModerationTrustSafetyKpiCard[] }) {
+  if (cards.length === 0) {
+    return null;
+  }
+
   return (
-    <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-        <dt className="text-xs font-medium text-stone-500">Total (base)</dt>
-        <dd className="mt-1 text-2xl font-semibold tabular-nums text-stone-900">{summary.total}</dd>
-        <dd className="mt-0.5 text-[10px] text-stone-400">Tous statuts confondus</dd>
-      </div>
-      <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3 shadow-sm">
-        <dt className="text-xs font-medium text-amber-900">En attente</dt>
-        <dd className="mt-1 text-2xl font-semibold tabular-nums text-amber-950">
-          {summary.pending}
-        </dd>
-      </div>
-      <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-        <dt className="text-xs font-medium text-stone-500">Traités</dt>
-        <dd className="mt-1 text-2xl font-semibold tabular-nums text-emerald-900">
-          {summary.resolved}
-        </dd>
-        <dd className="mt-0.5 text-[10px] text-stone-400">Examinés + action prise</dd>
-      </div>
-      <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-        <dt className="text-xs font-medium text-stone-500">Classés sans suite</dt>
-        <dd className="mt-1 text-2xl font-semibold tabular-nums text-stone-700">
-          {summary.dismissed}
-        </dd>
-        <dd className="mt-0.5 text-[10px] text-stone-400">
-          {filteredTotal} résultat{filteredTotal > 1 ? "s" : ""} filtré{filteredTotal > 1 ? "s" : ""}
-        </dd>
-      </div>
-    </dl>
+    <section
+      className="grid grid-cols-2 gap-2 lg:grid-cols-5"
+      aria-label="Indicateurs Trust & Safety"
+    >
+      {cards.map((card) => (
+        <article
+          key={card.id}
+          className="rounded-xl border border-stone-200/80 bg-white px-3 py-2.5 shadow-sm"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-medium text-stone-500">{card.label}</p>
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-yunicity-primary-soft text-yunicity-primary">
+              <KpiIcon id={card.id} />
+            </span>
+          </div>
+          <p
+            className={`mt-1 font-bold tracking-tight text-stone-950 tabular-nums ${
+              card.id === "dominant_reason" ? "text-base leading-snug" : "text-xl"
+            }`}
+          >
+            {card.displayValue}
+          </p>
+          <p className="text-[11px] text-stone-500">{card.hint}</p>
+        </article>
+      ))}
+    </section>
   );
 }

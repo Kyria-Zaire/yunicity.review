@@ -29,6 +29,7 @@ from app.schemas.admin_report import (
     AdminReportActionActorSummary,
     AdminReportActionListItem,
     AdminReportActionListResponse,
+    AdminReportAdminSummaryResponse,
     AdminReportDetailResponse,
     AdminReportListItem,
     AdminReportListResponse,
@@ -51,6 +52,17 @@ class AdminReportService:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
         self._repo = AdminReportRepository(session)
+
+    async def get_reports_admin_summary(self) -> AdminReportAdminSummaryResponse:
+        counts = await self._repo.fetch_admin_summary()
+        return AdminReportAdminSummaryResponse(
+            generated_at=datetime.now(UTC),
+            total=counts.total,
+            pending=counts.pending,
+            resolved=counts.resolved,
+            dismissed=counts.dismissed,
+            dominant_reason=counts.dominant_reason,
+        )
 
     async def list_reports(
         self,

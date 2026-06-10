@@ -197,3 +197,38 @@ async def test_invalid_status_filter_returns_422(
     )
     assert response.status_code == 422
     assert response.json()["code"] == "REPORT_STATUS_INVALID"
+
+
+@pytest.mark.asyncio
+async def test_moderator_can_get_reports_admin_summary(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    await _create_pending_report(auth_client)
+    moderator = await rbac_user_factory("MODERATOR")
+
+    response = await auth_client.get(
+        f"{BASE}/summary",
+        headers=auth_header(moderator.access_token),
+    )
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["total"] >= 1
+    assert data["pending"] >= 1
+    assert "resolved" in data
+    assert "dismissed" in data
+    assert "dominant_reason" in data
+    assert "generated_at" in data
+
+
+@pytest.mark.asyncio
+async def test_user_denied_reports_admin_summary(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    user = await rbac_user_factory()
+    response = await auth_client.get(
+        f"{BASE}/summary",
+        headers=auth_header(user.access_token),
+    )
+    assert response.status_code == 403

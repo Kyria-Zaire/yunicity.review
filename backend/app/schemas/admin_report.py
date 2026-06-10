@@ -46,6 +46,19 @@ class AdminReportStatusSummary(BaseModel):
     dismissed: int = Field(ge=0)
 
 
+class AdminReportAdminSummaryResponse(BaseModel):
+    """Aggregated Trust & Safety metrics (MODERATION-V2-01)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    generated_at: datetime
+    total: int = Field(ge=0)
+    pending: int = Field(ge=0)
+    resolved: int = Field(ge=0)
+    dismissed: int = Field(ge=0)
+    dominant_reason: AdminReportReason | None = None
+
+
 class AdminReportListResponse(BaseModel):
     items: list[AdminReportListItem]
     total: int = Field(ge=0)

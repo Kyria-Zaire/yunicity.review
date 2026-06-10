@@ -21,6 +21,7 @@ from app.db.session import get_db
 from app.models.user import User
 from app.schemas.admin_report import (
     AdminReportActionListResponse,
+    AdminReportAdminSummaryResponse,
     AdminReportDetailResponse,
     AdminReportDismissRequest,
     AdminReportListResponse,
@@ -60,6 +61,15 @@ def _parse_reason_filter(raw: str | None) -> str | None:
             code="REPORT_REASON_INVALID",
             detail="Motif de signalement invalide.",
         ) from exc
+
+
+@router.get("/summary", response_model=AdminReportAdminSummaryResponse)
+async def get_reports_admin_summary(
+    current_user: Annotated[User, Depends(_staff_guard)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> AdminReportAdminSummaryResponse:
+    _ = current_user
+    return await AdminReportService(session).get_reports_admin_summary()
 
 
 @router.get("", response_model=AdminReportListResponse)

@@ -13,6 +13,13 @@ export interface AdminModerationListState {
   pageSize: number;
 }
 
+export const MODERATION_DEFAULT_LIST_STATE: AdminModerationListState = {
+  status: "pending",
+  reason: "",
+  page: 1,
+  pageSize: MODERATION_DEFAULT_PAGE_SIZE,
+};
+
 const REPORT_STATUSES: AdminReportStatus[] = [
   "pending",
   "reviewed",
