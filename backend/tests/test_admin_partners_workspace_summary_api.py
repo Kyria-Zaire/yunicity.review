@@ -14,21 +14,21 @@ SUMMARY_URL = "/api/v1/admin/partners/workspace-summary"
 
 async def test_workspace_summary_requires_staff(
     auth_client: AsyncClient,
-    rbac_factory: RbacUserFactory,
+    rbac_user_factory: RbacUserFactory,
 ) -> None:
-    user = await rbac_factory.create_user(permissions=["auth.me.read"])
-    response = await auth_client.get(SUMMARY_URL, headers=auth_header(user))
+    user = await rbac_user_factory()
+    response = await auth_client.get(SUMMARY_URL, headers=auth_header(user.access_token))
     assert response.status_code == 403
 
 
 async def test_workspace_summary_returns_territorial_counts(
     auth_client: AsyncClient,
-    rbac_factory: RbacUserFactory,
+    rbac_user_factory: RbacUserFactory,
 ) -> None:
-    user = await rbac_factory.create_user(permissions=["moderation.manage"])
+    user = await rbac_user_factory("MODERATOR")
     response = await auth_client.get(
         f"{SUMMARY_URL}?city=Reims",
-        headers=auth_header(user),
+        headers=auth_header(user.access_token),
     )
     assert response.status_code == 200
     body = response.json()

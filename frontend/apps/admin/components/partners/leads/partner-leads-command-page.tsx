@@ -14,6 +14,7 @@ import { PartnerLeadsTable } from "@/components/partners/leads/partner-leads-tab
 import { PartnerLeadsToolbar } from "@/components/partners/leads/partner-leads-toolbar";
 import { usePartnerLeadsPipeline } from "@/lib/hooks/use-partner-leads-pipeline";
 import type { OrganizationType, PartnerLeadSource, PartnerLeadStatus } from "@yunicity/types";
+import Link from "next/link";
 import {
   buildPartnerLeadInsights,
   buildPartnerLeadPilotMomentum,
@@ -145,12 +146,12 @@ export function PartnerLeadsCommandPage({
           <p className="text-sm text-stone-600">
             {formatAdminMetric(leads.length)} prospect{leads.length > 1 ? "s" : ""} pour {city}
           </p>
-          <a
+          <Link
             href="/partner-leads"
             className="text-sm font-medium text-yunicity-primary underline-offset-2 hover:underline"
           >
             Ouvrir le pipeline complet
-          </a>
+          </Link>
         </div>
       )}
 

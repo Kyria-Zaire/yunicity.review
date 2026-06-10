@@ -1,6 +1,5 @@
 "use client";
 
-import type { AdminStaffListState } from "@/lib/staff-url";
 import type { AdminStaffListItem } from "@yunicity/types";
 import {
   buildStaffDetailPath,

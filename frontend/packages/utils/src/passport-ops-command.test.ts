@@ -26,7 +26,7 @@ function listItem(overrides: Partial<AdminPassportListItem> = {}): AdminPassport
     passport_number: "YC-0001",
     city: "Reims",
     status: "active",
-    tier_code: "bronze",
+    tier_code: "silver",
     user: { id: "u-1", email: "citoyen@mail.fr", display_name: "Alice Martin" },
     stamps_count: 0,
     redemptions_count: 0,

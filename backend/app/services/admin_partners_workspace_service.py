@@ -62,6 +62,9 @@ class AdminPartnersWorkspaceService:
             AdminPartnersCategoryBreakdownItem(key=key, count=count)
             for key, count in await self._terrain_repo.fetch_category_breakdown(city=resolved_city)
         ]
+        top_active_rows = await self._terrain_repo.fetch_top_active_partners(
+            city=resolved_city,
+        )
         top_active_partners = [
             AdminPartnersTopActiveItem(
                 organization_id=org_id,
@@ -69,9 +72,7 @@ class AdminPartnersWorkspaceService:
                 logo_url=logo_url,
                 interactions_count=interactions,
             )
-            for org_id, name, logo_url, interactions in await self._terrain_repo.fetch_top_active_partners(
-                city=resolved_city,
-            )
+            for org_id, name, logo_url, interactions in top_active_rows
         ]
         pending_requests = [
             AdminPartnersPendingRequestItem(

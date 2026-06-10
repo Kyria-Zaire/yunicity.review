@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.partner_constants import PartnershipType, PartnerStatus
 from app.repositories.admin_partners_terrain_repository import AdminPartnersTerrainRepository
 from app.schemas.admin_partners_terrain import (
     TERRAIN_LIST_PAGE_SIZE_DEFAULT,
@@ -47,13 +48,21 @@ class AdminPartnersTerrainService:
                     slug=row.organization.slug,
                     logo_url=row.organization.logo_url,
                     organization_type=row.organization.type,
-                    partnership_type=row.partnership_type,
+                    partnership_type=(
+                        PartnershipType(row.partnership_type)
+                        if row.partnership_type is not None
+                        else None
+                    ),
                     category=row.organization.category,
                     neighborhood_name=row.neighborhood_name,
                     address=row.organization.address,
                     city=row.organization.city,
                     verification_status=row.organization.verification_status,
-                    partner_status=row.partner_status,
+                    partner_status=(
+                        PartnerStatus(row.partner_status)
+                        if row.partner_status is not None
+                        else None
+                    ),
                     stamps_count=row.stamps_count,
                     updated_at=row.organization.updated_at,
                 )
