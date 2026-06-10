@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
+from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,6 +31,7 @@ from app.schemas.admin_report import (
     AdminReportActionListItem,
     AdminReportActionListResponse,
     AdminReportAdminSummaryResponse,
+    AdminReportReason,
     AdminReportDetailResponse,
     AdminReportListItem,
     AdminReportListResponse,
@@ -55,13 +57,16 @@ class AdminReportService:
 
     async def get_reports_admin_summary(self) -> AdminReportAdminSummaryResponse:
         counts = await self._repo.fetch_admin_summary()
+        dominant_reason: AdminReportReason | None = None
+        if counts.dominant_reason is not None and counts.dominant_reason in REPORT_REASONS:
+            dominant_reason = cast(AdminReportReason, counts.dominant_reason)
         return AdminReportAdminSummaryResponse(
             generated_at=datetime.now(UTC),
             total=counts.total,
             pending=counts.pending,
             resolved=counts.resolved,
             dismissed=counts.dismissed,
-            dominant_reason=counts.dominant_reason,
+            dominant_reason=dominant_reason,
         )
 
     async def list_reports(
