@@ -2,13 +2,18 @@
 
 import { useAuth } from "@/lib/auth/auth-provider";
 import type { AdminPassportListItem } from "@yunicity/types";
+import type { AdminCockpitSignals } from "@yunicity/types";
 import {
+  buildPassportOpsConseilMessage,
+  buildPassportOpsDashboardKpisFromCockpit,
+  buildPassportOpsDashboardKpisFromList,
   buildPassportOpsEngagedCitizens,
   buildPassportOpsIntelligence,
   buildPassportOpsKpiCards,
   buildPassportOpsMetricsFromCockpit,
   buildPassportOpsMetricsFromList,
   buildPassportOpsMomentum,
+  buildPassportOpsNextAction,
   buildPassportOpsRecommendedAction,
   buildPassportOpsSignal,
   buildPassportOpsDetailPath,
@@ -28,6 +33,7 @@ export function usePassportOpsCommand(
   const [cockpitPassport, setCockpitPassport] = useState<
     Parameters<typeof buildPassportOpsMetricsFromCockpit>[1] | null
   >(null);
+  const [cockpitSignals, setCockpitSignals] = useState<AdminCockpitSignals | null>(null);
   const [topPartner, setTopPartner] = useState<
     Parameters<typeof buildPassportOpsIntelligence>[1] | null
   >(null);
@@ -35,6 +41,7 @@ export function usePassportOpsCommand(
   useEffect(() => {
     if (hasSearchQuery) {
       setCockpitPassport(null);
+      setCockpitSignals(null);
       setTopPartner(null);
       setSuspendedTotal(0);
       return;
@@ -57,11 +64,13 @@ export function usePassportOpsCommand(
           return;
         }
         setCockpitPassport(summary.passport);
+        setCockpitSignals(summary.signals);
         setTopPartner(summary.signals.top_stamp_partner);
         setSuspendedTotal(suspended.total);
       } catch {
         if (!cancelled) {
           setCockpitPassport(null);
+          setCockpitSignals(null);
           setTopPartner(null);
           setSuspendedTotal(0);
         }
@@ -81,12 +90,26 @@ export function usePassportOpsCommand(
     return buildPassportOpsMetricsFromCockpit(city, cockpitPassport, suspendedTotal);
   }, [city, cockpitPassport, hasSearchQuery, items, suspendedTotal, total]);
 
+  const dashboardKpis = useMemo(() => {
+    if (!hasSearchQuery && cockpitPassport && cockpitSignals) {
+      return buildPassportOpsDashboardKpisFromCockpit(
+        cockpitPassport,
+        cockpitSignals,
+        suspendedTotal,
+      );
+    }
+    return buildPassportOpsDashboardKpisFromList(metrics);
+  }, [cockpitPassport, cockpitSignals, hasSearchQuery, metrics, suspendedTotal]);
+
   return useMemo(
     () => ({
       metrics,
       signal: buildPassportOpsSignal(metrics),
+      nextAction: buildPassportOpsNextAction(metrics),
       recommendedAction: buildPassportOpsRecommendedAction(metrics),
+      conseilMessage: buildPassportOpsConseilMessage(metrics),
       kpiCards: buildPassportOpsKpiCards(metrics),
+      dashboardKpis,
       momentum: buildPassportOpsMomentum(metrics),
       engagedCitizens: buildPassportOpsEngagedCitizens(
         items,
@@ -95,6 +118,6 @@ export function usePassportOpsCommand(
       ),
       intelligence: buildPassportOpsIntelligence(metrics, topPartner),
     }),
-    [items, metrics, topPartner],
+    [dashboardKpis, items, metrics, topPartner],
   );
 }

@@ -1,8 +1,7 @@
 "use client";
 
-import { PassportOpsEngagedCitizens } from "@/components/passport-ops/passport-ops-engaged-citizens";
+import { PassportOpsConseil } from "@/components/passport-ops/passport-ops-conseil";
 import { PassportOpsHero } from "@/components/passport-ops/passport-ops-hero";
-import { PassportOpsIntelligence } from "@/components/passport-ops/passport-ops-intelligence";
 import { PassportOpsKpiStrip } from "@/components/passport-ops/passport-ops-kpi-strip";
 import { PassportOpsList } from "@/components/passport-ops/passport-ops-list";
 import { PassportOpsMomentum } from "@/components/passport-ops/passport-ops-momentum";
@@ -36,10 +35,9 @@ export function PassportOpsWorkspace() {
     <div className="mx-auto max-w-6xl space-y-5 pb-10">
       <PassportOpsHero />
       <PassportOpsSignal signal={command.signal} />
-      <PassportOpsRecommendedAction action={command.recommendedAction} />
-      <PassportOpsKpiStrip cards={command.kpiCards} />
+      <PassportOpsRecommendedAction action={command.nextAction} />
+      <PassportOpsKpiStrip cards={command.dashboardKpis} />
       <PassportOpsMomentum momentum={command.momentum} />
-      <PassportOpsEngagedCitizens citizens={command.engagedCitizens} />
       <PassportOpsSearchBar
         state={state}
         isLoading={isLoading}
@@ -61,7 +59,10 @@ export function PassportOpsWorkspace() {
         isLoading={isLoading}
         onPageChange={goToPage}
       />
-      <PassportOpsIntelligence intelligence={command.intelligence} />
+      <PassportOpsConseil
+        message={command.conseilMessage}
+        action={command.recommendedAction}
+      />
     </div>
   );
 }

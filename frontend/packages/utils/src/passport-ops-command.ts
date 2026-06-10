@@ -1,6 +1,14 @@
 /** Passport Command Center helpers (PASSPORT-OPS-V2-01) — UX pure. */
 
-import type { AdminCockpitPassport, AdminCockpitTopStampPartner, AdminPassportListItem } from "@yunicity/types";
+import type {
+  AdminCockpitPassport,
+  AdminCockpitSignals,
+  AdminCockpitTopStampPartner,
+  AdminPassportListItem,
+} from "@yunicity/types";
+
+import { buildPassportOpsListPath } from "./admin-passport";
+import { formatAdminMetric } from "./admin-cockpit";
 
 export const PASSPORT_OPS_PILOT_GOAL = 50;
 
@@ -30,11 +38,28 @@ export interface PassportOpsRecommendedAction {
   href: string;
 }
 
+export interface PassportOpsNextAction {
+  id: string;
+  title: string;
+  ctaLabel: string;
+  href: string;
+}
+
 export interface PassportOpsKpiCard {
   id: string;
   label: string;
   value: number;
   hint: string;
+}
+
+export type PassportOpsDashboardKpiTone = "positive" | "neutral";
+
+export interface PassportOpsDashboardKpi {
+  id: string;
+  label: string;
+  value: number;
+  trend: string;
+  trendTone: PassportOpsDashboardKpiTone;
 }
 
 export interface PassportOpsMomentum {
@@ -105,28 +130,87 @@ export function buildPassportOpsMetricsFromList(
   };
 }
 
-export function buildPassportOpsSignal(metrics: PassportOpsProgramMetrics): PassportOpsSignal {
-  if (metrics.suspendedPassports > 0) {
-    return {
-      type: "attention",
-      title: "Une attention particulière est requise.",
-      description: "Certains Passport nécessitent une vérification.",
-    };
-  }
+export function passportOpsActivePassportCount(metrics: PassportOpsProgramMetrics): number {
+  return Math.max(metrics.totalPassports - metrics.suspendedPassports, 0);
+}
 
+export function buildPassportOpsSignal(metrics: PassportOpsProgramMetrics): PassportOpsSignal {
   if (metrics.totalPassports === 0) {
     return {
       type: "empty",
-      title: "Le programme attend ses premiers participants.",
-      description: `Aucun Passport actif n'a encore été détecté à ${metrics.city}.`,
+      title: "Programme en attente",
+      description: "Aucun citoyen n'a encore rejoint le programme Passport.",
+    };
+  }
+
+  if (metrics.suspendedPassports > 0) {
+    const count = formatAdminMetric(metrics.suspendedPassports);
+    return {
+      type: "attention",
+      title: "Vigilance requise",
+      description: `${count} Passport(s) nécessitent une attention.`,
     };
   }
 
   return {
     type: "active",
-    title: "Le programme est lancé.",
-    description: `Les premiers citoyens commencent à utiliser le Passport à ${metrics.city}.`,
+    title: "Programme lancé",
+    description: `Les citoyens commencent à utiliser le Passport à ${metrics.city}.`,
   };
+}
+
+export function buildPassportOpsNextAction(
+  metrics: PassportOpsProgramMetrics,
+): PassportOpsNextAction {
+  if (metrics.suspendedPassports > 0) {
+    return {
+      id: "suspensions",
+      title: "Traitez les Passport suspendus.",
+      ctaLabel: "Voir les suspensions",
+      href: buildPassportOpsListPath({ status: "suspended" }),
+    };
+  }
+
+  if (metrics.totalStamps === 0) {
+    return {
+      id: "first-stamp",
+      title: "Encouragez le premier tampon.",
+      ctaLabel: "Scanner un Passport",
+      href: "/partner-scan",
+    };
+  }
+
+  if (metrics.totalPassports < PASSPORT_OPS_PILOT_GOAL) {
+    return {
+      id: "grow",
+      title: "Développez le programme.",
+      ctaLabel: "Inviter des partenaires",
+      href: "/partners",
+    };
+  }
+
+  return {
+    id: "steady",
+    title: "Le programme progresse normalement.",
+    ctaLabel: "Consulter le registre",
+    href: "/passport-ops#passport-registry",
+  };
+}
+
+export function buildPassportOpsConseilMessage(metrics: PassportOpsProgramMetrics): string {
+  if (metrics.totalStamps === 0) {
+    return "Invitez un partenaire à réaliser la première interaction Passport.";
+  }
+
+  if (metrics.suspendedPassports > 0) {
+    return "Traitez rapidement les Passport suspendus.";
+  }
+
+  if (passportOpsActivePassportCount(metrics) >= PASSPORT_OPS_PILOT_GOAL) {
+    return "Le programme Passport dispose désormais d'une base solide.";
+  }
+
+  return "Continuez à développer l'engagement citoyen.";
 }
 
 export function buildPassportOpsRecommendedAction(
@@ -175,6 +259,125 @@ function kpiHint(value: number, emptyHint: string, activeHint: string): string {
   return value > 0 ? activeHint : emptyHint;
 }
 
+export function buildPassportOpsDashboardKpisFromCockpit(
+  passport: AdminCockpitPassport,
+  signals: AdminCockpitSignals,
+  suspendedPassports: number,
+): PassportOpsDashboardKpi[] {
+  const total = passport.passports_total;
+  const active = Math.max(total - suspendedPassports, 0);
+  const activePercent = total > 0 ? Math.round((active / total) * 100) : 0;
+  const newWeek = signals.passports_last_7_days;
+
+  return [
+    {
+      id: "passports",
+      label: "Passports (total)",
+      value: total,
+      trend:
+        newWeek > 0
+          ? `+${formatAdminMetric(newWeek)} cette semaine`
+          : "— vs semaine dernière",
+      trendTone: newWeek > 0 ? "positive" : "neutral",
+    },
+    {
+      id: "active-citizens",
+      label: "Citoyens actifs",
+      value: active,
+      trend: total > 0 ? `${activePercent}% du total` : "—",
+      trendTone: active > 0 ? "positive" : "neutral",
+    },
+    {
+      id: "redemptions",
+      label: "Utilisations validées",
+      value: passport.redemptions_completed,
+      trend:
+        signals.redemptions_today > 0
+          ? `+${formatAdminMetric(signals.redemptions_today)} aujourd'hui`
+          : "— vs hier",
+      trendTone: signals.redemptions_today > 0 ? "positive" : "neutral",
+    },
+    {
+      id: "stamps-today",
+      label: "Tampons aujourd'hui",
+      value: signals.stamps_today,
+      trend: signals.stamps_today > 0 ? "Activité du jour" : "— vs hier",
+      trendTone: signals.stamps_today > 0 ? "positive" : "neutral",
+    },
+    {
+      id: "new-week",
+      label: "Nouveaux (7j)",
+      value: newWeek,
+      trend: newWeek > 0 ? "Cette semaine" : "— vs semaine dernière",
+      trendTone: newWeek > 0 ? "positive" : "neutral",
+    },
+  ];
+}
+
+export function buildPassportOpsDashboardKpisFromList(
+  metrics: PassportOpsProgramMetrics,
+): PassportOpsDashboardKpi[] {
+  const active = Math.max(metrics.totalPassports - metrics.suspendedPassports, 0);
+  const activePercent =
+    metrics.totalPassports > 0
+      ? Math.round((active / metrics.totalPassports) * 100)
+      : 0;
+
+  return [
+    {
+      id: "passports",
+      label: "Passports (résultats)",
+      value: metrics.totalPassports,
+      trend: metrics.isFilteredView ? "Vue filtrée" : "—",
+      trendTone: metrics.totalPassports > 0 ? "positive" : "neutral",
+    },
+    {
+      id: "active-citizens",
+      label: "Citoyens actifs",
+      value: active,
+      trend: metrics.totalPassports > 0 ? `${activePercent}% du total` : "—",
+      trendTone: active > 0 ? "positive" : "neutral",
+    },
+    {
+      id: "redemptions",
+      label: "Rédemptions (page)",
+      value: metrics.totalRedemptions,
+      trend: "Somme page courante",
+      trendTone: "neutral",
+    },
+    {
+      id: "stamps-today",
+      label: "Tampons (page)",
+      value: metrics.totalStamps,
+      trend: "Somme page courante",
+      trendTone: "neutral",
+    },
+    {
+      id: "new-week",
+      label: "Engagés (page)",
+      value: metrics.engagedCitizens,
+      trend: "Au moins 1 interaction",
+      trendTone: metrics.engagedCitizens > 0 ? "positive" : "neutral",
+    },
+  ];
+}
+
+export function passportOpsCitizenInitials(
+  displayName: string | null | undefined,
+  email: string,
+): string {
+  const source = displayName?.trim() || email;
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
+  }
+  return source.slice(0, 2).toUpperCase();
+}
+
+export function passportOpsLastActivityAt(item: AdminPassportListItem): string | null {
+  return item.activated_at ?? item.created_at ?? null;
+}
+
 export function buildPassportOpsKpiCards(metrics: PassportOpsProgramMetrics): PassportOpsKpiCard[] {
   return [
     {
@@ -216,24 +419,21 @@ export function passportOpsMomentumProgress(
 
 export function passportOpsMomentumMicrocopy(activeCount: number): string {
   if (activeCount === 0) {
-    return "Le programme fait ses premiers pas.";
-  }
-  if (activeCount <= 9) {
-    return "Les premiers citoyens rejoignent Yunicity.";
+    return "Le programme attend ses premiers citoyens.";
   }
   if (activeCount <= 24) {
-    return "La communauté commence à émerger.";
+    return "Le territoire commence à s'engager.";
   }
   if (activeCount <= 49) {
-    return "Le Passport s'installe dans les habitudes locales.";
+    return "Le pilote prend de l'ampleur.";
   }
-  return "Le Passport est devenu un réflexe territorial.";
+  return "Le programme dispose d'une base solide.";
 }
 
 export function buildPassportOpsMomentum(
   metrics: PassportOpsProgramMetrics,
 ): PassportOpsMomentum {
-  const activeCount = metrics.totalPassports;
+  const activeCount = passportOpsActivePassportCount(metrics);
   const goal = PASSPORT_OPS_PILOT_GOAL;
 
   return {
