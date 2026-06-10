@@ -29,3 +29,34 @@ export function getVisibleSidebarNavLabels(isStaffUser: boolean): {
     staff: isStaffUser ? [...STAFF_NAV_LABELS] : [],
   };
 }
+
+export function isStaffNavActive(pathname: string, href: string): boolean {
+  if (href === "/") {
+    return pathname === "/";
+  }
+  if (href === "/partners") {
+    return pathname === "/partners" || pathname.startsWith("/partners/");
+  }
+  if (href === "/passport-ops") {
+    return pathname === "/passport-ops" || pathname.startsWith("/passport-ops/");
+  }
+  if (href === "/passport-offers") {
+    return pathname === "/passport-offers" || pathname.startsWith("/passport-offers/");
+  }
+  if (href === "/events") {
+    return pathname === "/events" || pathname.startsWith("/events/");
+  }
+  if (href === "/creator-content") {
+    return pathname === "/creator-content" || pathname.startsWith("/creator-content/");
+  }
+  if (href === "/moderation") {
+    return pathname === "/moderation" || pathname.startsWith("/moderation/");
+  }
+  if (href === "/partner-scan") {
+    return pathname === "/partner-scan" || pathname.startsWith("/partner-scan/");
+  }
+  if (href === "/staff") {
+    return pathname === "/staff" || pathname.startsWith("/staff/");
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}

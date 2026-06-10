@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminMobileNav } from "@/components/admin-mobile-nav";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { isStaffUser } from "@/lib/auth/staff-permissions";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -60,25 +61,32 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
       <div className="flex flex-1 flex-col">
         <header className="border-b border-stone-200 bg-white px-4 py-3 md:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h1 className="text-lg font-semibold tracking-tight text-stone-900">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-lg font-semibold tracking-tight text-stone-900">
                 {staffPageTitle(pathname, isPartnerArea)}
               </h1>
-              {user ? <p className="text-xs text-stone-500">{user.email}</p> : null}
+              {user ? (
+                <p className="truncate text-xs text-stone-500">{user.email}</p>
+              ) : null}
             </div>
-            {user ? (
-              <button
-                type="button"
-                onClick={() => void logout()}
-                className="rounded-lg px-3 py-1.5 text-sm text-stone-600 transition-colors duration-150 hover:bg-stone-100"
-              >
-                Déconnexion
-              </button>
-            ) : null}
-          </div>
-          <div className="mt-3 md:hidden">
-            <AdminSidebar staff={staff} homeHref={homeHref} variant="mobile" />
+            <div className="flex shrink-0 items-center gap-2">
+              <AdminMobileNav
+                staff={staff}
+                homeHref={homeHref}
+                userEmail={user?.email ?? null}
+                onLogout={() => void logout()}
+              />
+              {user ? (
+                <button
+                  type="button"
+                  onClick={() => void logout()}
+                  className="rounded-lg px-3 py-1.5 text-sm text-stone-600 transition-colors duration-150 hover:bg-stone-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yunicity-primary"
+                >
+                  Déconnexion
+                </button>
+              ) : null}
+            </div>
           </div>
         </header>
         <main className="flex-1 p-4 md:p-6">{children}</main>
