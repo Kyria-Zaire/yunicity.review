@@ -5,6 +5,7 @@ export const PARTNER_NAV_LABELS = [
 
 export const STAFF_NAV_LABELS = [
   "Cockpit",
+  "Analytics",
   "Partenaires",
   "Passport Ops",
   "Offres",
@@ -33,6 +34,9 @@ export function getVisibleSidebarNavLabels(isStaffUser: boolean): {
 export function isStaffNavActive(pathname: string, href: string): boolean {
   if (href === "/") {
     return pathname === "/";
+  }
+  if (href === "/analytics") {
+    return pathname === "/analytics" || pathname.startsWith("/analytics/");
   }
   if (href === "/partners") {
     return pathname === "/partners" || pathname.startsWith("/partners/");

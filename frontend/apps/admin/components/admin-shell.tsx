@@ -11,6 +11,9 @@ function staffPageTitle(pathname: string, isPartnerArea: boolean): string {
   if (pathname === "/") {
     return "Cockpit";
   }
+  if (pathname === "/analytics" || pathname.startsWith("/analytics")) {
+    return "Analytics";
+  }
   if (pathname === "/partners" || pathname.startsWith("/partners")) {
     return "Partenaires";
   }

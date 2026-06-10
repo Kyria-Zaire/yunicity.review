@@ -5,6 +5,7 @@ import { createAdminCockpitApi, type AdminCockpitApi } from "@/lib/admin-cockpit
 import { createAdminActivationWavesApi } from "@/lib/admin-activation-waves-api";
 import {
   MemoryTokenStorage,
+  createAdminAnalyticsApi,
   createAdminEventsApi,
   createAdminReportsApi,
   createAdminStaffApi,
@@ -22,6 +23,7 @@ import {
   getWebApiBaseUrl,
   humanizeAuthFailure,
   type AdminActivationWavesApi,
+  type AdminAnalyticsApi,
   type AdminEventsApi,
   type AdminReportsApi,
   type AdminStaffApi,
@@ -59,6 +61,7 @@ interface AuthContextValue {
   scanApi: ScanApi;
   partnersApi: PartnersApi;
   adminCockpitApi: AdminCockpitApi;
+  adminAnalyticsApi: AdminAnalyticsApi;
   adminEventsApi: AdminEventsApi;
   adminReportsApi: AdminReportsApi;
   adminStaffApi: AdminStaffApi;
@@ -122,6 +125,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const adminCockpitApi = useMemo(
     () => createAdminCockpitApi(client, apiBaseUrl),
+    [client, apiBaseUrl],
+  );
+
+  const adminAnalyticsApi = useMemo(
+    () => createAdminAnalyticsApi(client, apiBaseUrl),
     [client, apiBaseUrl],
   );
 
@@ -217,6 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     scanApi,
     partnersApi,
     adminCockpitApi,
+    adminAnalyticsApi,
     adminEventsApi,
     adminReportsApi,
     adminStaffApi,

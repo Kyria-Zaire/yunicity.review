@@ -494,6 +494,10 @@ export {
   createAdminStaffApi,
 } from "./admin-staff-api";
 export {
+  AdminAnalyticsApi,
+  createAdminAnalyticsApi,
+} from "./admin-analytics-api";
+export {
   STAFF_CRITICAL_ROLE_COUNT,
   buildStaffConseilAction,
   buildStaffConseilMessage,

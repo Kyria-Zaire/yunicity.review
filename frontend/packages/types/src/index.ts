@@ -129,6 +129,21 @@ export type {
 } from "./admin-cockpit";
 
 export type {
+  AdminAnalyticsAttention,
+  AdminAnalyticsCreators,
+  AdminAnalyticsCrm,
+  AdminAnalyticsEvents,
+  AdminAnalyticsGrowth,
+  AdminAnalyticsOffers,
+  AdminAnalyticsPartners,
+  AdminAnalyticsPassport,
+  AdminAnalyticsPeriod,
+  AdminAnalyticsScope,
+  AdminAnalyticsSummary,
+  AdminAnalyticsSummaryParams,
+} from "./admin-analytics";
+
+export type {
   AdminOrganizationListItem,
   AdminOrganizationListParams,
   AdminOrganizationListResponse,
