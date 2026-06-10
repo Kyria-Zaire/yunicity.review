@@ -63,7 +63,16 @@ export function PassportOpsList({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+    <div
+      id="passport-registry"
+      className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm"
+    >
+      <div className="border-b border-stone-200 px-4 py-4 sm:px-5">
+        <h2 className="text-sm font-semibold text-stone-900">Registre Passport</h2>
+        <p className="mt-1 text-sm text-stone-600">
+          Consultez et supervisez les Passport citoyens.
+        </p>
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[960px] text-left text-sm">
           <thead className="border-b border-stone-200 bg-stone-50 text-xs uppercase tracking-wide text-stone-500">

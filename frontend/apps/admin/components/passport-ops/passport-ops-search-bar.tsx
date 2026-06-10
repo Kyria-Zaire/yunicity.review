@@ -45,9 +45,15 @@ export function PassportOpsSearchBar({
 
   return (
     <div className="space-y-4 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm md:p-5">
+      <div>
+        <h2 className="text-sm font-semibold text-stone-900">Rechercher un Passport</h2>
+        <p className="mt-1 text-sm text-stone-600">
+          Retrouvez rapidement un citoyen ou un numéro Passport.
+        </p>
+      </div>
       <form onSubmit={handleSubmit} className="space-y-3">
-        <label className="block text-sm font-medium text-stone-700" htmlFor="passport-ops-q">
-          Rechercher
+        <label className="sr-only" htmlFor="passport-ops-q">
+          Rechercher un Passport
         </label>
         <div className="flex flex-col gap-2 sm:flex-row">
           <input

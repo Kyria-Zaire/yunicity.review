@@ -261,6 +261,28 @@ export {
   type PassportStatusActionKind,
 } from "./admin-passport";
 export {
+  PASSPORT_OPS_PILOT_GOAL,
+  buildPassportOpsEngagedCitizens,
+  buildPassportOpsIntelligence,
+  buildPassportOpsKpiCards,
+  buildPassportOpsMetricsFromCockpit,
+  buildPassportOpsMetricsFromList,
+  buildPassportOpsMomentum,
+  buildPassportOpsRecommendedAction,
+  buildPassportOpsSignal,
+  passportOpsIntelligenceEmptyCopy,
+  passportOpsMomentumMicrocopy,
+  passportOpsMomentumProgress,
+  type PassportOpsEngagedCitizen,
+  type PassportOpsIntelligenceResult,
+  type PassportOpsKpiCard,
+  type PassportOpsMomentum,
+  type PassportOpsProgramMetrics,
+  type PassportOpsRecommendedAction,
+  type PassportOpsSignal,
+  type PassportOpsSignalType,
+} from "./passport-ops-command";
+export {
   AdminActivationWavesApi,
   createAdminActivationWavesApi,
 } from "./admin-activation-waves-api";
