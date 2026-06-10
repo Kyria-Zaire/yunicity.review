@@ -87,8 +87,26 @@ export interface PartnerOfferAdminListParams {
   status?: PartnerOfferAdminStatus;
   offer_type?: PartnerOfferType;
   organization_id?: string;
+  q?: string;
   page?: number;
   page_size?: number;
+}
+
+export interface PartnerOfferAdminSummaryResponse {
+  city: string;
+  generated_at: string;
+  total: number;
+  pending_review: number;
+  published: number;
+  draft: number;
+  rejected: number;
+  archived: number;
+  contributor_partners: number;
+  expired_or_inactive: number;
+}
+
+export interface PartnerOfferAdminSummaryParams {
+  city?: string;
 }
 
 export type AdminOfferRedemptionChannel = "self" | "scan" | "unknown";

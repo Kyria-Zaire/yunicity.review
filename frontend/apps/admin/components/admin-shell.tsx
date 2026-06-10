@@ -23,7 +23,7 @@ function staffPageTitle(pathname: string, isPartnerArea: boolean): string {
     return "Scanner Passport";
   }
   if (pathname.startsWith("/passport-offers")) {
-    return "Modération offres";
+    return "Offres Passport";
   }
   if (pathname === "/events" || pathname.startsWith("/events/")) {
     return "Événements";

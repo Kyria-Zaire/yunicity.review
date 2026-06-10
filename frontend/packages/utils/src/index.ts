@@ -293,6 +293,25 @@ export {
   type PassportOpsSignalType,
 } from "./passport-ops-command";
 export {
+  OFFERS_CATALOG_PILOT_GOAL,
+  buildPartnerOffersCatalogKpiCards,
+  buildPartnerOffersCatalogMomentum,
+  buildPartnerOffersCatalogNextAction,
+  buildPartnerOffersCatalogSignal,
+  buildPartnerOffersConseilMessage,
+  buildPartnerOffersMetricsFromSummary,
+  buildPartnerOffersRecommendedAction,
+  partnerOffersCatalogMomentumMicrocopy,
+  passportOffersHasActiveFilters,
+  partnerOffersCatalogMomentumProgress,
+  type PartnerOffersCatalogKpiCard,
+  type PartnerOffersCatalogMetrics,
+  type PartnerOffersCatalogMomentum,
+  type PartnerOffersCatalogNextAction,
+  type PartnerOffersCatalogSignal,
+  type PartnerOffersCatalogSignalType,
+} from "./partner-offers-command";
+export {
   AdminActivationWavesApi,
   createAdminActivationWavesApi,
 } from "./admin-activation-waves-api";

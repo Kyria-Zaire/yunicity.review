@@ -37,6 +37,7 @@ from app.schemas.admin_partner_offer import (
     PartnerOfferAdminCreateRequest,
     PartnerOfferAdminListResponse,
     PartnerOfferAdminResponse,
+    PartnerOfferAdminSummaryResponse,
     PartnerOfferAdminUpdateRequest,
     PartnerOfferOrganizationAdmin,
     PartnerOfferRejectRequest,
@@ -243,12 +244,28 @@ class PartnerOfferService:
         offer = await self._require_offer(offer_id)
         return await self._to_admin_response(offer)
 
+    async def get_offers_admin_summary(self, *, city: str) -> PartnerOfferAdminSummaryResponse:
+        counts = await self._offers.fetch_admin_summary(city=city)
+        return PartnerOfferAdminSummaryResponse(
+            city=city,
+            generated_at=datetime.now(UTC),
+            total=counts.total,
+            pending_review=counts.pending_review,
+            published=counts.published,
+            draft=counts.draft,
+            rejected=counts.rejected,
+            archived=counts.archived,
+            contributor_partners=counts.contributor_partners,
+            expired_or_inactive=counts.expired_or_inactive,
+        )
+
     async def list_offers_admin(
         self,
         *,
         offer_status: str | None,
         offer_type: str | None,
         organization_id: uuid.UUID | None,
+        title_query: str | None,
         page: int,
         page_size: int,
     ) -> PartnerOfferAdminListResponse:
@@ -257,6 +274,7 @@ class PartnerOfferService:
             offer_status=offer_status,
             offer_type=offer_type,
             organization_id=organization_id,
+            title_query=title_query,
             page=page,
             page_size=page_size,
         )

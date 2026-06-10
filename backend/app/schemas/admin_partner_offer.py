@@ -41,7 +41,25 @@ __all__ = [
     "VerifiedOrganizationOption",
     "VerifiedOrganizationListResponse",
     "PartnerOfferRejectRequest",
+    "PartnerOfferAdminSummaryResponse",
 ]
+
+
+class PartnerOfferAdminSummaryResponse(BaseModel):
+    """Aggregated catalogue metrics for admin command center (OFFERS-V2-01)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    city: str
+    generated_at: datetime
+    total: int = Field(ge=0)
+    pending_review: int = Field(ge=0)
+    published: int = Field(ge=0)
+    draft: int = Field(ge=0)
+    rejected: int = Field(ge=0)
+    archived: int = Field(ge=0)
+    contributor_partners: int = Field(ge=0)
+    expired_or_inactive: int = Field(ge=0)
 
 
 class PartnerOfferRejectRequest(BaseModel):

@@ -21,11 +21,13 @@ from app.schemas.admin_partner_offer import (
     PartnerOfferAdminListResponse,
     PartnerOfferAdminRedemptionListResponse,
     PartnerOfferAdminResponse,
+    PartnerOfferAdminSummaryResponse,
     PartnerOfferAdminUpdateRequest,
     PartnerOfferRejectRequest,
     VerifiedOrganizationListResponse,
 )
 from app.services.admin_partner_offer_service import AdminPartnerOfferService
+from app.services.partner_offer_admin_queries import normalize_admin_offer_title_query
 from app.services.partner_offer_service import PartnerOfferService
 
 router = APIRouter(prefix="/admin/partner-offers", tags=["admin-partner-offers"])
@@ -51,6 +53,16 @@ async def create_partner_offer_admin(
     return await PartnerOfferService(session).create_offer_admin(current_user, payload)
 
 
+@router.get("/summary", response_model=PartnerOfferAdminSummaryResponse)
+async def get_partner_offers_admin_summary(
+    current_user: Annotated[User, Depends(_staff_guard)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    city: str = Query(default="Reims", min_length=1, max_length=120),
+) -> PartnerOfferAdminSummaryResponse:
+    _ = current_user
+    return await PartnerOfferService(session).get_offers_admin_summary(city=city)
+
+
 @router.get("", response_model=PartnerOfferAdminListResponse)
 async def list_partner_offers_admin(
     current_user: Annotated[User, Depends(_staff_guard)],
@@ -61,6 +73,7 @@ async def list_partner_offers_admin(
     ),
     offer_type: str | None = Query(default=None),
     organization_id: str | None = Query(default=None),
+    q: str | None = Query(default=None, min_length=1, max_length=160),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(
         default=PARTNER_OFFER_LIST_PAGE_SIZE_DEFAULT,
@@ -70,10 +83,12 @@ async def list_partner_offers_admin(
 ) -> PartnerOfferAdminListResponse:
     _ = current_user
     org_id = uuid.UUID(organization_id) if organization_id else None
+    title_query = normalize_admin_offer_title_query(q)
     return await PartnerOfferService(session).list_offers_admin(
         offer_status=status,
         offer_type=offer_type,
         organization_id=org_id,
+        title_query=title_query,
         page=page,
         page_size=page_size,
     )

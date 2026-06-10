@@ -10,9 +10,19 @@ export interface PassportOffersListState {
   status: AdminOfferStatusFilter;
   organizationId: string;
   offerType: AdminOfferTypeFilter;
+  q: string;
   page: number;
   pageSize: number;
 }
+
+export const PASSPORT_OFFERS_DEFAULT_LIST_STATE: PassportOffersListState = {
+  status: "pending_review",
+  organizationId: "",
+  offerType: "",
+  q: "",
+  page: 1,
+  pageSize: PASSPORT_OFFERS_DEFAULT_PAGE_SIZE,
+};
 
 const OFFER_STATUSES: AdminOfferStatus[] = [
   "draft",
@@ -75,6 +85,7 @@ export function parsePassportOffersSearchParams(
     status: parseStatus(params.get("status"), organizationId.length > 0),
     organizationId,
     offerType: parseOfferType(params.get("offer_type")),
+    q: params.get("q")?.trim() ?? "",
     page: parsePage(params.get("page")),
     pageSize: parsePageSize(params.get("page_size")),
   };
@@ -95,6 +106,9 @@ export function passportOffersStateToSearchParams(
   if (state.offerType) {
     params.set("offer_type", state.offerType);
   }
+  if (state.q) {
+    params.set("q", state.q);
+  }
   if (state.page > 1) {
     params.set("page", String(state.page));
   }
@@ -108,6 +122,7 @@ export function toAdminOfferListParams(state: PassportOffersListState): {
   status?: AdminOfferStatus;
   offer_type?: PartnerOfferType;
   organization_id?: string;
+  q?: string;
   page: number;
   page_size: number;
 } {
@@ -115,6 +130,7 @@ export function toAdminOfferListParams(state: PassportOffersListState): {
     status: state.status || undefined,
     offer_type: state.offerType || undefined,
     organization_id: state.organizationId || undefined,
+    q: state.q || undefined,
     page: state.page,
     page_size: state.pageSize,
   };

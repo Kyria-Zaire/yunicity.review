@@ -228,3 +228,37 @@ async def test_partner_offers_user_denied(
 async def test_partner_offers_auth_required(auth_client: AsyncClient) -> None:
     response = await auth_client.get(BASE)
     assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_partner_offers_summary(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    moderator = await rbac_user_factory("MODERATOR")
+    response = await auth_client.get(
+        f"{BASE}/summary?city=Reims",
+        headers=auth_header(moderator.access_token),
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["city"] == "Reims"
+    assert "total" in body
+    assert "pending_review" in body
+    assert "published" in body
+    assert "contributor_partners" in body
+    assert "expired_or_inactive" in body
+
+
+@pytest.mark.asyncio
+async def test_list_offers_title_search(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    moderator = await rbac_user_factory("MODERATOR")
+    response = await auth_client.get(
+        f"{BASE}?q=Café",
+        headers=auth_header(moderator.access_token),
+    )
+    assert response.status_code == 200
+    assert "items" in response.json()

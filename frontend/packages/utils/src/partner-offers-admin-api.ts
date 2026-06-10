@@ -5,6 +5,8 @@ import type {
   PartnerOfferAdminCreatePayload,
   PartnerOfferAdminListParams,
   PartnerOfferAdminListResponse,
+  PartnerOfferAdminSummaryParams,
+  PartnerOfferAdminSummaryResponse,
   PartnerOfferAdminRedemptionListParams,
   PartnerOfferAdminRedemptionListResponse,
   PartnerOfferAdminUpdatePayload,
@@ -28,6 +30,9 @@ function buildListQuery(params?: PartnerOfferAdminListParams): string {
   }
   if (params.organization_id) {
     search.set("organization_id", params.organization_id);
+  }
+  if (params.q) {
+    search.set("q", params.q);
   }
   if (params.page !== undefined) {
     search.set("page", String(params.page));
@@ -60,6 +65,19 @@ export class PartnerOffersAdminApi extends ApiClientBase {
   listVerifiedOrganizations(): Promise<VerifiedOrganizationListResponse> {
     return this.getJson<VerifiedOrganizationListResponse>(
       "/admin/partner-offers/verified-organizations",
+    );
+  }
+
+  getSummary(
+    params?: PartnerOfferAdminSummaryParams,
+  ): Promise<PartnerOfferAdminSummaryResponse> {
+    const search = new URLSearchParams();
+    if (params?.city) {
+      search.set("city", params.city);
+    }
+    const qs = search.toString();
+    return this.getJson<PartnerOfferAdminSummaryResponse>(
+      `/admin/partner-offers/summary${qs ? `?${qs}` : ""}`,
     );
   }
 

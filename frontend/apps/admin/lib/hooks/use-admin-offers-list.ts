@@ -3,6 +3,7 @@
 import { useAuth } from "@/lib/auth/auth-provider";
 import {
   parsePassportOffersSearchParams,
+  PASSPORT_OFFERS_DEFAULT_LIST_STATE,
   passportOffersStateToSearchParams,
   toAdminOfferListParams,
   type AdminOfferStatusFilter,
@@ -10,7 +11,7 @@ import {
   type PassportOffersListState,
 } from "@/lib/passport-offers-url";
 import type { AdminOfferListItem, VerifiedOrganizationOption } from "@yunicity/types";
-import { DEFAULT_ADMIN_OFFERS_CITY, isAuthError } from "@yunicity/utils";
+import { DEFAULT_ADMIN_OFFERS_CITY, isAuthError, passportOffersHasActiveFilters } from "@yunicity/utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -92,6 +93,19 @@ export function useAdminOffersList() {
     [replaceState, state],
   );
 
+  const setSearchQuery = useCallback(
+    (q: string) => {
+      replaceState({ ...state, q: q.trim(), page: 1 });
+    },
+    [replaceState, state],
+  );
+
+  const resetFilters = useCallback(() => {
+    replaceState({ ...PASSPORT_OFFERS_DEFAULT_LIST_STATE });
+  }, [replaceState]);
+
+  const hasActiveFilters = useMemo(() => passportOffersHasActiveFilters(state), [state]);
+
   const goToPage = useCallback(
     (nextPage: number) => {
       replaceState({ ...state, page: Math.max(1, nextPage) });
@@ -126,6 +140,9 @@ export function useAdminOffersList() {
     setStatusFilter,
     setOrganizationFilter,
     setOfferTypeFilter,
+    setSearchQuery,
+    resetFilters,
+    hasActiveFilters,
     goToPage,
   };
 }

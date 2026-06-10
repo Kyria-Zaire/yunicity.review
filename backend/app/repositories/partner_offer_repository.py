@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import distinct, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -20,11 +21,24 @@ from app.core.passport_constants import OfferRedemptionStatus, PartnerOfferStatu
 from app.models.organization import Organization, OrganizationMember
 from app.models.partner_profile import PartnerProfile
 from app.models.passport import PartnerOffer, PassportOfferRedemption
+from app.services.partner_offer_admin_queries import normalize_admin_offer_title_query
 
 _OFFER_MANAGER_ROLES = (
     OrganizationMemberRole.OWNER.value,
     OrganizationMemberRole.ADMIN.value,
 )
+
+
+@dataclass(frozen=True)
+class PartnerOfferAdminSummaryCounts:
+    total: int
+    pending_review: int
+    published: int
+    draft: int
+    rejected: int
+    archived: int
+    contributor_partners: int
+    expired_or_inactive: int
 
 
 class PartnerOfferRepository:
@@ -176,6 +190,7 @@ class PartnerOfferRepository:
         offer_status: str | None,
         offer_type: str | None,
         organization_id: uuid.UUID | None,
+        title_query: str | None,
         page: int,
         page_size: int,
     ) -> tuple[list[PartnerOffer], int]:
@@ -184,8 +199,57 @@ class PartnerOfferRepository:
             offer_type=offer_type,
             organization_id=organization_id,
             organization_ids=None,
+            title_query=title_query,
             page=page,
             page_size=page_size,
+        )
+
+    async def fetch_admin_summary(
+        self,
+        *,
+        city: str,
+        now: datetime | None = None,
+    ) -> PartnerOfferAdminSummaryCounts:
+        moment = now or datetime.now(UTC)
+        city_filter = Organization.city == city
+
+        async def _count(*extra: Any) -> int:
+            stmt = (
+                select(func.count())
+                .select_from(PartnerOffer)
+                .join(Organization, PartnerOffer.organization_id == Organization.id)
+                .where(city_filter, *extra)
+            )
+            return int((await self._session.execute(stmt)).scalar_one())
+
+        contributor_stmt = (
+            select(func.count(distinct(PartnerOffer.organization_id)))
+            .select_from(PartnerOffer)
+            .join(Organization, PartnerOffer.organization_id == Organization.id)
+            .where(city_filter)
+        )
+        contributor_partners = int((await self._session.execute(contributor_stmt)).scalar_one())
+
+        expired_filters = (
+            PartnerOffer.status == PartnerOfferStatus.PUBLISHED.value,
+            or_(
+                PartnerOffer.is_active.is_(False),
+                (PartnerOffer.valid_until.is_not(None)) & (PartnerOffer.valid_until < moment),
+                (PartnerOffer.valid_from.is_not(None)) & (PartnerOffer.valid_from > moment),
+            ),
+        )
+
+        return PartnerOfferAdminSummaryCounts(
+            total=await _count(),
+            pending_review=await _count(
+                PartnerOffer.status == PartnerOfferStatus.PENDING_REVIEW.value,
+            ),
+            published=await _count(PartnerOffer.status == PartnerOfferStatus.PUBLISHED.value),
+            draft=await _count(PartnerOffer.status == PartnerOfferStatus.DRAFT.value),
+            rejected=await _count(PartnerOffer.status == PartnerOfferStatus.REJECTED.value),
+            archived=await _count(PartnerOffer.status == PartnerOfferStatus.ARCHIVED.value),
+            contributor_partners=contributor_partners,
+            expired_or_inactive=await _count(*expired_filters),
         )
 
     async def list_for_organization_ids(
@@ -204,6 +268,7 @@ class PartnerOfferRepository:
             offer_type=offer_type,
             organization_id=None,
             organization_ids=organization_ids,
+            title_query=None,
             page=page,
             page_size=page_size,
         )
@@ -219,6 +284,7 @@ class PartnerOfferRepository:
             offer_type=None,
             organization_id=None,
             organization_ids=None,
+            title_query=None,
             page=page,
             page_size=page_size,
         )
@@ -230,6 +296,7 @@ class PartnerOfferRepository:
         offer_type: str | None,
         organization_id: uuid.UUID | None,
         organization_ids: list[uuid.UUID] | None,
+        title_query: str | None,
         page: int,
         page_size: int,
     ) -> tuple[list[PartnerOffer], int]:
@@ -242,6 +309,9 @@ class PartnerOfferRepository:
             filters.append(PartnerOffer.organization_id == organization_id)
         if organization_ids is not None:
             filters.append(PartnerOffer.organization_id.in_(organization_ids))
+        normalized_title = normalize_admin_offer_title_query(title_query)
+        if normalized_title:
+            filters.append(PartnerOffer.title.ilike(f"%{normalized_title}%"))
 
         count_stmt = select(func.count()).select_from(PartnerOffer)
         if filters:
