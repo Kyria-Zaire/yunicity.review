@@ -105,7 +105,7 @@ export function buildStaffListBackPath(searchParams: URLSearchParams | null): st
     return "/staff";
   }
   const params = new URLSearchParams();
-  for (const key of ["role", "active", "page", "page_size"] as const) {
+  for (const key of ["role", "status", "active", "page", "page_size"] as const) {
     const value = searchParams.get(key);
     if (value) {
       params.set(key, value);

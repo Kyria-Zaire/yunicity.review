@@ -107,6 +107,7 @@ export type {
   AdminStaffActionListParams,
   AdminStaffActionListResponse,
   AdminStaffActionType,
+  AdminStaffAdminSummaryResponse,
   AdminStaffAssignRolePayload,
   AdminStaffDetailResponse,
   AdminStaffReasonPayload,

@@ -12,20 +12,6 @@ import { isAuthError } from "@yunicity/utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-export interface AdminStaffKpiSummary {
-  total: number;
-  active: number;
-  suspended: number;
-  superAdmins: number;
-}
-
-const EMPTY_KPIS: AdminStaffKpiSummary = {
-  total: 0,
-  active: 0,
-  suspended: 0,
-  superAdmins: 0,
-};
-
 export function useAdminStaffList() {
   const { adminStaffApi } = useAuth();
   const router = useRouter();
@@ -37,9 +23,7 @@ export function useAdminStaffList() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(state.pageSize);
-  const [kpis, setKpis] = useState<AdminStaffKpiSummary>(EMPTY_KPIS);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingKpis, setIsLoadingKpis] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const replaceState = useCallback(
@@ -50,28 +34,6 @@ export function useAdminStaffList() {
     },
     [router],
   );
-
-  const loadKpis = useCallback(async () => {
-    setIsLoadingKpis(true);
-    try {
-      const [all, active, suspended, superAdmins] = await Promise.all([
-        adminStaffApi.listStaff({ page: 1, page_size: 1 }),
-        adminStaffApi.listStaff({ page: 1, page_size: 1, is_active: true }),
-        adminStaffApi.listStaff({ page: 1, page_size: 1, is_active: false }),
-        adminStaffApi.listStaff({ page: 1, page_size: 1, role: "SUPER_ADMIN" }),
-      ]);
-      setKpis({
-        total: all.total,
-        active: active.total,
-        suspended: suspended.total,
-        superAdmins: superAdmins.total,
-      });
-    } catch {
-      setKpis(EMPTY_KPIS);
-    } finally {
-      setIsLoadingKpis(false);
-    }
-  }, [adminStaffApi]);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -96,16 +58,12 @@ export function useAdminStaffList() {
   }, [adminStaffApi, state]);
 
   useEffect(() => {
-    void loadKpis();
-  }, [loadKpis]);
-
-  useEffect(() => {
     void load();
   }, [load]);
 
   const reload = useCallback(async () => {
-    await Promise.all([loadKpis(), load()]);
-  }, [load, loadKpis]);
+    await load();
+  }, [load]);
 
   const setRoleFilter = useCallback(
     (role: AdminStaffListState["role"]) => {
@@ -114,12 +72,21 @@ export function useAdminStaffList() {
     [replaceState, state],
   );
 
-  const setActiveFilter = useCallback(
-    (active: AdminStaffListState["active"]) => {
-      replaceState({ ...state, active, page: 1 });
+  const setStatusFilter = useCallback(
+    (status: AdminStaffListState["status"]) => {
+      replaceState({ ...state, status, page: 1 });
     },
     [replaceState, state],
   );
+
+  const resetFilters = useCallback(() => {
+    replaceState({
+      role: "",
+      status: "",
+      page: 1,
+      pageSize: state.pageSize,
+    });
+  }, [replaceState, state.pageSize]);
 
   const goToPage = useCallback(
     (nextPage: number) => {
@@ -137,13 +104,12 @@ export function useAdminStaffList() {
     page,
     pageSize,
     totalPages,
-    kpis,
     isLoading,
-    isLoadingKpis,
     error,
     reload,
     setRoleFilter,
-    setActiveFilter,
+    setStatusFilter,
+    resetFilters,
     goToPage,
   };
 }

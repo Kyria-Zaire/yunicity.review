@@ -104,6 +104,37 @@ async def test_super_admin_can_list_staff(
     assert "hashed_password" not in response.text
 
 
+async def test_super_admin_can_get_staff_summary(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    await _create_staff_target(auth_client)
+    super_admin = await rbac_user_factory("SUPER_ADMIN")
+    response = await auth_client.get(
+        f"{BASE}/summary",
+        headers=auth_header(super_admin.access_token),
+    )
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["total"] >= 1
+    assert data["active"] >= 1
+    assert "generated_at" in data
+    assert "dominant_role" in data
+    assert "hashed_password" not in response.text
+
+
+async def test_moderator_cannot_get_staff_summary(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    moderator = await rbac_user_factory("MODERATOR")
+    response = await auth_client.get(
+        f"{BASE}/summary",
+        headers=auth_header(moderator.access_token),
+    )
+    assert response.status_code == 403
+
+
 async def test_moderator_cannot_list_staff(
     auth_client: AsyncClient,
     rbac_user_factory: RbacUserFactory,

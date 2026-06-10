@@ -32,6 +32,21 @@ class AdminStaffListResponse(BaseModel):
     page_size: int = Field(ge=1, le=STAFF_ADMIN_LIST_PAGE_SIZE_MAX)
 
 
+class AdminStaffAdminSummaryResponse(BaseModel):
+    """Aggregated platform access metrics (STAFF-V10-01)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    generated_at: datetime
+    total: int = Field(ge=0)
+    active: int = Field(ge=0)
+    suspended: int = Field(ge=0)
+    super_admins: int = Field(ge=0)
+    city_admins: int = Field(ge=0)
+    moderators: int = Field(ge=0)
+    dominant_role: str | None = None
+
+
 class AdminStaffDetailResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,6 +24,7 @@ from app.schemas.admin_staff import (
     AdminStaffActionActorSummary,
     AdminStaffActionListItem,
     AdminStaffActionListResponse,
+    AdminStaffAdminSummaryResponse,
     AdminStaffDetailResponse,
     AdminStaffListItem,
     AdminStaffListResponse,
@@ -35,6 +37,24 @@ class AdminStaffService:
         self._session = session
         self._repo = AdminStaffRepository(session)
         self._rbac = RbacService(session)
+
+    async def get_staff_admin_summary(self) -> AdminStaffAdminSummaryResponse:
+        counts = await self._repo.fetch_admin_summary()
+        dominant_role = (
+            counts.dominant_role
+            if counts.dominant_role in STAFF_PLATFORM_ROLE_KEYS
+            else None
+        )
+        return AdminStaffAdminSummaryResponse(
+            generated_at=datetime.now(UTC),
+            total=counts.total,
+            active=counts.active,
+            suspended=counts.suspended,
+            super_admins=counts.super_admins,
+            city_admins=counts.city_admins,
+            moderators=counts.moderators,
+            dominant_role=dominant_role,
+        )
 
     async def list_staff(
         self,

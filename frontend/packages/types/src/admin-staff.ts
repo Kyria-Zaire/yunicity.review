@@ -31,6 +31,17 @@ export interface AdminStaffListResponse {
   page_size: number;
 }
 
+export interface AdminStaffAdminSummaryResponse {
+  generated_at: string;
+  total: number;
+  active: number;
+  suspended: number;
+  super_admins: number;
+  city_admins: number;
+  moderators: number;
+  dominant_role: AdminStaffPlatformRole | string | null;
+}
+
 export interface AdminStaffListParams {
   role?: string;
   is_active?: boolean;

@@ -1,6 +1,7 @@
 import type {
   AdminStaffActionListParams,
   AdminStaffActionListResponse,
+  AdminStaffAdminSummaryResponse,
   AdminStaffAssignRolePayload,
   AdminStaffDetailResponse,
   AdminStaffListParams,
@@ -48,6 +49,10 @@ function buildStaffActionsQuery(params?: AdminStaffActionListParams): string {
 }
 
 export class AdminStaffApi extends ApiClientBase {
+  getSummary(): Promise<AdminStaffAdminSummaryResponse> {
+    return this.getJson<AdminStaffAdminSummaryResponse>("/admin/staff/summary");
+  }
+
   listStaff(params?: AdminStaffListParams): Promise<AdminStaffListResponse> {
     return this.getJson<AdminStaffListResponse>(`/admin/staff${buildStaffListQuery(params)}`);
   }

@@ -6,7 +6,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
@@ -15,6 +15,7 @@ from app.models.rbac import Permission, Role, RolePermission, UserRole
 from app.models.staff_admin_action import StaffAdminAction
 from app.models.user import User
 from app.models.user_profile import UserProfile
+from app.services.admin_staff_queries import resolve_dominant_staff_role
 
 
 @dataclass(frozen=True)
@@ -22,6 +23,17 @@ class AdminStaffActionListRow:
     action: StaffAdminAction
     actor: User | None
     actor_profile: UserProfile | None
+
+
+@dataclass(frozen=True)
+class AdminStaffAdminSummaryCounts:
+    total: int
+    active: int
+    suspended: int
+    super_admins: int
+    city_admins: int
+    moderators: int
+    dominant_role: str | None
 
 
 class AdminStaffRepository:
@@ -47,15 +59,8 @@ class AdminStaffRepository:
         count = int((await self._session.execute(stmt)).scalar_one())
         return count > 0
 
-    async def list_staff_users(
-        self,
-        *,
-        role: str | None,
-        is_active: bool | None,
-        page: int,
-        page_size: int,
-    ) -> tuple[list[User], int]:
-        staff_user_ids = (
+    def _staff_user_ids_subquery(self) -> Select[tuple[uuid.UUID]]:
+        return (
             select(UserRole.user_id)
             .join(Role, UserRole.role_id == Role.id)
             .where(
@@ -66,6 +71,13 @@ class AdminStaffRepository:
             .distinct()
         )
 
+    def _build_staff_user_filters(
+        self,
+        *,
+        role: str | None,
+        is_active: bool | None,
+    ) -> list[Any]:
+        staff_user_ids = self._staff_user_ids_subquery()
         filters: list[Any] = [User.id.in_(staff_user_ids)]
         if role is not None:
             role_user_ids = (
@@ -81,7 +93,55 @@ class AdminStaffRepository:
             filters.append(User.id.in_(role_user_ids))
         if is_active is not None:
             filters.append(User.is_active.is_(is_active))
+        return filters
 
+    async def count_staff_users(
+        self,
+        *,
+        role: str | None = None,
+        is_active: bool | None = None,
+    ) -> int:
+        filters = self._build_staff_user_filters(role=role, is_active=is_active)
+        count_stmt = select(func.count()).select_from(User).where(*filters)
+        return int((await self._session.execute(count_stmt)).scalar_one())
+
+    async def fetch_role_assignment_counts(self) -> dict[str, int]:
+        stmt = (
+            select(Role.key, func.count(func.distinct(UserRole.user_id)))
+            .select_from(UserRole)
+            .join(Role, UserRole.role_id == Role.id)
+            .where(
+                Role.key.in_(STAFF_PLATFORM_ROLE_KEYS),
+                UserRole.scope_type.is_(None),
+                UserRole.scope_id.is_(None),
+            )
+            .group_by(Role.key)
+        )
+        rows = (await self._session.execute(stmt)).all()
+        return {str(row[0]): int(row[1]) for row in rows if int(row[1]) > 0}
+
+    async def fetch_admin_summary(self) -> AdminStaffAdminSummaryCounts:
+        role_counts = await self.fetch_role_assignment_counts()
+        dominant_role = resolve_dominant_staff_role(role_counts)
+        return AdminStaffAdminSummaryCounts(
+            total=await self.count_staff_users(),
+            active=await self.count_staff_users(is_active=True),
+            suspended=await self.count_staff_users(is_active=False),
+            super_admins=await self.count_staff_users(role="SUPER_ADMIN"),
+            city_admins=await self.count_staff_users(role="CITY_ADMIN"),
+            moderators=await self.count_staff_users(role="MODERATOR"),
+            dominant_role=dominant_role,
+        )
+
+    async def list_staff_users(
+        self,
+        *,
+        role: str | None,
+        is_active: bool | None,
+        page: int,
+        page_size: int,
+    ) -> tuple[list[User], int]:
+        filters = self._build_staff_user_filters(role=role, is_active=is_active)
         count_stmt = select(func.count()).select_from(User).where(*filters)
         total = int((await self._session.execute(count_stmt)).scalar_one())
 

@@ -8,7 +8,7 @@ import {
 
 export interface AdminStaffListState {
   role: AdminStaffRoleFilter;
-  active: AdminStaffActiveFilter;
+  status: AdminStaffActiveFilter;
   page: number;
   pageSize: number;
 }
@@ -22,7 +22,7 @@ function parseRole(raw: string | null): AdminStaffRoleFilter {
   return "";
 }
 
-function parseActive(raw: string | null): AdminStaffActiveFilter {
+function parseStatus(raw: string | null): AdminStaffActiveFilter {
   if (raw === "active" || raw === "suspended") {
     return raw;
   }
@@ -43,9 +43,12 @@ function parsePageSize(raw: string | null): number {
 }
 
 export function parseStaffSearchParams(params: URLSearchParams): AdminStaffListState {
+  const status =
+    parseStatus(params.get("status")) || parseStatus(params.get("active"));
+
   return {
     role: parseRole(params.get("role")),
-    active: parseActive(params.get("active")),
+    status,
     page: parsePage(params.get("page")),
     pageSize: parsePageSize(params.get("page_size")),
   };
@@ -56,8 +59,8 @@ export function staffStateToSearchParams(state: AdminStaffListState): URLSearchP
   if (state.role) {
     params.set("role", state.role);
   }
-  if (state.active) {
-    params.set("active", state.active);
+  if (state.status) {
+    params.set("status", state.status);
   }
   if (state.page > 1) {
     params.set("page", String(state.page));
@@ -77,7 +80,7 @@ export function toAdminStaffListParams(state: AdminStaffListState): {
   return {
     role: state.role || undefined,
     is_active:
-      state.active === "active" ? true : state.active === "suspended" ? false : undefined,
+      state.status === "active" ? true : state.status === "suspended" ? false : undefined,
     page: state.page,
     page_size: state.pageSize,
   };

@@ -1,43 +1,61 @@
-import type { AdminStaffKpiSummary } from "@/lib/hooks/use-admin-staff-list";
+import type { StaffKpiCard } from "@yunicity/utils";
+import {
+  Crown,
+  KeyRound,
+  Layers,
+  ShieldAlert,
+  UserCheck,
+} from "lucide-react";
 
-interface StaffKpiStripProps {
-  kpis: AdminStaffKpiSummary;
-  filteredTotal: number;
-  isLoading: boolean;
+function KpiIcon({ id }: { id: string }) {
+  const className = "h-4 w-4";
+  switch (id) {
+    case "total":
+      return <Layers className={className} aria-hidden />;
+    case "active":
+      return <UserCheck className={className} aria-hidden />;
+    case "suspended":
+      return <ShieldAlert className={className} aria-hidden />;
+    case "super_admins":
+      return <Crown className={className} aria-hidden />;
+    case "dominant_role":
+      return <KeyRound className={className} aria-hidden />;
+    default:
+      return <Layers className={className} aria-hidden />;
+  }
 }
 
-export function StaffKpiStrip({ kpis, filteredTotal, isLoading }: StaffKpiStripProps) {
-  const display = (value: number) => (isLoading ? "…" : value);
+export function StaffKpiStrip({ cards }: { cards: StaffKpiCard[] }) {
+  if (cards.length === 0) {
+    return null;
+  }
 
   return (
-    <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-        <dt className="text-xs font-medium text-stone-500">Total staff</dt>
-        <dd className="mt-1 text-2xl font-semibold tabular-nums text-stone-900">
-          {display(kpis.total)}
-        </dd>
-        <dd className="mt-0.5 text-[10px] text-stone-400">
-          {filteredTotal} résultat{filteredTotal > 1 ? "s" : ""} filtré{filteredTotal > 1 ? "s" : ""}
-        </dd>
-      </div>
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3 shadow-sm">
-        <dt className="text-xs font-medium text-emerald-900">Actifs</dt>
-        <dd className="mt-1 text-2xl font-semibold tabular-nums text-emerald-950">
-          {display(kpis.active)}
-        </dd>
-      </div>
-      <div className="rounded-xl border border-rose-200 bg-rose-50/60 px-4 py-3 shadow-sm">
-        <dt className="text-xs font-medium text-rose-900">Suspendus</dt>
-        <dd className="mt-1 text-2xl font-semibold tabular-nums text-rose-950">
-          {display(kpis.suspended)}
-        </dd>
-      </div>
-      <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
-        <dt className="text-xs font-medium text-stone-500">Super admins</dt>
-        <dd className="mt-1 text-2xl font-semibold tabular-nums text-stone-900">
-          {display(kpis.superAdmins)}
-        </dd>
-      </div>
-    </dl>
+    <section
+      className="grid grid-cols-2 gap-2 lg:grid-cols-5"
+      aria-label="Indicateurs gouvernance staff"
+    >
+      {cards.map((card) => (
+        <article
+          key={card.id}
+          className="rounded-xl border border-stone-200/80 bg-white px-3 py-2.5 shadow-sm"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-medium text-stone-500">{card.label}</p>
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-yunicity-primary-soft text-yunicity-primary">
+              <KpiIcon id={card.id} />
+            </span>
+          </div>
+          <p
+            className={`mt-1 font-bold tracking-tight text-stone-950 tabular-nums ${
+              card.id === "dominant_role" ? "text-base leading-snug" : "text-xl"
+            }`}
+          >
+            {card.displayValue}
+          </p>
+          <p className="text-[11px] text-stone-500">{card.hint}</p>
+        </article>
+      ))}
+    </section>
   );
 }

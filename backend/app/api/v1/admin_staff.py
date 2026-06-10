@@ -19,6 +19,7 @@ from app.db.session import get_db
 from app.models.user import User
 from app.schemas.admin_staff import (
     AdminStaffActionListResponse,
+    AdminStaffAdminSummaryResponse,
     AdminStaffAssignRoleRequest,
     AdminStaffDetailResponse,
     AdminStaffListResponse,
@@ -51,6 +52,15 @@ async def list_staff_admin(
         page=page,
         page_size=page_size,
     )
+
+
+@router.get("/summary", response_model=AdminStaffAdminSummaryResponse)
+async def get_staff_admin_summary(
+    current_user: Annotated[User, Depends(_system_admin_guard)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> AdminStaffAdminSummaryResponse:
+    _ = current_user
+    return await AdminStaffService(session).get_staff_admin_summary()
 
 
 @router.get("/{user_id}", response_model=AdminStaffDetailResponse)
