@@ -112,7 +112,7 @@ describe("buildStaffNextAction", () => {
     expect(action.href).toContain("status=suspended");
   });
 
-  it("routes moderator gap to role filter", () => {
+  it("routes moderator gap to roster without role filter", () => {
     const action = buildStaffNextAction(
       buildStaffMetricsFromSummary({
         ...baseSummary,
@@ -120,10 +120,14 @@ describe("buildStaffNextAction", () => {
         active: 2,
         super_admins: 2,
         city_admins: 1,
+        moderators: 0,
       }),
     );
-    expect(action.href).toContain("role=MODERATOR");
-    expect(action.ctaLabel).toContain("modérateurs");
+    expect(action.href).toBe("/staff");
+    expect(action.ctaLabel).toBe("Choisir un membre du staff");
+    expect(action.description).toBe(
+      "Sélectionnez un membre du roster puis attribuez le rôle depuis sa fiche.",
+    );
   });
 
   it("routes empty roster to staff refresh", () => {
@@ -189,7 +193,10 @@ describe("buildStaffOrganizationalHealth", () => {
 describe("staffRoleFilteredEmptyMessage", () => {
   it("returns moderator-specific copy", () => {
     const message = staffRoleFilteredEmptyMessage("MODERATOR");
-    expect(message.title).toContain("modérateur");
+    expect(message.title).toBe("Aucun modérateur assigné.");
+    expect(message.description).toBe(
+      "Attribuez ce rôle depuis la fiche d'un membre staff.",
+    );
   });
 
   it("returns city admin-specific copy", () => {

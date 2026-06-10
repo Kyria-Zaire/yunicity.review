@@ -150,9 +150,10 @@ export function buildStaffNextAction(metrics: StaffMetrics): StaffNextAction {
     return {
       id: "moderator",
       title: "Attribuer un rôle modérateur.",
-      description: "Sélectionnez un membre puis attribuez le rôle depuis sa fiche.",
-      ctaLabel: "Voir les modérateurs",
-      href: buildStaffListPath(new URLSearchParams({ role: "MODERATOR" })),
+      description:
+        "Sélectionnez un membre du roster puis attribuez le rôle depuis sa fiche.",
+      ctaLabel: "Choisir un membre du staff",
+      href: "/staff",
     };
   }
 
