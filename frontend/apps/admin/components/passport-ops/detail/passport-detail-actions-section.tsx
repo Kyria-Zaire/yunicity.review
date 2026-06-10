@@ -36,7 +36,10 @@ export function PassportDetailActionsSection({
 
   if (!canModifyPassportStatus(status)) {
     return (
-      <section className="rounded-2xl border border-stone-200 bg-stone-50/80 px-4 py-3 text-sm text-stone-600">
+      <section
+        id="actions"
+        className="rounded-2xl border border-stone-200 bg-stone-50/80 px-4 py-3 text-sm text-stone-600"
+      >
         Statut non modifiable en V1.
       </section>
     );
@@ -54,7 +57,7 @@ export function PassportDetailActionsSection({
   }
 
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+    <section id="actions" className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
         Actions staff
       </h2>
