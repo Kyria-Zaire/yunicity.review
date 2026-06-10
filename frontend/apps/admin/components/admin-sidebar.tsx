@@ -18,7 +18,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const PARTNER_NAV = [
-  { href: "/partner-scan", label: "Valider un Passport", icon: QrCode },
+  { href: "/partner-scan", label: "Scanner Passport", icon: QrCode },
   { href: "/partner-offers", label: "Mes offres pour la ville", icon: Tag },
 ] as const;
 

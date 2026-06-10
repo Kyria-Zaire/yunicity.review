@@ -20,7 +20,7 @@ describe("getVisibleSidebarNavLabels", () => {
     const { partner, staff } = getVisibleSidebarNavLabels(true);
 
     expect(partner).toEqual([]);
-    expect(partner).not.toContain("Valider un Passport");
+    expect(partner).not.toContain("Scanner Passport");
     expect(partner).not.toContain("Mes offres pour la ville");
     expect(staff).toContain("Scanner Passport");
     expect(staff).toContain("Offres");
@@ -29,7 +29,7 @@ describe("getVisibleSidebarNavLabels", () => {
   it("non-staff : bloc partenaire présent, pas de navigation staff", () => {
     const { partner, staff } = getVisibleSidebarNavLabels(false);
 
-    expect(partner).toEqual(["Valider un Passport", "Mes offres pour la ville"]);
+    expect(partner).toEqual(["Scanner Passport", "Mes offres pour la ville"]);
     expect(staff).toEqual([]);
   });
 });

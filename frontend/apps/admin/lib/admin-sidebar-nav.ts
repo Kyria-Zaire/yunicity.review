@@ -1,5 +1,5 @@
 export const PARTNER_NAV_LABELS = [
-  "Valider un Passport",
+  "Scanner Passport",
   "Mes offres pour la ville",
 ] as const;
 

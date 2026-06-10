@@ -1423,6 +1423,20 @@ export {
 } from "./events-featured-carousel";
 export { ScanApi, createScanApi } from "./scan-api";
 export {
+  PARTNER_SCAN_CAMERA_NOTICE,
+  buildPartnerScanKpiCards,
+  buildPartnerScanSessionKpis,
+  buildPartnerScanNextAction,
+  buildPartnerScanSignal,
+  derivePartnerScanPhase,
+  formatPartnerScanLastValidation,
+  type PartnerScanInputMode,
+  type PartnerScanKpiCard,
+  type PartnerScanNextAction,
+  type PartnerScanPhase,
+  type PartnerScanSignal,
+} from "./partner-scan-command";
+export {
   NotificationsApi,
   createNotificationsApi,
 } from "./notifications-api";
@@ -2098,7 +2112,11 @@ export {
   isEventWithinDays,
   mockLocalWeather,
 } from "./home-labels";
-export { SCAN_ERROR_MESSAGES, humanizeScanError } from "./scan-labels";
+export {
+  SCAN_ERROR_MESSAGES,
+  humanizeScanError,
+  humanizeScanErrorCode,
+} from "./scan-labels";
 export { resolveNotificationDeeplink } from "./notification-deeplink";
 export type { NotificationPlatform } from "./notification-deeplink";
 export {
