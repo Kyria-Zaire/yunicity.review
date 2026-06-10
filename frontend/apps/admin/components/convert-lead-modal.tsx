@@ -49,13 +49,17 @@ export function ConvertLeadModal({
       aria-modal="true"
       aria-labelledby="convert-lead-title"
     >
-      <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-xl">
-        <h2 id="convert-lead-title" className="text-lg font-semibold">
+      <div className="w-full max-w-lg rounded-2xl border border-stone-200 bg-white p-6 shadow-xl">
+        <h2 id="convert-lead-title" className="text-lg font-semibold text-stone-950">
           Convertir « {lead.name} »
         </h2>
+        <p className="mt-2 text-sm leading-relaxed text-stone-700">
+          Le prospect deviendra une organisation partenaire Yunicity. L&apos;organisation restera
+          privée jusqu&apos;à validation par l&apos;équipe.
+        </p>
         <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">
-          Les organizations converties restent <strong>pending</strong> et{" "}
-          <strong>private</strong> jusqu&apos;à validation modération.
+          Statut attendu après conversion : <strong>en attente de validation</strong> — pas de
+          visibilité publique immédiate.
         </p>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
