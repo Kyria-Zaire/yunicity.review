@@ -6,6 +6,8 @@ import type { PartnerLead } from "@yunicity/types";
 import {
   PARTNER_LEAD_SOURCE_LABELS,
   organizationTypeLabel,
+  partnerLeadHeroConvertCtaLabel,
+  partnerLeadIsConverted,
 } from "@yunicity/utils";
 import { ArrowLeft, Pencil, UserPlus } from "lucide-react";
 import Link from "next/link";
@@ -25,6 +27,10 @@ export function PartnerLead360Hero({
   onEdit,
   onConvert,
 }: PartnerLead360HeroProps) {
+  const isConverted = partnerLeadIsConverted(lead);
+  const convertCtaLabel = partnerLeadHeroConvertCtaLabel(lead);
+  const showConvertReason = !canConvert && convertDisabledReason && !isConverted && lead.status !== "converted";
+
   return (
     <header className="space-y-4">
       <Link
@@ -89,12 +95,12 @@ export function PartnerLead360Hero({
             className="inline-flex items-center gap-2 rounded-xl bg-yunicity-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45"
           >
             <UserPlus className="h-4 w-4" aria-hidden />
-            Convertir
+            {convertCtaLabel}
           </button>
         </div>
       </div>
 
-      {!canConvert && convertDisabledReason ? (
+      {showConvertReason ? (
         <p className="text-sm text-amber-800" role="status">
           {convertDisabledReason}
         </p>

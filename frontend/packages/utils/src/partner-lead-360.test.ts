@@ -8,6 +8,7 @@ import {
   buildPartnerLeadTimeline,
   partnerLeadCanConvert,
   partnerLeadConvertDisabledReason,
+  partnerLeadHeroConvertCtaLabel,
   partnerLeadReadiness,
   partnerLeadTimelineEmptyCopy,
   partnerLeadTimelineIsEmpty,
@@ -55,13 +56,24 @@ describe("buildPartnerLeadRelationSignal", () => {
 
   it("mappe le statut signed", () => {
     const signal = buildPartnerLeadRelationSignal(lead({ status: "signed" }));
-    expect(signal.title).toBe("Prêt à rejoindre le réseau");
+    expect(signal.title).toBe("Accord obtenu");
+  });
+
+  it("mappe le statut converted", () => {
+    const signal = buildPartnerLeadRelationSignal(lead({ status: "converted" }));
+    expect(signal.title).toBe("Partenaire activé");
   });
 });
 
 describe("partnerLeadReadiness", () => {
   it("retourne 75 % pour RDV planifié", () => {
     expect(partnerLeadReadiness(lead({ status: "meeting_scheduled" })).percent).toBe(75);
+  });
+
+  it("retourne le parcours complété pour signé", () => {
+    const readiness = partnerLeadReadiness(lead({ status: "signed" }));
+    expect(readiness.label).toBe("Parcours complété");
+    expect(readiness.hint).toContain("activation");
   });
 
   it("retourne 0 % pour rejeté", () => {
@@ -82,9 +94,9 @@ describe("buildPartnerLead360Action", () => {
     expect(action.action).toBe("edit");
   });
 
-  it("propose la conversion pour signé", () => {
+  it("propose l'intégration pour signé", () => {
     const action = buildPartnerLead360Action(lead({ status: "signed" }), NOW);
-    expect(action.ctaLabel).toBe("Convertir");
+    expect(action.ctaLabel).toBe("Ajouter au réseau Yunicity");
     expect(action.action).toBe("convert");
   });
 
@@ -107,6 +119,11 @@ describe("partnerLeadCanConvert", () => {
     expect(partnerLeadConvertDisabledReason(lead({ city: null, status: "signed" }))).toContain(
       "ville",
     );
+  });
+
+  it("refuse si le prospect n'est pas signé", () => {
+    expect(partnerLeadCanConvert(lead({ status: "interested" }))).toBe(false);
+    expect(partnerLeadConvertDisabledReason(lead({ status: "interested" }))).toContain("signé");
   });
 
   it("refuse si déjà converti", () => {
@@ -135,6 +152,34 @@ describe("buildPartnerLeadTimeline", () => {
     );
     expect(events.some((e) => e.kind === "contact")).toBe(true);
     expect(events.some((e) => e.kind === "notes")).toBe(true);
+  });
+
+  it("libelle l'intégration réseau quand converted_at existe", () => {
+    const events = buildPartnerLeadTimeline(
+      lead({
+        status: "converted",
+        converted_at: "2026-06-04T10:00:00Z",
+        converted_organization_id: "org-1",
+      }),
+    );
+    const integration = events.find((e) => e.kind === "conversion");
+    expect(integration?.label).toBe("Partenaire intégré");
+    expect(integration?.detail).toContain("Café du Parc");
+    expect(integration?.at).toBe("2026-06-04T10:00:00Z");
+  });
+});
+
+describe("partnerLeadHeroConvertCtaLabel", () => {
+  it("adapte le CTA hero selon le statut", () => {
+    expect(partnerLeadHeroConvertCtaLabel(lead({ status: "signed" }))).toBe(
+      "Ajouter au réseau Yunicity",
+    );
+    expect(partnerLeadHeroConvertCtaLabel(lead({ status: "converted" }))).toBe(
+      "Partenaire activé",
+    );
+    expect(partnerLeadHeroConvertCtaLabel(lead({ status: "interested" }))).toBe(
+      "Disponible après accord",
+    );
   });
 });
 

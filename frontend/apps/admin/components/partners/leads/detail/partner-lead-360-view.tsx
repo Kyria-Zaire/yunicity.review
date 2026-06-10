@@ -1,10 +1,12 @@
 "use client";
 
-import { ConvertLeadModal } from "@/components/convert-lead-modal";
 import { PartnerLead360ActionPanel } from "@/components/partners/leads/detail/partner-lead-360-action";
 import { PartnerLead360EditModal } from "@/components/partners/leads/detail/partner-lead-360-edit-modal";
 import { PartnerLead360Hero } from "@/components/partners/leads/detail/partner-lead-360-hero";
 import { PartnerLeadConversionPanel } from "@/components/partners/leads/detail/partner-lead-conversion-panel";
+import { PartnerLeadConversionReadinessPanel } from "@/components/partners/leads/detail/partner-lead-conversion-readiness";
+import { PartnerLeadConversionSuccess } from "@/components/partners/leads/detail/partner-lead-conversion-success";
+import { PartnerLeadGuidedConversionModal } from "@/components/partners/leads/detail/partner-lead-guided-conversion-modal";
 import { PartnerLeadInfoPanel } from "@/components/partners/leads/detail/partner-lead-info-panel";
 import { PartnerLeadReadinessBar } from "@/components/partners/leads/detail/partner-lead-readiness";
 import { PartnerLeadRelationSignal } from "@/components/partners/leads/detail/partner-lead-relation-signal";
@@ -13,6 +15,7 @@ import { useAuth } from "@/lib/auth/auth-provider";
 import type { ConvertLeadPayload, PartnerLead, PartnerLeadUpdatePayload } from "@yunicity/types";
 import {
   buildPartnerLead360Action,
+  buildPartnerLeadConversionReadiness,
   buildPartnerLeadRelationSignal,
   buildPartnerLeadTimeline,
   isAuthError,
@@ -33,6 +36,9 @@ export function PartnerLead360View({ lead, onLeadUpdated }: PartnerLead360ViewPr
   const { user, partnerLeadsApi } = useAuth();
   const [showEdit, setShowEdit] = useState(false);
   const [showConvert, setShowConvert] = useState(false);
+  const [conversionSuccessOrgId, setConversionSuccessOrgId] = useState<string | null | undefined>(
+    undefined,
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -40,6 +46,7 @@ export function PartnerLead360View({ lead, onLeadUpdated }: PartnerLead360ViewPr
   const action = useMemo(() => buildPartnerLead360Action(lead), [lead]);
   const timeline = useMemo(() => buildPartnerLeadTimeline(lead), [lead]);
   const readiness = useMemo(() => partnerLeadReadiness(lead), [lead]);
+  const conversionReadiness = useMemo(() => buildPartnerLeadConversionReadiness(lead), [lead]);
   const timelineMinimal = useMemo(() => partnerLeadTimelineIsEmpty(lead), [lead]);
   const canConvert = partnerLeadCanConvert(lead);
   const convertReason = partnerLeadConvertDisabledReason(lead);
@@ -62,6 +69,7 @@ export function PartnerLead360View({ lead, onLeadUpdated }: PartnerLead360ViewPr
     const updated = await partnerLeadsApi.convertPartnerLead(lead.id, payload);
     onLeadUpdated(updated);
     setShowConvert(false);
+    setConversionSuccessOrgId(updated.converted_organization_id);
   }
 
   return (
@@ -75,6 +83,8 @@ export function PartnerLead360View({ lead, onLeadUpdated }: PartnerLead360ViewPr
       />
 
       <PartnerLeadRelationSignal signal={signal} />
+
+      <PartnerLeadConversionReadinessPanel readiness={conversionReadiness} />
 
       <PartnerLead360ActionPanel
         action={action}
@@ -111,11 +121,18 @@ export function PartnerLead360View({ lead, onLeadUpdated }: PartnerLead360ViewPr
       />
 
       {showConvert && user && !partnerLeadIsConverted(lead) ? (
-        <ConvertLeadModal
+        <PartnerLeadGuidedConversionModal
           lead={lead}
-          defaultOwnerUserId={user.id}
+          currentUser={user}
           onClose={() => setShowConvert(false)}
           onSubmit={handleConvert}
+        />
+      ) : null}
+
+      {conversionSuccessOrgId !== undefined ? (
+        <PartnerLeadConversionSuccess
+          lead={lead}
+          onDismiss={() => setConversionSuccessOrgId(undefined)}
         />
       ) : null}
     </div>

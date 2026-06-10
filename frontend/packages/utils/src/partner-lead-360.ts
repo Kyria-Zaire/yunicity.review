@@ -2,6 +2,11 @@
 
 import type { PartnerLead, PartnerLeadStatus } from "@yunicity/types";
 
+import {
+  partnerLeadGuidedCanConvert,
+  partnerLeadGuidedConvertDisabledReason,
+} from "./partner-lead-guided-conversion";
+
 export type PartnerLeadRelationSignalType =
   | "info"
   | "active"
@@ -62,13 +67,13 @@ const READINESS_BY_STATUS: Record<PartnerLeadStatus, PartnerLeadReadiness> = {
   },
   signed: {
     percent: 100,
-    label: "Prêt pour le réseau",
-    hint: "Les derniers éléments sont à finaliser.",
+    label: "Parcours complété",
+    hint: "Le dossier est prêt pour son activation.",
   },
   converted: {
     percent: 100,
-    label: "Intégré au réseau",
-    hint: "Ce prospect est devenu partenaire.",
+    label: "Activation réussie",
+    hint: "Le partenaire est désormais intégré.",
   },
   rejected: {
     percent: 0,
@@ -105,13 +110,13 @@ const RELATION_SIGNAL_BY_STATUS: Record<PartnerLeadStatus, PartnerLeadRelationSi
   },
   signed: {
     type: "success",
-    title: "Prêt à rejoindre le réseau",
-    description: "Les derniers éléments sont à finaliser.",
+    title: "Accord obtenu",
+    description: "Le partenaire a validé son entrée dans le réseau Yunicity.",
   },
   converted: {
     type: "success",
-    title: "Partenaire intégré",
-    description: "Ce prospect a rejoint le réseau.",
+    title: "Partenaire activé",
+    description: "Ce partenaire contribue désormais au réseau Yunicity.",
   },
   rejected: {
     type: "blocked",
@@ -140,23 +145,11 @@ export function partnerLeadReadiness(lead: PartnerLead): PartnerLeadReadiness {
 }
 
 export function partnerLeadConvertDisabledReason(lead: PartnerLead): string | null {
-  if (partnerLeadIsConverted(lead)) {
-    return "Ce prospect est déjà converti en partenaire.";
-  }
-  if (lead.status === "rejected") {
-    return "Un prospect refusé ne peut pas être converti depuis cette fiche.";
-  }
-  if (lead.status === "archived") {
-    return "Un prospect archivé doit être réactivé avant conversion.";
-  }
-  if (!lead.city?.trim()) {
-    return "Ajoutez une ville au prospect avant de le convertir.";
-  }
-  return null;
+  return partnerLeadGuidedConvertDisabledReason(lead);
 }
 
 export function partnerLeadCanConvert(lead: PartnerLead): boolean {
-  return partnerLeadConvertDisabledReason(lead) === null;
+  return partnerLeadGuidedCanConvert(lead);
 }
 
 function isFollowupDue(lead: PartnerLead, now: Date = new Date()): boolean {
@@ -226,9 +219,9 @@ export function buildPartnerLead360Action(
     case "signed":
       return {
         id: "convert",
-        title: "Convertir en partenaire",
-        description: "Le prospect est prêt à rejoindre le réseau Yunicity.",
-        ctaLabel: "Convertir",
+        title: "Accueillir ce partenaire",
+        description: "Le dossier est prêt : vous pouvez l'ajouter au réseau Yunicity.",
+        ctaLabel: "Ajouter au réseau Yunicity",
         action: "convert",
       };
     case "rejected":
@@ -286,8 +279,8 @@ export function buildPartnerLeadTimeline(lead: PartnerLead): PartnerLeadTimeline
     events.push({
       id: "conversion",
       kind: "conversion",
-      label: "Conversion",
-      detail: "Intégration au réseau partenaires.",
+      label: "Partenaire intégré",
+      detail: `${lead.name} rejoint officiellement le réseau Yunicity.`,
       at: lead.converted_at,
     });
   }
@@ -342,4 +335,14 @@ export function partnerLeadNotesEmptyCopy(): string {
 
 export function partnerLeadTagsEmptyCopy(): string {
   return "Aucun tag associé.";
+}
+
+export function partnerLeadHeroConvertCtaLabel(lead: PartnerLead): string {
+  if (lead.status === "converted" || partnerLeadIsConverted(lead)) {
+    return "Partenaire activé";
+  }
+  if (lead.status === "signed") {
+    return "Ajouter au réseau Yunicity";
+  }
+  return "Disponible après accord";
 }

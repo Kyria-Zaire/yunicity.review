@@ -77,6 +77,7 @@ export {
   partnerLeadCanConvert,
   partnerLeadConvertDisabledReason,
   partnerLeadIsConverted,
+  partnerLeadHeroConvertCtaLabel,
   partnerLeadNotesEmptyCopy,
   partnerLeadReadiness,
   partnerLeadTagsEmptyCopy,
@@ -88,6 +89,24 @@ export {
   type PartnerLeadRelationSignalType,
   type PartnerLeadTimelineEvent,
 } from "./partner-lead-360";
+export {
+  PARTNER_LEAD_CONVERSION_DEFAULT_ERROR,
+  PARTNER_LEAD_CONVERSION_READINESS_TITLE,
+  buildPartnerLeadConversionReadiness,
+  buildPartnerLeadConversionSuccessCopy,
+  partnerLeadConversionPanelCopy,
+  partnerLeadConversionReadinessMicrocopy,
+  partnerLeadConversionSteps,
+  partnerLeadConversionSuccessCopy,
+  partnerLeadConvertErrorMessage,
+  partnerLeadGuidedCanConvert,
+  partnerLeadGuidedConvertDisabledReason,
+  type PartnerLeadConversionReadiness,
+  type PartnerLeadConversionStep,
+  type PartnerLeadConversionStepId,
+  type PartnerLeadConversionSuccessCopy,
+  type PartnerLeadConversionSummaryField,
+} from "./partner-lead-guided-conversion";
 export {
   PartnerOffersAdminApi,
   createPartnerOffersAdminApi,
