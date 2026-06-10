@@ -1,48 +1,53 @@
 "use client";
 
 import { useAuth } from "@/lib/auth/auth-provider";
-import type { AdminPassportListItem } from "@yunicity/types";
-import type { AdminCockpitSignals } from "@yunicity/types";
+import type { AdminCockpitSignals, AdminPassportListItem } from "@yunicity/types";
 import {
   buildPassportOpsConseilMessage,
   buildPassportOpsDashboardKpisFromCockpit,
   buildPassportOpsDashboardKpisFromList,
-  buildPassportOpsEngagedCitizens,
-  buildPassportOpsIntelligence,
-  buildPassportOpsKpiCards,
   buildPassportOpsMetricsFromCockpit,
   buildPassportOpsMetricsFromList,
   buildPassportOpsMomentum,
   buildPassportOpsNextAction,
   buildPassportOpsRecommendedAction,
   buildPassportOpsSignal,
-  buildPassportOpsDetailPath,
-  adminPassportTierLabel,
+  type PassportOpsDashboardKpi,
+  type PassportOpsMomentum,
+  type PassportOpsNextAction,
   type PassportOpsProgramMetrics,
+  type PassportOpsRecommendedAction,
+  type PassportOpsSignal,
 } from "@yunicity/utils";
 import { useEffect, useMemo, useState } from "react";
+
+export interface PassportOpsCommandState {
+  metrics: PassportOpsProgramMetrics;
+  signal: PassportOpsSignal;
+  nextAction: PassportOpsNextAction;
+  recommendedAction: PassportOpsRecommendedAction;
+  conseilMessage: string;
+  dashboardKpis: PassportOpsDashboardKpi[];
+  momentum: PassportOpsMomentum;
+}
 
 export function usePassportOpsCommand(
   city: string,
   hasSearchQuery: boolean,
   total: number,
   items: AdminPassportListItem[],
-) {
+): PassportOpsCommandState {
   const { adminCockpitApi, adminPassportsApi } = useAuth();
   const [suspendedTotal, setSuspendedTotal] = useState(0);
   const [cockpitPassport, setCockpitPassport] = useState<
     Parameters<typeof buildPassportOpsMetricsFromCockpit>[1] | null
   >(null);
   const [cockpitSignals, setCockpitSignals] = useState<AdminCockpitSignals | null>(null);
-  const [topPartner, setTopPartner] = useState<
-    Parameters<typeof buildPassportOpsIntelligence>[1] | null
-  >(null);
 
   useEffect(() => {
     if (hasSearchQuery) {
       setCockpitPassport(null);
       setCockpitSignals(null);
-      setTopPartner(null);
       setSuspendedTotal(0);
       return;
     }
@@ -65,13 +70,11 @@ export function usePassportOpsCommand(
         }
         setCockpitPassport(summary.passport);
         setCockpitSignals(summary.signals);
-        setTopPartner(summary.signals.top_stamp_partner);
         setSuspendedTotal(suspended.total);
       } catch {
         if (!cancelled) {
           setCockpitPassport(null);
           setCockpitSignals(null);
-          setTopPartner(null);
           setSuspendedTotal(0);
         }
       }
@@ -108,16 +111,9 @@ export function usePassportOpsCommand(
       nextAction: buildPassportOpsNextAction(metrics),
       recommendedAction: buildPassportOpsRecommendedAction(metrics),
       conseilMessage: buildPassportOpsConseilMessage(metrics),
-      kpiCards: buildPassportOpsKpiCards(metrics),
       dashboardKpis,
       momentum: buildPassportOpsMomentum(metrics),
-      engagedCitizens: buildPassportOpsEngagedCitizens(
-        items,
-        adminPassportTierLabel,
-        buildPassportOpsDetailPath,
-      ),
-      intelligence: buildPassportOpsIntelligence(metrics, topPartner),
     }),
-    [dashboardKpis, items, metrics, topPartner],
+    [dashboardKpis, metrics],
   );
 }
