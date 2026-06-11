@@ -502,6 +502,10 @@ export {
   createAdminPlatformConfigApi,
 } from "./admin-platform-config-api";
 export {
+  AdminActivityApi,
+  createAdminActivityApi,
+} from "./admin-activity-api";
+export {
   STAFF_CRITICAL_ROLE_COUNT,
   buildStaffConseilAction,
   buildStaffConseilMessage,

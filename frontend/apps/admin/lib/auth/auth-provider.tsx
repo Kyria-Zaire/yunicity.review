@@ -7,6 +7,7 @@ import {
   MemoryTokenStorage,
   createAdminAnalyticsApi,
   createAdminPlatformConfigApi,
+  createAdminActivityApi,
   createAdminEventsApi,
   createAdminReportsApi,
   createAdminStaffApi,
@@ -26,6 +27,7 @@ import {
   type AdminActivationWavesApi,
   type AdminAnalyticsApi,
   type AdminPlatformConfigApi,
+  type AdminActivityApi,
   type AdminEventsApi,
   type AdminReportsApi,
   type AdminStaffApi,
@@ -65,6 +67,7 @@ interface AuthContextValue {
   adminCockpitApi: AdminCockpitApi;
   adminAnalyticsApi: AdminAnalyticsApi;
   adminPlatformConfigApi: AdminPlatformConfigApi;
+  adminActivityApi: AdminActivityApi;
   adminEventsApi: AdminEventsApi;
   adminReportsApi: AdminReportsApi;
   adminStaffApi: AdminStaffApi;
@@ -138,6 +141,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const adminPlatformConfigApi = useMemo(
     () => createAdminPlatformConfigApi(client, apiBaseUrl),
+    [client, apiBaseUrl],
+  );
+
+  const adminActivityApi = useMemo(
+    () => createAdminActivityApi(client, apiBaseUrl),
     [client, apiBaseUrl],
   );
 
@@ -235,6 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     adminCockpitApi,
     adminAnalyticsApi,
     adminPlatformConfigApi,
+    adminActivityApi,
     adminEventsApi,
     adminReportsApi,
     adminStaffApi,

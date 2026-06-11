@@ -162,6 +162,24 @@ export type {
 } from "./admin-platform-config";
 
 export type {
+  AdminActivityAlert,
+  AdminActivityAttentionSummary,
+  AdminActivityFeed,
+  AdminActivityFeedCategory,
+  AdminActivityFeedItem,
+  AdminActivityFeedParams,
+  AdminActivityFeedSeverity,
+  AdminActivityFilterCategory,
+  AdminActivityHealth,
+  AdminActivityHealthStatus,
+  AdminActivitySectionSummary,
+  AdminActivitySections,
+  AdminActivitySummary,
+  AdminActivityAlertSeverity,
+  AdminActivityCheckStatus,
+} from "./admin-activity";
+
+export type {
   AdminOrganizationListItem,
   AdminOrganizationListParams,
   AdminOrganizationListResponse,

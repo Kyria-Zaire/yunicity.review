@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
+  Bell,
   CalendarDays,
   Flag,
   IdCard,
@@ -27,6 +28,7 @@ export const STAFF_NAV_GROUPS: { id: string; label: string; items: AdminNavItem[
     items: [
       { href: "/", label: "Cockpit", icon: LayoutDashboard },
       { href: "/analytics", label: "Analytics", icon: BarChart3 },
+      { href: "/activity", label: "Activité", icon: Bell },
       { href: "/partners", label: "Partenaires", icon: Store },
       { href: "/passport-ops", label: "Passport Ops", icon: IdCard },
     ],

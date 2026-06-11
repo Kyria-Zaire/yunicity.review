@@ -6,6 +6,7 @@ export const PARTNER_NAV_LABELS = [
 export const STAFF_NAV_LABELS = [
   "Cockpit",
   "Analytics",
+  "Activité",
   "Partenaires",
   "Passport Ops",
   "Offres",
@@ -38,6 +39,9 @@ export function isStaffNavActive(pathname: string, href: string): boolean {
   }
   if (href === "/analytics") {
     return pathname === "/analytics" || pathname.startsWith("/analytics/");
+  }
+  if (href === "/activity") {
+    return pathname === "/activity" || pathname.startsWith("/activity/");
   }
   if (href === "/partners") {
     return pathname === "/partners" || pathname.startsWith("/partners/");
