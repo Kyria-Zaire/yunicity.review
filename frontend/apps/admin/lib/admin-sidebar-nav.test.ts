@@ -53,9 +53,17 @@ describe("isStaffNavActive", () => {
     expect(isStaffNavActive("/passport-offers/abc", "/passport-offers")).toBe(true);
   });
 
-  it("active Contenus créateurs sur creator-content", () => {
+  it("active Créateurs sur creator-content", () => {
     expect(isStaffNavActive("/creator-content", "/creator-content")).toBe(true);
     expect(isStaffNavActive("/creator-content/abc", "/creator-content")).toBe(true);
+  });
+
+  it("active Configuration sur settings", () => {
+    expect(isStaffNavActive("/settings", "/settings")).toBe(true);
+  });
+
+  it("active Activité sur activity", () => {
+    expect(isStaffNavActive("/activity", "/activity")).toBe(true);
   });
 
   it("active Scanner Passport sur partner-scan", () => {

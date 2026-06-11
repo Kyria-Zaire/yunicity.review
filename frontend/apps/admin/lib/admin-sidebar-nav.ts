@@ -7,15 +7,15 @@ export const STAFF_NAV_LABELS = [
   "Cockpit",
   "Analytics",
   "Activité",
+  "Configuration",
   "Partenaires",
   "Passport Ops",
   "Offres",
   "Événements",
-  "Contenus créateurs",
+  "Créateurs",
   "Modération",
   "Scanner Passport",
   "Staff",
-  "Configuration",
 ] as const;
 
 /** Staff sessions use TERRAIN / MODÉRATION entries instead of the partner block. */
@@ -43,6 +43,9 @@ export function isStaffNavActive(pathname: string, href: string): boolean {
   if (href === "/activity") {
     return pathname === "/activity" || pathname.startsWith("/activity/");
   }
+  if (href === "/settings") {
+    return pathname === "/settings" || pathname.startsWith("/settings/");
+  }
   if (href === "/partners") {
     return pathname === "/partners" || pathname.startsWith("/partners/");
   }
@@ -66,9 +69,6 @@ export function isStaffNavActive(pathname: string, href: string): boolean {
   }
   if (href === "/staff") {
     return pathname === "/staff" || pathname.startsWith("/staff/");
-  }
-  if (href === "/settings") {
-    return pathname === "/settings" || pathname.startsWith("/settings/");
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }

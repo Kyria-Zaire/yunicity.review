@@ -53,6 +53,45 @@ export function activityHealthStatusLabel(status: AdminActivityHealthStatus): st
   return HEALTH_STATUS_LABELS[status];
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  partner: "Partenaire",
+  passport: "Passport",
+  offer: "Offre",
+  event: "Événement",
+  creator: "Créateur",
+  moderation: "Modération",
+  staff: "Staff",
+  system: "Système",
+  report: "Signalement",
+};
+
+export function activityCategoryLabel(category: string): string {
+  return CATEGORY_LABELS[category] ?? category;
+}
+
+/** Compact time for cockpit preview (today → HH:mm, yesterday → Hier). */
+export function formatCockpitActivityTime(iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfYesterday = new Date(startOfToday);
+  startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
+  if (date >= startOfToday) {
+    return new Intl.DateTimeFormat("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  }
+  if (date >= startOfYesterday) {
+    return "Hier";
+  }
+  return new Intl.DateTimeFormat("fr-FR", {
+    day: "numeric",
+    month: "short",
+  }).format(date);
+}
+
 export const ACTIVITY_CATEGORY_FILTER_OPTIONS = [
   { value: "all", label: "Toutes" },
   { value: "moderation", label: "Modération" },

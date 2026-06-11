@@ -29,27 +29,21 @@ export const STAFF_NAV_GROUPS: { id: string; label: string; items: AdminNavItem[
       { href: "/", label: "Cockpit", icon: LayoutDashboard },
       { href: "/analytics", label: "Analytics", icon: BarChart3 },
       { href: "/activity", label: "Activité", icon: Bell },
+      { href: "/settings", label: "Configuration", icon: Settings },
+    ],
+  },
+  {
+    id: "operations",
+    label: "Opérations",
+    items: [
       { href: "/partners", label: "Partenaires", icon: Store },
       { href: "/passport-ops", label: "Passport Ops", icon: IdCard },
-    ],
-  },
-  {
-    id: "moderation",
-    label: "Modération",
-    items: [
       { href: "/passport-offers", label: "Offres", icon: Tag },
       { href: "/events", label: "Événements", icon: CalendarDays },
-      { href: "/creator-content", label: "Contenus créateurs", icon: PenLine },
+      { href: "/creator-content", label: "Créateurs", icon: PenLine },
       { href: "/moderation", label: "Modération", icon: Flag },
-    ],
-  },
-  {
-    id: "terrain",
-    label: "Terrain",
-    items: [
       { href: "/partner-scan", label: "Scanner Passport", icon: QrCode },
       { href: "/staff", label: "Staff", icon: Users },
-      { href: "/settings", label: "Configuration", icon: Settings },
     ],
   },
 ];

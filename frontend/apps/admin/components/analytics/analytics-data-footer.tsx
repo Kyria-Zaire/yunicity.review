@@ -1,4 +1,5 @@
 import { BarChart3, ExternalLink } from "lucide-react";
+import Link from "next/link";
 
 export function AnalyticsDataFooter() {
   return (
@@ -15,15 +16,13 @@ export function AnalyticsDataFooter() {
           </p>
         </div>
       </div>
-      <button
-        type="button"
-        disabled
-        title="Guide Analytics non publié"
-        className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm font-medium text-violet-700 opacity-60"
+      <Link
+        href="/activity"
+        className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm font-medium text-violet-700 hover:bg-violet-50"
       >
-        Voir le guide Analytics
+        Voir l&apos;activité opérationnelle
         <ExternalLink className="h-4 w-4" aria-hidden />
-      </button>
+      </Link>
     </section>
   );
 }
