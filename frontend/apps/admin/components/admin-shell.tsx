@@ -41,6 +41,9 @@ function staffPageTitle(pathname: string, isPartnerArea: boolean): string {
   if (pathname === "/staff" || pathname.startsWith("/staff/")) {
     return "Staff";
   }
+  if (pathname === "/settings" || pathname.startsWith("/settings/")) {
+    return "Configuration";
+  }
   if (pathname.startsWith("/protected-admin")) {
     return "Zone staff";
   }

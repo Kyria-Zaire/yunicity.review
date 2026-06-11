@@ -11,6 +11,7 @@ from app.api.v1 import (
     admin_partner_creator_contents,
     admin_partner_offers,
     admin_partners,
+    admin_platform_config,
     admin_passports,
     admin_reports,
     admin_staff,
@@ -60,6 +61,7 @@ api_router.include_router(admin_activation_wave_items.router)
 api_router.include_router(admin_organizations.router)
 api_router.include_router(admin_passports.router)
 api_router.include_router(admin_partners.router)
+api_router.include_router(admin_platform_config.router)
 api_router.include_router(admin_partner_creator_contents.router)
 api_router.include_router(admin_reports.router)
 api_router.include_router(admin_staff.router)

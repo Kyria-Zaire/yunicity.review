@@ -498,6 +498,10 @@ export {
   createAdminAnalyticsApi,
 } from "./admin-analytics-api";
 export {
+  AdminPlatformConfigApi,
+  createAdminPlatformConfigApi,
+} from "./admin-platform-config-api";
+export {
   STAFF_CRITICAL_ROLE_COUNT,
   buildStaffConseilAction,
   buildStaffConseilMessage,

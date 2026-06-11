@@ -14,6 +14,7 @@ export const STAFF_NAV_LABELS = [
   "Modération",
   "Scanner Passport",
   "Staff",
+  "Configuration",
 ] as const;
 
 /** Staff sessions use TERRAIN / MODÉRATION entries instead of the partner block. */
@@ -61,6 +62,9 @@ export function isStaffNavActive(pathname: string, href: string): boolean {
   }
   if (href === "/staff") {
     return pathname === "/staff" || pathname.startsWith("/staff/");
+  }
+  if (href === "/settings") {
+    return pathname === "/settings" || pathname.startsWith("/settings/");
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }

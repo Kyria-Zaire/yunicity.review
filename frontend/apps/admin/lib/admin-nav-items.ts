@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   PenLine,
   QrCode,
+  Settings,
   Store,
   Tag,
   Users,
@@ -46,6 +47,7 @@ export const STAFF_NAV_GROUPS: { id: string; label: string; items: AdminNavItem[
     items: [
       { href: "/partner-scan", label: "Scanner Passport", icon: QrCode },
       { href: "/staff", label: "Staff", icon: Users },
+      { href: "/settings", label: "Configuration", icon: Settings },
     ],
   },
 ];

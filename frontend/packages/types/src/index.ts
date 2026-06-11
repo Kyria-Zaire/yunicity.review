@@ -144,6 +144,24 @@ export type {
 } from "./admin-analytics";
 
 export type {
+  AdminPlatformConfigBadgeThresholds,
+  AdminPlatformConfigBusiness,
+  AdminPlatformConfigGeneral,
+  AdminPlatformConfigMembershipPlan,
+  AdminPlatformConfigModeration,
+  AdminPlatformConfigNotifications,
+  AdminPlatformConfigPartners,
+  AdminPlatformConfigPassport,
+  AdminPlatformConfigPassportTier,
+  AdminPlatformConfigPilotGoals,
+  AdminPlatformConfigPlatformRole,
+  AdminPlatformConfigReadiness,
+  AdminPlatformConfigSnapshot,
+  AdminPlatformConfigSystem,
+  AdminPlatformConfigViewer,
+} from "./admin-platform-config";
+
+export type {
   AdminOrganizationListItem,
   AdminOrganizationListParams,
   AdminOrganizationListResponse,
