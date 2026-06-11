@@ -48,6 +48,7 @@ from app.schemas.redemption import RedemptionResponse
 from app.schemas.scan import PassportQrResponse
 from app.services.local_stamp_service import LocalStampService
 from app.services.passport_level_hooks import evaluate_passport_level_after_activity
+from app.services.passport_reputation_hooks import award_reputation_for_partner_redemption
 from app.services.passport_level_service import PassportLevelService
 
 
@@ -277,6 +278,11 @@ class PassportService:
             ) from exc
 
         await evaluate_passport_level_after_activity(self._session, passport.id)
+        await award_reputation_for_partner_redemption(
+            self._session,
+            redemption_id=created.id,
+            user_id=passport.user_id,
+        )
         return RedemptionResponse.model_validate(created)
 
     async def _require_active_passport(self, user_id: uuid.UUID) -> Passport:

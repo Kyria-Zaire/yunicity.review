@@ -6,6 +6,7 @@ from enum import StrEnum
 
 # MVP point weights — hooks in PASSPORT-01B will use these values.
 STAMP_EARNED_POINTS = 5
+PARTNER_REDEMPTION_POINTS = 3
 EVENT_ATTENDED_POINTS = 10
 CHALLENGE_COMPLETED_DEFAULT_POINTS = 50
 BADGE_REWARD_DEFAULT_POINTS = 0
@@ -13,6 +14,7 @@ BADGE_REWARD_DEFAULT_POINTS = 0
 
 class PassportReputationEventType(StrEnum):
     STAMP_EARNED = "stamp_earned"
+    PARTNER_REDEMPTION = "partner_redemption"
     EVENT_ATTENDED = "event_attended"
     CHALLENGE_COMPLETED = "challenge_completed"
     BADGE_REWARD = "badge_reward"
@@ -22,6 +24,7 @@ class PassportReputationEventType(StrEnum):
 
 class PassportReputationSourceType(StrEnum):
     PASSPORT_STAMP = "passport_stamp"
+    PARTNER_OFFER_REDEMPTION = "partner_offer_redemption"
     LOCAL_EVENT = "local_event"
     CHALLENGE = "challenge"
     BADGE = "badge"

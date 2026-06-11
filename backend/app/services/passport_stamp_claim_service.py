@@ -23,6 +23,7 @@ from app.schemas.passport_stamp_claim import (
     StampClaimResponse,
 )
 from app.services.passport_level_hooks import evaluate_passport_level_after_activity
+from app.services.passport_reputation_hooks import award_reputation_for_passport_stamp
 
 logger = logging.getLogger(__name__)
 
@@ -85,13 +86,14 @@ class PassportStampClaimService:
         if partner_offer_id is not None:
             metadata["partner_offer_id"] = str(partner_offer_id)
 
-        created = await self._passports.add_stamp_if_missing(
+        new_stamp = await self._passports.add_stamp_if_missing(
             passport_id=passport.id,
             organization_id=organization_id,
             stamped_at=now,
             stamp_source=PassportStampSource.QR,
             metadata=metadata,
         )
+        created = new_stamp is not None
 
         logger.info(
             "stamp_qr_claim",
@@ -104,10 +106,16 @@ class PassportStampClaimService:
             },
         )
 
-        if created:
+        if created and new_stamp is not None:
             await self._session.commit()
             await self._session.refresh(passport)
             await evaluate_passport_level_after_activity(self._session, passport.id)
+            await award_reputation_for_passport_stamp(
+                self._session,
+                stamp_id=new_stamp.id,
+                user_id=user.id,
+                partner_profile_id=partner_profile_id,
+            )
         # else: stamp already existed — no commit, passport data is accurate from initial load
 
         # 6. Build response — load stamp with org for display

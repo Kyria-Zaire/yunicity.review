@@ -34,6 +34,10 @@ from app.services.local_stamp_service import LocalStampService
 from app.services.notification_triggers import notify_redemption_success
 from app.services.organization_membership_service import OrganizationMembershipService
 from app.services.passport_level_hooks import evaluate_passport_level_after_activity
+from app.services.passport_reputation_hooks import (
+    award_reputation_for_partner_redemption,
+    award_reputation_for_passport_stamp,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -196,11 +200,12 @@ class ScanRedemptionService:
         try:
             created = await self._passports.create_redemption(redemption)
             await self._passports.increment_redemptions_count(passport)
-            stamp_added = await self._passports.add_stamp_if_missing(
+            new_stamp = await self._passports.add_stamp_if_missing(
                 passport_id=passport.id,
                 organization_id=offer.organization_id,
                 stamped_at=now,
             )
+            stamp_added = new_stamp is not None
             org = offer.organization
             new_local: list[CitizenLocalStamp] = []
             if org is not None:
@@ -239,6 +244,17 @@ class ScanRedemptionService:
         )
         await notify_redemption_success(self._session, passport.user_id)
         await evaluate_passport_level_after_activity(self._session, passport.id)
+        await award_reputation_for_partner_redemption(
+            self._session,
+            redemption_id=created.id,
+            user_id=passport.user_id,
+        )
+        if new_stamp is not None:
+            await award_reputation_for_passport_stamp(
+                self._session,
+                stamp_id=new_stamp.id,
+                user_id=passport.user_id,
+            )
         return ScanRedeemResponse(
             success=True,
             redemption_id=created.id,

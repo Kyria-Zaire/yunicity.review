@@ -123,7 +123,7 @@ class PassportRepository:
         stamped_at: datetime,
         stamp_source: PassportStampSource = PassportStampSource.ORGANIZATION,
         metadata: dict[str, object] | None = None,
-    ) -> bool:
+    ) -> PassportStamp | None:
         existing = await self._session.execute(
             select(PassportStamp.id).where(
                 PassportStamp.passport_id == passport_id,
@@ -131,11 +131,11 @@ class PassportRepository:
             )
         )
         if existing.scalar_one_or_none() is not None:
-            return False
+            return None
 
         passport = await self._session.get(Passport, passport_id)
         if passport is None:
-            return False
+            return None
 
         stamp = PassportStamp(
             passport_id=passport_id,
@@ -148,7 +148,7 @@ class PassportRepository:
         passport.stamps_count = passport.stamps_count + 1
         passport.last_stamp_at = stamped_at
         await self._session.flush()
-        return True
+        return stamp
 
     async def get_stamp_with_org(
         self,
