@@ -17,11 +17,14 @@ import {
   explorerCategoryHref,
   filterCatalogForExplorerCategory,
 } from "@yunicity/utils";
-import { Bookmark, ChevronRight, MapPin } from "lucide-react";
+import { ChevronRight, MapPin } from "lucide-react";
 import Link from "next/link";
 
 import { SearchExplorerEventsStrip } from "./search-explorer-events-strip";
+import { SearchExplorerNeighborhoodsSection } from "./search-explorer-neighborhoods-section";
+import { SearchExplorerOfferHighlight } from "./search-explorer-offer-highlight";
 import { SearchExplorerPartnersStrip } from "./search-explorer-partners-strip";
+import { SearchExplorerPointsRail } from "./search-explorer-points-rail";
 import { SearchExplorerTransitRail } from "./search-explorer-transit-rail";
 
 type SearchExplorerLandingProps = {
@@ -121,6 +124,14 @@ export function SearchExplorerLanding({ explorer, categoryId }: SearchExplorerLa
         <SearchExplorerPartnersStrip partners={explorer.partners} city={city} />
       ) : null}
 
+      {categoryId === "all" && explorer.highlightOffer ? (
+        <SearchExplorerOfferHighlight offer={explorer.highlightOffer} />
+      ) : null}
+
+      {categoryId === "all" ? (
+        <SearchExplorerNeighborhoodsSection neighborhoods={explorer.neighborhoods} city={city} />
+      ) : null}
+
       {categoryId === "events" || categoryId === "all" ? (
         <SearchExplorerEventsStrip events={explorer.upcomingEvents} city={city} />
       ) : null}
@@ -164,9 +175,6 @@ export function SearchExplorerLanding({ explorer, categoryId }: SearchExplorerLa
                     <span className="absolute left-2 top-2 z-10 rounded-md bg-white/95 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-neutral-800">
                       {item.badge}
                     </span>
-                    <span className="absolute right-2 top-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-neutral-500">
-                      <Bookmark className="h-4 w-4" aria-hidden />
-                    </span>
                   </div>
                   <div className="flex flex-1 flex-col p-3">
                     <h3 className="line-clamp-2 text-sm font-bold text-neutral-900 group-hover:text-yunicity-primary">
@@ -186,6 +194,8 @@ export function SearchExplorerLanding({ explorer, categoryId }: SearchExplorerLa
           </ul>
         )}
       </section>
+
+      {categoryId === "all" ? <SearchExplorerPointsRail /> : null}
 
       {categoryId === "all" ? <SearchExplorerTransitRail city={city} /> : null}
 

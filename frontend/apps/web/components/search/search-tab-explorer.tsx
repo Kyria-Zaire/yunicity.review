@@ -122,7 +122,7 @@ function EventsExplorer({ explorer }: { explorer: SearchExplorerContextState }) 
         <>
           <HomeWeekEventsCalendar events={upcoming} city={explorer.city} />
           <Link
-            href="/events"
+            href="/sortir"
             className="inline-block text-sm font-semibold text-yunicity-primary hover:underline"
           >
             {HOME_VIEW_ALL_EVENTS}

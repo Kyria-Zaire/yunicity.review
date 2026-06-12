@@ -86,11 +86,21 @@ const UPCOMING = (events: LocalEvent[]) => {
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
 };
 
-/** Image fixe du bandeau landing — indépendante du pick événement/lieu du jour. */
+/** Bandeau landing — priorité données locales, repli éditorial Reims. */
 export function resolveExplorerHeroImageUrl(
-  _events: LocalEvent[],
-  _culturalPlaces: CulturalPlaceListItem[],
+  events: LocalEvent[],
+  culturalPlaces: CulturalPlaceListItem[],
 ): string {
+  const nextEvent = UPCOMING(events)[0];
+  if (nextEvent) {
+    const eventImage = resolveEventHeroImage(nextEvent, culturalPlaces);
+    if (eventImage) return eventImage;
+  }
+  const place = culturalPlaces[0];
+  if (place) {
+    const placeImage = resolveCulturalPlaceDisplayUrl(place, "hero");
+    if (placeImage) return placeImage;
+  }
   return EXPLORER_EDITORIAL_HERO_IMAGE_URL;
 }
 
@@ -132,7 +142,7 @@ export function buildExplorerCategoryCards(
     id: "events",
     label: "Événements",
     countLabel: SEARCH_EXPLORER_EVENTS_COUNT(upcomingEventCount),
-    href: `/events?city=${encodeURIComponent(city)}`,
+    href: `/sortir?city=${encodeURIComponent(city)}`,
   });
 
   return cards;
@@ -251,7 +261,7 @@ export function explorerCategoryHref(
   city: string,
 ): string {
   if (categoryId === "events") {
-    return `/events?city=${encodeURIComponent(city)}`;
+    return `/sortir?city=${encodeURIComponent(city)}`;
   }
   if (categoryId === "all") {
     return `/search?city=${encodeURIComponent(city)}`;

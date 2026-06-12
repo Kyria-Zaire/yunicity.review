@@ -116,7 +116,7 @@ export function SearchExplorerSidebar({
               ))}
             </ul>
             <Link
-              href={`/search?city=${encodeURIComponent(city)}&tab=all`}
+              href={`/sortir?city=${encodeURIComponent(city)}`}
               className="mt-3 inline-block text-xs font-semibold text-yunicity-primary hover:underline"
             >
               {SEARCH_EXPLORER_TRENDS_CTA}

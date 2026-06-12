@@ -20,7 +20,7 @@ export function SearchExplorerEventsStrip({ events, city }: SearchExplorerEvents
           Moments à venir
         </h2>
         <Link
-          href={`/events?city=${encodeURIComponent(city)}`}
+          href={`/sortir?city=${encodeURIComponent(city)}`}
           className="inline-flex items-center gap-1 text-sm font-semibold text-yunicity-primary hover:underline"
         >
           Voir l&apos;agenda

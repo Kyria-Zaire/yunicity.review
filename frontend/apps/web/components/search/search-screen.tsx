@@ -220,11 +220,16 @@ export function SearchScreen() {
       setDefaultCity(urlCity.trim());
       return;
     }
-    void api.getProfileMe().then((profile) => {
-      if (profile.city?.trim()) {
-        setDefaultCity(profile.city.trim());
-      }
-    });
+    void api
+      .getProfileMe()
+      .then((profile) => {
+        if (profile.city?.trim()) {
+          setDefaultCity(profile.city.trim());
+        }
+      })
+      .catch(() => {
+        /* session expirée : ville par défaut conservée */
+      });
   }, [api, urlCity]);
 
   return (
