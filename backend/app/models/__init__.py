@@ -39,10 +39,10 @@ from app.models.staff_admin_action import StaffAdminAction
 from app.models.transit import TransitDeparture, TransitFeedMeta, TransitStop
 from app.models.tribe import Tribe, TribeInvitation, TribeMember, TribeModerationLog
 from app.models.user import User
-from app.models.yuni_wallet import YuniTransaction, YuniWallet
 from app.models.user_notification import UserNotification
 from app.models.user_profile import ProfileVisibility, UserProfile
 from app.models.user_subscription import UserSubscription
+from app.models.yuni_wallet import YuniTransaction, YuniWallet
 
 __all__ = [
     "ActivationWave",

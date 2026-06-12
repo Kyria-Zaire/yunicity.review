@@ -213,6 +213,7 @@ async def test_stamp_hook_metadata_is_stored(
         select(ReputationEvent).where(ReputationEvent.source_id == stamp.id)
     )
     assert event is not None
+    assert event.metadata_ is not None
     assert event.metadata_["stamp_id"] == str(stamp.id)
     assert event.metadata_["reason"] == "passport_stamp_created"
 

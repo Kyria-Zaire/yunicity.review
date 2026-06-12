@@ -24,7 +24,11 @@ from app.services.passport_reputation_backfill_service import (  # noqa: E402
     BackfillReport,
     PassportReputationBackfillService,
 )
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine  # noqa: E402
+from sqlalchemy.ext.asyncio import (  # noqa: E402
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 logger = logging.getLogger(__name__)
 

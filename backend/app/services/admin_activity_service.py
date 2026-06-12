@@ -7,19 +7,21 @@ from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.admin_activity_constants import AdminActivityHealthStatus
 from app.core.staff_admin_constants import SYSTEM_ADMIN_PERMISSION
 from app.db.session import check_database
 from app.integrations.redis import check_redis
 from app.models.user import User
 from app.repositories.admin_activity_repository import AdminActivityRepository
+from app.repositories.admin_cockpit_repository import AdminCockpitRawCounts
 from app.schemas.admin_activity import (
     AdminActivityAlert,
     AdminActivityAttentionSummary,
     AdminActivityFeedItem,
     AdminActivityFeedResponse,
     AdminActivityHealth,
-    AdminActivitySectionSummary,
     AdminActivitySections,
+    AdminActivitySectionSummary,
     AdminActivitySummaryResponse,
 )
 from app.schemas.admin_cockpit import DEFAULT_COCKPIT_CITY
@@ -90,7 +92,7 @@ class AdminActivityService:
                 raise AppError(
                     status_code=422,
                     code="INVALID_CURSOR",
-                    message="Curseur de pagination invalide.",
+                    detail="Curseur de pagination invalide.",
                 ) from exc
 
         raw_rows = await self._repo.fetch_feed_rows(
@@ -163,7 +165,7 @@ class AdminActivityService:
         *,
         database: str,
         redis: str,
-    ) -> str:
+    ) -> AdminActivityHealthStatus:
         if database == "error" or redis == "error":
             return "critical"
         if database == "unknown" or redis == "unknown":
@@ -172,7 +174,7 @@ class AdminActivityService:
 
     def _build_alerts(
         self,
-        counts,
+        counts: AdminCockpitRawCounts,
         *,
         database: str,
         redis: str,
@@ -284,7 +286,7 @@ class AdminActivityService:
 
     def _build_sections(
         self,
-        counts,
+        counts: AdminCockpitRawCounts,
         *,
         database: str,
         redis: str,

@@ -8,8 +8,8 @@ from collections.abc import AsyncIterator
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from httpx import AsyncClient
 from app.integrations.redis import get_redis_client
+from httpx import AsyncClient
 from tests.conftest_rbac import RbacUserFactory, auth_header
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]

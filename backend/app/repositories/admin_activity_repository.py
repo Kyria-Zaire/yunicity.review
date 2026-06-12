@@ -5,9 +5,11 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import Select, literal, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.selectable import Subquery
 
 from app.core.admin_activity_constants import MODERATION_FEED_CATEGORIES
 from app.models.creator_content_admin_action import CreatorContentAdminAction
@@ -18,7 +20,7 @@ from app.models.passport_admin_action import PassportAdminAction
 from app.models.report import Report
 from app.models.report_admin_action import ReportAdminAction
 from app.models.staff_admin_action import StaffAdminAction
-from app.repositories.admin_cockpit_repository import AdminCockpitRepository
+from app.repositories.admin_cockpit_repository import AdminCockpitRawCounts, AdminCockpitRepository
 from app.schemas.admin_cockpit import DEFAULT_COCKPIT_CITY
 
 
@@ -39,10 +41,12 @@ class AdminActivityRepository:
         self._session = session
         self._cockpit = AdminCockpitRepository(session)
 
-    async def fetch_attention_counts(self, *, city: str = DEFAULT_COCKPIT_CITY):
+    async def fetch_attention_counts(
+        self, *, city: str = DEFAULT_COCKPIT_CITY
+    ) -> AdminCockpitRawCounts:
         return await self._cockpit.fetch_counts(city)
 
-    def _partner_select(self) -> Select:
+    def _partner_select(self) -> Select[Any]:
         return select(
             literal("partner").label("category"),
             PartnerAdminAction.id.label("row_id"),
@@ -54,7 +58,7 @@ class AdminActivityRepository:
             PartnerAdminAction.new_status.label("new_status"),
         ).select_from(PartnerAdminAction)
 
-    def _passport_select(self) -> Select:
+    def _passport_select(self) -> Select[Any]:
         return select(
             literal("passport").label("category"),
             PassportAdminAction.id.label("row_id"),
@@ -66,7 +70,7 @@ class AdminActivityRepository:
             PassportAdminAction.new_status.label("new_status"),
         ).select_from(PassportAdminAction)
 
-    def _offer_select(self) -> Select:
+    def _offer_select(self) -> Select[Any]:
         return select(
             literal("offer").label("category"),
             OfferAdminAction.id.label("row_id"),
@@ -78,7 +82,7 @@ class AdminActivityRepository:
             OfferAdminAction.new_status.label("new_status"),
         ).select_from(OfferAdminAction)
 
-    def _event_select(self) -> Select:
+    def _event_select(self) -> Select[Any]:
         return select(
             literal("event").label("category"),
             EventAdminAction.id.label("row_id"),
@@ -90,7 +94,7 @@ class AdminActivityRepository:
             EventAdminAction.new_status.label("new_status"),
         ).select_from(EventAdminAction)
 
-    def _creator_select(self) -> Select:
+    def _creator_select(self) -> Select[Any]:
         return select(
             literal("creator").label("category"),
             CreatorContentAdminAction.id.label("row_id"),
@@ -102,7 +106,7 @@ class AdminActivityRepository:
             CreatorContentAdminAction.new_status.label("new_status"),
         ).select_from(CreatorContentAdminAction)
 
-    def _report_action_select(self) -> Select:
+    def _report_action_select(self) -> Select[Any]:
         return select(
             literal("report").label("category"),
             ReportAdminAction.id.label("row_id"),
@@ -114,7 +118,7 @@ class AdminActivityRepository:
             ReportAdminAction.new_status.label("new_status"),
         ).select_from(ReportAdminAction)
 
-    def _report_created_select(self) -> Select:
+    def _report_created_select(self) -> Select[Any]:
         return select(
             literal("report").label("category"),
             Report.id.label("row_id"),
@@ -126,7 +130,7 @@ class AdminActivityRepository:
             Report.status.label("new_status"),
         ).select_from(Report)
 
-    def _staff_select(self) -> Select:
+    def _staff_select(self) -> Select[Any]:
         return select(
             literal("staff").label("category"),
             StaffAdminAction.id.label("row_id"),
@@ -164,7 +168,7 @@ class AdminActivityRepository:
             return []
         return [category]
 
-    def _build_union(self, sources: list[str]):
+    def _build_union(self, sources: list[str]) -> Subquery | None:
         builders = {
             "partner": self._partner_select,
             "passport": self._passport_select,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
 from app.core.admin_activity_constants import (
     ACTIVITY_ALERT_COUNT_CRITICAL_THRESHOLD,
@@ -149,14 +150,14 @@ def resolve_target_label(
     return UNAVAILABLE_TARGET_LABEL
 
 
-def encode_feed_cursor(created_at, row_id: uuid.UUID) -> str:
+def encode_feed_cursor(created_at: datetime, row_id: uuid.UUID) -> str:
     import base64
 
     payload = f"{created_at.isoformat()}|{row_id}"
     return base64.urlsafe_b64encode(payload.encode("utf-8")).decode("ascii")
 
 
-def decode_feed_cursor(cursor: str) -> tuple:
+def decode_feed_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
     import base64
     from datetime import datetime
 
