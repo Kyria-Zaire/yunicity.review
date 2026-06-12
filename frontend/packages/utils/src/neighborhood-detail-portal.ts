@@ -1,6 +1,6 @@
 import type { CulturalPlaceListItem, Neighborhood } from "@yunicity/types";
 
-import { buildMapPlaceUrl } from "./explorer-links";
+import { buildPublicPlaceHref } from "./place-routing";
 import { resolveCulturalPlaceDisplayUrl } from "./cultural-place-display-image";
 import { neighborhoodAmbianceBadge } from "./neighborhood-detail";
 import { neighborhoodAmbianceLabel } from "./neighborhood-labels";
@@ -218,7 +218,7 @@ export function buildNeighborhoodDetailPlaceCards(
     name: place.name,
     tagline: place.editorial_excerpt?.trim() || place.short_description?.trim() || place.category,
     imageUrl: resolveCulturalPlaceDisplayUrl(place, "hero"),
-    href: buildMapPlaceUrl(place.slug, { city }),
+    href: buildPublicPlaceHref(place.slug, city),
   }));
 }
 

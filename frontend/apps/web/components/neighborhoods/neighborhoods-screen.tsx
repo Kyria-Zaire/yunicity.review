@@ -5,6 +5,7 @@ import { NeighborhoodsFeaturedRail } from "@/components/neighborhoods/neighborho
 import { NeighborhoodsHeroBanner } from "@/components/neighborhoods/neighborhoods-hero-banner";
 import { NeighborhoodsListSection } from "@/components/neighborhoods/neighborhoods-list-section";
 import { NeighborhoodsStatsBar } from "@/components/neighborhoods/neighborhoods-stats-bar";
+import { SearchExplorerOfferHighlight } from "@/components/search/search-explorer-offer-highlight";
 import { useNeighborhoodsPortalContext } from "@/hooks/use-neighborhoods-portal-context";
 import {
   NEIGHBORHOODS_EMPTY,
@@ -70,6 +71,12 @@ export function NeighborhoodsScreen() {
       <div className="mx-auto w-full max-w-[1400px] px-3 pb-12 sm:px-4 lg:px-6">
         <NeighborhoodsHeroBanner city={context.city} heroImageUrl={heroImageUrl} />
         <NeighborhoodsStatsBar stats={stats} />
+
+        {context.passportOffers[0] ? (
+          <div className="mt-8">
+            <SearchExplorerOfferHighlight offer={context.passportOffers[0]} />
+          </div>
+        ) : null}
 
         {context.loading ? (
           <p className="mt-8 text-center text-sm text-neutral-500" role="status">

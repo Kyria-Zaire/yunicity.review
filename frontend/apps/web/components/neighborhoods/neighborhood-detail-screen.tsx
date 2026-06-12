@@ -7,6 +7,7 @@ import { NeighborhoodDetailMoments } from "@/components/neighborhoods/neighborho
 import { NeighborhoodDetailPlacesRail } from "@/components/neighborhoods/neighborhood-detail-places-rail";
 import { NeighborhoodDetailPortalHero } from "@/components/neighborhoods/neighborhood-detail-portal-hero";
 import { NeighborhoodDetailPracticalCard } from "@/components/neighborhoods/neighborhood-detail-practical-card";
+import { NeighborhoodDetailRightRail } from "@/components/neighborhoods/neighborhood-detail-right-rail";
 import { NeighborhoodDetailTabs } from "@/components/neighborhoods/neighborhood-detail-tabs";
 import { NeighborhoodsAppShell } from "@/components/neighborhoods/neighborhoods-app-shell";
 import { useNeighborhoodDetailContext } from "@/hooks/use-neighborhood-detail-context";
@@ -114,30 +115,41 @@ export function NeighborhoodDetailScreen({ slug, city }: { slug: string; city: s
   return (
     <NeighborhoodsAppShell>
       <div className="mx-auto w-full max-w-[1400px] px-3 pb-12 sm:px-4 lg:px-6">
-        <div className="min-w-0 space-y-6">
-          <NeighborhoodDetailBreadcrumbs items={breadcrumbs} />
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+          <div className="min-w-0 space-y-6">
+            <NeighborhoodDetailBreadcrumbs items={breadcrumbs} />
 
-          <NeighborhoodDetailPortalHero hood={hood} quickStats={quickStats} />
+            <NeighborhoodDetailPortalHero hood={hood} quickStats={quickStats} />
 
-          <NeighborhoodDetailTabs tabs={NEIGHBORHOOD_DETAIL_TABS} onShare={() => void shareNeighborhood()} />
+            <NeighborhoodDetailTabs tabs={NEIGHBORHOOD_DETAIL_TABS} onShare={() => void shareNeighborhood()} />
 
-          <NeighborhoodDetailAboutSection presentation={presentation} briefFacts={briefFacts} />
+            <NeighborhoodDetailAboutSection presentation={presentation} briefFacts={briefFacts} />
 
-          <NeighborhoodDetailPlacesRail cards={placeCards} city={context.city} hoodSlug={hood.slug} />
+            <NeighborhoodDetailPlacesRail cards={placeCards} city={context.city} hoodSlug={hood.slug} />
 
-          <NeighborhoodDetailMoments
-            events={context.upcomingEvents}
-            culturalPlaces={context.cityCulturalPlaces}
-          />
-
-          <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-            <NeighborhoodDetailLocationCard hood={hood} places={context.hoodCulturalPlaces} />
-            <NeighborhoodDetailPracticalCard
-              hood={hood}
-              address={practicalAddress}
-              city={context.city}
+            <NeighborhoodDetailMoments
+              events={context.upcomingEvents}
+              culturalPlaces={context.cityCulturalPlaces}
             />
+
+            <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+              <NeighborhoodDetailLocationCard hood={hood} places={context.hoodCulturalPlaces} />
+              <NeighborhoodDetailPracticalCard
+                hood={hood}
+                address={practicalAddress}
+                city={context.city}
+              />
+            </div>
           </div>
+
+          <aside className="min-w-0 lg:sticky lg:top-28 lg:self-start">
+            <NeighborhoodDetailRightRail
+              context={context}
+              hood={hood}
+              weatherLat={hood.latitude}
+              weatherLon={hood.longitude}
+            />
+          </aside>
         </div>
       </div>
     </NeighborhoodsAppShell>

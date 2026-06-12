@@ -111,7 +111,7 @@ describe("neighborhood-detail-portal", () => {
   it("buildNeighborhoodDetailPlaceCards mappe les lieux culturels", () => {
     const cards = buildNeighborhoodDetailPlaceCards([place()], "Reims");
     expect(cards[0]?.name).toBe("Cathédrale Notre-Dame");
-    expect(cards[0]?.href).toContain("cathedrale");
+    expect(cards[0]?.href).toBe("/places/cathedrale?city=Reims");
   });
 
   it("summarizeTransitLines agrège tram et bus", () => {

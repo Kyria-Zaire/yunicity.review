@@ -9,7 +9,7 @@ import {
   NEIGHBORHOODS_PORTAL_FEATURED_TITLE,
   NEIGHBORHOODS_PORTAL_MOMENTS_LABEL,
 } from "@yunicity/utils";
-import { Bookmark, CalendarDays, ChevronRight, Coffee, MapPin } from "lucide-react";
+import { CalendarDays, ChevronRight, Coffee, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -112,11 +112,6 @@ export function NeighborhoodsFeaturedRail({ cards, onSeeAll }: NeighborhoodsFeat
                     <span className="truncate">{card.name}</span>
                   </span>
 
-                  <span className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/35 text-white/90 backdrop-blur-sm">
-                    <Bookmark className="h-4 w-4" aria-hidden />
-                    <span className="sr-only">Favori — bientôt</span>
-                  </span>
-
                   <div className="absolute inset-x-0 bottom-0 p-4 text-white">
                     <h3 className="text-lg font-bold leading-snug">{card.headline}</h3>
                     <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-white/85">
@@ -130,12 +125,7 @@ export function NeighborhoodsFeaturedRail({ cards, onSeeAll }: NeighborhoodsFeat
                           <Coffee className="h-3 w-3" aria-hidden />
                           {NEIGHBORHOODS_PORTAL_CAFES_LABEL(card.cafesCount)}
                         </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1">
-                          <Coffee className="h-3 w-3" aria-hidden />
-                          cafés
-                        </span>
-                      )}
+                      ) : null}
                       <span className="inline-flex items-center gap-1">
                         <CalendarDays className="h-3 w-3" aria-hidden />
                         {NEIGHBORHOODS_PORTAL_EVENTS_WEEK_LABEL(card.eventsThisWeek)}
