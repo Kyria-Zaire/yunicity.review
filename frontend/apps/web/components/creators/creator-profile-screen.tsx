@@ -1,6 +1,7 @@
 "use client";
 
 import { CreatorContentCard } from "@/components/creators/creator-content-card";
+import { CreatorPublicShell } from "@/components/creators/creator-public-shell";
 import { CreatorProfileError } from "@/components/creators/creator-profile-error";
 import { CreatorProfileNotFound } from "@/components/creators/creator-profile-not-found";
 import { CreatorProfileSkeleton } from "@/components/creators/creator-profile-skeleton";
@@ -29,7 +30,7 @@ export function CreatorProfileScreen({ creatorId }: CreatorProfileScreenProps) {
   const { state, reload } = useCreatorProfile(creatorId);
 
   return (
-    <div className="min-h-dvh bg-[#F4F5F7]">
+    <CreatorPublicShell>
       <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <nav className="mb-8 flex flex-wrap items-center gap-4 text-sm">
           <Link
@@ -57,7 +58,7 @@ export function CreatorProfileScreen({ creatorId }: CreatorProfileScreenProps) {
           <CreatorProfileView profile={state.profile} />
         )}
       </div>
-    </div>
+    </CreatorPublicShell>
   );
 }
 

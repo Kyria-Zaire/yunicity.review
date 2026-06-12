@@ -1,11 +1,7 @@
 "use client";
 
 import { YunicityLogo } from "@/components/brand";
-import {
-  WEB_CITIZEN_NAV_PRIMARY,
-  WEB_CITIZEN_NAV_SECONDARY,
-  isWebNavActive,
-} from "@/lib/layout/web-layout-config";
+import { WEB_CITIZEN_NAV_PRIMARY, isWebNavActive } from "@/lib/layout/web-layout-config";
 import { HOME_PUBLISH_MOMENT } from "@yunicity/utils";
 import { useAuth } from "@/lib/auth/auth-provider";
 import Link from "next/link";
@@ -14,38 +10,40 @@ import { usePathname } from "next/navigation";
 /** Header mobile uniquement (< md) — tablette+ utilise sidebar compacte. */
 export function WebMobileHeader() {
   const pathname = usePathname();
-  const onPassport = pathname === "/passport" || pathname.startsWith("/passport/");
-  const mobileNav = onPassport
-    ? [...WEB_CITIZEN_NAV_PRIMARY, ...WEB_CITIZEN_NAV_SECONDARY]
-    : WEB_CITIZEN_NAV_PRIMARY;
 
   return (
     <header className="web-mobile-chrome-only sticky top-0 z-20 border-b border-neutral-200/80 bg-white">
-      <div className="flex items-center justify-between gap-3 px-4 py-3">
+      <div className="flex items-center gap-3 px-4 py-3">
         <YunicityLogo href="/feed" size="sm" showWordmark priority />
         <Link
           href="/feed#feed-composer"
-          className="hidden shrink-0 rounded-full bg-yunicity-primary px-3 py-1.5 text-xs font-semibold text-white sm:inline-flex"
+          className="hidden shrink-0 rounded-full bg-yunicity-primary px-3 py-2 text-xs font-semibold text-white sm:inline-flex"
         >
           {HOME_PUBLISH_MOMENT}
         </Link>
-        <nav className="flex flex-wrap justify-end gap-1 text-xs sm:text-sm" aria-label="Navigation principale">
-          {mobileNav.map((item) => {
-            const active = isWebNavActive(pathname, item);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`rounded-full px-3 py-1.5 transition-colors ${
-                  active
-                    ? "bg-yunicity-primary text-white"
-                    : "text-neutral-600 hover:bg-neutral-100"
-                }`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+        <nav
+          className="min-w-0 flex-1 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          aria-label="Navigation principale"
+        >
+          <div className="flex w-max min-w-full justify-end gap-1.5 pr-1 text-xs sm:text-sm">
+            {WEB_CITIZEN_NAV_PRIMARY.map((item) => {
+              const active = isWebNavActive(pathname, item);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  className={`inline-flex min-h-11 shrink-0 items-center rounded-full px-3.5 py-2 font-medium transition-colors ${
+                    active
+                      ? "bg-yunicity-primary text-white"
+                      : "text-neutral-600 hover:bg-neutral-100"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
         </nav>
       </div>
     </header>

@@ -44,7 +44,7 @@ export function NotificationsScreen() {
 
   return (
     <NotificationsAppShell>
-      <div className="mx-auto w-full max-w-[1400px] px-0 py-2 sm:py-4">
+      <div className="mx-auto w-full max-w-[1400px] px-3 py-2 sm:px-4 sm:py-4">
         <div className="grid gap-8 xl:grid-cols-[16rem_minmax(0,1fr)_20rem]">
           <NotificationsInternalSidebar
             activeTab={ctx.tab}

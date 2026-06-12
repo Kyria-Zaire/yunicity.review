@@ -33,7 +33,7 @@ export function NotificationsRightRail({
 
   return (
     <aside
-      className="flex w-full flex-col gap-5 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:w-[min(100%,var(--web-context-rail-width-md))] lg:overflow-y-auto lg:pb-4 xl:w-[var(--web-context-rail-width)]"
+      className="hidden w-full flex-col gap-5 xl:flex xl:sticky xl:top-24 xl:max-h-[calc(100dvh-7rem)] xl:w-[var(--web-context-rail-width)] xl:overflow-y-auto xl:pb-4"
       aria-label="Votre activité et le territoire"
     >
       <section className="rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">

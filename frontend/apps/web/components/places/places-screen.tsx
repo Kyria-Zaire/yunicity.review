@@ -40,7 +40,7 @@ export function PlacesScreen() {
 
   return (
     <PlacesAppShell>
-      <div className="mx-auto w-full max-w-[1400px] px-0 py-2 sm:py-4">
+      <div className="mx-auto w-full max-w-[1400px] px-3 py-2 sm:px-4 sm:py-4">
         <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8 xl:grid-cols-[16rem_minmax(0,1fr)]">
           <PlacesInternalSidebar onScrollTo={scrollToSection} />
 

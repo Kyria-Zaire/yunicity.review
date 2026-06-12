@@ -1,6 +1,7 @@
 "use client";
 
 import { CreatorDirectoryCard } from "@/components/creators/creator-directory-card";
+import { CreatorPublicShell } from "@/components/creators/creator-public-shell";
 import { CreatorDirectorySkeleton } from "@/components/creators/creator-directory-skeleton";
 import { useCreatorDirectory } from "@/hooks/use-creator-directory";
 import {
@@ -45,7 +46,7 @@ export function CreatorDirectoryScreen() {
   };
 
   return (
-    <div className="min-h-dvh bg-[#F4F5F7]">
+    <CreatorPublicShell>
       <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <header className="max-w-3xl">
           <p className="text-xs font-bold uppercase tracking-widest text-yunicity-primary">
@@ -136,6 +137,6 @@ export function CreatorDirectoryScreen() {
           )}
         </section>
       </div>
-    </div>
+    </CreatorPublicShell>
   );
 }

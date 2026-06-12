@@ -21,6 +21,7 @@
 .web-shell-page {
   min-height: 100dvh;
   width: 100%;
+  overflow-x: clip;
   background: var(--yunicity-background);
 }
 
@@ -126,7 +127,7 @@ body {
   .web-three-col--with-rail {
     grid-template-columns:
       var(--web-sidebar-width-full)
-      minmax(var(--web-center-min-width), 1fr)
+      minmax(0, 1fr)
       var(--web-context-rail-width);
   }
 }

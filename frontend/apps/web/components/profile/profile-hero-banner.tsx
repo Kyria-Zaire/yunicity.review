@@ -52,15 +52,14 @@ export function ProfileHeroBanner({
           aria-hidden
         />
 
-        <Link
-          href={settingsHref}
-          className="absolute right-4 top-4 z-[2] inline-flex items-center gap-2 rounded-full border border-white/30 bg-black/35 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-black/50 sm:right-6 sm:top-6"
-        >
-          <Pencil className="h-4 w-4" aria-hidden />
-          {PROFILE_PORTAL_EDIT_CTA}
-        </Link>
-
         <div className="relative flex flex-col gap-4 p-5 pb-6 sm:flex-row sm:items-end sm:p-6 sm:pb-7">
+          <Link
+            href={settingsHref}
+            className="order-first self-end sm:absolute sm:right-6 sm:top-6 sm:order-none sm:z-[2] inline-flex items-center gap-2 rounded-full border border-white/30 bg-black/35 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-black/50"
+          >
+            <Pencil className="h-4 w-4" aria-hidden />
+            {PROFILE_PORTAL_EDIT_CTA}
+          </Link>
           <div className="relative shrink-0">
             <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-white bg-yunicity-primary shadow-lg sm:h-28 sm:w-28">
               {avatarUrl ? (

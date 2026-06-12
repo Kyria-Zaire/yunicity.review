@@ -1,6 +1,7 @@
 "use client";
 
 import { CreatorContentCard } from "@/components/creators/creator-content-card";
+import { CreatorPublicShell } from "@/components/creators/creator-public-shell";
 import { CreatorHubSkeleton } from "@/components/creators/creator-hub-skeleton";
 import { useCreatorHub } from "@/hooks/use-creator-hub";
 import {
@@ -21,7 +22,7 @@ export function CreatorHubScreen() {
   const { city, items, loading, error, reload } = useCreatorHub(cityParam);
 
   return (
-    <div className="min-h-dvh bg-[#F4F5F7]">
+    <CreatorPublicShell>
       <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <header className="max-w-2xl">
           <p className="text-xs font-bold uppercase tracking-widest text-yunicity-primary">
@@ -71,6 +72,6 @@ export function CreatorHubScreen() {
           )}
         </section>
       </div>
-    </div>
+    </CreatorPublicShell>
   );
 }

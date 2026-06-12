@@ -1,6 +1,7 @@
 "use client";
 
 import { CreatorContentCard } from "@/components/creators/creator-content-card";
+import { CreatorPublicShell } from "@/components/creators/creator-public-shell";
 import { CreatorContentDetailError } from "@/components/creators/creator-content-detail-error";
 import { CreatorContentDetailNotFound } from "@/components/creators/creator-content-detail-not-found";
 import { CreatorContentDetailSkeleton } from "@/components/creators/creator-content-detail-skeleton";
@@ -33,7 +34,7 @@ export function CreatorContentDetailScreen({ contentId }: CreatorContentDetailSc
   const { state, reload } = useCreatorContentDetail(contentId);
 
   return (
-    <div className="min-h-dvh bg-[#F4F5F7]">
+    <CreatorPublicShell>
       <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
         <nav className="mb-8 flex flex-wrap items-center gap-4 text-sm">
           <Link
@@ -61,7 +62,7 @@ export function CreatorContentDetailScreen({ contentId }: CreatorContentDetailSc
           <CreatorContentDetailView detail={state.detail} />
         )}
       </div>
-    </div>
+    </CreatorPublicShell>
   );
 }
 
