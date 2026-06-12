@@ -5,20 +5,23 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.dependencies import require_authenticated_user
+from app.core.local_video_constants import LOCAL_VIDEO_DEFAULT_CITY
 from app.core.rate_limit import enforce_rate_limit
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.local_video import (
+    LocalVideoFeedResponse,
     LocalVideoItem,
     LocalVideoPublishRequest,
     LocalVideoUploadInitRequest,
     LocalVideoUploadInitResponse,
 )
+from app.services.local_video_feed_service import LocalVideoFeedQuery, LocalVideoFeedService
 from app.services.local_video_service import (
     PUBLISH_RATE_LIMIT,
     PUBLISH_RATE_WINDOW,
@@ -84,6 +87,32 @@ async def publish_local_video(
         window_seconds=PUBLISH_RATE_WINDOW,
     )
     return await LocalVideoService(session, settings).publish(current_user.id, payload)
+
+
+@router.get("/feed", response_model=LocalVideoFeedResponse)
+async def list_local_video_feed(
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    city: str = Query(default=LOCAL_VIDEO_DEFAULT_CITY, min_length=1, max_length=64),
+    limit: int = Query(default=10, ge=1, le=20),
+    cursor: str | None = Query(default=None),
+    latitude: float | None = Query(default=None, ge=-90, le=90),
+    longitude: float | None = Query(default=None, ge=-180, le=180),
+    lat: float | None = Query(default=None, ge=-90, le=90),
+    lng: float | None = Query(default=None, ge=-180, le=180),
+) -> LocalVideoFeedResponse:
+    del current_user
+    resolved_latitude = latitude if latitude is not None else lat
+    resolved_longitude = longitude if longitude is not None else lng
+    return await LocalVideoFeedService(session).list_feed(
+        LocalVideoFeedQuery(
+            city=city,
+            limit=limit,
+            cursor=cursor,
+            latitude=resolved_latitude,
+            longitude=resolved_longitude,
+        )
+    )
 
 
 @router.get("/{video_id}", response_model=LocalVideoItem)

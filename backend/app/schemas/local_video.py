@@ -89,3 +89,48 @@ class LocalVideoItem(BaseModel):
     processing_error: str | None
     published_at: datetime | None
     created_at: datetime
+
+
+class LocalVideoFeedAuthor(BaseModel):
+    id: uuid.UUID
+    username: str | None
+    full_name: str
+    avatar_url: str | None
+
+
+class LocalVideoFeedItem(BaseModel):
+    id: uuid.UUID
+    author_user_id: uuid.UUID
+    author: LocalVideoFeedAuthor
+    city: str
+    neighborhood_id: uuid.UUID
+    neighborhood_name: str
+    neighborhood_slug: str
+    video_type: LocalVideoType
+    title: str | None
+    description: str | None
+    cultural_place_id: uuid.UUID | None
+    cultural_place_slug: str | None
+    cultural_place_name: str | None
+    local_event_id: uuid.UUID | None
+    tribe_id: uuid.UUID | None
+    organization_id: uuid.UUID | None
+    media_url: str
+    thumbnail_url: str
+    duration_seconds: float
+    mime_type: str
+    latitude: float | None
+    longitude: float | None
+    status: LocalVideoStatus
+    published_at: datetime | None
+    created_at: datetime
+    distance_meters: int | None
+    walk_minutes: int | None
+    like_count: int
+    comment_count: int
+
+
+class LocalVideoFeedResponse(BaseModel):
+    items: list[LocalVideoFeedItem]
+    next_cursor: str | None
+    city: str

@@ -1,17 +1,21 @@
-"""Local Video API tests (FEATURE-CREATORS-V2 / C2-S1)."""
+"""Local Video API tests (FEATURE-CREATORS-V2 / C2-S1, C2-S2-00)."""
 
 from __future__ import annotations
 
 import uuid
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
 from app.core.config import get_settings
 from app.core.local_video_constants import LocalVideoStatus, LocalVideoType
+from app.db.session import get_session_factory
 from app.integrations.redis import get_redis_client
+from app.models.local_video import LocalVideo
 from app.services.local_video.processor import LocalVideoProcessResult
 from httpx import AsyncClient
+from sqlalchemy import update
 
 from tests.conftest_passport import auth_header, register_user
 
@@ -203,3 +207,239 @@ async def test_publish_twice_same_upload_rejected(
     )
     assert second.status_code == 409
     assert second.json()["code"] == "LOCAL_VIDEO_UPLOAD_ALREADY_USED"
+
+
+async def _publish_video(
+    auth_client: AsyncClient,
+    token: str,
+    *,
+    city: str = "Reims",
+    title: str | None = None,
+    latitude: float | None = None,
+    longitude: float | None = None,
+) -> dict[str, Any]:
+    init_body = await _init_upload(auth_client, token)
+    await auth_client.put(
+        init_body["presigned_url"],
+        content=b"fake-mp4-bytes-for-test",
+        headers={"Content-Type": "video/mp4"},
+    )
+    payload: dict[str, Any] = {
+        "upload_id": init_body["upload_id"],
+        "city": city,
+        "neighborhood_id": BOULINGRIN_ID,
+        "video_type": LocalVideoType.MOMENT.value,
+    }
+    if title is not None:
+        payload["title"] = title
+    if latitude is not None:
+        payload["latitude"] = latitude
+    if longitude is not None:
+        payload["longitude"] = longitude
+    response = await auth_client.post(
+        BASE,
+        json=payload,
+        headers=auth_header(token),
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+async def _set_video_status(video_id: str, status: LocalVideoStatus) -> None:
+    session_factory = get_session_factory()
+    assert session_factory is not None
+    async with session_factory() as session:
+        await session.execute(
+            update(LocalVideo)
+            .where(LocalVideo.id == uuid.UUID(video_id))
+            .values(status=status.value)
+        )
+        await session.commit()
+
+
+async def _set_video_published_at(video_id: str, published_at: datetime) -> None:
+    session_factory = get_session_factory()
+    assert session_factory is not None
+    async with session_factory() as session:
+        await session.execute(
+            update(LocalVideo)
+            .where(LocalVideo.id == uuid.UUID(video_id))
+            .values(published_at=published_at)
+        )
+        await session.commit()
+
+
+@pytest.mark.asyncio
+async def test_feed_requires_auth(auth_client: AsyncClient) -> None:
+    response = await auth_client.get(f"{BASE}/feed")
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_feed_returns_only_published(
+    auth_client: AsyncClient,
+    mock_processor: None,
+) -> None:
+    user = await _register(auth_client)
+    token = user["access_token"]
+    published = await _publish_video(auth_client, token, title="Visible")
+    hidden = await _publish_video(auth_client, token, title="Hidden soon")
+    await _set_video_status(hidden["id"], LocalVideoStatus.PROCESSING)
+
+    response = await auth_client.get(
+        f"{BASE}/feed",
+        params={"city": "Reims", "limit": 10},
+        headers=auth_header(token),
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    ids = {item["id"] for item in body["items"]}
+    assert published["id"] in ids
+    assert hidden["id"] not in ids
+    assert all(item["status"] == LocalVideoStatus.PUBLISHED.value for item in body["items"])
+
+
+@pytest.mark.asyncio
+async def test_feed_filters_by_city(
+    auth_client: AsyncClient,
+    mock_processor: None,
+) -> None:
+    user = await _register(auth_client)
+    token = user["access_token"]
+    await _publish_video(auth_client, token, city="Reims", title="Reims clip")
+
+    response = await auth_client.get(
+        f"{BASE}/feed",
+        params={"city": "Paris", "limit": 10},
+        headers=auth_header(token),
+    )
+    assert response.status_code == 200
+    assert response.json()["items"] == []
+    assert response.json()["city"] == "Paris"
+
+
+@pytest.mark.asyncio
+async def test_feed_pagination_limit_and_cursor(
+    auth_client: AsyncClient,
+    mock_processor: None,
+) -> None:
+    user = await _register(auth_client)
+    token = user["access_token"]
+    await _publish_video(auth_client, token, title="Third")
+    await _publish_video(auth_client, token, title="Second")
+    await _publish_video(auth_client, token, title="First")
+
+    first_page = await auth_client.get(
+        f"{BASE}/feed",
+        params={"city": "Reims", "limit": 2},
+        headers=auth_header(token),
+    )
+    assert first_page.status_code == 200, first_page.text
+    first_body = first_page.json()
+    assert len(first_body["items"]) == 2
+    assert first_body["next_cursor"]
+
+    second_page = await auth_client.get(
+        f"{BASE}/feed",
+        params={"city": "Reims", "limit": 2, "cursor": first_body["next_cursor"]},
+        headers=auth_header(token),
+    )
+    assert second_page.status_code == 200
+    second_body = second_page.json()
+    assert len(second_body["items"]) == 1
+    assert second_body["next_cursor"] is None
+
+    first_ids = {item["id"] for item in first_body["items"]}
+    second_ids = {item["id"] for item in second_body["items"]}
+    assert first_ids.isdisjoint(second_ids)
+
+
+@pytest.mark.asyncio
+async def test_feed_distance_null_without_coordinates(
+    auth_client: AsyncClient,
+    mock_processor: None,
+) -> None:
+    user = await _register(auth_client)
+    token = user["access_token"]
+    await _publish_video(auth_client, token, latitude=49.2583, longitude=4.0317)
+
+    response = await auth_client.get(
+        f"{BASE}/feed",
+        params={"city": "Reims", "limit": 10},
+        headers=auth_header(token),
+    )
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["distance_meters"] is None
+    assert item["walk_minutes"] is None
+
+
+@pytest.mark.asyncio
+async def test_feed_distance_computed_with_coordinates(
+    auth_client: AsyncClient,
+    mock_processor: None,
+) -> None:
+    user = await _register(auth_client)
+    token = user["access_token"]
+    await _publish_video(auth_client, token, latitude=49.2583, longitude=4.0317)
+
+    response = await auth_client.get(
+        f"{BASE}/feed",
+        params={
+            "city": "Reims",
+            "limit": 10,
+            "latitude": 49.2583,
+            "longitude": 4.0317,
+        },
+        headers=auth_header(token),
+    )
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["distance_meters"] == 0
+    assert item["walk_minutes"] == 0
+
+
+@pytest.mark.asyncio
+async def test_feed_distance_with_lat_lng_aliases(
+    auth_client: AsyncClient,
+    mock_processor: None,
+) -> None:
+    user = await _register(auth_client)
+    token = user["access_token"]
+    await _publish_video(auth_client, token, latitude=49.26, longitude=4.04)
+
+    response = await auth_client.get(
+        f"{BASE}/feed",
+        params={"city": "Reims", "limit": 10, "lat": 49.26, "lng": 4.04},
+        headers=auth_header(token),
+    )
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["distance_meters"] is not None
+    assert item["walk_minutes"] is not None
+
+
+@pytest.mark.asyncio
+async def test_feed_orders_newest_first(
+    auth_client: AsyncClient,
+    mock_processor: None,
+) -> None:
+    user = await _register(auth_client)
+    token = user["access_token"]
+    older = await _publish_video(auth_client, token, title="Older")
+    newer = await _publish_video(auth_client, token, title="Newer")
+
+    now = datetime.now(UTC)
+    await _set_video_published_at(older["id"], now - timedelta(hours=2))
+    await _set_video_published_at(newer["id"], now - timedelta(minutes=5))
+
+    response = await auth_client.get(
+        f"{BASE}/feed",
+        params={"city": "Reims", "limit": 10},
+        headers=auth_header(token),
+    )
+    assert response.status_code == 200
+    items = response.json()["items"]
+    assert len(items) >= 2
+    assert items[0]["id"] == newer["id"]
+    assert items[1]["id"] == older["id"]
