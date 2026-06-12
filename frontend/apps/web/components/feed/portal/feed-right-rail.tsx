@@ -1,5 +1,6 @@
 "use client";
 
+import type { PartnerOfferPublic } from "@yunicity/types";
 import type {
   FeedHighlightEvent,
   FeedTrendItem,
@@ -15,16 +16,18 @@ import {
   FEED_PORTAL_TRENDS_CTA,
   FEED_PORTAL_TRENDS_DISCLAIMER,
   FEED_PORTAL_TRENDS_EMPTY,
-  FEED_PORTAL_TRENDS_TITLE,
+  HOME_PRIVILEGE_TITLE,
 } from "@yunicity/utils";
 import { Calendar, Home, MapPin, Users } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 type FeedRightRailProps = {
+  city: string;
   tribes: FeedTribeActivityItem[];
   highlights: FeedHighlightEvent[];
   trends: FeedTrendItem[];
+  highlightOffer?: PartnerOfferPublic | null;
   loading?: boolean;
 };
 
@@ -70,11 +73,53 @@ function SectionCard({
   );
 }
 
-export function FeedRightRail({ tribes, highlights, trends, loading }: FeedRightRailProps) {
+export function FeedRightRail({
+  city,
+  tribes,
+  highlights,
+  trends,
+  highlightOffer,
+  loading,
+}: FeedRightRailProps) {
   if (loading) return <RailSkeleton />;
+
+  const trendsTitle = `En ce moment à ${city.trim() || "Reims"}`;
 
   return (
     <div className="space-y-4">
+      {highlightOffer ? (
+        <section className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm">
+          <h2 className="text-sm font-bold text-neutral-900">{HOME_PRIVILEGE_TITLE}</h2>
+          <div className="mt-3 flex gap-3">
+            {highlightOffer.partner.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={highlightOffer.partner.logo_url}
+                alt=""
+                className="h-10 w-10 shrink-0 rounded-full border border-neutral-100 object-cover"
+              />
+            ) : (
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-yunicity-primary-soft text-sm font-bold text-yunicity-primary">
+                {highlightOffer.partner.name.slice(0, 1).toUpperCase()}
+              </span>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-yunicity-primary">{highlightOffer.partner.name}</p>
+              <p className="font-semibold text-neutral-900">{highlightOffer.title}</p>
+              {highlightOffer.description ? (
+                <p className="mt-1 line-clamp-2 text-sm text-neutral-600">{highlightOffer.description}</p>
+              ) : null}
+            </div>
+          </div>
+          <Link
+            href="/passport"
+            className="mt-3 inline-flex text-xs font-semibold text-yunicity-primary hover:underline"
+          >
+            Voir l&apos;avantage
+          </Link>
+        </section>
+      ) : null}
+
       <SectionCard title={FEED_PORTAL_TRIBES_TITLE} ctaHref="/tribes" ctaLabel={FEED_PORTAL_TRIBES_CTA}>
         {tribes.length === 0 ? (
           <p className="text-sm text-neutral-500">{FEED_PORTAL_TRIBES_EMPTY}</p>
@@ -161,7 +206,7 @@ export function FeedRightRail({ tribes, highlights, trends, loading }: FeedRight
         )}
       </SectionCard>
 
-      <SectionCard title={FEED_PORTAL_TRENDS_TITLE} ctaHref="/map" ctaLabel={FEED_PORTAL_TRENDS_CTA}>
+      <SectionCard title={trendsTitle} ctaHref="/map" ctaLabel={FEED_PORTAL_TRENDS_CTA}>
         {trends.length === 0 ? (
           <p className="text-sm text-neutral-500">{FEED_PORTAL_TRENDS_EMPTY}</p>
         ) : (

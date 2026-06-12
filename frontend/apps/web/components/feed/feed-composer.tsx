@@ -96,9 +96,14 @@ export function FeedComposer({
   const canPublish = Boolean(body.trim()) && !isSubmitting;
 
   useEffect(() => {
-    void api.getProfileMe().then((profile) => {
-      setDisplayName(profile.display_name ?? profile.username ?? null);
-    });
+    void api
+      .getProfileMe()
+      .then((profile) => {
+        setDisplayName(profile.display_name ?? profile.username ?? null);
+      })
+      .catch(() => {
+        /* session expirée : ProtectedRoute redirige vers login */
+      });
   }, [api]);
 
   async function handleSubmit() {
@@ -122,7 +127,6 @@ export function FeedComposer({
 
   return (
     <section
-      id="feed-composer"
       className="scroll-mt-24 border-y border-neutral-200/70 py-4 sm:py-5"
       aria-label="Publier sur le fil local"
     >

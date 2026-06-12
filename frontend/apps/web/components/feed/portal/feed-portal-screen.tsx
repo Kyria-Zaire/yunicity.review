@@ -5,7 +5,6 @@ import type { FeedPortalView } from "@yunicity/utils";
 import {
   FEED_LOAD_MORE_LABEL,
   FEED_PORTAL_FOR_YOU_HINT,
-  FEED_PORTAL_LOADING,
   FEED_PORTAL_POPULAR_HINT,
   PROFILE_INTERESTS,
   buildFeedHighlightEvents,
@@ -16,6 +15,7 @@ import {
   filterFeedPostsContributions,
   filterFeedPostsDiscussions,
 } from "@yunicity/utils";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { FeedCard } from "@/components/feed/feed-card";
@@ -26,6 +26,7 @@ import { FeedLoadingState } from "@/components/feed/feed-loading-state";
 import { FeedAppShell } from "@/components/feed/portal/feed-app-shell";
 import { FeedLeftRail } from "@/components/feed/portal/feed-left-rail";
 import { FeedRightRail } from "@/components/feed/portal/feed-right-rail";
+import { FeedSavedEventsPanel } from "@/components/feed/portal/feed-saved-events-panel";
 import { FeedStoriesRail } from "@/components/feed/portal/feed-stories-rail";
 import { FeedViewTabs } from "@/components/feed/portal/feed-view-tabs";
 import { useFeed } from "@/hooks/use-feed";
@@ -130,14 +131,17 @@ export function FeedPortalScreen() {
     if (leftNav === "contributions") {
       return filterFeedPostsContributions(items, user?.id ?? null);
     }
+    if (leftNav === "saved") return [];
+    const interestFilter =
+      activeView === "for_you" && filterOpen && interests.length > 0 ? interests : [];
     return filterFeedPostsByView(items, activeView, {
-      interests,
+      interests: interestFilter,
       userId: user?.id ?? null,
     });
-  }, [activeView, interests, items, leftNav, user?.id]);
+  }, [activeView, filterOpen, interests, items, leftNav, user?.id]);
 
   const viewHint =
-    activeView === "for_you" && !leftNav
+    activeView === "for_you" && !leftNav && filterOpen
       ? FEED_PORTAL_FOR_YOU_HINT
       : activeView === "popular" && !leftNav
         ? FEED_PORTAL_POPULAR_HINT
@@ -145,9 +149,11 @@ export function FeedPortalScreen() {
 
   const rightRail = (
     <FeedRightRail
+      city={city}
       tribes={tribeActivity}
       highlights={highlights}
       trends={trends}
+      highlightOffer={portal.highlightOffer}
       loading={portal.loading}
     />
   );
@@ -201,11 +207,23 @@ export function FeedPortalScreen() {
               onToggleFilter={() => setFilterOpen((v) => !v)}
             />
           </div>
-          {filterOpen && interests.length > 0 ? (
+          {filterOpen ? (
             <p className="border-b border-neutral-100 px-4 py-3 text-xs text-neutral-500 sm:px-6">
-              Filtre actif selon vos centres d&apos;intérêt :{" "}
-              {interests.slice(0, 4).join(", ")}
-              {interests.length > 4 ? "…" : ""}
+              {interests.length > 0 ? (
+                <>
+                  Filtre actif selon vos centres d&apos;intérêt :{" "}
+                  {interests.slice(0, 4).join(", ")}
+                  {interests.length > 4 ? "…" : ""}
+                </>
+              ) : (
+                <>
+                  Ajoutez vos centres d&apos;intérêt dans les{" "}
+                  <Link href="/settings" className="font-semibold text-yunicity-primary hover:underline">
+                    paramètres
+                  </Link>{" "}
+                  pour activer le filtrage.
+                </>
+              )}
             </p>
           ) : null}
         </div>
@@ -226,19 +244,36 @@ export function FeedPortalScreen() {
           </p>
         ) : null}
 
-        {portal.loading && isLoading ? (
-          <p className="mt-8 text-center text-sm text-neutral-500" role="status">
-            {FEED_PORTAL_LOADING}
-          </p>
-        ) : null}
-
         {isLoading ? <FeedLoadingState /> : null}
         {!isLoading && error ? <FeedErrorState onRetry={() => void refresh()} /> : null}
-        {!isLoading && !error && displayedPosts.length === 0 ? (
-          <FeedEmptyState city={city} />
+
+        {!isLoading && !error && leftNav === "saved" ? (
+          <FeedSavedEventsPanel events={portal.savedEvents} city={city} />
         ) : null}
 
-        {!isLoading && !error && displayedPosts.length > 0 ? (
+        {!isLoading && !error && leftNav !== "saved" && displayedPosts.length === 0 ? (
+          filterOpen && items.length > 0 ? (
+            <div className="mt-5 rounded-2xl border border-dashed border-yunicity-border bg-white p-8 text-center shadow-sm">
+              <p className="text-base font-semibold text-neutral-900">
+                Aucune publication ne correspond à vos centres d&apos;intérêt
+              </p>
+              <p className="mx-auto mt-2 max-w-sm text-sm text-neutral-600">
+                Désactivez le filtre ou ajustez vos préférences pour voir plus de contenu local.
+              </p>
+              <button
+                type="button"
+                onClick={() => setFilterOpen(false)}
+                className="mt-4 rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+              >
+                Désactiver le filtre
+              </button>
+            </div>
+          ) : (
+            <FeedEmptyState city={city} />
+          )
+        ) : null}
+
+        {!isLoading && !error && leftNav !== "saved" && displayedPosts.length > 0 ? (
           <ul className="mt-5 space-y-5 lg:space-y-6" aria-label="Publications du fil local">
             {displayedPosts.map((post) => (
               <li key={post.id}>
@@ -248,7 +283,7 @@ export function FeedPortalScreen() {
           </ul>
         ) : null}
 
-        {nextCursor && !isLoading && !error ? (
+        {nextCursor && !isLoading && !error && leftNav !== "saved" ? (
           <div className="mt-6 flex justify-center">
             <button
               type="button"
