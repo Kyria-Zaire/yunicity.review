@@ -22,6 +22,7 @@ from app.schemas.passport_stamp_claim import (
     StampClaimPassportSummary,
     StampClaimResponse,
 )
+from app.services.passport_challenge_hooks import update_challenges_for_passport_stamp
 from app.services.passport_level_hooks import evaluate_passport_level_after_activity
 from app.services.passport_reputation_hooks import award_reputation_for_passport_stamp
 from app.services.yuni_wallet_hooks import award_yuni_for_passport_stamp
@@ -123,6 +124,7 @@ class PassportStampClaimService:
                 user_id=user.id,
                 partner_profile_id=partner_profile_id,
             )
+            await update_challenges_for_passport_stamp(self._session, new_stamp)
         # else: stamp already existed — no commit, passport data is accurate from initial load
 
         # 6. Build response — load stamp with org for display

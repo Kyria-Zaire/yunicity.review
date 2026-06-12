@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import (
     Boolean,
@@ -16,18 +16,20 @@ from sqlalchemy import (
     String,
     Text,
     Uuid,
+    text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from app.models._mixins import TimestampMixin
+from app.models._mixins import CreatedAtMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.user import User
 
 
 class PassportChallenge(TimestampMixin, Base):
-    """Challenge catalog definition — progression logic is PASSPORT-04B+."""
+    """Challenge catalog definition — progression in PassportChallengeProgressService."""
 
     __tablename__ = "passport_challenges"
     __table_args__ = (
@@ -86,7 +88,7 @@ class PassportChallenge(TimestampMixin, Base):
 
 
 class UserPassportChallenge(TimestampMixin, Base):
-    """User challenge progress — updates are PASSPORT-04B+, not in this ticket."""
+    """User challenge progress — updated by PassportChallengeProgressService (PASSPORT-04B)."""
 
     __tablename__ = "user_passport_challenges"
     __table_args__ = (
@@ -132,3 +134,64 @@ class UserPassportChallenge(TimestampMixin, Base):
         "PassportChallenge",
         back_populates="user_challenges",
     )
+    progress_events: Mapped[list[PassportChallengeProgressEvent]] = relationship(
+        "PassportChallengeProgressEvent",
+        back_populates="user_challenge",
+        cascade="all, delete-orphan",
+    )
+
+
+class PassportChallengeProgressEvent(CreatedAtMixin, Base):
+    """Idempotent source ledger for challenge progress increments (PASSPORT-04B)."""
+
+    __tablename__ = "passport_challenge_progress_events"
+    __table_args__ = (
+        CheckConstraint(
+            "amount > 0",
+            name="ck_passport_challenge_progress_events_amount_positive",
+        ),
+        CheckConstraint(
+            "source_type <> ''",
+            name="ck_passport_challenge_progress_events_source_type_nonempty",
+        ),
+        Index(
+            "idx_passport_challenge_progress_events_user_challenge",
+            "user_challenge_id",
+            "created_at",
+        ),
+        Index(
+            "uq_passport_challenge_progress_events_idempotent_source",
+            "user_id",
+            "challenge_id",
+            "source_type",
+            "source_id",
+            unique=True,
+            postgresql_where=text("source_id IS NOT NULL"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_challenge_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("user_passport_challenges.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    challenge_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("passport_challenges.id", ondelete="CASCADE"), nullable=False
+    )
+    source_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    metadata_: Mapped[dict[str, Any] | None] = mapped_column(
+        "metadata",
+        JSONB,
+        nullable=True,
+    )
+
+    user_challenge: Mapped[UserPassportChallenge] = relationship(
+        "UserPassportChallenge",
+        back_populates="progress_events",
+    )
+    user: Mapped[User] = relationship("User")
+    challenge: Mapped[PassportChallenge] = relationship("PassportChallenge")

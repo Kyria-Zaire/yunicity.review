@@ -33,6 +33,10 @@ from app.schemas.scan import (
 from app.services.local_stamp_service import LocalStampService
 from app.services.notification_triggers import notify_redemption_success
 from app.services.organization_membership_service import OrganizationMembershipService
+from app.services.passport_challenge_hooks import (
+    update_challenges_for_partner_redemption,
+    update_challenges_for_passport_stamp,
+)
 from app.services.passport_level_hooks import evaluate_passport_level_after_activity
 from app.services.passport_reputation_hooks import (
     award_reputation_for_partner_redemption,
@@ -258,6 +262,7 @@ class ScanRedemptionService:
             redemption_id=created.id,
             user_id=passport.user_id,
         )
+        await update_challenges_for_partner_redemption(self._session, created)
         if new_stamp is not None:
             await award_reputation_for_passport_stamp(
                 self._session,
@@ -269,6 +274,7 @@ class ScanRedemptionService:
                 stamp_id=new_stamp.id,
                 user_id=passport.user_id,
             )
+            await update_challenges_for_passport_stamp(self._session, new_stamp)
         return ScanRedeemResponse(
             success=True,
             redemption_id=created.id,

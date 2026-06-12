@@ -29,7 +29,11 @@ from app.models.passport import (
 )
 from app.models.passport_admin_action import PassportAdminAction
 from app.models.passport_badge import PassportBadge, UserPassportBadge
-from app.models.passport_challenge import PassportChallenge, UserPassportChallenge
+from app.models.passport_challenge import (
+    PassportChallenge,
+    PassportChallengeProgressEvent,
+    UserPassportChallenge,
+)
 from app.models.passport_reputation import ReputationEvent, UserReputationSnapshot
 from app.models.post import Post
 from app.models.push_subscription import PushSubscription
@@ -89,6 +93,7 @@ __all__ = [
     "PassportBadge",
     "UserPassportBadge",
     "PassportChallenge",
+    "PassportChallengeProgressEvent",
     "UserPassportChallenge",
     "ReputationEvent",
     "Permission",

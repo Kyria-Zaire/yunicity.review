@@ -58,6 +58,19 @@ MVP_INACTIVE_CHALLENGE_CODES: frozenset[str] = frozenset(
     {PassportChallengeCode.SORTIES_REMOISES.value}
 )
 
+MVP_AUTO_STAMP_CHALLENGE_CODES: frozenset[str] = frozenset(
+    {PassportChallengeCode.EXPLORER_CENTRE_VILLE.value}
+)
+MVP_AUTO_REDEMPTION_CHALLENGE_CODES: frozenset[str] = frozenset(
+    {PassportChallengeCode.SOUTIEN_LOCAL_HEBDO.value}
+)
+
+
+class PassportChallengeProgressSourceType(StrEnum):
+    PASSPORT_STAMP = "passport_stamp"
+    PARTNER_OFFER_REDEMPTION = "partner_offer_redemption"
+
+
 MVP_PASSPORT_CHALLENGE_SEED: tuple[dict[str, Any], ...] = (
     {
         "code": PassportChallengeCode.EXPLORER_CENTRE_VILLE.value,

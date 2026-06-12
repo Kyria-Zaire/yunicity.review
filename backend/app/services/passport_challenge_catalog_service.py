@@ -1,6 +1,7 @@
 """Passport challenge catalog read service (PASSPORT-04A).
 
-Progress tracking and rewards: PASSPORT-04B+ — not in this ticket.
+Progress tracking: PassportChallengeProgressService (PASSPORT-04B).
+Reward claim: future tickets.
 """
 
 from __future__ import annotations
