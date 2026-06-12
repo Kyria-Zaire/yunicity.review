@@ -1,3 +1,3 @@
 "use client";
 
-export { PassportDashboardScreen as PassportScreen } from "@/components/passport/passport-dashboard-screen";
+export { PassportPage as PassportScreen } from "@/components/passport/passport-page";

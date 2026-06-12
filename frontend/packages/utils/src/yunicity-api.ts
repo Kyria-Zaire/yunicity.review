@@ -31,8 +31,12 @@ import type {
   PartnerOfferListParams,
   PartnerOfferPublicListResponse,
   PartnerPublic,
+  ChallengeClaimResponse,
   PassportActivateRequest,
+  PassportBadgesResponse,
+  PassportChallengesResponse,
   PassportMe,
+  PassportOverviewResponse,
   PassportStampClaimResult,
   PassportStampListResponse,
   PostCreatePayload,
@@ -67,6 +71,7 @@ import type { AuthClient } from "./auth/auth-client";
 import { OrganizationApi, createOrganizationApi } from "./organization-api";
 import { PartnerOffersApi, createPartnerOffersApi } from "./partner-offers-api";
 import { PassportApi, createPassportApi } from "./passport-api";
+import { PassportMeApi, createPassportMeApi } from "./passport-me-api";
 import { ScanApi, createScanApi } from "./scan-api";
 import { NotificationsApi, createNotificationsApi } from "./notifications-api";
 import { EventsApi, createEventsApi } from "./events-api";
@@ -101,6 +106,7 @@ export class YunicityApi {
   readonly organization: OrganizationApi;
   readonly partnerOffers: PartnerOffersApi;
   readonly passport: PassportApi;
+  readonly passportMe: PassportMeApi;
   readonly scan: ScanApi;
   readonly notifications: NotificationsApi;
   readonly feed: FeedApi;
@@ -126,6 +132,7 @@ export class YunicityApi {
     this.organization = createOrganizationApi(client, apiBaseUrl);
     this.partnerOffers = createPartnerOffersApi(client, apiBaseUrl);
     this.passport = createPassportApi(client, apiBaseUrl);
+    this.passportMe = createPassportMeApi(client, apiBaseUrl);
     this.scan = createScanApi(client, apiBaseUrl);
     this.notifications = createNotificationsApi(client, apiBaseUrl);
     this.feed = createFeedApi(client, apiBaseUrl);
@@ -349,6 +356,22 @@ export class YunicityApi {
 
   getPassportQr() {
     return this.passport.getPassportQr();
+  }
+
+  getMyPassport(): Promise<PassportOverviewResponse> {
+    return this.passportMe.getMyPassport();
+  }
+
+  getMyPassportBadges(): Promise<PassportBadgesResponse> {
+    return this.passportMe.getMyPassportBadges();
+  }
+
+  getMyPassportChallenges(): Promise<PassportChallengesResponse> {
+    return this.passportMe.getMyPassportChallenges();
+  }
+
+  claimChallengeReward(challengeCode: string): Promise<ChallengeClaimResponse> {
+    return this.passportMe.claimChallengeReward(challengeCode);
   }
 
   listFeed(params?: FeedListParams): Promise<FeedListResponse> {

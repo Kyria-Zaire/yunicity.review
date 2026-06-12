@@ -327,6 +327,19 @@ export type {
 } from "./passport";
 
 export type {
+  ChallengeClaimResponse,
+  PassportBadgeResponse,
+  PassportBadgesResponse,
+  PassportChallengeResponse,
+  PassportChallengesResponse,
+  PassportOverviewPassportResponse,
+  PassportOverviewResponse,
+  PassportReputationResponse,
+  PassportSummaryResponse,
+  PassportWalletResponse,
+} from "./passport-me";
+
+export type {
   MembershipBillingInterval,
   MembershipPlanCode,
   MembershipStatus,

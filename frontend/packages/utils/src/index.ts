@@ -1042,6 +1042,14 @@ export {
   createPassportApi,
   fetchPassportTiersPublic,
 } from "./passport-api";
+export { PassportMeApi, createPassportMeApi } from "./passport-me-api";
+export {
+  challengeClaimButtonLabel,
+  formatChallengeProgressPercent,
+  formatPassportStatusLabel,
+  formatPassportTierLabel,
+  humanizeChallengeClaimError,
+} from "./passport-me-presenter";
 export {
   buildPassportStampClaimUrl,
   formatPassportStampDate,
