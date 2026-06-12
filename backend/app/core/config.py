@@ -128,6 +128,11 @@ class Settings(BaseSettings):
             return _DEV_JWT_PLACEHOLDER
         return str(value).strip()
 
+    @staticmethod
+    def _is_localhost_url(url: str) -> bool:
+        lowered = url.lower()
+        return "localhost" in lowered or "127.0.0.1" in lowered
+
     @model_validator(mode="after")
     def validate_environment_rules(self) -> "Settings":
         if self.app_env == "prod" and self.debug:
@@ -139,8 +144,25 @@ class Settings(BaseSettings):
                 raise ValueError("JWT_SECRET_KEY must be at least 32 characters")
             if self.jwt_secret_key in _WEAK_JWT_SECRETS:
                 raise ValueError("JWT_SECRET_KEY is too weak for this environment")
-        if self.app_env == "prod" and not self.refresh_cookie_secure:
-            raise ValueError("REFRESH_COOKIE_SECURE must be true in prod")
+            if not self.refresh_token_pepper.strip():
+                raise ValueError("REFRESH_TOKEN_PEPPER must be set for this environment")
+            if len(self.refresh_token_pepper.strip()) < 16:
+                raise ValueError("REFRESH_TOKEN_PEPPER must be at least 16 characters")
+        if self.app_env == "prod":
+            if not self.refresh_cookie_secure:
+                raise ValueError("REFRESH_COOKIE_SECURE must be true in prod")
+            if not self.database_url:
+                raise ValueError("DATABASE_URL is required in prod")
+            if not self.redis_url:
+                raise ValueError("REDIS_URL is required in prod (rate limits and sessions)")
+            if not self.cors_origins:
+                raise ValueError("CORS_ORIGINS must list the public web and admin origins in prod")
+            if self._is_localhost_url(self.web_frontend_url):
+                raise ValueError("WEB_FRONTEND_URL must not use localhost in prod")
+            if any(self._is_localhost_url(origin) for origin in self.cors_origins):
+                raise ValueError("CORS_ORIGINS must not include localhost in prod")
+            if self._is_localhost_url(self.media_public_base_url):
+                raise ValueError("MEDIA_PUBLIC_BASE_URL must not use localhost in prod")
         return self
 
     @property
