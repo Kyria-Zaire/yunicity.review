@@ -24,6 +24,7 @@ from app.schemas.passport_stamp_claim import (
 )
 from app.services.passport_level_hooks import evaluate_passport_level_after_activity
 from app.services.passport_reputation_hooks import award_reputation_for_passport_stamp
+from app.services.yuni_wallet_hooks import award_yuni_for_passport_stamp
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +112,12 @@ class PassportStampClaimService:
             await self._session.refresh(passport)
             await evaluate_passport_level_after_activity(self._session, passport.id)
             await award_reputation_for_passport_stamp(
+                self._session,
+                stamp_id=new_stamp.id,
+                user_id=user.id,
+                partner_profile_id=partner_profile_id,
+            )
+            await award_yuni_for_passport_stamp(
                 self._session,
                 stamp_id=new_stamp.id,
                 user_id=user.id,

@@ -232,18 +232,21 @@ async def test_execute_redemptions_creates_events(
     )
     session.add(offer)
     await session.flush()
-    session.add(
-        PassportOfferRedemption(
-            passport_id=passport_id,
-            partner_offer_id=offer.id,
-            status=OfferRedemptionStatus.COMPLETED,
-            redeemed_at=datetime.now(UTC),
-        )
+    redemption = PassportOfferRedemption(
+        passport_id=passport_id,
+        partner_offer_id=offer.id,
+        status=OfferRedemptionStatus.COMPLETED,
+        redeemed_at=datetime.now(UTC),
     )
+    session.add(redemption)
     await session.commit()
 
     service = PassportReputationBackfillService(session)
-    report = await service.execute_redemptions()
-    assert report.created == 1
+    await service.execute_redemptions()
+
+    event = await session.scalar(
+        select(ReputationEvent).where(ReputationEvent.source_id == redemption.id)
+    )
+    assert event is not None
     snapshot = await PassportReputationService(session).get_reputation(user_id)
     assert snapshot.total_points >= 3

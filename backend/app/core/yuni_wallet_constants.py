@@ -26,6 +26,7 @@ class YuniTransactionType(StrEnum):
 class YuniTransactionReferenceType(StrEnum):
     PASSPORT_STAMP = "passport_stamp"
     PARTNER_REDEMPTION = "partner_redemption"
+    PARTNER_OFFER_REDEMPTION = "partner_offer_redemption"
     CHALLENGE = "challenge"
     ADMIN_ADJUSTMENT = "admin_adjustment"
     REWARD_REDEMPTION = "reward_redemption"

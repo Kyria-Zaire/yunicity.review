@@ -1,6 +1,6 @@
 """YuniMonnaie wallet ledger service (PASSPORT-02A).
 
-Automatic earn hooks from stamps/redemptions are PASSPORT-02B — not in this ticket.
+Automatic earn hooks: PASSPORT-02B (`yuni_wallet_hooks.py`).
 """
 
 from __future__ import annotations
@@ -46,6 +46,21 @@ class YuniWalletService:
             select(YuniWallet).where(YuniWallet.user_id == user_id)
         )
         return result.scalar_one_or_none()
+
+    async def has_existing_earn(
+        self,
+        user_id: uuid.UUID,
+        reference_type: str,
+        reference_id: uuid.UUID,
+    ) -> bool:
+        normalized_reference = self._validate_reference_type(reference_type)
+        existing = await self._find_transaction(
+            user_id=user_id,
+            transaction_type=YuniTransactionType.EARN.value,
+            reference_type=normalized_reference,
+            reference_id=reference_id,
+        )
+        return existing is not None
 
     async def earn(
         self,
