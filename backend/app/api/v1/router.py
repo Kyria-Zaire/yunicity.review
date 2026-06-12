@@ -32,6 +32,7 @@ from app.api.v1 import (
     partner_offers_public,
     partners,
     passport,
+    passport_me,
     posts,
     profile,
     rbac_validation,
@@ -75,6 +76,7 @@ api_router.include_router(tribes.router)
 api_router.include_router(tribe_invitations.router)
 api_router.include_router(admin_tribes.router)
 api_router.include_router(passport.router)
+api_router.include_router(passport_me.router)
 api_router.include_router(notifications.router)
 api_router.include_router(users.router)
 api_router.include_router(feed.router)
