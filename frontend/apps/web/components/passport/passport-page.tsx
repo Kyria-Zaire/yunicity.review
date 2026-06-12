@@ -16,6 +16,7 @@ import {
   PASSPORT_ACTIVATE_BODY,
   PASSPORT_ACTIVATE_CTA,
   PASSPORT_ACTIVATE_TITLE,
+  formatClaimSuccessBanner,
 } from "@yunicity/utils";
 
 export function PassportPage() {
@@ -71,13 +72,15 @@ export function PassportPage() {
 
             {claimSuccess ? (
               <div
-                className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+                className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
                 role="status"
               >
-                <p className="font-semibold">{claimSuccess.message}</p>
-                <p className="mt-1">
-                  Nouveau solde : {claimSuccess.new_balance.toLocaleString("fr-FR")} YM
-                </p>
+                <p className="font-semibold">{formatClaimSuccessBanner(claimSuccess)}</p>
+                {claimSuccess.claimed ? (
+                  <p className="mt-1 text-emerald-800">
+                    Nouveau solde : {claimSuccess.new_balance.toLocaleString("fr-FR")} YM
+                  </p>
+                ) : null}
                 <button
                   type="button"
                   onClick={clearClaimFeedback}

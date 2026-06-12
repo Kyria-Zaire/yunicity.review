@@ -14,15 +14,15 @@ export function PassportBadgesSection({ badges }: PassportBadgesSectionProps) {
   const locked = badges.locked;
 
   return (
-    <section className="space-y-8">
+    <section className="space-y-8" aria-label="Badges Passport">
       <div>
         <p className="text-xs font-bold uppercase tracking-widest text-yunicity-primary">Badges</p>
         <h2 className="mt-2 text-2xl font-bold text-neutral-900">Badges obtenus</h2>
         {earned.length === 0 ? (
           <div className="mt-4">
             <PassportEmptyState
-              title="Aucun badge pour l'instant"
-              description="Explorez la ville, participez aux événements et complétez des défis pour débloquer vos premiers badges."
+              title="Aucun badge obtenu pour le moment"
+              description="Pars à la découverte de ta ville pour débloquer tes premiers badges."
             />
           </div>
         ) : (
@@ -38,7 +38,7 @@ export function PassportBadgesSection({ badges }: PassportBadgesSectionProps) {
         <div>
           <h3 className="text-lg font-semibold text-neutral-900">À débloquer</h3>
           <p className="mt-1 text-sm text-neutral-500">
-            Les badges secrets non obtenus ne sont pas affichés ici.
+            Continue à explorer Yunicity pour enrichir ton Passport.
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {locked.map((badge) => (

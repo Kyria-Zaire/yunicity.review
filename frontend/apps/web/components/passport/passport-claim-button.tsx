@@ -25,7 +25,7 @@ export function PassportClaimButton({
       type="button"
       disabled={disabled || isLoading}
       onClick={() => onClaim(challengeCode)}
-      className={`${yunicityBtnPrimary} w-full sm:w-auto`}
+      className={`${yunicityBtnPrimary} min-h-11 w-full sm:w-auto`}
     >
       {label}
     </button>

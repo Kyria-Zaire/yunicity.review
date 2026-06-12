@@ -4,7 +4,13 @@ import { AuthError } from "./auth/auth-errors";
 import {
   challengeClaimButtonLabel,
   formatChallengeProgressPercent,
+  formatClaimSuccessBanner,
+  formatPassportTierHumanSubtitle,
   formatPassportTierLabel,
+  getChallengeMotivationMessage,
+  getPassportHeroContextMessage,
+  getReputationContextMessage,
+  getWalletContextMessage,
   humanizeChallengeClaimError,
   humanizePassportMeLoadError,
   isPassportMeApiUnavailableError,
@@ -85,14 +91,94 @@ describe("humanizePassportMeLoadError", () => {
   });
 });
 
+describe("getPassportHeroContextMessage", () => {
+  it("prioritizes suspended status", () => {
+    expect(
+      getPassportHeroContextMessage({
+        passportStatus: "suspended",
+        passportTier: "gold",
+        earnedBadges: 10,
+      }),
+    ).toContain("indisponible");
+  });
+
+  it("uses gold tier message before badge milestones", () => {
+    expect(
+      getPassportHeroContextMessage({
+        passportStatus: "active",
+        passportTier: "gold",
+        earnedBadges: 0,
+      }),
+    ).toContain("inspires");
+  });
+
+  it("maps badge milestones", () => {
+    expect(
+      getPassportHeroContextMessage({
+        passportStatus: "active",
+        passportTier: "basic",
+        earnedBadges: 0,
+      }),
+    ).toContain("Chaque action");
+  });
+});
+
+describe("formatPassportTierHumanSubtitle", () => {
+  it("maps silver tier", () => {
+    expect(formatPassportTierHumanSubtitle("silver")).toBe("Citoyen engagé");
+  });
+});
+
+describe("getChallengeMotivationMessage", () => {
+  it("celebrates completion", () => {
+    expect(getChallengeMotivationMessage(5, 5, true)).toBe("Défi terminé 🎉");
+  });
+
+  it("nudges when one action remains", () => {
+    expect(getChallengeMotivationMessage(4, 5, false)).toBe("Plus qu'une action pour réussir.");
+  });
+});
+
+describe("formatClaimSuccessBanner", () => {
+  it("formats ym reward", () => {
+    expect(
+      formatClaimSuccessBanner({
+        claimed: true,
+        ym_awarded: 12,
+        message: "Récompense réclamée avec succès.",
+      }),
+    ).toBe("+12 YM ajoutés à ton portefeuille.");
+  });
+});
+
+describe("getWalletContextMessage", () => {
+  it("encourages first earners", () => {
+    expect(getWalletContextMessage({ balance: 0, lifetime_earned: 0 })).toContain(
+      "premières actions",
+    );
+  });
+});
+
+describe("getReputationContextMessage", () => {
+  it("celebrates high reputation", () => {
+    expect(getReputationContextMessage(150)).toContain("plus engagés");
+  });
+});
+
 describe("humanizeChallengeClaimError", () => {
   it("maps wallet suspended", () => {
     const err = new AuthError("YUNI_WALLET_SUSPENDED", "suspendu", 403);
-    expect(humanizeChallengeClaimError(err, "fallback")).toContain("suspendu");
+    expect(humanizeChallengeClaimError(err, "fallback")).toContain("temporairement indisponible");
   });
 
   it("maps challenge not completed", () => {
     const err = new AuthError("PASSPORT_CHALLENGE_NOT_COMPLETED", "pas fini", 400);
-    expect(humanizeChallengeClaimError(err, "fallback")).toContain("pas encore terminé");
+    expect(humanizeChallengeClaimError(err, "fallback")).toContain("Termine ce défi");
+  });
+
+  it("maps network failures", () => {
+    expect(humanizeChallengeClaimError(new Error("network"), "fallback")).toContain(
+      "Impossible de contacter Yunicity",
+    );
   });
 });

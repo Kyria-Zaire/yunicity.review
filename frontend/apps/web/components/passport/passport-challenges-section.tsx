@@ -41,23 +41,23 @@ export function PassportChallengesSection({
     challenges.claimable.length > 0;
 
   return (
-    <section className="space-y-8">
+    <section className="space-y-8" aria-label="Défis Passport">
       <div>
         <p className="text-xs font-bold uppercase tracking-widest text-yunicity-primary">Défis</p>
-        <h2 className="mt-2 text-2xl font-bold text-neutral-900">Vos défis locaux</h2>
+        <h2 className="mt-2 text-2xl font-bold text-neutral-900">Tes défis locaux</h2>
       </div>
 
       {!hasAny ? (
         <PassportEmptyState
           title="Aucun défi pour l'instant"
-          description="De nouveaux défis apparaîtront au fil de votre participation dans la ville."
+          description="De nouveaux défis apparaîtront avec tes activités."
         />
       ) : (
         <>
           {challenges.claimable.length > 0 ? (
             <ChallengeGroup
               title="Récompenses à réclamer"
-              description="Ces défis sont terminés — réclamez votre YuniMonnaie."
+              description="Ces défis sont terminés — réclame ta YuniMonnaie."
             >
               {challenges.claimable.map((challenge) => (
                 <PassportChallengeCard
@@ -71,8 +71,8 @@ export function PassportChallengesSection({
             </ChallengeGroup>
           ) : (
             <PassportEmptyState
-              title="Aucune récompense à réclamer"
-              description="Terminez un défi pour débloquer une récompense YuniMonnaie."
+              title="Aucune récompense à récupérer pour le moment"
+              description="Termine un défi pour débloquer une récompense YuniMonnaie."
             />
           )}
 
