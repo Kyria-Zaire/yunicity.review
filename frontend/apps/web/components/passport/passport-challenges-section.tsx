@@ -69,12 +69,12 @@ export function PassportChallengesSection({
                 />
               ))}
             </ChallengeGroup>
-          ) : (
+          ) : challenges.active.length === 0 ? (
             <PassportEmptyState
-              title="Aucune récompense à récupérer pour le moment"
-              description="Termine un défi pour débloquer une récompense YuniMonnaie."
+              title="Aucune récompense à récupérer"
+              description="Continue à participer à la vie locale pour débloquer de nouvelles opportunités."
             />
-          )}
+          ) : null}
 
           {challenges.active.length > 0 ? (
             <ChallengeGroup title="Défis actifs">
