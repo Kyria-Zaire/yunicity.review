@@ -4,6 +4,7 @@ import {
   CREATOR_DETAIL_EMPTY_BODY,
   CREATOR_DETAIL_ERROR,
   CREATOR_DETAIL_NOT_FOUND,
+  buildCreatorProfileHref,
   formatContentAuthor,
   formatCreatorContentBody,
   formatCreatorContentDate,
@@ -11,9 +12,13 @@ import {
   formatCreatorContentNotFoundMessage,
   formatCreatorContentType,
   formatCreatorContentTypeLabel,
+  formatCreatorDirectoryItem,
+  formatCreatorPublishedCountLabel,
+  formatCreatorTerritoryLabel,
   formatReadingTime,
   getCreatorContentDetailBackHref,
   getCreatorContentDetailHref,
+  getCreatorDirectoryHref,
 } from "./creator-public-presenter";
 
 describe("creator-public-presenter", () => {
@@ -87,5 +92,28 @@ describe("creator-public-presenter", () => {
     expect(formatCreatorContentNotFoundMessage()).toBe(CREATOR_DETAIL_NOT_FOUND);
     expect(formatCreatorContentErrorMessage()).toBe(CREATOR_DETAIL_ERROR);
     expect(CREATOR_DETAIL_EMPTY_BODY).toContain("texte détaillé");
+  });
+
+  it("formats directory item and helpers", () => {
+    const view = formatCreatorDirectoryItem({
+      id: "creator-1",
+      kind: "partner",
+      display_name: "Studio Lumière",
+      slug: "studio-lumiere",
+      description: "Un regard local sur le territoire.",
+      logo_url: "https://cdn.example.com/logo.png",
+      territory: { city: "Reims", neighborhood_name: "Centre-ville" },
+      partnership_type: "creator_partner",
+      partner_status: "active",
+      published_content_count: 3,
+    });
+    expect(view.displayName).toBe("Studio Lumière");
+    expect(view.territoryLabel).toBe("Centre-ville · Reims");
+    expect(view.publishedCountLabel).toBe("3 histoires publiées");
+    expect(view.badgeLabel).toBe("Créateur partenaire");
+    expect(buildCreatorProfileHref("creator-1")).toBe("/creators/creator-1");
+    expect(getCreatorDirectoryHref()).toBe("/creators");
+    expect(formatCreatorTerritoryLabel({ city: "Reims", neighborhood_name: null })).toBe("Reims");
+    expect(formatCreatorPublishedCountLabel(1)).toBe("1 histoire publiée");
   });
 });

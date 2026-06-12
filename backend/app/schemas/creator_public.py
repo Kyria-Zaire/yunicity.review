@@ -8,6 +8,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.core.partner_constants import PartnershipType, PartnerStatus
+
 
 class CreatorPublicAuthor(BaseModel):
     """V1: partner organization. Future: kind=creator_profile."""
@@ -51,6 +53,29 @@ class CreatorPublicTerritory(BaseModel):
 
 class CreatorPublicProfileStats(BaseModel):
     published_content_count: int = Field(ge=0)
+
+
+class CreatorPublicDirectoryItem(BaseModel):
+    """Public creator directory card (C1-04). V1: partner organization as creator."""
+
+    id: UUID
+    kind: Literal["partner", "creator_profile"] = "partner"
+    display_name: str = Field(min_length=1, max_length=256)
+    slug: str = Field(min_length=1, max_length=128)
+    description: str | None = None
+    logo_url: str | None = None
+    territory: CreatorPublicTerritory
+    partnership_type: PartnershipType | None = None
+    partner_status: PartnerStatus | None = None
+    published_content_count: int = Field(ge=1)
+
+
+class CreatorPublicDirectoryListResponse(BaseModel):
+    city: str = Field(min_length=1, max_length=128)
+    items: list[CreatorPublicDirectoryItem]
+    total: int = Field(ge=0)
+    limit: int = Field(ge=1)
+    offset: int = Field(ge=0)
 
 
 class CreatorPublicProfileResponse(BaseModel):

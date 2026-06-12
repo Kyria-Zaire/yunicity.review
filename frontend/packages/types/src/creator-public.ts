@@ -1,3 +1,5 @@
+import type { PartnerStatus, PartnershipType } from "./partner";
+
 /** Public creator hub types (FEATURE-CREATORS-V1 C1-01). */
 
 export const CREATOR_CONTENT_TYPES = ["article", "photo"] as const;
@@ -74,4 +76,32 @@ export type CreatorPublicProfile = {
 export type CreatorPublicProfileParams = {
   limit?: number;
   offset?: number;
+};
+
+export type CreatorPublicDirectoryItem = {
+  id: string;
+  kind: CreatorContentAuthorKind;
+  display_name: string;
+  slug: string;
+  description: string | null;
+  logo_url: string | null;
+  territory: CreatorPublicTerritory;
+  partnership_type: PartnershipType | null;
+  partner_status: PartnerStatus | null;
+  published_content_count: number;
+};
+
+export type CreatorPublicDirectoryListParams = {
+  city?: string;
+  q?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export type CreatorPublicDirectoryListResponse = {
+  city: string;
+  items: CreatorPublicDirectoryItem[];
+  total: number;
+  limit: number;
+  offset: number;
 };

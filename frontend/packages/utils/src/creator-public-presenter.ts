@@ -1,4 +1,11 @@
-import type { CreatorContentAuthor, CreatorContentType } from "@yunicity/types";
+import type {
+  CreatorContentAuthor,
+  CreatorContentType,
+  CreatorPublicDirectoryItem,
+  PartnershipType,
+} from "@yunicity/types";
+
+import { partnerStatusLabel, partnerTypeLabel } from "./partner-labels";
 
 export const CREATOR_HUB_TITLE = "Créateurs";
 export const CREATOR_HUB_SUBTITLE =
@@ -25,6 +32,21 @@ export const CREATOR_PROFILE_CONTENTS_TITLE = "Histoires publiées";
 export const CREATOR_PROFILE_CONTENTS_EMPTY =
   "Aucune histoire publiée pour le moment. Revenez bientôt pour découvrir de nouveaux contenus.";
 export const CREATOR_PROFILE_STATS_LABEL = "histoires publiées";
+
+export const CREATOR_DIRECTORY_TITLE = "Créateurs";
+export const CREATOR_DIRECTORY_HERO =
+  "Découvrez les voix locales qui racontent Yunicity.";
+export const CREATOR_DIRECTORY_SUBTITLE =
+  "Ambassadeurs, partenaires et regards de terrain — un annuaire des créateurs publics sur votre territoire.";
+export const CREATOR_DIRECTORY_EMPTY =
+  "Aucun créateur public n'est encore disponible sur ce territoire.";
+export const CREATOR_DIRECTORY_ERROR = "Impossible de charger l'annuaire des créateurs.";
+export const CREATOR_DIRECTORY_RETRY = "Réessayer";
+export const CREATOR_DIRECTORY_SEARCH_PLACEHOLDER = "Rechercher par nom ou quartier…";
+export const CREATOR_DIRECTORY_VIEW_PROFILE = "Voir le profil";
+export const CREATOR_DIRECTORY_DISCOVER_LINK = "Découvrir les créateurs";
+export const CREATOR_DIRECTORY_HUB_LINK = "Voir les histoires";
+export const CREATOR_DIRECTORY_BIO_MAX_LENGTH = 140;
 
 export const CREATOR_CONTENT_TYPE_LABELS: Record<CreatorContentType, string> = {
   article: "Article",
@@ -132,9 +154,81 @@ export function formatCreatorProfileTerritory(
 }
 
 export function formatCreatorProfileStats(count: number): string {
+  return formatCreatorPublishedCountLabel(count);
+}
+
+export function formatCreatorPublishedCountLabel(count: number): string {
   const safe = Math.max(0, count);
   if (safe <= 1) {
-    return `${safe} ${CREATOR_PROFILE_STATS_LABEL.replace("histoires", "histoire")}`;
+    return `${safe} histoire publiée`;
   }
   return `${safe} ${CREATOR_PROFILE_STATS_LABEL}`;
+}
+
+export function formatCreatorTerritoryLabel(
+  territory: { city: string; neighborhood_name: string | null },
+): string {
+  return formatCreatorProfileTerritory(territory);
+}
+
+export function buildCreatorProfileHref(creatorId: string): string {
+  return getCreatorProfileHref(creatorId);
+}
+
+export function getCreatorDirectoryHref(): string {
+  return CREATORS_PATH;
+}
+
+export type CreatorDirectoryCardView = {
+  id: string;
+  displayName: string;
+  territoryLabel: string;
+  bioExcerpt: string | null;
+  publishedCountLabel: string;
+  badgeLabel: string | null;
+  profileHref: string;
+  logoUrl: string | null;
+};
+
+export function formatCreatorDirectoryBadge(
+  item: Pick<CreatorPublicDirectoryItem, "partnership_type" | "partner_status">,
+): string | null {
+  if (item.partner_status === "founding_partner") {
+    return partnerStatusLabel("founding_partner");
+  }
+  if (item.partner_status === "premium") {
+    return partnerStatusLabel("premium");
+  }
+  if (item.partnership_type) {
+    return partnerTypeLabel(item.partnership_type as PartnershipType);
+  }
+  return null;
+}
+
+export function formatCreatorDirectoryBioExcerpt(
+  description: string | null | undefined,
+): string | null {
+  const normalized = (description ?? "").replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return null;
+  }
+  if (normalized.length <= CREATOR_DIRECTORY_BIO_MAX_LENGTH) {
+    return normalized;
+  }
+  return `${normalized.slice(0, CREATOR_DIRECTORY_BIO_MAX_LENGTH - 1).trimEnd()}…`;
+}
+
+export function formatCreatorDirectoryItem(
+  item: CreatorPublicDirectoryItem,
+): CreatorDirectoryCardView {
+  return {
+    id: item.id,
+    displayName: item.display_name,
+    territoryLabel: formatCreatorTerritoryLabel(item.territory),
+    bioExcerpt: formatCreatorDirectoryBioExcerpt(item.description),
+    publishedCountLabel: formatCreatorPublishedCountLabel(item.published_content_count),
+    badgeLabel: formatCreatorDirectoryBadge(item),
+    profileHref: buildCreatorProfileHref(item.id),
+    logoUrl: item.logo_url,
+  };
 }

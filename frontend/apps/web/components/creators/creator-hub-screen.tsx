@@ -4,12 +4,15 @@ import { CreatorContentCard } from "@/components/creators/creator-content-card";
 import { CreatorHubSkeleton } from "@/components/creators/creator-hub-skeleton";
 import { useCreatorHub } from "@/hooks/use-creator-hub";
 import {
+  CREATOR_DIRECTORY_DISCOVER_LINK,
   CREATOR_HUB_EMPTY,
   CREATOR_HUB_ERROR,
   CREATOR_HUB_RETRY,
   CREATOR_HUB_SUBTITLE,
   CREATOR_HUB_TITLE,
+  getCreatorDirectoryHref,
 } from "@yunicity/utils";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 export function CreatorHubScreen() {
@@ -30,7 +33,15 @@ export function CreatorHubScreen() {
           <p className="mt-3 text-sm leading-relaxed text-neutral-600 sm:text-base">
             {CREATOR_HUB_SUBTITLE}
           </p>
-          <p className="mt-2 text-xs font-medium text-neutral-500">Ville : {city}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+            <p className="text-xs font-medium text-neutral-500">Ville : {city}</p>
+            <Link
+              href={getCreatorDirectoryHref()}
+              className="font-semibold text-yunicity-primary hover:underline"
+            >
+              {CREATOR_DIRECTORY_DISCOVER_LINK}
+            </Link>
+          </div>
         </header>
 
         <section className="mt-10" aria-label="Contenus créateurs publiés">

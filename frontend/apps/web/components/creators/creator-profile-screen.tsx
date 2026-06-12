@@ -8,11 +8,13 @@ import { CulturalImage } from "@/components/culture/cultural-image";
 import { useCreatorProfile } from "@/hooks/use-creator-profile";
 import type { CreatorPublicProfile } from "@yunicity/types";
 import {
+  CREATOR_DIRECTORY_DISCOVER_LINK,
   CREATOR_PROFILE_BACK,
   CREATOR_PROFILE_CONTENTS_EMPTY,
   CREATOR_PROFILE_CONTENTS_TITLE,
   formatCreatorProfileStats,
   formatCreatorProfileTerritory,
+  getCreatorDirectoryHref,
   getCreatorProfileBackHref,
   hasCreatorCover,
 } from "@yunicity/utils";
@@ -29,13 +31,19 @@ export function CreatorProfileScreen({ creatorId }: CreatorProfileScreenProps) {
   return (
     <div className="min-h-dvh bg-[#F4F5F7]">
       <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-        <nav className="mb-8">
+        <nav className="mb-8 flex flex-wrap items-center gap-4 text-sm">
           <Link
             href={getCreatorProfileBackHref()}
-            className="inline-flex items-center gap-2 text-sm font-medium text-neutral-600 transition-colors hover:text-yunicity-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yunicity-primary"
+            className="inline-flex items-center gap-2 font-medium text-neutral-600 transition-colors hover:text-yunicity-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yunicity-primary"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden />
             {CREATOR_PROFILE_BACK}
+          </Link>
+          <Link
+            href={getCreatorDirectoryHref()}
+            className="font-semibold text-yunicity-primary hover:underline"
+          >
+            {CREATOR_DIRECTORY_DISCOVER_LINK}
           </Link>
         </nav>
 

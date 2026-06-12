@@ -1,5 +1,7 @@
 import type {
   CreatorPublicDetailResponse,
+  CreatorPublicDirectoryListParams,
+  CreatorPublicDirectoryListResponse,
   CreatorPublicListParams,
   CreatorPublicListResponse,
   CreatorPublicProfile,
@@ -11,6 +13,7 @@ import { ApiClientBase } from "./api-client";
 
 export const CREATOR_HUB_LIST_LIMIT_DEFAULT = 24;
 export const CREATOR_PROFILE_CONTENTS_LIMIT_DEFAULT = 24;
+export const CREATOR_DIRECTORY_LIST_LIMIT_DEFAULT = 24;
 
 function buildCreatorPublicQuery(params: CreatorPublicListParams): string {
   const search = new URLSearchParams();
@@ -37,6 +40,25 @@ export class CreatorPublicApi extends ApiClientBase {
   getCreatorContentDetail(contentId: string): Promise<CreatorPublicDetailResponse> {
     const id = contentId.trim();
     return this.getJson<CreatorPublicDetailResponse>(`/creator-content/${encodeURIComponent(id)}`);
+  }
+
+  listCreators(
+    params: CreatorPublicDirectoryListParams = {},
+  ): Promise<CreatorPublicDirectoryListResponse> {
+    const search = new URLSearchParams();
+    search.set("city", params.city?.trim() || "Reims");
+    if (params.q?.trim()) {
+      search.set("q", params.q.trim());
+    }
+    if (params.limit !== undefined) {
+      search.set("limit", String(params.limit));
+    }
+    if (params.offset !== undefined) {
+      search.set("offset", String(params.offset));
+    }
+    return this.getJson<CreatorPublicDirectoryListResponse>(
+      `/public/creators?${search.toString()}`,
+    );
   }
 
   getCreatorProfile(
