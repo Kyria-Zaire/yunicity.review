@@ -32,7 +32,10 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-        sa.CheckConstraint("amount > 0", name="ck_passport_challenge_progress_events_amount_positive"),
+        sa.CheckConstraint(
+            "amount > 0",
+            name="ck_passport_challenge_progress_events_amount_positive",
+        ),
         sa.CheckConstraint(
             "source_type <> ''",
             name="ck_passport_challenge_progress_events_source_type_nonempty",
