@@ -1,6 +1,6 @@
 """Passport badge catalog read service (PASSPORT-03A).
 
-User badge attribution is PASSPORT-03B — not in this ticket.
+User badge attribution: PASSPORT-03B (`passport_badge_earning_service.py`).
 """
 
 from __future__ import annotations

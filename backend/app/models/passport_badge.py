@@ -90,7 +90,7 @@ class PassportBadge(TimestampMixin, Base):
 
 
 class UserPassportBadge(Base):
-    """User-earned badge — attribution logic is PASSPORT-03B."""
+    """User-earned badge — attribution via PassportBadgeEarningService (PASSPORT-03B)."""
 
     __tablename__ = "user_passport_badges"
     __table_args__ = (

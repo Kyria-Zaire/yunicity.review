@@ -1,9 +1,16 @@
-"""Passport V2 badge catalog constants (PASSPORT-03A)."""
+"""Passport V2 badge catalog constants (PASSPORT-03A/03B)."""
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
+
+# MVP pioneer cutoff — users registered on or before this instant qualify.
+PASSPORT_PIONEER_CUTOFF = datetime(2026, 6, 1, 0, 0, 0, tzinfo=UTC)
+
+EXPLORATEUR_REIMS_STAMP_THRESHOLD = 5
+SOUTIEN_LOCAL_REDEMPTION_THRESHOLD = 3
 
 PASSPORT_BADGE_FAMILIES: frozenset[str] = frozenset(
     {
@@ -40,6 +47,13 @@ class PassportBadgeRarity(StrEnum):
     RARE = "rare"
     EPIC = "epic"
     LEGENDARY = "legendary"
+
+
+class PassportBadgeSourceType(StrEnum):
+    PASSPORT_STAMPS = "passport_stamps"
+    PARTNER_OFFER_REDEMPTION = "partner_offer_redemption"
+    USER_REGISTRATION = "user_registration"
+    MANUAL = "manual"
 
 
 class PassportBadgeCode(StrEnum):
