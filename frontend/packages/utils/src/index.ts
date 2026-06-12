@@ -767,6 +767,13 @@ export {
   type LoginValidation,
 } from "./login-portal";
 export {
+  DEFAULT_AUTH_REDIRECT,
+  buildCurrentAppPath,
+  buildLoginUrlWithNext,
+  isSafeInternalReturnPath,
+  resolveAuthReturnPath,
+} from "./auth-return-path";
+export {
   LOGIN_FIELD_EMAIL,
   LOGIN_FIELD_EMAIL_PLACEHOLDER,
   LOGIN_FIELD_PASSWORD,

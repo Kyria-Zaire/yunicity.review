@@ -1,7 +1,7 @@
 "use client";
 
 import { yunicityBtnPrimary } from "@/lib/brand-classes";
-import { PASSPORT_SESSION_EXPIRED_MESSAGE } from "@yunicity/utils";
+import { PASSPORT_SESSION_EXPIRED_MESSAGE, buildLoginUrlWithNext } from "@yunicity/utils";
 import { useRouter } from "next/navigation";
 
 export function PassportSessionExpiredState() {
@@ -14,7 +14,7 @@ export function PassportSessionExpiredState() {
       <p className="mt-2 text-sm text-neutral-600">{PASSPORT_SESSION_EXPIRED_MESSAGE}</p>
       <button
         type="button"
-        onClick={() => router.replace("/login")}
+        onClick={() => router.replace(buildLoginUrlWithNext("/passport"))}
         className={`mt-6 ${yunicityBtnPrimary}`}
       >
         Se reconnecter

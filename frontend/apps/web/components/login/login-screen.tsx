@@ -6,12 +6,21 @@ import { LoginHelpCard } from "@/components/login/login-help-card";
 import { LoginMarketingPanel } from "@/components/login/login-marketing-panel";
 import { LoginSecurityBanner } from "@/components/login/login-security-banner";
 import { useAuth } from "@/lib/auth/auth-provider";
-import { buildLoginApiPayload, validateLoginForm } from "@yunicity/utils";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { buildLoginApiPayload, resolveAuthReturnPath, validateLoginForm } from "@yunicity/utils";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 
 export function LoginScreen() {
+  return (
+    <Suspense fallback={null}>
+      <LoginScreenInner />
+    </Suspense>
+  );
+}
+
+function LoginScreenInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, error, clearError } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
@@ -29,7 +38,7 @@ export function LoginScreen() {
     try {
       const ok = await login(buildLoginApiPayload(values));
       if (ok) {
-        router.replace("/feed");
+        router.replace(resolveAuthReturnPath(searchParams.get("next")));
       }
     } finally {
       setIsSubmitting(false);
