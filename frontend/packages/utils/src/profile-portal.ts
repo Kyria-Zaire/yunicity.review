@@ -439,7 +439,7 @@ export function buildProfileLocalJourneyItems(input: {
       postsCount,
     });
     for (const badge of badges) {
-      if (!badge.earned || badge.earnedAt?.trim()) continue;
+      if (!badge.earned || !badge.earnedAt?.trim()) continue;
       const key = `badge-${badge.id}`;
       if (seen.has(key)) continue;
       seen.add(key);

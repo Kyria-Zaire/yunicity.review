@@ -105,7 +105,7 @@ export function ProfilePortalScreen() {
               />
             </div>
 
-            <div className="rounded-2xl border border-neutral-200/90 bg-white p-6 text-center shadow-sm">
+            <div id="profile-settings" className="rounded-2xl border border-neutral-200/90 bg-white p-6 text-center shadow-sm">
               <p className="text-sm text-neutral-600">
                 Modifiez votre profil, vos préférences et votre confidentialité depuis vos paramètres.
               </p>

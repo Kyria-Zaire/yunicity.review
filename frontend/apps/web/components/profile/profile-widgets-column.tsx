@@ -181,10 +181,6 @@ export function ProfileWidgetsColumn({
           </ul>
         )}
       </section>
-
-      <section id="profile-events" className="sr-only" aria-hidden>
-        Rencontres enregistrées — voir activité récente
-      </section>
     </div>
   );
 }

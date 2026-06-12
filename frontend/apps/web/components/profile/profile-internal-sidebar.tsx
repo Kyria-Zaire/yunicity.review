@@ -35,7 +35,7 @@ const NAV_ITEMS: { id: ProfilePortalNavId; label: string; icon: LucideIcon; targ
     { id: "overview", label: PROFILE_PORTAL_NAV_PROFILE, icon: User, targetId: "profile-overview" },
     { id: "activity", label: PROFILE_PORTAL_NAV_ACTIVITY, icon: Sparkles, targetId: "profile-activity" },
     { id: "favorites", label: PROFILE_PORTAL_NAV_FAVORITES, icon: Star, targetId: "profile-favorites" },
-    { id: "events", label: PROFILE_PORTAL_NAV_EVENTS, icon: CalendarDays, targetId: "profile-events" },
+    { id: "events", label: PROFILE_PORTAL_NAV_EVENTS, icon: CalendarDays, targetId: "profile-activity" },
     { id: "tribes", label: PROFILE_PORTAL_NAV_TRIBES, icon: Users, targetId: "profile-tribes" },
     { id: "badges", label: PROFILE_PORTAL_NAV_BADGES, icon: Award, targetId: "profile-badges" },
     { id: "settings", label: PROFILE_PORTAL_NAV_SETTINGS, icon: Settings2, targetId: "profile-settings" },
