@@ -7,6 +7,7 @@ on:
       - "docker-compose.yml"
       - "backend/Dockerfile"
       - "backend/.dockerignore"
+      - "backend/tests/conftest.py"
       - "infra/docker/**"
       - ".github/workflows/docker-ci.yml"
   push:
@@ -15,6 +16,7 @@ on:
       - "docker-compose.yml"
       - "backend/Dockerfile"
       - "backend/.dockerignore"
+      - "backend/tests/conftest.py"
       - "infra/docker/**"
       - ".github/workflows/docker-ci.yml"
 
@@ -70,7 +72,11 @@ jobs:
           echo "$body" | grep -q '"redis":"ok"'
 
       - name: Pytest in backend container
-        run: docker compose exec -T backend pytest
+        run: |
+          docker compose exec -T \
+            -e JWT_SECRET_KEY=test-secret-key-at-least-32-characters-long!! \
+            -e REFRESH_TOKEN_PEPPER=test-pepper-32-chars-minimum!! \
+            backend pytest
 
       - name: Tear down
         if: always()
