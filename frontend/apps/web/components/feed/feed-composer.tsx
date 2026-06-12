@@ -169,7 +169,7 @@ export function FeedComposer({
           <ComposerIconButton label="Explorer les quartiers" href="/neighborhoods">
             <IconMapPin />
           </ComposerIconButton>
-          <ComposerIconButton label="Voir les moments locaux" href="/events">
+          <ComposerIconButton label="Voir les moments locaux" href="/sortir">
             <IconCalendar />
           </ComposerIconButton>
         </div>

@@ -12,6 +12,9 @@ import {
   PROFILE_PORTAL_ERROR,
   PROFILE_PORTAL_LOADING,
   PROFILE_PORTAL_NAV_SETTINGS,
+  PROFILE_PORTAL_ONBOARDING_BODY,
+  PROFILE_PORTAL_ONBOARDING_CTA,
+  PROFILE_PORTAL_ONBOARDING_TITLE,
   PROFILE_PORTAL_RETRY,
 } from "@yunicity/utils";
 import Link from "next/link";
@@ -67,6 +70,19 @@ export function ProfilePortalScreen() {
               subtitle={ctx.heroSubtitle}
               settingsHref="/profile/me/edit"
             />
+
+            {!ctx.profile.onboarding_completed ? (
+              <section className="rounded-2xl border border-amber-200 bg-amber-50/80 p-5">
+                <h2 className="font-semibold text-amber-900">{PROFILE_PORTAL_ONBOARDING_TITLE}</h2>
+                <p className="mt-1 text-sm text-amber-800">{PROFILE_PORTAL_ONBOARDING_BODY}</p>
+                <Link
+                  href="/profile/me/edit"
+                  className="mt-4 inline-flex rounded-xl bg-amber-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-950"
+                >
+                  {PROFILE_PORTAL_ONBOARDING_CTA}
+                </Link>
+              </section>
+            ) : null}
 
             <ProfileStatsBar stats={ctx.stats} />
 

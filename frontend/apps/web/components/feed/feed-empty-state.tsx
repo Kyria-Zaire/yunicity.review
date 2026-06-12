@@ -11,7 +11,7 @@ export function FeedEmptyState({ city }: { city?: string }) {
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <Link
-          href="/events"
+          href="/sortir"
           className="rounded-full bg-yunicity-primary px-4 py-2 text-sm font-medium text-white hover:bg-yunicity-primary-hover"
         >
           Moments à {place}

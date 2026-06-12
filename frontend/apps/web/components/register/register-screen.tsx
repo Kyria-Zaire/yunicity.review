@@ -32,9 +32,11 @@ import {
 } from "@yunicity/utils";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function RegisterScreen() {
+  const router = useRouter();
   const { register, error, clearError } = useAuth();
   const wizard = useRegisterWizard();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,7 +56,9 @@ export function RegisterScreen() {
     try {
       const ok = await register(buildRegisterApiPayload(wizard.draft));
       if (ok) {
-        setSuccessPath(buildRegisterPostAuthPath(wizard.draft.accountType));
+        const path = buildRegisterPostAuthPath(wizard.draft.accountType);
+        router.replace(path);
+        setSuccessPath(path);
       }
     } finally {
       setIsSubmitting(false);

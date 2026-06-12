@@ -69,7 +69,7 @@ const NAV_ITEMS: Array<{
   },
   { id: "stories", label: "Stories", icon: CircleDot, href: "/stories" },
   { id: "contributions", label: FEED_PORTAL_LEFT_CONTRIBUTIONS, icon: PenLine },
-  { id: "saved", label: FEED_PORTAL_LEFT_SAVED, icon: Bookmark, href: "/events" },
+  { id: "saved", label: FEED_PORTAL_LEFT_SAVED, icon: Bookmark, href: "/sortir" },
 ];
 
 export function FeedLeftRail({

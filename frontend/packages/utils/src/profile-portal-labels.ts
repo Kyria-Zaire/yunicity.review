@@ -19,6 +19,10 @@ export const PROFILE_PORTAL_IMPACT_CTA = "Voir mes statistiques";
 export const PROFILE_PORTAL_IMPACT_LABEL = "Impact positif";
 
 export const PROFILE_PORTAL_EDIT_CTA = "Éditer mon profil";
+export const PROFILE_PORTAL_ONBOARDING_TITLE = "Active ton profil";
+export const PROFILE_PORTAL_ONBOARDING_BODY =
+  "Choisis ta ville et au moins un centre d'intérêt pour personnaliser ton expérience locale.";
+export const PROFILE_PORTAL_ONBOARDING_CTA = "Compléter mon profil";
 export const PROFILE_PORTAL_VERIFIED_LABEL = "Profil vérifié";
 export const PROFILE_PORTAL_ROLE_HABITANT = "Habitant";
 

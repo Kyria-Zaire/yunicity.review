@@ -110,7 +110,7 @@ export function FeedRightRail({ tribes, highlights, trends, loading }: FeedRight
 
       <SectionCard
         title={FEED_PORTAL_HIGHLIGHTS_TITLE}
-        ctaHref="/events"
+        ctaHref="/sortir"
         ctaLabel={FEED_PORTAL_HIGHLIGHTS_CTA}
       >
         {highlights.length === 0 ? (

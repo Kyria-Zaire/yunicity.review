@@ -14,6 +14,7 @@ import {
   PASSPORT_STAMP_CLAIM_SUCCESS_BODY,
   PASSPORT_STAMP_CLAIM_SUCCESS_TITLE,
   partnerPublicHref,
+  buildLoginUrlWithNext,
 } from "@yunicity/utils";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -54,8 +55,10 @@ function PassportStampClaimContent() {
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      const redirect = encodeURIComponent(`/passport/stamp/claim?token=${token}`);
-      router.push(`/login?redirect=${redirect}`);
+      const returnPath = token
+        ? `/passport/stamp/claim?token=${encodeURIComponent(token)}`
+        : "/passport/stamp/claim";
+      router.push(buildLoginUrlWithNext(returnPath));
       return;
     }
     if (!token) {

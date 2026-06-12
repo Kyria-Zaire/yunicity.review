@@ -121,7 +121,12 @@ export function useProfileEditContext() {
     setSaveMessage(null);
     try {
       const payload = buildProfileEditSavePayload(profile, draft);
-      const updated = await api.updateProfileMe(payload);
+      let updated = await api.updateProfileMe(payload);
+      const city = (payload.city ?? draft.city).trim();
+      const interests = payload.interests ?? draft.interests;
+      if (!updated.onboarding_completed && city && interests.length > 0) {
+        updated = await api.completeProfileOnboarding({ city, interests });
+      }
       const nextDraft = buildProfileEditDraft(updated);
       setProfile(updated);
       setDraft(nextDraft);

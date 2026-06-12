@@ -96,7 +96,7 @@ function StoriesSeeAllCard({ href }: { href: string }) {
   );
 }
 
-export function FeedStoriesRail({ items, seeAllHref = "/events" }: FeedStoriesRailProps) {
+export function FeedStoriesRail({ items, seeAllHref = "/sortir" }: FeedStoriesRailProps) {
   if (items.length === 0) return null;
 
   return (
