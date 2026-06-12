@@ -23,6 +23,8 @@ import type {
   OrganizationMeListResponse,
   OrganizationPublic,
   OrganizationRequestPayload,
+  CreatorPublicListParams,
+  CreatorPublicListResponse,
   PartnerCreatorContentListParams,
   PartnerCreatorContentPublicListResponse,
   PartnerEventsParams,
@@ -96,6 +98,7 @@ import {
   createOrganizationEventsApi,
 } from "./organization-events-api";
 import { PartnerPassportApi, createPartnerPassportApi } from "./partner-passport-api";
+import { CreatorPublicApi, createCreatorPublicApi } from "./creator-public-api";
 import { PartnersApi, createPartnersApi, fetchPublicPartnerOffers } from "./partners-api";
 
 /** FaÃƒÆ’Ã‚Â§ade profile + organizations + passport. */
@@ -125,6 +128,7 @@ export class YunicityApi {
   readonly partnerPassport: PartnerPassportApi;
   readonly organizationEvents: OrganizationEventsApi;
   readonly organizationCreatorContent: OrganizationCreatorContentApi;
+  readonly creatorPublic: CreatorPublicApi;
 
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.apiBaseUrl = apiBaseUrl;
@@ -151,6 +155,13 @@ export class YunicityApi {
     this.partnerPassport = createPartnerPassportApi(client, apiBaseUrl);
     this.organizationEvents = createOrganizationEventsApi(client, apiBaseUrl);
     this.organizationCreatorContent = createOrganizationCreatorContentApi(client, apiBaseUrl);
+    this.creatorPublic = createCreatorPublicApi(client, apiBaseUrl);
+  }
+
+  listCreatorHubContent(
+    params?: CreatorPublicListParams,
+  ): Promise<CreatorPublicListResponse> {
+    return this.creatorPublic.listCreatorContent(params);
   }
 
   listPartners(params: PartnerListParams): Promise<PartnerListResponse> {

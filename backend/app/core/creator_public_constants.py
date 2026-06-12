@@ -1,0 +1,11 @@
+"""Public creator hub constants (FEATURE-CREATORS-V1 C1-01)."""
+
+from __future__ import annotations
+
+CREATOR_HUB_LIST_LIMIT_DEFAULT = 24
+CREATOR_HUB_LIST_LIMIT_MAX = 50
+
+CREATOR_CONTENT_TYPE_ARTICLE = "article"
+CREATOR_CONTENT_TYPE_PHOTO = "photo"
+
+CREATOR_AUTHOR_KIND_PARTNER = "partner"

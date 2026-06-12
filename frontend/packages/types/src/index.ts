@@ -293,6 +293,16 @@ export type {
 } from "./partner-creator-content";
 
 export type {
+  CreatorContentAuthor,
+  CreatorContentAuthorKind,
+  CreatorContentType,
+  CreatorPublicContent,
+  CreatorPublicListParams,
+  CreatorPublicListResponse,
+} from "./creator-public";
+export { CREATOR_AUTHOR_KINDS, CREATOR_CONTENT_TYPES } from "./creator-public";
+
+export type {
   PartnerOfferListParams,
   PartnerOfferPartnerSummary,
   PartnerOfferPublic,

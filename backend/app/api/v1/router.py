@@ -19,6 +19,7 @@ from app.api.v1 import (
     admin_tribes,
     auth,
     comments,
+    creator_content_public,
     cultural_places,
     discussions,
     events,
@@ -54,6 +55,7 @@ api_router.include_router(profile.router)
 api_router.include_router(organizations.router)
 api_router.include_router(partner_leads.router)
 api_router.include_router(partners.router)
+api_router.include_router(creator_content_public.router)
 api_router.include_router(partner_offers_public.router)
 api_router.include_router(admin_partner_offers.router)
 api_router.include_router(admin_cockpit.router)

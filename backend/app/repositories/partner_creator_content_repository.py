@@ -11,9 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.organization_constants import OrganizationVisibility, VerificationStatus
+from app.core.partner_constants import PUBLIC_PARTNER_STATUSES
 from app.core.partner_creator_content_constants import PartnerCreatorContentStatus
 from app.models.organization import Organization
 from app.models.partner_creator_content import PartnerCreatorContent
+from app.models.partner_profile import PartnerProfile
 from app.services.partner_creator_content_admin_queries import (
     normalize_admin_creator_content_title_query,
 )
@@ -164,6 +166,42 @@ class PartnerCreatorContentRepository:
             .order_by(PartnerCreatorContent.created_at.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().unique().all()), total
+
+    async def list_published_for_city(
+        self,
+        *,
+        city: str,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[PartnerCreatorContent], int]:
+        """Published, active contents for public partner orgs in a city (C1-01 hub)."""
+        filters: list[Any] = [
+            func.lower(Organization.city) == city.strip().lower(),
+            PartnerCreatorContent.status == PartnerCreatorContentStatus.PUBLISHED.value,
+            PartnerCreatorContent.is_active.is_(True),
+            Organization.verification_status == VerificationStatus.VERIFIED.value,
+            Organization.visibility == OrganizationVisibility.PUBLIC.value,
+            PartnerProfile.partner_status.in_([status.value for status in PUBLIC_PARTNER_STATUSES]),
+        ]
+        base = (
+            select(PartnerCreatorContent)
+            .join(Organization, PartnerCreatorContent.organization_id == Organization.id)
+            .join(PartnerProfile, PartnerProfile.organization_id == Organization.id)
+            .where(*filters)
+        )
+        count_stmt = select(func.count()).select_from(base.subquery())
+        total = int((await self._session.execute(count_stmt)).scalar_one())
+        stmt = (
+            base.options(selectinload(PartnerCreatorContent.organization))
+            .order_by(
+                PartnerCreatorContent.moderated_at.desc().nullslast(),
+                PartnerCreatorContent.updated_at.desc(),
+            )
+            .offset(offset)
+            .limit(limit)
         )
         result = await self._session.execute(stmt)
         return list(result.scalars().unique().all()), total
