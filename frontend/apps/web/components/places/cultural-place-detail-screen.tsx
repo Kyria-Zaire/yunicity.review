@@ -5,6 +5,7 @@ import { PlacesAppShell } from "@/components/places/places-app-shell";
 import type { CulturalPlaceDetail } from "@yunicity/types";
 import {
   MAP_CULTURE_ROUTE_CTA,
+  PLACES_PORTAL_OPEN_MAP,
   culturalPlaceCategoryLabel,
   culturalPlaceLocationLine,
   culturalPlaceMapHref,
@@ -74,6 +75,12 @@ export function CulturalPlaceDetailScreen({ place }: CulturalPlaceDetailScreenPr
                   <MapPin className="h-4 w-4" aria-hidden />
                   {MAP_CULTURE_ROUTE_CTA}
                 </Link>
+                <Link
+                  href={culturalPlaceMapHref(place.slug, place.city)}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white"
+                >
+                  {PLACES_PORTAL_OPEN_MAP}
+                </Link>
                 <button
                   type="button"
                   onClick={() => void handleShare()}
@@ -87,6 +94,72 @@ export function CulturalPlaceDetailScreen({ place }: CulturalPlaceDetailScreenPr
             </div>
           </div>
         </article>
+
+        <section className="rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-neutral-900">Informations pratiques</h2>
+          <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-neutral-500">Catégorie</dt>
+              <dd className="font-medium text-neutral-900">
+                {culturalPlaceCategoryLabel(place.category)}
+              </dd>
+            </div>
+            {place.neighborhood ? (
+              <div>
+                <dt className="text-neutral-500">Quartier</dt>
+                <dd>
+                  <Link
+                    href={`/neighborhoods/${encodeURIComponent(place.neighborhood.slug)}?city=${encodeURIComponent(place.city)}`}
+                    className="font-medium text-yunicity-primary hover:underline"
+                  >
+                    {place.neighborhood.display_name}
+                  </Link>
+                </dd>
+              </div>
+            ) : null}
+            {place.address ? (
+              <div className="sm:col-span-2">
+                <dt className="text-neutral-500">Adresse</dt>
+                <dd className="font-medium text-neutral-900">{place.address}</dd>
+              </div>
+            ) : null}
+            {place.source_url ? (
+              <div className="sm:col-span-2">
+                <dt className="text-neutral-500">Source</dt>
+                <dd>
+                  <a
+                    href={place.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-yunicity-primary hover:underline"
+                  >
+                    {place.source_name?.trim() || "En savoir plus"}
+                  </a>
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+        </section>
+
+        {place.gallery_images.length > 0 ? (
+          <section className="rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-neutral-900">Galerie</h2>
+            <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {place.gallery_images.map((image, index) => (
+                <li key={`${image.url}-${index}`} className="overflow-hidden rounded-xl bg-neutral-100">
+                  <CulturalImage
+                    src={image.url}
+                    alt={image.alt ?? place.name}
+                    placeName={place.name}
+                    className="aspect-[4/3] w-full"
+                    sizes="(max-width: 640px) 50vw, 240px"
+                    showFallbackCaption={false}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {place.description ? (
           <section className="rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-sm">

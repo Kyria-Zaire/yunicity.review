@@ -10,6 +10,7 @@ import {
   pickFeaturedPlaces,
   selectPlacesNewBadgeIds,
   shouldShowPlaceNewBadge,
+  sortPlacesLocally,
 } from "./places-portal";
 
 const BASE_PLACE = (overrides: Partial<CulturalPlaceListItem> = {}): CulturalPlaceListItem => ({
@@ -87,5 +88,16 @@ describe("places-portal", () => {
       created_at: new Date(Date.now() - 10 * 86_400_000).toISOString(),
     });
     expect(isPlaceWithinNewBadgeWindow(old)).toBe(false);
+  });
+
+  it("trie les lieux par date de création en mode recent", () => {
+    const now = Date.now();
+    const day = 86_400_000;
+    const places = [
+      BASE_PLACE({ id: "old", name: "Ancien", created_at: new Date(now - 5 * day).toISOString() }),
+      BASE_PLACE({ id: "new", name: "Récent", created_at: new Date(now - day).toISOString() }),
+    ];
+    const sorted = sortPlacesLocally(places, "recent");
+    expect(sorted[0]?.id).toBe("new");
   });
 });

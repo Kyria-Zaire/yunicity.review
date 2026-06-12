@@ -15,7 +15,7 @@ import {
   resolveCulturalPlaceDisplayUrl,
   shouldShowPlaceNewBadge,
 } from "@yunicity/utils";
-import { Bookmark, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 type PlacesRecentGridProps = {
@@ -84,42 +84,31 @@ function RecentCard({
       </Link>
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="line-clamp-1 text-base font-bold text-neutral-900">{place.name}</h3>
-              {showNew ? (
-                <span className="rounded-full bg-yunicity-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                  {PLACES_PORTAL_NEW_BADGE}
-                </span>
-              ) : (
-                <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${placesCategoryBadgeTone(place.category)}`}
-                >
-                  {culturalPlaceCategoryLabel(place.category)}
-                </span>
-              )}
-            </div>
-            <p className="mt-1 text-sm text-neutral-600">
-              <span className="font-medium text-neutral-700">
-                {culturalPlaceCategoryLabel(place.category)}
-              </span>
-              {place.short_description ? ` · ${place.short_description}` : null}
-            </p>
-            <p className="mt-0.5 text-xs text-neutral-500">
-              {location}
-              {openedLabel ? ` · ${openedLabel}` : null}
-              {!showNew ? ` · ${trust}` : null}
-            </p>
-          </div>
-          <button
-            type="button"
-            aria-label="Enregistrer ce lieu — bientôt"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
-          >
-            <Bookmark className="h-4 w-4" aria-hidden />
-          </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="line-clamp-1 text-base font-bold text-neutral-900">{place.name}</h3>
+          {showNew ? (
+            <span className="rounded-full bg-yunicity-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+              {PLACES_PORTAL_NEW_BADGE}
+            </span>
+          ) : (
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${placesCategoryBadgeTone(place.category)}`}
+            >
+              {culturalPlaceCategoryLabel(place.category)}
+            </span>
+          )}
         </div>
+        <p className="mt-1 text-sm text-neutral-600">
+          <span className="font-medium text-neutral-700">
+            {culturalPlaceCategoryLabel(place.category)}
+          </span>
+          {place.short_description ? ` · ${place.short_description}` : null}
+        </p>
+        <p className="mt-0.5 text-xs text-neutral-500">
+          {location}
+          {openedLabel ? ` · ${openedLabel}` : null}
+          {!showNew ? ` · ${trust}` : null}
+        </p>
         <Link
           href={buildPlaceHref(place, city)}
           className="mt-3 inline-flex text-sm font-semibold text-yunicity-primary hover:underline"

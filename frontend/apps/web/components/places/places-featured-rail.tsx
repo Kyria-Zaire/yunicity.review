@@ -12,7 +12,7 @@ import {
   placesCategoryBadgeTone,
   resolveCulturalPlaceDisplayUrl,
 } from "@yunicity/utils";
-import { ChevronLeft, ChevronRight, Heart, MapPin, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Star } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -133,10 +133,6 @@ function FeaturedCard({ place, city }: { place: CulturalPlaceListItem; city: str
           sizes="208px"
           showFallbackCaption={false}
         />
-        <span className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-neutral-500 shadow-sm">
-          <Heart className="h-4 w-4" aria-hidden />
-          <span className="sr-only">Favori — bientôt</span>
-        </span>
       </Link>
       <div className="flex flex-1 flex-col p-4">
         <h3 className="line-clamp-2 text-base font-bold leading-snug text-neutral-900">

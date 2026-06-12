@@ -15,6 +15,7 @@ import {
   pickFeaturedPlaces,
   pickRecentPlaces,
   selectPlacesNewBadgeIds,
+  sortPlacesLocally,
 } from "@yunicity/utils";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -92,8 +93,9 @@ export function usePlacesPortalContext(cityParam: string) {
 
   const filteredPlaces = useMemo(() => {
     const byCategory = filterPlacesByCategoryGroup(catalog, categoryFilter);
-    return filterPlacesBySearch(byCategory, searchQuery);
-  }, [catalog, categoryFilter, searchQuery]);
+    const bySearch = filterPlacesBySearch(byCategory, searchQuery);
+    return sortPlacesLocally(bySearch, sort);
+  }, [catalog, categoryFilter, searchQuery, sort]);
 
   const recentPlaces = useMemo(
     () => pickRecentPlaces(filteredPlaces, visibleCount),
@@ -102,7 +104,7 @@ export function usePlacesPortalContext(cityParam: string) {
 
   useEffect(() => {
     setVisibleCount(PLACES_PAGE_SIZE);
-  }, [categoryFilter, searchQuery]);
+  }, [categoryFilter, searchQuery, sort]);
 
   const hasMore = visibleCount < filteredPlaces.length;
 

@@ -14,9 +14,10 @@ import Link from "next/link";
 type PlacesPartnersRailProps = {
   cards: PartnerPlaceCard[];
   city: string;
+  showViewAll?: boolean;
 };
 
-export function PlacesPartnersRail({ cards, city }: PlacesPartnersRailProps) {
+export function PlacesPartnersRail({ cards, city, showViewAll = true }: PlacesPartnersRailProps) {
   if (cards.length === 0) return null;
 
   return (
@@ -28,13 +29,15 @@ export function PlacesPartnersRail({ cards, city }: PlacesPartnersRailProps) {
           </h2>
           <p className="mt-1 text-sm text-neutral-600">{PLACES_PARTNERS_SECTION_SUBTITLE}</p>
         </div>
-        <Link
-          href={`/places?city=${encodeURIComponent(city)}&filter=partners#places-partners`}
-          className="inline-flex items-center gap-1 text-sm font-semibold text-yunicity-primary hover:underline"
-        >
-          Tout voir
-          <ChevronRight className="h-4 w-4" aria-hidden />
-        </Link>
+        {showViewAll ? (
+          <Link
+            href={`/places?city=${encodeURIComponent(city)}&filter=partners#places-partners`}
+            className="inline-flex items-center gap-1 text-sm font-semibold text-yunicity-primary hover:underline"
+          >
+            Tout voir
+            <ChevronRight className="h-4 w-4" aria-hidden />
+          </Link>
+        ) : null}
       </div>
 
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

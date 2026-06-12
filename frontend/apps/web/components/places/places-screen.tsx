@@ -26,6 +26,7 @@ export function PlacesScreen() {
   const searchParams = useSearchParams();
   const cityParam = searchParams.get("city")?.trim() ?? "";
   const filterParam = searchParams.get("filter")?.trim();
+  const sortParam = searchParams.get("sort")?.trim();
   const ctx = usePlacesPortalContext(cityParam);
 
   useEffect(() => {
@@ -33,6 +34,12 @@ export function PlacesScreen() {
       ctx.setCategoryFilter("partners");
     }
   }, [filterParam, ctx.setCategoryFilter]);
+
+  useEffect(() => {
+    if (sortParam === "featured" || sortParam === "recent" || sortParam === "name") {
+      ctx.setSort(sortParam);
+    }
+  }, [sortParam, ctx.setSort]);
 
   const scrollToSection = useCallback((sectionId: string) => {
     document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -83,7 +90,11 @@ export function PlacesScreen() {
                 <PlacesPortalStats stats={ctx.stats} />
 
                 {ctx.showPartnersOnly ? (
-                  <PlacesPartnersRail cards={buildPartnerPlaceCards(ctx.partners)} city={ctx.city} />
+                  <PlacesPartnersRail
+                    cards={buildPartnerPlaceCards(ctx.partners)}
+                    city={ctx.city}
+                    showViewAll={false}
+                  />
                 ) : (
                   <>
                     <PlacesPartnersRail cards={ctx.partnerCards} city={ctx.city} />

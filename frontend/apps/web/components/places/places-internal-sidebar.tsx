@@ -104,7 +104,7 @@ export function PlacesInternalSidebar({ onScrollTo }: PlacesInternalSidebarProps
       id: "events",
       label: PLACES_SIDEBAR_EVENTS,
       icon: Sparkles,
-      href: "/events",
+      href: "/sortir",
     },
     {
       id: "news",
