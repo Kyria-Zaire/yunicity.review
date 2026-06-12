@@ -788,6 +788,10 @@ export {
   LOGIN_FORGOT_PAGE_BODY,
   LOGIN_FORGOT_PAGE_TITLE,
   LOGIN_FORGOT_PASSWORD,
+  LOGIN_FORGOT_SUBMIT,
+  LOGIN_FORGOT_SUBMITTING,
+  LOGIN_FORGOT_SUCCESS_BODY,
+  LOGIN_FORGOT_SUCCESS_TITLE,
   LOGIN_HELP_BODY,
   LOGIN_HELP_CTA,
   LOGIN_HELP_TITLE,
@@ -810,6 +814,31 @@ export {
   LOGIN_SUBMIT,
   LOGIN_SUBMITTING,
 } from "./login-portal-labels";
+export {
+  buildForgotPasswordApiPayload,
+  buildResetPasswordApiPayload,
+  normalizeForgotPasswordEmail,
+  validateForgotPasswordForm,
+  validateResetPasswordForm,
+  validateResetPasswordToken,
+  type ForgotPasswordFormValues,
+  type PasswordResetValidation,
+  type ResetPasswordFormValues,
+} from "./password-reset-portal";
+export {
+  RESET_PASSWORD_CONFIRM_FIELD,
+  RESET_PASSWORD_CONFIRM_PLACEHOLDER,
+  RESET_PASSWORD_FIELD,
+  RESET_PASSWORD_FIELD_PLACEHOLDER,
+  RESET_PASSWORD_INVALID_TOKEN,
+  RESET_PASSWORD_LOGIN_CTA,
+  RESET_PASSWORD_PAGE_BODY,
+  RESET_PASSWORD_PAGE_TITLE,
+  RESET_PASSWORD_SUBMIT,
+  RESET_PASSWORD_SUBMITTING,
+  RESET_PASSWORD_SUCCESS_BODY,
+  RESET_PASSWORD_SUCCESS_TITLE,
+} from "./password-reset-portal-labels";
 export {
   ProfileApi,
   createProfileApi,

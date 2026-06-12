@@ -38,3 +38,24 @@ class RefreshTokenResponse(BaseModel):
         default=None,
         description="Nouveau refresh pour clients mobile uniquement.",
     )
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ForgotPasswordResponse(BaseModel):
+    message: str
+    reset_url: str | None = Field(
+        default=None,
+        description="Hors production uniquement (APP_ENV != prod), pour les tests.",
+    )
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(min_length=1)
+    new_password: str = Field(min_length=1, max_length=128)
+
+
+class ResetPasswordResponse(BaseModel):
+    message: str

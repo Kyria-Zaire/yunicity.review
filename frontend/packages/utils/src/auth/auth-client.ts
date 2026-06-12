@@ -1,9 +1,13 @@
 import type {
   AuthResponse,
   AuthUser,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
   LoginRequest,
   RefreshResponse,
   RegisterRequest,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
 } from "@yunicity/types";
 
 import { AuthError, parseApiError } from "./auth-errors";
@@ -77,6 +81,22 @@ export class AuthClient {
 
   async me(): Promise<AuthUser> {
     return this.request<AuthUser>("/me", { method: "GET" });
+  }
+
+  async forgotPassword(payload: ForgotPasswordRequest): Promise<ForgotPasswordResponse> {
+    return this.request<ForgotPasswordResponse>("/forgot-password", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      skipAuth: true,
+    });
+  }
+
+  async resetPassword(payload: ResetPasswordRequest): Promise<ResetPasswordResponse> {
+    return this.request<ResetPasswordResponse>("/reset-password", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      skipAuth: true,
+    });
   }
 
   async refreshAccessToken(): Promise<string> {

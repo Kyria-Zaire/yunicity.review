@@ -35,6 +35,7 @@ from app.models.passport_challenge import (
     UserPassportChallenge,
 )
 from app.models.passport_reputation import ReputationEvent, UserReputationSnapshot
+from app.models.password_reset_token import PasswordResetToken
 from app.models.post import Post
 from app.models.push_subscription import PushSubscription
 from app.models.rbac import Permission, Role, RolePermission, UserRole
@@ -96,6 +97,7 @@ __all__ = [
     "PassportChallengeProgressEvent",
     "UserPassportChallenge",
     "ReputationEvent",
+    "PasswordResetToken",
     "Permission",
     "ProfileVisibility",
     "RefreshToken",

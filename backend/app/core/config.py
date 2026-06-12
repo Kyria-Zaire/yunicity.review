@@ -46,6 +46,8 @@ class Settings(BaseSettings):
     refresh_cookie_secure: bool = Field(default=False, alias="REFRESH_COOKIE_SECURE")
     refresh_cookie_samesite: CookieSameSite = Field(default="lax", alias="REFRESH_COOKIE_SAMESITE")
     refresh_token_pepper: str = Field(default="", alias="REFRESH_TOKEN_PEPPER")
+    web_frontend_url: str = Field(default="http://localhost:3000", alias="WEB_FRONTEND_URL")
+    password_reset_expire_hours: int = Field(default=1, alias="PASSWORD_RESET_EXPIRE_HOURS")
 
     expo_push_enabled: bool = Field(default=False, alias="EXPO_PUSH_ENABLED")
     expo_access_token: str | None = Field(default=None, alias="EXPO_ACCESS_TOKEN")

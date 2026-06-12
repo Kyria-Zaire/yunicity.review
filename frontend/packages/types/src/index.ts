@@ -3,10 +3,14 @@ export type {
   AuthResponse,
   AuthTokens,
   AuthUser,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
   LoginRequest,
   PermissionKey,
   RefreshResponse,
   RegisterRequest,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
   RoleKey,
 } from "./auth";
 

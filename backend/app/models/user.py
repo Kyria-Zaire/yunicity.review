@@ -9,6 +9,7 @@ from app.models._mixins import TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.passport import Passport
+    from app.models.password_reset_token import PasswordResetToken
     from app.models.push_subscription import PushSubscription
     from app.models.rbac import UserRole
     from app.models.refresh_token import RefreshToken
@@ -42,6 +43,11 @@ class User(TimestampMixin, Base):
     )
     refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
         "RefreshToken",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    password_reset_tokens: Mapped[list["PasswordResetToken"]] = relationship(
+        "PasswordResetToken",
         back_populates="user",
         cascade="all, delete-orphan",
     )

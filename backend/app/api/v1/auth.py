@@ -16,13 +16,18 @@ from app.db.session import get_db
 from app.models.user import User
 from app.schemas.auth import (
     AuthTokenResponse,
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
     LoginRequest,
     RefreshRequest,
     RefreshTokenResponse,
     RegisterRequest,
+    ResetPasswordRequest,
+    ResetPasswordResponse,
 )
 from app.schemas.user import UserPublic
 from app.services.auth_service import AuthService, IssuedRefreshToken
+from app.services.password_reset_service import PasswordResetService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -170,3 +175,35 @@ async def me(
 ) -> UserPublic:
     service = AuthService(session, settings)
     return await service.get_me(current_user.id)
+
+
+@router.post("/forgot-password", response_model=ForgotPasswordResponse)
+async def forgot_password(
+    payload: ForgotPasswordRequest,
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> ForgotPasswordResponse:
+    ip = _client_ip(request)
+    email = normalize_email(str(payload.email))
+    await enforce_rate_limit(f"rl:forgot-password:ip:{ip}", limit=5, window_seconds=3600)
+    await enforce_rate_limit(f"rl:forgot-password:email:{email}", limit=3, window_seconds=3600)
+
+    service = PasswordResetService(session, settings)
+    result = await service.request_password_reset(email)
+    return ForgotPasswordResponse(message=result.message, reset_url=result.reset_url)
+
+
+@router.post("/reset-password", response_model=ResetPasswordResponse)
+async def reset_password(
+    payload: ResetPasswordRequest,
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> ResetPasswordResponse:
+    ip = _client_ip(request)
+    await enforce_rate_limit(f"rl:reset-password:ip:{ip}", limit=10, window_seconds=3600)
+
+    service = PasswordResetService(session, settings)
+    message = await service.reset_password(payload.token, payload.new_password)
+    return ResetPasswordResponse(message=message)

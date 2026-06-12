@@ -52,8 +52,13 @@ export const LOGIN_FOOTER_CONTACT = "Contact";
 
 export const LOGIN_FORGOT_PAGE_TITLE = "Mot de passe oublié";
 export const LOGIN_FORGOT_PAGE_BODY =
-  "La réinitialisation en ligne n'est pas encore disponible. Contactez le support Yunicity ou créez un nouveau compte si vous n'avez plus accès à votre e-mail.";
+  "Saisissez votre adresse email.\n\nSi un compte Yunicity existe avec cette adresse, vous recevrez un lien de réinitialisation.";
 export const LOGIN_FORGOT_BACK = "Retour à la connexion";
+export const LOGIN_FORGOT_SUBMIT = "Envoyer le lien";
+export const LOGIN_FORGOT_SUBMITTING = "Envoi…";
+export const LOGIN_FORGOT_SUCCESS_TITLE = "Vérifiez votre boîte mail";
+export const LOGIN_FORGOT_SUCCESS_BODY =
+  "Si un compte Yunicity existe avec cette adresse, vous recevrez un lien de réinitialisation.";
 
 export const LOGIN_VALIDATION_EMAIL = "Indiquez une adresse e-mail valide.";
 export const LOGIN_VALIDATION_PASSWORD = "Indiquez votre mot de passe.";

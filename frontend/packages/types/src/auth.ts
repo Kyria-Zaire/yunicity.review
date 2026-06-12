@@ -49,6 +49,24 @@ export interface AuthResponse extends AuthTokens {
 
 export interface RefreshResponse extends AuthTokens {}
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+  reset_url?: string | null;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  new_password: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
 export interface ApiErrorBody {
   detail: string;
   code: string;
