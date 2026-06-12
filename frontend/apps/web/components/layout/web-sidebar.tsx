@@ -14,10 +14,8 @@ import { HOME_PUBLISH_MOMENT } from "@yunicity/utils";
 import { useAuth } from "@/lib/auth/auth-provider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 
-import { useNotificationUnread } from "@/hooks/use-notification-unread";
-import { useYunicityApi } from "@/hooks/use-yunicity-api";
+import { useCitizenChrome, useNotificationUnread } from "@/hooks/use-citizen-chrome";
 
 function scrollToComposer() {
   const el = document.getElementById("feed-composer");
@@ -154,35 +152,8 @@ function NavItem({
 export function WebSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
-  const api = useYunicityApi();
   const unreadNotifications = useNotificationUnread();
-  const [displayName, setDisplayName] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!user) {
-      setDisplayName(null);
-      return;
-    }
-
-    let cancelled = false;
-
-    void api
-      .getProfileMe()
-      .then((profile) => {
-        if (!cancelled) {
-          setDisplayName(profile.display_name ?? profile.username ?? null);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setDisplayName(user.email?.split("@")[0] ?? null);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [api, user]);
+  const { displayName } = useCitizenChrome();
 
   const profileLabel = displayName ?? user?.email?.split("@")[0] ?? "Mon profil";
 

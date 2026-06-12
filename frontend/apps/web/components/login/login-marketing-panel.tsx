@@ -13,6 +13,7 @@ import {
 } from "@yunicity/utils";
 import { CalendarDays, HandHeart, Store, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { YUNICITY_MASCOT_PATH } from "@yunicity/utils";
 
 const BENEFITS: {
   icon: LucideIcon;
@@ -77,9 +78,11 @@ export function LoginMarketingPanel() {
           <div className="overflow-hidden rounded-2xl bg-white/70">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="https://images.unsplash.com/photo-1590333748338-d629e4564ad9?w=700&auto=format&fit=crop&q=60"
+              src={YUNICITY_MASCOT_PATH}
               alt=""
-              className="aspect-[16/10] w-full object-cover"
+              loading="lazy"
+              decoding="async"
+              className="aspect-[16/10] w-full object-contain p-6"
             />
           </div>
         </div>

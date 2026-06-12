@@ -10,6 +10,10 @@ export function FeedAuthorHeader({ post }: { post: FeedPost }) {
         <img
           src={author.logo_url}
           alt=""
+          loading="lazy"
+          decoding="async"
+          width={40}
+          height={40}
           className="h-10 w-10 rounded-full border border-yunicity-border object-cover"
         />
       ) : (

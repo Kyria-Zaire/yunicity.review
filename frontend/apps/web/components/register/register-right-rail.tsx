@@ -15,6 +15,7 @@ import {
 } from "@yunicity/utils";
 import { HandHeart, MapPin, Megaphone, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { YUNICITY_MASCOT_PATH } from "@yunicity/utils";
 
 const BENEFITS: {
   icon: LucideIcon;
@@ -78,9 +79,11 @@ export function RegisterRightRail() {
           <div className="relative aspect-[4/3] bg-yunicity-primary-soft">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="https://images.unsplash.com/photo-1590333748338-d629e4564ad9?w=600&auto=format&fit=crop&q=60"
+              src={YUNICITY_MASCOT_PATH}
               alt=""
-              className="h-full w-full object-cover opacity-90"
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-contain p-8 opacity-90"
             />
           </div>
           <div className="p-5">

@@ -72,7 +72,6 @@ export function useSearchExplorerContext(city: string): SearchExplorerContextSta
       const [
         eventsRes,
         hoodsRes,
-        cultureFeaturedRes,
         cultureCatalogRes,
         statsRes,
         tribesRes,
@@ -81,7 +80,6 @@ export function useSearchExplorerContext(city: string): SearchExplorerContextSta
       ] = await Promise.allSettled([
         api.events.listEvents({ city: activeCity }),
         api.neighborhoods.listNeighborhoods({ city: activeCity, page_size: 12 }),
-        api.listCulturalPlaces({ city: activeCity, featured: true, limit: 12 }),
         api.listCulturalPlaces({ city: activeCity, limit: CATALOG_LIMIT, sort: "featured" }),
         api.getCulturalPlacesStats(activeCity),
         api.tribes.listTribes({ city: activeCity, page_size: 8 }),
@@ -108,12 +106,7 @@ export function useSearchExplorerContext(city: string): SearchExplorerContextSta
       const catalogItems =
         cultureCatalogRes.status === "fulfilled" ? cultureCatalogRes.value.items : [];
       setCatalog(catalogItems);
-
-      if (cultureFeaturedRes.status === "fulfilled" && cultureFeaturedRes.value.items.length > 0) {
-        setCulturalPlaces(cultureFeaturedRes.value.items);
-      } else {
-        setCulturalPlaces(catalogItems.slice(0, 12));
-      }
+      setCulturalPlaces(catalogItems.slice(0, 12));
 
       if (statsRes.status === "fulfilled") {
         setStats(statsRes.value);

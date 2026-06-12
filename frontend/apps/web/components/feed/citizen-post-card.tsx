@@ -16,6 +16,8 @@ export function CitizenPostCard({ post }: { post: FeedPost }) {
         <img
           src={post.media_url}
           alt=""
+          loading="lazy"
+          decoding="async"
           className="mt-4 max-h-80 w-full rounded-xl border border-yunicity-border object-cover"
         />
       ) : null}

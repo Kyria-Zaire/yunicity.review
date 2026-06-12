@@ -8,10 +8,8 @@ import {
   isWebNavActive,
   type WebNavItem,
 } from "@/lib/layout/web-layout-config";
-import { useNotificationUnread } from "@/hooks/use-notification-unread";
-import { useYunicityApi } from "@/hooks/use-yunicity-api";
+import { useCitizenChrome } from "@/hooks/use-citizen-chrome";
 import { useAuth } from "@/lib/auth/auth-provider";
-import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -56,20 +54,8 @@ function TopNavLink({
 export function CitizenTopNav() {
   const pathname = usePathname();
   const { user } = useAuth();
-  const api = useYunicityApi();
-  const unread = useNotificationUnread();
-  const [displayName, setDisplayName] = useState("Citoyen");
-
-  useEffect(() => {
-    void api
-      .getProfileMe()
-      .then((profile) => {
-        setDisplayName(profile.display_name?.trim() || profile.username?.trim() || "Citoyen");
-      })
-      .catch(() => {
-        setDisplayName(user?.full_name?.trim() || "Citoyen");
-      });
-  }, [api, user?.id, user?.full_name]);
+  const { unreadCount: unread, displayName } = useCitizenChrome();
+  const profileLabel = displayName?.trim() || user?.full_name?.trim() || "Citoyen";
 
   return (
     <header className="citizen-top-nav sticky top-0 z-40 hidden border-b border-neutral-200/90 bg-white/95 backdrop-blur-md">
@@ -105,7 +91,7 @@ export function CitizenTopNav() {
             className="inline-flex items-center gap-1 rounded-full py-1 pl-1 pr-2 transition hover:bg-neutral-100"
             aria-label="Mon profil"
           >
-            <ProfileAvatar name={displayName} size="sm" />
+            <ProfileAvatar name={profileLabel} size="sm" />
             <ChevronDown className="hidden h-4 w-4 text-neutral-500 sm:block" aria-hidden />
           </Link>
         </div>
