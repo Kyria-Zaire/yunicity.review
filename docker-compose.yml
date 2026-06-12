@@ -72,6 +72,8 @@ services:
       REDIS_URL: redis://redis:6379/0
       CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000","http://localhost:3001","http://localhost:19006"]}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # Writable path in container (bind-mount ./backend is host-owned)
+      MEDIA_UPLOAD_DIR: /tmp/yunicity-uploads
     volumes:
       - ./backend:/app
     depends_on:

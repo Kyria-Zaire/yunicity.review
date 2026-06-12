@@ -1,10 +1,12 @@
+from typing import Any
+
 import pytest
 from app.core.config import Settings
 from pydantic import ValidationError
 
 
-def _prod_settings(**overrides: object) -> Settings:
-    base: dict[str, object] = {
+def _prod_settings(**overrides: Any) -> Settings:
+    base: dict[str, Any] = {
         "APP_ENV": "prod",
         "DEBUG": False,
         "JWT_SECRET_KEY": "x" * 48,

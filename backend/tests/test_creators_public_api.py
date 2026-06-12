@@ -211,7 +211,7 @@ async def test_profile_returns_404_when_partner_not_active(
             select(PartnerProfile).where(PartnerProfile.organization_id == org_id)
         )
         profile = result.scalar_one()
-        profile.partner_status = PartnerStatus.SIGNED.value
+        profile.partner_status = PartnerStatus.SIGNED
         await session.commit()
 
     resp = await auth_client.get(f"{BASE}/{org_id}")

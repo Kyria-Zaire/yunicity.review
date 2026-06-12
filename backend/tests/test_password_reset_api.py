@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import Any
 from datetime import UTC, datetime, timedelta
 from urllib.parse import parse_qs, urlparse
 
@@ -37,10 +38,11 @@ async def _register(client: AsyncClient, payload: dict[str, str]) -> None:
     assert response.status_code == 201
 
 
-async def _forgot(client: AsyncClient, email: str) -> dict:
+async def _forgot(client: AsyncClient, email: str) -> dict[str, Any]:
     response = await client.post("/api/v1/auth/forgot-password", json={"email": email})
     assert response.status_code == 200
-    return response.json()
+    data: dict[str, Any] = response.json()
+    return data
 
 
 def _extract_token_from_reset_url(reset_url: str) -> str:
