@@ -8,30 +8,39 @@ import type {
 } from "@yunicity/types";
 import {
   buildLocalHintsFromTerritory,
+  countUnreadNotificationsByTab,
+  filterNotificationsByTab,
+  isSessionExpiredAuthError,
   type NotificationLocalHint,
 } from "@yunicity/utils";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
 
 const DEFAULT_CITY = "Reims";
+const INBOX_FETCH_LIMIT = 50;
 
 export function useNotificationsPageContext() {
   const api = useYunicityApi();
   const { user } = useAuth();
   const [tab, setTab] = useState<NotificationInboxTab>("all");
   const [localHints, setLocalHints] = useState<NotificationLocalHint[]>([]);
-  const [items, setItems] = useState<UserNotificationItem[]>([]);
+  const [allItems, setAllItems] = useState<UserNotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [summary, setSummary] = useState<UserNotificationSummaryResponse | null>(null);
   const [preferences, setPreferences] = useState<UserNotificationPreferences | null>(null);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isSavingPrefs, setIsSavingPrefs] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  const items = useMemo(() => filterNotificationsByTab(allItems, tab), [allItems, tab]);
+
+  const sectionUnreadFromItems = useMemo(
+    () => countUnreadNotificationsByTab(allItems),
+    [allItems],
+  );
 
   const loadSummary = useCallback(async () => {
     try {
@@ -52,46 +61,32 @@ export function useNotificationsPageContext() {
     }
   }, [api]);
 
-  const loadInbox = useCallback(
-    async (activeTab: NotificationInboxTab, cursor?: string | null) => {
-      const loadingMore = Boolean(cursor);
-      if (loadingMore) {
-        setIsLoadingMore(true);
-      } else {
-        setIsLoading(true);
+  const loadInbox = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    setSessionExpired(false);
+    try {
+      const data = await api.notifications.listInbox({ tab: "all", limit: INBOX_FETCH_LIMIT });
+      setAllItems(data.items);
+      setUnreadCount(data.unread_count);
+    } catch (err) {
+      setAllItems([]);
+      if (isSessionExpiredAuthError(err)) {
+        setSessionExpired(true);
         setError(null);
+      } else {
+        setError("load_failed");
       }
-      try {
-        const data = await api.notifications.listInbox({
-          tab: activeTab,
-          cursor: cursor ?? undefined,
-          limit: 20,
-        });
-        setItems((prev) => (loadingMore ? [...prev, ...data.items] : data.items));
-        setUnreadCount(data.unread_count);
-        setNextCursor(data.next_cursor ?? null);
-        setHasMore(Boolean(data.has_more));
-      } catch {
-        if (!loadingMore) {
-          setItems([]);
-          setError("load_failed");
-        }
-      } finally {
-        setIsLoading(false);
-        setIsLoadingMore(false);
-      }
-    },
-    [api],
-  );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [api]);
 
   useEffect(() => {
     void loadSummary();
     void loadPreferences();
-  }, [loadSummary, loadPreferences]);
-
-  useEffect(() => {
-    void loadInbox(tab);
-  }, [tab, loadInbox]);
+    void loadInbox();
+  }, [loadSummary, loadPreferences, loadInbox]);
 
   useEffect(() => {
     let cancelled = false;
@@ -143,7 +138,7 @@ export function useNotificationsPageContext() {
     async (id: string) => {
       try {
         await api.notifications.markNotificationRead(id);
-        setItems((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
+        setAllItems((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
         await loadSummary();
         setUnreadCount((prev) => Math.max(0, prev - 1));
       } catch {
@@ -156,18 +151,13 @@ export function useNotificationsPageContext() {
   const markAllRead = useCallback(async () => {
     try {
       await api.notifications.markAllNotificationsRead();
-      setItems((prev) => prev.map((n) => ({ ...n, is_read: true })));
+      setAllItems((prev) => prev.map((n) => ({ ...n, is_read: true })));
       setUnreadCount(0);
       await loadSummary();
     } catch {
       /* best effort */
     }
   }, [api, loadSummary]);
-
-  const loadMore = useCallback(async () => {
-    if (!hasMore || !nextCursor || isLoadingMore) return;
-    await loadInbox(tab, nextCursor);
-  }, [hasMore, nextCursor, isLoadingMore, loadInbox, tab]);
 
   const updatePreference = useCallback(
     async (key: keyof UserNotificationPreferences, value: boolean) => {
@@ -183,26 +173,46 @@ export function useNotificationsPageContext() {
     [api, preferences],
   );
 
+  const resolvedSummary = useMemo((): UserNotificationSummaryResponse | null => {
+    if (summary != null) {
+      return summary;
+    }
+    if (allItems.length === 0 && unreadCount === 0) {
+      return null;
+    }
+    return {
+      unread_count: unreadCount,
+      unread_mentions: sectionUnreadFromItems.mentions,
+      unread_social: sectionUnreadFromItems.social,
+      unread_events: sectionUnreadFromItems.events,
+      unread_passport: sectionUnreadFromItems.passport,
+      unread_system: sectionUnreadFromItems.system,
+    };
+  }, [allItems.length, sectionUnreadFromItems, summary, unreadCount]);
+
   return {
     tab,
     setTab,
     items,
     unreadCount,
-    summary,
+    summary: resolvedSummary,
     preferences,
-    hasMore,
+    hasMore: false,
     isLoading,
-    isLoadingMore,
+    isLoadingMore: false,
     isSavingPrefs,
     error,
+    sessionExpired,
     markRead,
     markAllRead,
-    loadMore,
+    loadMore: async () => {},
     updatePreference,
     localHints,
+    sectionUnread: sectionUnreadFromItems,
     reload: () => {
+      setSessionExpired(false);
       void loadSummary();
-      void loadInbox(tab);
+      void loadInbox();
     },
   };
 }

@@ -2141,6 +2141,8 @@ export {
   NOTIFICATIONS_EMPTY_SUGGESTIONS_TITLE,
   NOTIFICATIONS_EMPTY_TITLE,
   NOTIFICATIONS_ERROR,
+  NOTIFICATIONS_RETRY,
+  NOTIFICATIONS_SESSION_EXPIRED_MESSAGE,
   NOTIFICATIONS_LOAD_MORE,
   NOTIFICATIONS_LOADING,
   NOTIFICATIONS_MARK_ALL_READ,
@@ -2187,6 +2189,9 @@ export {
 export {
   notificationEmptyMessage,
   notificationTabLabel,
+  notificationMatchesTab,
+  filterNotificationsByTab,
+  countUnreadNotificationsByTab,
 } from "./notifications-inbox-utils";
 export {
   buildFallbackLocalHints,

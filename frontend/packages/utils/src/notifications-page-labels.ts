@@ -20,6 +20,9 @@ export const NOTIFICATIONS_LOAD_MORE = "Charger plus";
 export const NOTIFICATIONS_LOADING = "Chargement de votre fil…";
 export const NOTIFICATIONS_ERROR =
   "Nous n’avons pas pu charger votre fil. Réessayez dans un instant.";
+export const NOTIFICATIONS_RETRY = "Réessayer";
+export const NOTIFICATIONS_SESSION_EXPIRED_MESSAGE =
+  "Reconnectez-vous pour consulter vos alertes locales.";
 
 export const NOTIFICATIONS_EMPTY_TITLE = "Votre centre est calme pour le moment";
 export const NOTIFICATIONS_EMPTY_BODY_CALM =

@@ -4,6 +4,7 @@ import type { UserNotificationItem } from "@yunicity/types";
 import {
   formatNotificationInboxTime,
   getNotificationPresentation,
+  resolveNotificationDeeplink,
   type NotificationPresentationTone,
 } from "@yunicity/utils";
 import {
@@ -51,7 +52,7 @@ export function NotificationCard({ item, onMarkRead }: NotificationCardProps) {
   const presentation = getNotificationPresentation(item);
   const Icon = iconForType(item.type);
   const toneClass = TONE_STYLES[presentation.tone];
-  const href = item.deeplink?.startsWith("/") ? item.deeplink : "/feed";
+  const href = resolveNotificationDeeplink(item.deeplink, "web");
   const timeLabel = formatNotificationInboxTime(item.created_at);
 
   return (

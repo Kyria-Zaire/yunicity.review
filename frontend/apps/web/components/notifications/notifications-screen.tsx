@@ -10,6 +10,7 @@ import {
 } from "@/components/notifications/notifications-internal-sidebar";
 import { NotificationsRightRail } from "@/components/notifications/notifications-right-rail";
 import { NotificationsTabs } from "@/components/notifications/notifications-tabs";
+import { SessionExpiredPanel } from "@/components/auth/session-expired-panel";
 import { useNotificationsPageContext } from "@/hooks/use-notifications-page-context";
 import {
   buildNotificationEmptyState,
@@ -17,6 +18,8 @@ import {
   NOTIFICATIONS_LOAD_MORE,
   NOTIFICATIONS_LOADING,
   NOTIFICATIONS_MARK_ALL_READ,
+  NOTIFICATIONS_RETRY,
+  NOTIFICATIONS_SESSION_EXPIRED_MESSAGE,
 } from "@yunicity/utils";
 import { Check, ChevronDown } from "lucide-react";
 import { useMemo } from "react";
@@ -25,14 +28,15 @@ export function NotificationsScreen() {
   const ctx = useNotificationsPageContext();
 
   const sectionUnread = useMemo(
-    () => ({
-      mentions: ctx.summary?.unread_mentions ?? 0,
-      social: ctx.summary?.unread_social ?? 0,
-      events: ctx.summary?.unread_events ?? 0,
-      passport: ctx.summary?.unread_passport ?? 0,
-      system: ctx.summary?.unread_system ?? 0,
-    }),
-    [ctx.summary],
+    () =>
+      ctx.sectionUnread ?? {
+        mentions: ctx.summary?.unread_mentions ?? 0,
+        social: ctx.summary?.unread_social ?? 0,
+        events: ctx.summary?.unread_events ?? 0,
+        passport: ctx.summary?.unread_passport ?? 0,
+        system: ctx.summary?.unread_system ?? 0,
+      },
+    [ctx.sectionUnread, ctx.summary],
   );
 
   const activeHeading = notificationActiveHeading(ctx.tab);
@@ -82,14 +86,26 @@ export function NotificationsScreen() {
             />
 
             <div className="mt-6">
-              {ctx.isLoading ? (
+              {ctx.sessionExpired ? (
+                <SessionExpiredPanel
+                  message={NOTIFICATIONS_SESSION_EXPIRED_MESSAGE}
+                  returnPath="/notifications"
+                />
+              ) : ctx.isLoading ? (
                 <p className="text-sm text-neutral-500" role="status">
                   {NOTIFICATIONS_LOADING}
                 </p>
               ) : ctx.error ? (
-                <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700">
-                  {NOTIFICATIONS_ERROR}
-                </p>
+                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-6 text-center">
+                  <p className="text-sm text-red-700">{NOTIFICATIONS_ERROR}</p>
+                  <button
+                    type="button"
+                    onClick={() => ctx.reload()}
+                    className="mt-4 inline-flex items-center justify-center rounded-full border border-red-300 bg-white px-5 py-2 text-sm font-semibold text-red-800 transition hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                  >
+                    {NOTIFICATIONS_RETRY}
+                  </button>
+                </div>
               ) : ctx.items.length === 0 ? (
                 <NotificationsEmptyState view={emptyState} />
               ) : (
