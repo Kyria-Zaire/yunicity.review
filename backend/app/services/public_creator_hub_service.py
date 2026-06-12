@@ -1,19 +1,24 @@
-"""Public creator hub — editorial listing (FEATURE-CREATORS-V1 C1-01)."""
+"""Public creator hub — editorial listing & detail (FEATURE-CREATORS-V1 C1-01/C1-02)."""
 
 from __future__ import annotations
 
+import uuid
 from typing import Literal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-CreatorPublicContentType = Literal["article", "photo"]
+from app.core.creator_public_constants import CREATOR_HUB_RELATED_LIMIT
+from app.core.errors import AppError
 from app.models.partner_creator_content import PartnerCreatorContent
 from app.repositories.partner_creator_content_repository import PartnerCreatorContentRepository
 from app.schemas.creator_public import (
     CreatorPublicAuthor,
     CreatorPublicContentItem,
+    CreatorPublicDetailResponse,
     CreatorPublicListResponse,
 )
+
+CreatorPublicContentType = Literal["article", "photo"]
 
 
 def resolve_public_content_type(
@@ -51,6 +56,26 @@ class PublicCreatorHubService:
             total=total,
             limit=capped_limit,
             offset=safe_offset,
+        )
+
+    async def get_public_detail(self, content_id: uuid.UUID) -> CreatorPublicDetailResponse:
+        content = await self._contents.get_published_public_by_id(content_id)
+        if content is None:
+            raise AppError(
+                404,
+                "CREATOR_CONTENT_NOT_FOUND",
+                "Contenu créateur introuvable.",
+            )
+        org = content.organization
+        related_rows = await self._contents.list_related_published_for_city(
+            city=org.city,
+            exclude_id=content.id,
+            limit=CREATOR_HUB_RELATED_LIMIT,
+        )
+        item = self._to_public_item(content)
+        return CreatorPublicDetailResponse(
+            **item.model_dump(),
+            related=[self._to_public_item(row) for row in related_rows],
         )
 
     def _to_public_item(self, content: PartnerCreatorContent) -> CreatorPublicContentItem:

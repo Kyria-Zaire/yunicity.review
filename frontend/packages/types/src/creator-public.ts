@@ -38,3 +38,10 @@ export type CreatorPublicListResponse = {
   limit: number;
   offset: number;
 };
+
+/** List card item — same shape as hub list entry (C1-02 related). */
+export type CreatorPublicListItem = CreatorPublicContent;
+
+export type CreatorPublicDetailResponse = CreatorPublicContent & {
+  related: CreatorPublicListItem[];
+};

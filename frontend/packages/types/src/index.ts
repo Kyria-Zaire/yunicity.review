@@ -297,6 +297,8 @@ export type {
   CreatorContentAuthorKind,
   CreatorContentType,
   CreatorPublicContent,
+  CreatorPublicDetailResponse,
+  CreatorPublicListItem,
   CreatorPublicListParams,
   CreatorPublicListResponse,
 } from "./creator-public";

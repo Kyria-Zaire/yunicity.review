@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
@@ -12,7 +13,7 @@ from app.core.creator_public_constants import (
     CREATOR_HUB_LIST_LIMIT_MAX,
 )
 from app.db.session import get_db
-from app.schemas.creator_public import CreatorPublicListResponse
+from app.schemas.creator_public import CreatorPublicDetailResponse, CreatorPublicListResponse
 from app.services.public_creator_hub_service import PublicCreatorHubService
 
 router = APIRouter(prefix="/creator-content", tags=["creator-content-public"])
@@ -30,3 +31,11 @@ async def list_public_creator_content(
         limit=limit,
         offset=offset,
     )
+
+
+@router.get("/{content_id}", response_model=CreatorPublicDetailResponse)
+async def get_public_creator_content_detail(
+    content_id: uuid.UUID,
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> CreatorPublicDetailResponse:
+    return await PublicCreatorHubService(session).get_public_detail(content_id)

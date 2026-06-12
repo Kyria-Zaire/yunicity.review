@@ -36,3 +36,9 @@ class CreatorPublicListResponse(BaseModel):
     total: int
     limit: int = Field(ge=1)
     offset: int = Field(ge=0)
+
+
+class CreatorPublicDetailResponse(CreatorPublicContentItem):
+    """Public detail — same fields as list item plus related suggestions."""
+
+    related: list[CreatorPublicContentItem] = Field(default_factory=list)

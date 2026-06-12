@@ -1520,6 +1520,12 @@ export {
 } from "./creator-public-api";
 export {
   CREATOR_CONTENT_TYPE_LABELS,
+  CREATOR_DETAIL_BACK,
+  CREATOR_DETAIL_EMPTY_BODY,
+  CREATOR_DETAIL_ERROR,
+  CREATOR_DETAIL_NOT_FOUND,
+  CREATOR_DETAIL_RELATED_TITLE,
+  CREATOR_DETAIL_RETRY,
   CREATOR_HUB_EMPTY,
   CREATOR_HUB_ERROR,
   CREATOR_HUB_LOADING,
@@ -1527,9 +1533,15 @@ export {
   CREATOR_HUB_SUBTITLE,
   CREATOR_HUB_TITLE,
   formatContentAuthor,
+  formatCreatorContentBody,
+  formatCreatorContentErrorMessage,
+  formatCreatorContentNotFoundMessage,
+  formatCreatorContentType,
   formatCreatorContentTypeLabel,
   formatCreatorPublishedAt,
   formatReadingTime,
+  getCreatorContentDetailBackHref,
+  getCreatorContentDetailHref,
   hasCreatorCover,
 } from "./creator-public-presenter";
 export { PartnerPassportApi, createPartnerPassportApi } from "./partner-passport-api";

@@ -178,14 +178,7 @@ class PartnerCreatorContentRepository:
         offset: int,
     ) -> tuple[list[PartnerCreatorContent], int]:
         """Published, active contents for public partner orgs in a city (C1-01 hub)."""
-        filters: list[Any] = [
-            func.lower(Organization.city) == city.strip().lower(),
-            PartnerCreatorContent.status == PartnerCreatorContentStatus.PUBLISHED.value,
-            PartnerCreatorContent.is_active.is_(True),
-            Organization.verification_status == VerificationStatus.VERIFIED.value,
-            Organization.visibility == OrganizationVisibility.PUBLIC.value,
-            PartnerProfile.partner_status.in_([status.value for status in PUBLIC_PARTNER_STATUSES]),
-        ]
+        filters = self._published_public_filters(city=city)
         base = (
             select(PartnerCreatorContent)
             .join(Organization, PartnerCreatorContent.organization_id == Organization.id)
@@ -205,6 +198,59 @@ class PartnerCreatorContentRepository:
         )
         result = await self._session.execute(stmt)
         return list(result.scalars().unique().all()), total
+
+    def _published_public_filters(self, *, city: str | None = None) -> list[Any]:
+        filters: list[Any] = [
+            PartnerCreatorContent.status == PartnerCreatorContentStatus.PUBLISHED.value,
+            PartnerCreatorContent.is_active.is_(True),
+            Organization.verification_status == VerificationStatus.VERIFIED.value,
+            Organization.visibility == OrganizationVisibility.PUBLIC.value,
+            PartnerProfile.partner_status.in_([status.value for status in PUBLIC_PARTNER_STATUSES]),
+        ]
+        if city is not None:
+            filters.append(func.lower(Organization.city) == city.strip().lower())
+        return filters
+
+    async def get_published_public_by_id(
+        self,
+        content_id: uuid.UUID,
+    ) -> PartnerCreatorContent | None:
+        filters = [PartnerCreatorContent.id == content_id, *self._published_public_filters()]
+        stmt = (
+            select(PartnerCreatorContent)
+            .join(Organization, PartnerCreatorContent.organization_id == Organization.id)
+            .join(PartnerProfile, PartnerProfile.organization_id == Organization.id)
+            .where(*filters)
+            .options(selectinload(PartnerCreatorContent.organization))
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def list_related_published_for_city(
+        self,
+        *,
+        city: str,
+        exclude_id: uuid.UUID,
+        limit: int,
+    ) -> list[PartnerCreatorContent]:
+        filters = [
+            PartnerCreatorContent.id != exclude_id,
+            *self._published_public_filters(city=city),
+        ]
+        stmt = (
+            select(PartnerCreatorContent)
+            .join(Organization, PartnerCreatorContent.organization_id == Organization.id)
+            .join(PartnerProfile, PartnerProfile.organization_id == Organization.id)
+            .where(*filters)
+            .options(selectinload(PartnerCreatorContent.organization))
+            .order_by(
+                PartnerCreatorContent.moderated_at.desc().nullslast(),
+                PartnerCreatorContent.updated_at.desc(),
+            )
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().unique().all())
 
     async def list_published_for_organization(
         self,

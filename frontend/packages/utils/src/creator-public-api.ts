@@ -1,4 +1,8 @@
-import type { CreatorPublicListParams, CreatorPublicListResponse } from "@yunicity/types";
+import type {
+  CreatorPublicDetailResponse,
+  CreatorPublicListParams,
+  CreatorPublicListResponse,
+} from "@yunicity/types";
 
 import type { AuthClient } from "./auth/auth-client";
 import { ApiClientBase } from "./api-client";
@@ -25,6 +29,11 @@ export class CreatorPublicApi extends ApiClientBase {
       offset: params.offset ?? 0,
     });
     return this.getJson<CreatorPublicListResponse>(`/creator-content${query}`);
+  }
+
+  getCreatorContentDetail(contentId: string): Promise<CreatorPublicDetailResponse> {
+    const id = contentId.trim();
+    return this.getJson<CreatorPublicDetailResponse>(`/creator-content/${encodeURIComponent(id)}`);
   }
 }
 

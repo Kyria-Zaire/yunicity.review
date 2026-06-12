@@ -1,11 +1,11 @@
 "use client";
 
 import { CreatorContentCard } from "@/components/creators/creator-content-card";
+import { CreatorHubSkeleton } from "@/components/creators/creator-hub-skeleton";
 import { useCreatorHub } from "@/hooks/use-creator-hub";
 import {
   CREATOR_HUB_EMPTY,
   CREATOR_HUB_ERROR,
-  CREATOR_HUB_LOADING,
   CREATOR_HUB_RETRY,
   CREATOR_HUB_SUBTITLE,
   CREATOR_HUB_TITLE,
@@ -35,9 +35,7 @@ export function CreatorHubScreen() {
 
         <section className="mt-10" aria-label="Contenus créateurs publiés">
           {loading ? (
-            <p className="text-sm text-neutral-500" role="status">
-              {CREATOR_HUB_LOADING}
-            </p>
+            <CreatorHubSkeleton />
           ) : error ? (
             <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-6 text-center">
               <p className="text-sm text-red-800">{CREATOR_HUB_ERROR}</p>
