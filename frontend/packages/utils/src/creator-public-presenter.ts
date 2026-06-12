@@ -17,6 +17,15 @@ export const CREATOR_DETAIL_EMPTY_BODY =
   "Cette histoire ne contient pas encore de texte détaillé.";
 export const CREATOR_DETAIL_RELATED_TITLE = "Découvrir d'autres histoires";
 
+export const CREATOR_PROFILE_BACK = "Retour au Creator Hub";
+export const CREATOR_PROFILE_ERROR = "Impossible de charger ce profil créateur.";
+export const CREATOR_PROFILE_NOT_FOUND = "Ce profil créateur n'est plus disponible.";
+export const CREATOR_PROFILE_RETRY = "Réessayer";
+export const CREATOR_PROFILE_CONTENTS_TITLE = "Histoires publiées";
+export const CREATOR_PROFILE_CONTENTS_EMPTY =
+  "Aucune histoire publiée pour le moment. Revenez bientôt pour découvrir de nouveaux contenus.";
+export const CREATOR_PROFILE_STATS_LABEL = "histoires publiées";
+
 export const CREATOR_CONTENT_TYPE_LABELS: Record<CreatorContentType, string> = {
   article: "Article",
   photo: "Photo",
@@ -24,6 +33,7 @@ export const CREATOR_CONTENT_TYPE_LABELS: Record<CreatorContentType, string> = {
 
 const WORDS_PER_MINUTE = 200;
 const CREATOR_HUB_PATH = "/creator-content";
+const CREATORS_PATH = "/creators";
 
 /** V1: partner label. Future: creator_profiles display name. */
 export function formatContentAuthor(author: CreatorContentAuthor): string {
@@ -100,4 +110,31 @@ export function formatCreatorContentNotFoundMessage(): string {
 
 export function formatCreatorContentErrorMessage(): string {
   return CREATOR_DETAIL_ERROR;
+}
+
+export function getCreatorProfileHref(creatorId: string): string {
+  return `${CREATORS_PATH}/${encodeURIComponent(creatorId.trim())}`;
+}
+
+export function getCreatorProfileBackHref(): string {
+  return CREATOR_HUB_PATH;
+}
+
+export function formatCreatorProfileTerritory(
+  territory: { city: string; neighborhood_name: string | null },
+): string {
+  const city = territory.city.trim();
+  const neighborhood = territory.neighborhood_name?.trim();
+  if (neighborhood && city) {
+    return `${neighborhood} · ${city}`;
+  }
+  return city || neighborhood || "";
+}
+
+export function formatCreatorProfileStats(count: number): string {
+  const safe = Math.max(0, count);
+  if (safe <= 1) {
+    return `${safe} ${CREATOR_PROFILE_STATS_LABEL.replace("histoires", "histoire")}`;
+  }
+  return `${safe} ${CREATOR_PROFILE_STATS_LABEL}`;
 }

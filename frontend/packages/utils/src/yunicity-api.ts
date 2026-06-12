@@ -26,6 +26,8 @@ import type {
   CreatorPublicDetailResponse,
   CreatorPublicListParams,
   CreatorPublicListResponse,
+  CreatorPublicProfile,
+  CreatorPublicProfileParams,
   PartnerCreatorContentListParams,
   PartnerCreatorContentPublicListResponse,
   PartnerEventsParams,
@@ -167,6 +169,13 @@ export class YunicityApi {
 
   getCreatorContentDetail(contentId: string): Promise<CreatorPublicDetailResponse> {
     return this.creatorPublic.getCreatorContentDetail(contentId);
+  }
+
+  getCreatorProfile(
+    creatorId: string,
+    params?: CreatorPublicProfileParams,
+  ): Promise<CreatorPublicProfile> {
+    return this.creatorPublic.getCreatorProfile(creatorId, params);
   }
 
   listPartners(params: PartnerListParams): Promise<PartnerListResponse> {

@@ -1515,6 +1515,7 @@ export {
 } from "./partners-api";
 export {
   CREATOR_HUB_LIST_LIMIT_DEFAULT,
+  CREATOR_PROFILE_CONTENTS_LIMIT_DEFAULT,
   CreatorPublicApi,
   createCreatorPublicApi,
 } from "./creator-public-api";
@@ -1526,6 +1527,13 @@ export {
   CREATOR_DETAIL_NOT_FOUND,
   CREATOR_DETAIL_RELATED_TITLE,
   CREATOR_DETAIL_RETRY,
+  CREATOR_PROFILE_BACK,
+  CREATOR_PROFILE_CONTENTS_EMPTY,
+  CREATOR_PROFILE_CONTENTS_TITLE,
+  CREATOR_PROFILE_ERROR,
+  CREATOR_PROFILE_NOT_FOUND,
+  CREATOR_PROFILE_RETRY,
+  CREATOR_PROFILE_STATS_LABEL,
   CREATOR_HUB_EMPTY,
   CREATOR_HUB_ERROR,
   CREATOR_HUB_LOADING,
@@ -1540,8 +1548,12 @@ export {
   formatCreatorContentTypeLabel,
   formatCreatorPublishedAt,
   formatReadingTime,
+  formatCreatorProfileStats,
+  formatCreatorProfileTerritory,
   getCreatorContentDetailBackHref,
   getCreatorContentDetailHref,
+  getCreatorProfileBackHref,
+  getCreatorProfileHref,
   hasCreatorCover,
 } from "./creator-public-presenter";
 export { PartnerPassportApi, createPartnerPassportApi } from "./partner-passport-api";

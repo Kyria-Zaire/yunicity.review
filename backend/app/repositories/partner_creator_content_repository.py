@@ -259,24 +259,34 @@ class PartnerCreatorContentRepository:
         limit: int,
         offset: int,
     ) -> tuple[list[PartnerCreatorContent], int]:
+        return await self.list_published_public_for_creator(
+            organization_id,
+            limit=limit,
+            offset=offset,
+        )
+
+    async def list_published_public_for_creator(
+        self,
+        organization_id: uuid.UUID,
+        *,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[PartnerCreatorContent], int]:
+        """Published public contents for a creator org (C1-03 profile)."""
         filters: list[Any] = [
             PartnerCreatorContent.organization_id == organization_id,
-            PartnerCreatorContent.status == PartnerCreatorContentStatus.PUBLISHED.value,
-            PartnerCreatorContent.is_active.is_(True),
-            Organization.verification_status == VerificationStatus.VERIFIED.value,
-            Organization.visibility == OrganizationVisibility.PUBLIC.value,
+            *self._published_public_filters(),
         ]
-        count_stmt = (
-            select(func.count())
-            .select_from(PartnerCreatorContent)
-            .join(Organization, PartnerCreatorContent.organization_id == Organization.id)
-            .where(*filters)
-        )
-        total = int((await self._session.execute(count_stmt)).scalar_one())
-        stmt = (
+        base = (
             select(PartnerCreatorContent)
             .join(Organization, PartnerCreatorContent.organization_id == Organization.id)
+            .join(PartnerProfile, PartnerProfile.organization_id == Organization.id)
             .where(*filters)
+        )
+        count_stmt = select(func.count()).select_from(base.subquery())
+        total = int((await self._session.execute(count_stmt)).scalar_one())
+        stmt = (
+            base.options(selectinload(PartnerCreatorContent.organization))
             .order_by(
                 PartnerCreatorContent.moderated_at.desc().nullslast(),
                 PartnerCreatorContent.updated_at.desc(),

@@ -45,3 +45,33 @@ export type CreatorPublicListItem = CreatorPublicContent;
 export type CreatorPublicDetailResponse = CreatorPublicContent & {
   related: CreatorPublicListItem[];
 };
+
+export type CreatorPublicTerritory = {
+  city: string;
+  neighborhood_name: string | null;
+};
+
+export type CreatorPublicProfileStats = {
+  published_content_count: number;
+};
+
+export type CreatorPublicProfile = {
+  id: string;
+  kind: CreatorContentAuthorKind;
+  display_name: string;
+  slug: string;
+  description: string | null;
+  logo_url: string | null;
+  banner_url: string | null;
+  territory: CreatorPublicTerritory;
+  stats: CreatorPublicProfileStats;
+  contents: CreatorPublicContent[];
+  contents_total: number;
+  contents_limit: number;
+  contents_offset: number;
+};
+
+export type CreatorPublicProfileParams = {
+  limit?: number;
+  offset?: number;
+};

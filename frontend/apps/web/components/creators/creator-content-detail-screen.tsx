@@ -16,6 +16,7 @@ import {
   formatCreatorContentType,
   formatReadingTime,
   getCreatorContentDetailBackHref,
+  getCreatorProfileHref,
   hasCreatorCover,
 } from "@yunicity/utils";
 import type { CreatorPublicDetailResponse } from "@yunicity/types";
@@ -79,7 +80,14 @@ function CreatorContentDetailView({ detail }: { detail: CreatorPublicDetailRespo
         <h1 className="mt-4 text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
           {detail.title}
         </h1>
-        <p className="mt-3 text-sm font-medium text-neutral-700">{authorLabel}</p>
+        <p className="mt-3 text-sm font-medium text-neutral-700">
+          <Link
+            href={getCreatorProfileHref(detail.author.organization_id)}
+            className="transition-colors hover:text-yunicity-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yunicity-primary"
+          >
+            {authorLabel}
+          </Link>
+        </p>
       </header>
 
       <div className="mt-8">

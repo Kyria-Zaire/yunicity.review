@@ -301,6 +301,10 @@ export type {
   CreatorPublicListItem,
   CreatorPublicListParams,
   CreatorPublicListResponse,
+  CreatorPublicProfile,
+  CreatorPublicProfileParams,
+  CreatorPublicProfileStats,
+  CreatorPublicTerritory,
 } from "./creator-public";
 export { CREATOR_AUTHOR_KINDS, CREATOR_CONTENT_TYPES } from "./creator-public";
 
