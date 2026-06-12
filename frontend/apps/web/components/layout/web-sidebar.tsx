@@ -159,10 +159,30 @@ export function WebSidebar() {
   const [displayName, setDisplayName] = useState<string | null>(null);
 
   useEffect(() => {
-    void api.getProfileMe().then((profile) => {
-      setDisplayName(profile.display_name ?? profile.username ?? null);
-    });
-  }, [api]);
+    if (!user) {
+      setDisplayName(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    void api
+      .getProfileMe()
+      .then((profile) => {
+        if (!cancelled) {
+          setDisplayName(profile.display_name ?? profile.username ?? null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDisplayName(user.email?.split("@")[0] ?? null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [api, user]);
 
   const profileLabel = displayName ?? user?.email?.split("@")[0] ?? "Mon profil";
 
