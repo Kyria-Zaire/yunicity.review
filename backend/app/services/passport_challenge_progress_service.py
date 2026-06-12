@@ -1,6 +1,6 @@
 """Passport V2 challenge progress engine (PASSPORT-04B).
 
-Reward claim and YM payout: future tickets — not in PASSPORT-04B.
+Reward claim: PassportChallengeRewardService (PASSPORT-04C).
 """
 
 from __future__ import annotations
