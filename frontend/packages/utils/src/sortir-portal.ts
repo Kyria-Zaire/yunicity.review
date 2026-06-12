@@ -206,6 +206,10 @@ function eventMetaLine(event: LocalEvent, now = new Date()): string {
   if (event.interested_by_me) {
     return "Vous êtes intéressé·e";
   }
+  const interestCount = event.interest_count ?? 0;
+  if (interestCount > 0) {
+    return `${interestCount} intéressé${interestCount > 1 ? "s" : ""}`;
+  }
   const duration = formatEventDurationLabel(event.starts_at, event.ends_at);
   if (duration && event.ends_at) {
     const end = new Date(event.ends_at);
@@ -213,7 +217,7 @@ function eventMetaLine(event: LocalEvent, now = new Date()): string {
       return `Jusqu'au ${end.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}`;
     }
   }
-  return "Places limitées";
+  return "";
 }
 
 export function filterEventsBySortirCategory(
@@ -454,7 +458,10 @@ export function buildSortirForYouCard(input: {
     timeLabel,
     locationLine:
       match.neighborhood_summary?.display_name ?? match.district?.trim() ?? match.location_name,
-    spotsLine: match.ends_at ? "Places limitées" : null,
+    spotsLine:
+      (match.interest_count ?? 0) > 0
+        ? `${match.interest_count} intéressé${(match.interest_count ?? 0) > 1 ? "s" : ""}`
+        : null,
     imageUrl:
       resolveFeaturedCarouselEventImage(match) ??
       resolveEventHeroImage(match, input.culturalPlaces),

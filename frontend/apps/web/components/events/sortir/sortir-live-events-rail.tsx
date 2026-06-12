@@ -9,7 +9,7 @@ import {
   SORTIR_LIVE_EVENTS_EMPTY_CTA,
   SORTIR_LIVE_EVENTS_TITLE,
 } from "@yunicity/utils";
-import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Heart, MapPin, Users } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock3, MapPin, Users } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useRef } from "react";
 
@@ -22,9 +22,15 @@ const BADGE_TONE: Record<SortirLiveEventCard["badgeTone"], string> = {
 
 type SortirLiveEventsRailProps = {
   items: SortirLiveEventCard[];
+  categoryFilterActive?: boolean;
+  onClearCategory?: () => void;
 };
 
-export function SortirLiveEventsRail({ items }: SortirLiveEventsRailProps) {
+export function SortirLiveEventsRail({
+  items,
+  categoryFilterActive = false,
+  onClearCategory,
+}: SortirLiveEventsRailProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
 
   const scroll = useCallback((direction: "left" | "right") => {
@@ -34,12 +40,18 @@ export function SortirLiveEventsRail({ items }: SortirLiveEventsRailProps) {
   }, []);
 
   return (
-    <section className="space-y-4" aria-label={SORTIR_LIVE_EVENTS_TITLE}>
+    <section id="sortir-live-events" className="scroll-mt-24 space-y-4" aria-label={SORTIR_LIVE_EVENTS_TITLE}>
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-xl font-bold text-neutral-900">{SORTIR_LIVE_EVENTS_TITLE}</h2>
-        <Link href="/map" className="text-sm font-semibold text-yunicity-primary hover:underline">
-          {SORTIR_LIVE_EVENTS_CTA}
-        </Link>
+        {categoryFilterActive && onClearCategory ? (
+          <button
+            type="button"
+            onClick={onClearCategory}
+            className="text-sm font-semibold text-yunicity-primary hover:underline"
+          >
+            {SORTIR_LIVE_EVENTS_CTA}
+          </button>
+        ) : null}
       </div>
 
       {items.length === 0 ? (
@@ -73,10 +85,6 @@ export function SortirLiveEventsRail({ items }: SortirLiveEventsRailProps) {
                       >
                         {item.badge}
                       </span>
-                      <Heart
-                        className={`absolute right-3 top-3 h-5 w-5 ${item.interestedByMe ? "fill-white text-white" : "text-white/80"}`}
-                        aria-hidden
-                      />
                       <div className="absolute inset-x-0 bottom-0 space-y-2 p-4 text-white">
                         <h3 className="text-lg font-bold leading-snug">{item.title}</h3>
                         <p className="text-sm text-white/85">{item.subtitle}</p>
@@ -85,14 +93,16 @@ export function SortirLiveEventsRail({ items }: SortirLiveEventsRailProps) {
                             <Clock3 className="h-3.5 w-3.5" aria-hidden />
                             {item.timeLabel}
                           </li>
-                          <li className="flex items-center gap-2">
-                            {item.metaLine.includes("intéressé") ? (
-                              <Users className="h-3.5 w-3.5" aria-hidden />
-                            ) : (
-                              <CalendarDays className="h-3.5 w-3.5" aria-hidden />
-                            )}
-                            {item.metaLine}
-                          </li>
+                          {item.metaLine ? (
+                            <li className="flex items-center gap-2">
+                              {item.metaLine.includes("intéressé") ? (
+                                <Users className="h-3.5 w-3.5" aria-hidden />
+                              ) : (
+                                <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+                              )}
+                              {item.metaLine}
+                            </li>
+                          ) : null}
                           <li className="flex items-center gap-2">
                             <MapPin className="h-3.5 w-3.5" aria-hidden />
                             {item.locationLine}

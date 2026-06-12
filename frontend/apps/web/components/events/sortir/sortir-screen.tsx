@@ -9,6 +9,7 @@ import { SortirHeroBanner } from "@/components/events/sortir/sortir-hero-banner"
 import { SortirLiveEventsRail } from "@/components/events/sortir/sortir-live-events-rail";
 import { SortirLivePlacesRail } from "@/components/events/sortir/sortir-live-places-rail";
 import { SortirTribesTonightPanel } from "@/components/events/sortir/sortir-tribes-tonight-panel";
+import { SearchExplorerOfferHighlight } from "@/components/search/search-explorer-offer-highlight";
 import { useEventsAgendaContext } from "@/hooks/use-events-agenda-context";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { GeoProvider } from "@/providers/geo-provider";
@@ -155,6 +156,10 @@ function SortirScreenInner() {
 
         <SortirCategoryChips activeCategory={category} onSelect={setCategory} />
 
+        {agenda.passportOffers[0] ? (
+          <SearchExplorerOfferHighlight offer={agenda.passportOffers[0]} />
+        ) : null}
+
         {agenda.error ? (
           <div className="space-y-3">
             <p className="text-sm text-red-600">{SORTIR_ERROR}</p>
@@ -170,7 +175,11 @@ function SortirScreenInner() {
 
         {!agenda.error ? (
           <>
-            <SortirLiveEventsRail items={liveEvents} />
+            <SortirLiveEventsRail
+              items={liveEvents}
+              categoryFilterActive={category !== ""}
+              onClearCategory={() => setCategory("")}
+            />
             <SortirLivePlacesRail items={livePlaces} />
             <SortirActiveNeighborhoodsGrid
               items={activeNeighborhoods}

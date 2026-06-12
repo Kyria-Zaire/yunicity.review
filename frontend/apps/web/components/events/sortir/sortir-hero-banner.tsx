@@ -10,7 +10,7 @@ import {
   SORTIR_PORTAL_LOCATION_AROUND,
 } from "@yunicity/utils";
 import type { SortirHeroStat } from "@yunicity/utils";
-import { ChevronDown, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 
 type SortirHeroBannerProps = {
   city: string;
@@ -71,13 +71,17 @@ export function SortirHeroBanner({
             ))}
           </ul>
 
-          <div className="mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-white/95 px-4 py-2 text-sm text-neutral-800 shadow-sm">
+          <p
+            className="mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-white/95 px-4 py-2 text-sm text-neutral-800 shadow-sm"
+            title="Ville issue de votre profil ou de votre position"
+          >
             <MapPin className="h-4 w-4 text-yunicity-primary" aria-hidden />
             <span className="font-medium">{SORTIR_PORTAL_LOCATION_AROUND}</span>
-            <span className="text-neutral-500">·</span>
+            <span className="text-neutral-500" aria-hidden>
+              ·
+            </span>
             <span>{locationLabel}</span>
-            <ChevronDown className="h-4 w-4 text-neutral-400" aria-hidden />
-          </div>
+          </p>
         </div>
       </div>
     </section>

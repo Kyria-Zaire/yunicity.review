@@ -58,6 +58,16 @@ describe("sortir-portal", () => {
     });
     expect(cards[0]?.title).toBe("Concert Jazz");
     expect(cards[0]?.href).toBe("/events/e1");
+    expect(cards[0]?.metaLine).not.toBe("Places limitées");
+  });
+
+  it("uses interest count in live event meta line", () => {
+    const cards = buildSortirLiveEventCards({
+      city: "Reims",
+      events: [{ ...BASE_EVENT, interest_count: 3 }],
+      culturalPlaces: [],
+    });
+    expect(cards[0]?.metaLine).toBe("3 intéressés");
   });
 
   it("builds for-you card from profile interests", () => {
