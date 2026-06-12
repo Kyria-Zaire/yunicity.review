@@ -37,7 +37,7 @@ const NAV = [
   { href: "/map", label: DISCUSSIONS_LEFT_NEARBY, icon: MapPin, section: "nearby" as const },
   { href: "/discussions", label: DISCUSSIONS_LEFT_DISCUSSIONS, icon: MessageCircle, section: "discussions" as const },
   { href: "/feed", label: DISCUSSIONS_LEFT_CONTRIBUTIONS, icon: PenLine, section: "contributions" as const },
-  { href: "/sortir", label: DISCUSSIONS_LEFT_SAVED, icon: Bookmark, section: "saved" as const },
+  { href: "/feed", label: DISCUSSIONS_LEFT_SAVED, icon: Bookmark, section: "saved" as const },
 ] as const;
 
 type DiscussionsLeftRailProps = {

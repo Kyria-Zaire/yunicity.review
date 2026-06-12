@@ -41,10 +41,12 @@ export function FeedCard({
   post: initialPost,
   onToggleLike,
   onReport,
+  openCommentsByDefault = false,
 }: {
   post: FeedPost;
   onToggleLike: (post: FeedPost) => Promise<void>;
   onReport: (postId: string, reason: FeedReportReason) => Promise<void>;
+  openCommentsByDefault?: boolean;
 }) {
   const api = useYunicityApi();
   const { user } = useAuth();
@@ -54,7 +56,7 @@ export function FeedCard({
     setPost(initialPost);
   }, [initialPost]);
 
-  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(openCommentsByDefault);
   const [comments, setComments] = useState<FeedComment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
 
@@ -67,6 +69,12 @@ export function FeedCard({
       setCommentsLoading(false);
     }
   }, [api, post.id]);
+
+  useEffect(() => {
+    if (!openCommentsByDefault) return;
+    setCommentsOpen(true);
+    void loadComments();
+  }, [openCommentsByDefault, loadComments]);
 
   async function toggleComments() {
     const next = !commentsOpen;

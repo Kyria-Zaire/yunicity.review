@@ -84,7 +84,7 @@ export function NewDiscussionForm({
   onSubmit,
 }: NewDiscussionFormProps) {
   const bodyRef = useRef<HTMLTextAreaElement>(null);
-  const [category, setCategory] = useState<DiscussionCategoryId>("all");
+  const [category, setCategory] = useState<DiscussionCategoryId>("questions");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [tags, setTags] = useState<string[]>([]);

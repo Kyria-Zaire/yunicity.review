@@ -92,7 +92,13 @@ export function DiscussionsRightRail({
       <section className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-sm font-bold text-neutral-900">{DISCUSSIONS_ACTIVE_TITLE}</h2>
-          <span className="text-xs font-semibold text-yunicity-primary">{DISCUSSIONS_ACTIVE_CTA}</span>
+          <button
+            type="button"
+            onClick={() => onSelectTopic?.("all")}
+            className="text-xs font-semibold text-yunicity-primary hover:underline"
+          >
+            {DISCUSSIONS_ACTIVE_CTA}
+          </button>
         </div>
         {active.length === 0 ? (
           <p className="mt-3 text-sm text-neutral-500">{DISCUSSIONS_ACTIVE_EMPTY}</p>

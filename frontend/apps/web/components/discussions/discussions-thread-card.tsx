@@ -152,6 +152,7 @@ export function DiscussionsThreadCard({
         <div className="border-t border-neutral-100 p-4 sm:p-5">
           <FeedCard
             post={thread}
+            openCommentsByDefault
             onToggleLike={(p) => onToggleLike(p)}
             onReport={onReport}
           />

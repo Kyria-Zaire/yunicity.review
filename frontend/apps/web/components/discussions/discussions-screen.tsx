@@ -12,9 +12,8 @@ import {
 } from "@yunicity/utils";
 import { ChevronDown, MessageCircle, Plus } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { FeedComposer } from "@/components/feed/feed-composer";
 import { DiscussionsAppShell } from "@/components/discussions/discussions-app-shell";
 import { DiscussionsCategoryChips } from "@/components/discussions/discussions-category-chips";
 import { DiscussionsLeftRail } from "@/components/discussions/discussions-left-rail";
@@ -31,11 +30,16 @@ export function DiscussionsScreen() {
   const list = useDiscussionsList(category);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  async function handleCreate(body: string, mediaUrl?: string | null) {
-    await api.feed.createPost({ body, media_url: mediaUrl });
-    list.refresh();
-    portal.reload();
-  }
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash.startsWith("#thread-")) return;
+    const threadId = hash.slice("#thread-".length);
+    if (!threadId) return;
+    setExpandedId(threadId);
+    requestAnimationFrame(() => {
+      document.getElementById(`thread-${threadId}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [list.items, list.isLoading]);
 
   async function handleReport(postId: string, reason: FeedReportReason) {
     await api.reportFeedPost(postId, { reason });
@@ -91,8 +95,17 @@ export function DiscussionsScreen() {
         </div>
 
         <div id="discussions-composer" className="mt-6 scroll-mt-24">
-          <div className="rounded-2xl border border-neutral-200/90 bg-white px-4 shadow-sm sm:px-5">
-            <FeedComposer city={portal.city} onSubmit={handleCreate} />
+          <div className="rounded-2xl border border-neutral-200/90 bg-white px-5 py-4 shadow-sm sm:px-6 sm:py-5">
+            <p className="text-sm text-neutral-600">
+              Une question, un avis ou un besoin d&apos;aide pour la communauté rémoise ?
+            </p>
+            <Link
+              href="/discussions/new"
+              className="mt-3 inline-flex items-center gap-2 rounded-full bg-yunicity-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-yunicity-primary/90"
+            >
+              <Plus className="h-4 w-4" aria-hidden />
+              Lancer une discussion
+            </Link>
           </div>
         </div>
 
@@ -114,9 +127,16 @@ export function DiscussionsScreen() {
         ) : null}
 
         {!list.error && !list.isLoading && list.items.length === 0 ? (
-          <p className="mt-8 rounded-2xl border border-dashed border-neutral-200 bg-white px-6 py-10 text-center text-sm text-neutral-600">
-            {DISCUSSIONS_EMPTY}
-          </p>
+          <div className="mt-8 rounded-2xl border border-dashed border-neutral-200 bg-white px-6 py-10 text-center">
+            <p className="text-sm text-neutral-600">{DISCUSSIONS_EMPTY}</p>
+            <Link
+              href="/discussions/new"
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-yunicity-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-yunicity-primary/90"
+            >
+              <Plus className="h-4 w-4" aria-hidden />
+              Nouvelle discussion
+            </Link>
+          </div>
         ) : null}
 
         <ul className="mt-6 space-y-4">
