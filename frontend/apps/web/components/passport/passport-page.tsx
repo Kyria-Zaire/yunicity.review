@@ -4,13 +4,18 @@ import { PassportAppShell } from "@/components/passport/passport-app-shell";
 import { PassportBadgesSection } from "@/components/passport/passport-badges-section";
 import { PassportChallengesSection } from "@/components/passport/passport-challenges-section";
 import { PassportErrorState } from "@/components/passport/passport-error-state";
+import { PassportOffersList } from "@/components/passport/passport-offers-section";
+import { PassportPartnerOffersSection } from "@/components/passport/passport-partner-offers-section";
 import { PassportSessionExpiredState } from "@/components/passport/passport-session-expired-state";
 import { PassportHero } from "@/components/passport/passport-hero";
 import { PassportLoadingState } from "@/components/passport/passport-loading-state";
 import { PassportReputationCard } from "@/components/passport/passport-reputation-card";
+import { PassportStampsSection } from "@/components/passport/passport-stamps-section";
 import { PassportStatsGrid } from "@/components/passport/passport-stats-grid";
 import { PassportWalletCard } from "@/components/passport/passport-wallet-card";
 import { usePassportMe } from "@/hooks/use-passport-me";
+import { usePassportOffers } from "@/hooks/use-passport-offers";
+import { usePassportStamps } from "@/hooks/use-passport-stamps";
 import { yunicityBtnPrimaryLg } from "@/lib/brand-classes";
 import {
   PASSPORT_ACTIVATE_BODY,
@@ -37,6 +42,17 @@ export function PassportPage() {
     claimReward,
     clearClaimFeedback,
   } = usePassportMe();
+
+  const passportActive =
+    !needsActivation && !isSessionExpired && !!overview && !!badges && !!challenges;
+  const { stamps, isLoading: stampsLoading } = usePassportStamps(passportActive);
+  const {
+    offers,
+    isLoading: offersLoading,
+    redeem,
+    redeemingId,
+    message: offersMessage,
+  } = usePassportOffers(passportActive);
 
   return (
     <PassportAppShell>
@@ -119,6 +135,27 @@ export function PassportPage() {
               claimingCode={claimingCode}
               onClaim={(code) => void claimReward(code)}
             />
+
+            <PassportStampsSection stamps={stamps} isLoading={stampsLoading} />
+
+            {offersLoading ? (
+              <section className="rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-sm">
+                <p className="text-sm text-neutral-500">Chargement des avantages partenaires…</p>
+              </section>
+            ) : (
+              <>
+                <PassportPartnerOffersSection offers={offers} />
+                {offers.length > 0 ? (
+                  <PassportOffersList
+                    offers={offers}
+                    isLoading={false}
+                    message={offersMessage}
+                    redeemingId={redeemingId}
+                    onRedeem={(offerId) => void redeem(offerId)}
+                  />
+                ) : null}
+              </>
+            )}
 
             <footer className="rounded-2xl border border-neutral-200/80 bg-white px-6 py-5 text-center shadow-sm">
               <p className="text-sm font-medium text-neutral-800">

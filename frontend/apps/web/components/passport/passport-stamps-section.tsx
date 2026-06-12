@@ -79,9 +79,17 @@ export function PassportStampsSection({ stamps, isLoading }: PassportStampsSecti
     <section className="scroll-mt-28 space-y-4" id="passport-stamps">
       <h3 className="text-xl font-bold text-neutral-900">Tampons récents</h3>
       {stamps.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-6 text-sm text-neutral-600">
-          Vos premiers tampons apparaîtront ici lorsque vous visiterez un partenaire Yunicity.
-        </p>
+        <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-6 text-center">
+          <p className="text-sm text-neutral-600">
+            Vos premiers tampons apparaîtront ici lorsque vous visiterez un partenaire Yunicity.
+          </p>
+          <Link
+            href="/sortir"
+            className="mt-4 inline-flex rounded-full bg-yunicity-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+          >
+            Découvrir les partenaires
+          </Link>
+        </div>
       ) : (
         <ul className="space-y-3">
           {stamps.slice(0, 5).map((stamp) => (
