@@ -28,6 +28,7 @@ from app.models.passport import (
     PassportTierEvent,
 )
 from app.models.passport_admin_action import PassportAdminAction
+from app.models.passport_badge import PassportBadge, UserPassportBadge
 from app.models.passport_reputation import ReputationEvent, UserReputationSnapshot
 from app.models.post import Post
 from app.models.push_subscription import PushSubscription
@@ -84,6 +85,8 @@ __all__ = [
     "PassportStamp",
     "PassportTier",
     "PassportTierEvent",
+    "PassportBadge",
+    "UserPassportBadge",
     "ReputationEvent",
     "Permission",
     "ProfileVisibility",

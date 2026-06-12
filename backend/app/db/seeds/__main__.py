@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from app.core.config import Settings, get_settings
 from app.db.seeds.auth_rbac import seed_auth_rbac
 from app.db.seeds.bootstrap_admin import seed_bootstrap_admin
+from app.db.seeds.passport_badges import seed_passport_badges
 from app.db.seeds.passport_tiers import seed_passport_tiers
 from app.db.seeds.reims_activation_waves import seed_reims_activation_waves
 from app.db.seeds.reims_cultural_places import seed_reims_cultural_places
@@ -73,6 +74,7 @@ async def run(*, demo: bool, pilot: bool) -> None:
             await seed_auth_rbac(session)
             await seed_bootstrap_admin(session, settings)
             await seed_passport_tiers(session)
+            await seed_passport_badges(session)
             await seed_stamp_definitions(session)
             await seed_reims_neighborhoods(session)
             await seed_reims_cultural_places(session)
