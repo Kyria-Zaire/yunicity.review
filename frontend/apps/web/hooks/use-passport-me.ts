@@ -10,13 +10,14 @@ import type {
 } from "@yunicity/types";
 import {
   humanizeChallengeClaimError,
-  isAuthError,
+  humanizePassportMeLoadError,
   isPassportNotActiveError,
+  isSessionExpiredAuthError,
 } from "@yunicity/utils";
 import { useCallback, useEffect, useState } from "react";
 
 export function usePassportMe() {
-  const { yunicityApi, isAuthenticated } = useAuth();
+  const { yunicityApi, isAuthenticated, user } = useAuth();
   const [overview, setOverview] = useState<PassportOverviewResponse | null>(null);
   const [badges, setBadges] = useState<PassportBadgesResponse | null>(null);
   const [challenges, setChallenges] = useState<PassportChallengesResponse | null>(null);
@@ -24,10 +25,37 @@ export function usePassportMe() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [needsActivation, setNeedsActivation] = useState(false);
+  const [isSessionExpired, setIsSessionExpired] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
   const [claimingCode, setClaimingCode] = useState<string | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [claimSuccess, setClaimSuccess] = useState<ChallengeClaimResponse | null>(null);
+
+  const clearPassportData = useCallback(() => {
+    setOverview(null);
+    setBadges(null);
+    setChallenges(null);
+    setNeedsActivation(false);
+  }, []);
+
+  const handleSessionExpired = useCallback(() => {
+    clearPassportData();
+    setError(null);
+    setClaimError(null);
+    setClaimSuccess(null);
+    setIsSessionExpired(true);
+  }, [clearPassportData]);
+
+  const handleAuthError = useCallback(
+    (err: unknown): boolean => {
+      if (!isSessionExpiredAuthError(err)) {
+        return false;
+      }
+      handleSessionExpired();
+      return true;
+    },
+    [handleSessionExpired],
+  );
 
   const loadPassportData = useCallback(async () => {
     const [overviewData, badgesData, challengesData] = await Promise.all([
@@ -42,10 +70,8 @@ export function usePassportMe() {
   }, [yunicityApi]);
 
   const reload = useCallback(async () => {
-    if (!isAuthenticated) {
-      setOverview(null);
-      setBadges(null);
-      setChallenges(null);
+    if (!isAuthenticated || isSessionExpired) {
+      clearPassportData();
       setIsLoading(false);
       return;
     }
@@ -57,43 +83,87 @@ export function usePassportMe() {
       try {
         await loadPassportData();
       } catch (err) {
-        if (isPassportNotActiveError(err) || (isAuthError(err) && err.status === 404)) {
-          setOverview(null);
-          setBadges(null);
-          setChallenges(null);
+        if (handleAuthError(err)) {
+          return;
+        }
+        if (isPassportNotActiveError(err)) {
+          clearPassportData();
           setNeedsActivation(true);
         } else {
           throw err;
         }
       }
     } catch (err) {
-      setError(isAuthError(err) ? err.message : "Impossible de charger votre Passport.");
+      if (handleAuthError(err)) {
+        return;
+      }
+      setError(humanizePassportMeLoadError(err, "Impossible de charger votre Passport."));
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, loadPassportData, yunicityApi]);
+  }, [
+    clearPassportData,
+    handleAuthError,
+    isAuthenticated,
+    isSessionExpired,
+    loadPassportData,
+    yunicityApi,
+  ]);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      return;
+    }
+    setIsSessionExpired(false);
     void reload();
-  }, [reload]);
+  }, [isAuthenticated, reload]);
 
   const activate = useCallback(async () => {
+    if (isSessionExpired) {
+      return;
+    }
     setIsActivating(true);
     setError(null);
+    const city = profile?.city?.trim() || user?.city?.trim() || undefined;
     try {
-      const city = profile?.city?.trim() || undefined;
       await yunicityApi.activatePassport(city ? { city } : {});
-      await loadPassportData();
-      setNeedsActivation(false);
+      try {
+        await loadPassportData();
+        setNeedsActivation(false);
+      } catch (loadErr) {
+        if (handleAuthError(loadErr)) {
+          return;
+        }
+        setError(
+          humanizePassportMeLoadError(
+            loadErr,
+            "Passport activé, mais l'affichage V2 est momentanément indisponible.",
+          ),
+        );
+      }
     } catch (err) {
-      setError(isAuthError(err) ? err.message : "Activation impossible.");
+      if (handleAuthError(err)) {
+        return;
+      }
+      setError(humanizePassportMeLoadError(err, "Activation impossible."));
     } finally {
       setIsActivating(false);
     }
-  }, [loadPassportData, profile?.city, yunicityApi]);
+  }, [
+    handleAuthError,
+    isSessionExpired,
+    loadPassportData,
+    profile?.city,
+    user?.city,
+    yunicityApi,
+  ]);
 
   const claimReward = useCallback(
     async (challengeCode: string) => {
+      if (isSessionExpired) {
+        return;
+      }
       setClaimingCode(challengeCode);
       setClaimError(null);
       setClaimSuccess(null);
@@ -102,6 +172,9 @@ export function usePassportMe() {
         setClaimSuccess(result);
         await loadPassportData();
       } catch (err) {
+        if (handleAuthError(err)) {
+          return;
+        }
         setClaimError(
           humanizeChallengeClaimError(err, "Impossible de réclamer cette récompense."),
         );
@@ -109,7 +182,7 @@ export function usePassportMe() {
         setClaimingCode(null);
       }
     },
-    [loadPassportData, yunicityApi],
+    [handleAuthError, isSessionExpired, loadPassportData, yunicityApi],
   );
 
   const clearClaimFeedback = useCallback(() => {
@@ -125,6 +198,7 @@ export function usePassportMe() {
     error,
     isLoading,
     needsActivation,
+    isSessionExpired,
     isActivating,
     claimingCode,
     claimError,

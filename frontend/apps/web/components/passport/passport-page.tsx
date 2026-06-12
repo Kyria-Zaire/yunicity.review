@@ -4,6 +4,7 @@ import { PassportAppShell } from "@/components/passport/passport-app-shell";
 import { PassportBadgesSection } from "@/components/passport/passport-badges-section";
 import { PassportChallengesSection } from "@/components/passport/passport-challenges-section";
 import { PassportErrorState } from "@/components/passport/passport-error-state";
+import { PassportSessionExpiredState } from "@/components/passport/passport-session-expired-state";
 import { PassportHero } from "@/components/passport/passport-hero";
 import { PassportLoadingState } from "@/components/passport/passport-loading-state";
 import { PassportReputationCard } from "@/components/passport/passport-reputation-card";
@@ -25,6 +26,7 @@ export function PassportPage() {
     error,
     isLoading,
     needsActivation,
+    isSessionExpired,
     isActivating,
     claimingCode,
     claimError,
@@ -38,7 +40,9 @@ export function PassportPage() {
   return (
     <PassportAppShell>
       <div className="px-4 py-6 sm:px-6 sm:py-8">
-        {isLoading ? (
+        {isSessionExpired ? (
+          <PassportSessionExpiredState />
+        ) : isLoading ? (
           <PassportLoadingState />
         ) : error && !needsActivation ? (
           <PassportErrorState message={error} onRetry={() => void reload()} />

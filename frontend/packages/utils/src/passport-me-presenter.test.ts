@@ -6,6 +6,10 @@ import {
   formatChallengeProgressPercent,
   formatPassportTierLabel,
   humanizeChallengeClaimError,
+  humanizePassportMeLoadError,
+  isPassportMeApiUnavailableError,
+  isSessionExpiredAuthError,
+  PASSPORT_SESSION_EXPIRED_MESSAGE,
 } from "./passport-me-presenter";
 
 describe("formatChallengeProgressPercent", () => {
@@ -40,6 +44,44 @@ describe("challengeClaimButtonLabel", () => {
 
   it("uses generic label for zero reward", () => {
     expect(challengeClaimButtonLabel(0)).toBe("Réclamer la récompense");
+  });
+});
+
+describe("isSessionExpiredAuthError", () => {
+  it("detects expired session auth errors", () => {
+    const err = new AuthError("UNAUTHORIZED", "Session expirée. Veuillez vous reconnecter.", 401);
+    expect(isSessionExpiredAuthError(err)).toBe(true);
+  });
+
+  it("ignores other 401 errors", () => {
+    const err = new AuthError("INVALID_CREDENTIALS", "Identifiants invalides", 401);
+    expect(isSessionExpiredAuthError(err)).toBe(false);
+  });
+});
+
+describe("humanizePassportMeLoadError session", () => {
+  it("returns passport session copy", () => {
+    const err = new AuthError("UNAUTHORIZED", "Session expirée. Veuillez vous reconnecter.", 401);
+    expect(humanizePassportMeLoadError(err, "fallback")).toBe(PASSPORT_SESSION_EXPIRED_MESSAGE);
+  });
+});
+
+describe("isPassportMeApiUnavailableError", () => {
+  it("detects missing FastAPI route 404", () => {
+    const err = new AuthError("UNKNOWN_ERROR", "Not Found", 404);
+    expect(isPassportMeApiUnavailableError(err)).toBe(true);
+  });
+
+  it("ignores passport not active", () => {
+    const err = new AuthError("PASSPORT_NOT_ACTIVE", "Aucun Passport actif.", 404);
+    expect(isPassportMeApiUnavailableError(err)).toBe(false);
+  });
+});
+
+describe("humanizePassportMeLoadError", () => {
+  it("explains missing passport V2 API", () => {
+    const err = new AuthError("UNKNOWN_ERROR", "Not Found", 404);
+    expect(humanizePassportMeLoadError(err, "fallback")).toContain("PASSPORT-05A");
   });
 });
 

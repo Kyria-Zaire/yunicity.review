@@ -1044,11 +1044,15 @@ export {
 } from "./passport-api";
 export { PassportMeApi, createPassportMeApi } from "./passport-me-api";
 export {
+  PASSPORT_SESSION_EXPIRED_MESSAGE,
   challengeClaimButtonLabel,
   formatChallengeProgressPercent,
   formatPassportStatusLabel,
   formatPassportTierLabel,
   humanizeChallengeClaimError,
+  humanizePassportMeLoadError,
+  isPassportMeApiUnavailableError,
+  isSessionExpiredAuthError,
 } from "./passport-me-presenter";
 export {
   buildPassportStampClaimUrl,
