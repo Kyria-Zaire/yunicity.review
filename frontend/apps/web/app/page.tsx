@@ -1,6 +1,14 @@
 import { HealthStatusCard } from "@/components/health-status-card";
 import { YunicityLogo } from "@/components/brand";
+import { buildPageMetadata, SITE_DEFAULT_METADATA } from "@/lib/seo/metadata";
 import Link from "next/link";
+
+export const metadata = buildPageMetadata({
+  title: SITE_DEFAULT_METADATA.defaultTitle,
+  description: SITE_DEFAULT_METADATA.defaultDescription,
+  path: "/",
+  absoluteTitle: true,
+});
 
 export default function HomePage() {
   return (
