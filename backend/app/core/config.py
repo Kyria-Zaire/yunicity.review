@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 AppEnv = Literal["dev", "recette", "preprod", "prod"]
 CookieSameSite = Literal["lax", "strict", "none"]
+EmailProvider = Literal["none", "resend"]
 
 _DEV_JWT_PLACEHOLDER = "dev-only-insecure-jwt-secret-change-in-env-32chars"
 _WEAK_JWT_SECRETS = frozenset(
@@ -48,6 +49,10 @@ class Settings(BaseSettings):
     refresh_token_pepper: str = Field(default="", alias="REFRESH_TOKEN_PEPPER")
     web_frontend_url: str = Field(default="http://localhost:3000", alias="WEB_FRONTEND_URL")
     password_reset_expire_hours: int = Field(default=1, alias="PASSWORD_RESET_EXPIRE_HOURS")
+
+    email_provider: EmailProvider = Field(default="none", alias="EMAIL_PROVIDER")
+    resend_api_key: str | None = Field(default=None, alias="RESEND_API_KEY")
+    email_from: str | None = Field(default=None, alias="EMAIL_FROM")
 
     expo_push_enabled: bool = Field(default=False, alias="EXPO_PUSH_ENABLED")
     expo_access_token: str | None = Field(default=None, alias="EXPO_ACCESS_TOKEN")
@@ -163,6 +168,12 @@ class Settings(BaseSettings):
                 raise ValueError("CORS_ORIGINS must not include localhost in prod")
             if self._is_localhost_url(self.media_public_base_url):
                 raise ValueError("MEDIA_PUBLIC_BASE_URL must not use localhost in prod")
+            if self.email_provider != "resend":
+                raise ValueError("EMAIL_PROVIDER must be 'resend' in prod")
+            if not self.resend_api_key or not self.resend_api_key.strip():
+                raise ValueError("RESEND_API_KEY is required in prod")
+            if not self.email_from or not self.email_from.strip():
+                raise ValueError("EMAIL_FROM is required in prod")
         return self
 
     @property

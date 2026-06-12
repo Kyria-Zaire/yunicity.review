@@ -17,6 +17,7 @@ from app.core.security import (
     normalize_email,
     validate_password_strength,
 )
+from app.integrations.resend_email import EmailDeliveryError, send_password_reset_email
 from app.repositories.password_reset_token_repository import PasswordResetTokenRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.user_repository import UserRepository
@@ -59,9 +60,27 @@ class PasswordResetService:
                 token_hash=token_hash,
                 expires_at=expires_at,
             )
+            reset_link = self._build_reset_url(raw_token)
+
+            if self._settings.app_env == "prod":
+                try:
+                    await send_password_reset_email(
+                        to=normalized,
+                        reset_url=reset_link,
+                        settings=self._settings,
+                    )
+                except EmailDeliveryError as exc:
+                    await self._session.rollback()
+                    raise AppError(
+                        status_code=503,
+                        code="EMAIL_DELIVERY_FAILED",
+                        detail="Service temporairement indisponible. Réessayez plus tard.",
+                    ) from exc
+
             await self._session.commit()
+
             if self._settings.app_env != "prod":
-                reset_url = self._build_reset_url(raw_token)
+                reset_url = reset_link
 
         return ForgotPasswordResult(message=_GENERIC_FORGOT_MESSAGE, reset_url=reset_url)
 

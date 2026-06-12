@@ -18,7 +18,7 @@ Voir `backend/.env.example` (section PROD/PREPROD) et :
 
 | App | Variables |
 |-----|-----------|
-| Backend | `APP_ENV=prod`, `DEBUG=false`, `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET_KEY`, `REFRESH_TOKEN_PEPPER`, `REFRESH_COOKIE_SECURE=true`, `CORS_ORIGINS`, `WEB_FRONTEND_URL`, `MEDIA_PUBLIC_BASE_URL` |
+| Backend | `APP_ENV=prod`, `DEBUG=false`, `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET_KEY`, `REFRESH_TOKEN_PEPPER`, `REFRESH_COOKIE_SECURE=true`, `CORS_ORIGINS`, `WEB_FRONTEND_URL`, `MEDIA_PUBLIC_BASE_URL`, `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, `EMAIL_FROM` |
 | Web | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WEB_APP_URL` |
 | Admin | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WEB_APP_URL`, `NEXT_PUBLIC_ADMIN_URL` |
 
@@ -29,7 +29,7 @@ Voir `backend/.env.example` (section PROD/PREPROD) et :
 3. Déployer API avec variables prod validées (`Settings` refuse localhost / secrets faibles).
 4. `python scripts/bootstrap_admin.py` une fois (credentials ops via secrets).
 5. Build + déployer web et admin.
-6. Exécuter `scripts/smoke-check.sh` contre l’URL publique.
+6. Exécuter `scripts/smoke-check.sh` contre l'URL publique.
 
 ## Migrations
 
@@ -56,13 +56,14 @@ Monitoring : alerter si `/ready` → `degraded` ou 5xx.
 
 ## Backups (minimum viable)
 
-| Élément | Recommandation |
-|---------|----------------|
-| Fréquence | Dump PostgreSQL quotidien |
-| Rétention | 7 jours minimum, 30 jours idéal |
-| Stockage | Bucket chiffré hors du serveur app |
-| Test | Restauration sur preprod 1×/mois |
-| Blocage | **Non automatisé dans le dépôt** — à configurer chez l’hébergeur DB |
+Voir [`backups.md`](backups.md) et scripts `scripts/backup.sh` / `scripts/restore.sh`.
+
+| Élément | Valeur |
+|---------|--------|
+| Fréquence | Quotidien 03:00 UTC |
+| Rétention | 7 quotidiens + 4 hebdomadaires |
+| Stockage | OVH Object Storage ou Cloudflare R2 |
+| Restore test | Mensuel sur recette |
 
 ## HTTPS & domaine
 
@@ -82,6 +83,9 @@ Voir `scripts/smoke-check.sh`. Manuellement :
 - [ ] `/robots.txt` et `/sitemap.xml`
 - [ ] Register + login
 - [ ] Forgot password : **pas de `reset_url` dans la réponse** en prod
+- [ ] Forgot password : **email reçu** (boîte test Resend)
+- [ ] Backup quotidien exécuté (`scripts/backup.sh` ou cron)
+- [ ] Restore testé sur recette ce mois-ci
 - [ ] `/sortir`, `/places`, `/creators`
 - [ ] Admin login (compte bootstrap ops)
 - [ ] `/docs` API **absent** en prod
@@ -90,7 +94,7 @@ Voir `scripts/smoke-check.sh`. Manuellement :
 
 | Risque | Statut |
 |--------|--------|
-| Pas d’envoi email forgot-password | **Bloquant fonctionnel** — token créé mais lien non envoyé ; prévoir SMTP/provider ou procédure ops |
+| Domaine Resend / SPF | Vérifier `EMAIL_FROM` et DNS chez Resend avant prod |
 | Pas de Dockerfile web/admin | Déploiement frontend via plateforme Node séparée |
-| Backups non codés | Documentés — config hébergeur requise |
+| Upload S3 backups | Configurer cron + bucket sur l'hébergeur |
 | Rate limits désactivés sans Redis | **Bloqué au boot** si `REDIS_URL` absent en prod |

@@ -9,7 +9,7 @@ Docker, environnements et déploiement.
 | [docker/](docker/) | Init Postgres/PostGIS, doc services |
 | `docker-compose.yml` (racine) | Stack dev Postgres + Redis + API |
 | [environments/](environments/) | dev, recette, preprod, prod |
-| [deployment/](deployment/) | Checklist lancement web (QA-05) |
+| [deployment/](deployment/) | Checklist lancement web (QA-05) + backups (QA-05B) |
 
 ## Promotion
 

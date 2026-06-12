@@ -17,6 +17,9 @@ def _prod_settings(**overrides: Any) -> Settings:
         "CORS_ORIGINS": ["https://yunicity.fr", "https://admin.yunicity.fr"],
         "WEB_FRONTEND_URL": "https://yunicity.fr",
         "MEDIA_PUBLIC_BASE_URL": "https://api.yunicity.fr",
+        "EMAIL_PROVIDER": "resend",
+        "RESEND_API_KEY": "re_test_key_123456789",
+        "EMAIL_FROM": "no-reply@yunicity.fr",
     }
     base.update(overrides)
     return Settings(**base)
@@ -46,6 +49,16 @@ def test_prod_rejects_localhost_frontend_url() -> None:
 def test_prod_requires_redis_url() -> None:
     with pytest.raises(ValidationError, match="REDIS_URL"):
         _prod_settings(REDIS_URL=None)
+
+
+def test_prod_requires_resend_api_key() -> None:
+    with pytest.raises(ValidationError, match="RESEND_API_KEY"):
+        _prod_settings(RESEND_API_KEY="")
+
+
+def test_prod_requires_email_from() -> None:
+    with pytest.raises(ValidationError, match="EMAIL_FROM"):
+        _prod_settings(EMAIL_FROM="")
 
 
 def test_preprod_requires_refresh_token_pepper() -> None:
