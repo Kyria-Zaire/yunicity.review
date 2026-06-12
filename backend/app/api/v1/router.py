@@ -47,6 +47,7 @@ from app.api.v1 import (
     tribes,
     users,
     weather,
+    local_videos,
 )
 
 api_router = APIRouter()
@@ -86,6 +87,7 @@ api_router.include_router(users.router)
 api_router.include_router(feed.router)
 api_router.include_router(discussions.router)
 api_router.include_router(stories.router)
+api_router.include_router(local_videos.router)
 api_router.include_router(posts.router)
 api_router.include_router(comments.router)
 api_router.include_router(scan.router)

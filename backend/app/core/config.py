@@ -95,6 +95,31 @@ class Settings(BaseSettings):
         alias="MEDIA_PUBLIC_BASE_URL",
     )
 
+    local_video_storage_backend: Literal["filesystem", "r2"] = Field(
+        default="filesystem",
+        alias="LOCAL_VIDEO_STORAGE_BACKEND",
+    )
+    local_video_max_bytes: int = Field(default=52_428_800, alias="LOCAL_VIDEO_MAX_BYTES")
+    local_video_max_duration_seconds: int = Field(
+        default=60,
+        alias="LOCAL_VIDEO_MAX_DURATION_SECONDS",
+    )
+    local_video_presigned_ttl_seconds: int = Field(
+        default=900,
+        alias="LOCAL_VIDEO_PRESIGNED_TTL_SECONDS",
+    )
+    local_video_cdn_base_url: str | None = Field(default=None, alias="LOCAL_VIDEO_CDN_BASE_URL")
+    local_video_r2_endpoint: str | None = Field(default=None, alias="LOCAL_VIDEO_R2_ENDPOINT")
+    local_video_r2_access_key_id: str | None = Field(
+        default=None,
+        alias="LOCAL_VIDEO_R2_ACCESS_KEY_ID",
+    )
+    local_video_r2_secret_access_key: str | None = Field(
+        default=None,
+        alias="LOCAL_VIDEO_R2_SECRET_ACCESS_KEY",
+    )
+    local_video_r2_bucket: str | None = Field(default=None, alias="LOCAL_VIDEO_R2_BUCKET")
+
     bootstrap_admin_email: str | None = Field(
         default=None,
         alias="YUNICITY_BOOTSTRAP_ADMIN_EMAIL",
@@ -179,6 +204,12 @@ class Settings(BaseSettings):
     @property
     def refresh_cookie_path(self) -> str:
         return f"{self.api_v1_prefix.rstrip('/')}/auth"
+
+    @property
+    def local_video_public_base_url(self) -> str:
+        if self.local_video_cdn_base_url and self.local_video_cdn_base_url.strip():
+            return self.local_video_cdn_base_url.rstrip("/")
+        return self.media_public_base_url.rstrip("/")
 
     @property
     def access_token_ttl_seconds(self) -> int:
