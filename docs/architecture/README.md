@@ -56,6 +56,13 @@ apps/web | apps/admin | apps/mobile
 
 Checklist : [../ai/security-checklist.md](../ai/security-checklist.md)
 
-## Évolution
+## Documents
 
-Les diagrammes détaillés et ADR seront ajoutés au fil des tickets (auth, tribus, carte, etc.).
+| Document | Sujet |
+|----------|--------|
+| [DESIGN-CREATORS-V2-local-video.md](../creators/DESIGN-CREATORS-V2-local-video.md) | **Local Video V2** — wireframes player + upload |
+| [DESIGN-QUARTIERS-V2.md](../quartiers/DESIGN-QUARTIERS-V2.md) | **Quartiers V2** — hero vidéo-first, mémoire vivante |
+| [cultural-media-strategy.md](./cultural-media-strategy.md) | Lieux culturels, seed, R2 futur |
+| [ADR-CREATORS-V2-local-video-media.md](./ADR-CREATORS-V2-local-video-media.md) | **Local Video V2** — R2 + FFmpeg + CDN |
+| [ADR-QUARTIERS-V2.md](./ADR-QUARTIERS-V2.md) | **Quartiers V2** — mémoire vivante, tables dédiées, detail API enrichi |
+| [search.md](./search.md) | Search / Explorer |
