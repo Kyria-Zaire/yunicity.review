@@ -6,6 +6,7 @@ import uuid
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.neighborhood import Neighborhood
 
@@ -30,6 +31,30 @@ class NeighborhoodRepository:
         stmt = select(Neighborhood).where(
             func.lower(Neighborhood.city) == city.strip().lower(),
             Neighborhood.slug == slug.strip().lower(),
+        )
+        if active_only:
+            stmt = stmt.where(Neighborhood.is_active.is_(True))
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_by_city_slug_with_editorial(
+        self,
+        *,
+        city: str,
+        slug: str,
+        active_only: bool = False,
+    ) -> Neighborhood | None:
+        stmt = (
+            select(Neighborhood)
+            .where(
+                func.lower(Neighborhood.city) == city.strip().lower(),
+                Neighborhood.slug == slug.strip().lower(),
+            )
+            .options(
+                selectinload(Neighborhood.aliases),
+                selectinload(Neighborhood.mood_assignments),
+                selectinload(Neighborhood.timeline_entries),
+            )
         )
         if active_only:
             stmt = stmt.where(Neighborhood.is_active.is_(True))

@@ -64,7 +64,7 @@ class NeighborhoodContextService:
         )
 
         return NeighborhoodContextResponse(
-            neighborhood=NeighborhoodService._to_response(hood),
+            neighborhood=NeighborhoodService._to_response(hood, include_editorial=False),
             stats=stats,
             recent_events=events,
             organizations=orgs,

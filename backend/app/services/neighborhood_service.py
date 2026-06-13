@@ -20,6 +20,7 @@ from app.schemas.neighborhood import (
     NeighborhoodResponse,
     NeighborhoodUpdateRequest,
 )
+from app.services.neighborhood_v2_presenter import to_neighborhood_response
 
 _SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
@@ -52,21 +53,25 @@ class NeighborhoodService:
             active_only=True,
         )
         return NeighborhoodListResponse(
-            items=[self._to_response(row) for row in rows],
+            items=[self._to_response(row, include_editorial=False) for row in rows],
             total=total,
             page=page,
             page_size=page_size,
         )
 
     async def get_public_by_slug(self, *, city: str, slug: str) -> NeighborhoodResponse:
-        row = await self._neighborhoods.get_by_city_slug(city=city, slug=slug, active_only=True)
+        row = await self._neighborhoods.get_by_city_slug_with_editorial(
+            city=city,
+            slug=slug,
+            active_only=True,
+        )
         if row is None:
             raise AppError(
                 status_code=404,
                 code="NEIGHBORHOOD_NOT_FOUND",
                 detail="Quartier introuvable.",
             )
-        return self._to_response(row)
+        return self._to_response(row, include_editorial=True)
 
     async def create_admin(self, payload: NeighborhoodCreateRequest) -> NeighborhoodResponse:
         self._validate_slug(payload.slug)
@@ -97,7 +102,7 @@ class NeighborhoodService:
                 code="NEIGHBORHOOD_ALREADY_EXISTS",
                 detail="Un quartier avec ce slug existe déjà dans cette ville.",
             ) from exc
-        return self._to_response(created)
+        return self._to_response(created, include_editorial=False)
 
     async def update_admin(
         self,
@@ -116,14 +121,14 @@ class NeighborhoodService:
                 setattr(row, key, value)
         await self._session.commit()
         await self._session.refresh(row)
-        return self._to_response(row)
+        return self._to_response(row, include_editorial=False)
 
     async def deactivate_admin(self, *, city: str, slug: str) -> NeighborhoodResponse:
         row = await self._require_by_city_slug(city=city, slug=slug)
         row.is_active = False
         await self._session.commit()
         await self._session.refresh(row)
-        return self._to_response(row)
+        return self._to_response(row, include_editorial=False)
 
     async def _require_by_city_slug(self, *, city: str, slug: str) -> Neighborhood:
         row = await self._neighborhoods.get_by_city_slug(city=city, slug=slug, active_only=False)
@@ -159,21 +164,5 @@ class NeighborhoodService:
             )
 
     @staticmethod
-    def _to_response(row: Neighborhood) -> NeighborhoodResponse:
-        return NeighborhoodResponse(
-            id=row.id,
-            city=row.city,
-            slug=row.slug,
-            display_name=row.display_name,
-            short_description=row.short_description,
-            ambiance=row.ambiance,
-            cover_image_url=row.cover_image_url,
-            accent_color=row.accent_color,
-            latitude=float(row.latitude) if row.latitude is not None else None,
-            longitude=float(row.longitude) if row.longitude is not None else None,
-            radius_meters=row.radius_meters,
-            is_featured=row.is_featured,
-            is_active=row.is_active,
-            created_at=row.created_at,
-            updated_at=row.updated_at,
-        )
+    def _to_response(row: Neighborhood, *, include_editorial: bool) -> NeighborhoodResponse:
+        return to_neighborhood_response(row, include_editorial=include_editorial)

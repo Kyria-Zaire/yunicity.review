@@ -27,6 +27,21 @@ class FeedNeighborhoodSummary(BaseModel):
     display_name: str
 
 
+class NeighborhoodAliasItem(BaseModel):
+    id: uuid.UUID
+    name: str
+    slug: str
+    is_primary: bool
+
+
+class NeighborhoodTimelineItem(BaseModel):
+    id: uuid.UUID
+    year: int
+    title: str
+    description: str | None
+    display_order: int
+
+
 class NeighborhoodResponse(BaseModel):
     id: uuid.UUID
     city: str
@@ -43,6 +58,11 @@ class NeighborhoodResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    long_story: str | None = None
+    featured_quote: str | None = None
+    aliases: list[NeighborhoodAliasItem] = Field(default_factory=list)
+    moods: list[str] = Field(default_factory=list)
+    timeline: list[NeighborhoodTimelineItem] = Field(default_factory=list)
 
 
 class NeighborhoodListResponse(BaseModel):

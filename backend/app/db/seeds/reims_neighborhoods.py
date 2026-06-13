@@ -104,6 +104,90 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
         "radius_meters": 900,
         "is_featured": False,
     },
+    {
+        "id": uuid.UUID("d6010000-0000-4000-8000-000000000007"),
+        "slug": "murigny",
+        "display_name": "Murigny",
+        "short_description": (
+            "Quartier résidentiel au sud de Reims — rues calmes, commerces de "
+            "proximité et cadre de vie familial."
+        ),
+        "ambiance": NeighborhoodAmbiance.CALM.value,
+        "latitude": 49.2200,
+        "longitude": 4.0500,
+        "radius_meters": 750,
+        "is_featured": False,
+    },
+    {
+        "id": uuid.UUID("d6010000-0000-4000-8000-000000000008"),
+        "slug": "jean-jaures",
+        "display_name": "Jean-Jaurès",
+        "short_description": (
+            "Un quartier populaire et connecté — vie étudiante, commerces et "
+            "énergie du quotidien rémois."
+        ),
+        "ambiance": NeighborhoodAmbiance.STUDENT.value,
+        "latitude": 49.2500,
+        "longitude": 4.0200,
+        "radius_meters": 700,
+        "is_featured": False,
+    },
+    {
+        "id": uuid.UUID("d6010000-0000-4000-8000-000000000009"),
+        "slug": "la-neuvillette",
+        "display_name": "La Neuvillette",
+        "short_description": (
+            "Au nord de Reims — zones d'activité, logements récents et "
+            "dynamisme en développement."
+        ),
+        "ambiance": NeighborhoodAmbiance.LIVELY.value,
+        "latitude": 49.2800,
+        "longitude": 4.0600,
+        "radius_meters": 850,
+        "is_featured": False,
+    },
+    {
+        "id": uuid.UUID("d6010000-0000-4000-8000-000000000010"),
+        "slug": "orgeval",
+        "display_name": "Orgeval",
+        "short_description": (
+            "Quartier ouest de Reims — résidentiel, espaces verts et "
+            "proximité avec la campagne champenoise."
+        ),
+        "ambiance": NeighborhoodAmbiance.GREEN.value,
+        "latitude": 49.2700,
+        "longitude": 4.0000,
+        "radius_meters": 800,
+        "is_featured": False,
+    },
+    {
+        "id": uuid.UUID("d6010000-0000-4000-8000-000000000011"),
+        "slug": "chemin-vert",
+        "display_name": "Chemin-Vert",
+        "short_description": (
+            "Entre centre et faubourgs — un Reims habité, accessible et "
+            "en mouvement."
+        ),
+        "ambiance": NeighborhoodAmbiance.LIVELY.value,
+        "latitude": 49.2350,
+        "longitude": 4.0400,
+        "radius_meters": 700,
+        "is_featured": False,
+    },
+    {
+        "id": uuid.UUID("d6010000-0000-4000-8000-000000000012"),
+        "slug": "maison-blanche",
+        "display_name": "Maison-Blanche",
+        "short_description": (
+            "Quartier au sud-est — diversité, associations locales et "
+            "solidarité de proximité."
+        ),
+        "ambiance": NeighborhoodAmbiance.CALM.value,
+        "latitude": 49.2100,
+        "longitude": 4.0100,
+        "radius_meters": 800,
+        "is_featured": False,
+    },
 )
 
 

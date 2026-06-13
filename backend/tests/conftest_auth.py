@@ -12,6 +12,7 @@ from app.db.search_fts import install_search_fts
 from app.db.seeds.auth_rbac import seed_auth_rbac
 from app.db.seeds.passport_tiers import seed_passport_tiers
 from app.db.seeds.reims_neighborhoods import seed_reims_neighborhoods
+from app.db.seeds.reims_neighborhoods_v2_editorial import seed_reims_neighborhoods_v2_editorial
 from app.db.seeds.stamp_definitions import seed_stamp_definitions
 from app.db.session import dispose_db, get_engine, get_session_factory, init_db
 from app.integrations.redis import close_redis, init_redis
@@ -72,6 +73,7 @@ async def auth_client(auth_env: None) -> AsyncGenerator[AsyncClient, None]:
         await seed_passport_tiers(session)
         await seed_stamp_definitions(session)
         await seed_reims_neighborhoods(session)
+        await seed_reims_neighborhoods_v2_editorial(session)
         await session.commit()
 
     application: FastAPI = create_app()

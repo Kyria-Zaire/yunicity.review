@@ -11,6 +11,13 @@ from app.models.local_video import LocalVideo, LocalVideoUpload
 from app.models.local_video_social import LocalVideoComment, LocalVideoLike, LocalVideoReport
 from app.models.local_stamp import CitizenLocalStamp, StampDefinition
 from app.models.neighborhood import Neighborhood
+from app.models.neighborhood_editorial import (
+    NeighborhoodAlias,
+    NeighborhoodContribution,
+    NeighborhoodMoodAssignment,
+    NeighborhoodMoodTag,
+    NeighborhoodTimelineEntry,
+)
 from app.models.offer_admin_action import OfferAdminAction
 from app.models.organization import (
     Organization,
@@ -73,6 +80,11 @@ __all__ = [
     "LocalVideoReport",
     "LocalVideoUpload",
     "Neighborhood",
+    "NeighborhoodAlias",
+    "NeighborhoodContribution",
+    "NeighborhoodMoodAssignment",
+    "NeighborhoodMoodTag",
+    "NeighborhoodTimelineEntry",
     "PartnerCreatorContent",
     "PartnerLead",
     "OfferAdminAction",

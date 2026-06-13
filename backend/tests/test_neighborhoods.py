@@ -42,7 +42,7 @@ async def test_list_neighborhoods_public(auth_client: AsyncClient) -> None:
     response = await auth_client.get("/api/v1/neighborhoods", params={"city": "Reims"})
     assert response.status_code == 200, response.text
     body = response.json()
-    assert body["total"] >= 6
+    assert body["total"] >= 12
     slugs = {item["slug"] for item in body["items"]}
     assert "centre-ville" in slugs
     assert "boulingrin" in slugs

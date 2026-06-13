@@ -3,9 +3,22 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Index, Integer, Numeric, String, Text, UniqueConstraint, Uuid, text
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+    Uuid,
+    text,
+)
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -14,6 +27,12 @@ from app.models._mixins import TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.local_event import LocalEvent
+    from app.models.neighborhood_editorial import (
+        NeighborhoodAlias,
+        NeighborhoodContribution,
+        NeighborhoodMoodAssignment,
+        NeighborhoodTimelineEntry,
+    )
     from app.models.organization import Organization
     from app.models.passport import PartnerOffer
     from app.models.post import Post
@@ -51,6 +70,20 @@ class Neighborhood(TimestampMixin, Base):
         nullable=False,
         server_default=text("''::tsvector"),
     )
+    long_story: Mapped[str | None] = mapped_column(Text, nullable=True)
+    why_locals_love: Mapped[str | None] = mapped_column(Text, nullable=True)
+    featured_quote: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    official_label: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    hero_image_storage_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    editorial_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    editorial_updated_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
 
     posts: Mapped[list[Post]] = relationship("Post", back_populates="neighborhood")
     local_events: Mapped[list[LocalEvent]] = relationship(
@@ -61,4 +94,24 @@ class Neighborhood(TimestampMixin, Base):
     )
     partner_offers: Mapped[list[PartnerOffer]] = relationship(
         "PartnerOffer", back_populates="neighborhood"
+    )
+    aliases: Mapped[list[NeighborhoodAlias]] = relationship(
+        "NeighborhoodAlias",
+        back_populates="neighborhood",
+        cascade="all, delete-orphan",
+    )
+    mood_assignments: Mapped[list[NeighborhoodMoodAssignment]] = relationship(
+        "NeighborhoodMoodAssignment",
+        back_populates="neighborhood",
+        cascade="all, delete-orphan",
+    )
+    timeline_entries: Mapped[list[NeighborhoodTimelineEntry]] = relationship(
+        "NeighborhoodTimelineEntry",
+        back_populates="neighborhood",
+        cascade="all, delete-orphan",
+    )
+    contributions: Mapped[list[NeighborhoodContribution]] = relationship(
+        "NeighborhoodContribution",
+        back_populates="neighborhood",
+        cascade="all, delete-orphan",
     )
