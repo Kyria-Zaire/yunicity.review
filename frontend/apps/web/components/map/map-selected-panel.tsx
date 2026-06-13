@@ -3,10 +3,8 @@
 import type { MapSelectedPanelPayload } from "@yunicity/utils";
 import {
   MAP_PANEL_CLOSE,
-  MAP_PANEL_EVENT_ROUTE,
   MAP_PANEL_NEIGHBORHOOD_MOMENTS,
   MAP_PANEL_NEIGHBORHOOD_VIEW,
-  MAP_PANEL_PLACE_ROUTE,
   MAP_PANEL_TRIBE_VIEW,
 } from "@yunicity/utils";
 import Link from "next/link";
@@ -14,10 +12,9 @@ import Link from "next/link";
 type MapSelectedPanelProps = {
   payload: MapSelectedPanelPayload;
   onClose: () => void;
-  onStartRoute?: (slug: string) => void;
 };
 
-export function MapSelectedPanel({ payload, onClose, onStartRoute }: MapSelectedPanelProps) {
+export function MapSelectedPanel({ payload, onClose }: MapSelectedPanelProps) {
   return (
     <div
       className="pointer-events-auto absolute bottom-20 left-4 right-4 z-20 mx-auto max-w-md rounded-2xl border border-neutral-200/90 bg-white/95 p-4 shadow-lg backdrop-blur-sm sm:bottom-4 sm:left-auto sm:right-4 sm:mx-0"
@@ -54,18 +51,12 @@ export function MapSelectedPanel({ payload, onClose, onStartRoute }: MapSelected
               MapEventItem (GET /map/events) ne retourne pas organization.
               À activer quand l'endpoint map exposera is_partner + partner_status. */}
           <p className="mt-2 text-xs text-neutral-500">{payload.location}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3">
             <Link
               href={payload.href}
               className="rounded-full bg-yunicity-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-yunicity-primary-hover"
             >
               Voir le moment
-            </Link>
-            <Link
-              href={payload.routeHref}
-              className="rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:border-yunicity-primary/30"
-            >
-              {MAP_PANEL_EVENT_ROUTE}
             </Link>
           </div>
         </>
@@ -84,20 +75,13 @@ export function MapSelectedPanel({ payload, onClose, onStartRoute }: MapSelected
           {payload.credit ? (
             <p className="mt-1 text-[10px] text-neutral-400">{payload.credit}</p>
           ) : null}
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3">
             <Link
               href={payload.href}
               className="rounded-full bg-yunicity-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-yunicity-primary-hover"
             >
               Voir le lieu
             </Link>
-            <button
-              type="button"
-              onClick={() => onStartRoute?.(payload.routeSlug)}
-              className="rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:border-yunicity-primary/30"
-            >
-              {MAP_PANEL_PLACE_ROUTE}
-            </button>
           </div>
         </>
       ) : null}

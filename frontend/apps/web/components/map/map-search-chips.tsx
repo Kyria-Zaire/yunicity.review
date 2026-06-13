@@ -3,14 +3,14 @@
 import type { MapPortalCategoryId } from "@yunicity/utils";
 import {
   MAP_PORTAL_CHIP_ALL,
-  MAP_PORTAL_CHIP_CULTURE,
   MAP_PORTAL_CHIP_EVENTS,
   MAP_PORTAL_CHIP_MORE,
-  MAP_PORTAL_CHIP_PARTNERS,
+  MAP_PORTAL_CHIP_PASSPORT,
   MAP_PORTAL_CHIP_PLACES,
+  MAP_PORTAL_CATEGORY_NEIGHBORHOODS,
   MAP_PORTAL_SEARCH_PLACEHOLDER,
 } from "@yunicity/utils";
-import { Calendar, Landmark, MapPin, Search, SlidersHorizontal, Star, Store } from "lucide-react";
+import { Calendar, MapPin, MapPinHouse, Search, SlidersHorizontal, Star, TicketPercent } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -21,10 +21,10 @@ const CHIPS: {
   icon: typeof Star;
 }[] = [
   { id: "all", label: MAP_PORTAL_CHIP_ALL, icon: Star },
-  { id: "events", label: MAP_PORTAL_CHIP_EVENTS, icon: Calendar },
+  { id: "neighborhoods", label: MAP_PORTAL_CATEGORY_NEIGHBORHOODS, icon: MapPinHouse },
   { id: "places", label: MAP_PORTAL_CHIP_PLACES, icon: MapPin },
-  { id: "culture", label: MAP_PORTAL_CHIP_CULTURE, icon: Landmark },
-  { id: "partners", label: MAP_PORTAL_CHIP_PARTNERS, icon: Store },
+  { id: "events", label: MAP_PORTAL_CHIP_EVENTS, icon: Calendar },
+  { id: "partners", label: MAP_PORTAL_CHIP_PASSPORT, icon: TicketPercent },
   { id: "more", label: MAP_PORTAL_CHIP_MORE, icon: SlidersHorizontal },
 ];
 

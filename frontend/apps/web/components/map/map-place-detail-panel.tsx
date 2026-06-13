@@ -9,7 +9,6 @@ import {
   MAP_PORTAL_DETAIL_HIGHLIGHTS,
   MAP_PORTAL_DETAIL_HIGHLIGHTS_EMPTY,
   MAP_PORTAL_DETAIL_LOADING,
-  MAP_PORTAL_DETAIL_ROUTE,
   MAP_PORTAL_DETAIL_SEE_MORE,
   MAP_PORTAL_PARTNER_SEE_PROFILE,
   buildPublicPlaceHref,
@@ -26,7 +25,6 @@ import {
   ExternalLink,
   Globe,
   MapPin,
-  Navigation,
   Plus,
   Share2,
   X,
@@ -42,7 +40,6 @@ type MapPlaceDetailPanelProps = {
   events: MapEventItem[];
   origin: { latitude: number; longitude: number } | null;
   onClose: () => void;
-  onStartRoute: (slug: string) => void;
 };
 
 export function MapPlaceDetailPanel({
@@ -51,7 +48,6 @@ export function MapPlaceDetailPanel({
   events,
   origin,
   onClose,
-  onStartRoute,
 }: MapPlaceDetailPanelProps) {
   const api = useYunicityApi();
   const [placeDetail, setPlaceDetail] = useState<CulturalPlaceDetail | null>(null);
@@ -146,14 +142,6 @@ export function MapPlaceDetailPanel({
             >
               Voir l&apos;événement
             </Link>
-            <button
-              type="button"
-              onClick={() => onStartRoute(`event-${selectedEvent.id}`)}
-              className="inline-flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-800"
-            >
-              <Navigation className="h-4 w-4" aria-hidden />
-              {MAP_PORTAL_DETAIL_ROUTE}
-            </button>
           </div>
         </div>
       </PanelShell>
@@ -223,9 +211,9 @@ export function MapPlaceDetailPanel({
         <div className="grid grid-cols-4 gap-2 text-center">
           <ActionButton
             primary
-            icon={Navigation}
-            label={MAP_PORTAL_DETAIL_ROUTE}
-            onClick={() => onStartRoute(placeDetail.slug)}
+            icon={MapPin}
+            label="Voir le lieu"
+            href={buildPublicPlaceHref(placeDetail.slug, city)}
           />
           <ActionButton icon={Globe} label={MAP_PORTAL_DETAIL_WEBSITE} href={placeDetail.source_url} />
           <ActionButton
@@ -361,7 +349,7 @@ function ActionButton({
   primary,
   disabled,
 }: {
-  icon: typeof Navigation;
+  icon: typeof MapPin;
   label: string;
   onClick?: () => void;
   href?: string | null;
@@ -383,6 +371,14 @@ function ActionButton({
   );
 
   if (href && !disabled) {
+    if (href.startsWith("/")) {
+      return (
+        <Link href={href} className={className}>
+          {iconWrap}
+          {label}
+        </Link>
+      );
+    }
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
         {iconWrap}

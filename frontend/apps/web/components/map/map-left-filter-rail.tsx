@@ -7,14 +7,10 @@ import {
   DEFAULT_MAP_PORTAL_FILTERS,
   MAP_PORTAL_AMBIANCE_TITLE,
   MAP_PORTAL_CATEGORY_ALL,
-  MAP_PORTAL_CATEGORY_CULTURE,
   MAP_PORTAL_CATEGORY_EVENTS,
-  MAP_PORTAL_CATEGORY_NATURE,
   MAP_PORTAL_CATEGORY_NEIGHBORHOODS,
-  MAP_PORTAL_CATEGORY_PARTNERS,
+  MAP_PORTAL_CATEGORY_PASSPORT,
   MAP_PORTAL_CATEGORY_PLACES,
-  MAP_PORTAL_CATEGORY_TRANSIT,
-  MAP_PORTAL_CATEGORY_TRIBES,
   MAP_PORTAL_DISTANCE,
   MAP_PORTAL_DISTANCE_KM,
   MAP_PORTAL_FAVORITES,
@@ -28,18 +24,15 @@ import {
   MAP_PORTAL_VISITED,
 } from "@yunicity/utils";
 import {
-  Bus,
   Calendar,
   CheckCircle2,
   Heart,
-  Landmark,
   MapPin,
+  MapPinHouse,
   Navigation,
   Sparkles,
   Star,
-  Store,
-  TreePine,
-  Users,
+  TicketPercent,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -49,14 +42,10 @@ const CATEGORIES: {
   icon: typeof MapPin;
 }[] = [
   { id: "all", label: MAP_PORTAL_CATEGORY_ALL, icon: Star },
-  { id: "events", label: MAP_PORTAL_CATEGORY_EVENTS, icon: Calendar },
+  { id: "neighborhoods", label: MAP_PORTAL_CATEGORY_NEIGHBORHOODS, icon: MapPinHouse },
   { id: "places", label: MAP_PORTAL_CATEGORY_PLACES, icon: MapPin },
-  { id: "culture", label: MAP_PORTAL_CATEGORY_CULTURE, icon: Landmark },
-  { id: "nature", label: MAP_PORTAL_CATEGORY_NATURE, icon: TreePine },
-  { id: "tribes", label: MAP_PORTAL_CATEGORY_TRIBES, icon: Users },
-  { id: "neighborhoods", label: MAP_PORTAL_CATEGORY_NEIGHBORHOODS, icon: MapPin },
-  { id: "transit", label: MAP_PORTAL_CATEGORY_TRANSIT, icon: Bus },
-  { id: "partners", label: MAP_PORTAL_CATEGORY_PARTNERS, icon: Store },
+  { id: "events", label: MAP_PORTAL_CATEGORY_EVENTS, icon: Calendar },
+  { id: "partners", label: MAP_PORTAL_CATEGORY_PASSPORT, icon: TicketPercent },
 ];
 
 const AMBIANCES: { id: MapPortalAmbianceId; label: string }[] = [

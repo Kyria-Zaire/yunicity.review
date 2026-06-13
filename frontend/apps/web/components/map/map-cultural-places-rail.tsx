@@ -12,8 +12,8 @@ type MapCulturalPlacesRailProps = {
   selectedSlug: string | null;
   expandedSlug: string | null;
   onSelectPlace: (place: CulturalPlaceListItem) => void;
-  onStartRoute: (place: CulturalPlaceListItem) => void;
   onToggleDetails: (place: CulturalPlaceListItem) => void;
+  onStartRoute?: (place: CulturalPlaceListItem) => void;
 };
 
 export function MapCulturalPlacesRail({
@@ -21,8 +21,8 @@ export function MapCulturalPlacesRail({
   selectedSlug,
   expandedSlug,
   onSelectPlace,
-  onStartRoute,
   onToggleDetails,
+  onStartRoute,
 }: MapCulturalPlacesRailProps) {
   void onToggleDetails;
   const visible = places.slice(0, MAP_CULTURE_RAIL_LIMIT);
@@ -42,7 +42,7 @@ export function MapCulturalPlacesRail({
                 selected={selectedSlug === place.slug}
                 expanded={expandedSlug === place.slug}
                 onSelectMap={() => onSelectPlace(place)}
-                onRoute={() => onStartRoute(place)}
+                onRoute={onStartRoute ? () => onStartRoute(place) : undefined}
               />
             </li>
           ))}

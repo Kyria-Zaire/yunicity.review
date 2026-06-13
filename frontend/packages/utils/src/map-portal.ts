@@ -16,6 +16,27 @@ export type MapPortalCategoryId =
   | "transit"
   | "partners";
 
+/** MAP-V2.A — filtres territoriaux unifiés (chips + rail). */
+export const MAP_V2_A_FILTER_CATEGORY_IDS = [
+  "all",
+  "neighborhoods",
+  "places",
+  "events",
+  "partners",
+] as const satisfies readonly MapPortalCategoryId[];
+
+export type MapV2AFilterCategoryId = (typeof MAP_V2_A_FILTER_CATEGORY_IDS)[number];
+
+export function normalizeMapPortalCategory(category: MapPortalCategoryId): MapPortalCategoryId {
+  if ((MAP_V2_A_FILTER_CATEGORY_IDS as readonly string[]).includes(category)) {
+    return category;
+  }
+  if (category === "culture" || category === "nature") {
+    return "places";
+  }
+  return "all";
+}
+
 export type MapPortalAmbianceId =
   | "calm"
   | "lively"
@@ -154,7 +175,7 @@ export function resolveMapPortalLayerVisibility(
     showEvents: true,
     showPlaces: true,
     showNeighborhoods: true,
-    showTribes: true,
+    showTribes: false,
     emphasizeTransit: false,
   };
 }

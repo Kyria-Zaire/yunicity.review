@@ -4,7 +4,6 @@ import type { PartnerPublic } from "@yunicity/types";
 import {
   MAP_PARTNER_GEO_NOTICE,
   MAP_PORTAL_DETAIL_CLOSE,
-  MAP_PORTAL_PARTNER_PANEL_ROUTE,
   MAP_PORTAL_PARTNER_SEE_PROFILE,
   MAP_PORTAL_PARTNER_TAG,
   hasPartnerCoordinates,
@@ -14,19 +13,17 @@ import {
   partnerPublicHref,
   resolvePartnerImage,
 } from "@yunicity/utils";
-import { ExternalLink, Navigation, X } from "lucide-react";
+import { ExternalLink, X } from "lucide-react";
 import Link from "next/link";
 
 type MapPartnerDetailPanelProps = {
   partner: PartnerPublic;
   onClose: () => void;
-  onStartRoute: () => void;
 };
 
 export function MapPartnerDetailPanel({
   partner,
   onClose,
-  onStartRoute,
 }: MapPartnerDetailPanelProps) {
   const imageUrl = resolvePartnerImage(partner, "card");
   const actions = partnerContactActions(partner);
@@ -71,16 +68,6 @@ export function MapPartnerDetailPanel({
         ) : null}
 
         <div className="flex flex-wrap gap-2">
-          {canRoute ? (
-            <button
-              type="button"
-              onClick={onStartRoute}
-              className="inline-flex items-center gap-1.5 rounded-full bg-yunicity-primary px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90"
-            >
-              <Navigation className="h-3.5 w-3.5" aria-hidden />
-              {MAP_PORTAL_PARTNER_PANEL_ROUTE}
-            </button>
-          ) : null}
           <Link
             href={partnerPublicHref(partner)}
             className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-2 text-xs font-semibold text-neutral-800 transition hover:border-yunicity-primary/30"

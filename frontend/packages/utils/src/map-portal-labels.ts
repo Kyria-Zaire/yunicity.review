@@ -3,7 +3,7 @@
 export const MAP_PORTAL_TITLE = "Carte";
 export const MAP_PORTAL_CITY_LABEL = "Ville";
 
-export const MAP_PORTAL_CATEGORY_ALL = "Tout afficher";
+export const MAP_PORTAL_CATEGORY_ALL = "Tout";
 export const MAP_PORTAL_CATEGORY_EVENTS = "Événements";
 export const MAP_PORTAL_CATEGORY_PLACES = "Lieux";
 export const MAP_PORTAL_CATEGORY_CULTURE = "Culture";
@@ -12,6 +12,7 @@ export const MAP_PORTAL_CATEGORY_TRIBES = "Tribus";
 export const MAP_PORTAL_CATEGORY_NEIGHBORHOODS = "Quartiers";
 export const MAP_PORTAL_CATEGORY_TRANSIT = "Transports";
 export const MAP_PORTAL_CATEGORY_PARTNERS = "Partenaires";
+export const MAP_PORTAL_CATEGORY_PASSPORT = "Passport";
 
 export const MAP_PORTAL_PARTNER_TAG = "PARTENAIRE";
 export const MAP_PORTAL_PARTNER_SEE_PROFILE = "Voir la fiche";
@@ -37,12 +38,13 @@ export const MAP_PORTAL_GEO_CTA = "Activer ma position";
 export const MAP_PORTAL_SEARCH_PLACEHOLDER =
   "Rechercher un lieu, un événement, une activité…";
 
-export const MAP_PORTAL_CHIP_ALL = "Tous";
+export const MAP_PORTAL_CHIP_ALL = "Tout";
 export const MAP_PORTAL_CHIP_EVENTS = "Événements";
 export const MAP_PORTAL_CHIP_PLACES = "Lieux";
 export const MAP_PORTAL_CHIP_CULTURE = "Culture";
-export const MAP_PORTAL_CHIP_MORE = "Plus de filtres";
+export const MAP_PORTAL_CHIP_MORE = "Plus";
 export const MAP_PORTAL_CHIP_PARTNERS = "Partenaires";
+export const MAP_PORTAL_CHIP_PASSPORT = "Passport";
 
 export const MAP_PORTAL_AROUND_TITLE = "Autour de vous";
 export const MAP_PORTAL_AROUND_SEE_ALL = "Voir tout";

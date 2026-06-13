@@ -27,6 +27,8 @@ import {
   filterTribeMarkersForLayer,
   geocodeMapboxAddress,
   mapLayerToUrlSlug,
+  normalizeMapPortalCategory,
+  parseMapLayer,
   MAP_PARTNER_GEO_NOTICE,
   hasPartnerCoordinates,
   parseMapParams,
@@ -34,8 +36,6 @@ import {
   resolveMapPortalLayer,
   resolveMapPortalLayerVisibility,
   resolveMapPortalPlaceCategories,
-  resolveRouteTargetFromNeighborhood,
-  resolveRouteTargetFromTribeMarker,
   type MapAroundYouItem,
   type MapPortalFilters,
 } from "@yunicity/utils";
@@ -49,6 +49,7 @@ import { MapAppShell } from "@/components/map/map-app-shell";
 import { MapLeftFilterRail } from "@/components/map/map-left-filter-rail";
 import { MapPartnerDetailPanel } from "@/components/map/map-partner-detail-panel";
 import { MapPlaceDetailPanel } from "@/components/map/map-place-detail-panel";
+import { MapRightRail } from "@/components/map/map-right-rail";
 import { MapSearchChips } from "@/components/map/map-search-chips";
 import { MapSelectedPanel } from "@/components/map/map-selected-panel";
 import { useMapPortalStats } from "@/hooks/use-map-portal-stats";
@@ -136,9 +137,14 @@ export function EventMapScreen() {
   const { partners: mapPartners, markers: partnerMarkers } = useMapPartners(city);
 
   useEffect(() => {
-    void api.getProfileMe().then((profile) => {
-      if (profile.city) setProfileCity(profile.city);
-    });
+    void api
+      .getProfileMe()
+      .then((profile) => {
+        if (profile.city) setProfileCity(profile.city);
+      })
+      .catch(() => {
+        /* session expirée : ville par défaut conservée */
+      });
   }, [api]);
 
   useEffect(() => {
@@ -217,6 +223,28 @@ export function EventMapScreen() {
       }),
     [city, visibleEvents, visiblePlaces, userOrigin],
   );
+
+  useEffect(() => {
+    if (!mapParams.layer) return;
+    const layer = parseMapLayer(mapParams.layer);
+    const category =
+      layer === "moments"
+        ? "events"
+        : layer === "lieux"
+          ? "places"
+          : layer === "quartiers"
+            ? "neighborhoods"
+            : "all";
+    const normalized = normalizeMapPortalCategory(category);
+    setPortalFilters((prev) =>
+      prev.category === normalized ? prev : { ...prev, category: normalized },
+    );
+  }, [mapParams.layer]);
+
+  const transitPoint = useMemo(() => {
+    const center = resolveMapCenterOrigin(bbox, city);
+    return { lat: center.latitude, lon: center.longitude, city };
+  }, [bbox, city]);
 
   const showEmpty =
     hasLoaded &&
@@ -372,6 +400,10 @@ export function EventMapScreen() {
     setRouteProfile("walking");
   }, []);
 
+  // MAP-V2.A: entrées UI itinéraire retirées ; pipeline Mapbox conservé.
+  void handleStartRoute;
+  void resolveRoutePlaceFromEvent;
+
   const handlePickMapCenter = useCallback(() => {
     if (!routeTarget) return;
     setGeolocationDenied(false);
@@ -507,8 +539,9 @@ export function EventMapScreen() {
 
   const handlePortalCategoryChange = useCallback(
     (category: MapPortalFilters["category"]) => {
-      setPortalFilters((prev) => ({ ...prev, category }));
-      const layer = resolveMapPortalLayer(category);
+      const normalized = normalizeMapPortalCategory(category);
+      setPortalFilters((prev) => ({ ...prev, category: normalized }));
+      const layer = resolveMapPortalLayer(normalized);
       updateQuery((params) => {
         if (layer === "all") {
           params.delete("layer");
@@ -536,13 +569,12 @@ export function EventMapScreen() {
     const syncFromUrl = async () => {
       setMapNotice(null);
 
-      if (!mapParams.place && !mapParams.event && !mapParams.neighborhood && !mapParams.tribe) {
-        if (!mapParams.route) {
-          setFocusedEventId(null);
-          setSelectedCulturalSlug(null);
-          setSelection(null);
-          clearRoute();
-        }
+      if (!mapParams.place && !mapParams.event && !mapParams.neighborhood && !mapParams.tribe && !mapParams.partner) {
+        setFocusedEventId(null);
+        setSelectedCulturalSlug(null);
+        setSelectedPartnerSlug(null);
+        setSelection(null);
+        clearRoute();
         return;
       }
 
@@ -550,12 +582,6 @@ export function EventMapScreen() {
         const hood = mapContext.neighborhoods.find((item) => item.slug === mapParams.neighborhood);
         if (hood) {
           setSelection({ kind: "neighborhood", slug: hood.slug });
-          const routePlace = resolveRouteTargetFromNeighborhood(hood);
-          if (mapParams.route && routePlace) {
-            handleStartRoute(routePlace);
-          } else if (mapParams.route && !routePlace) {
-            setMapNotice("Ce quartier ne peut pas être positionné pour un itinéraire précis.");
-          }
         } else if (!cancelled) {
           setMapNotice("Le quartier demandé est indisponible actuellement.");
         }
@@ -566,9 +592,6 @@ export function EventMapScreen() {
         const marker = tribeMarkers.find((item) => item.slug === mapParams.tribe);
         if (marker) {
           setSelection({ kind: "tribe", slug: marker.slug });
-          if (mapParams.route) {
-            handleStartRoute(resolveRouteTargetFromTribeMarker(marker, city));
-          }
         } else if (!cancelled) {
           setMapNotice("La tribu demandée n’apparaît pas sur la carte pour le moment.");
         }
@@ -596,7 +619,6 @@ export function EventMapScreen() {
         if (fromContext) {
           setSelectedCulturalSlug(fromContext.slug);
           setSelection({ kind: "place", slug: fromContext.slug });
-          if (mapParams.route) handleStartRoute(fromContext);
           return;
         }
         try {
@@ -626,7 +648,6 @@ export function EventMapScreen() {
           };
           setSelectedCulturalSlug(fallbackPlace.slug);
           setSelection({ kind: "place", slug: fallbackPlace.slug });
-          if (mapParams.route) handleStartRoute(fallbackPlace);
         } catch {
           if (!cancelled) {
             setMapNotice("Le lieu demandé est indisponible actuellement.");
@@ -640,28 +661,14 @@ export function EventMapScreen() {
         if (existing) {
           setFocusedEventId(existing.id);
           setSelection({ kind: "event", id: existing.id });
-          if (mapParams.route) {
-            handleStartRoute(resolveRoutePlaceFromEvent(existing));
-          }
           return;
         }
         try {
           const event = await api.events.getEvent(mapParams.event);
           if (cancelled) return;
           if (event.latitude != null && event.longitude != null) {
-            const mapped = {
-              id: event.id,
-              title: event.title,
-              city: event.city,
-              location_name: event.location_name,
-              latitude: event.latitude,
-              longitude: event.longitude,
-            };
             setFocusedEventId(event.id);
             setSelection({ kind: "event", id: event.id });
-            if (mapParams.route) {
-              handleStartRoute(resolveRoutePlaceFromEvent(mapped));
-            }
           } else {
             setMapNotice("Le moment demandé ne peut pas être positionné sur la carte.");
           }
@@ -682,15 +689,12 @@ export function EventMapScreen() {
     clearRoute,
     culturalBySlug,
     events,
-    handleStartRoute,
     mapContext.neighborhoods,
     mapParams.event,
     mapParams.neighborhood,
     mapParams.place,
-    mapParams.route,
     mapParams.partner,
     mapParams.tribe,
-    resolveRoutePlaceFromEvent,
     tribeMarkers,
   ]);
 
@@ -739,32 +743,6 @@ export function EventMapScreen() {
           params.delete("partner");
         });
       }}
-      onStartRoute={() => {
-        if (!hasPartnerCoordinates(selectedPartner)) return;
-        const place = {
-          id: selectedPartner.id,
-          slug: selectedPartner.slug,
-          name: selectedPartner.name,
-          short_description: selectedPartner.description ?? "Partenaire Yunicity",
-          city: selectedPartner.city,
-          address: selectedPartner.address ?? selectedPartner.city,
-          category: selectedPartner.category ?? "partner",
-          latitude: selectedPartner.latitude as number,
-          longitude: selectedPartner.longitude as number,
-          image_url: selectedPartner.cover_image_url,
-          hero_image_url: selectedPartner.cover_image_url,
-          thumbnail_image_url: selectedPartner.logo_url,
-          gallery_images: [],
-          editorial_excerpt: null,
-          photo_credit: null,
-          image_source: null,
-          image_alt: null,
-          source_name: "Yunicity",
-          image_credit: null,
-          neighborhood: null,
-        };
-        void handleStartRoute(place);
-      }}
     />
   ) : showDetailRail ? (
     <MapPlaceDetailPanel
@@ -773,21 +751,25 @@ export function EventMapScreen() {
       events={visibleEvents}
       origin={userOrigin}
       onClose={() => setSelection(null)}
-      onStartRoute={(slug) => {
-        if (slug.startsWith("event-")) {
-          const eventId = slug.slice("event-".length);
-          const event = events.find((item) => item.id === eventId);
-          if (event) void handleStartRoute(resolveRoutePlaceFromEvent(event));
-          return;
-        }
-        const place = culturalBySlug.get(slug);
-        if (place) void handleStartRoute(place);
-      }}
     />
   ) : null;
 
+  const rightRail =
+    detailRail ??
+    (
+      <MapRightRail
+        context={mapContext}
+        culturalPlaces={mapContext.culturalPlaces}
+        transitPoint={transitPoint}
+        selectedCulturalSlug={selectedCulturalSlug}
+        expandedCulturalSlug={null}
+        onSelectCulturalPlace={(place) => handleMapSelectCulturalSlug(place.slug)}
+        onToggleCulturalDetails={() => {}}
+      />
+    );
+
   return (
-    <MapAppShell rightRail={detailRail}>
+    <MapAppShell rightRail={rightRail}>
       <MapLeftFilterRail
         city={city}
         filters={portalFilters}
@@ -867,10 +849,6 @@ export function EventMapScreen() {
               <MapSelectedPanel
                 payload={selectedPanel}
                 onClose={() => setSelection(null)}
-                onStartRoute={(slug) => {
-                  const place = culturalBySlug.get(slug);
-                  if (place) void handleStartRoute(place);
-                }}
               />
             ) : null}
           </div>

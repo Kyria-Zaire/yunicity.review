@@ -186,15 +186,17 @@ function ActionRow({
         onClick={onSelectMap}
         pill={compact}
       />
-      <TrendAction
-        mode={mode}
-        href={mapRouteHref}
-        icon={<RouteIcon className="h-3.5 w-3.5" />}
-        label={SEARCH_EXPLORER_CULTURE_ROUTE}
-        hint={culturalPlaceCategoryLabel(category)}
-        onClick={onRoute}
-        pill={compact}
-      />
+      {mode === "link" || onRoute ? (
+        <TrendAction
+          mode={mode}
+          href={mapRouteHref}
+          icon={<RouteIcon className="h-3.5 w-3.5" />}
+          label={SEARCH_EXPLORER_CULTURE_ROUTE}
+          hint={culturalPlaceCategoryLabel(category)}
+          onClick={onRoute}
+          pill={compact}
+        />
+      ) : null}
     </div>
   );
 }

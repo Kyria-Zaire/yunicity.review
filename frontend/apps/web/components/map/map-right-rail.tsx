@@ -39,8 +39,8 @@ type MapRightRailProps = {
   selectedCulturalSlug: string | null;
   expandedCulturalSlug: string | null;
   onSelectCulturalPlace: (place: CulturalPlaceListItem) => void;
-  onStartRoute: (place: CulturalPlaceListItem) => void;
   onToggleCulturalDetails: (place: CulturalPlaceListItem) => void;
+  onStartRoute?: (place: CulturalPlaceListItem) => void;
 };
 
 export function MapRightRail({
