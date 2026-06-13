@@ -232,7 +232,6 @@ class CulturalPlaceService:
             description=row.description,
             source_url=row.source_url,
             image_license=row.image_license,
-            is_featured=row.is_featured,
             featured_priority=row.featured_priority,
             image_blurhash=row.image_blurhash,
         )

@@ -55,7 +55,6 @@ class CulturalPlaceDetail(CulturalPlaceListItem):
     description: str | None
     source_url: str | None
     image_license: str | None
-    is_featured: bool
     featured_priority: int
     image_blurhash: str | None = None
 
