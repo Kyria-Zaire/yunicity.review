@@ -20,6 +20,7 @@ from app.db.seeds.reims_cultural_places import seed_reims_cultural_places
 from app.db.seeds.reims_demo_content import seed_reims_demo_content
 from app.db.seeds.reims_neighborhoods import seed_reims_neighborhoods
 from app.db.seeds.reims_neighborhoods_v2_editorial import seed_reims_neighborhoods_v2_editorial
+from app.db.seeds.reims_neighborhoods_v2_hero_assets import seed_reims_neighborhoods_v2_hero_assets
 from app.db.seeds.reims_partner_events import seed_reims_partner_events
 from app.db.seeds.reims_partner_offers import seed_reims_partner_offers
 from app.db.seeds.reims_pilot_partner_memberships import seed_reims_pilot_partner_memberships
@@ -81,6 +82,7 @@ async def run(*, demo: bool, pilot: bool) -> None:
             await seed_stamp_definitions(session)
             await seed_reims_neighborhoods(session)
             await seed_reims_neighborhoods_v2_editorial(session)
+            await seed_reims_neighborhoods_v2_hero_assets(session)
             await seed_reims_cultural_places(session)
             await seed_reims_signed_partners(session)
             await seed_reims_activation_waves(session)

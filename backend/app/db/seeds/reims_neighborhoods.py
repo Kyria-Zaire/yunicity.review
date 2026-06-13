@@ -10,6 +10,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.neighborhood_constants import NeighborhoodAmbiance
+from app.core.neighborhood_hero_assets import (
+    neighborhood_dev_public_hero_url,
+    neighborhood_hero_storage_key,
+)
 from app.models.neighborhood import Neighborhood
 
 logger = logging.getLogger(__name__)
@@ -214,7 +218,11 @@ async def seed_reims_neighborhoods(session: AsyncSession) -> None:
                 display_name=str(row["display_name"]),
                 short_description=str(row["short_description"]),
                 ambiance=str(row["ambiance"]) if row.get("ambiance") else None,
-                cover_image_url=row.get("cover_image_url"),
+                cover_image_url=(
+                    row.get("cover_image_url") or neighborhood_dev_public_hero_url(slug)
+                ),
+                hero_image_storage_key=row.get("hero_image_storage_key")
+                or neighborhood_hero_storage_key(slug),
                 accent_color=row.get("accent_color"),
                 latitude=row.get("latitude"),
                 longitude=row.get("longitude"),
