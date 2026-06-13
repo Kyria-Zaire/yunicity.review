@@ -72,9 +72,14 @@ import type {
   StoryRingsResponse,
   ReportPostPayload,
   UserProfile,
+  LocalVideoComment,
+  LocalVideoCommentCreatePayload,
+  LocalVideoCommentListResponse,
   LocalVideoFeedItem,
+  LocalVideoLikeResponse,
   LocalVideoListParams,
   LocalVideoListResponse,
+  LocalVideoReportCreatePayload,
 } from "@yunicity/types";
 
 import type { AuthClient } from "./auth/auth-client";
@@ -244,6 +249,36 @@ export class YunicityApi {
 
   getLocalVideo(videoId: string): Promise<LocalVideoFeedItem> {
     return this.localVideos.getLocalVideo(videoId);
+  }
+
+  likeLocalVideo(videoId: string): Promise<LocalVideoLikeResponse> {
+    return this.localVideos.likeLocalVideo(videoId);
+  }
+
+  unlikeLocalVideo(videoId: string): Promise<LocalVideoLikeResponse> {
+    return this.localVideos.unlikeLocalVideo(videoId);
+  }
+
+  listLocalVideoComments(
+    videoId: string,
+    params: { cursor?: string | null; limit?: number } = {},
+  ): Promise<LocalVideoCommentListResponse> {
+    return this.localVideos.listLocalVideoComments(videoId, params);
+  }
+
+  createLocalVideoComment(
+    videoId: string,
+    payload: LocalVideoCommentCreatePayload,
+  ): Promise<LocalVideoComment> {
+    return this.localVideos.createLocalVideoComment(videoId, payload);
+  }
+
+  deleteLocalVideoComment(commentId: string): Promise<void> {
+    return this.localVideos.deleteLocalVideoComment(commentId);
+  }
+
+  reportLocalVideo(videoId: string, payload: LocalVideoReportCreatePayload): Promise<void> {
+    return this.localVideos.reportLocalVideo(videoId, payload);
   }
 
   listDiscussions(params: DiscussionListParams = {}): Promise<DiscussionListResponse> {

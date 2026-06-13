@@ -47,6 +47,7 @@ function baseItem(overrides: Partial<LocalVideoFeedItem> = {}): LocalVideoFeedIt
     walk_minutes: 12,
     like_count: 0,
     comment_count: 0,
+    liked_by_me: false,
     ...overrides,
   };
 }

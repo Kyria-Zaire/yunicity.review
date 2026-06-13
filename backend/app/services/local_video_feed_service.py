@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +19,7 @@ from app.core.local_video_cursor import (
     encode_local_video_feed_cursor,
 )
 from app.models.local_video import LocalVideo
+from app.repositories.local_video_like_repository import LocalVideoLikeRepository
 from app.repositories.local_video_repository import LocalVideoRepository
 from app.schemas.local_video import (
     LocalVideoFeedAuthor,
@@ -34,11 +36,14 @@ class LocalVideoFeedQuery:
     cursor: str | None
     latitude: float | None
     longitude: float | None
+    viewer_user_id: uuid.UUID | None = None
 
 
 class LocalVideoFeedService:
     def __init__(self, session: AsyncSession) -> None:
+        self._session = session
         self._repo = LocalVideoRepository(session)
+        self._likes = LocalVideoLikeRepository(session)
 
     async def list_feed(self, query: LocalVideoFeedQuery) -> LocalVideoFeedResponse:
         city = query.city.strip() or LOCAL_VIDEO_DEFAULT_CITY
@@ -59,11 +64,19 @@ class LocalVideoFeedService:
         has_more = len(rows) > limit
         page = rows[:limit]
 
+        liked_ids: set[uuid.UUID] = set()
+        if query.viewer_user_id is not None and page:
+            liked_ids = await self._likes.list_liked_video_ids(
+                query.viewer_user_id,
+                [video.id for video in page],
+            )
+
         items = [
             self._to_feed_item(
                 video,
                 latitude=query.latitude,
                 longitude=query.longitude,
+                liked_by_me=video.id in liked_ids,
             )
             for video in page
         ]
@@ -82,6 +95,7 @@ class LocalVideoFeedService:
         *,
         latitude: float | None,
         longitude: float | None,
+        liked_by_me: bool = False,
     ) -> LocalVideoFeedItem:
         author = video.author
         profile = author.profile if author is not None else None
@@ -132,6 +146,7 @@ class LocalVideoFeedService:
             walk_minutes=walk_minutes,
             like_count=video.like_count,
             comment_count=video.comment_count,
+            liked_by_me=liked_by_me,
         )
 
     @staticmethod

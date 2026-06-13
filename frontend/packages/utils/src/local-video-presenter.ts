@@ -9,7 +9,7 @@ export const LOCAL_VIDEO_RETRY_LABEL = "Réessayer";
 export const LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE =
   "Votre session a expiré. Reconnectez-vous pour continuer.";
 export const LOCAL_VIDEO_COMMENTS_EMPTY =
-  "Les commentaires arrivent bientôt. Partagez vos découvertes en attendant.";
+  "Soyez le premier à réagir à cette vidéo locale.";
 
 export const LOCAL_VIDEO_TYPE_LABELS: Record<LocalVideoTypeId, string> = {
   bon_plan: "Bon plan",

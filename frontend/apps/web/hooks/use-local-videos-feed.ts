@@ -60,6 +60,15 @@ export function useLocalVideosFeed() {
     void fetchPage(null, false);
   }, [fetchPage]);
 
+  const updateItem = useCallback(
+    (videoId: string, updater: (item: LocalVideoFeedItem) => LocalVideoFeedItem) => {
+      setItems((prev) =>
+        prev.map((item) => (item.id === videoId ? updater(item) : item)),
+      );
+    },
+    [],
+  );
+
   return {
     items,
     city,
@@ -72,5 +81,6 @@ export function useLocalVideosFeed() {
     loadMore: () => {
       if (nextCursor) void fetchPage(nextCursor, true);
     },
+    updateItem,
   };
 }

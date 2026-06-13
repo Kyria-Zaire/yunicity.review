@@ -10,18 +10,30 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.dependencies import require_authenticated_user
-from app.core.local_video_constants import LOCAL_VIDEO_DEFAULT_CITY
+from app.core.local_video_constants import (
+    LOCAL_VIDEO_COMMENT_PAGE_DEFAULT,
+    LOCAL_VIDEO_COMMENT_PAGE_MAX,
+    LOCAL_VIDEO_DEFAULT_CITY,
+)
 from app.core.rate_limit import enforce_rate_limit
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.local_video import (
+    LocalVideoCommentCreateRequest,
+    LocalVideoCommentListResponse,
+    LocalVideoCommentResponse,
     LocalVideoFeedResponse,
     LocalVideoItem,
+    LocalVideoLikeResponse,
     LocalVideoPublishRequest,
+    LocalVideoReportCreateRequest,
     LocalVideoUploadInitRequest,
     LocalVideoUploadInitResponse,
 )
+from app.services.local_video_comment_service import LocalVideoCommentService
 from app.services.local_video_feed_service import LocalVideoFeedQuery, LocalVideoFeedService
+from app.services.local_video_like_service import LocalVideoLikeService
+from app.services.local_video_report_service import LocalVideoReportService
 from app.services.local_video_service import (
     PUBLISH_RATE_LIMIT,
     PUBLISH_RATE_WINDOW,
@@ -101,7 +113,6 @@ async def list_local_video_feed(
     lat: float | None = Query(default=None, ge=-90, le=90),
     lng: float | None = Query(default=None, ge=-180, le=180),
 ) -> LocalVideoFeedResponse:
-    del current_user
     resolved_latitude = latitude if latitude is not None else lat
     resolved_longitude = longitude if longitude is not None else lng
     return await LocalVideoFeedService(session).list_feed(
@@ -111,8 +122,84 @@ async def list_local_video_feed(
             cursor=cursor,
             latitude=resolved_latitude,
             longitude=resolved_longitude,
+            viewer_user_id=current_user.id,
         )
     )
+
+
+@router.delete("/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_local_video_comment(
+    comment_id: uuid.UUID,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> None:
+    await LocalVideoCommentService(session).soft_delete_comment(current_user, comment_id)
+
+
+@router.post("/{video_id}/like", response_model=LocalVideoLikeResponse)
+async def like_local_video(
+    video_id: uuid.UUID,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> LocalVideoLikeResponse:
+    return await LocalVideoLikeService(session).like_video(current_user.id, video_id)
+
+
+@router.delete("/{video_id}/like", response_model=LocalVideoLikeResponse)
+async def unlike_local_video(
+    video_id: uuid.UUID,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> LocalVideoLikeResponse:
+    return await LocalVideoLikeService(session).unlike_video(current_user.id, video_id)
+
+
+@router.get("/{video_id}/comments", response_model=LocalVideoCommentListResponse)
+async def list_local_video_comments(
+    video_id: uuid.UUID,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    cursor: str | None = Query(default=None),
+    limit: int = Query(
+        default=LOCAL_VIDEO_COMMENT_PAGE_DEFAULT,
+        ge=1,
+        le=LOCAL_VIDEO_COMMENT_PAGE_MAX,
+    ),
+) -> LocalVideoCommentListResponse:
+    del current_user
+    return await LocalVideoCommentService(session).list_comments(
+        video_id,
+        cursor=cursor,
+        limit=limit,
+    )
+
+
+@router.post(
+    "/{video_id}/comments",
+    response_model=LocalVideoCommentResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_local_video_comment(
+    video_id: uuid.UUID,
+    payload: LocalVideoCommentCreateRequest,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> LocalVideoCommentResponse:
+    return await LocalVideoCommentService(session).create_comment(
+        current_user,
+        video_id,
+        payload,
+    )
+
+
+@router.post("/{video_id}/report", status_code=status.HTTP_204_NO_CONTENT)
+async def report_local_video(
+    video_id: uuid.UUID,
+    payload: LocalVideoReportCreateRequest,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> None:
+    await LocalVideoReportService(session).report_video(current_user, video_id, payload)
 
 
 @router.get("/{video_id}", response_model=LocalVideoItem)

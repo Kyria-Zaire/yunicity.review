@@ -408,9 +408,15 @@ export type {
 
 export type {
   LocalVideoAuthor,
+  LocalVideoComment,
+  LocalVideoCommentCreatePayload,
+  LocalVideoCommentListResponse,
   LocalVideoFeedItem,
+  LocalVideoLikeResponse,
   LocalVideoListParams,
   LocalVideoListResponse,
+  LocalVideoReportCreatePayload,
+  LocalVideoReportReason,
   LocalVideoStatusId,
   LocalVideoTypeId,
 } from "./local-video";

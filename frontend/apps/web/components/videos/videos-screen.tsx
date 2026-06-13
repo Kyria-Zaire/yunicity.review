@@ -2,18 +2,20 @@
 
 import { SessionExpiredPanel } from "@/components/auth/session-expired-panel";
 import { LocalVideoFeedViewport } from "@/components/videos/local-video-feed-viewport";
+import { LocalVideoReportSheet } from "@/components/videos/local-video-report-sheet";
 import { VideoCommentsSheet } from "@/components/videos/video-comments-sheet";
 import { VideosAppShell } from "@/components/videos/videos-app-shell";
 import { VideosFeedEmpty } from "@/components/videos/videos-feed-empty";
 import { VideosFeedError } from "@/components/videos/videos-feed-error";
 import { VideosFeedSkeleton } from "@/components/videos/videos-feed-skeleton";
+import { useLocalVideoInteractions } from "@/hooks/use-local-video-interactions";
 import { useLocalVideosFeed } from "@/hooks/use-local-videos-feed";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { GeoProvider } from "@/providers/geo-provider";
-import { LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE } from "@yunicity/utils";
+import { LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE, bumpLocalVideoCommentCount } from "@yunicity/utils";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export function VideosScreen() {
   const { user } = useAuth();
@@ -28,7 +30,21 @@ export function VideosScreen() {
 
 function VideosScreenInner() {
   const feed = useLocalVideosFeed();
+  const interactions = useLocalVideoInteractions({ updateItem: feed.updateItem });
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+  const [reportVideoId, setReportVideoId] = useState<string | null>(null);
+
+  const activeVideo = useMemo(
+    () => feed.items.find((item) => item.id === activeVideoId) ?? feed.items[0] ?? null,
+    [activeVideoId, feed.items],
+  );
+
+  const commentsVideo = useMemo(() => {
+    if (!commentsOpen) return null;
+    return feed.items.find((item) => item.id === activeVideoId) ?? activeVideo;
+  }, [activeVideo, activeVideoId, commentsOpen, feed.items]);
 
   return (
     <VideosAppShell>
@@ -46,6 +62,12 @@ function VideosScreenInner() {
           </h1>
         </header>
 
+        {interactions.shareHint ? (
+          <p className="absolute left-1/2 top-20 z-[55] -translate-x-1/2 rounded-full bg-neutral-900/80 px-4 py-2 text-xs text-white">
+            {interactions.shareHint}
+          </p>
+        ) : null}
+
         {feed.sessionExpired ? (
           <SessionExpiredPanel
             message={LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE}
@@ -60,14 +82,45 @@ function VideosScreenInner() {
         ) : (
           <LocalVideoFeedViewport
             items={feed.items}
-            onOpenComments={() => setCommentsOpen(true)}
+            onActiveVideoChange={setActiveVideoId}
+            onOpenComments={(videoId) => {
+              setActiveVideoId(videoId);
+              setCommentsOpen(true);
+            }}
+            onToggleLike={(item) => void interactions.toggleLike(item)}
+            onShare={(item) => void interactions.shareVideo(item)}
+            onOpenReport={(videoId) => {
+              setReportVideoId(videoId);
+              setReportOpen(true);
+            }}
             onEndReached={() => {
               if (!feed.isLoadingMore && feed.nextCursor) feed.loadMore();
             }}
           />
         )}
 
-        <VideoCommentsSheet open={commentsOpen} onClose={() => setCommentsOpen(false)} />
+        <VideoCommentsSheet
+          open={commentsOpen}
+          video={commentsVideo}
+          onClose={() => setCommentsOpen(false)}
+          onCommentCountDelta={(videoId, delta) => {
+            feed.updateItem(videoId, (item) => bumpLocalVideoCommentCount(item, delta));
+          }}
+        />
+
+        <LocalVideoReportSheet
+          open={reportOpen}
+          onClose={() => {
+            setReportOpen(false);
+            setReportVideoId(null);
+          }}
+          alreadyReported={reportVideoId ? interactions.hasReported(reportVideoId) : false}
+          errorMessage={interactions.reportError}
+          onReport={async (reason) => {
+            if (!reportVideoId) return;
+            await interactions.reportVideo(reportVideoId, reason);
+          }}
+        />
       </div>
     </VideosAppShell>
   );

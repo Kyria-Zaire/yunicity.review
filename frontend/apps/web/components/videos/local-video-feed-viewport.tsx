@@ -4,22 +4,34 @@ import type { LocalVideoFeedItem } from "@yunicity/types";
 
 import { LocalVideoSlide } from "@/components/videos/local-video-slide";
 import { useVideoFeedAutoplay } from "@/hooks/use-video-feed-autoplay";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 type LocalVideoFeedViewportProps = {
   items: LocalVideoFeedItem[];
-  onOpenComments: () => void;
+  onActiveVideoChange: (videoId: string | null) => void;
+  onOpenComments: (videoId: string) => void;
+  onToggleLike: (item: LocalVideoFeedItem) => void;
+  onShare: (item: LocalVideoFeedItem) => void;
+  onOpenReport: (videoId: string) => void;
   onEndReached?: () => void;
 };
 
 export function LocalVideoFeedViewport({
   items,
+  onActiveVideoChange,
   onOpenComments,
+  onToggleLike,
+  onShare,
+  onOpenReport,
   onEndReached,
 }: LocalVideoFeedViewportProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const itemIds = items.map((item) => item.id);
   const activeId = useVideoFeedAutoplay(itemIds);
+
+  useEffect(() => {
+    onActiveVideoChange(activeId);
+  }, [activeId, onActiveVideoChange]);
 
   const handleScroll = useCallback(() => {
     const node = containerRef.current;
@@ -39,7 +51,10 @@ export function LocalVideoFeedViewport({
           key={item.id}
           item={item}
           isActive={activeId === item.id}
-          onOpenComments={onOpenComments}
+          onOpenComments={() => onOpenComments(item.id)}
+          onToggleLike={() => onToggleLike(item)}
+          onShare={() => onShare(item)}
+          onOpenReport={() => onOpenReport(item.id)}
         />
       ))}
     </div>

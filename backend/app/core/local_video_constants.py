@@ -14,6 +14,10 @@ LOCAL_VIDEO_DESCRIPTION_MAX_LENGTH = 300
 LOCAL_VIDEO_DEFAULT_CITY = "Reims"
 LOCAL_VIDEO_FEED_DEFAULT_LIMIT = 10
 LOCAL_VIDEO_FEED_MAX_LIMIT = 20
+LOCAL_VIDEO_COMMENT_BODY_MAX_LENGTH = 500
+LOCAL_VIDEO_COMMENT_PAGE_DEFAULT = 20
+LOCAL_VIDEO_COMMENT_PAGE_MAX = 50
+LOCAL_VIDEO_REPORT_REVIEW_PRIORITY_THRESHOLD = 3
 
 ALLOWED_LOCAL_VIDEO_CONTENT_TYPES = frozenset(
     {
@@ -51,3 +55,22 @@ class LocalVideoStatus(StrEnum):
     FAILED = "failed"
     HIDDEN = "hidden"
     DELETED = "deleted"
+
+
+class LocalVideoReportReason(StrEnum):
+    SPAM = "spam"
+    HARASSMENT = "harassment"
+    HATE = "hate"
+    VIOLENCE = "violence"
+    SEXUAL = "sexual"
+    COPYRIGHT = "copyright"
+    OTHER = "other"
+
+
+class LocalVideoReportStatus(StrEnum):
+    PENDING = "pending"
+    RESOLVED = "resolved"
+    DISMISSED = "dismissed"
+
+
+LOCAL_VIDEO_REPORT_REASONS = frozenset(reason.value for reason in LocalVideoReportReason)

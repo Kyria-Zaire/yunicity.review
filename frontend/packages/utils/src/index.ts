@@ -2693,6 +2693,27 @@ export {
   type VideoGoCta,
   type VideoTerritoryLines,
 } from "./local-video-presenter";
+export {
+  LOCAL_VIDEO_COMMENT_LOAD_ERROR,
+  LOCAL_VIDEO_COMMENT_PLACEHOLDER,
+  LOCAL_VIDEO_COMMENT_SEND_ERROR,
+  LOCAL_VIDEO_COMMENT_SUBMIT_LABEL,
+  LOCAL_VIDEO_REPORT_ERROR,
+  LOCAL_VIDEO_REPORT_LABEL,
+  LOCAL_VIDEO_REPORT_REASON_LABELS,
+  LOCAL_VIDEO_REPORT_REASONS,
+  LOCAL_VIDEO_REPORT_SUCCESS,
+  LOCAL_VIDEO_SHARE_COPIED,
+} from "./local-video-labels";
+export {
+  applyLocalVideoLikeResponse,
+  applyLocalVideoLikeToggle,
+  buildLocalVideoShareUrl,
+  bumpLocalVideoCommentCount,
+  isDoubleTap,
+  shareLocalVideoWithFallback,
+} from "./local-video-state";
+export type { LocalVideoShareResult } from "./local-video-state";
 export { LocalVideosApi, createLocalVideosApi } from "./local-videos-api";
 export { MemoryTokenStorage } from "./storage/memory-token-storage";
 export type { TokenStorage } from "./storage/token-storage";

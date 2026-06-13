@@ -66,3 +66,34 @@ class LocalVideoRepository:
 
         result = await self._session.execute(stmt)
         return list(result.scalars().unique().all())
+
+    async def get_published_by_id(self, video_id: uuid.UUID) -> LocalVideo | None:
+        result = await self._session.execute(
+            select(LocalVideo).where(
+                LocalVideo.id == video_id,
+                LocalVideo.status == LocalVideoStatus.PUBLISHED.value,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def increment_like_count(self, video_id: uuid.UUID, delta: int) -> None:
+        video = await self._session.get(LocalVideo, video_id)
+        if video is None:
+            return
+        video.like_count = max(0, video.like_count + delta)
+
+    async def increment_comment_count(self, video_id: uuid.UUID, delta: int) -> None:
+        video = await self._session.get(LocalVideo, video_id)
+        if video is None:
+            return
+        video.comment_count = max(0, video.comment_count + delta)
+
+    async def increment_report_count(self, video_id: uuid.UUID) -> None:
+        from app.core.local_video_constants import LOCAL_VIDEO_REPORT_REVIEW_PRIORITY_THRESHOLD
+
+        video = await self._session.get(LocalVideo, video_id)
+        if video is None:
+            return
+        video.report_count = max(0, video.report_count + 1)
+        if video.report_count >= LOCAL_VIDEO_REPORT_REVIEW_PRIORITY_THRESHOLD:
+            video.review_priority = True

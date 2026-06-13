@@ -52,6 +52,45 @@ export type LocalVideoFeedItem = {
   walk_minutes: number | null;
   like_count: number;
   comment_count: number;
+  liked_by_me: boolean;
+};
+
+export type LocalVideoLikeResponse = {
+  liked: boolean;
+  like_count: number;
+};
+
+export type LocalVideoComment = {
+  id: string;
+  video_id: string;
+  author_user_id: string;
+  author_display_name: string;
+  author_username: string | null;
+  body: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LocalVideoCommentListResponse = {
+  items: LocalVideoComment[];
+  next_cursor: string | null;
+};
+
+export type LocalVideoCommentCreatePayload = {
+  body: string;
+};
+
+export type LocalVideoReportReason =
+  | "spam"
+  | "harassment"
+  | "hate"
+  | "violence"
+  | "sexual"
+  | "copyright"
+  | "other";
+
+export type LocalVideoReportCreatePayload = {
+  reason: LocalVideoReportReason;
 };
 
 export type LocalVideoListParams = {

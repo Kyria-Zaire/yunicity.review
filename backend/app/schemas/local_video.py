@@ -9,10 +9,12 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.core.local_video_constants import (
     ALLOWED_LOCAL_VIDEO_CONTENT_TYPES,
+    LOCAL_VIDEO_COMMENT_BODY_MAX_LENGTH,
     LOCAL_VIDEO_DEFAULT_CITY,
     LOCAL_VIDEO_DESCRIPTION_MAX_LENGTH,
     LOCAL_VIDEO_MAX_BYTES,
     LOCAL_VIDEO_TITLE_MAX_LENGTH,
+    LocalVideoReportReason,
     LocalVideoStatus,
     LocalVideoType,
 )
@@ -128,9 +130,44 @@ class LocalVideoFeedItem(BaseModel):
     walk_minutes: int | None
     like_count: int
     comment_count: int
+    liked_by_me: bool = False
 
 
 class LocalVideoFeedResponse(BaseModel):
     items: list[LocalVideoFeedItem]
     next_cursor: str | None
     city: str
+
+
+class LocalVideoLikeResponse(BaseModel):
+    liked: bool
+    like_count: int
+
+
+class LocalVideoCommentCreateRequest(BaseModel):
+    body: str = Field(..., min_length=1, max_length=LOCAL_VIDEO_COMMENT_BODY_MAX_LENGTH)
+
+    @field_validator("body")
+    @classmethod
+    def strip_body(cls, value: str) -> str:
+        return value.strip()
+
+
+class LocalVideoCommentResponse(BaseModel):
+    id: uuid.UUID
+    video_id: uuid.UUID
+    author_user_id: uuid.UUID
+    author_display_name: str
+    author_username: str | None
+    body: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class LocalVideoCommentListResponse(BaseModel):
+    items: list[LocalVideoCommentResponse]
+    next_cursor: str | None = None
+
+
+class LocalVideoReportCreateRequest(BaseModel):
+    reason: LocalVideoReportReason
