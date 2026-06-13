@@ -7,9 +7,9 @@ from app.models.cultural_place import CulturalPlace
 from app.models.event_admin_action import EventAdminAction
 from app.models.like import Like
 from app.models.local_event import EventInterest, LocalEvent
+from app.models.local_stamp import CitizenLocalStamp, StampDefinition
 from app.models.local_video import LocalVideo, LocalVideoUpload
 from app.models.local_video_social import LocalVideoComment, LocalVideoLike, LocalVideoReport
-from app.models.local_stamp import CitizenLocalStamp, StampDefinition
 from app.models.neighborhood import Neighborhood
 from app.models.neighborhood_editorial import (
     NeighborhoodAlias,

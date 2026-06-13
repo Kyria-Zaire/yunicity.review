@@ -27,6 +27,7 @@ from app.api.v1 import (
     events,
     feed,
     health,
+    local_videos,
     map,
     neighborhood_contributions_me,
     neighborhoods,
@@ -49,7 +50,6 @@ from app.api.v1 import (
     tribes,
     users,
     weather,
-    local_videos,
 )
 
 api_router = APIRouter()
