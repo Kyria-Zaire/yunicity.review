@@ -181,6 +181,34 @@ export interface NeighborhoodContributionSubmitResponse {
   message: string;
 }
 
+export interface NeighborhoodContributionMeNeighborhood {
+  id: string;
+  slug: string;
+  display_name: string;
+}
+
+export type NeighborhoodContributionMeStatus = "pending" | "approved" | "rejected";
+
+export interface NeighborhoodContributionMeItem {
+  id: string;
+  neighborhood: NeighborhoodContributionMeNeighborhood;
+  title: string | null;
+  body: string;
+  status: NeighborhoodContributionMeStatus;
+  submitted_at: string;
+  approved_at: string | null;
+  reviewed_at: string | null;
+  display_identity_label: string;
+  display_identity_type: string;
+  passport_verified_snapshot: boolean;
+  rejection_reason_code: string | null;
+  rejection_message: string | null;
+}
+
+export interface NeighborhoodContributionMeListResponse {
+  items: NeighborhoodContributionMeItem[];
+}
+
 export interface NeighborhoodDetailTribeItem {
   id: string;
   slug: string;

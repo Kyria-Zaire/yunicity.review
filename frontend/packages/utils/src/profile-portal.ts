@@ -46,6 +46,7 @@ export type ProfilePortalNavId =
   | "events"
   | "tribes"
   | "badges"
+  | "memories"
   | "settings";
 
 export type ProfilePortalStatId =

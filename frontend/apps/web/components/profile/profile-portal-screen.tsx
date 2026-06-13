@@ -5,6 +5,7 @@ import { ProfileAppShell } from "@/components/profile/profile-app-shell";
 import { ProfileBadgesPreview } from "@/components/profile/profile-badges-preview";
 import { ProfileHeroBanner } from "@/components/profile/profile-hero-banner";
 import { ProfileInternalSidebar } from "@/components/profile/profile-internal-sidebar";
+import { ProfileMemoriesSection } from "@/components/profile/profile-memories-section";
 import { ProfileStatsBar } from "@/components/profile/profile-stats-bar";
 import { ProfileWidgetsColumn } from "@/components/profile/profile-widgets-column";
 import { useProfilePortalContext } from "@/hooks/use-profile-portal-context";
@@ -90,6 +91,8 @@ export function ProfilePortalScreen() {
               badges={ctx.badgesPreview.badges}
               emptyCopy={ctx.badgesPreview.emptyCopy}
             />
+
+            <ProfileMemoriesSection city={ctx.city} />
 
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
               <ProfileActivitySection

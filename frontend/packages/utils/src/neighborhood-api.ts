@@ -1,5 +1,6 @@
 import type {
   NeighborhoodContextResponse,
+  NeighborhoodContributionMeListResponse,
   NeighborhoodContributionSubmitRequest,
   NeighborhoodContributionSubmitResponse,
   NeighborhoodDetail,
@@ -54,6 +55,10 @@ export class NeighborhoodsApi extends ApiClientBase {
       `/neighborhoods/${encodeURIComponent(slug)}/contributions?${qs.toString()}`,
       payload,
     );
+  }
+
+  listMyContributions(): Promise<NeighborhoodContributionMeListResponse> {
+    return this.getJson<NeighborhoodContributionMeListResponse>("/me/neighborhood-contributions");
   }
 }
 

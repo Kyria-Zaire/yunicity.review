@@ -10,6 +10,7 @@ export const PROFILE_PORTAL_NAV_FAVORITES = "Mes favoris";
 export const PROFILE_PORTAL_NAV_EVENTS = "Mes événements";
 export const PROFILE_PORTAL_NAV_TRIBES = "Mes tribus";
 export const PROFILE_PORTAL_NAV_BADGES = "Mes badges";
+export const PROFILE_PORTAL_NAV_MEMORIES = "Mes souvenirs";
 export const PROFILE_PORTAL_NAV_SETTINGS = "Mes paramètres";
 
 export const PROFILE_PORTAL_IMPACT_TITLE = "Votre impact local";

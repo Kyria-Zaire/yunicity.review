@@ -11,6 +11,7 @@ import {
   PROFILE_PORTAL_NAV_BADGES,
   PROFILE_PORTAL_NAV_EVENTS,
   PROFILE_PORTAL_NAV_FAVORITES,
+  PROFILE_PORTAL_NAV_MEMORIES,
   PROFILE_PORTAL_NAV_PROFILE,
   PROFILE_PORTAL_NAV_SETTINGS,
   PROFILE_PORTAL_NAV_TRIBES,
@@ -19,6 +20,7 @@ import {
 } from "@yunicity/utils";
 import {
   Award,
+  BookOpen,
   CalendarDays,
   Settings2,
   Sparkles,
@@ -38,6 +40,7 @@ const NAV_ITEMS: { id: ProfilePortalNavId; label: string; icon: LucideIcon; targ
     { id: "events", label: PROFILE_PORTAL_NAV_EVENTS, icon: CalendarDays, targetId: "profile-activity" },
     { id: "tribes", label: PROFILE_PORTAL_NAV_TRIBES, icon: Users, targetId: "profile-tribes" },
     { id: "badges", label: PROFILE_PORTAL_NAV_BADGES, icon: Award, targetId: "profile-badges" },
+    { id: "memories", label: PROFILE_PORTAL_NAV_MEMORIES, icon: BookOpen, targetId: "profile-memories" },
     { id: "settings", label: PROFILE_PORTAL_NAV_SETTINGS, icon: Settings2, targetId: "profile-settings" },
   ];
 
