@@ -4,11 +4,18 @@ import type { LocalVideoFeedItem } from "@yunicity/types";
 
 import {
   LOCAL_VIDEO_DEFAULT_MUTED,
+  LOCAL_VIDEO_SOCIAL_PROOF_LABEL,
+  LOCAL_VIDEO_TERRITORY_FALLBACK,
+  LOCAL_VIDEO_WOW_COPY_MAX_LENGTH,
+  buildVideoTerritoryLines,
   formatVideoDistanceLabel,
   formatVideoTemporalLabel,
+  formatVideoWalkLabel,
+  resolveLocalVideoWowCopy,
   resolveVideoGoCta,
   selectAutoplayVideoId,
   shouldKeepVideoMuted,
+  shouldShowLocalVideoSocialProof,
 } from "./local-video-presenter";
 
 function baseItem(overrides: Partial<LocalVideoFeedItem> = {}): LocalVideoFeedItem {
@@ -59,9 +66,30 @@ describe("local-video presenter", () => {
     expect(shouldKeepVideoMuted(true)).toBe(false);
   });
 
-  it("formats distance label for nearby videos", () => {
-    expect(formatVideoDistanceLabel(800)).toBe("À 800 m de chez toi");
+  it("formats distance label for nearby videos with vous", () => {
+    expect(formatVideoDistanceLabel(650)).toBe("À 650 m de chez vous");
+    expect(formatVideoDistanceLabel(800)).toBe("À 800 m de chez vous");
     expect(formatVideoDistanceLabel(null)).toBeNull();
+  });
+
+  it("formats walk label when minutes are available", () => {
+    expect(formatVideoWalkLabel(12)).toBe("12 min à pied");
+    expect(formatVideoWalkLabel(null)).toBeNull();
+  });
+
+  it("builds territory lines with city fallback when distance is absent", () => {
+    const lines = buildVideoTerritoryLines(
+      baseItem({
+        distance_meters: null,
+        walk_minutes: 12,
+        published_at: "2026-06-12T19:28:00.000Z",
+      }),
+      new Date("2026-06-12T20:00:00.000Z"),
+    );
+    expect(lines.distance).toBe(LOCAL_VIDEO_TERRITORY_FALLBACK);
+    expect(lines.walk).toBe("12 min à pied");
+    expect(lines.neighborhood).toBe("Boulingrin");
+    expect(lines.temporal).toBe("Il y a 32 min");
   });
 
   it("selects the most visible slide for autoplay", () => {
@@ -73,31 +101,147 @@ describe("local-video presenter", () => {
     expect(selectAutoplayVideoId(map)).toBe("b");
   });
 
-  it("resolves event CTA with walk minutes", () => {
-    const cta = resolveVideoGoCta(
-      baseItem({ local_event_id: "evt-1", walk_minutes: 12 }),
-    );
-    expect(cta.href).toBe("/events/evt-1");
-    expect(cta.label).toBe("Y aller · 12 min");
-  });
-
-  it("resolves place slug CTA", () => {
-    const cta = resolveVideoGoCta(
-      baseItem({ cultural_place_slug: "cafe-du-forum", walk_minutes: null }),
-    );
-    expect(cta.href).toBe("/places/cafe-du-forum");
-    expect(cta.label).toBe("Y aller");
-  });
-
-  it("falls back to neighborhood when no linked entity", () => {
-    const cta = resolveVideoGoCta(baseItem({ distance_meters: null, walk_minutes: null }));
-    expect(cta.href).toBe("/neighborhoods/boulingrin");
-    expect(cta.label).toBe("Découvrir le lieu");
-  });
-
   it("formats temporal label from published_at", () => {
     const now = new Date("2026-06-12T20:00:00.000Z");
-    const label = formatVideoTemporalLabel("2026-06-12T19:28:00.000Z", now);
-    expect(label).toBe("Il y a 32 min");
+    expect(formatVideoTemporalLabel("2026-06-12T19:28:00.000Z", now)).toBe("Il y a 32 min");
+    expect(formatVideoTemporalLabel("2026-06-12T19:55:00.000Z", now)).toBe("Il y a 5 min");
+  });
+
+  it("formats temporal label for today and yesterday", () => {
+    const now = new Date("2026-06-12T20:00:00.000Z");
+    expect(formatVideoTemporalLabel("2026-06-12T08:00:00.000Z", now)).toBe("Aujourd'hui");
+    expect(formatVideoTemporalLabel("2026-06-11T20:00:00.000Z", now)).toBe("Hier");
+  });
+
+  describe("resolveLocalVideoWowCopy", () => {
+    const now = new Date("2026-06-12T20:00:00.000Z");
+
+    it("returns bon plan copy", () => {
+      expect(resolveLocalVideoWowCopy(baseItem({ video_type: "bon_plan" }), now)).toBe(
+        "Découvert près de chez vous.",
+      );
+    });
+
+    it("returns moment copy for upcoming events", () => {
+      expect(
+        resolveLocalVideoWowCopy(
+          baseItem({ video_type: "moment", local_event_id: "evt-1" }),
+          now,
+        ),
+      ).toBe("Encore le temps d'y aller.");
+    });
+
+    it("returns quartier copy", () => {
+      expect(resolveLocalVideoWowCopy(baseItem({ video_type: "quartier" }), now)).toBe(
+        "Une autre façon de voir votre quartier.",
+      );
+    });
+
+    it("returns lieu copy with city", () => {
+      expect(resolveLocalVideoWowCopy(baseItem({ video_type: "lieu" }), now)).toBe(
+        "Un endroit à découvrir à Reims.",
+      );
+    });
+
+    it("returns tribu copy", () => {
+      expect(resolveLocalVideoWowCopy(baseItem({ video_type: "tribu" }), now)).toBe(
+        "Votre communauté se retrouve ici.",
+      );
+    });
+
+    it("returns fallback copy for autre", () => {
+      expect(resolveLocalVideoWowCopy(baseItem({ video_type: "autre" }), now)).toBe(
+        "La ville a toujours quelque chose à raconter.",
+      );
+    });
+
+    it("keeps wow copy within max length", () => {
+      const copy = resolveLocalVideoWowCopy(baseItem({ video_type: "quartier" }), now);
+      expect(copy.length).toBeLessThanOrEqual(LOCAL_VIDEO_WOW_COPY_MAX_LENGTH);
+    });
+  });
+
+  describe("resolveVideoGoCta", () => {
+    it("resolves bon plan CTA with place and walk minutes", () => {
+      const cta = resolveVideoGoCta(
+        baseItem({
+          video_type: "bon_plan",
+          cultural_place_slug: "maison-cafe",
+          cultural_place_name: "Maison & Café",
+          walk_minutes: 7,
+        }),
+      );
+      expect(cta.href).toBe("/places/maison-cafe");
+      expect(cta.label).toBe("Découvrir le café • 7 min");
+      expect(cta.microCopy).toBe("Découvert près de chez vous.");
+    });
+
+    it("resolves moment event CTA with walk minutes", () => {
+      const cta = resolveVideoGoCta(
+        baseItem({ video_type: "moment", local_event_id: "evt-1", walk_minutes: 12 }),
+      );
+      expect(cta.href).toBe("/events/evt-1");
+      expect(cta.label).toBe("Participer ce soir • 12 min");
+    });
+
+    it("resolves quartier CTA with neighborhood name", () => {
+      const cta = resolveVideoGoCta(
+        baseItem({
+          video_type: "quartier",
+          neighborhood_name: "Saint-Remi",
+          neighborhood_slug: "saint-remi",
+        }),
+      );
+      expect(cta.href).toBe("/neighborhoods/saint-remi");
+      expect(cta.label).toBe("Explorer Saint-Remi");
+    });
+
+    it("resolves lieu CTA with walk minutes", () => {
+      const cta = resolveVideoGoCta(
+        baseItem({
+          video_type: "lieu",
+          cultural_place_slug: "forum",
+          walk_minutes: 4,
+        }),
+      );
+      expect(cta.href).toBe("/places/forum");
+      expect(cta.label).toBe("Voir le lieu • 4 min");
+    });
+
+    it("resolves tribu CTA", () => {
+      const cta = resolveVideoGoCta(baseItem({ video_type: "tribu", tribe_id: "t1" }));
+      expect(cta.href).toBe("/tribes");
+      expect(cta.label).toBe("Rejoindre la tribu");
+    });
+
+    it("falls back to explorer city when no linked entity", () => {
+      const cta = resolveVideoGoCta(
+        baseItem({
+          video_type: "autre",
+          distance_meters: null,
+          walk_minutes: null,
+          neighborhood_slug: "",
+          neighborhood_name: "Reims",
+        }),
+      );
+      expect(cta.href).toBe("/sortir");
+      expect(cta.label).toBe("Explorer Reims");
+    });
+  });
+
+  describe("social proof", () => {
+    it("shows social proof when there is engagement", () => {
+      expect(shouldShowLocalVideoSocialProof(baseItem({ like_count: 18, comment_count: 0 }))).toBe(
+        true,
+      );
+      expect(shouldShowLocalVideoSocialProof(baseItem({ like_count: 0, comment_count: 4 }))).toBe(
+        true,
+      );
+      expect(shouldShowLocalVideoSocialProof(baseItem())).toBe(false);
+    });
+
+    it("uses remois social proof label constant", () => {
+      expect(LOCAL_VIDEO_SOCIAL_PROOF_LABEL).toBe("Les Rémois réagissent.");
+    });
   });
 });

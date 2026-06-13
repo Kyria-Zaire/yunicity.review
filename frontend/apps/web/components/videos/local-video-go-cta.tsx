@@ -6,8 +6,8 @@ import Link from "next/link";
 
 export function LocalVideoGoCta({ cta }: { cta: VideoGoCta }) {
   return (
-    <div className="space-y-1.5">
-      <p className="text-center text-xs font-medium text-white/85">{cta.microCopy}</p>
+    <div className="space-y-2">
+      <p className="text-sm font-medium italic leading-snug text-white/90">{cta.microCopy}</p>
       <Link href={cta.href} className={`block w-full text-center ${yunicityBtnPrimary}`}>
         {cta.label}
       </Link>

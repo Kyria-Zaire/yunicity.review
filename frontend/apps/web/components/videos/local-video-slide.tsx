@@ -13,7 +13,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { LocalVideoActionRail } from "@/components/videos/local-video-action-rail";
 import { LocalVideoGoCta } from "@/components/videos/local-video-go-cta";
 import { LocalVideoMetaStrip } from "@/components/videos/local-video-meta-strip";
-import { LocalVideoTerritoryBadge } from "@/components/videos/local-video-territory-badge";
+import { LocalVideoTerritoryBanner } from "@/components/videos/local-video-territory-banner";
 
 const SINGLE_TAP_DELAY_MS = 260;
 
@@ -135,7 +135,7 @@ export function LocalVideoSlide({
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-neutral-950/90 via-neutral-950/50 to-transparent" />
 
       <div className="absolute left-4 top-4 z-10 pt-[env(safe-area-inset-top)] md:top-3">
-        <LocalVideoTerritoryBadge lines={territory} />
+        <LocalVideoTerritoryBanner lines={territory} />
       </div>
 
       <div className="absolute right-4 top-4 z-10 flex items-center gap-2 pt-[env(safe-area-inset-top)] md:top-3">
