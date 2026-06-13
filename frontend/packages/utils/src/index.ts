@@ -2674,6 +2674,26 @@ export {
   type TribesPortalView,
 } from "./tribe-portal";
 export { YunicityApi, createYunicityApi } from "./yunicity-api";
+export {
+  LOCAL_VIDEO_COMMENTS_EMPTY,
+  LOCAL_VIDEO_DEFAULT_MUTED,
+  LOCAL_VIDEO_EMPTY_MESSAGE,
+  LOCAL_VIDEO_ERROR_MESSAGE,
+  LOCAL_VIDEO_RETRY_LABEL,
+  LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE,
+  LOCAL_VIDEO_TYPE_LABELS,
+  buildVideoTerritoryLines,
+  formatLocalVideoTypeLabel,
+  formatVideoAuthorHandle,
+  formatVideoDistanceLabel,
+  formatVideoTemporalLabel,
+  resolveVideoGoCta,
+  selectAutoplayVideoId,
+  shouldKeepVideoMuted,
+  type VideoGoCta,
+  type VideoTerritoryLines,
+} from "./local-video-presenter";
+export { LocalVideosApi, createLocalVideosApi } from "./local-videos-api";
 export { MemoryTokenStorage } from "./storage/memory-token-storage";
 export type { TokenStorage } from "./storage/token-storage";
 

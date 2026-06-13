@@ -72,6 +72,9 @@ import type {
   StoryRingsResponse,
   ReportPostPayload,
   UserProfile,
+  LocalVideoFeedItem,
+  LocalVideoListParams,
+  LocalVideoListResponse,
 } from "@yunicity/types";
 
 import type { AuthClient } from "./auth/auth-client";
@@ -94,6 +97,7 @@ import { WeatherApi, createWeatherApi } from "./weather-api";
 import { SubscriptionsApi, createSubscriptionsApi } from "./subscription-api";
 import { DiscussionsApi, createDiscussionsApi } from "./discussions-api";
 import { StoriesApi, createStoriesApi } from "./stories-api";
+import { LocalVideosApi, createLocalVideosApi } from "./local-videos-api";
 import {
   OrganizationCreatorContentApi,
   createOrganizationCreatorContentApi,
@@ -129,6 +133,7 @@ export class YunicityApi {
   readonly subscriptions: SubscriptionsApi;
   readonly discussions: DiscussionsApi;
   readonly stories: StoriesApi;
+  readonly localVideos: LocalVideosApi;
   readonly partners: PartnersApi;
   readonly partnerPassport: PartnerPassportApi;
   readonly organizationEvents: OrganizationEventsApi;
@@ -156,6 +161,7 @@ export class YunicityApi {
     this.subscriptions = createSubscriptionsApi(client, apiBaseUrl);
     this.discussions = createDiscussionsApi(client, apiBaseUrl);
     this.stories = createStoriesApi(client, apiBaseUrl);
+    this.localVideos = createLocalVideosApi(client, apiBaseUrl);
     this.partners = createPartnersApi(client, apiBaseUrl);
     this.partnerPassport = createPartnerPassportApi(client, apiBaseUrl);
     this.organizationEvents = createOrganizationEventsApi(client, apiBaseUrl);
@@ -230,6 +236,14 @@ export class YunicityApi {
 
   recordStoryView(storyId: string): Promise<void> {
     return this.stories.recordView(storyId);
+  }
+
+  listLocalVideos(params: LocalVideoListParams = {}): Promise<LocalVideoListResponse> {
+    return this.localVideos.listLocalVideos(params);
+  }
+
+  getLocalVideo(videoId: string): Promise<LocalVideoFeedItem> {
+    return this.localVideos.getLocalVideo(videoId);
   }
 
   listDiscussions(params: DiscussionListParams = {}): Promise<DiscussionListResponse> {

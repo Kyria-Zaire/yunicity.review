@@ -407,6 +407,15 @@ export type {
 } from "./story";
 
 export type {
+  LocalVideoAuthor,
+  LocalVideoFeedItem,
+  LocalVideoListParams,
+  LocalVideoListResponse,
+  LocalVideoStatusId,
+  LocalVideoTypeId,
+} from "./local-video";
+
+export type {
   PushPlatform,
   PushSubscription,
   PushSubscriptionListResponse,

@@ -7,6 +7,7 @@ export type WebNavMatch = "prefix" | "exact";
 
 export type WebNavIconId =
   | "feed"
+  | "videos"
   | "map"
   | "search"
   | "events"
@@ -35,6 +36,7 @@ export type WebNavItem = {
 /** Navigation principale — ordre feed-first (WEB-HOME-01). */
 export const WEB_CITIZEN_NAV_PRIMARY: WebNavItem[] = [
   { href: "/feed", label: "Fil local", icon: "feed", match: "prefix", tier: "primary" },
+  { href: "/videos", label: "Vidéos", icon: "videos", match: "prefix", tier: "primary" },
   { href: "/map", label: "Carte", icon: "map", match: "prefix", tier: "primary" },
   { href: "/search", label: "Recherche", icon: "search", match: "prefix", tier: "primary" },
   { href: "/sortir", label: "Sortir", icon: "sortir", match: "prefix", tier: "primary" },
