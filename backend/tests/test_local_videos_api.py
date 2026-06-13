@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from app.core.config import get_settings
@@ -73,7 +73,7 @@ async def _init_upload(client: AsyncClient, token: str) -> dict[str, Any]:
         headers=auth_header(token),
     )
     assert response.status_code == 201, response.text
-    return response.json()
+    return cast(dict[str, Any], response.json())
 
 
 @pytest.mark.asyncio
@@ -242,7 +242,7 @@ async def _publish_video(
         headers=auth_header(token),
     )
     assert response.status_code == 201, response.text
-    return response.json()
+    return cast(dict[str, Any], response.json())
 
 
 async def _set_video_status(video_id: str, status: LocalVideoStatus) -> None:
