@@ -65,4 +65,5 @@ Checklist : [../ai/security-checklist.md](../ai/security-checklist.md)
 | [cultural-media-strategy.md](./cultural-media-strategy.md) | Lieux culturels, seed, R2 futur |
 | [ADR-CREATORS-V2-local-video-media.md](./ADR-CREATORS-V2-local-video-media.md) | **Local Video V2** — R2 + FFmpeg + CDN |
 | [ADR-QUARTIERS-V2.md](./ADR-QUARTIERS-V2.md) | **Quartiers V2** — mémoire vivante, tables dédiées, detail API enrichi |
+| [ADR-Q2-S3-Contributions-Citoyennes.md](./ADR-Q2-S3-Contributions-Citoyennes.md) | **Quartiers V2 Q2-S3** — contributions citoyennes, quota, anti-réseau social |
 | [search.md](./search.md) | Search / Explorer |

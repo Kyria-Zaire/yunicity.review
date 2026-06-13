@@ -377,7 +377,9 @@ En quittant la page : « Je fais **un peu partie** de cet endroit. » (Test **T4
 └─────────────────────────────────────┘
 ```
 
-## Contributions (Q2-S4)
+## Contributions (Q2-S3)
+
+> **Document canon contributions :** `docs/quartiers/DESIGN-QUARTIERS-V2-Q2-S3-contributions.md` — remplace le wireframe ci-dessous pour modal, empty state, profil, admin.
 
 - Carte témoignage : fond `surface`, pas fil Facebook.
 - **Pas** de likes, **pas** de commentaires publics MVP.

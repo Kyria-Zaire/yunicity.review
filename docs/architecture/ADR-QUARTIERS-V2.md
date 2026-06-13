@@ -294,7 +294,9 @@ Les 10 autres : contenu minimum viable Q2-S1 (hero image + short + 1 entrée tim
 | PATCH | `/admin/neighborhood-contributions/{id}` | staff | Approve / reject |
 | PUT/PATCH | `/admin/neighborhoods/{id}/editorial` | staff | Histoire, timeline, moods, aliases |
 
-Rate limit soumission : **3 contributions / user / quartier / 24h**.
+Rate limit soumission : voir **`docs/architecture/ADR-Q2-S3-Contributions-Citoyennes.md`** (Q2-S3-ADR-01) — **1 approved / user / quartier / 30 jours** (remplace 3/24h ci-dessous).
+
+> **Delta Q2-S3 (2026-06-13)** : quota, snapshot identité, refus pédagogique, section persistante, immutabilité, tri `approved_at`, anti-réseau social — `ADR-Q2-S3-Contributions-Citoyennes.md`.
 
 ### Service layer
 
@@ -338,6 +340,8 @@ Habitant connecté
 | Public | Uniquement `approved` |
 | Auteur | Voit ses `pending` / `rejected` dans « Mes contributions » (Q2-S4 UI) |
 | Commentaires | **Hors scope** — pas de thread sur anecdote |
+
+> **Précisions Q2-S3** : voir `ADR-Q2-S3-Contributions-Citoyennes.md` (quota approved-only, snapshot identité, codes rejet, immutabilité, anti-social).
 
 ### Permissions
 
