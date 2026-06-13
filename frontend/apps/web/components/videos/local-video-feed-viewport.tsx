@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef } from "react";
 
 type LocalVideoFeedViewportProps = {
   items: LocalVideoFeedItem[];
+  focusVideoId?: string | null;
   onActiveVideoChange: (videoId: string | null) => void;
   onOpenComments: (videoId: string) => void;
   onToggleLike: (item: LocalVideoFeedItem) => void;
@@ -18,6 +19,7 @@ type LocalVideoFeedViewportProps = {
 
 export function LocalVideoFeedViewport({
   items,
+  focusVideoId = null,
   onActiveVideoChange,
   onOpenComments,
   onToggleLike,
@@ -27,7 +29,17 @@ export function LocalVideoFeedViewport({
 }: LocalVideoFeedViewportProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const itemIds = items.map((item) => item.id);
-  const activeId = useVideoFeedAutoplay(itemIds);
+  const activeId = useVideoFeedAutoplay(itemIds, focusVideoId);
+
+  useEffect(() => {
+    if (!focusVideoId) return;
+    const frame = window.requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>(`[data-video-slide-id="${focusVideoId}"]`)
+        ?.scrollIntoView({ behavior: "auto", block: "start" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [focusVideoId, items]);
 
   useEffect(() => {
     onActiveVideoChange(activeId);

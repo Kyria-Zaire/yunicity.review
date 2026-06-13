@@ -10,6 +10,7 @@ import { NeighborhoodDetailPracticalCard } from "@/components/neighborhoods/neig
 import { NeighborhoodDetailRightRail } from "@/components/neighborhoods/neighborhood-detail-right-rail";
 import { NeighborhoodDetailTabs } from "@/components/neighborhoods/neighborhood-detail-tabs";
 import { NeighborhoodsAppShell } from "@/components/neighborhoods/neighborhoods-app-shell";
+import { LocalVideoTeaserSection } from "@/components/videos/local-video-teaser-section";
 import { useNeighborhoodDetailContext } from "@/hooks/use-neighborhood-detail-context";
 import {
   NEIGHBORHOOD_DETAIL_LOADING,
@@ -126,6 +127,11 @@ export function NeighborhoodDetailScreen({ slug, city }: { slug: string; city: s
             <NeighborhoodDetailAboutSection presentation={presentation} briefFacts={briefFacts} />
 
             <NeighborhoodDetailPlacesRail cards={placeCards} city={context.city} hoodSlug={hood.slug} />
+
+            <LocalVideoTeaserSection
+              city={hood.city}
+              filter={{ kind: "neighborhood", neighborhoodSlug: hood.slug }}
+            />
 
             <NeighborhoodDetailMoments
               events={context.upcomingEvents}

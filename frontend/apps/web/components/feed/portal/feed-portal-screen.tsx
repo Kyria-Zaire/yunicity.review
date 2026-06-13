@@ -29,6 +29,7 @@ import { FeedRightRail } from "@/components/feed/portal/feed-right-rail";
 import { FeedSavedEventsPanel } from "@/components/feed/portal/feed-saved-events-panel";
 import { FeedStoriesRail } from "@/components/feed/portal/feed-stories-rail";
 import { FeedViewTabs } from "@/components/feed/portal/feed-view-tabs";
+import { LocalVideoTeaserSection } from "@/components/videos/local-video-teaser-section";
 import { useFeed } from "@/hooks/use-feed";
 import { useFeedPortalContext } from "@/hooks/use-feed-portal-context";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
@@ -233,6 +234,12 @@ export function FeedPortalScreen() {
             <FeedComposer city={city} onSubmit={handleCreate} />
           </div>
         </div>
+
+        {!leftNav ? (
+          <div className="mt-5">
+            <LocalVideoTeaserSection city={city} filter={{ kind: "city" }} layout="scroll" />
+          </div>
+        ) : null}
 
         {viewHint ? (
           <p className="mt-4 text-xs leading-relaxed text-neutral-500">{viewHint}</p>

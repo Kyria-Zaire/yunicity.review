@@ -3,8 +3,11 @@
 import { selectAutoplayVideoId } from "@yunicity/utils";
 import { useEffect, useState } from "react";
 
-export function useVideoFeedAutoplay(itemIds: string[]) {
-  const [activeId, setActiveId] = useState<string | null>(itemIds[0] ?? null);
+export function useVideoFeedAutoplay(itemIds: string[], preferredVideoId?: string | null) {
+  const [activeId, setActiveId] = useState<string | null>(() => {
+    if (preferredVideoId && itemIds.includes(preferredVideoId)) return preferredVideoId;
+    return itemIds[0] ?? null;
+  });
 
   useEffect(() => {
     if (itemIds.length === 0) {
@@ -12,10 +15,11 @@ export function useVideoFeedAutoplay(itemIds: string[]) {
       return;
     }
     setActiveId((current) => {
+      if (preferredVideoId && itemIds.includes(preferredVideoId)) return preferredVideoId;
       if (current && itemIds.includes(current)) return current;
       return itemIds[0] ?? null;
     });
-  }, [itemIds]);
+  }, [itemIds, preferredVideoId]);
 
   useEffect(() => {
     if (itemIds.length === 0) return;

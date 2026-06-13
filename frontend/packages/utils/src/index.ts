@@ -2702,6 +2702,21 @@ export {
   type VideoTerritoryLines,
 } from "./local-video-presenter";
 export {
+  LOCAL_VIDEO_TEASER_CTA,
+  LOCAL_VIDEO_TEASER_FETCH_LIMIT,
+  LOCAL_VIDEO_TEASER_MAX,
+  LOCAL_VIDEO_TEASER_SECTION_EVENT,
+  LOCAL_VIDEO_TEASER_SECTION_FEED,
+  LOCAL_VIDEO_TEASER_SECTION_NEIGHBORHOOD,
+  LOCAL_VIDEO_TEASER_SECTION_PLACE,
+  buildLocalVideoTeaserHref,
+  filterLocalVideoTeasers,
+  formatLocalVideoDuration,
+  reorderLocalVideoFeedForFocus,
+  resolveLocalVideoTeaserTitle,
+  type LocalVideoTeaserFilter,
+} from "./local-video-teaser";
+export {
   LOCAL_VIDEO_COMMENT_LOAD_ERROR,
   LOCAL_VIDEO_COMMENT_PLACEHOLDER,
   LOCAL_VIDEO_COMMENT_SEND_ERROR,

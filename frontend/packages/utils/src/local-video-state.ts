@@ -29,7 +29,7 @@ export function applyLocalVideoLikeResponse(
 
 export function buildLocalVideoShareUrl(videoId: string, origin?: string): string {
   const base = origin ?? (typeof window !== "undefined" ? window.location.origin : "");
-  return `${base}/videos/${encodeURIComponent(videoId)}`;
+  return `${base}/videos?video=${encodeURIComponent(videoId)}`;
 }
 
 export type LocalVideoShareResult = "shared" | "copied" | "cancelled";

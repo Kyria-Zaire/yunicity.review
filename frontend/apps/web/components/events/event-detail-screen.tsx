@@ -7,6 +7,7 @@ import { EventDetailMainTabs } from "@/components/events/event-detail-main-tabs"
 import { EventDetailPortalHero } from "@/components/events/event-detail-portal-hero";
 import { EventDetailRightPortalRail } from "@/components/events/event-detail-right-portal-rail";
 import { TransitNearbyCarouselRail } from "@/components/map/transit-nearby-carousel-rail";
+import { LocalVideoTeaserSection } from "@/components/videos/local-video-teaser-section";
 import { useEventDetailContext } from "@/hooks/use-event-detail-context";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -132,6 +133,11 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
           />
 
           <EventDetailMainTabs event={event} context={context} venuePlace={venuePlace} />
+
+          <LocalVideoTeaserSection
+            city={event.city}
+            filter={{ kind: "event", localEventId: event.id }}
+          />
 
           {transitPoint ? (
             <TransitNearbyCarouselRail

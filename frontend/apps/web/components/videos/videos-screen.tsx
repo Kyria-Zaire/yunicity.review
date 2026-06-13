@@ -10,12 +10,19 @@ import { VideosFeedError } from "@/components/videos/videos-feed-error";
 import { VideosFeedSkeleton } from "@/components/videos/videos-feed-skeleton";
 import { useLocalVideoInteractions } from "@/hooks/use-local-video-interactions";
 import { useLocalVideosFeed } from "@/hooks/use-local-videos-feed";
+import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { GeoProvider } from "@/providers/geo-provider";
-import { LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE, bumpLocalVideoCommentCount } from "@yunicity/utils";
+import {
+  LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE,
+  bumpLocalVideoCommentCount,
+  reorderLocalVideoFeedForFocus,
+} from "@yunicity/utils";
+import type { LocalVideoFeedItem } from "@yunicity/types";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 export function VideosScreen() {
   const { user } = useAuth();
@@ -29,22 +36,57 @@ export function VideosScreen() {
 }
 
 function VideosScreenInner() {
+  const api = useYunicityApi();
+  const searchParams = useSearchParams();
+  const focusVideoId = searchParams.get("video")?.trim() || null;
+
   const feed = useLocalVideosFeed();
   const interactions = useLocalVideoInteractions({ updateItem: feed.updateItem });
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const [reportVideoId, setReportVideoId] = useState<string | null>(null);
+  const [pinnedVideo, setPinnedVideo] = useState<LocalVideoFeedItem | null>(null);
+
+  useEffect(() => {
+    if (!focusVideoId || feed.isLoading) return;
+    if (feed.items.some((item) => item.id === focusVideoId)) {
+      setPinnedVideo(null);
+      return;
+    }
+
+    let cancelled = false;
+    void api
+      .getLocalVideo(focusVideoId)
+      .then((video) => {
+        if (!cancelled) setPinnedVideo(video);
+      })
+      .catch(() => {
+        if (!cancelled) setPinnedVideo(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [api, feed.isLoading, feed.items, focusVideoId]);
+
+  const displayItems = useMemo(() => {
+    let list = feed.items;
+    if (pinnedVideo && !list.some((item) => item.id === pinnedVideo.id)) {
+      list = [pinnedVideo, ...list];
+    }
+    return reorderLocalVideoFeedForFocus(list, focusVideoId);
+  }, [feed.items, focusVideoId, pinnedVideo]);
 
   const activeVideo = useMemo(
-    () => feed.items.find((item) => item.id === activeVideoId) ?? feed.items[0] ?? null,
-    [activeVideoId, feed.items],
+    () => displayItems.find((item) => item.id === activeVideoId) ?? displayItems[0] ?? null,
+    [activeVideoId, displayItems],
   );
 
   const commentsVideo = useMemo(() => {
     if (!commentsOpen) return null;
-    return feed.items.find((item) => item.id === activeVideoId) ?? activeVideo;
-  }, [activeVideo, activeVideoId, commentsOpen, feed.items]);
+    return displayItems.find((item) => item.id === activeVideoId) ?? activeVideo;
+  }, [activeVideo, activeVideoId, commentsOpen, displayItems]);
 
   return (
     <VideosAppShell>
@@ -77,11 +119,12 @@ function VideosScreenInner() {
           <VideosFeedSkeleton />
         ) : feed.error ? (
           <VideosFeedError onRetry={() => void feed.refresh()} />
-        ) : feed.items.length === 0 ? (
+        ) : displayItems.length === 0 ? (
           <VideosFeedEmpty />
         ) : (
           <LocalVideoFeedViewport
-            items={feed.items}
+            items={displayItems}
+            focusVideoId={focusVideoId}
             onActiveVideoChange={setActiveVideoId}
             onOpenComments={(videoId) => {
               setActiveVideoId(videoId);

@@ -2,6 +2,7 @@
 
 import { CulturalImage } from "@/components/culture/cultural-image";
 import { PlacesAppShell } from "@/components/places/places-app-shell";
+import { LocalVideoTeaserSection } from "@/components/videos/local-video-teaser-section";
 import type { CulturalPlaceDetail } from "@yunicity/types";
 import {
   MAP_CULTURE_ROUTE_CTA,
@@ -94,6 +95,11 @@ export function CulturalPlaceDetailScreen({ place }: CulturalPlaceDetailScreenPr
             </div>
           </div>
         </article>
+
+        <LocalVideoTeaserSection
+          city={place.city}
+          filter={{ kind: "place", culturalPlaceSlug: place.slug }}
+        />
 
         <section className="rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-bold text-neutral-900">Informations pratiques</h2>

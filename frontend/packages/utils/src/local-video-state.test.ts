@@ -75,7 +75,7 @@ describe("local-video social state", () => {
 
   it("builds share deep link", () => {
     expect(buildLocalVideoShareUrl("abc-123", "https://yunicity.fr")).toBe(
-      "https://yunicity.fr/videos/abc-123",
+      "https://yunicity.fr/videos?video=abc-123",
     );
   });
 
@@ -92,7 +92,7 @@ describe("local-video social state", () => {
     );
 
     expect(result).toBe("copied");
-    expect(writeText).toHaveBeenCalledWith("https://yunicity.fr/videos/v1");
+    expect(writeText).toHaveBeenCalledWith("https://yunicity.fr/videos?video=v1");
     vi.unstubAllGlobals();
   });
 });
