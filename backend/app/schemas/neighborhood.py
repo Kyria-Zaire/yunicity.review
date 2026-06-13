@@ -230,6 +230,9 @@ class NeighborhoodDetailContributionItem(BaseModel):
     id: uuid.UUID
     title: str | None = None
     body: str
+    author_label: str
+    passport_verified_snapshot: bool = False
+    approved_at: datetime | None = None
     created_at: datetime
 
 

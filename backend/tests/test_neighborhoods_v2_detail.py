@@ -178,6 +178,9 @@ async def _seed_boulingrin_detail_fixtures(session: AsyncSession, author_id: uui
             ),
             title="Notre rituel",
             status=NeighborhoodContributionStatus.APPROVED.value,
+            display_identity_label="Camille R.",
+            passport_verified_snapshot=False,
+            approved_at=datetime.now(UTC),
         )
     )
     session.add(
@@ -288,6 +291,9 @@ async def test_neighborhood_detail_excludes_pending_contributions(
     contributions = body["contributions"]
     assert len(contributions) == 1
     assert contributions[0]["title"] == "Notre rituel"
+    assert contributions[0]["author_label"] == "Camille R."
+    assert contributions[0]["approved_at"] is not None
+    assert contributions[0]["passport_verified_snapshot"] is False
     assert "modération" not in contributions[0]["body"].lower()
 
 

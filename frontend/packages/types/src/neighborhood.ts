@@ -157,7 +157,28 @@ export interface NeighborhoodDetailContributionItem {
   id: string;
   title: string | null;
   body: string;
+  author_label: string;
+  passport_verified_snapshot: boolean;
+  approved_at: string | null;
   created_at: string;
+}
+
+export type NeighborhoodContributionIdentityType = "PSEUDO" | "ANONYMOUS" | "VERIFIED";
+
+export type NeighborhoodContributionAnonymousGender = "remois" | "remoise";
+
+export interface NeighborhoodContributionSubmitRequest {
+  identity_type: NeighborhoodContributionIdentityType;
+  title?: string | null;
+  body: string;
+  anonymous_gender?: NeighborhoodContributionAnonymousGender | null;
+}
+
+export interface NeighborhoodContributionSubmitResponse {
+  id: string;
+  status: string;
+  submitted_at: string;
+  message: string;
 }
 
 export interface NeighborhoodDetailTribeItem {

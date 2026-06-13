@@ -218,7 +218,7 @@ class NeighborhoodDetailService:
                 NeighborhoodContribution.neighborhood_id == neighborhood_id,
                 NeighborhoodContribution.status == NeighborhoodContributionStatus.APPROVED.value,
             )
-            .order_by(NeighborhoodContribution.created_at.desc())
+            .order_by(NeighborhoodContribution.approved_at.desc().nullslast())
             .limit(NEIGHBORHOOD_DETAIL_CONTRIBUTIONS_LIMIT)
         )
         result = await self._session.execute(stmt)
@@ -227,6 +227,9 @@ class NeighborhoodDetailService:
                 id=row.id,
                 title=row.title,
                 body=row.body,
+                author_label=row.display_identity_label,
+                passport_verified_snapshot=row.passport_verified_snapshot,
+                approved_at=row.approved_at,
                 created_at=row.created_at,
             )
             for row in result.scalars().all()

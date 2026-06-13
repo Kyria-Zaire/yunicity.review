@@ -1,5 +1,7 @@
 import type {
   NeighborhoodContextResponse,
+  NeighborhoodContributionSubmitRequest,
+  NeighborhoodContributionSubmitResponse,
   NeighborhoodDetail,
   NeighborhoodListResponse,
 } from "@yunicity/types";
@@ -39,6 +41,18 @@ export class NeighborhoodsApi extends ApiClientBase {
     const qs = new URLSearchParams({ city });
     return this.getJson<NeighborhoodContextResponse>(
       `/neighborhoods/${encodeURIComponent(slug)}/context?${qs.toString()}`,
+    );
+  }
+
+  submitContribution(
+    slug: string,
+    city: string,
+    payload: NeighborhoodContributionSubmitRequest,
+  ): Promise<NeighborhoodContributionSubmitResponse> {
+    const qs = new URLSearchParams({ city });
+    return this.postJson<NeighborhoodContributionSubmitResponse>(
+      `/neighborhoods/${encodeURIComponent(slug)}/contributions?${qs.toString()}`,
+      payload,
     );
   }
 }
