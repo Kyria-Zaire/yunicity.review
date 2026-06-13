@@ -7,7 +7,7 @@ import uuid
 from collections.abc import AsyncGenerator
 
 import pytest
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.db.base import Base
 from app.db.dev._guards import require_non_production_env
 from app.db.dev.promote_user import _validate_role_key, promote_user
@@ -16,8 +16,6 @@ from app.repositories.user_repository import UserRepository
 from app.schemas.auth import RegisterRequest
 from app.services.auth_service import AuthService
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
-from tests.conftest_auth import _TEST_JWT_SECRET
 
 pytestmark = pytest.mark.integration
 
@@ -49,20 +47,27 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
     await engine.dispose()
 
 
-def test_require_non_production_env_rejects_prod(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setenv("APP_ENV", "prod")
-    monkeypatch.setenv("JWT_SECRET_KEY", _TEST_JWT_SECRET)
-    monkeypatch.setenv("REFRESH_COOKIE_SECURE", "true")
-    get_settings.cache_clear()
-    settings = get_settings()
+def test_require_non_production_env_rejects_prod() -> None:
+    settings = Settings(
+        APP_ENV="prod",
+        DEBUG=False,
+        JWT_SECRET_KEY="x" * 48,
+        REFRESH_TOKEN_PEPPER="y" * 32,
+        REFRESH_COOKIE_SECURE=True,
+        DATABASE_URL="postgresql+asyncpg://user:pass@db:5432/yunicity_prod",
+        REDIS_URL="redis://redis:6379/0",
+        CORS_ORIGINS=["https://yunicity.fr"],
+        WEB_FRONTEND_URL="https://yunicity.fr",
+        MEDIA_PUBLIC_BASE_URL="https://api.yunicity.fr",
+        EMAIL_PROVIDER="resend",
+        RESEND_API_KEY="re_test_key",
+        EMAIL_FROM="no-reply@yunicity.fr",
+    )
 
     with pytest.raises(SystemExit) as exc_info:
         require_non_production_env(settings)
 
     assert exc_info.value.code == 1
-    get_settings.cache_clear()
 
 
 def test_validate_unknown_role() -> None:
