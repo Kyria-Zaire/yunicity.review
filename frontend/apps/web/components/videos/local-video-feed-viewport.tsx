@@ -44,7 +44,7 @@ export function LocalVideoFeedViewport({
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className="videos-feed-viewport fixed inset-0 z-40 snap-y snap-mandatory overflow-y-auto overscroll-y-contain scroll-smooth md:static md:z-auto md:h-[calc(100dvh-6rem)] md:rounded-2xl"
+      className="videos-feed-viewport fixed inset-0 z-40 snap-y snap-mandatory overflow-y-auto overscroll-y-contain scroll-smooth md:static md:z-auto md:h-[calc(100dvh-6rem)] md:rounded-2xl xl:h-[calc(100dvh-4.25rem-2rem)]"
     >
       {items.map((item) => (
         <LocalVideoSlide

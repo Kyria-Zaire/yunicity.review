@@ -57,7 +57,7 @@ function VideosScreenInner() {
           >
             <ChevronLeft className="h-6 w-6" aria-hidden />
           </Link>
-          <h1 className="text-sm font-semibold text-white drop-shadow md:text-lg md:text-neutral-900 md:drop-shadow-none">
+          <h1 className="text-sm font-semibold text-white drop-shadow md:text-lg md:text-neutral-900 md:drop-shadow-none xl:hidden">
             Vidéos
           </h1>
         </header>

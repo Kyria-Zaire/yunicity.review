@@ -29,8 +29,8 @@ const ICONS: Record<WebNavIconId, (props: IconProps) => ReactElement> = {
   ),
   videos: (p) => (
     <IconBase {...p}>
-      <rect x="3" y="5" width="14" height="14" rx="2.5" />
-      <path d="M10 9.5v5l4.5-2.5L10 9.5z" />
+      <rect x="4" y="6" width="16" height="12" rx="2" />
+      <path d="M11 10v4l4-2-4-2z" />
     </IconBase>
   ),
   map: (p) => (
