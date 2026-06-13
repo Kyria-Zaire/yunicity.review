@@ -1,4 +1,4 @@
-"""Neighborhood citizen contributions API tests (FEATURE-QUARTIERS-V2 / Q2-S3-01)."""
+"""Neighborhood citizen contributions API tests (FEATURE-QUARTIERS-V2 / Q2-S3-01+02)."""
 
 from __future__ import annotations
 
@@ -19,10 +19,13 @@ from httpx import AsyncClient
 from sqlalchemy import select
 
 from tests.conftest_passport import activate_passport, auth_header, register_user
+from tests.conftest_rbac import RbacUserFactory
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
 BASE = "/api/v1/neighborhoods"
+ADMIN_BASE = "/api/v1/admin/neighborhood-contributions"
+ME_BASE = "/api/v1/me/neighborhood-contributions"
 VALID_BODY = (
     "Quand j'étais petit, mon grand-père m'emmenait aux Halles tous les samedis matin."
 )
@@ -48,6 +51,22 @@ def _submit_payload(**overrides: Any) -> dict[str, Any]:
     }
     payload.update(overrides)
     return payload
+
+
+async def _submit_pending(
+    auth_client: AsyncClient,
+    token: str,
+    *,
+    slug: str = "boulingrin",
+) -> uuid.UUID:
+    response = await auth_client.post(
+        f"{BASE}/{slug}/contributions",
+        params={"city": "Reims"},
+        json=_submit_payload(),
+        headers=auth_header(token),
+    )
+    assert response.status_code == 201, response.text
+    return uuid.UUID(response.json()["id"])
 
 
 async def _hood_id(slug: str) -> uuid.UUID:
@@ -250,3 +269,228 @@ async def test_submit_contribution_requires_auth(auth_client: AsyncClient) -> No
         json=_submit_payload(),
     )
     assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_approve_contribution_success(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    citizen = await _register(auth_client)
+    moderator = await rbac_user_factory("MODERATOR")
+    contribution_id = await _submit_pending(auth_client, citizen["access_token"])
+
+    response = await auth_client.post(
+        f"{ADMIN_BASE}/{contribution_id}/approve",
+        headers=auth_header(moderator.access_token),
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "approved"
+    assert body["approved_at"] is not None
+    assert body["reviewed_at"] is not None
+    assert body["reviewed_by_user_id"] == str(moderator.user_id)
+    assert body["rejection_reason_code"] is None
+
+
+@pytest.mark.asyncio
+async def test_reject_contribution_success(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    citizen = await _register(auth_client)
+    moderator = await rbac_user_factory("MODERATOR")
+    contribution_id = await _submit_pending(auth_client, citizen["access_token"])
+
+    response = await auth_client.post(
+        f"{ADMIN_BASE}/{contribution_id}/reject",
+        json={"reason_code": "NOT_A_MEMORY", "note": "Formulation type avis"},
+        headers=auth_header(moderator.access_token),
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "rejected"
+    assert body["approved_at"] is None
+    assert body["rejection_reason_code"] == "NOT_A_MEMORY"
+    assert body["rejection_note"] == "Formulation type avis"
+
+
+@pytest.mark.asyncio
+async def test_approve_already_reviewed_returns_409(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    citizen = await _register(auth_client)
+    moderator = await rbac_user_factory("MODERATOR")
+    contribution_id = await _submit_pending(auth_client, citizen["access_token"])
+
+    first = await auth_client.post(
+        f"{ADMIN_BASE}/{contribution_id}/approve",
+        headers=auth_header(moderator.access_token),
+    )
+    assert first.status_code == 200, first.text
+
+    second = await auth_client.post(
+        f"{ADMIN_BASE}/{contribution_id}/approve",
+        headers=auth_header(moderator.access_token),
+    )
+    assert second.status_code == 409, second.text
+    assert second.json()["code"] == "CONTRIBUTION_ALREADY_REVIEWED"
+
+
+@pytest.mark.asyncio
+async def test_reject_already_reviewed_returns_409(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    citizen = await _register(auth_client)
+    moderator = await rbac_user_factory("MODERATOR")
+    contribution_id = await _submit_pending(auth_client, citizen["access_token"])
+
+    first = await auth_client.post(
+        f"{ADMIN_BASE}/{contribution_id}/reject",
+        json={"reason_code": "OTHER"},
+        headers=auth_header(moderator.access_token),
+    )
+    assert first.status_code == 200, first.text
+
+    second = await auth_client.post(
+        f"{ADMIN_BASE}/{contribution_id}/reject",
+        json={"reason_code": "OTHER"},
+        headers=auth_header(moderator.access_token),
+    )
+    assert second.status_code == 409, second.text
+    assert second.json()["code"] == "CONTRIBUTION_ALREADY_REVIEWED"
+
+
+@pytest.mark.asyncio
+async def test_approve_unauthorized_returns_403(
+    auth_client: AsyncClient,
+) -> None:
+    citizen = await _register(auth_client)
+    contribution_id = await _submit_pending(auth_client, citizen["access_token"])
+
+    response = await auth_client.post(
+        f"{ADMIN_BASE}/{contribution_id}/approve",
+        headers=auth_header(citizen["access_token"]),
+    )
+    assert response.status_code == 403, response.text
+
+
+@pytest.mark.asyncio
+async def test_reject_unauthorized_returns_403(
+    auth_client: AsyncClient,
+) -> None:
+    citizen = await _register(auth_client)
+    contribution_id = await _submit_pending(auth_client, citizen["access_token"])
+
+    response = await auth_client.post(
+        f"{ADMIN_BASE}/{contribution_id}/reject",
+        json={"reason_code": "NOT_A_MEMORY"},
+        headers=auth_header(citizen["access_token"]),
+    )
+    assert response.status_code == 403, response.text
+
+
+@pytest.mark.asyncio
+async def test_reject_invalid_reason_returns_422(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    citizen = await _register(auth_client)
+    moderator = await rbac_user_factory("MODERATOR")
+    contribution_id = await _submit_pending(auth_client, citizen["access_token"])
+
+    response = await auth_client.post(
+        f"{ADMIN_BASE}/{contribution_id}/reject",
+        json={"reason_code": "NOT_VALID"},
+        headers=auth_header(moderator.access_token),
+    )
+    assert response.status_code == 422, response.text
+
+
+@pytest.mark.asyncio
+async def test_get_me_lists_pending_contribution(auth_client: AsyncClient) -> None:
+    citizen = await _register(auth_client)
+    contribution_id = await _submit_pending(auth_client, citizen["access_token"])
+
+    response = await auth_client.get(
+        ME_BASE,
+        headers=auth_header(citizen["access_token"]),
+    )
+    assert response.status_code == 200, response.text
+    items = response.json()["items"]
+    assert len(items) == 1
+    assert items[0]["id"] == str(contribution_id)
+    assert items[0]["status"] == "pending"
+    assert items[0]["neighborhood"]["slug"] == "boulingrin"
+    assert items[0]["rejection_message"] is None
+
+
+@pytest.mark.asyncio
+async def test_get_me_lists_approved_contribution(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    citizen = await _register(auth_client)
+    moderator = await rbac_user_factory("MODERATOR")
+    contribution_id = await _submit_pending(auth_client, citizen["access_token"])
+    await auth_client.post(
+        f"{ADMIN_BASE}/{contribution_id}/approve",
+        headers=auth_header(moderator.access_token),
+    )
+
+    response = await auth_client.get(
+        ME_BASE,
+        headers=auth_header(citizen["access_token"]),
+    )
+    assert response.status_code == 200, response.text
+    item = response.json()["items"][0]
+    assert item["status"] == "approved"
+    assert item["approved_at"] is not None
+    assert item["rejection_message"] is None
+
+
+@pytest.mark.asyncio
+async def test_get_me_rejected_exposes_pedagogical_message(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    citizen = await _register(auth_client)
+    moderator = await rbac_user_factory("MODERATOR")
+    contribution_id = await _submit_pending(auth_client, citizen["access_token"])
+    await auth_client.post(
+        f"{ADMIN_BASE}/{contribution_id}/reject",
+        json={"reason_code": "NOT_A_MEMORY"},
+        headers=auth_header(moderator.access_token),
+    )
+
+    response = await auth_client.get(
+        ME_BASE,
+        headers=auth_header(citizen["access_token"]),
+    )
+    assert response.status_code == 200, response.text
+    item = response.json()["items"][0]
+    assert item["status"] == "rejected"
+    assert item["rejection_reason_code"] == "NOT_A_MEMORY"
+    assert item["rejection_message"] == (
+        "Cela ressemblait davantage à un avis qu'à un souvenir personnel."
+    )
+
+
+@pytest.mark.asyncio
+async def test_get_me_cannot_see_other_users_contributions(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    author = await _register(auth_client)
+    other = await _register(auth_client)
+    contribution_id = await _submit_pending(auth_client, author["access_token"])
+    _ = contribution_id
+
+    response = await auth_client.get(
+        ME_BASE,
+        headers=auth_header(other["access_token"]),
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["items"] == []

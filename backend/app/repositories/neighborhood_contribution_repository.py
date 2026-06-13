@@ -6,6 +6,7 @@ import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.neighborhood_v2_constants import NeighborhoodContributionStatus
 from app.models.neighborhood_editorial import NeighborhoodContribution
@@ -52,3 +53,32 @@ class NeighborhoodContributionRepository:
 
     async def get_by_id(self, contribution_id: uuid.UUID) -> NeighborhoodContribution | None:
         return await self._session.get(NeighborhoodContribution, contribution_id)
+
+    async def get_contribution_by_id(
+        self,
+        contribution_id: uuid.UUID,
+    ) -> NeighborhoodContribution | None:
+        return await self.get_by_id_with_neighborhood(contribution_id)
+
+    async def get_by_id_with_neighborhood(
+        self,
+        contribution_id: uuid.UUID,
+    ) -> NeighborhoodContribution | None:
+        result = await self._session.execute(
+            select(NeighborhoodContribution)
+            .where(NeighborhoodContribution.id == contribution_id)
+            .options(selectinload(NeighborhoodContribution.neighborhood))
+        )
+        return result.scalar_one_or_none()
+
+    async def list_by_author(self, author_user_id: uuid.UUID) -> list[NeighborhoodContribution]:
+        result = await self._session.execute(
+            select(NeighborhoodContribution)
+            .where(NeighborhoodContribution.author_user_id == author_user_id)
+            .options(selectinload(NeighborhoodContribution.neighborhood))
+            .order_by(
+                NeighborhoodContribution.submitted_at.desc(),
+                NeighborhoodContribution.created_at.desc(),
+            )
+        )
+        return list(result.scalars().all())

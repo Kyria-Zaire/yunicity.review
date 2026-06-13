@@ -7,6 +7,7 @@ from app.api.v1 import (
     admin_analytics,
     admin_cockpit,
     admin_local_events,
+    admin_neighborhood_contributions,
     admin_neighborhoods,
     admin_organizations,
     admin_partner_creator_contents,
@@ -27,6 +28,7 @@ from app.api.v1 import (
     feed,
     health,
     map,
+    neighborhood_contributions_me,
     neighborhoods,
     notifications,
     organizations,
@@ -74,8 +76,10 @@ api_router.include_router(admin_partner_creator_contents.router)
 api_router.include_router(admin_reports.router)
 api_router.include_router(admin_staff.router)
 api_router.include_router(admin_local_events.router)
+api_router.include_router(admin_neighborhood_contributions.router)
 api_router.include_router(admin_neighborhoods.router)
 api_router.include_router(events.router)
+api_router.include_router(neighborhood_contributions_me.router)
 api_router.include_router(neighborhoods.router)
 api_router.include_router(tribes.router)
 api_router.include_router(tribe_invitations.router)

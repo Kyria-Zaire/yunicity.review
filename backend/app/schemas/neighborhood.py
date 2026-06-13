@@ -20,9 +20,11 @@ from app.core.neighborhood_constants import (
 )
 from app.core.neighborhood_v2_constants import (
     NEIGHBORHOOD_CONTRIBUTION_BODY_MAX_LENGTH,
+    NEIGHBORHOOD_CONTRIBUTION_REJECTION_NOTE_MAX_LENGTH,
     NEIGHBORHOOD_CONTRIBUTION_TITLE_MAX_LENGTH,
     NeighborhoodContributionAnonymousGender,
     NeighborhoodContributionIdentityType,
+    NeighborhoodContributionRejectionCode,
 )
 
 
@@ -293,3 +295,47 @@ class NeighborhoodContributionSubmitResponse(BaseModel):
     status: str
     submitted_at: datetime
     message: str
+
+
+class NeighborhoodContributionRejectRequest(BaseModel):
+    reason_code: NeighborhoodContributionRejectionCode
+    note: str | None = Field(
+        default=None,
+        max_length=NEIGHBORHOOD_CONTRIBUTION_REJECTION_NOTE_MAX_LENGTH,
+    )
+
+
+class NeighborhoodContributionModerationResponse(BaseModel):
+    id: uuid.UUID
+    status: str
+    approved_at: datetime | None = None
+    reviewed_at: datetime | None = None
+    reviewed_by_user_id: uuid.UUID | None = None
+    rejection_reason_code: str | None = None
+    rejection_note: str | None = None
+
+
+class NeighborhoodContributionMeNeighborhood(BaseModel):
+    id: uuid.UUID
+    slug: str
+    display_name: str
+
+
+class NeighborhoodContributionMeItem(BaseModel):
+    id: uuid.UUID
+    neighborhood: NeighborhoodContributionMeNeighborhood
+    title: str | None = None
+    body: str
+    status: str
+    submitted_at: datetime
+    approved_at: datetime | None = None
+    reviewed_at: datetime | None = None
+    display_identity_label: str
+    display_identity_type: str
+    passport_verified_snapshot: bool
+    rejection_reason_code: str | None = None
+    rejection_message: str | None = None
+
+
+class NeighborhoodContributionMeListResponse(BaseModel):
+    items: list[NeighborhoodContributionMeItem] = Field(default_factory=list)

@@ -55,6 +55,47 @@ class NeighborhoodContributionAnonymousGender(StrEnum):
     REMOISE = "remoise"
 
 
+class NeighborhoodContributionRejectionCode(StrEnum):
+    NOT_A_MEMORY = "NOT_A_MEMORY"
+    COMMERCIAL_CONTENT = "COMMERCIAL_CONTENT"
+    TOO_SHORT = "TOO_SHORT"
+    NOT_LOCAL = "NOT_LOCAL"
+    INAPPROPRIATE = "INAPPROPRIATE"
+    DUPLICATE = "DUPLICATE"
+    OTHER = "OTHER"
+
+
+NEIGHBORHOOD_CONTRIBUTION_REJECTION_MESSAGES: dict[NeighborhoodContributionRejectionCode, str] = {
+    NeighborhoodContributionRejectionCode.NOT_A_MEMORY: (
+        "Cela ressemblait davantage à un avis qu'à un souvenir personnel."
+    ),
+    NeighborhoodContributionRejectionCode.COMMERCIAL_CONTENT: (
+        "Les contenus promotionnels ne sont pas publiés ici."
+    ),
+    NeighborhoodContributionRejectionCode.TOO_SHORT: (
+        "Nous vous invitons à développer davantage votre souvenir."
+    ),
+    NeighborhoodContributionRejectionCode.NOT_LOCAL: (
+        "Ce souvenir ne semble pas lié à ce quartier."
+    ),
+    NeighborhoodContributionRejectionCode.INAPPROPRIATE: (
+        "Ce contenu ne respecte pas nos règles éditoriales."
+    ),
+    NeighborhoodContributionRejectionCode.DUPLICATE: (
+        "Un souvenir similaire a déjà été partagé récemment."
+    ),
+    NeighborhoodContributionRejectionCode.OTHER: (
+        "Ce souvenir n'a pas pu être publié."
+    ),
+}
+
+NEIGHBORHOOD_CONTRIBUTION_IDENTITY_API_TYPES: dict[str, NeighborhoodContributionIdentityType] = {
+    "pseudo": NeighborhoodContributionIdentityType.PSEUDO,
+    "anonymous": NeighborhoodContributionIdentityType.ANONYMOUS,
+    "verified": NeighborhoodContributionIdentityType.VERIFIED,
+}
+
+
 NEIGHBORHOOD_CONTRIBUTION_IDENTITY_LABEL_MAX_LENGTH = 120
 NEIGHBORHOOD_CONTRIBUTION_DISPLAY_IDENTITY_TYPE_MAX_LENGTH = 16
 NEIGHBORHOOD_CONTRIBUTION_REJECTION_CODE_MAX_LENGTH = 32
