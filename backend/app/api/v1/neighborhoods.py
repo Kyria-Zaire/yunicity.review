@@ -14,10 +14,11 @@ from app.core.neighborhood_constants import (
 from app.db.session import get_db
 from app.schemas.neighborhood import (
     NeighborhoodContextResponse,
+    NeighborhoodDetailResponse,
     NeighborhoodListResponse,
-    NeighborhoodResponse,
 )
 from app.services.neighborhood_context_service import NeighborhoodContextService
+from app.services.neighborhood_detail_service import NeighborhoodDetailService
 from app.services.neighborhood_service import NeighborhoodService
 
 router = APIRouter(prefix="/neighborhoods", tags=["neighborhoods"])
@@ -52,10 +53,10 @@ async def get_neighborhood_context(
     return await NeighborhoodContextService(session).get_context(city=city, slug=slug)
 
 
-@router.get("/{slug}", response_model=NeighborhoodResponse)
+@router.get("/{slug}", response_model=NeighborhoodDetailResponse)
 async def get_neighborhood(
     slug: str,
     session: Annotated[AsyncSession, Depends(get_db)],
     city: str = Query(min_length=1, description="Ville (ex. Reims)"),
-) -> NeighborhoodResponse:
-    return await NeighborhoodService(session).get_public_by_slug(city=city, slug=slug)
+) -> NeighborhoodDetailResponse:
+    return await NeighborhoodDetailService(session).get_detail(city=city, slug=slug)

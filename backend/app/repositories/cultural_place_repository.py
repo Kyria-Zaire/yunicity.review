@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from datetime import datetime
 from typing import Any
 
@@ -127,6 +128,36 @@ class CulturalPlaceRepository:
             stmt = stmt.where(CulturalPlace.is_active.is_(True))
         result = await self._session.execute(stmt)
         return int(result.scalar_one() or 0)
+
+    async def list_for_neighborhood(
+        self,
+        *,
+        neighborhood_id: uuid.UUID,
+        active_only: bool,
+        limit: int,
+    ) -> list[CulturalPlace]:
+        stmt = (
+            self._base_stmt(active_only=active_only)
+            .where(CulturalPlace.neighborhood_id == neighborhood_id)
+            .order_by(CulturalPlace.featured_priority.desc(), CulturalPlace.name.asc())
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().unique().all())
+
+    async def count_for_neighborhood(
+        self,
+        *,
+        neighborhood_id: uuid.UUID,
+        active_only: bool,
+    ) -> int:
+        stmt = select(func.count()).select_from(CulturalPlace).where(
+            CulturalPlace.neighborhood_id == neighborhood_id,
+        )
+        if active_only:
+            stmt = stmt.where(CulturalPlace.is_active.is_(True))
+        result = await self._session.execute(stmt)
+        return int(result.scalar_one())
 
     async def get_by_city_slug(
         self,

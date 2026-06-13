@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -66,6 +66,49 @@ class LocalVideoRepository:
 
         result = await self._session.execute(stmt)
         return list(result.scalars().unique().all())
+
+    async def list_published_for_neighborhood(
+        self,
+        *,
+        neighborhood_id: uuid.UUID,
+        limit: int,
+    ) -> list[LocalVideo]:
+        stmt = (
+            select(LocalVideo)
+            .join(User, LocalVideo.author_user_id == User.id)
+            .where(
+                LocalVideo.neighborhood_id == neighborhood_id,
+                LocalVideo.status == LocalVideoStatus.PUBLISHED.value,
+                LocalVideo.published_at.is_not(None),
+                User.is_active.is_(True),
+            )
+            .options(
+                selectinload(LocalVideo.author).selectinload(User.profile),
+                selectinload(LocalVideo.neighborhood),
+            )
+            .order_by(
+                LocalVideo.published_at.desc(),
+                LocalVideo.created_at.desc(),
+                LocalVideo.id.desc(),
+            )
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().unique().all())
+
+    async def count_published_for_neighborhood(self, neighborhood_id: uuid.UUID) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(LocalVideo)
+            .join(User, LocalVideo.author_user_id == User.id)
+            .where(
+                LocalVideo.neighborhood_id == neighborhood_id,
+                LocalVideo.status == LocalVideoStatus.PUBLISHED.value,
+                LocalVideo.published_at.is_not(None),
+                User.is_active.is_(True),
+            )
+        )
+        return int((await self._session.execute(stmt)).scalar_one())
 
     async def get_published_by_id(self, video_id: uuid.UUID) -> LocalVideo | None:
         result = await self._session.execute(

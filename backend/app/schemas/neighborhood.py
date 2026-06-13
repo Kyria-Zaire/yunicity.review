@@ -158,3 +158,105 @@ class NeighborhoodListParams(BaseModel):
         ge=1,
         le=NEIGHBORHOOD_LIST_PAGE_SIZE_MAX,
     )
+
+
+class NeighborhoodDetailHero(BaseModel):
+    id: uuid.UUID
+    slug: str
+    display_name: str
+    official_label: str
+    aliases: list[NeighborhoodAliasItem] = Field(default_factory=list)
+    moods: list[str] = Field(default_factory=list)
+    featured_quote: str | None = None
+    cover_image_url: str | None = None
+    hero_image_storage_key: str | None = None
+
+
+class NeighborhoodDetailHistory(BaseModel):
+    long_story: str | None = None
+    featured_quote: str | None = None
+
+
+class NeighborhoodDetailVideoAuthor(BaseModel):
+    id: uuid.UUID
+    username: str | None = None
+    full_name: str
+    avatar_url: str | None = None
+
+
+class NeighborhoodDetailVideoItem(BaseModel):
+    id: uuid.UUID
+    title: str | None = None
+    thumbnail_url: str
+    duration_seconds: float
+    neighborhood_slug: str
+    published_at: datetime | None = None
+    video_type: str
+    author: NeighborhoodDetailVideoAuthor
+
+
+class NeighborhoodDetailPlaceItem(BaseModel):
+    id: uuid.UUID
+    slug: str
+    name: str
+    category: str
+    image_url: str | None = None
+    is_partner: bool = False
+
+
+class NeighborhoodDetailEventItem(BaseModel):
+    id: uuid.UUID
+    title: str
+    starts_at: datetime
+    location_name: str
+    cover_image_url: str | None = None
+
+
+class NeighborhoodDetailPassportOfferItem(BaseModel):
+    id: uuid.UUID
+    title: str
+    organization_name: str
+
+
+class NeighborhoodDetailContributionItem(BaseModel):
+    id: uuid.UUID
+    title: str | None = None
+    body: str
+    created_at: datetime
+
+
+class NeighborhoodDetailTribeItem(BaseModel):
+    id: uuid.UUID
+    slug: str
+    name: str
+
+
+class NeighborhoodDetailCreatorItem(BaseModel):
+    id: uuid.UUID
+    username: str | None = None
+    full_name: str
+    avatar_url: str | None = None
+
+
+class NeighborhoodDetailStats(BaseModel):
+    places_count: int
+    events_count: int
+    videos_count: int
+    tribes_count: int
+    creators_count: int
+    contributions_count: int
+
+
+class NeighborhoodDetailResponse(NeighborhoodResponse):
+    """Quartier vivant — superset V1 + blocs structurés (FEATURE-QUARTIERS-V2 / Q2-S1-03)."""
+
+    hero: NeighborhoodDetailHero | None = None
+    history: NeighborhoodDetailHistory | None = None
+    videos: list[NeighborhoodDetailVideoItem] = Field(default_factory=list)
+    places: list[NeighborhoodDetailPlaceItem] = Field(default_factory=list)
+    events: list[NeighborhoodDetailEventItem] = Field(default_factory=list)
+    tribes: list[NeighborhoodDetailTribeItem] = Field(default_factory=list)
+    creators: list[NeighborhoodDetailCreatorItem] = Field(default_factory=list)
+    passport_offers: list[NeighborhoodDetailPassportOfferItem] = Field(default_factory=list)
+    contributions: list[NeighborhoodDetailContributionItem] = Field(default_factory=list)
+    stats: NeighborhoodDetailStats | None = None
