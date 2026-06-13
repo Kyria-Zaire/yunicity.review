@@ -1,6 +1,6 @@
 import type {
-  Neighborhood,
   NeighborhoodContextResponse,
+  NeighborhoodDetail,
   NeighborhoodListResponse,
 } from "@yunicity/types";
 
@@ -28,9 +28,9 @@ export class NeighborhoodsApi extends ApiClientBase {
     return this.getJson<NeighborhoodListResponse>(`/neighborhoods?${search.toString()}`);
   }
 
-  getNeighborhood(slug: string, city: string): Promise<Neighborhood> {
+  getNeighborhood(slug: string, city: string): Promise<NeighborhoodDetail> {
     const qs = new URLSearchParams({ city });
-    return this.getJson<Neighborhood>(
+    return this.getJson<NeighborhoodDetail>(
       `/neighborhoods/${encodeURIComponent(slug)}?${qs.toString()}`,
     );
   }

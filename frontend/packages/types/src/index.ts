@@ -472,13 +472,27 @@ export type {
 
 export type {
   Neighborhood,
+  NeighborhoodAliasItem,
   NeighborhoodContextEventItem,
   NeighborhoodContextOfferItem,
   NeighborhoodContextOrganizationItem,
   NeighborhoodContextPostItem,
   NeighborhoodContextResponse,
   NeighborhoodContextStats,
+  NeighborhoodDetail,
+  NeighborhoodDetailContributionItem,
+  NeighborhoodDetailCreatorItem,
+  NeighborhoodDetailEventItem,
+  NeighborhoodDetailHero,
+  NeighborhoodDetailHistory,
+  NeighborhoodDetailPassportOfferItem,
+  NeighborhoodDetailPlaceItem,
+  NeighborhoodDetailStats,
+  NeighborhoodDetailTribeItem,
+  NeighborhoodDetailVideoAuthor,
+  NeighborhoodDetailVideoItem,
   NeighborhoodListResponse,
+  NeighborhoodTimelineItem,
 } from "./neighborhood";
 
 export type {
