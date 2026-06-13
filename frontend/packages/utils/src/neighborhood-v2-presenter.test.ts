@@ -5,8 +5,10 @@ import type { NeighborhoodDetail, NeighborhoodTimelineItem } from "@yunicity/typ
 import {
   formatNeighborhoodV2AliasLine,
   formatNeighborhoodV2MoodLabels,
+  buildNeighborhoodV2SeoDescription,
   mapNeighborhoodDetailVideosToFeedItems,
   resolveNeighborhoodV2HistoryStory,
+  resolveNeighborhoodV2HistoryStoryForDisplay,
   sortNeighborhoodV2Timeline,
   truncateNeighborhoodV2Story,
 } from "./neighborhood-v2-presenter";
@@ -106,5 +108,27 @@ describe("neighborhood-v2-presenter", () => {
     expect(items[0]?.id).toBe("vid-1");
     expect(items[0]?.neighborhood_name).toBe("Boulingrin");
     expect(items[0]?.thumbnail_url).toBe("https://cdn.example/thumb.jpg");
+  });
+
+  it("keeps distinct history pull-quote when hero quote differs", () => {
+    const history = resolveNeighborhoodV2HistoryStoryForDisplay(BASE_DETAIL);
+    expect(history?.long_story).toContain("XXe siècle");
+    expect(history?.featured_quote).toBe("On venait le dimanche pour le marché.");
+  });
+
+  it("dedupes history pull-quote when identical to hero quote", () => {
+    const detail: NeighborhoodDetail = {
+      ...BASE_DETAIL,
+      hero: {
+        ...BASE_DETAIL.hero!,
+        featured_quote: "On venait le dimanche pour le marché.",
+      },
+    };
+    const history = resolveNeighborhoodV2HistoryStoryForDisplay(detail);
+    expect(history?.featured_quote).toBeNull();
+  });
+
+  it("builds SEO description from featured quote first", () => {
+    expect(buildNeighborhoodV2SeoDescription(BASE_DETAIL)).toBe("Les halles retrouvent leur rythme.");
   });
 });

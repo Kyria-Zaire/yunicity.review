@@ -5,7 +5,7 @@ import type {
   NeighborhoodTimelineItem,
 } from "@yunicity/types";
 
-import { resolveNeighborhoodHeroImage } from "./neighborhood-detail";
+import { neighborhoodHasMapCoordinates, resolveNeighborhoodHeroImage } from "./neighborhood-detail";
 
 export const NEIGHBORHOOD_V2_NOT_FOUND = "Ce quartier n'existe pas encore.";
 export const NEIGHBORHOOD_V2_BACK_TO_LIST = "Retour aux quartiers";
@@ -34,6 +34,12 @@ export const NEIGHBORHOOD_V2_CONTRIBUTIONS_TITLE = "Pourquoi les Rémois aiment"
 export const NEIGHBORHOOD_V2_SHARE_MEMORY_CTA = "Partager votre souvenir";
 export const NEIGHBORHOOD_V2_SHARE_MEMORY_SOON = "Bientôt";
 export const NEIGHBORHOOD_V2_STATS_TITLE = "Le quartier en chiffres";
+export const NEIGHBORHOOD_V2_PRACTICAL_TITLE = "Infos pratiques";
+export const NEIGHBORHOOD_V2_PRACTICAL_CITY = "Ville";
+export const NEIGHBORHOOD_V2_PRACTICAL_HOOD = "Quartier";
+export const NEIGHBORHOOD_V2_PRACTICAL_PLACES = "Lieux à découvrir";
+export const NEIGHBORHOOD_V2_PRACTICAL_EVENTS = "Moments à venir";
+export const NEIGHBORHOOD_V2_PRACTICAL_MAP_CTA = "Voir sur la carte";
 export const NEIGHBORHOOD_V2_EXPLORE_ANCHOR = "neighborhood-explore";
 
 export const NEIGHBORHOOD_V2_HISTORY_COLLAPSE_CHARS = 250;
@@ -112,6 +118,52 @@ export function resolveNeighborhoodV2HistoryStory(
     long_story: longStory,
     featured_quote: featuredQuote,
   };
+}
+
+/** Histoire affichée — évite de répéter la citation déjà visible dans le hero. */
+export function resolveNeighborhoodV2HistoryStoryForDisplay(
+  detail: NeighborhoodDetail,
+): NeighborhoodDetailHistory | null {
+  const base = resolveNeighborhoodV2HistoryStory(detail);
+  if (!base) {
+    return null;
+  }
+
+  const heroQuote = resolveNeighborhoodV2HeroQuote(detail);
+  const pullQuote =
+    base.featured_quote?.trim() && base.featured_quote.trim() !== heroQuote?.trim()
+      ? base.featured_quote
+      : null;
+
+  if (!base.long_story && !pullQuote) {
+    return null;
+  }
+
+  return {
+    long_story: base.long_story,
+    featured_quote: pullQuote,
+  };
+}
+
+export function buildNeighborhoodV2SeoDescription(detail: NeighborhoodDetail): string {
+  const candidates = [
+    resolveNeighborhoodV2HeroQuote(detail),
+    detail.history?.long_story ?? detail.long_story ?? null,
+    detail.short_description,
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate?.trim()) {
+      continue;
+    }
+    const normalized = candidate.replace(/\s+/g, " ").trim();
+    if (normalized.length <= 160) {
+      return normalized;
+    }
+    return `${normalized.slice(0, 159).trimEnd()}…`;
+  }
+
+  return `Découvrez le quartier ${detail.display_name} à ${detail.city} sur Yunicity.`;
 }
 
 export function truncateNeighborhoodV2Story(text: string, limit = NEIGHBORHOOD_V2_HISTORY_COLLAPSE_CHARS): string {
@@ -196,4 +248,23 @@ export function hasNeighborhoodV2Stats(detail: NeighborhoodDetail): boolean {
     return false;
   }
   return Object.values(stats).some((value) => value > 0);
+}
+
+export function hasNeighborhoodV2PracticalBlock(detail: NeighborhoodDetail): boolean {
+  const stats = detail.stats;
+  return (
+    Boolean(detail.city?.trim()) &&
+    Boolean(detail.display_name?.trim()) &&
+    (neighborhoodHasMapCoordinates(detail) ||
+      (stats?.places_count ?? 0) > 0 ||
+      (stats?.events_count ?? 0) > 0)
+  );
+}
+
+export function listNeighborhoodV2VisibleStatKeys(
+  stats: import("@yunicity/types").NeighborhoodDetailStats,
+): (keyof import("@yunicity/types").NeighborhoodDetailStats)[] {
+  return (Object.keys(NEIGHBORHOOD_V2_STAT_LABELS) as (keyof typeof NEIGHBORHOOD_V2_STAT_LABELS)[]).filter(
+    (key) => stats[key] > 0,
+  );
 }

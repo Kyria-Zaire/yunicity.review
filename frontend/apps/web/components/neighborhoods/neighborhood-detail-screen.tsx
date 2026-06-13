@@ -6,6 +6,7 @@ import { NeighborhoodV2ExploreSection } from "@/components/neighborhoods/v2/neig
 import { NeighborhoodV2Hero } from "@/components/neighborhoods/v2/neighborhood-v2-hero";
 import { NeighborhoodV2HistorySection } from "@/components/neighborhoods/v2/neighborhood-v2-history-section";
 import { NeighborhoodV2LocalLifeSection } from "@/components/neighborhoods/v2/neighborhood-v2-local-life-section";
+import { NeighborhoodV2PracticalSection } from "@/components/neighborhoods/v2/neighborhood-v2-practical-section";
 import { NeighborhoodV2Skeleton } from "@/components/neighborhoods/v2/neighborhood-v2-skeleton";
 import { NeighborhoodV2StatsSection } from "@/components/neighborhoods/v2/neighborhood-v2-stats-section";
 import { NeighborhoodV2TimelineSection } from "@/components/neighborhoods/v2/neighborhood-v2-timeline-section";
@@ -19,7 +20,7 @@ import {
   NEIGHBORHOOD_V2_SHARE,
   buildNeighborhoodDetailBreadcrumbs,
   neighborhoodHref,
-  resolveNeighborhoodV2HistoryStory,
+  resolveNeighborhoodV2HistoryStoryForDisplay,
 } from "@yunicity/utils";
 import Link from "next/link";
 import { useMemo } from "react";
@@ -34,7 +35,7 @@ export function NeighborhoodDetailScreen({ slug, city }: { slug: string; city: s
   );
 
   const history = useMemo(
-    () => (detail ? resolveNeighborhoodV2HistoryStory(detail) : null),
+    () => (detail ? resolveNeighborhoodV2HistoryStoryForDisplay(detail) : null),
     [detail],
   );
 
@@ -97,13 +98,13 @@ export function NeighborhoodDetailScreen({ slug, city }: { slug: string; city: s
 
   return (
     <NeighborhoodsAppShell>
-      <div className="mx-auto w-full max-w-[1100px] space-y-6 px-3 pb-12 sm:px-4 lg:px-6">
+      <div className="mx-auto w-full min-w-0 max-w-[1100px] space-y-6 overflow-x-hidden px-3 pb-12 sm:px-4 lg:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <NeighborhoodDetailBreadcrumbs items={breadcrumbs} />
           <button
             type="button"
             onClick={() => void shareNeighborhood()}
-            className="text-sm font-semibold text-yunicity-primary hover:underline"
+            className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-yunicity-primary hover:underline"
           >
             {NEIGHBORHOOD_V2_SHARE}
           </button>
@@ -116,6 +117,8 @@ export function NeighborhoodDetailScreen({ slug, city }: { slug: string; city: s
         <NeighborhoodV2TimelineSection timeline={timeline} />
 
         <NeighborhoodV2ExploreSection detail={detail} />
+
+        <NeighborhoodV2PracticalSection detail={detail} />
 
         <NeighborhoodV2LocalLifeSection detail={detail} />
 

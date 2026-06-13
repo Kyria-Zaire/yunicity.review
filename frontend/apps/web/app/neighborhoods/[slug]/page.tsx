@@ -1,9 +1,10 @@
 import { NeighborhoodDetailScreen } from "@/components/neighborhoods/neighborhood-detail-screen";
 import { JsonLd } from "@/components/seo/json-ld";
-import { buildPageMetadata, plainTextExcerpt, truncateForMeta } from "@/lib/seo/metadata";
+import { buildPageMetadata, truncateForMeta } from "@/lib/seo/metadata";
 import { fetchNeighborhoodForSeo } from "@/lib/seo/public-fetch";
 import { SEO_DEFAULT_CITY, resolveMediaUrl } from "@/lib/seo/site";
 import { buildNeighborhoodBreadcrumbJsonLd } from "@/lib/seo/structured-data";
+import { buildNeighborhoodV2SeoDescription, resolveNeighborhoodV2HeroImage } from "@yunicity/utils";
 import type { Metadata } from "next";
 
 type NeighborhoodDetailPageProps = {
@@ -31,12 +32,8 @@ export async function generateMetadata({
   }
 
   const title = `${neighborhood.display_name} — quartier à ${neighborhood.city}`;
-  const description = truncateForMeta(
-    plainTextExcerpt(neighborhood.short_description) ||
-      plainTextExcerpt(neighborhood.ambiance) ||
-      `Découvrez le quartier ${neighborhood.display_name} à ${neighborhood.city} sur Yunicity.`,
-  );
-  const image = resolveMediaUrl(neighborhood.cover_image_url);
+  const description = truncateForMeta(buildNeighborhoodV2SeoDescription(neighborhood));
+  const image = resolveMediaUrl(resolveNeighborhoodV2HeroImage(neighborhood));
 
   return buildPageMetadata({
     title,

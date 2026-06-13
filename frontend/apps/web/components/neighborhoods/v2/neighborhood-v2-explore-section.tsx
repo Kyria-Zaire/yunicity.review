@@ -28,6 +28,7 @@ export function NeighborhoodV2ExploreSection({ detail }: NeighborhoodV2ExploreSe
   }
 
   const displayName = detail.hero?.display_name ?? detail.display_name;
+  const passportHref = `/passport?city=${encodeURIComponent(detail.city)}`;
 
   return (
     <section
@@ -48,7 +49,10 @@ export function NeighborhoodV2ExploreSection({ detail }: NeighborhoodV2ExploreSe
           <ul className="grid gap-3 sm:grid-cols-2">
             {detail.places.map((place) => (
               <li key={place.id}>
-                <article className="flex h-full gap-3 rounded-2xl border border-neutral-100 bg-neutral-50/60 p-3">
+                <Link
+                  href={buildPublicPlaceHref(place.slug, detail.city)}
+                  className="group flex h-full min-h-11 gap-3 rounded-2xl border border-neutral-100 bg-neutral-50/60 p-3 transition hover:border-yunicity-primary/30 hover:bg-white"
+                >
                   <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-neutral-200">
                     {place.image_url ? (
                       <CulturalImage
@@ -68,17 +72,16 @@ export function NeighborhoodV2ExploreSection({ detail }: NeighborhoodV2ExploreSe
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col justify-between">
                     <div>
-                      <p className="line-clamp-2 text-sm font-bold text-neutral-900">{place.name}</p>
+                      <p className="line-clamp-2 text-sm font-bold text-neutral-900 group-hover:text-yunicity-primary">
+                        {place.name}
+                      </p>
                       <p className="mt-0.5 text-xs text-neutral-500">{place.category}</p>
                     </div>
-                    <Link
-                      href={buildPublicPlaceHref(place.slug, detail.city)}
-                      className="mt-2 text-xs font-semibold text-yunicity-primary hover:underline"
-                    >
+                    <span className="mt-2 text-xs font-semibold text-yunicity-primary group-hover:underline">
                       {NEIGHBORHOOD_V2_PLACE_CTA}
-                    </Link>
+                    </span>
                   </div>
-                </article>
+                </Link>
               </li>
             ))}
           </ul>
@@ -93,7 +96,10 @@ export function NeighborhoodV2ExploreSection({ detail }: NeighborhoodV2ExploreSe
           <ul className="grid gap-3 sm:grid-cols-2">
             {detail.events.map((event) => (
               <li key={event.id}>
-                <article className="flex h-full gap-3 rounded-2xl border border-neutral-100 bg-neutral-50/60 p-3">
+                <Link
+                  href={`/events/${encodeURIComponent(event.id)}`}
+                  className="group flex h-full min-h-11 gap-3 rounded-2xl border border-neutral-100 bg-neutral-50/60 p-3 transition hover:border-yunicity-primary/30 hover:bg-white"
+                >
                   <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-neutral-200">
                     {event.cover_image_url ? (
                       <CulturalImage
@@ -113,19 +119,18 @@ export function NeighborhoodV2ExploreSection({ detail }: NeighborhoodV2ExploreSe
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col justify-between">
                     <div>
-                      <p className="line-clamp-2 text-sm font-bold text-neutral-900">{event.title}</p>
+                      <p className="line-clamp-2 text-sm font-bold text-neutral-900 group-hover:text-yunicity-primary">
+                        {event.title}
+                      </p>
                       <p className="mt-0.5 text-xs text-neutral-600">
                         {formatEventDateRange(event.starts_at, null)} · {event.location_name}
                       </p>
                     </div>
-                    <Link
-                      href={`/events/${encodeURIComponent(event.id)}`}
-                      className="mt-2 text-xs font-semibold text-yunicity-primary hover:underline"
-                    >
+                    <span className="mt-2 text-xs font-semibold text-yunicity-primary group-hover:underline">
                       {NEIGHBORHOOD_V2_EVENT_CTA}
-                    </Link>
+                    </span>
                   </div>
-                </article>
+                </Link>
               </li>
             ))}
           </ul>
@@ -140,16 +145,18 @@ export function NeighborhoodV2ExploreSection({ detail }: NeighborhoodV2ExploreSe
           <ul className="grid gap-3 sm:grid-cols-2">
             {detail.passport_offers.map((offer) => (
               <li key={offer.id}>
-                <article className="flex h-full flex-col rounded-2xl border border-neutral-100 bg-neutral-50/60 p-4">
-                  <p className="line-clamp-2 text-sm font-bold text-neutral-900">{offer.title}</p>
+                <Link
+                  href={passportHref}
+                  className="group flex h-full min-h-11 flex-col rounded-2xl border border-neutral-100 bg-neutral-50/60 p-4 transition hover:border-yunicity-primary/30 hover:bg-white"
+                >
+                  <p className="line-clamp-2 text-sm font-bold text-neutral-900 group-hover:text-yunicity-primary">
+                    {offer.title}
+                  </p>
                   <p className="mt-1 text-xs text-neutral-600">{offer.organization_name}</p>
-                  <Link
-                    href="/passport"
-                    className="mt-auto pt-3 text-xs font-semibold text-yunicity-primary hover:underline"
-                  >
+                  <span className="mt-auto pt-3 text-xs font-semibold text-yunicity-primary group-hover:underline">
                     {NEIGHBORHOOD_V2_OFFER_CTA}
-                  </Link>
-                </article>
+                  </span>
+                </Link>
               </li>
             ))}
           </ul>

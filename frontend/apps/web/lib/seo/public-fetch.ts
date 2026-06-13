@@ -7,7 +7,7 @@ import type {
   CulturalPlaceListResponse,
   LocalEvent,
   LocalEventListResponse,
-  Neighborhood,
+  NeighborhoodDetail,
   NeighborhoodListResponse,
 } from "@yunicity/types";
 import { getWebApiBaseUrl } from "@yunicity/utils";
@@ -70,9 +70,9 @@ export async function fetchEventForSeo(eventId: string): Promise<LocalEvent | nu
 export async function fetchNeighborhoodForSeo(
   slug: string,
   city = SEO_DEFAULT_CITY,
-): Promise<Neighborhood | null> {
+): Promise<NeighborhoodDetail | null> {
   const search = new URLSearchParams({ city });
-  return fetchPublicJson<Neighborhood>(
+  return fetchPublicJson<NeighborhoodDetail>(
     apiUrl(`/neighborhoods/${encodeURIComponent(slug)}?${search}`),
   );
 }

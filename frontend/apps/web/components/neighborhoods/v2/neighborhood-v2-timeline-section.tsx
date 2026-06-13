@@ -18,7 +18,7 @@ export function NeighborhoodV2TimelineSection({ timeline }: NeighborhoodV2Timeli
   return (
     <section className="rounded-2xl border border-neutral-200/90 bg-white px-5 py-6 shadow-sm sm:px-6">
       <h2 className="text-lg font-bold tracking-tight text-neutral-900">{NEIGHBORHOOD_V2_TIMELINE_TITLE}</h2>
-      <ol className="relative mt-6 space-y-6 border-l-2 border-yunicity-primary/30 pl-6">
+      <ol className="relative mt-6 space-y-6 border-l-2 border-yunicity-primary/30 pl-5 sm:pl-6">
         {items.map((item) => (
           <li key={item.id} className="relative">
             <span
