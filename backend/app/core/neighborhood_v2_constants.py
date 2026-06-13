@@ -42,6 +42,42 @@ class NeighborhoodContributionStatus(StrEnum):
     REJECTED = "rejected"
 
 
+class NeighborhoodContributionIdentityType(StrEnum):
+    """Public identity modes at submission time (API uppercase)."""
+
+    PSEUDO = "PSEUDO"
+    ANONYMOUS = "ANONYMOUS"
+    VERIFIED = "VERIFIED"
+
+
+class NeighborhoodContributionAnonymousGender(StrEnum):
+    REMOIS = "remois"
+    REMOISE = "remoise"
+
+
+NEIGHBORHOOD_CONTRIBUTION_IDENTITY_LABEL_MAX_LENGTH = 120
+NEIGHBORHOOD_CONTRIBUTION_DISPLAY_IDENTITY_TYPE_MAX_LENGTH = 16
+NEIGHBORHOOD_CONTRIBUTION_REJECTION_CODE_MAX_LENGTH = 32
+NEIGHBORHOOD_CONTRIBUTION_REJECTION_NOTE_MAX_LENGTH = 500
+NEIGHBORHOOD_CONTRIBUTION_APPROVED_QUOTA_DAYS = 30
+
+NEIGHBORHOOD_CONTRIBUTION_IDENTITY_STORAGE: dict[NeighborhoodContributionIdentityType, str] = {
+    NeighborhoodContributionIdentityType.PSEUDO: "pseudo",
+    NeighborhoodContributionIdentityType.ANONYMOUS: "anonymous",
+    NeighborhoodContributionIdentityType.VERIFIED: "verified",
+}
+
+NEIGHBORHOOD_CONTRIBUTION_ANONYMOUS_LABELS: dict[NeighborhoodContributionAnonymousGender, str] = {
+    NeighborhoodContributionAnonymousGender.REMOIS: "Un Rémois",
+    NeighborhoodContributionAnonymousGender.REMOISE: "Une Rémoise",
+}
+
+NEIGHBORHOOD_CONTRIBUTION_VERIFIED_SUFFIX = "Citoyen vérifié"
+NEIGHBORHOOD_CONTRIBUTION_SUBMIT_SUCCESS_MESSAGE = (
+    "Merci. Votre souvenir sera relu avant publication."
+)
+
+
 NEIGHBORHOOD_V2_MOOD_LABELS: dict[str, str] = {
     NeighborhoodMood.STUDENT.value: "Étudiant",
     NeighborhoodMood.FAMILY.value: "Familial",

@@ -4,20 +4,25 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.dependencies import require_authenticated_user
 from app.core.neighborhood_constants import (
     NEIGHBORHOOD_LIST_PAGE_SIZE_DEFAULT,
     NEIGHBORHOOD_LIST_PAGE_SIZE_MAX,
 )
 from app.db.session import get_db
+from app.models.user import User
 from app.schemas.neighborhood import (
     NeighborhoodContextResponse,
+    NeighborhoodContributionSubmitRequest,
+    NeighborhoodContributionSubmitResponse,
     NeighborhoodDetailResponse,
     NeighborhoodListResponse,
 )
 from app.services.neighborhood_context_service import NeighborhoodContextService
+from app.services.neighborhood_contribution_service import NeighborhoodContributionService
 from app.services.neighborhood_detail_service import NeighborhoodDetailService
 from app.services.neighborhood_service import NeighborhoodService
 
@@ -60,3 +65,23 @@ async def get_neighborhood(
     city: str = Query(min_length=1, description="Ville (ex. Reims)"),
 ) -> NeighborhoodDetailResponse:
     return await NeighborhoodDetailService(session).get_detail(city=city, slug=slug)
+
+
+@router.post(
+    "/{slug}/contributions",
+    response_model=NeighborhoodContributionSubmitResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def submit_neighborhood_contribution(
+    slug: str,
+    payload: NeighborhoodContributionSubmitRequest,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    city: str = Query(min_length=1, description="Ville (ex. Reims)"),
+) -> NeighborhoodContributionSubmitResponse:
+    return await NeighborhoodContributionService(session).submit_contribution(
+        user=current_user,
+        city=city,
+        slug=slug,
+        payload=payload,
+    )

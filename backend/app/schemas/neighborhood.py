@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.core.neighborhood_constants import (
     NEIGHBORHOOD_ACCENT_COLOR_MAX_LENGTH,
@@ -17,6 +17,12 @@ from app.core.neighborhood_constants import (
     NEIGHBORHOOD_LIST_PAGE_SIZE_MAX,
     NEIGHBORHOOD_SHORT_DESCRIPTION_MAX_LENGTH,
     NEIGHBORHOOD_SLUG_MAX_LENGTH,
+)
+from app.core.neighborhood_v2_constants import (
+    NEIGHBORHOOD_CONTRIBUTION_BODY_MAX_LENGTH,
+    NEIGHBORHOOD_CONTRIBUTION_TITLE_MAX_LENGTH,
+    NeighborhoodContributionAnonymousGender,
+    NeighborhoodContributionIdentityType,
 )
 
 
@@ -260,3 +266,30 @@ class NeighborhoodDetailResponse(NeighborhoodResponse):
     passport_offers: list[NeighborhoodDetailPassportOfferItem] = Field(default_factory=list)
     contributions: list[NeighborhoodDetailContributionItem] = Field(default_factory=list)
     stats: NeighborhoodDetailStats | None = None
+
+
+class NeighborhoodContributionSubmitRequest(BaseModel):
+    identity_type: NeighborhoodContributionIdentityType
+    title: str | None = Field(default=None, max_length=NEIGHBORHOOD_CONTRIBUTION_TITLE_MAX_LENGTH)
+    body: str = Field(max_length=NEIGHBORHOOD_CONTRIBUTION_BODY_MAX_LENGTH)
+    anonymous_gender: NeighborhoodContributionAnonymousGender | None = None
+
+    @field_validator("body")
+    @classmethod
+    def strip_body(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("title")
+    @classmethod
+    def strip_title(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
+
+
+class NeighborhoodContributionSubmitResponse(BaseModel):
+    id: uuid.UUID
+    status: str
+    submitted_at: datetime
+    message: str

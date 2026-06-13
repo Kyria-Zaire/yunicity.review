@@ -16,6 +16,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     Uuid,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -126,6 +127,20 @@ class NeighborhoodContribution(TimestampMixin, Base):
     __table_args__ = (
         Index("ix_neighborhood_contributions_hood_status", "neighborhood_id", "status"),
         Index("ix_neighborhood_contributions_status_created", "status", "created_at"),
+        Index("ix_neighborhood_contributions_author_status", "author_user_id", "status"),
+        Index(
+            "ix_neighborhood_contributions_author_hood_status",
+            "author_user_id",
+            "neighborhood_id",
+            "status",
+        ),
+        Index(
+            "ix_neighborhood_contributions_hood_approved_at",
+            "neighborhood_id",
+            "approved_at",
+            postgresql_ops={"approved_at": "DESC"},
+            postgresql_where=text("status = 'approved'"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
@@ -142,12 +157,23 @@ class NeighborhoodContribution(TimestampMixin, Base):
     body: Mapped[str] = mapped_column(Text, nullable=False)
     title: Mapped[str | None] = mapped_column(String(200), nullable=True)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
+    display_identity_type: Mapped[str] = mapped_column(String(16), nullable=False, default="pseudo")
+    display_identity_label: Mapped[str] = mapped_column(String(120), nullable=False, default="")
+    passport_verified_snapshot: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    submitted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default="now()"
+    )
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     reviewed_by: Mapped[uuid.UUID | None] = mapped_column(
         Uuid,
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    rejection_reason_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    rejection_note: Mapped[str | None] = mapped_column(String(500), nullable=True)
     rejection_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     neighborhood: Mapped[Neighborhood] = relationship(
