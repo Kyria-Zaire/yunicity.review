@@ -1,6 +1,7 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
+import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,11 +14,15 @@ from app.core.logging import configure_logging
 from app.db.session import dispose_db, init_db
 from app.integrations.redis import close_redis, init_redis
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     configure_logging(settings)
+    if settings.app_env == "prod" and settings.email_provider == "console":
+        logger.warning("Production email provider is console; real emails are disabled.")
     init_db(settings)
     await init_redis(settings)
     yield

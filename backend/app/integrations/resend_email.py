@@ -47,6 +47,13 @@ async def send_password_reset_email(
     reset_url: str,
     settings: Settings,
 ) -> None:
+    if settings.email_provider == "console":
+        logger.warning(
+            "password_reset_email_console_only",
+            extra={"recipient": _mask_email(to), "reset_url": reset_url},
+        )
+        return
+
     if settings.email_provider != "resend":
         return
 

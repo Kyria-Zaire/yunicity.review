@@ -51,14 +51,28 @@ def test_prod_requires_redis_url() -> None:
         _prod_settings(REDIS_URL=None)
 
 
-def test_prod_requires_resend_api_key() -> None:
+def test_prod_requires_resend_api_key_when_provider_is_resend() -> None:
     with pytest.raises(ValidationError, match="RESEND_API_KEY"):
         _prod_settings(RESEND_API_KEY="")
 
 
-def test_prod_requires_email_from() -> None:
+def test_prod_requires_email_from_when_provider_is_resend() -> None:
     with pytest.raises(ValidationError, match="EMAIL_FROM"):
         _prod_settings(EMAIL_FROM="")
+
+
+def test_prod_accepts_console_email_provider() -> None:
+    settings = _prod_settings(
+        EMAIL_PROVIDER="console",
+        RESEND_API_KEY=None,
+        EMAIL_FROM=None,
+    )
+    assert settings.email_provider == "console"
+
+
+def test_prod_rejects_none_email_provider() -> None:
+    with pytest.raises(ValidationError, match="EMAIL_PROVIDER must be 'resend' or 'console'"):
+        _prod_settings(EMAIL_PROVIDER="none")
 
 
 def test_preprod_requires_refresh_token_pepper() -> None:
