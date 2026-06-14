@@ -4,6 +4,8 @@ from typing import Literal
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.db.database_url import to_asyncpg_url
+
 AppEnv = Literal["dev", "recette", "preprod", "prod"]
 CookieSameSite = Literal["lax", "strict", "none"]
 EmailProvider = Literal["none", "resend", "console"]
@@ -35,6 +37,15 @@ class Settings(BaseSettings):
     redis_url: str | None = Field(default=None, alias="REDIS_URL")
     cors_origins: list[str] | str = Field(default="", alias="CORS_ORIGINS")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_database_url(cls, value: object) -> str | None:
+        if value is None:
+            return None
+        if isinstance(value, str) and not value.strip():
+            return None
+        return to_asyncpg_url(str(value).strip())
 
     # Weather provider (WEB-SEARCH-02A)
     openweather_api_key: str | None = Field(default=None, alias="OPENWEATHER_API_KEY")
