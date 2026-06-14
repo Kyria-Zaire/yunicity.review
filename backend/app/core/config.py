@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     api_v1_prefix: str = Field(default="/api/v1", alias="API_V1_PREFIX")
     database_url: str | None = Field(default=None, alias="DATABASE_URL")
     redis_url: str | None = Field(default=None, alias="REDIS_URL")
-    cors_origins: list[str] = Field(default_factory=list, alias="CORS_ORIGINS")
+    cors_origins: list[str] | str = Field(default="", alias="CORS_ORIGINS")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
 
     # Weather provider (WEB-SEARCH-02A)
@@ -133,23 +133,46 @@ class Settings(BaseSettings):
         alias="YUNICITY_BOOTSTRAP_ADMIN_FULL_NAME",
     )
 
+    @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: object) -> list[str]:
         if value is None or value == "":
             return []
         if isinstance(value, list):
-            return value
+            return [str(item).strip().rstrip("/") for item in value if str(item).strip()]
         if isinstance(value, str):
             stripped = value.strip()
+            if not stripped:
+                return []
             if stripped.startswith("["):
                 import json
 
                 parsed = json.loads(stripped)
                 if not isinstance(parsed, list):
                     raise ValueError("CORS_ORIGINS must be a list")
-                return [str(item) for item in parsed]
-            return [part.strip() for part in value.split(",") if part.strip()]
+                return [str(item).strip().rstrip("/") for item in parsed if str(item).strip()]
+            return [part.strip().rstrip("/") for part in stripped.split(",") if part.strip()]
         raise ValueError("Invalid CORS_ORIGINS")
+
+    @property
+    def resolved_cors_origins(self) -> list[str]:
+        """Origins effectives : env + WEB_FRONTEND_URL + paire apex/www yunicity.city."""
+        seen: set[str] = set()
+        origins: list[str] = []
+        for raw in [*self.cors_origins, self.web_frontend_url.rstrip("/")]:
+            if not raw or raw in seen:
+                continue
+            seen.add(raw)
+            origins.append(raw)
+        apex = "https://yunicity.city"
+        www = "https://www.yunicity.city"
+        if apex in seen and www not in seen:
+            seen.add(www)
+            origins.append(www)
+        if www in seen and apex not in seen:
+            seen.add(apex)
+            origins.append(apex)
+        return origins
 
     @field_validator("jwt_secret_key", mode="before")
     @classmethod

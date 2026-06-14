@@ -37,10 +37,11 @@ def create_app() -> FastAPI:
         redoc_url=None if hide_api_docs else "/redoc",
         openapi_url=None if hide_api_docs else "/openapi.json",
     )
-    if settings.cors_origins:
+    cors_origins = settings.resolved_cors_origins
+    if cors_origins:
         app.add_middleware(
             CORSMiddleware,
-            allow_origins=settings.cors_origins,
+            allow_origins=cors_origins,
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
