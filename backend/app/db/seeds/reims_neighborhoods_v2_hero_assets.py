@@ -7,10 +7,11 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import Settings
 from app.core.neighborhood_hero_assets import (
     REIMS_NEIGHBORHOOD_HERO_SLUGS,
-    neighborhood_dev_public_hero_url,
     neighborhood_hero_storage_key,
+    neighborhood_seed_cover_url,
 )
 from app.models.neighborhood import Neighborhood
 
@@ -19,8 +20,12 @@ logger = logging.getLogger(__name__)
 REIMS_CITY = "Reims"
 
 
-async def seed_reims_neighborhoods_v2_hero_assets(session: AsyncSession) -> None:
-    """Assign Yunicity-owned hero keys and DEV public cover URLs to all 12 Reims hoods."""
+async def seed_reims_neighborhoods_v2_hero_assets(
+    session: AsyncSession,
+    *,
+    settings: Settings | None = None,
+) -> int:
+    """Assign Yunicity-owned hero keys and public cover URLs to all 12 Reims hoods."""
     applied = 0
     for slug in REIMS_NEIGHBORHOOD_HERO_SLUGS:
         hood = (
@@ -36,8 +41,18 @@ async def seed_reims_neighborhoods_v2_hero_assets(session: AsyncSession) -> None
             continue
 
         hood.hero_image_storage_key = neighborhood_hero_storage_key(slug)
-        hood.cover_image_url = neighborhood_dev_public_hero_url(slug)
+        if settings is not None:
+            hood.cover_image_url = neighborhood_seed_cover_url(
+                slug,
+                app_env=settings.app_env,
+                web_frontend_url=settings.web_frontend_url,
+            )
+        else:
+            from app.core.neighborhood_hero_assets import neighborhood_dev_public_hero_url
+
+            hood.cover_image_url = neighborhood_dev_public_hero_url(slug)
         applied += 1
 
     await session.flush()
     logger.info("reims_neighborhoods_v2_hero_assets_seed_completed count=%s", applied)
+    return applied

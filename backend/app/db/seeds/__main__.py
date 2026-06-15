@@ -18,7 +18,7 @@ from app.db.seeds.passport_tiers import seed_passport_tiers
 from app.db.seeds.reims_activation_waves import seed_reims_activation_waves
 from app.db.seeds.reims_cultural_places import seed_reims_cultural_places
 from app.db.seeds.reims_demo_content import seed_reims_demo_content
-from app.db.seeds.reims_neighborhoods import seed_reims_neighborhoods
+from app.db.seeds.reims_neighborhoods_catalog import seed_reims_neighborhoods_catalog
 from app.db.seeds.reims_neighborhoods_v2_editorial import seed_reims_neighborhoods_v2_editorial
 from app.db.seeds.reims_neighborhoods_v2_hero_assets import seed_reims_neighborhoods_v2_hero_assets
 from app.db.seeds.reims_partner_events import seed_reims_partner_events
@@ -55,12 +55,19 @@ def _assert_pilot_seed_allowed(settings: Settings) -> None:
         raise SystemExit(2)
 
 
-async def run(*, demo: bool, pilot: bool) -> None:
+async def run(*, demo: bool, pilot: bool, neighborhoods: bool) -> None:
     settings = get_settings()
     if demo:
         _assert_demo_seed_allowed(settings)
     if pilot:
         _assert_pilot_seed_allowed(settings)
+    if neighborhoods and (demo or pilot):
+        print(
+            "Refusing --neighborhoods with --demo or --pilot: "
+            "use --neighborhoods alone for production catalog seeding.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
     if not settings.database_url:
         print("DATABASE_URL is required to run seeds", file=sys.stderr)
         raise SystemExit(1)
@@ -74,27 +81,37 @@ async def run(*, demo: bool, pilot: bool) -> None:
     )
     try:
         async with session_factory() as session:
-            await seed_auth_rbac(session)
-            await seed_bootstrap_admin(session, settings)
-            await seed_passport_tiers(session)
-            await seed_passport_badges(session)
-            await seed_passport_challenges(session)
-            await seed_stamp_definitions(session)
-            await seed_reims_neighborhoods(session)
-            await seed_reims_neighborhoods_v2_editorial(session)
-            await seed_reims_neighborhoods_v2_hero_assets(session)
-            await seed_reims_cultural_places(session)
-            await seed_reims_signed_partners(session)
-            await seed_reims_activation_waves(session)
-            await seed_reims_partner_offers(session)
-            await seed_reims_partner_events(session)
-            if pilot:
-                await seed_reims_pilot_partner_memberships(session)
-            if demo:
-                await seed_reims_demo_content(session)
-                await seed_reims_tribes(session)
+            if neighborhoods:
+                await seed_reims_neighborhoods_catalog(session, settings)
+            else:
+                from app.db.seeds.reims_neighborhoods import seed_reims_neighborhoods
+
+                await seed_auth_rbac(session)
+                await seed_bootstrap_admin(session, settings)
+                await seed_passport_tiers(session)
+                await seed_passport_badges(session)
+                await seed_passport_challenges(session)
+                await seed_stamp_definitions(session)
+                await seed_reims_neighborhoods(session, settings=settings)
+                await seed_reims_neighborhoods_v2_editorial(session)
+                await seed_reims_neighborhoods_v2_hero_assets(session, settings=settings)
+                await seed_reims_cultural_places(session)
+                await seed_reims_signed_partners(session)
+                await seed_reims_activation_waves(session)
+                await seed_reims_partner_offers(session)
+                await seed_reims_partner_events(session)
+                if pilot:
+                    await seed_reims_pilot_partner_memberships(session)
+                if demo:
+                    await seed_reims_demo_content(session)
+                    await seed_reims_tribes(session)
             await session.commit()
-        logger.info("Seed completed (demo=%s, pilot=%s)", demo, pilot)
+        logger.info(
+            "Seed completed (demo=%s, pilot=%s, neighborhoods=%s)",
+            demo,
+            pilot,
+            neighborhoods,
+        )
     finally:
         await engine.dispose()
 
@@ -111,9 +128,17 @@ def main() -> None:
         action="store_true",
         help="Reims pilot partner OWNER accounts (dev/recette only — blocked in preprod/prod)",
     )
+    parser.add_argument(
+        "--neighborhoods",
+        action="store_true",
+        help=(
+            "Reims official neighborhood catalog only (12 quartiers, idempotent, "
+            "safe for prod/preprod — no demo partners or fake content)"
+        ),
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
-    asyncio.run(run(demo=args.demo, pilot=args.pilot))
+    asyncio.run(run(demo=args.demo, pilot=args.pilot, neighborhoods=args.neighborhoods))
 
 
 if __name__ == "__main__":

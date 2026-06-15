@@ -9,11 +9,13 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import Settings
 from app.core.neighborhood_constants import NeighborhoodAmbiance
 from app.core.neighborhood_hero_assets import (
-    neighborhood_dev_public_hero_url,
     neighborhood_hero_storage_key,
+    neighborhood_seed_cover_url,
 )
+from app.core.neighborhood_v2_constants import NEIGHBORHOOD_OFFICIAL_LABEL_DEFAULT
 from app.models.neighborhood import Neighborhood
 
 logger = logging.getLogger(__name__)
@@ -195,7 +197,12 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
 )
 
 
-async def seed_reims_neighborhoods(session: AsyncSession) -> None:
+async def seed_reims_neighborhoods(
+    session: AsyncSession,
+    *,
+    settings: Settings | None = None,
+) -> int:
+    created = 0
     for row in REIMS_NEIGHBORHOOD_SEED:
         slug = str(row["slug"])
         result = await session.execute(
@@ -210,6 +217,18 @@ async def seed_reims_neighborhoods(session: AsyncSession) -> None:
             continue
         hood_id = row["id"]
         assert isinstance(hood_id, uuid.UUID)
+        cover_url = row.get("cover_image_url")
+        if cover_url is None:
+            if settings is not None:
+                cover_url = neighborhood_seed_cover_url(
+                    slug,
+                    app_env=settings.app_env,
+                    web_frontend_url=settings.web_frontend_url,
+                )
+            else:
+                from app.core.neighborhood_hero_assets import neighborhood_dev_public_hero_url
+
+                cover_url = neighborhood_dev_public_hero_url(slug)
         session.add(
             Neighborhood(
                 id=hood_id,
@@ -218,9 +237,7 @@ async def seed_reims_neighborhoods(session: AsyncSession) -> None:
                 display_name=str(row["display_name"]),
                 short_description=str(row["short_description"]),
                 ambiance=str(row["ambiance"]) if row.get("ambiance") else None,
-                cover_image_url=(
-                    row.get("cover_image_url") or neighborhood_dev_public_hero_url(slug)
-                ),
+                cover_image_url=cover_url,
                 hero_image_storage_key=row.get("hero_image_storage_key")
                 or neighborhood_hero_storage_key(slug),
                 accent_color=row.get("accent_color"),
@@ -229,7 +246,13 @@ async def seed_reims_neighborhoods(session: AsyncSession) -> None:
                 radius_meters=row.get("radius_meters"),
                 is_featured=bool(row.get("is_featured", False)),
                 is_active=True,
+                official_label=NEIGHBORHOOD_OFFICIAL_LABEL_DEFAULT,
             )
         )
+        created += 1
     await session.flush()
-    logger.info("reims_neighborhoods_seed_completed", extra={"city": REIMS_CITY})
+    logger.info(
+        "reims_neighborhoods_seed_completed",
+        extra={"city": REIMS_CITY, "created": created},
+    )
+    return created

@@ -55,6 +55,23 @@ def neighborhood_dev_public_hero_url(slug: str) -> str:
     return f"{DEV_PUBLIC_NEIGHBORHOOD_MEDIA_PREFIX}/{normalized}/{NEIGHBORHOOD_HERO_FILENAME}"
 
 
+def neighborhood_seed_cover_url(
+    slug: str,
+    *,
+    app_env: str,
+    web_frontend_url: str,
+) -> str:
+    """Cover URL written by seeds — DEV relative path, prod absolute via web app."""
+    relative = neighborhood_dev_public_hero_url(slug)
+    if app_env == "dev":
+        return relative
+    if app_env in ("prod", "preprod"):
+        return f"{web_frontend_url.rstrip('/')}{relative}"
+    if app_env == "recette":
+        return neighborhood_cdn_hero_url(slug)
+    return relative
+
+
 def neighborhood_cdn_hero_url(slug: str) -> str:
     return f"{YUNICITY_CDN_BASE_URL}/{neighborhood_hero_storage_key(slug)}"
 
