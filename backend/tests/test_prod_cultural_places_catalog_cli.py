@@ -21,6 +21,7 @@ def test_cultural_places_cli_refuses_demo_combo(monkeypatch: pytest.MonkeyPatch)
                 neighborhoods=False,
                 categories=False,
                 cultural_places=True,
+                partners=False,
             )
         )
     assert exc.value.code == 2
@@ -39,6 +40,7 @@ def test_cultural_places_cli_refuses_categories_combo(monkeypatch: pytest.Monkey
                 neighborhoods=False,
                 categories=True,
                 cultural_places=True,
+                partners=False,
             )
         )
     assert exc.value.code == 2

@@ -131,13 +131,14 @@ def _build_offer(entry: dict[str, Any], *, organization_id: uuid.UUID) -> Partne
 
 async def _upsert_offer(
     session: AsyncSession, entry: dict[str, Any], organization_id: uuid.UUID
-) -> None:
+) -> bool:
+    """Return True when a new offer row is inserted."""
     existing = await session.get(PartnerOffer, entry["id"])
     built = _build_offer(entry, organization_id=organization_id)
     if existing is not None:
         for field in _SYNC_FIELDS:
             setattr(existing, field, getattr(built, field))
-        return
+        return False
     by_slug = await session.execute(
         select(PartnerOffer).where(PartnerOffer.slug == entry["slug"])
     )
@@ -145,11 +146,15 @@ async def _upsert_offer(
     if found is not None:
         for field in _SYNC_FIELDS:
             setattr(found, field, getattr(built, field))
-        return
+        return False
     session.add(built)
+    return True
 
 
-async def seed_reims_partner_offers(session: AsyncSession) -> None:
+async def seed_reims_partner_offers(session: AsyncSession) -> tuple[int, int]:
+    offers_created = 0
+    offers_updated = 0
+
     for entry in REIMS_PARTNER_OFFERS_SEED:
         organization_id = await _resolve_organization_id(session, entry)
         if organization_id is None:
@@ -158,6 +163,19 @@ async def seed_reims_partner_offers(session: AsyncSession) -> None:
                 entry["org_slug"],
             )
             continue
-        await _upsert_offer(session, entry, organization_id)
+        created = await _upsert_offer(session, entry, organization_id)
+        if created:
+            offers_created += 1
+        else:
+            offers_updated += 1
 
-    logger.info("reims_partner_offers_seed_completed count=%s", len(REIMS_PARTNER_OFFERS_SEED))
+    await session.flush()
+    logger.info(
+        "reims_partner_offers_seed_completed",
+        extra={
+            "offers_created": offers_created,
+            "offers_updated": offers_updated,
+            "offers_total": len(REIMS_PARTNER_OFFERS_SEED),
+        },
+    )
+    return offers_created, offers_updated

@@ -21,6 +21,7 @@ from app.db.seeds.reims_demo_content import seed_reims_demo_content
 from app.db.seeds.reims_neighborhoods_catalog import seed_reims_neighborhoods_catalog
 from app.db.seeds.reims_neighborhoods_v2_editorial import seed_reims_neighborhoods_v2_editorial
 from app.db.seeds.reims_neighborhoods_v2_hero_assets import seed_reims_neighborhoods_v2_hero_assets
+from app.db.seeds.reims_partners_catalog import seed_reims_partners_catalog
 from app.db.seeds.reims_partner_events import seed_reims_partner_events
 from app.db.seeds.reims_partner_offers import seed_reims_partner_offers
 from app.db.seeds.reims_pilot_partner_memberships import seed_reims_pilot_partner_memberships
@@ -62,18 +63,24 @@ def _assert_exclusive_catalog_seed(
     neighborhoods: bool,
     categories: bool,
     cultural_places: bool,
+    partners: bool,
     demo: bool,
     pilot: bool,
 ) -> None:
-    catalog_flags = int(neighborhoods) + int(categories) + int(cultural_places)
+    catalog_flags = (
+        int(neighborhoods)
+        + int(categories)
+        + int(cultural_places)
+        + int(partners)
+    )
     if catalog_flags > 1:
         print(
             "Refusing multiple catalog seeds: use only one of "
-            "--neighborhoods, --categories, or --cultural-places.",
+            "--neighborhoods, --categories, --cultural-places, or --partners.",
             file=sys.stderr,
         )
         raise SystemExit(2)
-    if (neighborhoods or categories or cultural_places) and (demo or pilot):
+    if (neighborhoods or categories or cultural_places or partners) and (demo or pilot):
         print(
             "Refusing catalog seed with --demo or --pilot: "
             "use a single catalog flag alone for production catalog seeding.",
@@ -89,6 +96,7 @@ async def run(
     neighborhoods: bool,
     categories: bool,
     cultural_places: bool,
+    partners: bool,
 ) -> None:
     settings = get_settings()
     if demo:
@@ -99,6 +107,7 @@ async def run(
         neighborhoods=neighborhoods,
         categories=categories,
         cultural_places=cultural_places,
+        partners=partners,
         demo=demo,
         pilot=pilot,
     )
@@ -121,6 +130,8 @@ async def run(
                 await seed_yunicity_categories_catalog(session)
             elif cultural_places:
                 await seed_reims_cultural_places_catalog(session, settings)
+            elif partners:
+                await seed_reims_partners_catalog(session, settings)
             else:
                 from app.db.seeds.reims_cultural_places import seed_reims_cultural_places
                 from app.db.seeds.reims_neighborhoods import seed_reims_neighborhoods
@@ -147,12 +158,14 @@ async def run(
                     await seed_reims_tribes(session)
             await session.commit()
         logger.info(
-            "Seed completed (demo=%s, pilot=%s, neighborhoods=%s, categories=%s, cultural_places=%s)",
+            "Seed completed (demo=%s, pilot=%s, neighborhoods=%s, categories=%s, "
+            "cultural_places=%s, partners=%s)",
             demo,
             pilot,
             neighborhoods,
             categories,
             cultural_places,
+            partners,
         )
     finally:
         await engine.dispose()
@@ -194,6 +207,14 @@ def main() -> None:
             "safe for prod/preprod — no demo partners or fake content)"
         ),
     )
+    parser.add_argument(
+        "--partners",
+        action="store_true",
+        help=(
+            "Reims signed partners catalog only (14 partenaires signés + offres Passport, "
+            "idempotent, safe for prod/preprod — no demo accounts or fake events)"
+        ),
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
     asyncio.run(
@@ -203,6 +224,7 @@ def main() -> None:
             neighborhoods=args.neighborhoods,
             categories=args.categories,
             cultural_places=args.cultural_places,
+            partners=args.partners,
         )
     )
 

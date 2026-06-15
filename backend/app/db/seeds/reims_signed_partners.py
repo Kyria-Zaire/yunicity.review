@@ -10,13 +10,21 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import Settings
 from app.core.organization_constants import (
     OrganizationType,
     OrganizationVisibility,
     VerificationStatus,
 )
+from app.core.partner_assets import (
+    partner_seed_banner_url,
+    partner_seed_logo_url,
+)
 from app.core.partner_constants import PartnershipType, PartnerStatus
-from app.db.seeds.reims_pilot_partner_public_data import merge_pilot_public_fields
+from app.db.seeds.reims_pilot_partner_public_data import (
+    PILOT_PARTNER_SLUGS,
+    merge_pilot_public_fields,
+)
 from app.models.organization import Organization
 from app.models.partner_profile import PartnerProfile
 
@@ -251,6 +259,39 @@ REIMS_SIGNED_PARTNERS_SEED: tuple[dict[str, Any], ...] = (
     },
 )
 
+REIMS_SIGNED_PARTNER_SLUGS: tuple[str, ...] = tuple(
+    str(entry["slug"]) for entry in REIMS_SIGNED_PARTNERS_SEED
+)
+
+
+def _apply_catalog_media(entry: dict[str, Any], settings: Settings) -> dict[str, Any]:
+    slug = entry.get("slug")
+    if not isinstance(slug, str) or slug not in PILOT_PARTNER_SLUGS:
+        return entry
+    merged = dict(entry)
+    merged["logo_url"] = partner_seed_logo_url(
+        slug,
+        app_env=settings.app_env,
+        web_frontend_url=settings.web_frontend_url,
+    )
+    merged["banner_url"] = partner_seed_banner_url(
+        slug,
+        app_env=settings.app_env,
+        web_frontend_url=settings.web_frontend_url,
+    )
+    return merged
+
+
+def _prepare_seed_entry(
+    raw_entry: dict[str, Any],
+    *,
+    settings: Settings | None,
+) -> dict[str, Any]:
+    entry = merge_pilot_public_fields(dict(raw_entry))
+    if settings is not None and settings.app_env in ("prod", "preprod"):
+        return _apply_catalog_media(entry, settings)
+    return entry
+
 
 def _build_organization(entry: dict[str, Any]) -> Organization:
     signed_at = entry.get("signed_at") or datetime(2025, 6, 1, tzinfo=UTC)
@@ -300,7 +341,8 @@ def _build_partner_profile(entry: dict[str, Any]) -> PartnerProfile:
     )
 
 
-async def _upsert_organization(session: AsyncSession, row: Organization) -> None:
+async def _upsert_organization(session: AsyncSession, row: Organization) -> bool:
+    """Return True when a new organization row is inserted."""
     existing = await session.get(Organization, row.id)
     if existing is None:
         by_slug = await session.execute(
@@ -309,12 +351,13 @@ async def _upsert_organization(session: AsyncSession, row: Organization) -> None
         found = by_slug.scalar_one_or_none()
         if found is None:
             session.add(row)
-            return
+            return True
         for field in _SYNC_ORG_FIELDS:
             setattr(found, field, getattr(row, field))
-        return
+        return False
     for field in _SYNC_ORG_FIELDS:
         setattr(existing, field, getattr(row, field))
+    return False
 
 
 async def _upsert_partner_profile(session: AsyncSession, row: PartnerProfile) -> None:
@@ -334,14 +377,32 @@ async def _upsert_partner_profile(session: AsyncSession, row: PartnerProfile) ->
         setattr(existing, field, getattr(row, field))
 
 
-async def seed_reims_signed_partners(session: AsyncSession) -> None:
+async def seed_reims_signed_partners(
+    session: AsyncSession,
+    *,
+    settings: Settings | None = None,
+) -> tuple[int, int]:
+    partners_created = 0
+    partners_updated = 0
+
     for raw_entry in REIMS_SIGNED_PARTNERS_SEED:
-        entry = merge_pilot_public_fields(dict(raw_entry))
+        entry = _prepare_seed_entry(raw_entry, settings=settings)
         org = _build_organization(entry)
         profile = _build_partner_profile(entry)
-        await _upsert_organization(session, org)
+        created = await _upsert_organization(session, org)
         await _upsert_partner_profile(session, profile)
+        if created:
+            partners_created += 1
+        else:
+            partners_updated += 1
+
+    await session.flush()
     logger.info(
-        "reims_signed_partners_seed_completed count=%s",
-        len(REIMS_SIGNED_PARTNERS_SEED),
+        "reims_signed_partners_seed_completed",
+        extra={
+            "partners_created": partners_created,
+            "partners_updated": partners_updated,
+            "partners_total": len(REIMS_SIGNED_PARTNERS_SEED),
+        },
     )
+    return partners_created, partners_updated

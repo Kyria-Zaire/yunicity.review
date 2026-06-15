@@ -14,6 +14,15 @@ def test_neighborhoods_cli_refuses_demo_combo(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-at-least-32-characters-long!!")
     get_settings.cache_clear()
     with pytest.raises(SystemExit) as exc:
-        asyncio.run(run(demo=True, pilot=False, neighborhoods=True, categories=False, cultural_places=False))
+        asyncio.run(
+            run(
+                demo=True,
+                pilot=False,
+                neighborhoods=True,
+                categories=False,
+                cultural_places=False,
+                partners=False,
+            )
+        )
     assert exc.value.code == 2
     get_settings.cache_clear()

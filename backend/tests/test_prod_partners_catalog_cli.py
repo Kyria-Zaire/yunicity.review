@@ -1,4 +1,4 @@
-"""CLI guards for production category catalog seed."""
+"""CLI guards for production signed partners catalog seed."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from app.core.config import get_settings
 from app.db.seeds.__main__ import run
 
 
-def test_categories_cli_refuses_demo_combo(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_partners_cli_refuses_demo_combo(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://unused")
     monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-at-least-32-characters-long!!")
     get_settings.cache_clear()
@@ -19,16 +19,16 @@ def test_categories_cli_refuses_demo_combo(monkeypatch: pytest.MonkeyPatch) -> N
                 demo=True,
                 pilot=False,
                 neighborhoods=False,
-                categories=True,
+                categories=False,
                 cultural_places=False,
-                partners=False,
+                partners=True,
             )
         )
     assert exc.value.code == 2
     get_settings.cache_clear()
 
 
-def test_categories_cli_refuses_neighborhoods_combo(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_partners_cli_refuses_cultural_places_combo(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://unused")
     monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-at-least-32-characters-long!!")
     get_settings.cache_clear()
@@ -37,10 +37,10 @@ def test_categories_cli_refuses_neighborhoods_combo(monkeypatch: pytest.MonkeyPa
             run(
                 demo=False,
                 pilot=False,
-                neighborhoods=True,
-                categories=True,
+                neighborhoods=False,
+                categories=False,
                 cultural_places=True,
-                partners=False,
+                partners=True,
             )
         )
     assert exc.value.code == 2
