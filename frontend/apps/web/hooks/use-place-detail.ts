@@ -24,20 +24,24 @@ export function usePlaceDetail(slug: string, city: string) {
       return;
     }
     setState({ status: "loading" });
-    try {
-      const cultural = await api.getCulturalPlace(cleanSlug, cleanCity);
-      setState({ status: "cultural", place: cultural });
+    // Probe en parallèle : un slug est soit un lieu culturel, soit un
+    // partenaire. On lance les deux requêtes simultanément pour supprimer le
+    // roundtrip séquentiel (404 cultural → partner) du chemin critique, tout en
+    // gardant la priorité au lieu culturel quand les deux répondent.
+    const [culturalRes, partnerRes] = await Promise.allSettled([
+      api.getCulturalPlace(cleanSlug, cleanCity),
+      api.getPartner(cleanSlug, cleanCity),
+    ]);
+
+    if (culturalRes.status === "fulfilled") {
+      setState({ status: "cultural", place: culturalRes.value });
       return;
-    } catch {
-      /* cultural_place prioritaire — essai partenaire */
     }
-    try {
-      const partner = await api.getPartner(cleanSlug, cleanCity);
-      setState({ status: "partner", partner, kind: "partner" });
+    if (partnerRes.status === "fulfilled") {
+      setState({ status: "partner", partner: partnerRes.value, kind: "partner" });
       return;
-    } catch {
-      setState({ status: "error" });
     }
+    setState({ status: "error" });
   }, [api, slug, city]);
 
   useEffect(() => {

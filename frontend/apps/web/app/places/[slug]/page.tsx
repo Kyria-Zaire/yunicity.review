@@ -5,9 +5,11 @@ import {
   plainTextExcerpt,
   truncateForMeta,
 } from "@/lib/seo/metadata";
-import { fetchPlaceForSeo } from "@/lib/seo/public-fetch";
+import { fetchPlaceOrPartnerForSeo } from "@/lib/seo/public-fetch";
 import { resolveMediaUrl, SEO_DEFAULT_CITY } from "@/lib/seo/site";
 import {
+  buildPartnerBreadcrumbJsonLd,
+  buildPartnerLocalBusinessJsonLd,
   buildPlaceBreadcrumbJsonLd,
   buildPlaceLocalBusinessJsonLd,
 } from "@/lib/seo/structured-data";
@@ -26,9 +28,9 @@ export async function generateMetadata({
   const query = await searchParams;
   const city = query.city?.trim() || SEO_DEFAULT_CITY;
   const path = `/places/${slug}`;
-  const place = await fetchPlaceForSeo(slug, city);
+  const entity = await fetchPlaceOrPartnerForSeo(slug, city);
 
-  if (!place) {
+  if (!entity) {
     return buildPageMetadata({
       title: "Lieu introuvable",
       description: "Ce lieu n'est pas disponible sur Yunicity.",
@@ -37,6 +39,24 @@ export async function generateMetadata({
     });
   }
 
+  if (entity.kind === "partner") {
+    const { partner } = entity;
+    const description = truncateForMeta(
+      plainTextExcerpt(partner.description) ||
+        `Découvrez ${partner.name}, partenaire Yunicity à ${partner.city}.`,
+    );
+    const image = resolveMediaUrl(partner.cover_image_url || partner.logo_url);
+
+    return buildPageMetadata({
+      title: `${partner.name} — ${partner.city}`,
+      description,
+      path,
+      image,
+      imageAlt: partner.name,
+    });
+  }
+
+  const { place } = entity;
   const title = `${place.name} — ${place.city}`;
   const description = truncateForMeta(
     place.short_description ||
@@ -62,18 +82,24 @@ export default async function PlaceDetailPage({ params, searchParams }: PlaceDet
   const query = await searchParams;
   const city = query.city?.trim() || SEO_DEFAULT_CITY;
   const path = `/places/${slug}`;
-  const place = await fetchPlaceForSeo(slug, city);
+  const entity = await fetchPlaceOrPartnerForSeo(slug, city);
+
+  const jsonLd =
+    entity?.kind === "cultural"
+      ? [
+          buildPlaceLocalBusinessJsonLd(entity.place, path),
+          buildPlaceBreadcrumbJsonLd(entity.place, path),
+        ]
+      : entity?.kind === "partner"
+        ? [
+            buildPartnerLocalBusinessJsonLd(entity.partner, path),
+            buildPartnerBreadcrumbJsonLd(entity.partner, path),
+          ]
+        : null;
 
   return (
     <>
-      {place ? (
-        <JsonLd
-          data={[
-            buildPlaceLocalBusinessJsonLd(place, path),
-            buildPlaceBreadcrumbJsonLd(place, path),
-          ]}
-        />
-      ) : null}
+      {jsonLd ? <JsonLd data={jsonLd} /> : null}
       <PlaceDetailScreen slug={slug} city={query.city?.trim() ?? ""} />
     </>
   );

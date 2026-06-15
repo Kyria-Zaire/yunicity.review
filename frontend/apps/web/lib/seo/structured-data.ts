@@ -1,4 +1,9 @@
-import type { CulturalPlaceDetail, LocalEvent, Neighborhood } from "@yunicity/types";
+import type {
+  CulturalPlaceDetail,
+  LocalEvent,
+  Neighborhood,
+  PartnerPublic,
+} from "@yunicity/types";
 
 import { getAbsoluteUrl, resolveMediaUrl } from "./site";
 
@@ -53,6 +58,63 @@ export function buildPlaceBreadcrumbJsonLd(
         "@type": "ListItem",
         position: 2,
         name: place.name,
+        item: getAbsoluteUrl(path),
+      },
+    ],
+  };
+}
+
+export function buildPartnerLocalBusinessJsonLd(
+  partner: PartnerPublic,
+  path: string,
+): Record<string, unknown> {
+  const image =
+    resolveMediaUrl(partner.cover_image_url) || resolveMediaUrl(partner.logo_url);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: partner.name,
+    description: partner.description || undefined,
+    image,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: partner.address || undefined,
+      postalCode: partner.postal_code || undefined,
+      addressLocality: partner.city,
+      addressCountry: "FR",
+    },
+    geo:
+      partner.latitude != null && partner.longitude != null
+        ? {
+            "@type": "GeoCoordinates",
+            latitude: partner.latitude,
+            longitude: partner.longitude,
+          }
+        : undefined,
+    url: getAbsoluteUrl(path),
+    sameAs: [partner.website_url, partner.instagram_url].filter(Boolean) as string[],
+  };
+}
+
+export function buildPartnerBreadcrumbJsonLd(
+  partner: PartnerPublic,
+  path: string,
+): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Lieux",
+        item: getAbsoluteUrl("/places"),
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: partner.name,
         item: getAbsoluteUrl(path),
       },
     ],

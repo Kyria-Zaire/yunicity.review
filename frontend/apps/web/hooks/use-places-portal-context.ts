@@ -44,13 +44,10 @@ export function usePlacesPortalContext(cityParam: string) {
     setLoading(true);
     setError(null);
     try {
-      let resolvedCity = cityParam.trim() || user?.city?.trim() || DEFAULT_CITY;
-      try {
-        const profile = await api.getProfileMe();
-        resolvedCity = profile.city?.trim() || resolvedCity;
-      } catch {
-        /* profil optionnel */
-      }
+      // La ville provient du paramètre d'URL ou de la session déjà chargée par
+      // AuthProvider. On évite un appel `getProfileMe()` bloquant (et son retry
+      // refresh sur 401 pour les visiteurs anonymes) avant le catalogue.
+      const resolvedCity = cityParam.trim() || user?.city?.trim() || DEFAULT_CITY;
       setCity(resolvedCity);
 
       const [statsRes, featuredRes, catalogRes, partnersRes] = await Promise.all([

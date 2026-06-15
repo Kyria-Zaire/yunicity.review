@@ -9,6 +9,7 @@ import type {
   LocalEventListResponse,
   NeighborhoodDetail,
   NeighborhoodListResponse,
+  PartnerPublic,
 } from "@yunicity/types";
 import { getWebApiBaseUrl } from "@yunicity/utils";
 import type { MetadataRoute } from "next";
@@ -47,6 +48,45 @@ export async function fetchPlaceForSeo(
   return fetchPublicJson<CulturalPlaceDetail>(
     apiUrl(`/cultural-places/${encodeURIComponent(slug)}?${search}`),
   );
+}
+
+export async function fetchPartnerForSeo(
+  slug: string,
+  city = SEO_DEFAULT_CITY,
+): Promise<PartnerPublic | null> {
+  const search = new URLSearchParams({ city });
+  return fetchPublicJson<PartnerPublic>(
+    apiUrl(`/partners/${encodeURIComponent(slug)}?${search}`),
+  );
+}
+
+/**
+ * Résout l'entité SEO d'un slug `/places/[slug]` : lieu culturel en priorité,
+ * sinon partenaire (les deux probes sont lancés en parallèle). Évite le titre
+ * « Lieu introuvable » sur les pages partenaires réelles.
+ */
+export type PlaceSeoEntity =
+  | { kind: "cultural"; place: CulturalPlaceDetail }
+  | { kind: "partner"; partner: PartnerPublic };
+
+export async function fetchPlaceOrPartnerForSeo(
+  slug: string,
+  city = SEO_DEFAULT_CITY,
+): Promise<PlaceSeoEntity | null> {
+  const [culturalRes, partnerRes] = await Promise.allSettled([
+    fetchPlaceForSeo(slug, city),
+    fetchPartnerForSeo(slug, city),
+  ]);
+
+  const place = culturalRes.status === "fulfilled" ? culturalRes.value : null;
+  if (place) {
+    return { kind: "cultural", place };
+  }
+  const partner = partnerRes.status === "fulfilled" ? partnerRes.value : null;
+  if (partner) {
+    return { kind: "partner", partner };
+  }
+  return null;
 }
 
 export async function fetchCreatorProfileForSeo(creatorId: string): Promise<CreatorPublicProfile | null> {
