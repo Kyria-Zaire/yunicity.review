@@ -16,7 +16,7 @@ from app.db.seeds.passport_badges import seed_passport_badges
 from app.db.seeds.passport_challenges import seed_passport_challenges
 from app.db.seeds.passport_tiers import seed_passport_tiers
 from app.db.seeds.reims_activation_waves import seed_reims_activation_waves
-from app.db.seeds.reims_cultural_places import seed_reims_cultural_places
+from app.db.seeds.reims_cultural_places_catalog import seed_reims_cultural_places_catalog
 from app.db.seeds.reims_demo_content import seed_reims_demo_content
 from app.db.seeds.reims_neighborhoods_catalog import seed_reims_neighborhoods_catalog
 from app.db.seeds.reims_neighborhoods_v2_editorial import seed_reims_neighborhoods_v2_editorial
@@ -61,26 +61,35 @@ def _assert_exclusive_catalog_seed(
     *,
     neighborhoods: bool,
     categories: bool,
+    cultural_places: bool,
     demo: bool,
     pilot: bool,
 ) -> None:
-    catalog_flags = int(neighborhoods) + int(categories)
+    catalog_flags = int(neighborhoods) + int(categories) + int(cultural_places)
     if catalog_flags > 1:
         print(
-            "Refusing multiple catalog seeds: use only one of --neighborhoods or --categories.",
+            "Refusing multiple catalog seeds: use only one of "
+            "--neighborhoods, --categories, or --cultural-places.",
             file=sys.stderr,
         )
         raise SystemExit(2)
-    if (neighborhoods or categories) and (demo or pilot):
+    if (neighborhoods or categories or cultural_places) and (demo or pilot):
         print(
             "Refusing catalog seed with --demo or --pilot: "
-            "use --neighborhoods or --categories alone for production catalog seeding.",
+            "use a single catalog flag alone for production catalog seeding.",
             file=sys.stderr,
         )
         raise SystemExit(2)
 
 
-async def run(*, demo: bool, pilot: bool, neighborhoods: bool, categories: bool) -> None:
+async def run(
+    *,
+    demo: bool,
+    pilot: bool,
+    neighborhoods: bool,
+    categories: bool,
+    cultural_places: bool,
+) -> None:
     settings = get_settings()
     if demo:
         _assert_demo_seed_allowed(settings)
@@ -89,6 +98,7 @@ async def run(*, demo: bool, pilot: bool, neighborhoods: bool, categories: bool)
     _assert_exclusive_catalog_seed(
         neighborhoods=neighborhoods,
         categories=categories,
+        cultural_places=cultural_places,
         demo=demo,
         pilot=pilot,
     )
@@ -109,7 +119,10 @@ async def run(*, demo: bool, pilot: bool, neighborhoods: bool, categories: bool)
                 await seed_reims_neighborhoods_catalog(session, settings)
             elif categories:
                 await seed_yunicity_categories_catalog(session)
+            elif cultural_places:
+                await seed_reims_cultural_places_catalog(session, settings)
             else:
+                from app.db.seeds.reims_cultural_places import seed_reims_cultural_places
                 from app.db.seeds.reims_neighborhoods import seed_reims_neighborhoods
 
                 await seed_auth_rbac(session)
@@ -134,11 +147,12 @@ async def run(*, demo: bool, pilot: bool, neighborhoods: bool, categories: bool)
                     await seed_reims_tribes(session)
             await session.commit()
         logger.info(
-            "Seed completed (demo=%s, pilot=%s, neighborhoods=%s, categories=%s)",
+            "Seed completed (demo=%s, pilot=%s, neighborhoods=%s, categories=%s, cultural_places=%s)",
             demo,
             pilot,
             neighborhoods,
             categories,
+            cultural_places,
         )
     finally:
         await engine.dispose()
@@ -172,6 +186,14 @@ def main() -> None:
             "safe for prod/preprod — no demo partners or fake content)"
         ),
     )
+    parser.add_argument(
+        "--cultural-places",
+        action="store_true",
+        help=(
+            "Reims official cultural places only (12 lieux réels, idempotent, "
+            "safe for prod/preprod — no demo partners or fake content)"
+        ),
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
     asyncio.run(
@@ -180,6 +202,7 @@ def main() -> None:
             pilot=args.pilot,
             neighborhoods=args.neighborhoods,
             categories=args.categories,
+            cultural_places=args.cultural_places,
         )
     )
 

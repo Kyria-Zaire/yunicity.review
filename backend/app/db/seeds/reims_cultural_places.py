@@ -9,6 +9,11 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import Settings
+from app.core.cultural_place_assets import (
+    REIMS_OFFICIAL_CULTURAL_PLACE_SLUGS,
+    cultural_place_seed_cover_url,
+)
 from app.db.seeds.reims_cultural_media import REIMS_CULTURAL_MEDIA_BY_SLUG
 from app.models.cultural_place import CulturalPlace
 from app.models.neighborhood import Neighborhood
@@ -20,6 +25,18 @@ REIMS_CITY = "Reims"
 
 _SOURCE = "Catalogue éditorial Yunicity — médias Wikimedia Commons"
 _SOURCE_URL = "https://commons.wikimedia.org/"
+_PROD_SOURCE = "Catalogue éditorial Yunicity"
+
+_OFFICIAL_FEATURED_SLUGS = frozenset(
+    {
+        "cathedrale-notre-dame",
+        "palais-du-tau",
+        "basilique-saint-remi",
+        "musee-des-beaux-arts",
+        "opera-de-reims",
+        "frac-grand-est",
+    }
+)
 
 REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
     {
@@ -97,7 +114,7 @@ REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
         "latitude": 49.2598,
         "longitude": 4.0275,
         "category": "market",
-        "neighborhood_slug": "centre-ville",
+        "neighborhood_slug": "boulingrin",
     },
     {
         "id": uuid.UUID("d6030000-0000-4000-8000-000000000007"),
@@ -207,6 +224,36 @@ REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
         "category": "heritage",
         "neighborhood_slug": "centre-ville",
     },
+    {
+        "id": uuid.UUID("d6030000-0000-4000-8000-000000000016"),
+        "slug": "planetarium-de-reims",
+        "name": "Planétarium de Reims",
+        "short_description": "Découverte des étoiles et des sciences au cœur de Reims.",
+        "description": (
+            "Espace de médiation scientifique pour les familles et les curieux du ciel."
+        ),
+        "address": "49 Rue du Général Ponty",
+        "latitude": 49.2342,
+        "longitude": 4.0215,
+        "category": "museum",
+        "neighborhood_slug": "murigny",
+        "is_featured": False,
+    },
+    {
+        "id": uuid.UUID("d6030000-0000-4000-8000-000000000017"),
+        "slug": "frac-grand-est",
+        "name": "FRAC Champagne-Ardenne",
+        "short_description": "Art contemporain et expositions au Frac Grand Est à Reims.",
+        "description": (
+            "Institution d'art contemporain, vitrine culturelle de la région Grand Est."
+        ),
+        "address": "1 Square Aly Nabarro",
+        "latitude": 49.2612,
+        "longitude": 4.0356,
+        "category": "museum",
+        "neighborhood_slug": "centre-ville",
+        "is_featured": True,
+    },
 )
 
 _MEDIA_SYNC_FIELDS = (
@@ -244,15 +291,48 @@ async def _neighborhood_ids_by_slug(session: AsyncSession, city: str) -> dict[st
     return {slug: row_id for slug, row_id in result.all()}
 
 
+def _prod_media_for_place(entry: dict[str, Any], settings: Settings) -> dict[str, Any]:
+    slug = str(entry["slug"])
+    cover = cultural_place_seed_cover_url(
+        slug,
+        app_env=settings.app_env,
+        web_frontend_url=settings.web_frontend_url,
+    )
+    alt = f"{entry['name']} — Reims"
+    featured = bool(entry.get("is_featured", slug in _OFFICIAL_FEATURED_SLUGS))
+    priority = 100 if slug == "cathedrale-notre-dame" else (80 if featured else 10)
+    return {
+        "hero_image_url": cover,
+        "thumbnail_image_url": cover,
+        "image_source": "yunicity_asset",
+        "photo_credit": "Yunicity",
+        "image_credit": "Yunicity",
+        "gallery_images": [
+            {"url": cover, "alt": alt, "credit": "Yunicity", "source": "yunicity_asset"},
+        ],
+        "featured_priority": priority,
+        "is_featured": featured,
+    }
+
+
 def _build_place_row(
     entry: dict[str, Any],
     *,
     neighborhood_id: uuid.UUID | None,
     media: dict[str, Any],
+    settings: Settings | None = None,
+    use_prod_media: bool = False,
 ) -> CulturalPlace:
     slug = str(entry["slug"])
-    media_payload = REIMS_CULTURAL_MEDIA_BY_SLUG.get(slug, {})
-    merged_media = {**media_payload, **media}
+    if use_prod_media and settings is not None:
+        merged_media = {**_prod_media_for_place(entry, settings), **media}
+        source_name = _PROD_SOURCE
+        source_url = settings.web_frontend_url.rstrip("/")
+    else:
+        media_payload = REIMS_CULTURAL_MEDIA_BY_SLUG.get(slug, {})
+        merged_media = {**media_payload, **media}
+        source_name = _SOURCE
+        source_url = _SOURCE_URL
 
     normalized = normalize_cultural_media(
         hero_image_url=merged_media.get("hero_image_url"),
@@ -284,8 +364,8 @@ def _build_place_row(
         gallery_images=normalized.gallery_images or None,
         thumbnail_image_url=normalized.thumbnail_image_url,
         image_alt=image_alt,
-        source_name=_SOURCE,
-        source_url=_SOURCE_URL,
+        source_name=source_name,
+        source_url=source_url,
         photo_credit=normalized.photo_credit,
         image_credit=normalized.image_credit,
         image_source=normalized.image_source,
@@ -298,12 +378,32 @@ def _build_place_row(
     )
 
 
-async def seed_reims_cultural_places(session: AsyncSession) -> None:
+async def seed_reims_cultural_places(
+    session: AsyncSession,
+    *,
+    settings: Settings | None = None,
+    official_only: bool = False,
+) -> tuple[int, int]:
     hood_ids = await _neighborhood_ids_by_slug(session, REIMS_CITY)
-    for entry in REIMS_CULTURAL_PLACES_SEED:
+    entries = REIMS_CULTURAL_PLACES_SEED
+    if official_only:
+        official_slugs = set(REIMS_OFFICIAL_CULTURAL_PLACE_SLUGS)
+        entries = tuple(entry for entry in entries if entry["slug"] in official_slugs)
+
+    use_prod_media = settings is not None and settings.app_env in ("prod", "preprod")
+    places_created = 0
+    places_updated = 0
+
+    for entry in entries:
         hood_slug = entry.get("neighborhood_slug")
         neighborhood_id = hood_ids.get(hood_slug) if isinstance(hood_slug, str) else None
-        row = _build_place_row(entry, neighborhood_id=neighborhood_id, media={})
+        row = _build_place_row(
+            entry,
+            neighborhood_id=neighborhood_id,
+            media={},
+            settings=settings,
+            use_prod_media=use_prod_media,
+        )
 
         repo_row = await session.get(CulturalPlace, row.id)
         if repo_row is None:
@@ -316,11 +416,24 @@ async def seed_reims_cultural_places(session: AsyncSession) -> None:
             found = existing.scalar_one_or_none()
             if found is None:
                 session.add(row)
+                places_created += 1
             else:
                 for field in _MEDIA_SYNC_FIELDS:
                     setattr(found, field, getattr(row, field))
+                places_updated += 1
         else:
             for field in _MEDIA_SYNC_FIELDS:
                 setattr(repo_row, field, getattr(row, field))
+            places_updated += 1
 
-    logger.info("reims_cultural_places_seed_completed count=%s", len(REIMS_CULTURAL_PLACES_SEED))
+    await session.flush()
+    logger.info(
+        "reims_cultural_places_seed_completed",
+        extra={
+            "places_created": places_created,
+            "places_updated": places_updated,
+            "places_total": len(entries),
+            "official_only": official_only,
+        },
+    )
+    return places_created, places_updated
