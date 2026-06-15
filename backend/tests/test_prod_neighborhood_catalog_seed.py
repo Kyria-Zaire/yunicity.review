@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import logging
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 from app.core.config import Settings
 from app.core.neighborhood_hero_assets import (
@@ -9,7 +12,10 @@ from app.core.neighborhood_hero_assets import (
     neighborhood_dev_public_hero_url,
     neighborhood_seed_cover_url,
 )
-from app.db.seeds.reims_neighborhoods import REIMS_NEIGHBORHOOD_SEED
+from app.db.seeds.reims_neighborhoods import (
+    REIMS_NEIGHBORHOOD_SEED,
+    seed_reims_neighborhoods,
+)
 from app.db.seeds.reims_neighborhoods_catalog import (
     REIMS_OFFICIAL_NEIGHBORHOOD_COUNT,
     seed_reims_neighborhoods_catalog,
@@ -39,6 +45,27 @@ def test_neighborhood_seed_cover_url_dev() -> None:
         web_frontend_url="http://localhost:3000",
     )
     assert url == neighborhood_dev_public_hero_url("boulingrin")
+
+
+@pytest.mark.asyncio
+async def test_reims_neighborhoods_seed_logging_does_not_crash() -> None:
+    """LogRecord reserves 'created' — extra must use neighborhoods_created instead."""
+    logging.basicConfig(level=logging.INFO, force=True)
+
+    async def mock_execute(_stmt: object) -> MagicMock:
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = None
+        return result
+
+    session = AsyncMock()
+    session.execute = mock_execute
+    session.add = MagicMock()
+    session.flush = AsyncMock()
+
+    created = await seed_reims_neighborhoods(session)
+
+    assert created == len(REIMS_NEIGHBORHOOD_SEED)
+    assert session.add.call_count == len(REIMS_NEIGHBORHOOD_SEED)
 
 
 @pytest.mark.asyncio

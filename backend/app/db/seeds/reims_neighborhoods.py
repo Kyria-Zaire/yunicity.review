@@ -253,6 +253,6 @@ async def seed_reims_neighborhoods(
     await session.flush()
     logger.info(
         "reims_neighborhoods_seed_completed",
-        extra={"city": REIMS_CITY, "created": created},
+        extra={"city": REIMS_CITY, "neighborhoods_created": created},
     )
     return created
