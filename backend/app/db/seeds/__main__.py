@@ -27,6 +27,8 @@ from app.db.seeds.reims_pilot_partner_memberships import seed_reims_pilot_partne
 from app.db.seeds.reims_signed_partners import seed_reims_signed_partners
 from app.db.seeds.reims_tribes import seed_reims_tribes
 from app.db.seeds.stamp_definitions import seed_stamp_definitions
+from app.db.seeds.yunicity_categories import seed_yunicity_categories
+from app.db.seeds.yunicity_categories_catalog import seed_yunicity_categories_catalog
 
 logger = logging.getLogger(__name__)
 
@@ -55,19 +57,41 @@ def _assert_pilot_seed_allowed(settings: Settings) -> None:
         raise SystemExit(2)
 
 
-async def run(*, demo: bool, pilot: bool, neighborhoods: bool) -> None:
+def _assert_exclusive_catalog_seed(
+    *,
+    neighborhoods: bool,
+    categories: bool,
+    demo: bool,
+    pilot: bool,
+) -> None:
+    catalog_flags = int(neighborhoods) + int(categories)
+    if catalog_flags > 1:
+        print(
+            "Refusing multiple catalog seeds: use only one of --neighborhoods or --categories.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+    if (neighborhoods or categories) and (demo or pilot):
+        print(
+            "Refusing catalog seed with --demo or --pilot: "
+            "use --neighborhoods or --categories alone for production catalog seeding.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+
+
+async def run(*, demo: bool, pilot: bool, neighborhoods: bool, categories: bool) -> None:
     settings = get_settings()
     if demo:
         _assert_demo_seed_allowed(settings)
     if pilot:
         _assert_pilot_seed_allowed(settings)
-    if neighborhoods and (demo or pilot):
-        print(
-            "Refusing --neighborhoods with --demo or --pilot: "
-            "use --neighborhoods alone for production catalog seeding.",
-            file=sys.stderr,
-        )
-        raise SystemExit(2)
+    _assert_exclusive_catalog_seed(
+        neighborhoods=neighborhoods,
+        categories=categories,
+        demo=demo,
+        pilot=pilot,
+    )
     if not settings.database_url:
         print("DATABASE_URL is required to run seeds", file=sys.stderr)
         raise SystemExit(1)
@@ -83,6 +107,8 @@ async def run(*, demo: bool, pilot: bool, neighborhoods: bool) -> None:
         async with session_factory() as session:
             if neighborhoods:
                 await seed_reims_neighborhoods_catalog(session, settings)
+            elif categories:
+                await seed_yunicity_categories_catalog(session)
             else:
                 from app.db.seeds.reims_neighborhoods import seed_reims_neighborhoods
 
@@ -92,6 +118,7 @@ async def run(*, demo: bool, pilot: bool, neighborhoods: bool) -> None:
                 await seed_passport_badges(session)
                 await seed_passport_challenges(session)
                 await seed_stamp_definitions(session)
+                await seed_yunicity_categories(session)
                 await seed_reims_neighborhoods(session, settings=settings)
                 await seed_reims_neighborhoods_v2_editorial(session)
                 await seed_reims_neighborhoods_v2_hero_assets(session, settings=settings)
@@ -107,10 +134,11 @@ async def run(*, demo: bool, pilot: bool, neighborhoods: bool) -> None:
                     await seed_reims_tribes(session)
             await session.commit()
         logger.info(
-            "Seed completed (demo=%s, pilot=%s, neighborhoods=%s)",
+            "Seed completed (demo=%s, pilot=%s, neighborhoods=%s, categories=%s)",
             demo,
             pilot,
             neighborhoods,
+            categories,
         )
     finally:
         await engine.dispose()
@@ -136,9 +164,24 @@ def main() -> None:
             "safe for prod/preprod — no demo partners or fake content)"
         ),
     )
+    parser.add_argument(
+        "--categories",
+        action="store_true",
+        help=(
+            "Yunicity official category catalog only (12 categories, idempotent, "
+            "safe for prod/preprod — no demo partners or fake content)"
+        ),
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
-    asyncio.run(run(demo=args.demo, pilot=args.pilot, neighborhoods=args.neighborhoods))
+    asyncio.run(
+        run(
+            demo=args.demo,
+            pilot=args.pilot,
+            neighborhoods=args.neighborhoods,
+            categories=args.categories,
+        )
+    )
 
 
 if __name__ == "__main__":

@@ -59,6 +59,7 @@ from app.models.user_notification import UserNotification
 from app.models.user_profile import ProfileVisibility, UserProfile
 from app.models.user_subscription import UserSubscription
 from app.models.yuni_wallet import YuniTransaction, YuniWallet
+from app.models.yunicity_category import YunicityCategory
 
 __all__ = [
     "ActivationWave",
@@ -130,4 +131,5 @@ __all__ = [
     "UserSubscription",
     "YuniTransaction",
     "YuniWallet",
+    "YunicityCategory",
 ]
