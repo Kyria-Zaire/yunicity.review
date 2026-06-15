@@ -77,6 +77,19 @@ def generate_opaque_token() -> str:
     return secrets.token_urlsafe(64)
 
 
+def generate_temporary_password() -> str:
+    """Generate a one-time bootstrap password meeting platform strength rules."""
+    for _ in range(32):
+        core = secrets.token_urlsafe(16)
+        candidate = f"Yn{core}9A"
+        try:
+            validate_password_strength(candidate)
+            return candidate
+        except AppError:
+            continue
+    raise RuntimeError("Unable to generate a compliant temporary password.")
+
+
 def hash_refresh_token(raw_token: str, pepper: str = "") -> str:
     payload = f"{pepper}{raw_token}".encode()
     return hashlib.sha256(payload).hexdigest()

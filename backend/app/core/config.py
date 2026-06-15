@@ -143,6 +143,10 @@ class Settings(BaseSettings):
         default="Yunicity Bootstrap Admin",
         alias="YUNICITY_BOOTSTRAP_ADMIN_FULL_NAME",
     )
+    bootstrap_super_admin_email: str | None = Field(
+        default=None,
+        alias="YUNICITY_BOOTSTRAP_SUPER_ADMIN_EMAIL",
+    )
 
     @field_validator("cors_origins", mode="before")
     @classmethod

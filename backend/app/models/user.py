@@ -34,6 +34,9 @@ class User(TimestampMixin, Base):
     is_system_account: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
+    force_password_reset: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
 
     roles: Mapped[list["UserRole"]] = relationship(
         "UserRole",
