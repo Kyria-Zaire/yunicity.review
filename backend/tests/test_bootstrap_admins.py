@@ -43,6 +43,7 @@ def _settings(
     return Settings(
         APP_ENV="prod",
         DATABASE_URL="postgresql+asyncpg://yunicity:yunicity@localhost:5434/yunicity_test",
+        REDIS_URL="redis://localhost:6379/0",
         DEBUG=False,
         JWT_SECRET_KEY="x" * 48,
         REFRESH_TOKEN_PEPPER="y" * 32,

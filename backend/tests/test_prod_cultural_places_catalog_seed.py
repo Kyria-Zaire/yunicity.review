@@ -46,6 +46,7 @@ async def test_reims_cultural_places_seed_logging_does_not_crash() -> None:
     settings = Settings(
         APP_ENV="prod",
         DATABASE_URL="postgresql+asyncpg://yunicity:yunicity@localhost:5434/yunicity_test",
+        REDIS_URL="redis://localhost:6379/0",
         DEBUG=False,
         JWT_SECRET_KEY="x" * 48,
         REFRESH_TOKEN_PEPPER="y" * 32,
@@ -88,6 +89,7 @@ async def test_prod_cultural_places_catalog_seed_creates_twelve() -> None:
     settings = Settings(
         APP_ENV="prod",
         DATABASE_URL="postgresql+asyncpg://yunicity:yunicity@localhost:5434/yunicity_test",
+        REDIS_URL="redis://localhost:6379/0",
         DEBUG=False,
         JWT_SECRET_KEY="x" * 48,
         REFRESH_TOKEN_PEPPER="y" * 32,
@@ -130,6 +132,7 @@ async def test_prod_cultural_places_catalog_seed_idempotent() -> None:
     settings = Settings(
         APP_ENV="prod",
         DATABASE_URL="postgresql+asyncpg://yunicity:yunicity@localhost:5434/yunicity_test",
+        REDIS_URL="redis://localhost:6379/0",
         DEBUG=False,
         JWT_SECRET_KEY="x" * 48,
         REFRESH_TOKEN_PEPPER="y" * 32,
@@ -163,6 +166,7 @@ async def test_prod_cultural_places_catalog_prod_image_urls() -> None:
     settings = Settings(
         APP_ENV="prod",
         DATABASE_URL="postgresql+asyncpg://yunicity:yunicity@localhost:5434/yunicity_test",
+        REDIS_URL="redis://localhost:6379/0",
         DEBUG=False,
         JWT_SECRET_KEY="x" * 48,
         REFRESH_TOKEN_PEPPER="y" * 32,
@@ -209,6 +213,7 @@ async def test_api_lists_official_cultural_places_after_catalog_seed() -> None:
     settings = Settings(
         APP_ENV="prod",
         DATABASE_URL="postgresql+asyncpg://yunicity:yunicity@localhost:5434/yunicity_test",
+        REDIS_URL="redis://localhost:6379/0",
         DEBUG=False,
         JWT_SECRET_KEY="x" * 48,
         REFRESH_TOKEN_PEPPER="y" * 32,
