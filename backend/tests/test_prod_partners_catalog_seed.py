@@ -39,6 +39,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 def _prod_settings() -> Settings:
     return Settings(
         APP_ENV="prod",
+        DATABASE_URL="postgresql+asyncpg://yunicity:yunicity@localhost:5434/yunicity_test",
         DEBUG=False,
         JWT_SECRET_KEY="x" * 48,
         REFRESH_TOKEN_PEPPER="y" * 32,

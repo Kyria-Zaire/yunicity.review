@@ -45,6 +45,7 @@ async def test_reims_cultural_places_seed_logging_does_not_crash() -> None:
     logging.basicConfig(level=logging.INFO, force=True)
     settings = Settings(
         APP_ENV="prod",
+        DATABASE_URL="postgresql+asyncpg://yunicity:yunicity@localhost:5434/yunicity_test",
         DEBUG=False,
         JWT_SECRET_KEY="x" * 48,
         REFRESH_TOKEN_PEPPER="y" * 32,
@@ -86,6 +87,7 @@ async def test_prod_cultural_places_catalog_seed_creates_twelve() -> None:
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     settings = Settings(
         APP_ENV="prod",
+        DATABASE_URL="postgresql+asyncpg://yunicity:yunicity@localhost:5434/yunicity_test",
         DEBUG=False,
         JWT_SECRET_KEY="x" * 48,
         REFRESH_TOKEN_PEPPER="y" * 32,
@@ -127,6 +129,7 @@ async def test_prod_cultural_places_catalog_seed_idempotent() -> None:
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     settings = Settings(
         APP_ENV="prod",
+        DATABASE_URL="postgresql+asyncpg://yunicity:yunicity@localhost:5434/yunicity_test",
         DEBUG=False,
         JWT_SECRET_KEY="x" * 48,
         REFRESH_TOKEN_PEPPER="y" * 32,
@@ -159,6 +162,7 @@ async def test_prod_cultural_places_catalog_prod_image_urls() -> None:
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     settings = Settings(
         APP_ENV="prod",
+        DATABASE_URL="postgresql+asyncpg://yunicity:yunicity@localhost:5434/yunicity_test",
         DEBUG=False,
         JWT_SECRET_KEY="x" * 48,
         REFRESH_TOKEN_PEPPER="y" * 32,
@@ -204,6 +208,7 @@ async def test_api_lists_official_cultural_places_after_catalog_seed() -> None:
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     settings = Settings(
         APP_ENV="prod",
+        DATABASE_URL="postgresql+asyncpg://yunicity:yunicity@localhost:5434/yunicity_test",
         DEBUG=False,
         JWT_SECRET_KEY="x" * 48,
         REFRESH_TOKEN_PEPPER="y" * 32,
