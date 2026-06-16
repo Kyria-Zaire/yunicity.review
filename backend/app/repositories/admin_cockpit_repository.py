@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -23,6 +25,7 @@ from app.core.passport_constants import (
     PartnerOfferStatus,
     PassportStampSource,
 )
+from app.db.session import get_session_factory
 from app.models.local_event import LocalEvent
 from app.models.organization import Organization
 from app.models.partner_creator_content import PartnerCreatorContent
@@ -36,6 +39,11 @@ from app.models.passport import (
 )
 from app.models.report import Report
 from app.models.user import User
+
+# Max concurrent isolated sessions used to parallelize cockpit counts.
+# Bounded to stay well within the SQLAlchemy connection pool even with a few
+# admins triggering a cold (cache-miss) load at the same time (ADMIN-PERF-02A).
+_COCKPIT_COUNT_CONCURRENCY = 4
 
 # Open pipeline leads — excludes signed, converted, rejected, archived.
 OPEN_PARTNER_LEAD_STATUSES: frozenset[str] = frozenset(
@@ -101,105 +109,174 @@ class AdminCockpitRepository:
         self._session = session
 
     async def fetch_counts(self, city: str) -> AdminCockpitRawCounts:
-        """Aggregate cockpit metrics. Users are global; territorial entities use ``city``."""
-        top_partner = await self._fetch_top_stamp_partner(city=city)
+        """Aggregate cockpit metrics. Users are global; territorial entities use ``city``.
+
+        Counts are independent read-only aggregates, so on a cold (cache-miss) load
+        they run concurrently over a bounded pool of dedicated sessions via
+        ``asyncio.gather`` instead of ~30 sequential round-trips. A SQLAlchemy
+        ``AsyncSession`` cannot be shared across concurrent tasks, so each lane gets
+        its own session; concurrency is capped to stay within the connection pool.
+        When the DB is not configured (e.g. unit tests), it falls back to the
+        original sequential execution on the current session. (ADMIN-PERF-02A)
+        """
+        start_of_day = _start_of_utc_day()
+        since_7d = datetime.now(UTC) - timedelta(days=7)
+        specs = self._build_count_specs(
+            city=city, start_of_day=start_of_day, since_7d=since_7d
+        )
+
+        factory = get_session_factory()
+        if factory is None:
+            values: dict[str, int] = {name: await fn(self) for name, fn in specs.items()}
+            top_partner = await self._fetch_top_stamp_partner(city=city)
+        else:
+            semaphore = asyncio.Semaphore(_COCKPIT_COUNT_CONCURRENCY)
+
+            async def run_count(
+                fn: Callable[[AdminCockpitRepository], Awaitable[int]],
+            ) -> int:
+                async with semaphore, factory() as session:
+                    return await fn(AdminCockpitRepository(session))
+
+            async def run_top() -> tuple[str | None, str | None, int]:
+                async with semaphore, factory() as session:
+                    return await AdminCockpitRepository(session)._fetch_top_stamp_partner(
+                        city=city
+                    )
+
+            names = list(specs)
+            count_results, top_partner = await asyncio.gather(
+                asyncio.gather(*(run_count(specs[name]) for name in names)),
+                run_top(),
+            )
+            values = {name: count_results[index] for index, name in enumerate(names)}
+
         return AdminCockpitRawCounts(
-            users_total=await self._count_users_total(),
-            users_active=await self._count_users_active(),
-            passports_total_scoped=await self._count_passports(city=city),
-            partners_total=await self._count_partner_profiles(city=city),
-            offers_total=await self._count_offers(city=city),
-            events_total=await self._count_events(city=city),
-            creator_contents_total=await self._count_creator_contents(city=city),
-            partner_leads_total=await self._count_leads(city=city),
-            offers_pending=await self._count_offers(
-                city=city,
-                status=PartnerOfferStatus.PENDING_REVIEW.value,
-            ),
-            creator_contents_pending=await self._count_creator_contents(
-                city=city,
-                status=PartnerCreatorContentStatus.PENDING_REVIEW.value,
-            ),
-            events_pending=await self._count_events(
-                city=city,
-                moderation_status=LocalEventModerationStatus.PENDING_REVIEW.value,
-            ),
-            reports_pending=await self._count_reports_pending(),
-            partner_leads_open=await self._count_leads(
-                city=city,
-                statuses=OPEN_PARTNER_LEAD_STATUSES,
-            ),
-            organizations_pending_review=await self._count_organizations_pending(city=city),
-            partner_status_active=await self._count_partner_profiles(
-                city=city,
-                partner_status=PartnerStatus.ACTIVE.value,
-            ),
-            partner_status_signed=await self._count_partner_profiles(
-                city=city,
-                partner_status=PartnerStatus.SIGNED.value,
-            ),
-            partner_status_premium=await self._count_partner_profiles(
-                city=city,
-                partner_status=PartnerStatus.PREMIUM.value,
-            ),
-            partner_status_founding_partner=await self._count_partner_profiles(
-                city=city,
-                partner_status=PartnerStatus.FOUNDING_PARTNER.value,
-            ),
-            partner_status_paused=await self._count_partner_profiles(
-                city=city,
-                partner_status=PartnerStatus.PAUSED.value,
-            ),
-            org_public_with_partner=await self._count_orgs_with_partner(
-                city=city,
-                visibility=OrganizationVisibility.PUBLIC.value,
-            ),
-            org_private_with_partner=await self._count_orgs_with_partner(
-                city=city,
-                visibility=OrganizationVisibility.PRIVATE.value,
-            ),
-            org_verified_with_partner=await self._count_orgs_with_partner(
-                city=city,
-                verification_status=VerificationStatus.VERIFIED.value,
-            ),
-            org_pending_review_with_partner=await self._count_orgs_with_partner(
-                city=city,
-                verification_statuses=ORGANIZATION_PENDING_VERIFICATION_STATUSES,
-            ),
-            passports_total=await self._count_passports(city=city),
-            stamps_total=await self._count_stamps(city=city),
-            qr_stamps=await self._count_stamps(
-                city=city,
-                stamp_source=PassportStampSource.QR.value,
-            ),
-            partner_stamps=await self._count_stamps(
-                city=city,
-                stamp_source=PassportStampSource.ORGANIZATION.value,
-            ),
-            redemptions_total=await self._count_redemptions(city=city),
-            redemptions_completed=await self._count_redemptions(
-                city=city,
-                status=OfferRedemptionStatus.COMPLETED.value,
-            ),
-            offers_published=await self._count_offers(
-                city=city,
-                status=PartnerOfferStatus.PUBLISHED.value,
-            ),
-            stamps_today=await self._count_stamps_since(city=city, since=_start_of_utc_day()),
-            redemptions_today=await self._count_redemptions_since(
-                city=city,
-                since=_start_of_utc_day(),
-                status=OfferRedemptionStatus.COMPLETED.value,
-            ),
-            passports_last_7_days=await self._count_passports_since(
-                city=city,
-                since=datetime.now(UTC) - timedelta(days=7),
-            ),
-            events_upcoming=await self._count_events_upcoming(city=city),
+            users_total=values["users_total"],
+            users_active=values["users_active"],
+            passports_total_scoped=values["passports"],
+            partners_total=values["partners_total"],
+            offers_total=values["offers_total"],
+            events_total=values["events_total"],
+            creator_contents_total=values["creator_contents_total"],
+            partner_leads_total=values["partner_leads_total"],
+            offers_pending=values["offers_pending"],
+            creator_contents_pending=values["creator_contents_pending"],
+            events_pending=values["events_pending"],
+            reports_pending=values["reports_pending"],
+            partner_leads_open=values["partner_leads_open"],
+            organizations_pending_review=values["organizations_pending_review"],
+            partner_status_active=values["partner_status_active"],
+            partner_status_signed=values["partner_status_signed"],
+            partner_status_premium=values["partner_status_premium"],
+            partner_status_founding_partner=values["partner_status_founding_partner"],
+            partner_status_paused=values["partner_status_paused"],
+            org_public_with_partner=values["org_public_with_partner"],
+            org_private_with_partner=values["org_private_with_partner"],
+            org_verified_with_partner=values["org_verified_with_partner"],
+            org_pending_review_with_partner=values["org_pending_review_with_partner"],
+            # Same scoped count as ``passports_total_scoped`` — computed once.
+            passports_total=values["passports"],
+            stamps_total=values["stamps_total"],
+            qr_stamps=values["qr_stamps"],
+            partner_stamps=values["partner_stamps"],
+            redemptions_total=values["redemptions_total"],
+            redemptions_completed=values["redemptions_completed"],
+            offers_published=values["offers_published"],
+            stamps_today=values["stamps_today"],
+            redemptions_today=values["redemptions_today"],
+            passports_last_7_days=values["passports_last_7_days"],
+            events_upcoming=values["events_upcoming"],
             top_stamp_partner_org_id=top_partner[0],
             top_stamp_partner_name=top_partner[1],
             top_stamp_partner_stamps=top_partner[2],
         )
+
+    def _build_count_specs(
+        self,
+        *,
+        city: str,
+        start_of_day: datetime,
+        since_7d: datetime,
+    ) -> dict[str, Callable[[AdminCockpitRepository], Awaitable[int]]]:
+        """Named, independent count callables keyed by raw-count field name.
+
+        ``passports`` is intentionally a single entry reused for both
+        ``passports_total`` and ``passports_total_scoped``.
+        """
+        return {
+            "users_total": lambda r: r._count_users_total(),
+            "users_active": lambda r: r._count_users_active(),
+            "passports": lambda r: r._count_passports(city=city),
+            "partners_total": lambda r: r._count_partner_profiles(city=city),
+            "offers_total": lambda r: r._count_offers(city=city),
+            "events_total": lambda r: r._count_events(city=city),
+            "creator_contents_total": lambda r: r._count_creator_contents(city=city),
+            "partner_leads_total": lambda r: r._count_leads(city=city),
+            "offers_pending": lambda r: r._count_offers(
+                city=city, status=PartnerOfferStatus.PENDING_REVIEW.value
+            ),
+            "creator_contents_pending": lambda r: r._count_creator_contents(
+                city=city, status=PartnerCreatorContentStatus.PENDING_REVIEW.value
+            ),
+            "events_pending": lambda r: r._count_events(
+                city=city, moderation_status=LocalEventModerationStatus.PENDING_REVIEW.value
+            ),
+            "reports_pending": lambda r: r._count_reports_pending(),
+            "partner_leads_open": lambda r: r._count_leads(
+                city=city, statuses=OPEN_PARTNER_LEAD_STATUSES
+            ),
+            "organizations_pending_review": lambda r: r._count_organizations_pending(city=city),
+            "partner_status_active": lambda r: r._count_partner_profiles(
+                city=city, partner_status=PartnerStatus.ACTIVE.value
+            ),
+            "partner_status_signed": lambda r: r._count_partner_profiles(
+                city=city, partner_status=PartnerStatus.SIGNED.value
+            ),
+            "partner_status_premium": lambda r: r._count_partner_profiles(
+                city=city, partner_status=PartnerStatus.PREMIUM.value
+            ),
+            "partner_status_founding_partner": lambda r: r._count_partner_profiles(
+                city=city, partner_status=PartnerStatus.FOUNDING_PARTNER.value
+            ),
+            "partner_status_paused": lambda r: r._count_partner_profiles(
+                city=city, partner_status=PartnerStatus.PAUSED.value
+            ),
+            "org_public_with_partner": lambda r: r._count_orgs_with_partner(
+                city=city, visibility=OrganizationVisibility.PUBLIC.value
+            ),
+            "org_private_with_partner": lambda r: r._count_orgs_with_partner(
+                city=city, visibility=OrganizationVisibility.PRIVATE.value
+            ),
+            "org_verified_with_partner": lambda r: r._count_orgs_with_partner(
+                city=city, verification_status=VerificationStatus.VERIFIED.value
+            ),
+            "org_pending_review_with_partner": lambda r: r._count_orgs_with_partner(
+                city=city, verification_statuses=ORGANIZATION_PENDING_VERIFICATION_STATUSES
+            ),
+            "stamps_total": lambda r: r._count_stamps(city=city),
+            "qr_stamps": lambda r: r._count_stamps(
+                city=city, stamp_source=PassportStampSource.QR.value
+            ),
+            "partner_stamps": lambda r: r._count_stamps(
+                city=city, stamp_source=PassportStampSource.ORGANIZATION.value
+            ),
+            "redemptions_total": lambda r: r._count_redemptions(city=city),
+            "redemptions_completed": lambda r: r._count_redemptions(
+                city=city, status=OfferRedemptionStatus.COMPLETED.value
+            ),
+            "offers_published": lambda r: r._count_offers(
+                city=city, status=PartnerOfferStatus.PUBLISHED.value
+            ),
+            "stamps_today": lambda r: r._count_stamps_since(city=city, since=start_of_day),
+            "redemptions_today": lambda r: r._count_redemptions_since(
+                city=city, since=start_of_day, status=OfferRedemptionStatus.COMPLETED.value
+            ),
+            "passports_last_7_days": lambda r: r._count_passports_since(
+                city=city, since=since_7d
+            ),
+            "events_upcoming": lambda r: r._count_events_upcoming(city=city),
+        }
 
     async def _fetch_top_stamp_partner(self, *, city: str) -> tuple[str | None, str | None, int]:
         stmt = (

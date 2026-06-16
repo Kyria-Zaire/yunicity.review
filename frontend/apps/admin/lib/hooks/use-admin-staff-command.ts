@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/lib/auth/auth-provider";
+import { mapAdminError } from "@/lib/admin-query";
 import {
   buildStaffConseilAction,
   buildStaffConseilMessage,
@@ -9,14 +10,14 @@ import {
   buildStaffNextAction,
   buildStaffOrganizationalHealth,
   buildStaffSignal,
-  isAuthError,
   type StaffKpiCard,
   type StaffMetrics,
   type StaffNextAction,
   type StaffOrganizationalHealth,
   type StaffSignal,
 } from "@yunicity/utils";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback, useMemo } from "react";
 
 export interface StaffCommandState {
   metrics: StaffMetrics | null;
@@ -33,31 +34,27 @@ export interface StaffCommandState {
 
 export function useAdminStaffCommand(): StaffCommandState {
   const { adminStaffApi } = useAuth();
-  const [metrics, setMetrics] = useState<StaffMetrics | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
+  const query = useQuery({
+    queryKey: ["admin", "staff", "summary"],
+    queryFn: () => adminStaffApi.getSummary(),
+  });
+
+  const { refetch } = query;
   const reload = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const summary = await adminStaffApi.getSummary();
-      setMetrics(buildStaffMetricsFromSummary(summary));
-    } catch (err) {
-      setMetrics(null);
-      setError(
-        isAuthError(err)
-          ? err.message
-          : "Impossible de charger les indicateurs d'accès plateforme. Réessayez dans un instant.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [adminStaffApi]);
+    await refetch();
+  }, [refetch]);
 
-  useEffect(() => {
-    void reload();
-  }, [reload]);
+  const metrics = useMemo(
+    () => (query.data ? buildStaffMetricsFromSummary(query.data) : null),
+    [query.data],
+  );
+
+  const isLoading = query.isPending;
+  const error = mapAdminError(
+    query.error,
+    "Impossible de charger les indicateurs d'accès plateforme. Réessayez dans un instant.",
+  );
 
   return useMemo(() => {
     if (!metrics) {

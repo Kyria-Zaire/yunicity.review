@@ -173,7 +173,15 @@ class PartnerOfferService:
             page=page,
             page_size=page_size,
         )
-        items = [await self._to_management_response(offer) for offer in offers]
+        redemptions = await self._offers.count_completed_redemptions_for_offers(
+            [offer.id for offer in offers]
+        )
+        items = [
+            await self._to_management_response(
+                offer, redemptions_count=redemptions.get(offer.id, 0)
+            )
+            for offer in offers
+        ]
         return PartnerOfferManagementListResponse(
             items=items,
             total=total,
@@ -278,7 +286,15 @@ class PartnerOfferService:
             page=page,
             page_size=page_size,
         )
-        items = [await self._to_admin_response(offer) for offer in offers]
+        redemptions = await self._offers.count_completed_redemptions_for_offers(
+            [offer.id for offer in offers]
+        )
+        items = [
+            await self._to_admin_response(
+                offer, redemptions_count=redemptions.get(offer.id, 0)
+            )
+            for offer in offers
+        ]
         return PartnerOfferAdminListResponse(
             items=items,
             total=total,
@@ -491,8 +507,11 @@ class PartnerOfferService:
     async def _to_management_response(
         self,
         offer: PartnerOffer,
+        *,
+        redemptions_count: int | None = None,
     ) -> PartnerOfferManagementResponse:
-        redemptions_count = await self._offers.count_completed_redemptions(offer.id)
+        if redemptions_count is None:
+            redemptions_count = await self._offers.count_completed_redemptions(offer.id)
         status = (
             offer.status
             if isinstance(offer.status, PartnerOfferStatus)
@@ -527,12 +546,18 @@ class PartnerOfferService:
             updated_at=offer.updated_at,
         )
 
-    async def _to_admin_response(self, offer: PartnerOffer) -> PartnerOfferAdminResponse:
+    async def _to_admin_response(
+        self,
+        offer: PartnerOffer,
+        *,
+        redemptions_count: int | None = None,
+    ) -> PartnerOfferAdminResponse:
         org = offer.organization
         if org is None:
             org = await self._orgs.get_by_id(offer.organization_id)
         assert org is not None
-        redemptions_count = await self._offers.count_completed_redemptions(offer.id)
+        if redemptions_count is None:
+            redemptions_count = await self._offers.count_completed_redemptions(offer.id)
         status = (
             offer.status
             if isinstance(offer.status, PartnerOfferStatus)

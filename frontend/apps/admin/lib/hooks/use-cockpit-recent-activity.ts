@@ -1,41 +1,24 @@
 "use client";
 
-import type { AdminActivityFeedItem } from "@yunicity/types";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
+import { mapAdminError } from "@/lib/admin-query";
 import { useAuth } from "@/lib/auth/auth-provider";
 
 const COCKPIT_ACTIVITY_PREVIEW_LIMIT = 5;
 
 export function useCockpitRecentActivity() {
   const { adminActivityApi } = useAuth();
-  const [items, setItems] = useState<AdminActivityFeedItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const feed = await adminActivityApi.getActivityFeed({
-        limit: COCKPIT_ACTIVITY_PREVIEW_LIMIT,
-      });
-      setItems(feed.items);
-    } catch (err) {
-      setItems([]);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Impossible de charger l'activité récente.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [adminActivityApi]);
+  const query = useQuery({
+    queryKey: ["admin", "activity", "feed", { limit: COCKPIT_ACTIVITY_PREVIEW_LIMIT }],
+    queryFn: () =>
+      adminActivityApi.getActivityFeed({ limit: COCKPIT_ACTIVITY_PREVIEW_LIMIT }),
+  });
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  return { items, isLoading, error };
+  return {
+    items: query.data?.items ?? [],
+    isLoading: query.isPending,
+    error: mapAdminError(query.error, "Impossible de charger l'activité récente."),
+  };
 }

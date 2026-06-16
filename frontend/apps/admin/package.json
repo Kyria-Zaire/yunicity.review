@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.101.0",
     "@yunicity/types": "workspace:*",
     "@yunicity/ui": "workspace:*",
     "@yunicity/utils": "workspace:*",

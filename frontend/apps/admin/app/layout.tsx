@@ -1,4 +1,5 @@
 import { AuthProvider } from "@/lib/auth/auth-provider";
+import { AdminQueryProvider } from "@/lib/query-provider";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { YUNICITY_MASCOT_PATH } from "@yunicity/utils";
@@ -21,7 +22,9 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <AdminQueryProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </AdminQueryProvider>
       </body>
     </html>
   );

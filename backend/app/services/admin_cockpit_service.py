@@ -6,6 +6,11 @@ from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.integrations.cache import (
+    COCKPIT_SUMMARY_TTL_SECONDS,
+    get_cached_model,
+    set_cached_model,
+)
 from app.repositories.admin_cockpit_repository import AdminCockpitRepository
 from app.schemas.admin_cockpit import (
     DEFAULT_COCKPIT_CITY,
@@ -25,8 +30,12 @@ class AdminCockpitService:
 
     async def get_summary(self, *, city: str | None = None) -> AdminCockpitSummaryResponse:
         resolved_city = (city or DEFAULT_COCKPIT_CITY).strip() or DEFAULT_COCKPIT_CITY
+        cache_key = f"admin:cockpit:summary:v1:{resolved_city.lower()}"
+        cached = await get_cached_model(cache_key, AdminCockpitSummaryResponse)
+        if cached is not None:
+            return cached
         counts = await self._repo.fetch_counts(resolved_city)
-        return AdminCockpitSummaryResponse(
+        response = AdminCockpitSummaryResponse(
             generated_at=datetime.now(UTC),
             city=resolved_city,
             executive=AdminCockpitExecutiveMetrics(
@@ -79,3 +88,5 @@ class AdminCockpitService:
                 ),
             ),
         )
+        await set_cached_model(cache_key, response, COCKPIT_SUMMARY_TTL_SECONDS)
+        return response

@@ -1,30 +1,42 @@
 "use client";
 
 import { useAuth } from "@/lib/auth/auth-provider";
+import { mapAdminError } from "@/lib/admin-query";
 import {
   staffStateToSearchParams,
   parseStaffSearchParams,
   toAdminStaffListParams,
   type AdminStaffListState,
 } from "@/lib/staff-url";
-import type { AdminStaffListItem } from "@yunicity/types";
-import { isAuthError } from "@yunicity/utils";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 
 export function useAdminStaffList() {
   const { adminStaffApi } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const searchKey = searchParams.toString();
 
-  const state = useMemo(() => parseStaffSearchParams(searchParams), [searchParams]);
+  const state = useMemo(
+    () => parseStaffSearchParams(searchParams),
+    [searchParams, searchKey],
+  );
 
-  const [items, setItems] = useState<AdminStaffListItem[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(state.pageSize);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const query = useQuery({
+    queryKey: ["admin", "staff", "list", state],
+    queryFn: () => adminStaffApi.listStaff(toAdminStaffListParams(state)),
+  });
+
+  const items = query.data?.items ?? [];
+  const total = query.data?.total ?? 0;
+  const page = query.data?.page ?? 1;
+  const pageSize = query.data?.page_size ?? state.pageSize;
+
+  const { refetch } = query;
+  const reload = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const replaceState = useCallback(
     (next: AdminStaffListState) => {
@@ -34,36 +46,6 @@ export function useAdminStaffList() {
     },
     [router],
   );
-
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await adminStaffApi.listStaff(toAdminStaffListParams(state));
-      setItems(response.items);
-      setTotal(response.total);
-      setPage(response.page);
-      setPageSize(response.page_size);
-    } catch (err) {
-      setItems([]);
-      setTotal(0);
-      setError(
-        isAuthError(err)
-          ? err.message
-          : "Impossible de charger les comptes staff pour le moment.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [adminStaffApi, state]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  const reload = useCallback(async () => {
-    await load();
-  }, [load]);
 
   const setRoleFilter = useCallback(
     (role: AdminStaffListState["role"]) => {
@@ -104,8 +86,11 @@ export function useAdminStaffList() {
     page,
     pageSize,
     totalPages,
-    isLoading,
-    error,
+    isLoading: query.isPending,
+    error: mapAdminError(
+      query.error,
+      "Impossible de charger les comptes staff pour le moment.",
+    ),
     reload,
     setRoleFilter,
     setStatusFilter,

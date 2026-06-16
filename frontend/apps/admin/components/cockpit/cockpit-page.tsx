@@ -11,6 +11,7 @@ import { CockpitWelcomeHeader } from "@/components/cockpit/cockpit-welcome-heade
 import { CockpitYunicitySignal } from "@/components/cockpit/cockpit-yunicity-signal";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { useAdminCockpitSummary } from "@/lib/hooks/use-admin-cockpit-summary";
+import { useCockpitRecentActivity } from "@/lib/hooks/use-cockpit-recent-activity";
 
 const COCKPIT_CITY = "Reims";
 
@@ -34,6 +35,10 @@ function CockpitLoading() {
 export function CockpitPage() {
   const { user } = useAuth();
   const { data, isLoading, error, reload } = useAdminCockpitSummary(COCKPIT_CITY);
+  // Kick off the recent-activity feed on mount so it loads in parallel with the
+  // summary instead of waiting for it (React Query dedupes the shared query key
+  // consumed below by <CockpitRecentActivity />). ADMIN-PERF-02A.
+  useCockpitRecentActivity();
 
   if (isLoading && !data) {
     return <CockpitLoading />;

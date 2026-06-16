@@ -1,60 +1,36 @@
 "use client";
 
 import { useAuth } from "@/lib/auth/auth-provider";
-import type {
-  AdminPartnersTerrainListItem,
-  AdminPartnersTerrainListParams,
-} from "@yunicity/types";
-import { isAuthError } from "@yunicity/utils";
-import { useCallback, useEffect, useState } from "react";
+import { mapAdminError } from "@/lib/admin-query";
+import type { AdminPartnersTerrainListParams } from "@yunicity/types";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
 
 export function useAdminPartnersTerrainList(params: AdminPartnersTerrainListParams) {
   const { adminPartnersApi } = useAuth();
-  const [items, setItems] = useState<AdminPartnersTerrainListItem[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(params.page ?? 1);
-  const [pageSize, setPageSize] = useState(params.page_size ?? 20);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const pageSize = params.page_size ?? 20;
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await adminPartnersApi.listTerrain({
-        ...params,
-        page,
-        page_size: pageSize,
-      });
-      setItems(response.items);
-      setTotal(response.total);
-      setPage(response.page);
-      setPageSize(response.page_size);
-    } catch (err) {
-      setItems([]);
-      setTotal(0);
-      setError(
-        isAuthError(err)
-          ? err.message
-          : "Impossible de charger les partenaires.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [adminPartnersApi, params, page, pageSize]);
+  const requestParams = { ...params, page, page_size: pageSize };
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const query = useQuery({
+    queryKey: ["admin", "partners", "terrain", requestParams],
+    queryFn: () => adminPartnersApi.listTerrain(requestParams),
+  });
+
+  const { refetch } = query;
+  const reload = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   return {
-    items,
-    total,
-    page,
-    pageSize,
-    isLoading,
-    error,
-    reload: load,
+    items: query.data?.items ?? [],
+    total: query.data?.total ?? 0,
+    page: query.data?.page ?? page,
+    pageSize: query.data?.page_size ?? pageSize,
+    isLoading: query.isPending,
+    error: mapAdminError(query.error, "Impossible de charger les partenaires."),
+    reload,
     setPage,
   };
 }

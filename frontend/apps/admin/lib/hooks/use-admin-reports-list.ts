@@ -8,10 +8,12 @@ import {
   toAdminReportListParams,
   type AdminModerationListState,
 } from "@/lib/moderation-url";
-import type { AdminReportListItem, AdminReportStatusSummary } from "@yunicity/types";
-import { isAuthError, moderationHasActiveFilters } from "@yunicity/utils";
+import { mapAdminError } from "@/lib/admin-query";
+import type { AdminReportStatusSummary } from "@yunicity/types";
+import { moderationHasActiveFilters } from "@yunicity/utils";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 
 const EMPTY_SUMMARY: AdminReportStatusSummary = {
   total: 0,
@@ -30,13 +32,21 @@ export function useAdminReportsList() {
     [searchParams],
   );
 
-  const [items, setItems] = useState<AdminReportListItem[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(state.pageSize);
-  const [summary, setSummary] = useState<AdminReportStatusSummary>(EMPTY_SUMMARY);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const query = useQuery({
+    queryKey: ["admin", "reports", "list", state],
+    queryFn: () => adminReportsApi.listReports(toAdminReportListParams(state)),
+  });
+
+  const items = query.data?.items ?? [];
+  const total = query.data?.total ?? 0;
+  const page = query.data?.page ?? 1;
+  const pageSize = query.data?.page_size ?? state.pageSize;
+  const summary = query.data?.summary ?? EMPTY_SUMMARY;
+
+  const { refetch } = query;
+  const reload = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const replaceState = useCallback(
     (next: AdminModerationListState) => {
@@ -46,34 +56,6 @@ export function useAdminReportsList() {
     },
     [router],
   );
-
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await adminReportsApi.listReports(toAdminReportListParams(state));
-      setItems(response.items);
-      setTotal(response.total);
-      setPage(response.page);
-      setPageSize(response.page_size);
-      setSummary(response.summary);
-    } catch (err) {
-      setItems([]);
-      setTotal(0);
-      setSummary(EMPTY_SUMMARY);
-      setError(
-        isAuthError(err)
-          ? err.message
-          : "Impossible de charger les signalements pour le moment.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [adminReportsApi, state]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   const setStatusFilter = useCallback(
     (status: AdminModerationListState["status"]) => {
@@ -111,10 +93,13 @@ export function useAdminReportsList() {
     pageSize,
     totalPages,
     summary,
-    isLoading,
-    error,
+    isLoading: query.isPending,
+    error: mapAdminError(
+      query.error,
+      "Impossible de charger les signalements pour le moment.",
+    ),
     hasActiveFilters,
-    reload: load,
+    reload,
     setStatusFilter,
     setReasonFilter,
     resetFilters,

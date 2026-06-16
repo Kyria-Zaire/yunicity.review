@@ -26,7 +26,7 @@ export function PartnersTerrainCommandPage() {
   const [partnershipType, setPartnershipType] = useState("");
   const [organizationType, setOrganizationType] = useState("");
 
-  const { data: summary, isLoading: summaryLoading, error: summaryError, reload } =
+  const { data: summary, error: summaryError, reload } =
     useAdminPartnersWorkspaceSummary(DEFAULT_CITY);
 
   const listParams = useMemo(
@@ -52,20 +52,6 @@ export function PartnersTerrainCommandPage() {
 
   const filtered = Boolean(search || status || partnershipType || organizationType);
 
-  if (summaryLoading && !summary) {
-    return (
-      <div className="mx-auto max-w-7xl space-y-4 animate-pulse pb-8" aria-busy="true">
-        <div className="h-24 rounded-2xl bg-stone-100" />
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-32 rounded-2xl bg-stone-100" />
-          ))}
-        </div>
-        <div className="h-96 rounded-2xl bg-stone-100" />
-      </div>
-    );
-  }
-
   if (summaryError && !summary) {
     return (
       <div className="mx-auto max-w-2xl rounded-2xl border border-rose-200 bg-rose-50 p-6">
@@ -82,13 +68,24 @@ export function PartnersTerrainCommandPage() {
     );
   }
 
-  if (!summary) return null;
-
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-10">
-      <PartnersTerrainHeader city={DEFAULT_CITY} partnersTotal={summary.partners_total} />
-      <PartnersNetworkSignal summary={summary} />
-      <PartnersKpiStrip summary={summary} />
+      {summary ? (
+        <>
+          <PartnersTerrainHeader city={DEFAULT_CITY} partnersTotal={summary.partners_total} />
+          <PartnersNetworkSignal summary={summary} />
+          <PartnersKpiStrip summary={summary} />
+        </>
+      ) : (
+        <div className="space-y-4 animate-pulse" aria-busy="true">
+          <div className="h-24 rounded-2xl bg-stone-100" />
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-32 rounded-2xl bg-stone-100" />
+            ))}
+          </div>
+        </div>
+      )}
 
       <PartnersTerrainToolbar
         search={search}
@@ -136,10 +133,17 @@ export function PartnersTerrainCommandPage() {
             }}
           />
         </div>
-        <PartnersTerrainInsights summary={summary} />
+        {summary ? (
+          <PartnersTerrainInsights summary={summary} />
+        ) : (
+          <div
+            className="hidden h-96 animate-pulse rounded-2xl bg-stone-100 xl:block"
+            aria-busy="true"
+          />
+        )}
       </div>
 
-      <PartnersTerrainBottomGrid summary={summary} />
+      {summary ? <PartnersTerrainBottomGrid summary={summary} /> : null}
     </div>
   );
 }

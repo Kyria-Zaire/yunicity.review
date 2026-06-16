@@ -1,8 +1,10 @@
 "use client";
 
-import type { AdminAnalyticsPeriod, AdminAnalyticsSummary } from "@yunicity/types";
-import { useCallback, useEffect, useState } from "react";
+import type { AdminAnalyticsPeriod } from "@yunicity/types";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
 
+import { mapAdminError } from "@/lib/admin-query";
 import { useAuth } from "@/lib/auth/auth-provider";
 
 const DEFAULT_CITY = "Reims";
@@ -10,41 +12,25 @@ const DEFAULT_CITY = "Reims";
 export function useAdminAnalytics(initialPeriod: AdminAnalyticsPeriod = "30d") {
   const { adminAnalyticsApi } = useAuth();
   const [period, setPeriod] = useState<AdminAnalyticsPeriod>(initialPeriod);
-  const [city] = useState(DEFAULT_CITY);
-  const [summary, setSummary] = useState<AdminAnalyticsSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const city = DEFAULT_CITY;
 
+  const query = useQuery({
+    queryKey: ["admin", "analytics", "summary", { city, period, compare: true }],
+    queryFn: () => adminAnalyticsApi.getSummary({ city, period, compare: true }),
+  });
+
+  const { refetch } = query;
   const reload = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await adminAnalyticsApi.getSummary({
-        city,
-        period,
-        compare: true,
-      });
-      setSummary(data);
-    } catch (err) {
-      setSummary(null);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Impossible de charger les analytics territoriales.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [adminAnalyticsApi, city, period]);
-
-  useEffect(() => {
-    void reload();
-  }, [reload]);
+    await refetch();
+  }, [refetch]);
 
   return {
-    summary,
-    isLoading,
-    error,
+    summary: query.data ?? null,
+    isLoading: query.isPending,
+    error: mapAdminError(
+      query.error,
+      "Impossible de charger les analytics territoriales.",
+    ),
     period,
     city,
     setPeriod,

@@ -29,7 +29,7 @@ from app.schemas.admin_staff import (
     AdminStaffListItem,
     AdminStaffListResponse,
 )
-from app.services.rbac_service import RbacService
+from app.services.rbac_service import RbacService, UserRbacContext
 
 
 class AdminStaffService:
@@ -73,9 +73,10 @@ class AdminStaffService:
             page=resolved_page,
             page_size=resolved_page_size,
         )
+        contexts = await self._rbac.get_user_rbac_contexts([user.id for user in users])
         items: list[AdminStaffListItem] = []
         for user in users:
-            items.append(await self._to_list_item(user))
+            items.append(await self._to_list_item(user, context=contexts.get(user.id)))
         return AdminStaffListResponse(
             items=items,
             total=total,
@@ -304,8 +305,14 @@ class AdminStaffService:
             )
         return user
 
-    async def _to_list_item(self, user: User) -> AdminStaffListItem:
-        context = await self._rbac.get_user_rbac_context(user.id)
+    async def _to_list_item(
+        self,
+        user: User,
+        *,
+        context: UserRbacContext | None = None,
+    ) -> AdminStaffListItem:
+        if context is None:
+            context = await self._rbac.get_user_rbac_context(user.id)
         return AdminStaffListItem(
             id=user.id,
             email=user.email,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/lib/auth/auth-provider";
+import { mapAdminError } from "@/lib/admin-query";
 import {
   buildModerationTrustSafetyConseilMessage,
   buildModerationTrustSafetyKpiCards,
@@ -14,9 +15,9 @@ import {
   type ModerationTrustSafetyMomentum,
   type ModerationTrustSafetyNextAction,
   type ModerationTrustSafetySignal,
-  isAuthError,
 } from "@yunicity/utils";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback, useMemo } from "react";
 
 export interface ModerationCommandState {
   metrics: ModerationTrustSafetyMetrics | null;
@@ -33,31 +34,28 @@ export interface ModerationCommandState {
 
 export function useAdminModerationCommand(): ModerationCommandState {
   const { adminReportsApi } = useAuth();
-  const [metrics, setMetrics] = useState<ModerationTrustSafetyMetrics | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [summaryError, setSummaryError] = useState<string | null>(null);
 
-  const loadSummary = useCallback(async () => {
-    setIsLoading(true);
-    setSummaryError(null);
-    try {
-      const summary = await adminReportsApi.getSummary();
-      setMetrics(buildModerationTrustSafetyMetricsFromSummary(summary));
-    } catch (err) {
-      setMetrics(null);
-      setSummaryError(
-        isAuthError(err)
-          ? err.message
-          : "Impossible de charger les indicateurs Trust & Safety. Réessayez dans un instant.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [adminReportsApi]);
+  const query = useQuery({
+    queryKey: ["admin", "reports", "summary"],
+    queryFn: () => adminReportsApi.getSummary(),
+  });
 
-  useEffect(() => {
-    void loadSummary();
-  }, [loadSummary]);
+  const { refetch } = query;
+  const reloadSummary = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
+  const metrics = useMemo(
+    () =>
+      query.data ? buildModerationTrustSafetyMetricsFromSummary(query.data) : null,
+    [query.data],
+  );
+
+  const isLoading = query.isPending;
+  const summaryError = mapAdminError(
+    query.error,
+    "Impossible de charger les indicateurs Trust & Safety. Réessayez dans un instant.",
+  );
 
   return useMemo(() => {
     if (!metrics) {
@@ -71,7 +69,7 @@ export function useAdminModerationCommand(): ModerationCommandState {
         momentum: null,
         isLoading,
         summaryError,
-        reloadSummary: loadSummary,
+        reloadSummary,
       };
     }
 
@@ -85,7 +83,7 @@ export function useAdminModerationCommand(): ModerationCommandState {
       momentum: buildModerationTrustSafetyMomentum(metrics),
       isLoading,
       summaryError: null,
-      reloadSummary: loadSummary,
+      reloadSummary,
     };
-  }, [isLoading, loadSummary, metrics, summaryError]);
+  }, [isLoading, metrics, reloadSummary, summaryError]);
 }

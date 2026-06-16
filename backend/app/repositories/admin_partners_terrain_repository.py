@@ -148,43 +148,44 @@ class AdminPartnersTerrainRepository:
         ]
 
     async def fetch_evolution_30d(self, *, city: str) -> list[tuple[date, int, int]]:
+        # ADMIN-PERF-02A: a single scoped fetch + in-Python bucketing replaces the
+        # previous 30-day loop of 60 COUNT round-trips. Semantics are preserved
+        # exactly (a profile counts on a day if signed_at OR created_at fall in it,
+        # and is cumulative once either date is <= day_end).
         today = datetime.now(UTC).date()
         start = today - timedelta(days=29)
-        day = start
+        window_end = datetime.combine(today, datetime.max.time(), tzinfo=UTC)
+
+        rows_stmt = (
+            select(PartnerProfile.signed_at, PartnerProfile.created_at)
+            .select_from(PartnerProfile)
+            .join(Organization, PartnerProfile.organization_id == Organization.id)
+            .where(
+                Organization.city == city,
+                or_(
+                    PartnerProfile.signed_at <= window_end,
+                    PartnerProfile.created_at <= window_end,
+                ),
+            )
+        )
+        rows = (await self._session.execute(rows_stmt)).all()
+
         points: list[tuple[date, int, int]] = []
-
+        day = start
         while day <= today:
-            day_end = datetime.combine(day, datetime.max.time(), tzinfo=UTC)
-            cumulative_stmt = (
-                select(func.count())
-                .select_from(PartnerProfile)
-                .join(Organization, PartnerProfile.organization_id == Organization.id)
-                .where(
-                    Organization.city == city,
-                    or_(
-                        PartnerProfile.signed_at <= day_end,
-                        PartnerProfile.created_at <= day_end,
-                    ),
-                )
-            )
-            cumulative = int((await self._session.execute(cumulative_stmt)).scalar_one() or 0)
-
             day_start = datetime.combine(day, datetime.min.time(), tzinfo=UTC)
-            new_stmt = (
-                select(func.count())
-                .select_from(PartnerProfile)
-                .join(Organization, PartnerProfile.organization_id == Organization.id)
-                .where(
-                    Organization.city == city,
-                    or_(
-                        (PartnerProfile.signed_at >= day_start)
-                        & (PartnerProfile.signed_at <= day_end),
-                        (PartnerProfile.created_at >= day_start)
-                        & (PartnerProfile.created_at <= day_end),
-                    ),
-                )
-            )
-            new_count = int((await self._session.execute(new_stmt)).scalar_one() or 0)
+            day_end = datetime.combine(day, datetime.max.time(), tzinfo=UTC)
+            cumulative = 0
+            new_count = 0
+            for signed_at, created_at in rows:
+                if (signed_at is not None and signed_at <= day_end) or (
+                    created_at is not None and created_at <= day_end
+                ):
+                    cumulative += 1
+                if (signed_at is not None and day_start <= signed_at <= day_end) or (
+                    created_at is not None and day_start <= created_at <= day_end
+                ):
+                    new_count += 1
             points.append((day, cumulative, new_count))
             day += timedelta(days=1)
 

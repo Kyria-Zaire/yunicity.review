@@ -1,42 +1,31 @@
 "use client";
 
-import type { AdminPlatformConfigSnapshot } from "@yunicity/types";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
 
+import { mapAdminError } from "@/lib/admin-query";
 import { useAuth } from "@/lib/auth/auth-provider";
 
 export function useAdminPlatformConfig() {
   const { adminPlatformConfigApi } = useAuth();
-  const [snapshot, setSnapshot] = useState<AdminPlatformConfigSnapshot | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
+  const query = useQuery({
+    queryKey: ["admin", "platform-config"],
+    queryFn: () => adminPlatformConfigApi.getSnapshot(),
+  });
+
+  const { refetch } = query;
   const reload = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await adminPlatformConfigApi.getSnapshot();
-      setSnapshot(data);
-    } catch (err) {
-      setSnapshot(null);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Impossible de charger la configuration plateforme.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [adminPlatformConfigApi]);
-
-  useEffect(() => {
-    void reload();
-  }, [reload]);
+    await refetch();
+  }, [refetch]);
 
   return {
-    snapshot,
-    isLoading,
-    error,
+    snapshot: query.data ?? null,
+    isLoading: query.isPending,
+    error: mapAdminError(
+      query.error,
+      "Impossible de charger la configuration plateforme.",
+    ),
     reload,
   };
 }

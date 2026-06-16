@@ -36,6 +36,36 @@ class RbacService:
         permissions = await self._get_permission_keys_cached(user_id)
         return UserRbacContext(user_id=user_id, roles=roles, permissions=permissions)
 
+    async def get_user_rbac_contexts(
+        self,
+        user_ids: list[uuid.UUID],
+    ) -> dict[uuid.UUID, UserRbacContext]:
+        """Batch RBAC contexts for many users with 2 queries instead of 2×N.
+
+        Seeds the request-scoped caches so any later single-user lookup in the
+        same request stays consistent and cheap (ADMIN-PERF-02A).
+        """
+        unique_ids = list(dict.fromkeys(user_ids))
+        if not unique_ids:
+            return {}
+        roles_map = await self._repo.get_role_keys_for_users(unique_ids)
+        perms_map = await self._repo.get_permission_keys_for_users(unique_ids)
+
+        role_cache = dict(_role_cache_var.get() or {})
+        perm_cache = dict(_permission_cache_var.get() or {})
+        contexts: dict[uuid.UUID, UserRbacContext] = {}
+        for user_id in unique_ids:
+            roles = tuple(roles_map.get(user_id, []))
+            permissions = frozenset(perms_map.get(user_id, []))
+            contexts[user_id] = UserRbacContext(
+                user_id=user_id, roles=roles, permissions=permissions
+            )
+            role_cache[user_id] = roles
+            perm_cache[user_id] = permissions
+        _role_cache_var.set(role_cache)
+        _permission_cache_var.set(perm_cache)
+        return contexts
+
     async def user_has_permission(self, user_id: uuid.UUID, permission_key: str) -> bool:
         permissions = await self._get_permission_keys_cached(user_id)
         return permission_key in permissions

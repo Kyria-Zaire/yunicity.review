@@ -176,6 +176,33 @@ class PartnerOfferRepository:
         )
         return int(result.scalar_one())
 
+    async def count_completed_redemptions_for_offers(
+        self,
+        offer_ids: list[uuid.UUID],
+    ) -> dict[uuid.UUID, int]:
+        """Batch completed-redemption counts for many offers in one GROUP BY query.
+
+        Avoids the N+1 of one COUNT per offer when building list responses
+        (ADMIN-PERF-02A). Missing offers default to 0.
+        """
+        counts: dict[uuid.UUID, int] = {offer_id: 0 for offer_id in offer_ids}
+        if not offer_ids:
+            return counts
+        result = await self._session.execute(
+            select(
+                PassportOfferRedemption.partner_offer_id,
+                func.count(),
+            )
+            .where(
+                PassportOfferRedemption.partner_offer_id.in_(offer_ids),
+                PassportOfferRedemption.status == OfferRedemptionStatus.COMPLETED.value,
+            )
+            .group_by(PassportOfferRedemption.partner_offer_id)
+        )
+        for offer_id, count in result.all():
+            counts[offer_id] = int(count)
+        return counts
+
     async def get_by_id(self, offer_id: uuid.UUID) -> PartnerOffer | None:
         result = await self._session.execute(
             select(PartnerOffer)

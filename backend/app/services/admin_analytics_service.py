@@ -12,6 +12,11 @@ from app.core.partner_constants import PartnerStatus
 from app.core.partner_creator_content_constants import PartnerCreatorContentStatus
 from app.core.partner_lead_constants import PartnerLeadStatus
 from app.core.passport_constants import PartnerOfferStatus, PassportStampSource
+from app.integrations.cache import (
+    ANALYTICS_SUMMARY_TTL_SECONDS,
+    get_cached_model,
+    set_cached_model,
+)
 from app.repositories.admin_analytics_repository import AdminAnalyticsRepository
 from app.schemas.admin_analytics import (
     ANALYTICS_PERIOD_DAYS,
@@ -42,6 +47,13 @@ class AdminAnalyticsService:
         compare_enabled: bool,
     ) -> AdminAnalyticsSummaryResponse:
         resolved_city = resolve_analytics_city(city)
+        cache_key = (
+            f"admin:analytics:summary:v1:{resolved_city.lower()}"
+            f":{period}:{int(compare_enabled)}"
+        )
+        cached = await get_cached_model(cache_key, AdminAnalyticsSummaryResponse)
+        if cached is not None:
+            return cached
         now = datetime.now(UTC)
         period_days = ANALYTICS_PERIOD_DAYS[period]
         period_start, period_end = _period_bounds(now=now, days=period_days)
@@ -62,7 +74,7 @@ class AdminAnalyticsService:
             )
             growth_rate = _growth_rate_percent(new_users, new_users_previous)
 
-        return AdminAnalyticsSummaryResponse(
+        response = AdminAnalyticsSummaryResponse(
             generated_at=now,
             scope=AdminAnalyticsScope(
                 city=resolved_city,
@@ -236,6 +248,8 @@ class AdminAnalyticsService:
                 open_leads=await self._repo.count_leads_open(city=resolved_city),
             ),
         )
+        await set_cached_model(cache_key, response, ANALYTICS_SUMMARY_TTL_SECONDS)
+        return response
 
 
 def _period_bounds(*, now: datetime, days: int) -> tuple[datetime, datetime]:

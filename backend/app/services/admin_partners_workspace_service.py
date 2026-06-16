@@ -7,6 +7,11 @@ from datetime import UTC, datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.activation_wave_constants import ActivationWaveStatus
+from app.integrations.cache import (
+    PARTNERS_WORKSPACE_SUMMARY_TTL_SECONDS,
+    get_cached_model,
+    set_cached_model,
+)
 from app.repositories.admin_activation_wave_repository import AdminActivationWaveRepository
 from app.repositories.admin_cockpit_repository import AdminCockpitRepository
 from app.repositories.admin_partners_terrain_repository import AdminPartnersTerrainRepository
@@ -38,6 +43,10 @@ class AdminPartnersWorkspaceService:
         resolved_city = (
             city or DEFAULT_PARTNERS_WORKSPACE_CITY
         ).strip() or DEFAULT_PARTNERS_WORKSPACE_CITY
+        cache_key = f"admin:partners:workspace-summary:v1:{resolved_city.lower()}"
+        cached = await get_cached_model(cache_key, AdminPartnersWorkspaceSummaryResponse)
+        if cached is not None:
+            return cached
         counts = await self._cockpit_repo.fetch_counts(resolved_city)
 
         activation_waves_open = 0
@@ -105,7 +114,7 @@ class AdminPartnersWorkspaceService:
             )
         ]
 
-        return AdminPartnersWorkspaceSummaryResponse(
+        response = AdminPartnersWorkspaceSummaryResponse(
             generated_at=datetime.now(UTC),
             city=resolved_city,
             leads_total=counts.partner_leads_total,
@@ -131,3 +140,7 @@ class AdminPartnersWorkspaceService:
             map_pins=map_pins,
             evolution_30d=evolution_30d,
         )
+        await set_cached_model(
+            cache_key, response, PARTNERS_WORKSPACE_SUMMARY_TTL_SECONDS
+        )
+        return response

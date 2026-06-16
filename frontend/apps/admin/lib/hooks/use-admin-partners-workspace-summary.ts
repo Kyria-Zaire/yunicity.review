@@ -1,38 +1,32 @@
 "use client";
 
 import { useAuth } from "@/lib/auth/auth-provider";
-import type { AdminPartnersWorkspaceSummary } from "@yunicity/types";
-import { isAuthError } from "@yunicity/utils";
-import { useCallback, useEffect, useState } from "react";
+import { mapAdminError } from "@/lib/admin-query";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
 
 const DEFAULT_CITY = "Reims";
 
 export function useAdminPartnersWorkspaceSummary(city: string = DEFAULT_CITY) {
   const { adminPartnersApi } = useAuth();
-  const [data, setData] = useState<AdminPartnersWorkspaceSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const summary = await adminPartnersApi.getWorkspaceSummary({ city });
-      setData(summary);
-    } catch (err) {
-      setError(
-        isAuthError(err)
-          ? err.message
-          : "Impossible de charger le signal réseau. Réessayez dans un instant.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [adminPartnersApi, city]);
+  const query = useQuery({
+    queryKey: ["admin", "partners", "workspace-summary", city],
+    queryFn: () => adminPartnersApi.getWorkspaceSummary({ city }),
+  });
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const { refetch } = query;
+  const reload = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
-  return { data, isLoading, error, reload: load };
+  return {
+    data: query.data ?? null,
+    isLoading: query.isPending,
+    error: mapAdminError(
+      query.error,
+      "Impossible de charger le signal réseau. Réessayez dans un instant.",
+    ),
+    reload,
+  };
 }

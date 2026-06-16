@@ -91,6 +91,49 @@ class RbacRepository:
         )
         return list(result.scalars().all())
 
+    async def get_role_keys_for_users(
+        self,
+        user_ids: list[uuid.UUID],
+    ) -> dict[uuid.UUID, list[str]]:
+        """Batch role keys for many users in one query (ADMIN-PERF-02A).
+
+        Preserves per-user ordering (by role key) and returns an empty list for
+        users without roles.
+        """
+        mapping: dict[uuid.UUID, list[str]] = {user_id: [] for user_id in user_ids}
+        if not user_ids:
+            return mapping
+        result = await self._session.execute(
+            select(UserRole.user_id, Role.key)
+            .join(Role, Role.id == UserRole.role_id)
+            .where(UserRole.user_id.in_(user_ids))
+            .order_by(Role.key)
+        )
+        for user_id, key in result.all():
+            mapping.setdefault(user_id, []).append(key)
+        return mapping
+
+    async def get_permission_keys_for_users(
+        self,
+        user_ids: list[uuid.UUID],
+    ) -> dict[uuid.UUID, list[str]]:
+        """Batch effective permission keys for many users in one query."""
+        mapping: dict[uuid.UUID, list[str]] = {user_id: [] for user_id in user_ids}
+        if not user_ids:
+            return mapping
+        result = await self._session.execute(
+            select(UserRole.user_id, Permission.key)
+            .join(Role, Role.id == UserRole.role_id)
+            .join(RolePermission, RolePermission.role_id == Role.id)
+            .join(Permission, Permission.id == RolePermission.permission_id)
+            .where(UserRole.user_id.in_(user_ids))
+            .distinct()
+            .order_by(Permission.key)
+        )
+        for user_id, key in result.all():
+            mapping.setdefault(user_id, []).append(key)
+        return mapping
+
     async def user_has_permission(self, user_id: uuid.UUID, permission_key: str) -> bool:
         result = await self._session.execute(
             select(Permission.id)

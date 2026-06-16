@@ -10,6 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.admin_activity_constants import AdminActivityHealthStatus
 from app.core.staff_admin_constants import SYSTEM_ADMIN_PERMISSION
 from app.db.session import check_database
+from app.integrations.cache import (
+    ACTIVITY_SUMMARY_TTL_SECONDS,
+    get_cached_model,
+    set_cached_model,
+)
 from app.integrations.redis import check_redis
 from app.models.user import User
 from app.repositories.admin_activity_repository import AdminActivityRepository
@@ -48,6 +53,10 @@ class AdminActivityService:
 
     async def get_summary(self, *, city: str | None = None) -> AdminActivitySummaryResponse:
         resolved_city = (city or DEFAULT_COCKPIT_CITY).strip() or DEFAULT_COCKPIT_CITY
+        cache_key = f"admin:activity:summary:v1:{resolved_city.lower()}"
+        cached = await get_cached_model(cache_key, AdminActivitySummaryResponse)
+        if cached is not None:
+            return cached
         counts = await self._repo.fetch_attention_counts(city=resolved_city)
         db_raw = await check_database()
         redis_raw = await check_redis()
@@ -59,7 +68,7 @@ class AdminActivityService:
         attention = self._build_attention(alerts)
         sections = self._build_sections(counts, database=database, redis=redis)
 
-        return AdminActivitySummaryResponse(
+        response = AdminActivitySummaryResponse(
             generated_at=datetime.now(UTC),
             read_only=True,
             health=AdminActivityHealth(
@@ -71,6 +80,8 @@ class AdminActivityService:
             alerts=alerts,
             sections=sections,
         )
+        await set_cached_model(cache_key, response, ACTIVITY_SUMMARY_TTL_SECONDS)
+        return response
 
     async def get_feed(
         self,
