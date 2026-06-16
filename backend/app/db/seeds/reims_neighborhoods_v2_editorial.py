@@ -268,7 +268,7 @@ async def _apply_editorial_row(session: AsyncSession, hood: Neighborhood, row: d
         )
 
 
-async def seed_reims_neighborhoods_v2_editorial(session: AsyncSession) -> None:
+async def seed_reims_neighborhoods_v2_editorial(session: AsyncSession) -> int:
     await _ensure_mood_tags(session)
 
     applied = 0
@@ -283,3 +283,4 @@ async def seed_reims_neighborhoods_v2_editorial(session: AsyncSession) -> None:
 
     await session.flush()
     logger.info("reims_neighborhoods_v2_editorial_seed_completed count=%s", applied)
+    return applied
