@@ -14,14 +14,13 @@
     "@yunicity/types": "workspace:*",
     "@yunicity/ui": "workspace:*",
     "@yunicity/utils": "workspace:*",
-    "mapbox-gl": "^3.24.0",
     "next": "^15.3.3",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-map-gl": "^8.1.1"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
+    "@types/google.maps": "^3.58.1",
     "@types/node": "^22.15.21",
     "eslint": "^9.27.0",
     "eslint-config-next": "^15.3.3",

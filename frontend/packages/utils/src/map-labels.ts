@@ -166,6 +166,10 @@ export const MAP_TOKEN_MISSING =
   "Carte indisponible : token Mapbox public manquant.";
 export const MAP_TOKEN_MISSING_WEB =
   "Carte indisponible : configurez NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN.";
+export const MAP_TOKEN_MISSING_GOOGLE_WEB =
+  "Carte indisponible : configurez NEXT_PUBLIC_GOOGLE_MAPS_API_KEY.";
+export const MAP_GOOGLE_LOAD_ERROR =
+  "Impossible de charger Google Maps. Vérifiez la clé API ou réessayez plus tard.";
 export const MAP_TOKEN_MISSING_EXPO =
   "Carte indisponible : configurez EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN.";
 export const MAP_VIEW_EVENT = "Voir le moment";

@@ -15,7 +15,8 @@
     "allowJs": true,
     "types": [
       "next",
-      "next/image-types/global"
+      "next/image-types/global",
+      "google.maps"
     ]
   },
   "include": [

@@ -1,8 +1,8 @@
 "use client";
 
 import { mapCulturalPlaceItemToListItem } from "@/lib/map-cultural-places";
-import type { CulturalPlaceListItem, MapRouteGeometry, MapRouteSummary } from "@yunicity/types";
-import type { MapRouteProfile, MapTerritorySelection } from "@yunicity/utils";
+import type { CulturalPlaceListItem } from "@yunicity/types";
+import type { MapTerritorySelection } from "@yunicity/utils";
 import {
   DEFAULT_MAP_CITY,
   MAP_EMPTY,
@@ -10,14 +10,13 @@ import {
   MAP_ERROR,
   MAP_LOADING,
   MAP_RETRY,
-  MAP_TOKEN_MISSING_WEB,
+  MAP_TOKEN_MISSING_GOOGLE_WEB,
   MAP_TRUNCATED_HINT,
   buildMapSelectedPanelPayload,
   buildNeighborhoodMapMarkers,
   buildTribeMapMarkers,
   buildMapAroundYouItems,
   DEFAULT_MAP_PORTAL_FILTERS,
-  fetchMapboxRoute,
   filterEventsByPortalFilters,
   filterEventsForMapLayer,
   filterNeighborhoodMarkersForLayer,
@@ -25,7 +24,6 @@ import {
   filterPlacesByPortalFilters,
   filterPlacesForMapLayer,
   filterTribeMarkersForLayer,
-  geocodeMapboxAddress,
   mapLayerToUrlSlug,
   normalizeMapPortalCategory,
   parseMapLayer,
@@ -39,11 +37,10 @@ import {
   type MapAroundYouItem,
   type MapPortalFilters,
 } from "@yunicity/utils";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import type { CulturalRoutePanelPhase } from "@/components/map/map-cultural-route-panel";
-import { EventMap } from "@/components/map/event-map";
+import { GoogleEventMap } from "@/components/map/google-event-map";
 import { MapAroundYouCarousel } from "@/components/map/map-around-you-carousel";
 import { MapAppShell } from "@/components/map/map-app-shell";
 import { MapLeftFilterRail } from "@/components/map/map-left-filter-rail";
@@ -61,7 +58,7 @@ import { useMapPageContext } from "@/hooks/use-map-page-context";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
 
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
 
 type LatLon = { latitude: number; longitude: number };
 
@@ -98,23 +95,10 @@ export function EventMapScreen() {
   const [recenterSignal, setRecenterSignal] = useState(0);
   const [flyToTarget, setFlyToTarget] = useState<LatLon | null>(null);
   const [positionHintVisible, setPositionHintVisible] = useState(false);
-
-  const [routeTarget, setRouteTarget] = useState<CulturalPlaceListItem | null>(null);
-  const [routePanelPhase, setRoutePanelPhase] = useState<CulturalRoutePanelPhase | null>(null);
-  const [routeOrigin, setRouteOrigin] = useState<LatLon | null>(null);
-  const [routeProfile, setRouteProfile] = useState<MapRouteProfile>("walking");
-  const [routeGeometry, setRouteGeometry] = useState<MapRouteGeometry | null>(null);
-  const [routeSummary, setRouteSummary] = useState<MapRouteSummary | null>(null);
-  const [routeLoading, setRouteLoading] = useState(false);
-  const [routeError, setRouteError] = useState(false);
-  const [geolocationDenied, setGeolocationDenied] = useState(false);
-  const [addressInput, setAddressInput] = useState("");
-  const [addressError, setAddressError] = useState(false);
   const [mapNotice, setMapNotice] = useState<string | null>(null);
   const [portalFilters, setPortalFilters] = useState<MapPortalFilters>(DEFAULT_MAP_PORTAL_FILTERS);
   const [userOrigin, setUserOrigin] = useState<LatLon | null>(null);
 
-  const routeRequestIdRef = useRef(0);
   const portalStats = useMapPortalStats();
 
   const placeCategories = useMemo(
@@ -291,196 +275,6 @@ export function EventMapScreen() {
     [pathname, router, searchParams],
   );
 
-  const clearRoute = useCallback(() => {
-    setRouteTarget(null);
-    setRoutePanelPhase(null);
-    setRouteOrigin(null);
-    setRouteGeometry(null);
-    setRouteSummary(null);
-    setRouteLoading(false);
-    setRouteError(false);
-    setGeolocationDenied(false);
-    setAddressInput("");
-    setAddressError(false);
-    setRouteProfile("walking");
-  }, []);
-
-  const resolveRoutePlaceFromEvent = useCallback(
-    (event: {
-      id: string;
-      title: string;
-      city: string;
-      location_name: string | null;
-      latitude: number;
-      longitude: number;
-    }): CulturalPlaceListItem => ({
-      id: `event-${event.id}`,
-      slug: `event-${event.id}`,
-      name: event.title,
-      short_description: event.location_name ?? "Moment local",
-      city: event.city,
-      address: event.location_name ?? "Adresse non précisée",
-      category: "event",
-      latitude: event.latitude,
-      longitude: event.longitude,
-      image_url: null,
-      hero_image_url: null,
-      thumbnail_image_url: null,
-      gallery_images: [],
-      editorial_excerpt: null,
-      photo_credit: null,
-      image_source: null,
-      image_alt: null,
-      source_name: "Yunicity",
-      image_credit: null,
-      neighborhood: null,
-    }),
-    [],
-  );
-
-  const computeRoute = useCallback(
-    async (
-      place: CulturalPlaceListItem,
-      origin: LatLon,
-      profile: MapRouteProfile,
-    ) => {
-      if (!MAPBOX_TOKEN) {
-        setRouteError(true);
-        setRoutePanelPhase("active");
-        return;
-      }
-
-      const requestId = ++routeRequestIdRef.current;
-      setRouteTarget(place);
-      setSelectedCulturalSlug(place.slug.startsWith("event-") ? null : place.slug);
-      setRouteOrigin(origin);
-      setRoutePanelPhase("active");
-      setRouteLoading(true);
-      setRouteError(false);
-      setRouteGeometry(null);
-      setRouteSummary(null);
-
-      const result = await fetchMapboxRoute({
-        accessToken: MAPBOX_TOKEN,
-        profile,
-        origin,
-        destination: { latitude: place.latitude, longitude: place.longitude },
-      });
-
-      if (requestId !== routeRequestIdRef.current) {
-        return;
-      }
-
-      setRouteLoading(false);
-      if (!result.ok) {
-        setRouteError(true);
-        return;
-      }
-      setRouteGeometry(result.geometry);
-      setRouteSummary(result.summary);
-    },
-    [],
-  );
-
-  const handleStartRoute = useCallback((place: CulturalPlaceListItem) => {
-    routeRequestIdRef.current += 1;
-    setRouteTarget(place);
-    if (!place.slug.startsWith("event-") && !place.slug.startsWith("neighborhood-") && !place.slug.startsWith("tribe-")) {
-      setSelectedCulturalSlug(place.slug);
-    }
-    setRoutePanelPhase("pick-origin");
-    setRouteGeometry(null);
-    setRouteSummary(null);
-    setRouteLoading(false);
-    setRouteError(false);
-    setGeolocationDenied(false);
-    setAddressInput("");
-    setAddressError(false);
-    setRouteOrigin(null);
-    setRouteProfile("walking");
-  }, []);
-
-  // MAP-V2.A: entrées UI itinéraire retirées ; pipeline Mapbox conservé.
-  void handleStartRoute;
-  void resolveRoutePlaceFromEvent;
-
-  const handlePickMapCenter = useCallback(() => {
-    if (!routeTarget) return;
-    setGeolocationDenied(false);
-    void computeRoute(routeTarget, resolveMapCenterOrigin(bbox, city), routeProfile);
-  }, [routeTarget, bbox, city, routeProfile, computeRoute]);
-
-  const handlePickMyPosition = useCallback(() => {
-    if (!routeTarget) return;
-    setGeolocationDenied(false);
-
-    if (!navigator.geolocation) {
-      setGeolocationDenied(true);
-      return;
-    }
-
-    setRouteLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        void computeRoute(
-          routeTarget,
-          {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          },
-          routeProfile,
-        );
-      },
-      () => {
-        setRouteLoading(false);
-        setGeolocationDenied(true);
-      },
-      { enableHighAccuracy: false, timeout: 12_000, maximumAge: 60_000 },
-    );
-  }, [routeTarget, routeProfile, computeRoute]);
-
-  const handlePickAddressMode = useCallback(() => {
-    setAddressError(false);
-    setRoutePanelPhase("enter-address");
-  }, []);
-
-  const handleSubmitAddress = useCallback(() => {
-    if (!routeTarget || !MAPBOX_TOKEN) {
-      setAddressError(true);
-      return;
-    }
-
-    const proximity = resolveMapCenterOrigin(bbox, city);
-    setRouteLoading(true);
-    setAddressError(false);
-
-    void geocodeMapboxAddress({
-      accessToken: MAPBOX_TOKEN,
-      query: addressInput,
-      proximity,
-    }).then((result) => {
-      if (!result.ok) {
-        setRouteLoading(false);
-        setAddressError(true);
-        return;
-      }
-      void computeRoute(
-        routeTarget,
-        { latitude: result.latitude, longitude: result.longitude },
-        routeProfile,
-      );
-    });
-  }, [routeTarget, addressInput, bbox, city, routeProfile, computeRoute]);
-
-  const handleChangeProfile = useCallback(
-    (profile: MapRouteProfile) => {
-      setRouteProfile(profile);
-      if (!routeTarget || !routeOrigin) return;
-      void computeRoute(routeTarget, routeOrigin, profile);
-    },
-    [routeTarget, routeOrigin, computeRoute],
-  );
-
   const handleMapSelectCulturalSlug = useCallback(
     (slug: string) => {
       const place = culturalBySlug.get(slug);
@@ -495,24 +289,15 @@ export function EventMapScreen() {
   const handleSelectEvent = useCallback((id: string) => {
     setFocusedEventId(id);
     setSelection({ kind: "event", id });
-    clearRoute();
-  }, [clearRoute]);
+  }, []);
 
-  const handleSelectNeighborhood = useCallback(
-    (slug: string) => {
-      setSelection({ kind: "neighborhood", slug });
-      clearRoute();
-    },
-    [clearRoute],
-  );
+  const handleSelectNeighborhood = useCallback((slug: string) => {
+    setSelection({ kind: "neighborhood", slug });
+  }, []);
 
-  const handleSelectTribe = useCallback(
-    (slug: string) => {
-      setSelection({ kind: "tribe", slug });
-      clearRoute();
-    },
-    [clearRoute],
-  );
+  const handleSelectTribe = useCallback((slug: string) => {
+    setSelection({ kind: "tribe", slug });
+  }, []);
 
   const handleUsePositionOnMap = useCallback(() => {
     setPositionHintVisible(true);
@@ -574,7 +359,6 @@ export function EventMapScreen() {
         setSelectedCulturalSlug(null);
         setSelectedPartnerSlug(null);
         setSelection(null);
-        clearRoute();
         return;
       }
 
@@ -686,7 +470,6 @@ export function EventMapScreen() {
   }, [
     api,
     city,
-    clearRoute,
     culturalBySlug,
     events,
     mapContext.neighborhoods,
@@ -712,7 +495,6 @@ export function EventMapScreen() {
       setSelectedPartnerSlug(slug);
       setSelection(null);
       setSelectedCulturalSlug(null);
-      clearRoute();
       updateQuery((params) => {
         params.set("partner", slug);
         params.delete("place");
@@ -728,7 +510,7 @@ export function EventMapScreen() {
         setMapNotice(MAP_PARTNER_GEO_NOTICE);
       }
     },
-    [mapPartners, clearRoute, updateQuery],
+    [mapPartners, updateQuery],
   );
 
   const showDetailRail =
@@ -789,9 +571,9 @@ export function EventMapScreen() {
           </p>
         ) : null}
 
-        {!MAPBOX_TOKEN ? (
+        {!GOOGLE_MAPS_API_KEY ? (
           <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {MAP_TOKEN_MISSING_WEB}
+            {MAP_TOKEN_MISSING_GOOGLE_WEB}
           </p>
         ) : (
           <div className="relative min-h-[520px] h-[calc(100dvh-9rem)] overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm">
@@ -799,9 +581,9 @@ export function EventMapScreen() {
               activeCategory={portalFilters.category}
               onSelectCategory={handlePortalCategoryChange}
             />
-            <EventMap
+            <GoogleEventMap
               city={city}
-              accessToken={MAPBOX_TOKEN}
+              apiKey={GOOGLE_MAPS_API_KEY}
               events={visibleEvents}
               culturalPlaces={visiblePlaces}
               partnerMarkers={visiblePartnerMarkers}
@@ -818,28 +600,6 @@ export function EventMapScreen() {
               focusedEventId={focusedEventId}
               selectedCulturalSlug={selectedCulturalSlug}
               selectedPartnerSlug={selectedPartnerSlug}
-              routeGeometry={routeGeometry}
-              routeTargetName={routeTarget?.name ?? null}
-              routeLoading={routeLoading}
-              routeError={routeError}
-              onClearRoute={clearRoute}
-              routeTarget={routeTarget}
-              routePanelPhase={routePanelPhase}
-              routeSummary={routeSummary}
-              routeProfile={routeProfile}
-              geolocationDenied={geolocationDenied}
-              addressInput={addressInput}
-              addressError={addressError}
-              onPickMyPosition={handlePickMyPosition}
-              onPickAddressMode={handlePickAddressMode}
-              onPickMapCenter={handlePickMapCenter}
-              onAddressInputChange={setAddressInput}
-              onSubmitAddress={handleSubmitAddress}
-              onBackFromAddress={() => {
-                setAddressError(false);
-                setRoutePanelPhase("pick-origin");
-              }}
-              onChangeProfile={handleChangeProfile}
               recenterSignal={recenterSignal}
               flyToTarget={flyToTarget}
               fullHeight
@@ -873,7 +633,7 @@ export function EventMapScreen() {
           </div>
         ) : null}
 
-        {showEmpty && MAPBOX_TOKEN ? (
+        {showEmpty && GOOGLE_MAPS_API_KEY ? (
           <div className="rounded-xl border border-neutral-200/90 bg-white px-4 py-6 text-center shadow-sm">
             <p className="font-medium text-neutral-800">{MAP_EMPTY}</p>
             <p className="mt-1 text-sm text-neutral-500">{MAP_EMPTY_HINT}</p>
