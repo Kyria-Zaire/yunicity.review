@@ -21,9 +21,9 @@ from app.db.seeds.reims_demo_content import seed_reims_demo_content
 from app.db.seeds.reims_neighborhoods_catalog import seed_reims_neighborhoods_catalog
 from app.db.seeds.reims_neighborhoods_v2_editorial import seed_reims_neighborhoods_v2_editorial
 from app.db.seeds.reims_neighborhoods_v2_hero_assets import seed_reims_neighborhoods_v2_hero_assets
-from app.db.seeds.reims_partners_catalog import seed_reims_partners_catalog
 from app.db.seeds.reims_partner_events import seed_reims_partner_events
 from app.db.seeds.reims_partner_offers import seed_reims_partner_offers
+from app.db.seeds.reims_partners_catalog import seed_reims_partners_catalog
 from app.db.seeds.reims_pilot_partner_memberships import seed_reims_pilot_partner_memberships
 from app.db.seeds.reims_signed_partners import seed_reims_signed_partners
 from app.db.seeds.reims_tribes import seed_reims_tribes

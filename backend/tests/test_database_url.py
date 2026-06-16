@@ -50,4 +50,5 @@ def test_prod_settings_accepts_railway_postgresql_url() -> None:
         MEDIA_PUBLIC_BASE_URL="https://api.yunicity.city",
         EMAIL_PROVIDER="console",
     )
+    assert settings.database_url is not None
     assert settings.database_url.startswith("postgresql+asyncpg://")

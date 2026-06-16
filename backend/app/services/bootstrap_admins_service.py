@@ -26,7 +26,6 @@ from app.core.security import (
 )
 from app.db.seeds.auth_rbac import seed_auth_rbac
 from app.models.user import User
-from app.repositories.profile_repository import ProfileRepository
 from app.repositories.rbac_repository import RbacRepository
 from app.repositories.user_repository import UserRepository
 from app.services.profile_service import ProfileService

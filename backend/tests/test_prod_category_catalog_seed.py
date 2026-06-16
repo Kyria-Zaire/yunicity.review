@@ -53,7 +53,9 @@ async def test_prod_category_catalog_seed_creates_twelve() -> None:
         result = await seed_yunicity_categories_catalog(session)
         await session.commit()
 
-        count = (await session.execute(select(func.count()).select_from(YunicityCategory))).scalar_one()
+        count = (
+            await session.execute(select(func.count()).select_from(YunicityCategory))
+        ).scalar_one()
 
     assert result.categories_total == YUNICITY_OFFICIAL_CATEGORY_COUNT == 12
     assert count == 12
@@ -75,7 +77,9 @@ async def test_prod_category_catalog_seed_idempotent() -> None:
         second = await seed_yunicity_categories_catalog(session)
         await session.commit()
 
-        count = (await session.execute(select(func.count()).select_from(YunicityCategory))).scalar_one()
+        count = (
+            await session.execute(select(func.count()).select_from(YunicityCategory))
+        ).scalar_one()
 
     assert first.categories_created == 12
     assert second.categories_created == 0

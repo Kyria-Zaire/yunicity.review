@@ -22,8 +22,8 @@ from app.db.seeds.reims_partners_catalog import (
 )
 from app.db.seeds.reims_pilot_partner_public_data import PILOT_PARTNER_SLUGS
 from app.db.seeds.reims_signed_partners import (
-    REIMS_SIGNED_PARTNERS_SEED,
     REIMS_SIGNED_PARTNER_SLUGS,
+    REIMS_SIGNED_PARTNERS_SEED,
     seed_reims_signed_partners,
 )
 from app.db.session import get_engine

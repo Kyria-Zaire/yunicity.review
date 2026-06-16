@@ -1,7 +1,7 @@
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

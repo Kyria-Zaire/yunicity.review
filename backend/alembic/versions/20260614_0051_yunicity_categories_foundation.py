@@ -42,7 +42,10 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-        sa.CheckConstraint("display_order >= 0", name="ck_yunicity_categories_display_order_nonneg"),
+        sa.CheckConstraint(
+            "display_order >= 0",
+            name="ck_yunicity_categories_display_order_nonneg",
+        ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("slug", name="uq_yunicity_categories_slug"),
     )

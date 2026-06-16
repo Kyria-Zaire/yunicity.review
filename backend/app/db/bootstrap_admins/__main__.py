@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.core.config import get_settings
 from app.services.bootstrap_admins_service import (
+    BootstrapAdminAccountResult,
     BootstrapSuperAdminEmailMissingError,
     bootstrap_initial_admin_accounts,
 )
@@ -18,7 +19,7 @@ from app.services.bootstrap_admins_service import (
 logger = logging.getLogger(__name__)
 
 
-def _print_results(results: list) -> None:
+def _print_results(results: list[BootstrapAdminAccountResult]) -> None:
     created = [item for item in results if item.created]
     skipped = [item for item in results if not item.created]
 
@@ -27,7 +28,7 @@ def _print_results(results: list) -> None:
         for item in created:
             print(f"- {item.account_key}: {item.email}")
             print(f"  rôle: {item.role_key}")
-            print(f"  force_password_reset: true")
+            print("  force_password_reset: true")
             if item.temporary_password:
                 print(f"  mot de passe temporaire: {item.temporary_password}")
         print("Conservez ces mots de passe hors Git et changez-les après la première connexion.")
