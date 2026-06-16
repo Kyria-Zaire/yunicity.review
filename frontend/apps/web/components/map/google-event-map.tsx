@@ -149,6 +149,9 @@ export function GoogleEventMap({
   // Initialisation de la carte (une fois Google prêt).
   useEffect(() => {
     if (status !== "ready" || mapRef.current || !containerRef.current) return;
+    if (typeof google === "undefined" || typeof google.maps?.Map !== "function") {
+      return;
+    }
 
     const center = resolveCityMapCenter(city);
     const map = new google.maps.Map(containerRef.current, {
