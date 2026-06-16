@@ -7,16 +7,18 @@ import { useEffect, useState } from "react";
  *
  * - Aucun secret backend : seule la clé publique `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
  *   (restreinte par referrer dans Google Cloud) est utilisée.
- * - Le script n'est injecté qu'une seule fois (singleton de promesse), même si
- *   plusieurs composants montent le hook.
- * - `loading=async` ne garantit PAS que `google.maps.Map` soit disponible au
- *   `onload` du script : il faut attendre `importLibrary(...)` avant de signaler
- *   `ready`, sinon `new google.maps.Map(...)` lève « is not a constructor ».
+ * - Le script n'est injecté qu'une seule fois (singleton de promesse).
+ * - On utilise le `callback` officiel Google : il n'est invoqué qu'une fois
+ *   l'API ENTIÈREMENT chargée, avec `google.maps.Map`/`Marker` disponibles.
+ *   (Le mode `loading=async` ne garantit pas que les classes soient montées au
+ *   `onload` du script, ce qui provoquait « google.maps.Map is not a
+ *   constructor » ou un échec de `importLibrary`.)
  */
 
 export type GoogleMapsStatus = "idle" | "loading" | "ready" | "error";
 
 const SCRIPT_ID = "yunicity-google-maps-js";
+const CALLBACK_NAME = "__yunicityGoogleMapsReady";
 let loadPromise: Promise<void> | null = null;
 
 function isGoogleMapsReady(): boolean {
@@ -28,10 +30,22 @@ function isGoogleMapsReady(): boolean {
   );
 }
 
-async function importMapsLibraries(): Promise<void> {
-  // Garantit que les classes (Map, Marker, Point, SymbolPath) sont montées.
-  await google.maps.importLibrary("maps");
-  await google.maps.importLibrary("marker");
+function waitForReady(timeoutMs = 15_000): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const start = Date.now();
+    const tick = () => {
+      if (isGoogleMapsReady()) {
+        resolve();
+        return;
+      }
+      if (Date.now() - start > timeoutMs) {
+        reject(new Error("google-maps: délai dépassé"));
+        return;
+      }
+      window.setTimeout(tick, 100);
+    };
+    tick();
+  });
 }
 
 function loadGoogleMaps(apiKey: string): Promise<void> {
@@ -46,31 +60,22 @@ function loadGoogleMaps(apiKey: string): Promise<void> {
   }
 
   loadPromise = new Promise<void>((resolve, reject) => {
-    const finalize = () => {
-      importMapsLibraries().then(resolve).catch(reject);
-    };
-
-    const existing = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
+    // Le script a déjà été injecté (ex. remount/HMR) : on attend que l'API soit prête.
+    const existing = document.getElementById(SCRIPT_ID);
     if (existing) {
-      // Le script peut déjà avoir été chargé : on tente directement l'import,
-      // sinon on attend son évènement load.
-      if (typeof google !== "undefined" && typeof google.maps?.importLibrary === "function") {
-        finalize();
-      } else {
-        existing.addEventListener("load", finalize);
-        existing.addEventListener("error", () =>
-          reject(new Error("google-maps: échec de chargement du script existant")),
-        );
-      }
+      waitForReady().then(resolve).catch(reject);
       return;
     }
+
+    // Callback global déclenché par Google une fois l'API totalement chargée.
+    (window as unknown as Record<string, () => void>)[CALLBACK_NAME] = () => resolve();
 
     const params = new URLSearchParams({
       key: apiKey,
       v: "weekly",
-      loading: "async",
       language: "fr",
       region: "FR",
+      callback: CALLBACK_NAME,
     });
 
     const script = document.createElement("script");
@@ -78,7 +83,6 @@ function loadGoogleMaps(apiKey: string): Promise<void> {
     script.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
     script.async = true;
     script.defer = true;
-    script.onload = finalize;
     script.onerror = () => reject(new Error("google-maps: échec de chargement du script"));
     document.head.appendChild(script);
   });
