@@ -11,6 +11,7 @@ from app.core.local_event_constants import (
     LOCAL_EVENT_LIST_PAGE_SIZE_DEFAULT,
     MVP_LOCAL_EVENT_TYPES,
 )
+from app.schemas.event_readiness import EventReadinessFields
 from app.schemas.neighborhood import FeedNeighborhoodSummary
 
 
@@ -99,6 +100,7 @@ class LocalEventUpdateRequest(BaseModel):
 
 class LocalEventManagementResponse(LocalEventResponse):
     rejection_reason: str | None = None
+    readiness: EventReadinessFields
 
 
 class LocalEventManagementListResponse(BaseModel):

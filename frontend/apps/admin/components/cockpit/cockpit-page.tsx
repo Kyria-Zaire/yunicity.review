@@ -5,6 +5,7 @@ import { CockpitOverviewGrid } from "@/components/cockpit/cockpit-overview-grid"
 import { CockpitPassportHealth } from "@/components/cockpit/cockpit-passport-health";
 import { CockpitQuickActions } from "@/components/cockpit/cockpit-quick-actions";
 import { CockpitRecentActivity } from "@/components/cockpit/cockpit-recent-activity";
+import { CockpitTerritoryEventHealth } from "@/components/cockpit/cockpit-territory-event-health";
 import { CockpitTerritoryMapCard } from "@/components/cockpit/cockpit-territory-map-card";
 import { CockpitTerritoryPulse } from "@/components/cockpit/cockpit-territory-pulse";
 import { CockpitWelcomeHeader } from "@/components/cockpit/cockpit-welcome-header";
@@ -91,6 +92,8 @@ export function CockpitPage() {
       />
 
       <CockpitAttentionPanel attention={data.attention} city={data.city} />
+
+      <CockpitTerritoryEventHealth health={data.signals.territory_event_health} />
 
       <CockpitTerritoryPulse
         city={data.city}

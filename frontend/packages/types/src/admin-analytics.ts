@@ -43,7 +43,9 @@ export interface AdminAnalyticsOffers {
 
 export interface AdminAnalyticsEvents {
   total: number;
-  approved: number;
+  published: number;
+  upcoming: number;
+  past: number;
   pending_review: number;
   cancelled: number;
   archived: number;

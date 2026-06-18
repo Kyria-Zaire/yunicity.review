@@ -6,6 +6,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from app.schemas.event_readiness import TerritoryEventHealthFields
+
 DEFAULT_COCKPIT_CITY = "Reims"
 
 
@@ -64,6 +66,7 @@ class AdminCockpitSignalsMetrics(BaseModel):
     redemptions_today: int = Field(ge=0)
     passports_last_7_days: int = Field(ge=0)
     events_upcoming: int = Field(ge=0)
+    territory_event_health: TerritoryEventHealthFields
     top_stamp_partner: AdminCockpitTopStampPartner
 
 

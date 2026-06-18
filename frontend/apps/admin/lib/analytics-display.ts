@@ -93,8 +93,8 @@ export function buildModuleActivityBars(summary: AdminAnalyticsSummary): Analyti
     },
     {
       id: "events",
-      label: "Événements",
-      value: summary.events.approved,
+      label: "Événements à venir",
+      value: summary.events.upcoming,
       color: "#22c55e",
     },
     {

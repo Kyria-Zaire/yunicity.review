@@ -28,6 +28,7 @@ from app.schemas.admin_local_event import (
     AdminLocalEventDetailResponse,
     AdminLocalEventOrganizationDetail,
 )
+from app.services.event_readiness_mapper import build_event_readiness_fields
 from app.services.feed_event_sync import FeedEventSyncService
 
 
@@ -135,6 +136,7 @@ class AdminLocalEventService:
                 verification_status=org.verification_status,
                 visibility=org.visibility,
             )
+        readiness = build_event_readiness_fields(event)
         return AdminLocalEventDetailResponse(
             id=event.id,
             title=event.title,
@@ -153,6 +155,7 @@ class AdminLocalEventService:
             interest_count=interest_count,
             rejection_reason=event.rejection_reason,
             organization=org_detail,
+            readiness=readiness,
             created_at=event.created_at,
             updated_at=event.updated_at,
         )

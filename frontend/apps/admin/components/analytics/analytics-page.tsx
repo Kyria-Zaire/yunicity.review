@@ -3,6 +3,7 @@
 import { AnalyticsDataFooter } from "@/components/analytics/analytics-data-footer";
 import { AnalyticsEmptyState } from "@/components/analytics/analytics-empty-state";
 import { AnalyticsErrorState } from "@/components/analytics/analytics-error-state";
+import { AnalyticsEventsVitality } from "@/components/analytics/analytics-events-vitality";
 import { AnalyticsEvolutionPanel } from "@/components/analytics/analytics-evolution-panel";
 import { AnalyticsHeader } from "@/components/analytics/analytics-header";
 import { AnalyticsKpiGrid } from "@/components/analytics/analytics-kpi-grid";
@@ -65,6 +66,8 @@ export function AnalyticsPage() {
         attention={summary.attention}
         scope={summary.scope}
       />
+
+      <AnalyticsEventsVitality events={summary.events} />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <AnalyticsEvolutionPanel />

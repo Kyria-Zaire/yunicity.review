@@ -41,6 +41,7 @@ from app.schemas.local_event import (
     LocalEventResponse,
     LocalEventUpdateRequest,
 )
+from app.services.event_readiness_mapper import build_event_readiness_fields
 from app.services.feed_event_sync import FeedEventSyncService
 from app.services.neighborhood_summary import neighborhood_summary_from_event
 from app.services.organization_membership_service import OrganizationMembershipService
@@ -605,7 +606,9 @@ class LocalEventService:
 
     def _to_management_response(self, event: LocalEvent) -> LocalEventManagementResponse:
         base = self._to_response(event)
+        readiness = build_event_readiness_fields(event)
         return LocalEventManagementResponse(
             **base.model_dump(),
             rejection_reason=event.rejection_reason,
+            readiness=readiness,
         )

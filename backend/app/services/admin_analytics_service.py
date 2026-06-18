@@ -48,7 +48,7 @@ class AdminAnalyticsService:
     ) -> AdminAnalyticsSummaryResponse:
         resolved_city = resolve_analytics_city(city)
         cache_key = (
-            f"admin:analytics:summary:v1:{resolved_city.lower()}"
+            f"admin:analytics:summary:v2:{resolved_city.lower()}"
             f":{period}:{int(compare_enabled)}"
         )
         cached = await get_cached_model(cache_key, AdminAnalyticsSummaryResponse)
@@ -165,10 +165,18 @@ class AdminAnalyticsService:
             ),
             events=AdminAnalyticsEvents(
                 total=await self._repo.count_events(city=resolved_city),
-                approved=await self._repo.count_events(
+                published=await self._repo.count_events(
                     city=resolved_city,
                     moderation_status=LocalEventModerationStatus.APPROVED.value,
                     is_cancelled=False,
+                ),
+                upcoming=await self._repo.count_events_upcoming_published(
+                    city=resolved_city,
+                    now=now,
+                ),
+                past=await self._repo.count_events_past_published(
+                    city=resolved_city,
+                    now=now,
                 ),
                 pending_review=await self._repo.count_events(
                     city=resolved_city,

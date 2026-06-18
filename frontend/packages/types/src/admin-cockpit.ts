@@ -1,4 +1,4 @@
-/** Admin cockpit summary (ADMIN-01A / ADMIN-01B). */
+import type { TerritoryEventHealthFields } from "./event-readiness";
 
 export interface AdminCockpitExecutive {
   users_total: number;
@@ -53,6 +53,7 @@ export interface AdminCockpitSignals {
   redemptions_today: number;
   passports_last_7_days: number;
   events_upcoming: number;
+  territory_event_health: TerritoryEventHealthFields;
   top_stamp_partner: AdminCockpitTopStampPartner;
 }
 

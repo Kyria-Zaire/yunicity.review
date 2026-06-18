@@ -61,7 +61,9 @@ class AdminAnalyticsOffers(BaseModel):
 
 class AdminAnalyticsEvents(BaseModel):
     total: int = Field(ge=0)
-    approved: int = Field(ge=0)
+    published: int = Field(ge=0)
+    upcoming: int = Field(ge=0)
+    past: int = Field(ge=0)
     pending_review: int = Field(ge=0)
     cancelled: int = Field(ge=0)
     archived: int = Field(ge=0)

@@ -1,5 +1,6 @@
 /** Admin local events workspace types (ADMIN-05B). */
 
+import type { EventReadinessFields } from "./event-readiness";
 import type { LocalEventManagement, LocalEventManagementListResponse } from "./local-event";
 
 export type AdminEventModerationStatus = "pending_review" | "approved" | "rejected";
@@ -70,6 +71,7 @@ export interface AdminLocalEventDetail {
   interest_count: number;
   rejection_reason?: string | null;
   organization: AdminLocalEventOrganizationDetail | null;
+  readiness: EventReadinessFields;
   created_at: string;
   updated_at: string;
 }

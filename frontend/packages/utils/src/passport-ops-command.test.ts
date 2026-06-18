@@ -296,6 +296,12 @@ describe("buildPassportOpsDashboardKpisFromCockpit", () => {
         redemptions_today: 1,
         passports_last_7_days: 2,
         events_upcoming: 0,
+        territory_event_health: {
+          status: "critical",
+          upcoming_published_count: 0,
+          label: "Aucun événement à venir",
+          signal_emoji: "🔴",
+        },
         top_stamp_partner: { organization_id: null, name: null, stamps_count: 0 },
       },
       1,

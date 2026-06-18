@@ -1,6 +1,7 @@
 "use client";
 
 import { EventDetailAttentionBanner } from "@/components/events/detail/event-detail-attention-banner";
+import { EventTerritoryContributionPanel } from "@/components/events/event-territory-contribution-panel";
 import { EventDetailAuditSection } from "@/components/events/detail/event-detail-audit-section";
 import { EventDetailFeedSyncCard } from "@/components/events/detail/event-detail-feed-sync-card";
 import { EventDetailHeader } from "@/components/events/detail/event-detail-header";
@@ -166,6 +167,9 @@ export function EventDetailView({ eventId }: EventDetailViewProps) {
         </div>
 
         <aside className="space-y-6">
+          {event.readiness ? (
+            <EventTerritoryContributionPanel readiness={event.readiness} />
+          ) : null}
           <EventDetailOrganizationCard event={event} />
           <EventDetailLocationCard event={event} />
           <EventDetailPublicExposureCard event={event} />

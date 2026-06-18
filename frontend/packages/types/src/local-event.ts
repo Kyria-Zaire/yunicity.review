@@ -1,6 +1,7 @@
 /** Local events / city moments (TICKET-505). */
 
 import type { FeedNeighborhoodSummary } from "./neighborhood";
+import type { EventReadinessFields } from "./event-readiness";
 import type { PartnerStatus } from "./partner";
 
 export interface LocalEventOrganization {
@@ -73,9 +74,15 @@ export interface PartnerEventsParams {
 /** Organization self-service (TICKET-505 / WEB-PARTNERS-08C). */
 export interface LocalEventManagement extends LocalEvent {
   rejection_reason?: string | null;
+  readiness: EventReadinessFields;
 }
 
-export type LocalEventManagementListResponse = LocalEventListResponse;
+export interface LocalEventManagementListResponse {
+  items: LocalEventManagement[];
+  total: number;
+  page: number;
+  page_size: number;
+}
 
 export interface LocalEventCreatePayload {
   organization_id: string;

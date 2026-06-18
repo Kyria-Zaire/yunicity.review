@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.core.event_admin_constants import (
     EVENT_ADMIN_ACTION_LIST_PAGE_SIZE_MAX,
 )
+from app.schemas.event_readiness import EventReadinessFields
 
 EVENT_ADMIN_ACTION_LIST_PAGE_SIZE_DEFAULT = 20
 
@@ -73,6 +74,7 @@ class AdminLocalEventDetailResponse(BaseModel):
     interest_count: int = Field(ge=0)
     rejection_reason: str | None = None
     organization: AdminLocalEventOrganizationDetail | None = None
+    readiness: EventReadinessFields
     created_at: datetime
     updated_at: datetime
 

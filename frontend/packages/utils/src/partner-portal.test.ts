@@ -149,6 +149,14 @@ describe("partnerPortalReadinessChecklist", () => {
           interested_by_me: false,
           organization: null,
           created_at: new Date().toISOString(),
+          readiness: {
+            readiness: "not_ready",
+            classification: "placeholder",
+            contributes_to_territory: false,
+            territory_contribution_label:
+              "Cet événement est incomplet et n'améliore pas la vitalité du territoire.",
+            checks: [],
+          },
         },
       ],
       creatorContents: [

@@ -331,6 +331,16 @@ export type {
 } from "./partner-offer-readiness";
 
 export type {
+  EventContentClassification,
+  EventReadinessCheck,
+  EventReadinessCheckSeverity,
+  EventReadinessFields,
+  EventReadinessLevel,
+  TerritoryEventHealthFields,
+  TerritoryEventHealthLevel,
+} from "./event-readiness";
+
+export type {
   OfferRedemptionStatus,
   PartnerOffer,
   PartnerOfferListResponse,

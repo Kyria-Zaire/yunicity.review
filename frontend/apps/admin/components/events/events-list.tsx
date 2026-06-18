@@ -1,6 +1,7 @@
 "use client";
 
 import { EventModerationStatusBadge } from "@/components/events/event-moderation-status-badge";
+import { EventReadinessBadge } from "@/components/events/event-readiness-badge";
 import { EventRejectDialog } from "@/components/events/event-reject-dialog";
 import type { AdminLocalEventListItem } from "@yunicity/types";
 import {
@@ -134,6 +135,7 @@ export function EventsList({
                 <th className="px-4 py-3 font-medium">Organisation</th>
                 <th className="px-4 py-3 font-medium">Type</th>
                 <th className="px-4 py-3 font-medium">Statut</th>
+                <th className="px-4 py-3 font-medium">Préparation</th>
                 <th className="px-4 py-3 font-medium">Visibilité</th>
                 <th className="px-4 py-3 font-medium">Date</th>
                 <th className="px-4 py-3 font-medium">Ville / zone</th>
@@ -176,6 +178,13 @@ export function EventsList({
                         status={event.moderation_status}
                         isCancelled={event.is_cancelled}
                       />
+                    </td>
+                    <td className="px-4 py-3">
+                      {event.readiness ? (
+                        <EventReadinessBadge readiness={event.readiness.readiness} />
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td className="px-4 py-3 text-stone-600">
                       {eventVisibilityLabel("public")}

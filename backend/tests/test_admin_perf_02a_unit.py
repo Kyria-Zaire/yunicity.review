@@ -22,6 +22,7 @@ from app.schemas.admin_cockpit import (
     AdminCockpitSummaryResponse,
     AdminCockpitTopStampPartner,
 )
+from app.schemas.event_readiness import TerritoryEventHealthFields
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -134,6 +135,12 @@ def _zeroed_cockpit_summary() -> AdminCockpitSummaryResponse:
             redemptions_today=3,
             passports_last_7_days=4,
             events_upcoming=5,
+            territory_event_health=TerritoryEventHealthFields(
+                status="healthy",
+                upcoming_published_count=5,
+                label="Agenda vivant",
+                signal_emoji="🟢",
+            ),
             top_stamp_partner=AdminCockpitTopStampPartner(
                 organization_id=None,
                 name=None,

@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Select
 
+from app.core.local_event_constants import LocalEventModerationStatus
 from app.core.partner_creator_content_constants import PartnerCreatorContentStatus
 from app.core.passport_constants import (
     OfferRedemptionStatus,
@@ -190,6 +191,32 @@ class AdminAnalyticsRepository:
             stmt = stmt.where(LocalEvent.moderation_status == moderation_status)
         if is_cancelled is not None:
             stmt = stmt.where(LocalEvent.is_cancelled.is_(is_cancelled))
+        return await self._scalar_count(stmt)
+
+    async def count_events_upcoming_published(self, *, city: str, now: datetime) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(LocalEvent)
+            .where(
+                LocalEvent.city == city,
+                LocalEvent.is_cancelled.is_(False),
+                LocalEvent.moderation_status == LocalEventModerationStatus.APPROVED.value,
+                LocalEvent.starts_at >= now,
+            )
+        )
+        return await self._scalar_count(stmt)
+
+    async def count_events_past_published(self, *, city: str, now: datetime) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(LocalEvent)
+            .where(
+                LocalEvent.city == city,
+                LocalEvent.is_cancelled.is_(False),
+                LocalEvent.moderation_status == LocalEventModerationStatus.APPROVED.value,
+                LocalEvent.starts_at < now,
+            )
+        )
         return await self._scalar_count(stmt)
 
     async def count_creator_contents(self, *, city: str, status: str | None = None) -> int:

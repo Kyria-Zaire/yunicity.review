@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.territory_event_health import territory_event_health
 from app.integrations.cache import (
     COCKPIT_SUMMARY_TTL_SECONDS,
     get_cached_model,
@@ -22,6 +23,7 @@ from app.schemas.admin_cockpit import (
     AdminCockpitSummaryResponse,
     AdminCockpitTopStampPartner,
 )
+from app.schemas.event_readiness import TerritoryEventHealthFields
 
 
 class AdminCockpitService:
@@ -30,11 +32,12 @@ class AdminCockpitService:
 
     async def get_summary(self, *, city: str | None = None) -> AdminCockpitSummaryResponse:
         resolved_city = (city or DEFAULT_COCKPIT_CITY).strip() or DEFAULT_COCKPIT_CITY
-        cache_key = f"admin:cockpit:summary:v1:{resolved_city.lower()}"
+        cache_key = f"admin:cockpit:summary:v2:{resolved_city.lower()}"
         cached = await get_cached_model(cache_key, AdminCockpitSummaryResponse)
         if cached is not None:
             return cached
         counts = await self._repo.fetch_counts(resolved_city)
+        event_health = territory_event_health(counts.events_upcoming)
         response = AdminCockpitSummaryResponse(
             generated_at=datetime.now(UTC),
             city=resolved_city,
@@ -81,6 +84,12 @@ class AdminCockpitService:
                 redemptions_today=counts.redemptions_today,
                 passports_last_7_days=counts.passports_last_7_days,
                 events_upcoming=counts.events_upcoming,
+                territory_event_health=TerritoryEventHealthFields(
+                    status=event_health.status.value,
+                    upcoming_published_count=event_health.upcoming_published_count,
+                    label=event_health.label,
+                    signal_emoji=event_health.signal_emoji,
+                ),
                 top_stamp_partner=AdminCockpitTopStampPartner(
                     organization_id=counts.top_stamp_partner_org_id,
                     name=counts.top_stamp_partner_name,
