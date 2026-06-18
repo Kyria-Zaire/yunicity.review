@@ -44,7 +44,8 @@ REIMS_PARTNER_OFFERS_SEED: tuple[dict[str, Any], ...] = (
         "title": "Entrée offerte",
         "value_label": "Entrée au choix offerte",
         "description": (
-            "Découvrez la cuisine thaï du Pittaya avec une entrée offerte pour les porteurs Passport."
+            "Découvrez la cuisine thaï du Pittaya avec une entrée offerte "
+            "pour les porteurs Passport."
         ),
         "conditions": (
             "Pour toute commande d'un plat principal, sur présentation du Passport. "
@@ -82,7 +83,8 @@ REIMS_PARTNER_OFFERS_SEED: tuple[dict[str, Any], ...] = (
         "title": "Coupe + soin barbe",
         "value_label": "Offre Gold — coupe & soin",
         "description": (
-            "Une coupe et un soin barbe offerts pour les ambassadeurs Passport Gold chez Garçon Barbiers."
+            "Une coupe et un soin barbe offerts pour les ambassadeurs Passport Gold "
+            "chez Garçon Barbiers."
         ),
         "conditions": (
             "Sur rendez-vous, présentation du Passport Gold. Une utilisation par trimestre et par "
