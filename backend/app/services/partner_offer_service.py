@@ -53,6 +53,7 @@ from app.schemas.partner_offer_management import (
 from app.services.feed_offer_sync import FeedOfferSyncService
 from app.services.notification_triggers import notify_offer_approved, notify_offer_rejected
 from app.services.organization_membership_service import OrganizationMembershipService
+from app.services.partner_offer_readiness_mapper import build_partner_offer_readiness_fields
 
 
 class PartnerOfferService:
@@ -274,10 +275,40 @@ class PartnerOfferService:
         offer_type: str | None,
         organization_id: uuid.UUID | None,
         title_query: str | None,
+        readiness: str | None,
         page: int,
         page_size: int,
     ) -> PartnerOfferAdminListResponse:
         page_size = min(page_size, PARTNER_OFFER_LIST_PAGE_SIZE_MAX)
+        if readiness:
+            offers, _ = await self._offers.list_admin(
+                offer_status=offer_status,
+                offer_type=offer_type,
+                organization_id=organization_id,
+                title_query=title_query,
+                page=1,
+                page_size=PARTNER_OFFER_LIST_PAGE_SIZE_MAX,
+            )
+            redemptions = await self._offers.count_completed_redemptions_for_offers(
+                [offer.id for offer in offers]
+            )
+            items = [
+                await self._to_admin_response(
+                    offer, redemptions_count=redemptions.get(offer.id, 0)
+                )
+                for offer in offers
+            ]
+            filtered = [item for item in items if item.readiness.readiness == readiness]
+            total = len(filtered)
+            start = (page - 1) * page_size
+            end = start + page_size
+            return PartnerOfferAdminListResponse(
+                items=filtered[start:end],
+                total=total,
+                page=page,
+                page_size=page_size,
+            )
+
         offers, total = await self._offers.list_admin(
             offer_status=offer_status,
             offer_type=offer_type,
@@ -518,11 +549,14 @@ class PartnerOfferService:
             else PartnerOfferStatus(offer.status)
         )
         flash = build_flash_snapshot(offer)
+        readiness = build_partner_offer_readiness_fields(offer)
         return PartnerOfferManagementResponse(
             id=offer.id,
             organization_id=offer.organization_id,
             title=offer.title,
             description=offer.description,
+            value_label=offer.value_label,
+            conditions=offer.conditions,
             offer_type=offer.offer_type,
             offer_status=status,
             is_active=offer.is_active,
@@ -544,6 +578,7 @@ class PartnerOfferService:
             notification_sent_at=offer.notification_sent_at,
             created_at=offer.created_at,
             updated_at=offer.updated_at,
+            readiness=readiness,
         )
 
     async def _to_admin_response(
@@ -563,11 +598,14 @@ class PartnerOfferService:
             if isinstance(offer.status, PartnerOfferStatus)
             else PartnerOfferStatus(offer.status)
         )
+        readiness = build_partner_offer_readiness_fields(offer, org=org)
         return PartnerOfferAdminResponse(
             id=offer.id,
             organization_id=offer.organization_id,
             title=offer.title,
             description=offer.description,
+            value_label=offer.value_label,
+            conditions=offer.conditions,
             offer_type=offer.offer_type,
             offer_status=status,
             is_active=offer.is_active,
@@ -591,4 +629,5 @@ class PartnerOfferService:
                 verification_status=org.verification_status,
                 visibility=org.visibility,
             ),
+            readiness=readiness,
         )

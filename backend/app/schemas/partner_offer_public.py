@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.partner_constants import PartnerStatus
 from app.core.passport_constants import PartnerOfferType
+from app.schemas.partner_offer_readiness import PartnerOfferReadinessFields
 
 
 class PartnerOfferPartnerSummary(BaseModel):
@@ -38,6 +39,8 @@ class PartnerOfferPublic(BaseModel):
     valid_until: datetime | None
     is_featured: bool = False
     tier_code_required: str | None = None
+    is_passport_eligible: bool = False
+    readiness: PartnerOfferReadinessFields | None = None
     partner: PartnerOfferPartnerSummary
 
 

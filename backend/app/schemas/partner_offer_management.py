@@ -15,6 +15,7 @@ from app.core.passport_constants import (
     PartnerOfferStatus,
     PartnerOfferType,
 )
+from app.schemas.partner_offer_readiness import PartnerOfferReadinessFields
 
 PARTNER_OFFER_LIST_PAGE_SIZE_DEFAULT = 50
 PARTNER_OFFER_LIST_PAGE_SIZE_MAX = 100
@@ -98,6 +99,8 @@ class PartnerOfferManagementResponse(BaseModel):
     organization_id: UUID
     title: str
     description: str | None
+    value_label: str | None = None
+    conditions: str | None = None
     offer_type: PartnerOfferType
     offer_status: PartnerOfferStatus
     is_active: bool
@@ -119,6 +122,7 @@ class PartnerOfferManagementResponse(BaseModel):
     notification_sent_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
+    readiness: PartnerOfferReadinessFields
 
 
 class PartnerOfferManagementListResponse(BaseModel):

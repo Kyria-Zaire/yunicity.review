@@ -323,6 +323,14 @@ export type {
 } from "./partner-offer-public";
 
 export type {
+  PartnerOfferReadinessCheck,
+  PartnerOfferReadinessCheckSeverity,
+  PartnerOfferReadinessFields,
+  PartnerOfferReadinessLevel,
+  PartnerOfferValueCategory,
+} from "./partner-offer-readiness";
+
+export type {
   OfferRedemptionStatus,
   PartnerOffer,
   PartnerOfferListResponse,

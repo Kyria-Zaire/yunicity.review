@@ -270,7 +270,10 @@ export function passportOffersHasActiveFilters(state: {
   status: string;
   organizationId: string;
   offerType: string;
+  readiness?: string;
   q: string;
 }): boolean {
-  return Boolean(state.status || state.organizationId || state.offerType || state.q.trim());
+  return Boolean(
+    state.status || state.organizationId || state.offerType || state.readiness || state.q.trim(),
+  );
 }

@@ -1,4 +1,5 @@
 import type { PartnerOfferType } from "./passport";
+import type { PartnerOfferReadinessFields, PartnerOfferReadinessLevel } from "./partner-offer-readiness";
 import type { OfferRedemptionStatus } from "./passport";
 import type { PartnerOfferStatus } from "./partner_offer_management";
 
@@ -19,6 +20,8 @@ export interface PartnerOfferAdmin {
   organization_id: string;
   title: string;
   description: string | null;
+  value_label?: string | null;
+  conditions?: string | null;
   offer_type: PartnerOfferType;
   offer_status: PartnerOfferAdminStatus;
   is_active: boolean;
@@ -35,6 +38,7 @@ export interface PartnerOfferAdmin {
   created_at: string;
   updated_at: string;
   organization: PartnerOfferAdminOrganization;
+  readiness: PartnerOfferReadinessFields;
 }
 
 export interface PartnerOfferAdminListResponse {
@@ -88,6 +92,7 @@ export interface PartnerOfferAdminListParams {
   offer_type?: PartnerOfferType;
   organization_id?: string;
   q?: string;
+  readiness?: PartnerOfferReadinessLevel;
   page?: number;
   page_size?: number;
 }

@@ -1,4 +1,5 @@
 import type { PartnerOfferType } from "./passport";
+import type { PartnerOfferReadinessFields } from "./partner-offer-readiness";
 
 export type PartnerOfferStatus =
   | "draft"
@@ -12,6 +13,8 @@ export interface PartnerOfferManagement {
   organization_id: string;
   title: string;
   description: string | null;
+  value_label?: string | null;
+  conditions?: string | null;
   offer_type: PartnerOfferType;
   offer_status: PartnerOfferStatus;
   is_active: boolean;
@@ -33,6 +36,7 @@ export interface PartnerOfferManagement {
   notification_sent_at?: string | null;
   created_at: string;
   updated_at: string;
+  readiness: PartnerOfferReadinessFields;
 }
 
 export interface PartnerOfferManagementListResponse {

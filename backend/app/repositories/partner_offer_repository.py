@@ -206,7 +206,9 @@ class PartnerOfferRepository:
     async def get_by_id(self, offer_id: uuid.UUID) -> PartnerOffer | None:
         result = await self._session.execute(
             select(PartnerOffer)
-            .options(selectinload(PartnerOffer.organization))
+            .options(
+                selectinload(PartnerOffer.organization).selectinload(Organization.partner_profile)
+            )
             .where(PartnerOffer.id == offer_id)
         )
         return result.scalar_one_or_none()
@@ -347,7 +349,9 @@ class PartnerOfferRepository:
 
         stmt = (
             select(PartnerOffer)
-            .options(selectinload(PartnerOffer.organization))
+            .options(
+                selectinload(PartnerOffer.organization).selectinload(Organization.partner_profile)
+            )
             .order_by(PartnerOffer.created_at.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
