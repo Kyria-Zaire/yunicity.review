@@ -74,6 +74,10 @@ async def list_partner_offers_admin(
     offer_type: str | None = Query(default=None),
     organization_id: str | None = Query(default=None),
     q: str | None = Query(default=None, min_length=1, max_length=160),
+    readiness: str | None = Query(
+        default=None,
+        description="Readiness filter: ready, partial, not_ready",
+    ),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(
         default=PARTNER_OFFER_LIST_PAGE_SIZE_DEFAULT,
@@ -89,6 +93,7 @@ async def list_partner_offers_admin(
         offer_type=offer_type,
         organization_id=org_id,
         title_query=title_query,
+        readiness=readiness,
         page=page,
         page_size=page_size,
     )

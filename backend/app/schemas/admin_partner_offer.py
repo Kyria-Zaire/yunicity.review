@@ -20,6 +20,7 @@ from app.schemas.partner_offer_management import (
     PARTNER_OFFER_LIST_PAGE_SIZE_DEFAULT,
     PARTNER_OFFER_LIST_PAGE_SIZE_MAX,
 )
+from app.schemas.partner_offer_readiness import PartnerOfferReadinessFields
 
 ADMIN_OFFER_REDEMPTION_LIST_PAGE_SIZE_DEFAULT = 20
 ADMIN_OFFER_REDEMPTION_LIST_PAGE_SIZE_MAX = 50
@@ -134,6 +135,8 @@ class PartnerOfferAdminResponse(BaseModel):
     organization_id: UUID
     title: str
     description: str | None
+    value_label: str | None = None
+    conditions: str | None = None
     offer_type: PartnerOfferType
     offer_status: PartnerOfferStatus
     is_active: bool
@@ -150,6 +153,7 @@ class PartnerOfferAdminResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     organization: PartnerOfferOrganizationAdmin
+    readiness: PartnerOfferReadinessFields
 
 
 class PartnerOfferAdminListResponse(BaseModel):

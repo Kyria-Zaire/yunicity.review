@@ -8,6 +8,7 @@ import {
   toAdminOfferListParams,
   type AdminOfferStatusFilter,
   type AdminOfferTypeFilter,
+  type AdminOfferReadinessFilter,
   type PassportOffersListState,
 } from "@/lib/passport-offers-url";
 import type { AdminOfferListItem, VerifiedOrganizationOption } from "@yunicity/types";
@@ -93,6 +94,13 @@ export function useAdminOffersList() {
     [replaceState, state],
   );
 
+  const setReadinessFilter = useCallback(
+    (readiness: AdminOfferReadinessFilter) => {
+      replaceState({ ...state, readiness, page: 1 });
+    },
+    [replaceState, state],
+  );
+
   const setSearchQuery = useCallback(
     (q: string) => {
       replaceState({ ...state, q: q.trim(), page: 1 });
@@ -140,6 +148,7 @@ export function useAdminOffersList() {
     setStatusFilter,
     setOrganizationFilter,
     setOfferTypeFilter,
+    setReadinessFilter,
     setSearchQuery,
     resetFilters,
     hasActiveFilters,

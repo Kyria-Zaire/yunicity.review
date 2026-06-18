@@ -1,5 +1,6 @@
 import type { PartnerStatus } from "./partner";
 import type { PartnerOfferType } from "./passport";
+import type { PartnerOfferReadinessFields } from "./partner-offer-readiness";
 
 export type PartnerOfferPartnerSummary = {
   name: string;
@@ -24,6 +25,8 @@ export type PartnerOfferPublic = {
   valid_until: string | null;
   is_featured: boolean;
   tier_code_required: string | null;
+  is_passport_eligible?: boolean;
+  readiness?: PartnerOfferReadinessFields | null;
   partner: PartnerOfferPartnerSummary;
 };
 

@@ -149,8 +149,10 @@ async def test_public_catalog_lists_active_offers(
     assert response.status_code == 200
     body = response.json()
     slugs = {item["slug"] for item in body["items"]}
-    assert "belga-queen-accueil-passport" in slugs
-    assert "pittaya-avantage-passport" in slugs
+    assert "belga-queen-premiere-biere" in slugs
+    assert "pittaya-entree-offerte" in slugs
+    assert "centre-des-ressources-atelier-silver" in slugs
+    assert "garcon-barbiers-coupe-soin-gold" in slugs
     for item in body["items"]:
         assert "partner" in item
         assert item["partner"]["slug"]

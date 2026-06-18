@@ -34,6 +34,11 @@ export function OfferDetailIdentityCard({ offer }: OfferDetailIdentityCardProps)
         <Field label="Titre" value={offer.title} />
         <Field label="Description" value={offer.description?.trim() || "—"} />
         <Field label="Type" value={PARTNER_OFFER_TYPE_LABELS[offer.offer_type]} />
+        <Field label="Préparation" value={offer.readiness.value_category_label} />
+        <Field
+          label="Éligible Passport"
+          value={offer.readiness.is_passport_eligible ? "Oui" : "Non"}
+        />
         <Field label="Statut" value={offerStatusLabel(offer.offer_status)} />
         <Field label="Publiée le" value={publishedAt} />
         <Field label="Valide du" value={formatOfferDate(offer.valid_from)} />

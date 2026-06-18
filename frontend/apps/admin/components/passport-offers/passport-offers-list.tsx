@@ -1,5 +1,6 @@
 "use client";
 
+import { OfferReadinessBadge } from "@/components/passport-offers/offer-readiness-badge";
 import { OfferStatusBadge } from "@/components/offer-status-badge";
 import type { AdminOfferListItem } from "@yunicity/types";
 import {
@@ -95,12 +96,13 @@ export function PassportOffersList({
       className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm"
     >
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1100px] text-left text-sm">
+        <table className="w-full min-w-[1200px] text-left text-sm">
           <thead className="border-b border-stone-200 bg-stone-50 text-[11px] uppercase tracking-wide text-stone-500">
             <tr>
               <th className="px-4 py-3 font-medium">Offre</th>
               <th className="px-4 py-3 font-medium">Partenaire</th>
               <th className="px-4 py-3 font-medium">Type</th>
+              <th className="px-4 py-3 font-medium">Préparation</th>
               <th className="px-4 py-3 font-medium">Statut</th>
               <th className="px-4 py-3 font-medium">Validité</th>
               <th className="px-4 py-3 font-medium">Utilisations</th>
@@ -125,6 +127,9 @@ export function PassportOffersList({
                   </td>
                   <td className="px-4 py-3 text-stone-700">{offer.organization.name}</td>
                   <td className="px-4 py-3 text-stone-600">{typeLabel}</td>
+                  <td className="px-4 py-3">
+                    <OfferReadinessBadge readiness={offer.readiness.readiness} />
+                  </td>
                   <td className="px-4 py-3">
                     <OfferStatusBadge status={offer.offer_status} />
                   </td>

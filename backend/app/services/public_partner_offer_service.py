@@ -21,6 +21,7 @@ from app.schemas.partner_offer_public import (
     PartnerOfferPublic,
     PartnerOfferPublicListResponse,
 )
+from app.services.partner_offer_readiness_mapper import build_partner_offer_readiness_fields
 
 
 class PublicPartnerOfferService:
@@ -144,6 +145,7 @@ class PublicPartnerOfferService:
                 if isinstance(profile.partner_status, PartnerStatus)
                 else PartnerStatus(profile.partner_status)
             )
+        readiness = build_partner_offer_readiness_fields(offer, org=org)
         return PartnerOfferPublic(
             id=offer.id,
             slug=offer.slug,
@@ -160,6 +162,8 @@ class PublicPartnerOfferService:
             valid_until=offer.valid_until,
             is_featured=offer.is_featured,
             tier_code_required=offer.tier_code_required,
+            readiness=readiness,
+            is_passport_eligible=readiness.is_passport_eligible,
             partner=self._partner_summary(org, partner_status),
         )
 

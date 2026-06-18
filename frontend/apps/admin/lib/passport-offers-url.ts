@@ -1,15 +1,17 @@
-import type { AdminOfferStatus, PartnerOfferType } from "@yunicity/types";
+import type { AdminOfferStatus, PartnerOfferType, PartnerOfferReadinessLevel } from "@yunicity/types";
 
 export const PASSPORT_OFFERS_DEFAULT_PAGE_SIZE = 20;
 export const PASSPORT_OFFERS_MAX_PAGE_SIZE = 50;
 
 export type AdminOfferStatusFilter = "" | AdminOfferStatus;
 export type AdminOfferTypeFilter = "" | PartnerOfferType;
+export type AdminOfferReadinessFilter = "" | PartnerOfferReadinessLevel;
 
 export interface PassportOffersListState {
   status: AdminOfferStatusFilter;
   organizationId: string;
   offerType: AdminOfferTypeFilter;
+  readiness: AdminOfferReadinessFilter;
   q: string;
   page: number;
   pageSize: number;
@@ -19,6 +21,7 @@ export const PASSPORT_OFFERS_DEFAULT_LIST_STATE: PassportOffersListState = {
   status: "pending_review",
   organizationId: "",
   offerType: "",
+  readiness: "",
   q: "",
   page: 1,
   pageSize: PASSPORT_OFFERS_DEFAULT_PAGE_SIZE,
@@ -57,6 +60,17 @@ function parseStatus(
   return "";
 }
 
+const OFFER_READINESS_LEVELS = ["ready", "partial", "not_ready"] as const;
+
+function parseReadiness(raw: string | null): AdminOfferReadinessFilter {
+  if (!raw) {
+    return "";
+  }
+  return OFFER_READINESS_LEVELS.includes(raw as PartnerOfferReadinessLevel)
+    ? (raw as PartnerOfferReadinessLevel)
+    : "";
+}
+
 function parseOfferType(raw: string | null): AdminOfferTypeFilter {
   if (!raw) {
     return "";
@@ -85,6 +99,7 @@ export function parsePassportOffersSearchParams(
     status: parseStatus(params.get("status"), organizationId.length > 0),
     organizationId,
     offerType: parseOfferType(params.get("offer_type")),
+    readiness: parseReadiness(params.get("readiness")),
     q: params.get("q")?.trim() ?? "",
     page: parsePage(params.get("page")),
     pageSize: parsePageSize(params.get("page_size")),
@@ -106,6 +121,9 @@ export function passportOffersStateToSearchParams(
   if (state.offerType) {
     params.set("offer_type", state.offerType);
   }
+  if (state.readiness) {
+    params.set("readiness", state.readiness);
+  }
   if (state.q) {
     params.set("q", state.q);
   }
@@ -122,6 +140,7 @@ export function toAdminOfferListParams(state: PassportOffersListState): {
   status?: AdminOfferStatus;
   offer_type?: PartnerOfferType;
   organization_id?: string;
+  readiness?: PartnerOfferReadinessLevel;
   q?: string;
   page: number;
   page_size: number;
@@ -130,6 +149,7 @@ export function toAdminOfferListParams(state: PassportOffersListState): {
     status: state.status || undefined,
     offer_type: state.offerType || undefined,
     organization_id: state.organizationId || undefined,
+    readiness: state.readiness || undefined,
     q: state.q || undefined,
     page: state.page,
     page_size: state.pageSize,

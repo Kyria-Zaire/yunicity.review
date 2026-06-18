@@ -29,6 +29,7 @@ export function PassportOffersWorkspace() {
     setStatusFilter,
     setOrganizationFilter,
     setOfferTypeFilter,
+    setReadinessFilter,
     setSearchQuery,
     resetFilters,
     hasActiveFilters,
@@ -65,6 +66,7 @@ export function PassportOffersWorkspace() {
         onStatusChange={setStatusFilter}
         onOrganizationChange={setOrganizationFilter}
         onOfferTypeChange={setOfferTypeFilter}
+        onReadinessChange={setReadinessFilter}
         onSearchSubmit={setSearchQuery}
         onRefresh={reload}
       />

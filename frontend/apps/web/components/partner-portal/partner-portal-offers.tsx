@@ -1,5 +1,6 @@
 "use client";
 
+import { PartnerOfferReadinessPanel } from "@/components/partner-portal/partner-offer-readiness-panel";
 import { usePartnerPortalContext } from "@/hooks/use-partner-portal-context";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import type { PartnerOfferManagement, PartnerOfferType } from "@yunicity/types";
@@ -235,6 +236,9 @@ export function PartnerPortalOffers() {
                 {offer.rejection_reason ? (
                   <p className="mt-2 text-xs text-red-600">Motif : {offer.rejection_reason}</p>
                 ) : null}
+                <div className="mt-4">
+                  <PartnerOfferReadinessPanel readiness={offer.readiness} />
+                </div>
                 {ctx.canManage && (canEditOffer(offer) || canSubmitOffer(offer)) ? (
                   <div className="mt-4 flex flex-wrap gap-2">
                     {canEditOffer(offer) ? (

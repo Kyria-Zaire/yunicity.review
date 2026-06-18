@@ -355,5 +355,5 @@ async def test_api_partner_offers_after_catalog_seed() -> None:
     assert response.status_code == 200, response.text
     offers = response.json()["items"]
     assert len(offers) == 1
-    assert offers[0]["slug"] == "belga-queen-accueil-passport"
+    assert offers[0]["slug"] == "belga-queen-premiere-biere"
     assert offers[0]["is_active"] is True

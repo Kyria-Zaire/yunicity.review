@@ -3,6 +3,7 @@
 import { OfferDetailEditSection } from "@/components/passport-offers/detail/offer-detail-edit-section";
 import { OfferDetailHeader } from "@/components/passport-offers/detail/offer-detail-header";
 import { OfferDetailIdentityCard } from "@/components/passport-offers/detail/offer-detail-identity-card";
+import { OfferReadinessPanel } from "@/components/passport-offers/offer-readiness-panel";
 import { OfferDetailModerationSection } from "@/components/passport-offers/detail/offer-detail-moderation-section";
 import { OfferDetailPartnerCard } from "@/components/passport-offers/detail/offer-detail-partner-card";
 import { OfferDetailPassportConditionsCard } from "@/components/passport-offers/detail/offer-detail-passport-conditions-card";
@@ -142,6 +143,7 @@ export function OfferDetailView({ offerId }: OfferDetailViewProps) {
       ) : null}
 
       <OfferDetailIdentityCard offer={offer} />
+      <OfferReadinessPanel readiness={offer.readiness} />
       <OfferDetailPartnerCard offer={offer} />
       <OfferDetailPassportConditionsCard offer={offer} />
       <OfferDetailPublicExposureCard offer={offer} />

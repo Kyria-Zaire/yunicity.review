@@ -34,6 +34,9 @@ function buildListQuery(params?: PartnerOfferAdminListParams): string {
   if (params.q) {
     search.set("q", params.q);
   }
+  if (params.readiness) {
+    search.set("readiness", params.readiness);
+  }
   if (params.page !== undefined) {
     search.set("page", String(params.page));
   }
