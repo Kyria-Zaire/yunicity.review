@@ -11,7 +11,12 @@ from botocore.exceptions import ClientError  # type: ignore[import-untyped]
 
 from app.core.config import Settings
 from app.core.errors import AppError
-from app.services.local_video.storage import ObjectHead, PresignedUpload, storage_key_prefix
+from app.services.local_video.storage import ObjectHead, PresignedUpload
+from app.services.local_video.storage_keys import (
+    build_processed_key,
+    build_source_upload_key,
+    build_thumbnail_key,
+)
 
 
 class R2LocalVideoStorage:
@@ -48,13 +53,14 @@ class R2LocalVideoStorage:
             region_name="auto",
         )
 
-    def build_source_key(self, *, user_id: uuid.UUID, upload_id: uuid.UUID, ext: str) -> str:
-        prefix = storage_key_prefix(self._settings)
-        return f"{prefix}/{user_id}/{upload_id}/source{ext}"
+    def build_source_key(self, *, city_slug: str, video_id: uuid.UUID, ext: str) -> str:
+        return build_source_upload_key(city_slug=city_slug, video_id=video_id, ext=ext)
 
-    def build_derivative_key(self, *, user_id: uuid.UUID, video_id: uuid.UUID, name: str) -> str:
-        prefix = storage_key_prefix(self._settings)
-        return f"{prefix}/{user_id}/{video_id}/{name}"
+    def build_processed_key(self, *, city_slug: str, video_id: uuid.UUID) -> str:
+        return build_processed_key(city_slug=city_slug, video_id=video_id)
+
+    def build_thumbnail_key(self, *, city_slug: str, video_id: uuid.UUID) -> str:
+        return build_thumbnail_key(city_slug=city_slug, video_id=video_id)
 
     def create_presigned_upload(
         self,
@@ -62,17 +68,20 @@ class R2LocalVideoStorage:
         upload_id: uuid.UUID,
         storage_key: str,
         content_type: str,
+        content_length: int,
         ttl_seconds: int,
     ) -> PresignedUpload:
         del upload_id
         expires_at = datetime.now(tz=UTC) + timedelta(seconds=ttl_seconds)
+        params: dict[str, str | int] = {
+            "Bucket": self._bucket,
+            "Key": storage_key,
+            "ContentType": content_type,
+            "ContentLength": content_length,
+        }
         upload_url = self._client.generate_presigned_url(
             "put_object",
-            Params={
-                "Bucket": self._bucket,
-                "Key": storage_key,
-                "ContentType": content_type,
-            },
+            Params=params,
             ExpiresIn=ttl_seconds,
             HttpMethod="PUT",
         )

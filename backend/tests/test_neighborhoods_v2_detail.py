@@ -106,7 +106,7 @@ async def _seed_boulingrin_detail_fixtures(session: AsyncSession, author_id: uui
                 neighborhood_id=hood_id,
                 video_type=LocalVideoType.QUARTIER.value,
                 title=f"Vidéo Boulingrin {index + 1}",
-                storage_key=f"local-video/test/reims/{author_id}/v{index}/source.mp4",
+                storage_key=f"local-video/reims/{uuid.uuid4()}/processed.mp4",
                 media_url=f"https://cdn.test/v{index}.mp4",
                 thumbnail_url=f"https://cdn.test/v{index}.jpg",
                 duration_seconds=10.0 + index,
