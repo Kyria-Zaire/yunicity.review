@@ -23,6 +23,8 @@ COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./
 COPY tests ./tests
+COPY scripts ./scripts
+COPY data ./data
 
 RUN pip install --upgrade pip \
     && pip install -e ".[dev]"
