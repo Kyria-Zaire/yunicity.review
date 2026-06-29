@@ -3,6 +3,13 @@
 Also serves as R2 recette smoke test (MEDIA-INFRA-V1 / INFRA-01):
   YUNICITY_API_BASE_URL=https://api.recette.yunicity.city/api/v1 \\
     python scripts/pilot_m00_seed_videos.py --smoke
+
+Smoke mode cleans up storage objects by default (R2 or filesystem when creds/paths
+are available). DB rows and the ephemeral test user are not removed — no public
+delete API exists. Use --leave-artifacts to keep storage objects.
+
+Dry-run (no upload/publish, no storage writes):
+  python scripts/pilot_m00_seed_videos.py --dry-run-safe
 """
 
 from __future__ import annotations
@@ -33,7 +40,7 @@ def _auth_headers(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-def _register(client: httpx.Client, api: str) -> str:
+def _register(client: httpx.Client, api: str) -> tuple[str, str]:
     email = f"pilot-m00-{uuid.uuid4().hex[:8]}@example.com"
     response = client.post(
         f"{api}/auth/register",
@@ -45,7 +52,7 @@ def _register(client: httpx.Client, api: str) -> str:
     )
     response.raise_for_status()
     print(f"registered={email}", file=sys.stderr)
-    return response.json()["access_token"]
+    return response.json()["access_token"], email
 
 
 def _publish(
@@ -101,6 +108,7 @@ def _publish(
     publish.raise_for_status()
     body = publish.json()
     body["_upload_storage_key"] = init_body.get("storage_key")
+    body["_upload_id"] = init_body.get("upload_id")
     return body
 
 
@@ -124,14 +132,164 @@ def _cdn_status(client: httpx.Client, url: str) -> int | None:
         return None
 
 
-def _run_smoke(client: httpx.Client, api: str) -> int:
-    token = _register(client, api)
+def _artifact_storage_keys(video: dict[str, Any]) -> list[str]:
+    keys: list[str] = []
+    upload_key = video.get("_upload_storage_key")
+    if isinstance(upload_key, str) and upload_key.strip():
+        keys.append(upload_key.strip())
+    processed_key = video.get("storage_key")
+    if isinstance(processed_key, str) and processed_key.strip():
+        keys.append(processed_key.strip())
+        if processed_key.endswith("/processed.mp4"):
+            keys.append(processed_key.replace("/processed.mp4", "/thumbnail.jpg"))
+    return list(dict.fromkeys(keys))
+
+
+def _cleanup_storage_objects(keys: list[str]) -> dict[str, Any]:
+    if not keys:
+        return {"attempted": False, "reason": "no_keys", "deleted": [], "failed": []}
+
+    backend = os.environ.get("LOCAL_VIDEO_STORAGE_BACKEND", "filesystem").strip().lower()
+    if backend == "r2":
+        return _cleanup_r2_objects(keys)
+    return _cleanup_filesystem_objects(keys)
+
+
+def _cleanup_r2_objects(keys: list[str]) -> dict[str, Any]:
+    endpoint = os.environ.get("LOCAL_VIDEO_R2_ENDPOINT", "").strip()
+    bucket = os.environ.get("LOCAL_VIDEO_R2_BUCKET", "").strip()
+    access_key = os.environ.get("LOCAL_VIDEO_R2_ACCESS_KEY_ID", "").strip()
+    secret_key = os.environ.get("LOCAL_VIDEO_R2_SECRET_ACCESS_KEY", "").strip()
+    if not all([endpoint, bucket, access_key, secret_key]):
+        return {
+            "attempted": False,
+            "reason": "missing_r2_env",
+            "deleted": [],
+            "failed": keys,
+            "manual_cleanup_required": keys,
+        }
+
+    import boto3  # type: ignore[import-untyped]
+    from botocore.client import Config  # type: ignore[import-untyped]
+    from botocore.exceptions import ClientError  # type: ignore[import-untyped]
+
+    client = boto3.client(
+        "s3",
+        endpoint_url=endpoint,
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+        config=Config(signature_version="s3v4"),
+        region_name="auto",
+    )
+    deleted: list[str] = []
+    failed: list[str] = []
+    for key in keys:
+        try:
+            client.delete_object(Bucket=bucket, Key=key)
+            deleted.append(key)
+        except ClientError:
+            failed.append(key)
+    return {
+        "attempted": True,
+        "backend": "r2",
+        "bucket": bucket,
+        "deleted": deleted,
+        "failed": failed,
+    }
+
+
+def _cleanup_filesystem_objects(keys: list[str]) -> dict[str, Any]:
+    media_root = Path(os.environ.get("MEDIA_UPLOAD_DIR", "uploads"))
+    deleted: list[str] = []
+    failed: list[str] = []
+    for key in keys:
+        path = media_root / key.replace("..", "").lstrip("/")
+        try:
+            if path.is_file():
+                path.unlink()
+                deleted.append(key)
+            else:
+                failed.append(key)
+        except OSError:
+            failed.append(key)
+    return {
+        "attempted": True,
+        "backend": "filesystem",
+        "media_upload_dir": str(media_root),
+        "deleted": deleted,
+        "failed": failed,
+    }
+
+
+def _manual_db_cleanup(video: dict[str, Any], user_email: str) -> dict[str, Any]:
+    return {
+        "note": "No public delete API — remove manually if required.",
+        "local_video_id": video.get("id"),
+        "upload_id": video.get("_upload_id"),
+        "user_email": user_email,
+        "tables": ["local_videos", "local_video_uploads", "users (optional)"],
+    }
+
+
+def _run_dry_run_safe(client: httpx.Client, api: str) -> int:
+    health = client.get(f"{api}/health")
+    health.raise_for_status()
+
+    token, email = _register(client, api)
+    init = client.post(
+        f"{api}/local-videos/upload-init",
+        headers=_auth_headers(token),
+        json={
+            "filename": "pilot-m00.mp4",
+            "content_type": "video/mp4",
+            "file_size_bytes": 1024,
+            "city": "Reims",
+            "neighborhood_id": CENTRE_VILLE_ID,
+        },
+    )
+    init.raise_for_status()
+    init_body = init.json()
+    presigned_url = init_body.get("presigned_url", "")
+    uses_r2 = "/binary" not in presigned_url
+
+    report = {
+        "mode": "dry-run-safe",
+        "api_base": api,
+        "health": health.json(),
+        "upload_init": {
+            "upload_id": init_body.get("upload_id"),
+            "storage_key": init_body.get("storage_key"),
+            "presigned_url_host": httpx.URL(presigned_url).host if presigned_url else None,
+            "expects_r2_presigned": uses_r2,
+        },
+        "artifacts_created": {
+            "user_email": email,
+            "local_video_upload_pending": init_body.get("upload_id"),
+            "storage_objects": [],
+            "local_video_published": None,
+        },
+        "next_step": (
+            "Re-run with --smoke for full pipeline "
+            "(use --leave-artifacts to skip storage cleanup)."
+        ),
+    }
+    print(json.dumps(report, indent=2))
+    return 0
+
+
+def _run_smoke(client: httpx.Client, api: str, *, cleanup: bool) -> int:
+    token, email = _register(client, api)
     video = _publish(client, api, token, title="INFRA-01 R2 smoke test")
 
     media_status = _cdn_status(client, video.get("media_url", ""))
     thumb_status = _cdn_status(client, video.get("thumbnail_url", ""))
 
-    report = {
+    artifact_keys = _artifact_storage_keys(video)
+    cleanup_result: dict[str, Any] | None = None
+    if cleanup:
+        cleanup_result = _cleanup_storage_objects(artifact_keys)
+
+    report: dict[str, Any] = {
         "mode": "smoke",
         "api_base": api,
         "video": {
@@ -141,11 +299,20 @@ def _run_smoke(client: httpx.Client, api: str) -> int:
             "media_url": video.get("media_url"),
             "thumbnail_url": video.get("thumbnail_url"),
             "upload_storage_key": video.get("_upload_storage_key"),
+            "artifact_storage_keys": artifact_keys,
         },
         "cdn_checks": {
             "media_url_http_status": media_status,
             "thumbnail_url_http_status": thumb_status,
         },
+        "artifacts_created": {
+            "user_email": email,
+            "local_video_id": video.get("id"),
+            "upload_id": video.get("_upload_id"),
+            "storage_keys": artifact_keys,
+        },
+        "cleanup": cleanup_result,
+        "manual_db_cleanup": _manual_db_cleanup(video, email),
     }
     print(json.dumps(report, indent=2))
 
@@ -153,11 +320,13 @@ def _run_smoke(client: httpx.Client, api: str) -> int:
         return 2
     if media_status != 200 or thumb_status != 200:
         return 3
+    if cleanup and cleanup_result and cleanup_result.get("failed"):
+        return 5
     return 0
 
 
-def _run_full(client: httpx.Client, api: str) -> int:
-    token = _register(client, api)
+def _run_full(client: httpx.Client, api: str, *, cleanup: bool) -> int:
+    token, email = _register(client, api)
 
     place_video = _publish(
         client,
@@ -180,9 +349,15 @@ def _run_full(client: httpx.Client, api: str) -> int:
     ]
     event_hits = [i for i in items if i.get("local_event_id") == PARTNER_EVENT_1_ID]
 
+    cleanup_reports: list[dict[str, Any]] = []
+    if cleanup:
+        for video in (place_video, event_video):
+            cleanup_reports.append(_cleanup_storage_objects(_artifact_storage_keys(video)))
+
     report = {
         "mode": "full",
         "api_base": api,
+        "user_email": email,
         "place_video": {
             "id": place_video["id"],
             "cultural_place_slug": place_video.get("cultural_place_slug"),
@@ -198,6 +373,7 @@ def _run_full(client: httpx.Client, api: str) -> int:
         "feed_place_matches": len(place_slug_hits),
         "feed_event_matches": len(event_hits),
         "feed_total": len(items),
+        "cleanup": cleanup_reports if cleanup else None,
     }
     print(json.dumps(report, indent=2))
 
@@ -214,23 +390,47 @@ def _run_full(client: httpx.Client, api: str) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Local Video pilot seed / R2 smoke test")
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--smoke",
         action="store_true",
         help="Single-video INFRA-01 smoke test with CDN URL checks",
     )
+    mode.add_argument(
+        "--dry-run-safe",
+        action="store_true",
+        help="Health + upload-init only (no PUT/publish, no storage objects)",
+    )
+    parser.add_argument(
+        "--cleanup",
+        action="store_true",
+        help="Delete storage objects after run (default with --smoke)",
+    )
+    parser.add_argument(
+        "--leave-artifacts",
+        action="store_true",
+        help="Keep storage objects after --smoke (skip cleanup)",
+    )
     args = parser.parse_args()
 
-    if not VIDEO_PATH.is_file():
+    if not args.dry_run_safe and not VIDEO_PATH.is_file():
         print(f"missing video: {VIDEO_PATH}", file=sys.stderr)
         return 1
+
+    cleanup = args.cleanup
+    if args.smoke and not args.leave_artifacts:
+        cleanup = True
+    elif not args.smoke and not args.cleanup:
+        cleanup = False
 
     api = _api_base()
     try:
         with httpx.Client(timeout=120.0) as client:
+            if args.dry_run_safe:
+                return _run_dry_run_safe(client, api)
             if args.smoke:
-                return _run_smoke(client, api)
-            return _run_full(client, api)
+                return _run_smoke(client, api, cleanup=cleanup)
+            return _run_full(client, api, cleanup=cleanup)
     except httpx.HTTPStatusError as exc:
         print(
             json.dumps(
