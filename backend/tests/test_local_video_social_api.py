@@ -38,12 +38,12 @@ async def _clear_redis_rate_limits(auth_client: AsyncClient) -> None:
 
 @pytest.fixture
 def mock_processor(monkeypatch: pytest.MonkeyPatch) -> None:
-    def _fake_process(self, *, source_storage_key, user_id, video_id, content_type):  # type: ignore[no-untyped-def]
-        del self, content_type
+    def _fake_process(self, *, source_storage_key, city_slug, video_id, content_type):  # type: ignore[no-untyped-def]
+        del self, content_type, source_storage_key
         return LocalVideoProcessResult(
             duration_seconds=12.5,
-            source_storage_key=f"local-video/test/reims/{user_id}/{video_id}/source.mp4",
-            thumbnail_storage_key=f"local-video/test/reims/{user_id}/{video_id}/thumb.jpg",
+            source_storage_key=f"local-video/{city_slug}/{video_id}/processed.mp4",
+            thumbnail_storage_key=f"local-video/{city_slug}/{video_id}/thumbnail.jpg",
             mime_type="video/mp4",
             file_size_bytes=4096,
         )

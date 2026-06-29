@@ -37,7 +37,7 @@ class LocalVideoMediaProcessor:
         self,
         *,
         source_storage_key: str,
-        user_id: uuid.UUID,
+        city_slug: str,
         video_id: uuid.UUID,
         content_type: str,
     ) -> LocalVideoProcessResult:
@@ -70,15 +70,13 @@ class LocalVideoMediaProcessor:
             thumb_source = output_path if output_path.is_file() else source_path
             self._extract_thumbnail(thumb_source, thumb_path)
 
-            final_source_key = self._storage.build_derivative_key(
-                user_id=user_id,
+            final_source_key = self._storage.build_processed_key(
+                city_slug=city_slug,
                 video_id=video_id,
-                name="source.mp4",
             )
-            thumb_key = self._storage.build_derivative_key(
-                user_id=user_id,
+            thumb_key = self._storage.build_thumbnail_key(
+                city_slug=city_slug,
                 video_id=video_id,
-                name="thumb.jpg",
             )
 
             upload_source = output_path if output_path.is_file() else source_path

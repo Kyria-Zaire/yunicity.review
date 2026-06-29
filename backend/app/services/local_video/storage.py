@@ -27,11 +27,11 @@ class PresignedUpload:
 
 
 class LocalVideoStorage(Protocol):
-    def build_source_key(self, *, user_id: uuid.UUID, upload_id: uuid.UUID, ext: str) -> str: ...
+    def build_source_key(self, *, city_slug: str, video_id: uuid.UUID, ext: str) -> str: ...
 
-    def build_derivative_key(
-        self, *, user_id: uuid.UUID, video_id: uuid.UUID, name: str
-    ) -> str: ...
+    def build_processed_key(self, *, city_slug: str, video_id: uuid.UUID) -> str: ...
+
+    def build_thumbnail_key(self, *, city_slug: str, video_id: uuid.UUID) -> str: ...
 
     def create_presigned_upload(
         self,
@@ -39,6 +39,7 @@ class LocalVideoStorage(Protocol):
         upload_id: uuid.UUID,
         storage_key: str,
         content_type: str,
+        content_length: int,
         ttl_seconds: int,
     ) -> PresignedUpload: ...
 
@@ -61,7 +62,3 @@ def build_local_video_storage(settings: Settings) -> LocalVideoStorage:
     from app.services.local_video.filesystem_storage import FilesystemLocalVideoStorage
 
     return FilesystemLocalVideoStorage(settings)
-
-
-def storage_key_prefix(settings: Settings) -> str:
-    return f"local-video/{settings.app_env}/reims"

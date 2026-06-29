@@ -42,12 +42,12 @@ async def _clear_redis_rate_limits(auth_client: AsyncClient) -> None:
 
 @pytest.fixture
 def mock_processor(monkeypatch: pytest.MonkeyPatch) -> None:
-    def _fake_process(self, *, source_storage_key, user_id, video_id, content_type):  # type: ignore[no-untyped-def]
-        del self, content_type
+    def _fake_process(self, *, source_storage_key, city_slug, video_id, content_type):  # type: ignore[no-untyped-def]
+        del self, content_type, source_storage_key
         return LocalVideoProcessResult(
             duration_seconds=12.5,
-            source_storage_key=f"local-video/test/reims/{user_id}/{video_id}/source.mp4",
-            thumbnail_storage_key=f"local-video/test/reims/{user_id}/{video_id}/thumb.jpg",
+            source_storage_key=f"local-video/{city_slug}/{video_id}/processed.mp4",
+            thumbnail_storage_key=f"local-video/{city_slug}/{video_id}/thumbnail.jpg",
             mime_type="video/mp4",
             file_size_bytes=4096,
         )
@@ -74,6 +74,31 @@ async def _init_upload(client: AsyncClient, token: str) -> dict[str, Any]:
     )
     assert response.status_code == 201, response.text
     return cast(dict[str, Any], response.json())
+
+
+@pytest.mark.asyncio
+async def test_binary_upload_endpoint_unavailable_for_r2(
+    auth_client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LOCAL_VIDEO_STORAGE_BACKEND", "r2")
+    monkeypatch.setenv(
+        "LOCAL_VIDEO_R2_ENDPOINT",
+        "https://example.r2.cloudflarestorage.com",
+    )
+    monkeypatch.setenv("LOCAL_VIDEO_R2_BUCKET", "bucket")
+    monkeypatch.setenv("LOCAL_VIDEO_R2_ACCESS_KEY_ID", "key")
+    monkeypatch.setenv("LOCAL_VIDEO_R2_SECRET_ACCESS_KEY", "secret")
+    get_settings.cache_clear()
+
+    response = await auth_client.put(
+        f"{BASE}/uploads/{uuid.uuid4()}/binary",
+        content=b"fake-mp4-bytes",
+        headers={"Content-Type": "video/mp4"},
+    )
+    assert response.status_code == 404
+    assert response.json()["code"] == "LOCAL_VIDEO_BINARY_ENDPOINT_UNAVAILABLE"
+    get_settings.cache_clear()
 
 
 @pytest.mark.asyncio
@@ -110,9 +135,32 @@ async def test_upload_init_success(auth_client: AsyncClient) -> None:
     body = await _init_upload(auth_client, user["access_token"])
     assert body["upload_id"]
     assert body["presigned_url"].endswith("/binary")
-    assert body["storage_key"].startswith("local-video/")
+    assert body["storage_key"].startswith("local-video/reims/")
+    assert body["storage_key"].endswith("/source.mp4")
     assert body["upload_method"] == "PUT"
     assert body["upload_headers"]["Content-Type"] == "video/mp4"
+
+
+@pytest.mark.asyncio
+async def test_upload_init_prod_requires_city_slug(
+    auth_client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("APP_ENV", "prod")
+    get_settings.cache_clear()
+    user = await _register(auth_client)
+    response = await auth_client.post(
+        f"{BASE}/upload-init",
+        json={
+            "filename": "clip.mp4",
+            "content_type": "video/mp4",
+            "file_size_bytes": 1024,
+        },
+        headers=auth_header(user["access_token"]),
+    )
+    assert response.status_code == 400
+    assert response.json()["code"] == "LOCAL_VIDEO_CITY_SLUG_REQUIRED"
+    get_settings.cache_clear()
 
 
 @pytest.mark.asyncio

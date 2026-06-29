@@ -24,6 +24,9 @@ class LocalVideoUploadInitRequest(BaseModel):
     filename: str = Field(min_length=1, max_length=255)
     content_type: str
     file_size_bytes: int = Field(gt=0)
+    city: str | None = Field(default=None, min_length=1, max_length=64)
+    neighborhood_id: uuid.UUID | None = None
+    organization_id: uuid.UUID | None = None
 
     @field_validator("content_type")
     @classmethod

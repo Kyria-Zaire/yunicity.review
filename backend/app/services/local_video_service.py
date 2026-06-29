@@ -27,8 +27,10 @@ from app.schemas.local_video import (
     LocalVideoUploadInitRequest,
     LocalVideoUploadInitResponse,
 )
+from app.services.local_video.city_slug_resolver import resolve_local_video_city_slug
 from app.services.local_video.processor import LocalVideoMediaProcessor, LocalVideoProcessResult
 from app.services.local_video.storage import LocalVideoStorage, build_local_video_storage
+from app.services.local_video.storage_keys import city_slug_from_storage_key
 
 
 class LocalVideoService:
@@ -56,11 +58,19 @@ class LocalVideoService:
                 detail="Type de fichier vidéo non supporté.",
             )
 
+        city_resolution = await resolve_local_video_city_slug(
+            self._session,
+            self._settings,
+            city=payload.city,
+            neighborhood_id=payload.neighborhood_id,
+            organization_id=payload.organization_id,
+        )
+
         ext = EXTENSION_BY_LOCAL_VIDEO_MIME.get(payload.content_type, ".mp4")
         upload_id = uuid.uuid4()
         storage_key = self._storage.build_source_key(
-            user_id=user_id,
-            upload_id=upload_id,
+            city_slug=city_resolution.city_slug,
+            video_id=upload_id,
             ext=ext,
         )
         ttl = self._settings.local_video_presigned_ttl_seconds
@@ -69,6 +79,7 @@ class LocalVideoService:
             upload_id=upload_id,
             storage_key=storage_key,
             content_type=payload.content_type,
+            content_length=payload.file_size_bytes,
             ttl_seconds=ttl,
         )
 
@@ -194,7 +205,22 @@ class LocalVideoService:
                 detail="Cette vidéo a déjà été publiée.",
             )
 
-        video_id = uuid.uuid4()
+        city_resolution = await resolve_local_video_city_slug(
+            self._session,
+            self._settings,
+            city=payload.city,
+            neighborhood_id=payload.neighborhood_id,
+            organization_id=payload.organization_id,
+        )
+        init_city_slug = city_slug_from_storage_key(upload.storage_key)
+        if init_city_slug is None or init_city_slug != city_resolution.city_slug:
+            raise AppError(
+                status_code=400,
+                code="LOCAL_VIDEO_CITY_SLUG_MISMATCH",
+                detail="Territoire incompatible avec la session d'upload.",
+            )
+
+        video_id = upload.id
         video = LocalVideo(
             id=video_id,
             author_user_id=user_id,
@@ -226,7 +252,7 @@ class LocalVideoService:
         try:
             result = processor.process(
                 source_storage_key=upload.storage_key,
-                user_id=user_id,
+                city_slug=city_resolution.city_slug,
                 video_id=video_id,
                 content_type=upload.content_type,
             )

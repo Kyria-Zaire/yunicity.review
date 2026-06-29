@@ -130,6 +130,10 @@ class Settings(BaseSettings):
         alias="LOCAL_VIDEO_R2_SECRET_ACCESS_KEY",
     )
     local_video_r2_bucket: str | None = Field(default=None, alias="LOCAL_VIDEO_R2_BUCKET")
+    local_video_default_city_slug: str = Field(
+        default="reims",
+        alias="LOCAL_VIDEO_DEFAULT_CITY_SLUG",
+    )
 
     bootstrap_admin_email: str | None = Field(
         default=None,
