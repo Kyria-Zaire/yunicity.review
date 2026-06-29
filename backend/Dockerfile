@@ -20,6 +20,7 @@ RUN groupadd --system app \
 
 COPY pyproject.toml README.md ./
 COPY app ./app
+COPY workers ./workers
 COPY alembic ./alembic
 COPY alembic.ini ./
 COPY tests ./tests

@@ -14,6 +14,7 @@ from app.core.local_video_constants import (
     LOCAL_VIDEO_DESCRIPTION_MAX_LENGTH,
     LOCAL_VIDEO_MAX_BYTES,
     LOCAL_VIDEO_TITLE_MAX_LENGTH,
+    LocalVideoProcessingStatus,
     LocalVideoReportReason,
     LocalVideoStatus,
     LocalVideoType,
@@ -71,6 +72,14 @@ class LocalVideoPublishRequest(BaseModel):
     longitude: float | None = Field(default=None, ge=-180, le=180)
 
 
+class LocalVideoPublishAcceptedResponse(BaseModel):
+    id: uuid.UUID
+    status: LocalVideoStatus
+    processing_status: LocalVideoProcessingStatus
+    job_id: str
+    message: str = "Traitement vidéo en cours."
+
+
 class LocalVideoItem(BaseModel):
     id: uuid.UUID
     author_user_id: uuid.UUID
@@ -91,6 +100,7 @@ class LocalVideoItem(BaseModel):
     latitude: float | None
     longitude: float | None
     status: LocalVideoStatus
+    processing_status: LocalVideoProcessingStatus
     processing_error: str | None
     published_at: datetime | None
     created_at: datetime

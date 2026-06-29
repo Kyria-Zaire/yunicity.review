@@ -18,8 +18,8 @@ Yunicity gère ou gérera :
 
 | Type | Pipeline | Statut |
 |------|----------|--------|
-| Vidéos Local Video | `local_video/` | ✅ Implémenté (VIDEO-01/01B) |
-| Thumbnails vidéo | `local_video/` (dérivé) | ✅ |
+| Vidéos Local Video | `local_video/` | ✅ Implémenté (VIDEO-01/01B/03A) |
+| Thumbnails vidéo | `local_video/` (dérivé worker) | ✅ |
 | Images événements | `image_media/` (futur) | 📋 Planifié |
 | Logos partenaires | `image_media/` (futur) | 📋 Planifié |
 | Avatars utilisateurs | `image_media/` (futur) | 📋 Planifié |
@@ -66,25 +66,23 @@ API Yunicity — POST /upload-init
 Client ──PUT──► Cloudflare R2 (bucket env)
     │ pas de secret côté client
     ▼
-API — publish / confirm
-    │ HeadObject, validation métier
+API — publish (HTTP 202)
+    │ HeadObject, validation métier, enqueue ARQ
     ▼
-Statut UPLOADED
+Statut PROCESSING (vidéo invisible feed)
 ```
 
-### Processing (worker — futur VIDEO-03A)
+### Processing (worker VIDEO-03A)
 
 ```
 API publish
-    │ enqueue job (ARQ + Redis)
+    │ enqueue job (ARQ + Redis, queue yunicity-media-video)
     ▼
-Worker — ffprobe + FFmpeg / image resize
-    │ upload processed + thumbnail
+Worker `arq workers.video_worker.WorkerSettings`
+    │ download source → ffprobe + FFmpeg (thread pool) → thumbnail
+    │ upload processed + thumbnail → R2
     ▼
-R2 — objets finaux
-    │ URLs publiques via CDN
-    ▼
-Statut READY (published) ou FAILED
+Statut READY (`published`) ou FAILED (+ retries max 3)
 ```
 
 ### Lecture (CDN public)

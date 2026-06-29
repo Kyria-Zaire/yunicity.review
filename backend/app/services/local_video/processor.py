@@ -91,6 +91,48 @@ class LocalVideoMediaProcessor:
                 file_size_bytes=upload_source.stat().st_size,
             )
 
+    def build_result_from_existing_derivatives(
+        self,
+        *,
+        city_slug: str,
+        video_id: uuid.UUID,
+    ) -> LocalVideoProcessResult | None:
+        """Return result when processed.mp4 + thumbnail.jpg already exist (idempotent retry)."""
+        processed_key = self._storage.build_processed_key(
+            city_slug=city_slug,
+            video_id=video_id,
+        )
+        thumb_key = self._storage.build_thumbnail_key(
+            city_slug=city_slug,
+            video_id=video_id,
+        )
+        processed_head = self._storage.head_object(processed_key)
+        thumb_head = self._storage.head_object(thumb_key)
+        if processed_head is None or thumb_head is None:
+            return None
+        if processed_head.content_length <= 0 or thumb_head.content_length <= 0:
+            return None
+
+        with TemporaryDirectory(prefix="yunicity-local-video-idem-") as tmp:
+            processed_path = Path(tmp) / "processed.mp4"
+            self._storage.read_to_path(processed_key, processed_path)
+            try:
+                duration = self._probe_duration(processed_path)
+            except AppError:
+                logger.warning(
+                    "local_video_idempotent_probe_failed",
+                    extra={"video_id": str(video_id), "processed_key": processed_key},
+                )
+                return None
+
+        return LocalVideoProcessResult(
+            duration_seconds=duration,
+            source_storage_key=processed_key,
+            thumbnail_storage_key=thumb_key,
+            mime_type="video/mp4",
+            file_size_bytes=processed_head.content_length,
+        )
+
     def _probe_duration(self, path: Path) -> float:
         cmd = [
             "ffprobe",

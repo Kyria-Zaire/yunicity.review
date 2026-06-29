@@ -25,6 +25,7 @@ from app.schemas.local_video import (
     LocalVideoFeedResponse,
     LocalVideoItem,
     LocalVideoLikeResponse,
+    LocalVideoPublishAcceptedResponse,
     LocalVideoPublishRequest,
     LocalVideoReportCreateRequest,
     LocalVideoUploadInitRequest,
@@ -86,13 +87,17 @@ async def upload_local_video_binary(
     await LocalVideoService(session, settings).store_binary_upload(upload_id, body)
 
 
-@router.post("", response_model=LocalVideoItem, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=LocalVideoPublishAcceptedResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
 async def publish_local_video(
     payload: LocalVideoPublishRequest,
     current_user: Annotated[User, Depends(require_authenticated_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
     settings: Annotated[Settings, Depends(get_settings)],
-) -> LocalVideoItem:
+) -> LocalVideoPublishAcceptedResponse:
     await enforce_rate_limit(
         publish_rate_limit_key(current_user.id),
         limit=PUBLISH_RATE_LIMIT,

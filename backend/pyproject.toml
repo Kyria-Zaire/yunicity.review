@@ -20,6 +20,7 @@ dependencies = [
     "python-multipart>=0.0.12",
     "tzdata>=2024.2",
     "boto3>=1.35.0",
+    "arq>=0.26.0",
 ]
 
 [project.optional-dependencies]
@@ -41,7 +42,7 @@ packages = ["app"]
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-src = ["app", "tests"]
+src = ["app", "tests", "workers"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
@@ -54,7 +55,7 @@ packages = ["app", "tests"]
 mypy_path = "."
 
 [[tool.mypy.overrides]]
-module = ["redis.*", "asyncpg.*", "jwt.*", "argon2.*"]
+module = ["redis.*", "asyncpg.*", "jwt.*", "argon2.*", "arq.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

@@ -15,6 +15,7 @@ from app.core.local_video_constants import (
     EXTENSION_BY_LOCAL_VIDEO_MIME,
     LOCAL_VIDEO_UPLOAD_RATE_LIMIT,
     LOCAL_VIDEO_UPLOAD_RATE_WINDOW_SECONDS,
+    LocalVideoProcessingStatus,
     LocalVideoStatus,
     LocalVideoType,
     LocalVideoUploadStatus,
@@ -23,12 +24,14 @@ from app.models.local_video import LocalVideo, LocalVideoUpload
 from app.models.neighborhood import Neighborhood
 from app.schemas.local_video import (
     LocalVideoItem,
+    LocalVideoPublishAcceptedResponse,
     LocalVideoPublishRequest,
     LocalVideoUploadInitRequest,
     LocalVideoUploadInitResponse,
 )
 from app.services.local_video.city_slug_resolver import resolve_local_video_city_slug
-from app.services.local_video.processor import LocalVideoMediaProcessor, LocalVideoProcessResult
+from app.services.local_video.job_queue import enqueue_local_video_processing
+from app.services.local_video.processing_status import map_video_processing_status
 from app.services.local_video.storage import LocalVideoStorage, build_local_video_storage
 from app.services.local_video.storage_keys import city_slug_from_storage_key
 
@@ -144,7 +147,7 @@ class LocalVideoService:
         self,
         user_id: uuid.UUID,
         payload: LocalVideoPublishRequest,
-    ) -> LocalVideoItem:
+    ) -> LocalVideoPublishAcceptedResponse:
         upload = await self._get_upload(payload.upload_id)
         if upload.author_user_id != user_id:
             raise AppError(
@@ -245,32 +248,17 @@ class LocalVideoService:
             status=LocalVideoStatus.PROCESSING.value,
         )
         self._session.add(video)
-        upload.status = LocalVideoUploadStatus.UPLOADED.value
-        await self._session.flush()
-
-        processor = LocalVideoMediaProcessor(self._settings, self._storage)
-        try:
-            result = processor.process(
-                source_storage_key=upload.storage_key,
-                city_slug=city_resolution.city_slug,
-                video_id=video_id,
-                content_type=upload.content_type,
-            )
-        except AppError as exc:
-            video.status = LocalVideoStatus.FAILED.value
-            video.processing_error = exc.detail
-            upload.status = LocalVideoUploadStatus.FAILED.value
-            await self._session.commit()
-            await self._session.refresh(video)
-            return self._to_item(video)
-
-        self._apply_process_result(video, result)
-        video.status = LocalVideoStatus.PUBLISHED.value
-        video.published_at = datetime.now(tz=UTC)
         upload.status = LocalVideoUploadStatus.CONSUMED.value
         await self._session.commit()
         await self._session.refresh(video)
-        return self._to_item(video)
+
+        job_id = await enqueue_local_video_processing(video_id)
+        return LocalVideoPublishAcceptedResponse(
+            id=video.id,
+            status=LocalVideoStatus(video.status),
+            processing_status=LocalVideoProcessingStatus.PROCESSING,
+            job_id=job_id,
+        )
 
     async def get_video(self, user_id: uuid.UUID, video_id: uuid.UUID) -> LocalVideoItem:
         video = await self._session.get(LocalVideo, video_id)
@@ -305,15 +293,6 @@ class LocalVideoService:
             )
         return upload
 
-    def _apply_process_result(self, video: LocalVideo, result: LocalVideoProcessResult) -> None:
-        video.storage_key = result.source_storage_key
-        video.media_url = self._storage.public_url(result.source_storage_key)
-        video.thumbnail_url = self._storage.public_url(result.thumbnail_storage_key)
-        video.duration_seconds = result.duration_seconds
-        video.file_size_bytes = result.file_size_bytes
-        video.mime_type = result.mime_type
-        video.processing_error = None
-
     @staticmethod
     def _to_item(video: LocalVideo) -> LocalVideoItem:
         return LocalVideoItem(
@@ -336,6 +315,7 @@ class LocalVideoService:
             latitude=float(video.latitude) if video.latitude is not None else None,
             longitude=float(video.longitude) if video.longitude is not None else None,
             status=LocalVideoStatus(video.status),
+            processing_status=map_video_processing_status(video.status),
             processing_error=video.processing_error,
             published_at=video.published_at,
             created_at=video.created_at,
