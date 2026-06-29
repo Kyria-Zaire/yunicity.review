@@ -150,7 +150,7 @@ Alternative de repli : **RQ** si l'équipe préfère un modèle sync explicite p
 
 - Transient (R2 timeout, ffmpeg OOM) : retry exponentiel max 3.
 - Permanent (invalid media) : `failed` immédiat, pas de retry.
-- Backoff ARQ : `retry_delay=30` → defer `(try-1)² × 30` s (30, 120, … cap 86400).
+- Backoff ARQ : `retry_delay=30` → defer `(try-1)² × 30` s (30, 120, … cap 86400). **Dette :** alignement tuple 30/120/300 → ticket `docs/ops/VIDEO-03B-arq-backoff-alignment.md`.
 
 ### Idempotence job
 
@@ -182,9 +182,9 @@ Logs : `local_video_job_exhausted` avec `timed_out=true` si timeout ARQ ; messag
 | Queue Redis `yunicity-media-video` | ✅ |
 | Publish async HTTP 202 | ✅ |
 | FFmpeg hors requête HTTP | ✅ |
-| Retries max 3 + backoff ARQ | ✅ |
+| Retries max 3 + backoff ARQ | ⚠️ voir VIDEO-03B |
 | Logs structurés (`local_video_processing_*`) | ✅ |
-| Docker service `video-worker` | ✅ dev Compose |
+| Docker service `video-worker` | ✅ dev Compose · 📋 Railway INFRA-03 |
 
 **Composants livrés :**
 
