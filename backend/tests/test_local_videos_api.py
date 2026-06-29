@@ -9,10 +9,15 @@ from typing import Any, cast
 
 import pytest
 from app.core.config import get_settings
-from app.core.local_video_constants import LocalVideoStatus, LocalVideoType
+from app.core.local_video_constants import (
+    LocalVideoProcessingStatus,
+    LocalVideoStatus,
+    LocalVideoType,
+)
 from app.db.session import get_session_factory
 from app.integrations.redis import get_redis_client
 from app.models.local_video import LocalVideo
+from app.services.local_video.processing_service import run_local_video_processing
 from app.services.local_video.processor import LocalVideoProcessResult
 from httpx import AsyncClient
 from sqlalchemy import update
@@ -53,8 +58,29 @@ def mock_processor(monkeypatch: pytest.MonkeyPatch) -> None:
         )
 
     monkeypatch.setattr(
-        "app.services.local_video_service.LocalVideoMediaProcessor.process",
+        "app.services.local_video.processor.LocalVideoMediaProcessor.process",
         _fake_process,
+    )
+
+    async def _enqueue(video_id: uuid.UUID, *, settings=None) -> str:  # type: ignore[no-untyped-def]
+        await run_local_video_processing(video_id, settings=settings or get_settings())
+        return f"local-video:{video_id}"
+
+    monkeypatch.setattr(
+        "app.services.local_video.job_queue.enqueue_local_video_processing",
+        _enqueue,
+    )
+
+
+@pytest.fixture
+def noop_enqueue(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def _noop(video_id: uuid.UUID, *, settings=None) -> str:  # type: ignore[no-untyped-def]
+        del settings
+        return f"local-video:{video_id}"
+
+    monkeypatch.setattr(
+        "app.services.local_video.job_queue.enqueue_local_video_processing",
+        _noop,
     )
 
 
@@ -164,7 +190,10 @@ async def test_upload_init_prod_requires_city_slug(
 
 
 @pytest.mark.asyncio
-async def test_publish_flow(auth_client: AsyncClient, mock_processor: None) -> None:
+async def test_publish_flow(
+    auth_client: AsyncClient,
+    mock_processor: None,
+) -> None:
     user = await _register(auth_client)
     init_body = await _init_upload(auth_client, user["access_token"])
     upload_id = init_body["upload_id"]
@@ -188,20 +217,25 @@ async def test_publish_flow(auth_client: AsyncClient, mock_processor: None) -> N
         },
         headers=auth_header(user["access_token"]),
     )
-    assert publish_response.status_code == 201, publish_response.text
-    published = publish_response.json()
+    assert publish_response.status_code == 202, publish_response.text
+    accepted = publish_response.json()
+    assert accepted["status"] == LocalVideoStatus.PROCESSING.value
+    assert accepted["processing_status"] == LocalVideoProcessingStatus.PROCESSING.value
+    assert accepted["job_id"]
+
+    get_response = await auth_client.get(
+        f"{BASE}/{accepted['id']}",
+        headers=auth_header(user["access_token"]),
+    )
+    assert get_response.status_code == 200
+    published = get_response.json()
+    assert published["id"] == accepted["id"]
     assert published["status"] == LocalVideoStatus.PUBLISHED.value
+    assert published["processing_status"] == LocalVideoProcessingStatus.READY.value
     assert published["duration_seconds"] == 12.5
     assert published["media_url"]
     assert published["thumbnail_url"]
     assert published["neighborhood_id"] == BOULINGRIN_ID
-
-    get_response = await auth_client.get(
-        f"{BASE}/{published['id']}",
-        headers=auth_header(user["access_token"]),
-    )
-    assert get_response.status_code == 200
-    assert get_response.json()["id"] == published["id"]
 
 
 @pytest.mark.asyncio
@@ -226,7 +260,7 @@ async def test_publish_without_upload_fails(auth_client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_publish_twice_same_upload_rejected(
     auth_client: AsyncClient,
-    mock_processor: None,
+    noop_enqueue: None,
 ) -> None:
     user = await _register(auth_client)
     init_body = await _init_upload(auth_client, user["access_token"])
@@ -246,7 +280,7 @@ async def test_publish_twice_same_upload_rejected(
         json=payload,
         headers=auth_header(user["access_token"]),
     )
-    assert first.status_code == 201, first.text
+    assert first.status_code == 202, first.text
 
     second = await auth_client.post(
         BASE,
@@ -289,7 +323,7 @@ async def _publish_video(
         json=payload,
         headers=auth_header(token),
     )
-    assert response.status_code == 201, response.text
+    assert response.status_code == 202, response.text
     return cast(dict[str, Any], response.json())
 
 

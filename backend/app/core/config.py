@@ -134,6 +134,11 @@ class Settings(BaseSettings):
         default="reims",
         alias="LOCAL_VIDEO_DEFAULT_CITY_SLUG",
     )
+    local_video_processing_job_timeout_seconds: int = Field(
+        default=600,
+        ge=300,
+        alias="LOCAL_VIDEO_PROCESSING_JOB_TIMEOUT_SECONDS",
+    )
 
     bootstrap_admin_email: str | None = Field(
         default=None,

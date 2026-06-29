@@ -2,7 +2,7 @@
 
 | Champ | Valeur |
 |-------|--------|
-| Statut | **ACCEPTED** — implémentation différée |
+| Statut | **IMPLEMENTED** (VIDEO-03A) |
 | Feature | FEATURE-CREATORS-V2 — Local Video |
 | Ticket | VIDEO-01B (documentation) · implémentation future VIDEO-03A |
 | Date | 2026-06-16 |
@@ -55,7 +55,7 @@ READY (status=published, URLs CDN)
 FAILED (status=failed, processing_error, retry policy)
 ```
 
-L'API publish devient **acceptation rapide** : validation métier + enqueue + `status=processing` + réponse 202 ou 201 avec polling/WebSocket futur.
+L'API publish devient **acceptation rapide** : validation métier + enqueue + `status=processing` + réponse **202 Accepted** avec `processing_status` ; polling via `GET /local-videos/{id}`.
 
 ---
 
@@ -150,16 +150,45 @@ Alternative de repli : **RQ** si l'équipe préfère un modèle sync explicite p
 
 - Transient (R2 timeout, ffmpeg OOM) : retry exponentiel max 3.
 - Permanent (invalid media) : `failed` immédiat, pas de retry.
+- Backoff ARQ : `retry_delay=30` → defer `(try-1)² × 30` s (30, 120, … cap 86400).
+
+### Idempotence job
+
+Avant FFmpeg, le worker vérifie :
+
+1. DB `status=published` → skip (log `local_video_processing_skip_ready`).
+2. R2/filesystem : `processed.mp4` **et** `thumbnail.jpg` présents (HeadObject) → ffprobe léger sur processed uniquement, finalize DB sans re-transcode (log `local_video_processing_ready_idempotent`).
+
+Cas couvert : crash worker après upload derivatives, avant commit DB.
+
+### Timeout ARQ
+
+| Paramètre | Défaut | Env |
+|-----------|--------|-----|
+| `job_timeout` | 600 s (10 min) | `LOCAL_VIDEO_PROCESSING_JOB_TIMEOUT_SECONDS` (min 300) |
+| `max_tries` | 3 | constante code |
+| `retry_delay` | 30 s | `LOCAL_VIDEO_PROCESSING_RETRY_BACKOFF_SECONDS[0]` |
+
+Logs : `local_video_job_exhausted` avec `timed_out=true` si timeout ARQ ; message DB explicite.
 
 ---
 
 ## Statut implémentation
 
-| Élément | VIDEO-01B | VIDEO-03A (futur) |
-|---------|-----------|-------------------|
-| ADR | ✅ Ce document | — |
-| Worker ARQ | ❌ | À implémenter |
-| Publish async | ❌ | À implémenter |
-| FFmpeg sync | ✅ Accepté dev/recette | À retirer prod |
+| Élément | VIDEO-03A |
+|---------|-----------|
+| ADR | ✅ Ce document |
+| Worker ARQ (`workers/video_worker.py`) | ✅ |
+| Queue Redis `yunicity-media-video` | ✅ |
+| Publish async HTTP 202 | ✅ |
+| FFmpeg hors requête HTTP | ✅ |
+| Retries max 3 + backoff ARQ | ✅ |
+| Logs structurés (`local_video_processing_*`) | ✅ |
+| Docker service `video-worker` | ✅ dev Compose |
 
-**Aucune implémentation dans VIDEO-01B** — documentation et gates prod uniquement.
+**Composants livrés :**
+
+- `app/services/local_video/processing_service.py` — pipeline FFmpeg (thread pool)
+- `app/services/local_video/job_queue.py` — enqueue ARQ
+- `workers/video_worker.py` — worker container séparé
+- États pipeline : `UPLOADED` → `PROCESSING` → `READY` (`published`) / `FAILED`

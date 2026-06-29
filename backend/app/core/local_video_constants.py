@@ -57,6 +57,31 @@ class LocalVideoStatus(StrEnum):
     DELETED = "deleted"
 
 
+class LocalVideoProcessingStatus(StrEnum):
+    """Pipeline worker states (VIDEO-03A). READY maps to LocalVideoStatus.PUBLISHED."""
+
+    UPLOADED = "uploaded"
+    PROCESSING = "processing"
+    READY = "ready"
+    FAILED = "failed"
+
+
+LOCAL_VIDEO_PROCESSING_MAX_TRIES = 3
+LOCAL_VIDEO_PROCESSING_RETRY_BACKOFF_SECONDS = (30, 120, 300)
+# ARQ job_timeout — min. 300 s recommandé (vidéo 60 s + transcode Railway). Défaut 600 s.
+LOCAL_VIDEO_PROCESSING_JOB_TIMEOUT_SECONDS = 600
+
+LOCAL_VIDEO_PROCESSING_NON_RETRYABLE_CODES = frozenset(
+    {
+        "LOCAL_VIDEO_INVALID_MEDIA",
+        "LOCAL_VIDEO_TOO_LONG",
+        "LOCAL_VIDEO_TRANSCODE_FAILED",
+        "LOCAL_VIDEO_THUMBNAIL_FAILED",
+        "LOCAL_VIDEO_CITY_SLUG_MISMATCH",
+    }
+)
+
+
 class LocalVideoReportReason(StrEnum):
     SPAM = "spam"
     HARASSMENT = "harassment"

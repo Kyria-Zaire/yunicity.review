@@ -4,6 +4,11 @@ Also serves as R2 recette smoke test (MEDIA-INFRA-V1 / INFRA-01):
   YUNICITY_API_BASE_URL=https://api.recette.yunicity.city/api/v1 \\
     python scripts/pilot_m00_seed_videos.py --smoke
 
+After publish (HTTP 202), polls GET /local-videos/{id} until published or timeout.
+Polling defaults: interval 2 s, timeout 180 s (override via env below).
+Exit 6 = processing timeout (likely video worker not running).
+Exit 7 = processing failed (status=failed).
+
 Smoke mode cleans up storage objects by default (R2 or filesystem when creds/paths
 are available). DB rows and the ephemeral test user are not removed — no public
 delete API exists. Use --leave-artifacts to keep storage objects.
@@ -18,6 +23,7 @@ import argparse
 import json
 import os
 import sys
+import time
 import uuid
 from pathlib import Path
 from typing import Any
@@ -30,6 +36,35 @@ VIDEO_PATH = Path(__file__).resolve().parents[1] / "data" / "e2e-test-video.mp4"
 CENTRE_VILLE_ID = "d6010000-0000-4000-8000-000000000001"
 CATHEDRALE_ID = "d6030000-0000-4000-8000-000000000001"
 PARTNER_EVENT_1_ID = "d6050000-0000-4000-8000-000000000001"
+# Poll after HTTP 202 publish — override for slow recette / large files.
+PUBLISH_POLL_INTERVAL_SECONDS = float(
+    os.environ.get("LOCAL_VIDEO_SMOKE_POLL_INTERVAL_SECONDS", "2.0")
+)
+PUBLISH_POLL_TIMEOUT_SECONDS = float(
+    os.environ.get("LOCAL_VIDEO_SMOKE_POLL_TIMEOUT_SECONDS", "180.0")
+)
+
+
+class VideoProcessingFailedError(RuntimeError):
+    """Worker reported status=failed."""
+
+
+class VideoProcessingTimeoutError(TimeoutError):
+    """Polling exceeded deadline — worker may be down."""
+
+    def __init__(self, video_id: str, *, last_status: str, elapsed_seconds: float) -> None:
+        self.video_id = video_id
+        self.last_status = last_status
+        self.elapsed_seconds = elapsed_seconds
+        hint = (
+            "Video worker not running? Start: arq workers.video_worker.WorkerSettings"
+            if last_status == "processing"
+            else f"Last status was {last_status!r}"
+        )
+        super().__init__(
+            f"Video {video_id} not ready after {elapsed_seconds:.0f}s "
+            f"(last_status={last_status}). {hint}"
+        )
 
 
 def _api_base() -> str:
@@ -53,6 +88,50 @@ def _register(client: httpx.Client, api: str) -> tuple[str, str]:
     response.raise_for_status()
     print(f"registered={email}", file=sys.stderr)
     return response.json()["access_token"], email
+
+
+def _wait_until_ready(
+    client: httpx.Client,
+    api: str,
+    token: str,
+    video_id: str,
+) -> dict[str, Any]:
+    started = time.monotonic()
+    deadline = started + PUBLISH_POLL_TIMEOUT_SECONDS
+    last_status = "unknown"
+    polls = 0
+    while time.monotonic() < deadline:
+        response = client.get(
+            f"{api}/local-videos/{video_id}",
+            headers=_auth_headers(token),
+        )
+        response.raise_for_status()
+        body = response.json()
+        last_status = str(body.get("status") or "unknown")
+        polls += 1
+        if last_status == "published":
+            print(
+                f"poll_ready video_id={video_id} polls={polls} "
+                f"elapsed_s={time.monotonic() - started:.1f}",
+                file=sys.stderr,
+            )
+            return body
+        if last_status == "failed":
+            detail = body.get("processing_error") or "unknown error"
+            raise VideoProcessingFailedError(f"Video processing failed: {detail}")
+        time.sleep(PUBLISH_POLL_INTERVAL_SECONDS)
+    elapsed = time.monotonic() - started
+    print(
+        f"poll_timeout video_id={video_id} polls={polls} "
+        f"elapsed_s={elapsed:.1f} last_status={last_status} "
+        f"interval_s={PUBLISH_POLL_INTERVAL_SECONDS} timeout_s={PUBLISH_POLL_TIMEOUT_SECONDS}",
+        file=sys.stderr,
+    )
+    raise VideoProcessingTimeoutError(
+        video_id,
+        last_status=last_status,
+        elapsed_seconds=elapsed,
+    )
 
 
 def _publish(
@@ -105,8 +184,11 @@ def _publish(
         headers=_auth_headers(token),
         json=payload,
     )
-    publish.raise_for_status()
-    body = publish.json()
+    if publish.status_code not in {200, 201, 202}:
+        publish.raise_for_status()
+    accepted = publish.json()
+    video_id = str(accepted["id"])
+    body = _wait_until_ready(client, api, token, video_id)
     body["_upload_storage_key"] = init_body.get("storage_key")
     body["_upload_id"] = init_body.get("upload_id")
     return body
@@ -448,6 +530,42 @@ def main() -> int:
     except httpx.HTTPError as exc:
         print(json.dumps({"error": "http_error", "detail": str(exc)}, indent=2), file=sys.stderr)
         return 4
+    except VideoProcessingTimeoutError as exc:
+        print(
+            json.dumps(
+                {
+                    "error": "processing_timeout",
+                    "video_id": exc.video_id,
+                    "last_status": exc.last_status,
+                    "elapsed_seconds": exc.elapsed_seconds,
+                    "poll_interval_seconds": PUBLISH_POLL_INTERVAL_SECONDS,
+                    "poll_timeout_seconds": PUBLISH_POLL_TIMEOUT_SECONDS,
+                    "hint": (
+                        "Video worker not running? Deploy or start: "
+                        "arq workers.video_worker.WorkerSettings"
+                        if exc.last_status == "processing"
+                        else "Check worker logs for processing failures."
+                    ),
+                    "detail": str(exc),
+                },
+                indent=2,
+            ),
+            file=sys.stderr,
+        )
+        return 6
+    except VideoProcessingFailedError as exc:
+        print(
+            json.dumps(
+                {
+                    "error": "processing_failed",
+                    "detail": str(exc),
+                    "hint": "Inspect LocalVideo.processing_error and worker logs.",
+                },
+                indent=2,
+            ),
+            file=sys.stderr,
+        )
+        return 7
 
 
 if __name__ == "__main__":
