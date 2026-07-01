@@ -2856,12 +2856,54 @@ export {
   LOCAL_VIDEO_COMMENT_PLACEHOLDER,
   LOCAL_VIDEO_COMMENT_SEND_ERROR,
   LOCAL_VIDEO_COMMENT_SUBMIT_LABEL,
+  LOCAL_VIDEO_DESCRIPTION_MAX_LENGTH,
   LOCAL_VIDEO_REPORT_ERROR,
   LOCAL_VIDEO_REPORT_LABEL,
   LOCAL_VIDEO_REPORT_REASON_LABELS,
   LOCAL_VIDEO_REPORT_REASONS,
   LOCAL_VIDEO_REPORT_SUCCESS,
   LOCAL_VIDEO_SHARE_COPIED,
+  LOCAL_VIDEO_TITLE_MAX_LENGTH,
+  LOCAL_VIDEO_UPLOAD_BACK_TO_FEED,
+  LOCAL_VIDEO_UPLOAD_CANCEL,
+  LOCAL_VIDEO_UPLOAD_CHANGE_FILE,
+  LOCAL_VIDEO_UPLOAD_CHOOSE_FILE,
+  LOCAL_VIDEO_UPLOAD_DESCRIPTION_LABEL,
+  LOCAL_VIDEO_UPLOAD_DESCRIPTION_PLACEHOLDER,
+  LOCAL_VIDEO_UPLOAD_DURATION_LABEL,
+  LOCAL_VIDEO_UPLOAD_DURATION_UNKNOWN,
+  LOCAL_VIDEO_UPLOAD_ERROR_GENERIC,
+  LOCAL_VIDEO_UPLOAD_FILE_INVALID_TYPE,
+  LOCAL_VIDEO_UPLOAD_FILE_SIZE_LABEL,
+  LOCAL_VIDEO_UPLOAD_FILE_TOO_LARGE,
+  LOCAL_VIDEO_UPLOAD_FILE_TOO_LONG,
+  LOCAL_VIDEO_UPLOAD_NEIGHBORHOOD_LABEL,
+  LOCAL_VIDEO_UPLOAD_NEIGHBORHOOD_PLACEHOLDER,
+  LOCAL_VIDEO_UPLOAD_NEIGHBORHOOD_REQUIRED,
+  LOCAL_VIDEO_UPLOAD_NEIGHBORHOODS_EMPTY,
+  LOCAL_VIDEO_UPLOAD_NEIGHBORHOODS_LOADING,
+  LOCAL_VIDEO_UPLOAD_PAGE_SUBTITLE,
+  LOCAL_VIDEO_UPLOAD_PAGE_TITLE,
+  LOCAL_VIDEO_UPLOAD_PHASE_PROCESSING,
+  LOCAL_VIDEO_UPLOAD_PHASE_PUBLISH,
+  LOCAL_VIDEO_UPLOAD_PHASE_UPLOAD,
+  LOCAL_VIDEO_UPLOAD_PUBLISH,
+  LOCAL_VIDEO_UPLOAD_PUBLISH_CTA,
+  LOCAL_VIDEO_PROCESSING_FAILED_TITLE,
+  LOCAL_VIDEO_PROCESSING_FEED_HINT,
+  LOCAL_VIDEO_PROCESSING_FEED_TITLE,
+  LOCAL_VIDEO_PROCESSING_PUBLISHED_HINT,
+  LOCAL_VIDEO_PROCESSING_PUBLISHED_TITLE,
+  LOCAL_VIDEO_PROCESSING_RETRY_CTA,
+  LOCAL_VIDEO_UPLOAD_SUBMITTED_BODY,
+  LOCAL_VIDEO_UPLOAD_SUCCESS_BODY,
+  LOCAL_VIDEO_UPLOAD_SUCCESS_CTA,
+  LOCAL_VIDEO_UPLOAD_TITLE_LABEL,
+  LOCAL_VIDEO_UPLOAD_TITLE_PLACEHOLDER,
+  LOCAL_VIDEO_UPLOAD_TITLE_REQUIRED,
+  LOCAL_VIDEO_UPLOAD_VIDEO_HINT,
+  LOCAL_VIDEO_UPLOAD_VIDEO_LABEL,
+  LOCAL_VIDEO_UPLOAD_VIDEO_REQUIRED,
 } from "./local-video-labels";
 export {
   applyLocalVideoLikeResponse,
@@ -2872,7 +2914,41 @@ export {
   shareLocalVideoWithFallback,
 } from "./local-video-state";
 export type { LocalVideoShareResult } from "./local-video-state";
-export { LocalVideosApi, createLocalVideosApi } from "./local-videos-api";
+export { LocalVideosApi, createLocalVideosApi, mapLocalVideoToFeedPreview } from "./local-videos-api";
+export {
+  humanizeLocalVideoError,
+  isKnownLocalVideoErrorCode,
+  isLocalVideoError,
+  isLocalVideoProcessingFailed,
+  isLocalVideoProcessingReady,
+  LocalVideoError,
+  LOCAL_VIDEO_ERROR_MESSAGES,
+  parseLocalVideoApiError,
+  toLocalVideoError,
+} from "./local-video-errors";
+export {
+  getProcessingStatus,
+  pollLocalVideoUntilSettled,
+} from "./local-video-processing";
+export {
+  buildLocalVideoProcessingFailureError,
+  isLocalVideoFeedItemPlayable,
+  isLocalVideoFeedItemProcessing,
+  localVideoFeedHref,
+  resolveLocalVideoPublicationPhase,
+  type LocalVideoPublicationPhase,
+} from "./local-video-processing-presenter";
+export {
+  readLocalVideoPendingRecords,
+  registerLocalVideoPending,
+  removeLocalVideoPending,
+  writeLocalVideoPendingRecords,
+  type LocalVideoPendingRecord,
+} from "./local-video-pending-storage";
+export {
+  uploadLocalVideoBinaryDev,
+  uploadLocalVideoBytes,
+} from "./local-video-upload";
 export { MemoryTokenStorage } from "./storage/memory-token-storage";
 export type { TokenStorage } from "./storage/token-storage";
 

@@ -72,6 +72,7 @@ import type {
   StoryRingsResponse,
   ReportPostPayload,
   UserProfile,
+  LocalVideo,
   LocalVideoComment,
   LocalVideoCommentCreatePayload,
   LocalVideoCommentListResponse,
@@ -79,7 +80,11 @@ import type {
   LocalVideoLikeResponse,
   LocalVideoListParams,
   LocalVideoListResponse,
+  LocalVideoPublishAcceptedResponse,
+  LocalVideoPublishPayload,
   LocalVideoReportCreatePayload,
+  LocalVideoUpload,
+  LocalVideoUploadInitPayload,
 } from "@yunicity/types";
 
 import type { AuthClient } from "./auth/auth-client";
@@ -249,6 +254,18 @@ export class YunicityApi {
 
   getLocalVideo(videoId: string): Promise<LocalVideoFeedItem> {
     return this.localVideos.getLocalVideo(videoId);
+  }
+
+  getVideo(videoId: string): Promise<LocalVideo> {
+    return this.localVideos.getVideo(videoId);
+  }
+
+  createLocalVideoUpload(payload: LocalVideoUploadInitPayload): Promise<LocalVideoUpload> {
+    return this.localVideos.createUpload(payload);
+  }
+
+  publishLocalVideo(payload: LocalVideoPublishPayload): Promise<LocalVideoPublishAcceptedResponse> {
+    return this.localVideos.publishVideo(payload);
   }
 
   likeLocalVideo(videoId: string): Promise<LocalVideoLikeResponse> {
