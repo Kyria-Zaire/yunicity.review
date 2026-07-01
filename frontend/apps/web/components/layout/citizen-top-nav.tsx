@@ -1,5 +1,6 @@
 "use client";
 
+import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { YunicityLogo } from "@/components/brand";
 import {
@@ -72,6 +73,8 @@ export function CitizenTopNav() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2 xl:gap-3">
+          <CreateHubTriggerButton variant="nav" className="hidden xl:inline-flex" />
+
           <nav
             className="hidden items-center gap-0.5 border-r border-neutral-200 pr-2 lg:flex xl:gap-1 xl:pr-3"
             aria-label="Compte et lieux"

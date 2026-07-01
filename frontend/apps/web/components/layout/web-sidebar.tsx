@@ -2,6 +2,7 @@
 
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { YunicityLogo } from "@/components/brand";
+import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
 import { WebSidebarTooltip } from "@/components/layout/web-sidebar-tooltip";
 import {
   WEB_CITIZEN_NAV_PRIMARY,
@@ -215,7 +216,12 @@ export function WebSidebar() {
             ))}
           </nav>
 
-          <div className="mt-8 flex justify-center xl:mt-10">
+          <div className="mt-8 flex flex-col items-center gap-3 xl:mt-10 xl:items-stretch">
+            <WebSidebarTooltip label="Créer">
+              <CreateHubTriggerButton variant="sidebar-icon" className="xl:hidden" />
+            </WebSidebarTooltip>
+            <CreateHubTriggerButton variant="sidebar-expanded" />
+
             <WebSidebarTooltip label={HOME_PUBLISH_MOMENT}>
               <button
                 type="button"

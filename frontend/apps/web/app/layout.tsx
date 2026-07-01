@@ -1,3 +1,4 @@
+import { CreateHubProvider } from "@/components/create-hub";
 import { AuthProvider } from "@/lib/auth/auth-provider";
 import { SITE_DEFAULT_METADATA } from "@/lib/seo/metadata";
 import { getDefaultOgImageUrl, getSiteUrl } from "@/lib/seo/site";
@@ -43,7 +44,9 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className="min-h-screen antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <CreateHubProvider>{children}</CreateHubProvider>
+        </AuthProvider>
       </body>
     </html>
   );
