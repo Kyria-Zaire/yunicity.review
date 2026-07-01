@@ -5,11 +5,13 @@ import {
   LOCAL_VIDEO_DEFAULT_MUTED,
   buildVideoTerritoryLines,
   isDoubleTap,
+  isLocalVideoFeedItemProcessing,
   resolveVideoGoCta,
 } from "@yunicity/utils";
 import { Heart, MoreVertical, Pause, Play, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { LocalVideoProcessingSlide } from "@/components/videos/local-video-processing-slide";
 import { LocalVideoActionRail } from "@/components/videos/local-video-action-rail";
 import { LocalVideoGoCta } from "@/components/videos/local-video-go-cta";
 import { LocalVideoMetaStrip } from "@/components/videos/local-video-meta-strip";
@@ -20,6 +22,8 @@ const SINGLE_TAP_DELAY_MS = 260;
 type LocalVideoSlideProps = {
   item: LocalVideoFeedItem;
   isActive: boolean;
+  processingError?: string | null;
+  onDismissProcessing?: () => void;
   onOpenComments: () => void;
   onToggleLike: () => void;
   onShare: () => void;
@@ -29,6 +33,8 @@ type LocalVideoSlideProps = {
 export function LocalVideoSlide({
   item,
   isActive,
+  processingError,
+  onDismissProcessing,
   onOpenComments,
   onToggleLike,
   onShare,
@@ -114,6 +120,16 @@ export function LocalVideoSlide({
   const toggleMute = useCallback(() => {
     setIsMuted((value) => !value);
   }, []);
+
+  if (isLocalVideoFeedItemProcessing(item)) {
+    return (
+      <LocalVideoProcessingSlide
+        item={item}
+        errorMessage={processingError}
+        onDismiss={onDismissProcessing}
+      />
+    );
+  }
 
   return (
     <article

@@ -9,6 +9,8 @@ import { useCallback, useEffect, useRef } from "react";
 type LocalVideoFeedViewportProps = {
   items: LocalVideoFeedItem[];
   focusVideoId?: string | null;
+  processingErrors?: Record<string, string | null | undefined>;
+  onDismissProcessing?: (videoId: string) => void;
   onActiveVideoChange: (videoId: string | null) => void;
   onOpenComments: (videoId: string) => void;
   onToggleLike: (item: LocalVideoFeedItem) => void;
@@ -20,6 +22,8 @@ type LocalVideoFeedViewportProps = {
 export function LocalVideoFeedViewport({
   items,
   focusVideoId = null,
+  processingErrors = {},
+  onDismissProcessing,
   onActiveVideoChange,
   onOpenComments,
   onToggleLike,
@@ -63,6 +67,10 @@ export function LocalVideoFeedViewport({
           key={item.id}
           item={item}
           isActive={activeId === item.id}
+          processingError={processingErrors[item.id]}
+          onDismissProcessing={
+            onDismissProcessing ? () => onDismissProcessing(item.id) : undefined
+          }
           onOpenComments={() => onOpenComments(item.id)}
           onToggleLike={() => onToggleLike(item)}
           onShare={() => onShare(item)}

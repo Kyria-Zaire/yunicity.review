@@ -27,8 +27,8 @@ const CITIZEN_ACTIONS: readonly CreateHubAction[] = [
     title: "Filmer mon quartier",
     description: "Partage une vidéo locale (90 s max).",
     icon: Video,
-    kind: "soon",
-    soonLabel: "Bientôt disponible",
+    kind: "navigate",
+    href: "/videos/new",
   },
   {
     id: "story",

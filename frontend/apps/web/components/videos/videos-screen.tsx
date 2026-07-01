@@ -9,13 +9,19 @@ import { VideosFeedEmpty } from "@/components/videos/videos-feed-empty";
 import { VideosFeedError } from "@/components/videos/videos-feed-error";
 import { VideosFeedSkeleton } from "@/components/videos/videos-feed-skeleton";
 import { useLocalVideoInteractions } from "@/hooks/use-local-video-interactions";
+import { useLocalVideoPendingTracker } from "@/hooks/use-local-video-pending-tracker";
 import { useLocalVideosFeed } from "@/hooks/use-local-videos-feed";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { GeoProvider } from "@/providers/geo-provider";
 import {
   LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE,
+  LOCAL_VIDEO_UPLOAD_PUBLISH_CTA,
   bumpLocalVideoCommentCount,
+  isLocalVideoFeedItemPlayable,
+  isLocalVideoProcessingReady,
+  mapLocalVideoToFeedPreview,
+  registerLocalVideoPending,
   reorderLocalVideoFeedForFocus,
 } from "@yunicity/utils";
 import type { LocalVideoFeedItem } from "@yunicity/types";
@@ -41,6 +47,17 @@ function VideosScreenInner() {
   const focusVideoId = searchParams.get("video")?.trim() || null;
 
   const feed = useLocalVideosFeed();
+  const pending = useLocalVideoPendingTracker({
+    onPublished: (videoId) => {
+      void feed.refresh();
+      if (focusVideoId === videoId) {
+        void api
+          .getLocalVideo(videoId)
+          .then((video) => setPinnedVideo(video))
+          .catch(() => {});
+      }
+    },
+  });
   const interactions = useLocalVideoInteractions({ updateItem: feed.updateItem });
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -57,9 +74,18 @@ function VideosScreenInner() {
 
     let cancelled = false;
     void api
-      .getLocalVideo(focusVideoId)
+      .getVideo(focusVideoId)
       .then((video) => {
-        if (!cancelled) setPinnedVideo(video);
+        if (cancelled) return;
+        if (!isLocalVideoProcessingReady(video)) {
+          registerLocalVideoPending({
+            videoId: video.id,
+            title: video.title,
+            registeredAt: video.created_at,
+          });
+          pending.syncFromStorage();
+        }
+        setPinnedVideo(mapLocalVideoToFeedPreview(video));
       })
       .catch(() => {
         if (!cancelled) setPinnedVideo(null);
@@ -68,15 +94,38 @@ function VideosScreenInner() {
     return () => {
       cancelled = true;
     };
-  }, [api, feed.isLoading, feed.items, focusVideoId]);
+  }, [api, feed.isLoading, feed.items, focusVideoId, pending.syncFromStorage]);
 
   const displayItems = useMemo(() => {
-    let list = feed.items;
-    if (pinnedVideo && !list.some((item) => item.id === pinnedVideo.id)) {
-      list = [pinnedVideo, ...list];
+    const byId = new Map<string, LocalVideoFeedItem>();
+
+    for (const item of feed.items) {
+      byId.set(item.id, item);
     }
-    return reorderLocalVideoFeedForFocus(list, focusVideoId);
-  }, [feed.items, focusVideoId, pinnedVideo]);
+
+    for (const processingItem of pending.processingFeedItems) {
+      const existing = byId.get(processingItem.id);
+      if (existing && isLocalVideoFeedItemPlayable(existing)) continue;
+      byId.set(processingItem.id, processingItem);
+    }
+
+    if (pinnedVideo) {
+      const existing = byId.get(pinnedVideo.id);
+      if (!existing || !isLocalVideoFeedItemPlayable(existing)) {
+        byId.set(pinnedVideo.id, pinnedVideo);
+      }
+    }
+
+    return reorderLocalVideoFeedForFocus(Array.from(byId.values()), focusVideoId);
+  }, [feed.items, focusVideoId, pending.processingFeedItems, pinnedVideo]);
+
+  const processingErrors = useMemo(() => {
+    const map: Record<string, string | null> = {};
+    for (const track of pending.tracks) {
+      if (track.error) map[track.record.videoId] = track.error;
+    }
+    return map;
+  }, [pending.tracks]);
 
   const activeVideo = useMemo(
     () => displayItems.find((item) => item.id === activeVideoId) ?? displayItems[0] ?? null,
@@ -102,6 +151,12 @@ function VideosScreenInner() {
           <h1 className="text-sm font-semibold text-white drop-shadow md:text-lg md:text-neutral-900 md:drop-shadow-none xl:hidden">
             Vidéos
           </h1>
+          <Link
+            href="/videos/new"
+            className="ml-auto hidden rounded-full bg-yunicity-primary px-4 py-2 text-xs font-semibold text-white hover:bg-yunicity-primary-hover md:inline-flex"
+          >
+            {LOCAL_VIDEO_UPLOAD_PUBLISH_CTA}
+          </Link>
         </header>
 
         {interactions.shareHint ? (
@@ -115,7 +170,7 @@ function VideosScreenInner() {
             message={LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE}
             returnPath="/videos"
           />
-        ) : feed.isLoading ? (
+        ) : feed.isLoading && pending.processingFeedItems.length === 0 ? (
           <VideosFeedSkeleton />
         ) : feed.error ? (
           <VideosFeedError onRetry={() => void feed.refresh()} />
@@ -125,6 +180,8 @@ function VideosScreenInner() {
           <LocalVideoFeedViewport
             items={displayItems}
             focusVideoId={focusVideoId}
+            processingErrors={processingErrors}
+            onDismissProcessing={pending.dismissTrack}
             onActiveVideoChange={setActiveVideoId}
             onOpenComments={(videoId) => {
               setActiveVideoId(videoId);
