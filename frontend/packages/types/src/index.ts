@@ -415,18 +415,32 @@ export type {
 } from "./story";
 
 export type {
+  LocalVideo,
   LocalVideoAuthor,
   LocalVideoComment,
   LocalVideoCommentCreatePayload,
   LocalVideoCommentListResponse,
+  LocalVideoContentType,
+  LocalVideoErrorCode,
   LocalVideoFeedItem,
   LocalVideoLikeResponse,
   LocalVideoListParams,
   LocalVideoListResponse,
+  LocalVideoProcessingStatusId,
+  LocalVideoPublishAcceptedResponse,
+  LocalVideoPublishPayload,
   LocalVideoReportCreatePayload,
   LocalVideoReportReason,
   LocalVideoStatusId,
   LocalVideoTypeId,
+  LocalVideoUpload,
+  LocalVideoUploadInitPayload,
+} from "./local-video";
+
+export {
+  LOCAL_VIDEO_ALLOWED_CONTENT_TYPES,
+  LOCAL_VIDEO_MAX_BYTES,
+  LOCAL_VIDEO_MAX_DURATION_SECONDS,
 } from "./local-video";
 
 export type {
