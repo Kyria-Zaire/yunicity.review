@@ -6,5 +6,4 @@ export { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigg
 export {
   CREATE_HUB_FAB_LABEL,
   CREATE_HUB_SHEET_TITLE,
-  CREATE_HUB_SHEET_PLACEHOLDER,
 } from "@/components/create-hub/create-hub-labels";

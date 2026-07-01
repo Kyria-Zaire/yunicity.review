@@ -1,14 +1,19 @@
 "use client";
 
+import { CreateHubActionRow } from "@/components/create-hub/create-hub-action-row";
 import {
+  CREATE_HUB_ACTIONS_ARIA_LABEL,
   CREATE_HUB_BACKDROP_LABEL,
   CREATE_HUB_CLOSE_LABEL,
-  CREATE_HUB_SHEET_PLACEHOLDER,
   CREATE_HUB_SHEET_TITLE,
 } from "@/components/create-hub/create-hub-labels";
+import { useCreateHubPartnerAccess } from "@/hooks/use-create-hub-partner-access";
+import { buildCreateHubActions, type CreateHubAction } from "@/lib/create-hub/create-hub-actions";
+import { navigateFromCreateHub } from "@/lib/create-hub/create-hub-navigation";
 import { Z_INDEX } from "@/lib/layout/z-index";
 import { X } from "lucide-react";
-import { useEffect, useId, useRef } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useCallback, useEffect, useId, useMemo, useRef } from "react";
 
 type CreateHubSheetProps = {
   open: boolean;
@@ -17,8 +22,28 @@ type CreateHubSheetProps = {
 
 export function CreateHubSheet({ open, onClose }: CreateHubSheetProps) {
   const titleId = useId();
+  const listId = useId();
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const { showPartnerAction } = useCreateHubPartnerAccess();
+
+  const actions = useMemo(
+    () => buildCreateHubActions({ showPartnerAction }),
+    [showPartnerAction],
+  );
+
+  const handleSelect = useCallback(
+    (action: CreateHubAction) => {
+      if (action.kind !== "navigate" || !action.href) {
+        return;
+      }
+      onClose();
+      navigateFromCreateHub(action.href, { pathname, router });
+    },
+    [onClose, pathname, router],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -86,7 +111,17 @@ export function CreateHubSheet({ open, onClose }: CreateHubSheetProps) {
           </button>
         </div>
 
-        <p className="mt-6 py-8 text-center text-sm text-neutral-500">{CREATE_HUB_SHEET_PLACEHOLDER}</p>
+        <ul
+          id={listId}
+          aria-label={CREATE_HUB_ACTIONS_ARIA_LABEL}
+          className="mt-5 space-y-3 pb-1"
+        >
+          {actions.map((action) => (
+            <li key={action.id}>
+              <CreateHubActionRow action={action} onSelect={handleSelect} />
+            </li>
+          ))}
+        </ul>
       </section>
     </div>
   );
