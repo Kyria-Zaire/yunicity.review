@@ -16,6 +16,14 @@
   --web-center-min-width: 40rem; /* 640px — colonne centrale dominante (large) */
   --web-grid-gap: 1.5rem;
   --web-sidebar-icon-hit: 3.25rem;
+  /* CREATORS-UX-02A — registre z-index (voir lib/layout/z-index.ts) */
+  --z-chrome: 40;
+  --z-video-header: 50;
+  --z-video-hint: 55;
+  --z-video-comments: 60;
+  --z-create-fab: 65;
+  --z-video-report: 70;
+  --z-create-hub: 75;
 }
 
 .web-shell-page {
