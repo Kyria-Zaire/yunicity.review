@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, File, Request, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.dependencies import (
     get_current_user_optional,
     require_authenticated_user,
@@ -20,6 +21,8 @@ from app.schemas.profile import (
     ProfilePublicResponse,
     ProfileUpdateRequest,
 )
+from app.core.profile_media_constants import ProfileMediaKind
+from app.services.profile_media_service import ProfileMediaService
 from app.services.profile_service import ProfileService
 
 router = APIRouter(prefix="/profile", tags=["profile"])
@@ -60,6 +63,50 @@ async def patch_profile_me(
         window_seconds=3600,
     )
     return await ProfileService(session).update_me(current_user, payload)
+
+
+@router.post("/me/avatar", response_model=ProfileMeResponse)
+async def upload_profile_avatar(
+    request: Request,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    file: Annotated[UploadFile, File()],
+) -> ProfileMeResponse:
+    await enforce_rate_limit(
+        f"profile:avatar:{current_user.id}",
+        limit=20,
+        window_seconds=3600,
+    )
+    await enforce_rate_limit(
+        f"profile:avatar:ip:{_client_ip(request)}",
+        limit=40,
+        window_seconds=3600,
+    )
+    settings = get_settings()
+    url = await ProfileMediaService(settings).upload(current_user, file, ProfileMediaKind.AVATAR)
+    return await ProfileService(session).set_avatar_url(current_user, url)
+
+
+@router.post("/me/banner", response_model=ProfileMeResponse)
+async def upload_profile_banner(
+    request: Request,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    file: Annotated[UploadFile, File()],
+) -> ProfileMeResponse:
+    await enforce_rate_limit(
+        f"profile:banner:{current_user.id}",
+        limit=20,
+        window_seconds=3600,
+    )
+    await enforce_rate_limit(
+        f"profile:banner:ip:{_client_ip(request)}",
+        limit=40,
+        window_seconds=3600,
+    )
+    settings = get_settings()
+    url = await ProfileMediaService(settings).upload(current_user, file, ProfileMediaKind.BANNER)
+    return await ProfileService(session).set_banner_url(current_user, url)
 
 
 @router.post("/complete", response_model=ProfileMeResponse)

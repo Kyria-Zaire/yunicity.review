@@ -25,6 +25,11 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         logger.warning("Production email provider is console; real emails are disabled.")
     init_db(settings)
     await init_redis(settings)
+    from app.core.profile_media_policy import validate_profile_media_storage_config
+
+    profile_media_warnings = validate_profile_media_storage_config(settings)
+    for warning in profile_media_warnings:
+        logger.warning("profile_media_storage_config: %s", warning)
     yield
     await close_redis()
     await dispose_db()

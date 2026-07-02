@@ -20,6 +20,11 @@ export const PROFILE_EDIT_BANNER_CHANGE = "Changer la photo";
 export const PROFILE_EDIT_BANNER_TIP =
   "Une image de votre ville ou de vos passions donne du caractère à votre profil.";
 
+export const PROFILE_EDIT_AVATAR_UPLOAD_SUCCESS = "Photo de profil mise à jour.";
+export const PROFILE_EDIT_BANNER_UPLOAD_SUCCESS = "Photo de couverture mise à jour.";
+export const PROFILE_EDIT_MEDIA_UPLOAD_ERROR =
+  "Impossible d'envoyer l'image. Utilisez JPG, PNG ou WEBP et réessayez.";
+
 export const PROFILE_EDIT_PERSONAL_TITLE = "Informations personnelles";
 export const PROFILE_EDIT_FIRST_NAME = "Prénom";
 export const PROFILE_EDIT_LAST_NAME = "Nom";

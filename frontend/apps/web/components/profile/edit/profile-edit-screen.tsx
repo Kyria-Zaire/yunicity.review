@@ -75,6 +75,7 @@ export function ProfileEditScreen() {
               isUploadingAvatar={ctx.isUploadingAvatar}
               isUploadingBanner={ctx.isUploadingBanner}
               saveMessage={ctx.saveMessage}
+              saveMessageIsError={ctx.saveMessageIsError}
               onDraftChange={ctx.updateDraft}
               onSave={async () => {
                 await ctx.save();
