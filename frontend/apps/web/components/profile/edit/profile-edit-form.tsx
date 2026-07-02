@@ -82,7 +82,7 @@ export function ProfileEditForm({
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const bioLength = draft.bio.length;
-  const bannerSrc = profile.banner_url?.trim() || NEIGHBORHOODS_PORTAL_HERO_IMAGE_URL;
+  const bannerUrl = profile.banner_url?.trim() || null;
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -153,16 +153,26 @@ export function ProfileEditForm({
           {PROFILE_EDIT_BANNER_TITLE}
         </h2>
         <div className="relative min-h-[140px] bg-neutral-900">
-          <CulturalImage
-            src={bannerSrc}
-            alt=""
-            placeName={draft.city || "Reims"}
-            className="absolute inset-0 size-full"
-            imageClassName="object-cover"
-            sizes="(max-width: 768px) 100vw, 720px"
-            showFallbackCaption={false}
-            overlay={false}
-          />
+          {bannerUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={bannerUrl}
+              src={bannerUrl}
+              alt=""
+              className="absolute inset-0 size-full object-cover"
+            />
+          ) : (
+            <CulturalImage
+              src={NEIGHBORHOODS_PORTAL_HERO_IMAGE_URL}
+              alt=""
+              placeName={draft.city || "Reims"}
+              className="absolute inset-0 size-full"
+              imageClassName="object-cover"
+              sizes="(max-width: 768px) 100vw, 720px"
+              showFallbackCaption={false}
+              overlay={false}
+            />
+          )}
           <button
             type="button"
             disabled={isUploadingBanner}
@@ -176,7 +186,7 @@ export function ProfileEditForm({
             )}
             {isUploadingBanner ? PROFILE_EDIT_UPLOADING : PROFILE_EDIT_BANNER_CHANGE}
           </button>
-          {profile.banner_url ? (
+          {bannerUrl ? (
             <button
               type="button"
               disabled={isUploadingBanner}
