@@ -11,19 +11,11 @@ import {
   type WebNavItem,
 } from "@/lib/layout/web-layout-config";
 import { WebNavIcon } from "@/lib/layout/web-nav-icons";
-import { HOME_PUBLISH_MOMENT } from "@yunicity/utils";
 import { useAuth } from "@/lib/auth/auth-provider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useCitizenChrome, useNotificationUnread } from "@/hooks/use-citizen-chrome";
-
-function scrollToComposer() {
-  const el = document.getElementById("feed-composer");
-  el?.scrollIntoView({ behavior: "smooth", block: "center" });
-  const textarea = el?.querySelector("textarea");
-  textarea?.focus();
-}
 
 /** Cible tactile 52px — icône seule, style barre X en mode compact. */
 function NavIconButton({
@@ -148,7 +140,7 @@ function NavItem({
 }
 
 /**
- * WEB-HOME-01C — Colonne grille gauche, sticky 100dvh, profil en bas, Publier après nav secondaire.
+ * WEB-HOME-01C — Colonne grille gauche, sticky 100dvh, Create Hub + profil en bas.
  */
 export function WebSidebar() {
   const pathname = usePathname();
@@ -221,25 +213,6 @@ export function WebSidebar() {
               <CreateHubTriggerButton variant="sidebar-icon" className="xl:hidden" />
             </WebSidebarTooltip>
             <CreateHubTriggerButton variant="sidebar-expanded" />
-
-            <WebSidebarTooltip label={HOME_PUBLISH_MOMENT}>
-              <button
-                type="button"
-                onClick={scrollToComposer}
-                aria-label={HOME_PUBLISH_MOMENT}
-                className="flex items-center justify-center rounded-full bg-yunicity-primary text-white shadow-md transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 xl:hidden"
-                style={{ width: "var(--web-sidebar-icon-hit)", height: "var(--web-sidebar-icon-hit)" }}
-              >
-                <WebNavIcon id="publish" className="h-[26px] w-[26px] text-white" />
-              </button>
-            </WebSidebarTooltip>
-            <button
-              type="button"
-              onClick={scrollToComposer}
-              className="hidden w-full rounded-full bg-yunicity-primary px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-yunicity-primary-hover xl:block"
-            >
-              {HOME_PUBLISH_MOMENT}
-            </button>
           </div>
         </div>
 

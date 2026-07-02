@@ -169,10 +169,6 @@ export function FeedPortalScreen() {
     setTimeout(() => setReportMessage(null), 4000);
   }
 
-  function scrollToComposer() {
-    composerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
   function handleLeftNavSelect(nav: FeedLeftNav) {
     if (nav === "for_you" || nav === "recent" || nav === "popular") {
       setActiveView(nav);
@@ -189,7 +185,6 @@ export function FeedPortalScreen() {
         leftNav={leftNav}
         onNavSelect={handleLeftNavSelect}
         interests={interests}
-        onCreatePost={scrollToComposer}
       />
 
       <div className="min-w-0 flex-1">
