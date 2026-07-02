@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import boto3  # type: ignore[import-untyped]
-from botocore.client import Config  # type: ignore[import-untyped]
-
 from app.core.config import Settings
 from app.core.errors import AppError
 from app.core.story_media_policy import validate_story_media_storage_config
+from botocore.client import Config  # type: ignore[import-untyped]
 
 
 class StoryMediaR2Storage:

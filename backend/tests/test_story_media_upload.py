@@ -48,6 +48,15 @@ def mock_story_media_r2() -> dict[str, bytes]:
         yield stored
 
 
+@pytest.fixture(autouse=True)
+def disable_story_media_rate_limits(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def _noop(*_args: object, **_kwargs: object) -> None:
+        return None
+
+    monkeypatch.setattr("app.api.v1.stories.enforce_rate_limit", _noop)
+    monkeypatch.setattr("app.api.v1.auth.enforce_rate_limit", _noop)
+
+
 def _auth_headers(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
