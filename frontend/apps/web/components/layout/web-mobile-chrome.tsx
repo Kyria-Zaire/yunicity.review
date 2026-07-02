@@ -2,7 +2,6 @@
 
 import { YunicityLogo } from "@/components/brand";
 import { WEB_CITIZEN_NAV_PRIMARY, isWebNavActive } from "@/lib/layout/web-layout-config";
-import { HOME_PUBLISH_MOMENT } from "@yunicity/utils";
 import { useAuth } from "@/lib/auth/auth-provider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -15,12 +14,6 @@ export function WebMobileHeader() {
     <header className="web-mobile-chrome-only sticky top-0 z-20 border-b border-neutral-200/80 bg-white">
       <div className="flex items-center gap-3 px-4 py-3">
         <YunicityLogo href="/feed" size="sm" showWordmark priority />
-        <Link
-          href="/feed#feed-composer"
-          className="hidden shrink-0 rounded-full bg-yunicity-primary px-3 py-2 text-xs font-semibold text-white sm:inline-flex"
-        >
-          {HOME_PUBLISH_MOMENT}
-        </Link>
         <nav
           className="min-w-0 flex-1 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label="Navigation principale"

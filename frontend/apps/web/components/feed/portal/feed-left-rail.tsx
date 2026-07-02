@@ -2,9 +2,6 @@
 
 import type { FeedPortalView } from "@yunicity/utils";
 import {
-  FEED_PORTAL_CTA_BODY,
-  FEED_PORTAL_CTA_BUTTON,
-  FEED_PORTAL_CTA_TITLE,
   FEED_PORTAL_INTERESTS_MANAGE,
   FEED_PORTAL_INTERESTS_SEE_ALL,
   FEED_PORTAL_INTERESTS_TITLE,
@@ -47,7 +44,6 @@ type FeedLeftRailProps = {
   leftNav: FeedLeftNavId;
   onNavSelect: (nav: FeedLeftNavId) => void;
   interests: string[];
-  onCreatePost: () => void;
 };
 
 const NAV_ITEMS: Array<{
@@ -77,7 +73,6 @@ export function FeedLeftRail({
   leftNav,
   onNavSelect,
   interests,
-  onCreatePost,
 }: FeedLeftRailProps) {
   return (
     <aside className="hidden w-56 shrink-0 xl:block">
@@ -123,21 +118,6 @@ export function FeedLeftRail({
             })}
           </ul>
         </nav>
-
-        <section className="rounded-2xl bg-yunicity-primary p-5 text-white shadow-sm">
-          <h2 className="text-base font-bold">{FEED_PORTAL_CTA_TITLE}</h2>
-          <p className="mt-2 text-sm leading-relaxed text-white/85">{FEED_PORTAL_CTA_BODY}</p>
-          <button
-            type="button"
-            onClick={onCreatePost}
-            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-yunicity-primary transition hover:bg-neutral-100"
-          >
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-yunicity-primary text-white">
-              +
-            </span>
-            {FEED_PORTAL_CTA_BUTTON}
-          </button>
-        </section>
 
         <section className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between gap-2">
