@@ -79,6 +79,19 @@ class ProfileService:
         await self._session.refresh(profile)
         return ProfileMeResponse.model_validate(profile)
 
+    async def set_avatar_url(self, user: User, url: str) -> ProfileMeResponse:
+        return await self._set_media_url(user, field="avatar_url", url=url)
+
+    async def set_banner_url(self, user: User, url: str) -> ProfileMeResponse:
+        return await self._set_media_url(user, field="banner_url", url=url)
+
+    async def _set_media_url(self, user: User, *, field: str, url: str) -> ProfileMeResponse:
+        profile = await self._get_profile_for_user(user.id)
+        await self._profiles.update_fields(profile, fields={field: url})
+        await self._session.commit()
+        await self._session.refresh(profile)
+        return ProfileMeResponse.model_validate(profile)
+
     async def complete_onboarding(
         self,
         user: User,

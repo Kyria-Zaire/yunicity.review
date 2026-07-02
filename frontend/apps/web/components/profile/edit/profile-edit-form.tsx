@@ -42,6 +42,7 @@ type ProfileEditFormProps = {
   isUploadingAvatar: boolean;
   isUploadingBanner: boolean;
   saveMessage: string | null;
+  saveMessageIsError?: boolean;
   onDraftChange: (patch: Partial<ProfileEditDraft>) => void;
   onSave: () => Promise<void>;
   onAvatarFile: (file: File) => Promise<void>;
@@ -69,6 +70,7 @@ export function ProfileEditForm({
   isUploadingAvatar,
   isUploadingBanner,
   saveMessage,
+  saveMessageIsError = false,
   onDraftChange,
   onSave,
   onAvatarFile,
@@ -290,7 +292,12 @@ export function ProfileEditForm({
       </div>
 
       {saveMessage ? (
-        <p className="text-center text-sm font-medium text-emerald-700" role="status">
+        <p
+          className={`text-center text-sm font-medium ${
+            saveMessageIsError ? "text-red-700" : "text-emerald-700"
+          }`}
+          role="status"
+        >
           {saveMessage}
         </p>
       ) : null}

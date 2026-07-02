@@ -14,7 +14,11 @@ import {
   buildProfileEditPreview,
   buildProfileEditSavePayload,
   buildProfileTribeCards,
+  humanizeAuthFailure,
   profileEditDraftEquals,
+  PROFILE_EDIT_AVATAR_UPLOAD_SUCCESS,
+  PROFILE_EDIT_BANNER_UPLOAD_SUCCESS,
+  PROFILE_EDIT_MEDIA_UPLOAD_ERROR,
   type ProfileEditDraft,
   type ProfileEditPreviewView,
 } from "@yunicity/utils";
@@ -39,6 +43,7 @@ export function useProfileEditContext() {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [saveMessageIsError, setSaveMessageIsError] = useState(false);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -113,12 +118,14 @@ export function useProfileEditContext() {
   const updateDraft = useCallback((patch: Partial<ProfileEditDraft>) => {
     setDraft((current) => (current ? { ...current, ...patch } : current));
     setSaveMessage(null);
+    setSaveMessageIsError(false);
   }, []);
 
   const save = useCallback(async () => {
     if (!profile || !draft) return null;
     setIsSaving(true);
     setSaveMessage(null);
+    setSaveMessageIsError(false);
     try {
       const payload = buildProfileEditSavePayload(profile, draft);
       let updated = await api.updateProfileMe(payload);
@@ -140,10 +147,20 @@ export function useProfileEditContext() {
   const uploadAvatar = useCallback(
     async (file: File) => {
       setIsUploadingAvatar(true);
+      setSaveMessage(null);
+      setSaveMessageIsError(false);
       try {
         const updated = await api.uploadProfileAvatar(file);
         setProfile(updated);
+        setSaveMessage(PROFILE_EDIT_AVATAR_UPLOAD_SUCCESS);
+        setSaveMessageIsError(false);
         return updated;
+      } catch (err) {
+        setSaveMessage(
+          humanizeAuthFailure(err, PROFILE_EDIT_MEDIA_UPLOAD_ERROR),
+        );
+        setSaveMessageIsError(true);
+        return null;
       } finally {
         setIsUploadingAvatar(false);
       }
@@ -154,10 +171,20 @@ export function useProfileEditContext() {
   const uploadBanner = useCallback(
     async (file: File) => {
       setIsUploadingBanner(true);
+      setSaveMessage(null);
+      setSaveMessageIsError(false);
       try {
         const updated = await api.uploadProfileBanner(file);
         setProfile(updated);
+        setSaveMessage(PROFILE_EDIT_BANNER_UPLOAD_SUCCESS);
+        setSaveMessageIsError(false);
         return updated;
+      } catch (err) {
+        setSaveMessage(
+          humanizeAuthFailure(err, PROFILE_EDIT_MEDIA_UPLOAD_ERROR),
+        );
+        setSaveMessageIsError(true);
+        return null;
       } finally {
         setIsUploadingBanner(false);
       }
@@ -190,6 +217,7 @@ export function useProfileEditContext() {
     isUploadingAvatar,
     isUploadingBanner,
     saveMessage,
+    saveMessageIsError,
     setSaveMessage,
     updateDraft,
     save,
