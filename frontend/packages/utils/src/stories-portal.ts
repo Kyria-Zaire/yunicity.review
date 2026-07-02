@@ -63,7 +63,7 @@ export function mergeStoryItems(prev: StoryItem[], next: StoryItem[]): StoryItem
 
 export type StoryRingDisplay = {
   id: string;
-  kind: "publish" | "author";
+  kind: "publish" | "mine" | "author";
   name: string;
   subtitle: string;
   imageUrl: string | null;
@@ -72,25 +72,44 @@ export type StoryRingDisplay = {
 };
 
 export function buildStoryRingDisplay(input: {
-  profile: Pick<ProfileMe, "display_name" | "username" | "avatar_url"> | null;
+  profile: Pick<ProfileMe, "display_name" | "username" | "avatar_url" | "user_id"> | null;
   rings: StoryRingItem[];
 }): StoryRingDisplay[] {
   const displayName =
     input.profile?.display_name?.trim() ||
     input.profile?.username?.trim() ||
     "Vous";
-  const items: StoryRingDisplay[] = [
-    {
-      id: "publish",
-      kind: "publish",
-      name: displayName,
-      subtitle: STORIES_RING_YOURS,
-      imageUrl: input.profile?.avatar_url ?? null,
-      href: "/stories/new",
-      hasActivity: false,
-    },
-  ];
-  for (const ring of input.rings) {
+  const userId = input.profile?.user_id ?? null;
+  const ownRing = userId ? input.rings.find((ring) => ring.author_id === userId) : undefined;
+  const otherRings = userId
+    ? input.rings.filter((ring) => ring.author_id !== userId)
+    : input.rings;
+
+  const items: StoryRingDisplay[] = ownRing
+    ? [
+        {
+          id: "mine",
+          kind: "mine",
+          name: displayName,
+          subtitle: ownRing.subtitle || STORIES_RING_YOURS,
+          imageUrl: ownRing.latest_media_url ?? input.profile?.avatar_url ?? null,
+          href: storyDetailHref(ownRing.latest_story_id),
+          hasActivity: true,
+        },
+      ]
+    : [
+        {
+          id: "publish",
+          kind: "publish",
+          name: displayName,
+          subtitle: STORIES_RING_YOURS,
+          imageUrl: input.profile?.avatar_url ?? null,
+          href: "/stories/new",
+          hasActivity: false,
+        },
+      ];
+
+  for (const ring of otherRings) {
     items.push({
       id: ring.author_id,
       kind: "author",

@@ -91,8 +91,9 @@ export function FeedPortalScreen() {
         tribes: portal.tribes,
         events: portal.events,
         culturalPlaces: portal.culturalPlaces,
+        storyRings: portal.storyRings,
       }),
-    [city, portal.culturalPlaces, portal.events, portal.profile, portal.tribes],
+    [city, portal.culturalPlaces, portal.events, portal.profile, portal.storyRings, portal.tribes],
   );
 
   const tribeActivity = useMemo(

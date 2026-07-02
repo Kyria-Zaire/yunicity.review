@@ -58,12 +58,45 @@ describe("feed-portal", () => {
   it("builds story shortcuts with publish first", () => {
     const items = buildFeedStoryShortcuts({
       city: "Reims",
-      profile: { display_name: "Kyria", username: "kyria", avatar_url: null },
+      profile: {
+        display_name: "Kyria",
+        username: "kyria",
+        avatar_url: null,
+        user_id: "user-1",
+      },
       tribes: [],
       events: [],
       culturalPlaces: [],
     });
     expect(items[0]?.kind).toBe("publish");
+  });
+
+  it("builds story shortcuts with mine when user has active story", () => {
+    const items = buildFeedStoryShortcuts({
+      city: "Reims",
+      profile: {
+        display_name: "Kyria",
+        username: "kyria",
+        avatar_url: null,
+        user_id: "user-1",
+      },
+      storyRings: [
+        {
+          author_id: "user-1",
+          author_name: "Kyria",
+          author_avatar_url: null,
+          subtitle: "Reims centre",
+          latest_story_id: "story-1",
+          latest_media_url: "https://media.example/story.jpg",
+          has_recent: true,
+        },
+      ],
+      tribes: [],
+      events: [],
+      culturalPlaces: [],
+    });
+    expect(items[0]?.kind).toBe("mine");
+    expect(items[0]?.href).toBe("/stories#story-story-1");
   });
 
   it("marks tribe activity when event tonight", () => {
