@@ -5,8 +5,8 @@
 | Feature | MEDIA-INFRA-V1 — Yunicity Media Platform Foundation |
 | Ticket | INFRA-01 |
 | Phase BMAD | INFRA |
-| Statut | Document de référence — provisionnement manuel Cloudflare |
-| Liens | `docs/ops/INFRA-01-cloudflare-setup-checklist.md`, `docs/ops/MEDIA-MONITORING-SPEC.md`, `docs/ops/VIDEO-01-media-storage-readiness.md` |
+| Statut | Document de référence — recette (INFRA-01) · **prod provisionné 2026-07-02** (INFRA-R2-PROD) |
+| Liens | `docs/ops/INFRA-01-cloudflare-setup-checklist.md`, `docs/ops/INFRA-R2-PROD-setup.md`, `docs/ops/MEDIA-MONITORING-SPEC.md`, `docs/ops/VIDEO-01-media-storage-readiness.md` |
 
 ---
 
@@ -103,14 +103,27 @@ R2 bucket (origin privé, accès via CDN / signed si privé futur)
 
 ## 4. Multi-environnements
 
-| Environnement | `APP_ENV` | Bucket R2 | Domaine CDN |
-|---------------|-----------|-----------|-------------|
-| Dev local | `dev` | `yunicity-media-dev` *(optionnel)* | `media.dev.yunicity.city` ou filesystem |
-| Recette | `recette` | `yunicity-media-recette` | `media.recette.yunicity.city` |
-| Preprod | `preprod` | `yunicity-media-preprod` | `media.preprod.yunicity.city` |
-| Production | `prod` | `yunicity-media-prod` | `media.yunicity.city` |
+| Environnement | `APP_ENV` | Bucket R2 | Domaine CDN | Statut infra |
+|---------------|-----------|-----------|-------------|--------------|
+| Dev local | `dev` | `yunicity-media-dev` *(optionnel)* | `media.dev.yunicity.city` ou filesystem | 📋 |
+| Recette | `recette` | `yunicity-media-recette` | `media.recette.yunicity.city` | 📋 Checklist INFRA-01 |
+| Preprod | `preprod` | `yunicity-media-preprod` | `media.preprod.yunicity.city` | 📋 |
+| **Production** | `prod` | **`yunicity-media-prod`** | **`media.yunicity.city`** | ✅ **Provisionné 2026-07-02** |
+
+**Production (état réel)** — détail ops : `docs/ops/INFRA-R2-PROD-setup.md`
+
+| Composant | Valeur prod |
+|-----------|-------------|
+| Bucket R2 | `yunicity-media-prod` (WEUR) |
+| CDN | `https://media.yunicity.city` |
+| Token R2 | `yunicity-media-prod-backend` (scope bucket prod) |
+| API Railway | `powerful-abundance` |
+| Worker Railway | `creative-commitment` |
+| CORS browser | `https://yunicity.city`, `https://www.yunicity.city` |
 
 **Décision CTO** : un bucket par environnement. Pas de préfixe `recette/` ou `prod/` dans un bucket unique.
+
+**Séparation effective (2026-07-02)** : prod ne partage **plus** le bucket recette. Les URLs `media.recette.yunicity.city` restent valides pour le contenu recette / legacy pré-bascule uniquement.
 
 **DNS** : domaine racine `yunicity.city`. Si contrainte registrar impose une variante (ex. sous-domaine technique), documenter l’écart dans `INFRA-01-cloudflare-setup-checklist.md` et mettre à jour les variables `LOCAL_VIDEO_CDN_BASE_URL`.
 
@@ -191,7 +204,7 @@ local-video/{city_slug}/{video_id}/thumbnail.jpg
 | Owner scope | implicite (auteur en DB) | explicite `user/{user_id}/` |
 | Migration | — | progressive, ticket dédié + validation CTO |
 
-**INFRA-01 ne migre pas les clés.** Le bucket unifié `yunicity-media-recette` hébergera le préfixe `local-video/` tel quel. Une migration vers `media/video/...` pourra être planifiée lorsque plusieurs pipelines partageront les mêmes helpers `media/keys/`.
+**INFRA-01 ne migre pas les clés.** Chaque bucket d’environnement héberge le préfixe `local-video/` tel quel (`yunicity-media-recette` en recette, `yunicity-media-prod` en prod). Une migration vers `media/video/...` pourra être planifiée lorsque plusieurs pipelines partageront les mêmes helpers `media/keys/`.
 
 ---
 
@@ -253,11 +266,13 @@ Ne pas fusionner `local_video_service` et futurs services image dans ce ticket.
 
 | Document | Rôle |
 |----------|------|
-| `docs/ops/INFRA-01-cloudflare-setup-checklist.md` | Provisionnement manuel Cloudflare |
+| `docs/ops/INFRA-01-cloudflare-setup-checklist.md` | Provisionnement manuel Cloudflare recette |
+| `docs/ops/INFRA-R2-PROD-setup.md` | **État réel prod** — bucket, CORS, CDN, Railway, rollback |
 | `docs/ops/MEDIA-MONITORING-SPEC.md` | KPIs et alertes |
 | `docs/qa/MEDIA-INFRA-V1-smoke-test.md` | Validation recette R2 |
-| `docs/adr/ADR-VIDEO-03A-async-media-processing-worker.md` | Worker FFmpeg async |
+| `docs/adr/ADR-VIDEO-03A-async-media-processing-worker.md` | Worker FFmpeg async (IMPLEMENTED) |
 | `docs/ops/VIDEO-01-media-storage-readiness.md` | Readiness pipeline Local Video |
+| `docs/api/LOCAL-VIDEO-API.md` | Contrats HTTP + types (VIDEO-DOCS-SYNC-01) |
 
 ---
 
@@ -266,9 +281,11 @@ Ne pas fusionner `local_video_service` et futurs services image dans ce ticket.
 | Risque | Mitigation |
 |--------|------------|
 | Bucket unique mal configuré (public access) | Checklist INFRA-01 + review sécurité |
-| CORS trop permissif | Origines recette explicites |
+| CORS trop permissif | Origines explicites par env — prod : `yunicity.city` + `www` (voir INFRA-R2-PROD) |
 | Coût R2/CDN non surveillé | `MEDIA-MONITORING-SPEC.md` |
-| FFmpeg sync en prod | ADR VIDEO-03A — NO-GO prod public |
+| FFmpeg sync en prod | ✅ Résolu VIDEO-03A — worker async obligatoire prod |
 | Clés v1 vs cible `media/` | Coexistence documentée ; migration CTO |
 
-**Verdict provisionnement recette** : **GO** après exécution checklist INFRA-01 par Kyria (aucune ressource créée par Cursor).
+**Verdict provisionnement recette** : **GO** après exécution checklist INFRA-01 par Kyria.
+
+**Verdict provisionnement prod** : **GO opérationnel** depuis 2026-07-02 — upload browser + worker + CDN validés (VIDEO-04BC-POST-SMOKE). Détail : `docs/ops/INFRA-R2-PROD-setup.md`.
