@@ -12,6 +12,29 @@ export class AuthError extends Error {
   }
 }
 
+function formatApiErrorDetail(detail: unknown, status: number): string {
+  if (typeof detail === "string" && detail.trim()) {
+    return detail;
+  }
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) => {
+        if (item && typeof item === "object" && "msg" in item) {
+          return String((item as { msg?: unknown }).msg ?? "");
+        }
+        return typeof item === "string" ? item : "";
+      })
+      .filter(Boolean);
+    if (messages.length > 0) {
+      return messages.join(" ");
+    }
+  }
+  if (detail && typeof detail === "object" && "msg" in detail) {
+    return String((detail as { msg?: unknown }).msg);
+  }
+  return `Erreur API (${status})`;
+}
+
 export async function parseApiError(response: Response): Promise<AuthError> {
   let body: ApiErrorBody | null = null;
   try {
@@ -20,7 +43,7 @@ export async function parseApiError(response: Response): Promise<AuthError> {
     body = null;
   }
   const code = body?.code ?? "UNKNOWN_ERROR";
-  const detail = body?.detail ?? `Erreur API (${response.status})`;
+  const detail = formatApiErrorDetail(body?.detail, response.status);
   return new AuthError(code, detail, response.status);
 }
 
@@ -42,5 +65,20 @@ export function humanizeAuthFailure(err: unknown, fallback: string): string {
   if (err.code === "EMAIL_ALREADY_EXISTS") {
     return "Un compte existe déjà avec cet email. Connectez-vous ou utilisez un autre email.";
   }
-  return err.message;
+  if (err.code === "PROFILE_MEDIA_INVALID_TYPE") {
+    return "Format non supporté. Utilisez JPG, PNG ou WEBP.";
+  }
+  if (err.code === "PROFILE_MEDIA_TOO_LARGE") {
+    return err.message;
+  }
+  if (err.code === "PROFILE_MEDIA_INVALID_CONTENT") {
+    return err.message;
+  }
+  if (err.code === "PROFILE_MEDIA_EMPTY") {
+    return "Fichier vide. Choisissez une autre image.";
+  }
+  if (err.code === "UNKNOWN_ERROR" && err.status === 422) {
+    return err.message || fallback;
+  }
+  return err.message || fallback;
 }

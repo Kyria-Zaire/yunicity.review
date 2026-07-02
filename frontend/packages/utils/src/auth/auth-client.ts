@@ -160,6 +160,10 @@ export class AuthClient {
     return this.platform === "web" || this.platform === "admin";
   }
 
+  private shouldUseJsonContentType(body: BodyInit | null | undefined): boolean {
+    return typeof body === "string";
+  }
+
   private buildHeaders(options: {
     json?: boolean;
     skipAuth?: boolean;
@@ -198,7 +202,7 @@ export class AuthClient {
     let response = await this.rawFetch(input, {
       ...init,
       headers: this.mergeHeaders(init.headers, this.buildHeaders({
-        json: Boolean(init.body),
+        json: this.shouldUseJsonContentType(init.body),
         skipAuth: init.skipAuth,
         accessToken,
       })),
@@ -217,7 +221,7 @@ export class AuthClient {
       response = await this.rawFetch(input, {
         ...init,
         headers: this.mergeHeaders(init.headers, this.buildHeaders({
-          json: Boolean(init.body),
+          json: this.shouldUseJsonContentType(init.body),
           accessToken: newToken,
         })),
         credentials: this.useCookies() ? "include" : "same-origin",
