@@ -11,7 +11,12 @@ from app.core.config import get_settings
 from app.core.profile_media_constants import PROFILE_AVATAR_MAX_BYTES, PROFILE_BANNER_MAX_BYTES
 from httpx import AsyncClient
 
-from tests.media_fixtures import FAKE_MP4_BYTES, MINIMAL_JPEG_BYTES, MINIMAL_PNG_BYTES, MINIMAL_WEBP_BYTES
+from tests.media_fixtures import (
+    FAKE_MP4_BYTES,
+    MINIMAL_JPEG_BYTES,
+    MINIMAL_PNG_BYTES,
+    MINIMAL_WEBP_BYTES,
+)
 from tests.test_profile_endpoints import _auth_headers, _register
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]

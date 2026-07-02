@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 PROFILE_AVATAR_MAX_BYTES = 2 * 1024 * 1024
 PROFILE_BANNER_MAX_BYTES = 5 * 1024 * 1024
 
 
-class ProfileMediaKind(str, Enum):
+class ProfileMediaKind(StrEnum):
     AVATAR = "avatar"
     BANNER = "banner"

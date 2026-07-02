@@ -10,8 +10,8 @@ from botocore.exceptions import ClientError  # type: ignore[import-untyped]
 
 from app.core.config import Settings
 from app.core.errors import AppError
-from app.core.profile_media_policy import validate_profile_media_storage_config
 from app.core.profile_media_constants import ProfileMediaKind
+from app.core.profile_media_policy import validate_profile_media_storage_config
 from app.services.profile_media.storage_keys import list_profile_media_variant_keys
 
 

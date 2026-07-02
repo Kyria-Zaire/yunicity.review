@@ -12,6 +12,7 @@ from app.core.dependencies import (
     get_current_user_optional,
     require_authenticated_user,
 )
+from app.core.profile_media_constants import ProfileMediaKind
 from app.core.rate_limit import enforce_rate_limit
 from app.db.session import get_db
 from app.models.user import User
@@ -21,7 +22,6 @@ from app.schemas.profile import (
     ProfilePublicResponse,
     ProfileUpdateRequest,
 )
-from app.core.profile_media_constants import ProfileMediaKind
 from app.services.profile_media_service import ProfileMediaService
 from app.services.profile_service import ProfileService
 

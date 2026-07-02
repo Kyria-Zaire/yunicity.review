@@ -6,7 +6,10 @@ from fastapi import UploadFile
 
 from app.core.config import Settings
 from app.core.errors import AppError
-from app.core.media_magic_bytes import ContentTypeMismatchError, assert_content_matches_declared_type
+from app.core.media_magic_bytes import (
+    ContentTypeMismatchError,
+    assert_content_matches_declared_type,
+)
 from app.core.profile_media_constants import (
     PROFILE_AVATAR_MAX_BYTES,
     PROFILE_BANNER_MAX_BYTES,
