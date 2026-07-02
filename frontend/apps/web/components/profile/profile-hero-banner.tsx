@@ -27,8 +27,7 @@ export function ProfileHeroBanner({
   settingsHref,
 }: ProfileHeroBannerProps) {
   const displayName = profile.display_name?.trim() || profile.username;
-  const heroImage =
-    resolveProfilePortalHeroImage(profile) ?? NEIGHBORHOODS_PORTAL_HERO_IMAGE_URL;
+  const bannerUrl = resolveProfilePortalHeroImage(profile);
   const avatarUrl = profile.avatar_url?.trim() || null;
 
   return (
@@ -37,17 +36,26 @@ export function ProfileHeroBanner({
       className="scroll-mt-24 overflow-hidden rounded-3xl border border-neutral-200/90 bg-neutral-950 text-white shadow-sm"
     >
       <div className="relative min-h-[200px] sm:min-h-[220px]">
-        <CulturalImage
-          src={heroImage}
-          alt=""
-          placeName={profile.city ?? "Reims"}
-          className="absolute inset-0 size-full"
-          imageClassName="object-cover object-center"
-          sizes="(max-width: 1280px) 100vw, 960px"
-          priority
-          showFallbackCaption={false}
-          overlay={false}
-        />
+        {bannerUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={bannerUrl}
+            src={bannerUrl}
+            alt=""
+            className="absolute inset-0 size-full object-cover object-center"
+          />
+        ) : (
+          <CulturalImage
+            src={NEIGHBORHOODS_PORTAL_HERO_IMAGE_URL}
+            alt=""
+            placeName={profile.city ?? "Reims"}
+            className="absolute inset-0 size-full"
+            imageClassName="object-cover object-center"
+            sizes="(max-width: 1280px) 100vw, 960px"
+            priority
+            showFallbackCaption={false}
+          />
+        )}
         <div
           className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20"
           aria-hidden
