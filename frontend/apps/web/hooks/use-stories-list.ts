@@ -42,6 +42,10 @@ export function useStoriesList(tab: StoryTabId, category: StoryCategoryId) {
     void fetchPage(null, false);
   }, [fetchPage]);
 
+  const prependStory = useCallback((story: StoryItem) => {
+    setItems((prev) => mergeStoryItems([story], prev));
+  }, []);
+
   return {
     items,
     nextCursor,
@@ -52,5 +56,6 @@ export function useStoriesList(tab: StoryTabId, category: StoryCategoryId) {
     loadMore: () => {
       if (nextCursor) void fetchPage(nextCursor, true);
     },
+    prependStory,
   };
 }

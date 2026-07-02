@@ -2,9 +2,12 @@
 
 import type { StoryAudienceId } from "@yunicity/types";
 import {
+  STORIES_JUST_PUBLISHED_STORAGE_KEY,
+  STORIES_NEW_ERROR,
   STORIES_NEW_SUBTITLE,
   STORIES_NEW_TITLE,
-  STORIES_NEW_ERROR,
+  STORIES_NEW_UPLOAD_ERROR,
+  humanizeAuthFailure,
   storyDetailHref,
 } from "@yunicity/utils";
 import { CircleDot } from "lucide-react";
@@ -55,18 +58,31 @@ export function NewStoryScreen() {
     setSubmitting(true);
     setError(null);
     try {
-      const uploaded = await api.uploadStoryMedia(payload.file);
-      const created = await api.createStory({
-        media_url: uploaded.url,
-        media_type: uploaded.media_type,
-        caption: payload.caption,
-        audience: payload.audience,
-        tags: payload.tags,
-        location_label: payload.locationLabel,
-      });
+      let uploaded;
+      try {
+        uploaded = await api.uploadStoryMedia(payload.file);
+      } catch (uploadErr) {
+        setError(humanizeAuthFailure(uploadErr, STORIES_NEW_UPLOAD_ERROR));
+        return;
+      }
+
+      let created;
+      try {
+        created = await api.createStory({
+          media_url: uploaded.url,
+          media_type: uploaded.media_type,
+          caption: payload.caption,
+          audience: payload.audience,
+          tags: payload.tags,
+          location_label: payload.locationLabel,
+        });
+      } catch (publishErr) {
+        setError(humanizeAuthFailure(publishErr, STORIES_NEW_ERROR));
+        return;
+      }
+
+      sessionStorage.setItem(STORIES_JUST_PUBLISHED_STORAGE_KEY, JSON.stringify(created));
       router.push(storyDetailHref(created.id));
-    } catch {
-      setError(STORIES_NEW_ERROR);
     } finally {
       setSubmitting(false);
     }

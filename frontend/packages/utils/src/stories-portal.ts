@@ -47,6 +47,8 @@ export function storyDetailHref(storyId: string): string {
   return `/stories#story-${storyId}`;
 }
 
+export const STORIES_JUST_PUBLISHED_STORAGE_KEY = "yunicity-stories-just-published";
+
 export function mergeStoryItems(prev: StoryItem[], next: StoryItem[]): StoryItem[] {
   const seen = new Set(prev.map((item) => item.id));
   const merged = [...prev];

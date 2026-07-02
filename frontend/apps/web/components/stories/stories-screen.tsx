@@ -1,9 +1,10 @@
 "use client";
 
-import type { StoryCategoryId, StoryTabId } from "@yunicity/types";
+import type { StoryCategoryId, StoryItem, StoryTabId } from "@yunicity/types";
 import {
   STORIES_EMPTY,
   STORIES_ERROR,
+  STORIES_JUST_PUBLISHED_STORAGE_KEY,
   STORIES_LOAD_MORE,
   STORIES_LOADING,
   STORIES_PAGE_SUBTITLE,
@@ -14,7 +15,7 @@ import {
 } from "@yunicity/utils";
 import type { FeedStoryShortcut } from "@yunicity/utils";
 import { CircleDot } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { FeedStoriesRail } from "@/components/feed/portal/feed-stories-rail";
 import { StoriesAppShell } from "@/components/stories/stories-app-shell";
@@ -31,6 +32,32 @@ export function StoriesScreen() {
   const [category, setCategory] = useState<StoryCategoryId>("all");
   const [filterOpen, setFilterOpen] = useState(false);
   const list = useStoriesList(tab, category);
+
+  useEffect(() => {
+    const raw = sessionStorage.getItem(STORIES_JUST_PUBLISHED_STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const story = JSON.parse(raw) as StoryItem;
+      sessionStorage.removeItem(STORIES_JUST_PUBLISHED_STORAGE_KEY);
+      list.prependStory(story);
+      setTab("recent");
+    } catch {
+      sessionStorage.removeItem(STORIES_JUST_PUBLISHED_STORAGE_KEY);
+    }
+  }, [list.prependStory]);
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash.startsWith("#story-")) return;
+    const storyId = hash.slice("#story-".length);
+    if (!storyId) return;
+    requestAnimationFrame(() => {
+      document.getElementById(`story-${storyId}`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
+  }, [list.items, list.isLoading]);
 
   const ringShortcuts = useMemo((): FeedStoryShortcut[] => {
     return buildStoryRingDisplay({

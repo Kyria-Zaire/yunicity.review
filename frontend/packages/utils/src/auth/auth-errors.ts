@@ -77,6 +77,18 @@ export function humanizeAuthFailure(err: unknown, fallback: string): string {
   if (err.code === "PROFILE_MEDIA_EMPTY") {
     return "Fichier vide. Choisissez une autre image.";
   }
+  if (err.code === "STORY_MEDIA_INVALID_TYPE") {
+    return "Format non supporté. Utilisez JPG, PNG, WEBP ou MP4.";
+  }
+  if (err.code === "STORY_MEDIA_TOO_LARGE") {
+    return err.message;
+  }
+  if (err.code === "STORY_MEDIA_INVALID_CONTENT") {
+    return err.message;
+  }
+  if (err.code === "STORY_MEDIA_EMPTY") {
+    return "Fichier vide. Choisissez une autre photo ou vidéo.";
+  }
   if (err.code === "UNKNOWN_ERROR" && err.status === 422) {
     return err.message || fallback;
   }
