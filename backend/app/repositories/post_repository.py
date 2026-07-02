@@ -78,7 +78,11 @@ class PostRepository:
         # Global city feed: tribe-scoped posts are never listed (TICKET-A.2 invariant).
         stmt = (
             select(Post)
-            .where(Post.is_active.is_(True), Post.tribe_id.is_(None))
+            .where(
+                Post.is_active.is_(True),
+                Post.tribe_id.is_(None),
+                Post.is_story.is_(False),
+            )
             .options(
                 selectinload(Post.partner_offer).selectinload(PartnerOffer.neighborhood),
                 selectinload(Post.partner_creator_content),
