@@ -12,6 +12,10 @@ type StoryCardProps = {
   city: string;
 };
 
+function isStoryVideoMedia(mediaUrl: string): boolean {
+  return /\.mp4(?:[?#]|$)/i.test(mediaUrl);
+}
+
 export function StoryCard({ story, city }: StoryCardProps) {
   const api = useYunicityApi();
 
@@ -27,12 +31,23 @@ export function StoryCard({ story, city }: StoryCardProps) {
       id={`story-${story.id}`}
       className="group relative aspect-[3/4] overflow-hidden rounded-2xl bg-neutral-900 shadow-sm"
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={story.media_url}
-        alt=""
-        className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-      />
+      {isStoryVideoMedia(story.media_url) ? (
+        <video
+          src={story.media_url}
+          className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+          muted
+          playsInline
+          preload="metadata"
+          aria-label=""
+        />
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={story.media_url}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+        />
+      )}
       <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/75" />
 
       <header className="relative z-10 flex items-start justify-between gap-2 p-3">

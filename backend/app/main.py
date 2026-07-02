@@ -26,10 +26,14 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     init_db(settings)
     await init_redis(settings)
     from app.core.profile_media_policy import validate_profile_media_storage_config
+    from app.core.story_media_policy import validate_story_media_storage_config
 
     profile_media_warnings = validate_profile_media_storage_config(settings)
     for warning in profile_media_warnings:
         logger.warning("profile_media_storage_config: %s", warning)
+    story_media_warnings = validate_story_media_storage_config(settings)
+    for warning in story_media_warnings:
+        logger.warning("story_media_storage_config: %s", warning)
     yield
     await close_redis()
     await dispose_db()
