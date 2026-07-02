@@ -23,6 +23,9 @@ type FeedStoriesRailProps = {
 };
 
 function storyRingClass(item: FeedStoryShortcut, index: number): string {
+  if (item.kind === "mine") {
+    return `${STORY_RING_ACTIVE[0]} p-[2.5px]`;
+  }
   if (!item.hasActivity && item.kind !== "publish") {
     return "bg-neutral-200 p-[2.5px]";
   }
@@ -60,6 +63,22 @@ function StoryAvatar({ item, index }: { item: FeedStoryShortcut; index: number }
         </div>
         <span className="max-w-[5.5rem] truncate text-center text-xs font-semibold text-neutral-800">
           {FEED_PORTAL_STORY_YOURS}
+        </span>
+      </Link>
+    );
+  }
+
+  if (item.kind === "mine") {
+    return (
+      <Link href={item.href} className={`flex ${ITEM_WIDTH} shrink-0 flex-col items-center gap-1`}>
+        <div className={`rounded-full ${AVATAR_SIZE} ${ringClass}`}>
+          <div className="h-full w-full rounded-full bg-white p-[3px]">{inner}</div>
+        </div>
+        <span className="max-w-[5.5rem] truncate text-center text-xs font-bold text-neutral-900">
+          {FEED_PORTAL_STORY_YOURS}
+        </span>
+        <span className="max-w-[5.5rem] truncate text-center text-[11px] font-medium text-neutral-500">
+          {item.subtitle}
         </span>
       </Link>
     );

@@ -10,13 +10,14 @@ import { useYunicityApi } from "@/hooks/use-yunicity-api";
 type StoryCardProps = {
   story: StoryItem;
   city: string;
+  isHighlighted?: boolean;
 };
 
 function isStoryVideoMedia(mediaUrl: string): boolean {
   return /\.mp4(?:[?#]|$)/i.test(mediaUrl);
 }
 
-export function StoryCard({ story, city }: StoryCardProps) {
+export function StoryCard({ story, city, isHighlighted = false }: StoryCardProps) {
   const api = useYunicityApi();
 
   useEffect(() => {
@@ -29,7 +30,9 @@ export function StoryCard({ story, city }: StoryCardProps) {
   return (
     <article
       id={`story-${story.id}`}
-      className="group relative aspect-[3/4] overflow-hidden rounded-2xl bg-neutral-900 shadow-sm"
+      className={`group relative aspect-[3/4] overflow-hidden rounded-2xl bg-neutral-900 shadow-sm${
+        isHighlighted ? " ring-4 ring-yunicity-primary ring-offset-2 ring-offset-white" : ""
+      }`}
     >
       {isStoryVideoMedia(story.media_url) ? (
         <video

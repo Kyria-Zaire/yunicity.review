@@ -4,6 +4,7 @@ import type {
   LocalEvent,
   Neighborhood,
   ProfileMe,
+  StoryRingItem,
   Tribe,
 } from "@yunicity/types";
 
@@ -15,17 +16,17 @@ import { buildMapPlaceUrl } from "./explorer-links";
 import {
   FEED_PORTAL_EVENT_TODAY,
   FEED_PORTAL_EVENT_TOMORROW,
-  FEED_PORTAL_STORY_YOURS,
 } from "./feed-portal-labels";
 import { findTribeForEvent } from "./tribe-portal";
 import { tribeCategoryLabel, tribeHref } from "./tribe-labels";
 import { isEventTonight } from "./sortir-portal";
+import { buildStoryRingDisplay } from "./stories-portal";
 
 export type FeedPortalView = "for_you" | "recent" | "popular";
 
 export type FeedStoryShortcut = {
   id: string;
-  kind: "publish" | "tribe" | "event" | "place";
+  kind: "publish" | "mine" | "tribe" | "event" | "place";
   name: string;
   subtitle: string;
   imageUrl: string | null;
@@ -145,10 +146,11 @@ export function filterFeedPostsContributions(posts: FeedPost[], userId: string |
 
 export function buildFeedStoryShortcuts(input: {
   city: string;
-  profile: Pick<ProfileMe, "display_name" | "username" | "avatar_url"> | null;
+  profile: Pick<ProfileMe, "display_name" | "username" | "avatar_url" | "user_id"> | null;
   tribes: Tribe[];
   events: LocalEvent[];
   culturalPlaces: CulturalPlaceListItem[];
+  storyRings?: StoryRingItem[];
   maxItems?: number;
   now?: Date;
 }): FeedStoryShortcut[] {
@@ -156,20 +158,21 @@ export function buildFeedStoryShortcuts(input: {
   const now = input.now ?? new Date();
   const items: FeedStoryShortcut[] = [];
 
-  const displayName =
-    input.profile?.display_name?.trim() ||
-    input.profile?.username?.trim() ||
-    "Vous";
-
-  items.push({
-    id: "publish",
-    kind: "publish",
-    name: displayName,
-    subtitle: FEED_PORTAL_STORY_YOURS,
-    imageUrl: input.profile?.avatar_url ?? null,
-    href: "/stories/new",
-    hasActivity: false,
-  });
+  const myStorySlot = buildStoryRingDisplay({
+    profile: input.profile,
+    rings: input.storyRings ?? [],
+  })[0];
+  if (myStorySlot) {
+    items.push({
+      id: myStorySlot.id,
+      kind: myStorySlot.kind === "mine" ? "mine" : "publish",
+      name: myStorySlot.name,
+      subtitle: myStorySlot.subtitle,
+      imageUrl: myStorySlot.imageUrl,
+      href: myStorySlot.href,
+      hasActivity: myStorySlot.hasActivity,
+    });
+  }
 
   const memberTribes = input.tribes.filter((t) => !t.is_archived && t.viewer_is_member);
   for (const tribe of memberTribes.slice(0, 3)) {

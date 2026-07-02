@@ -41,16 +41,23 @@ export function StoriesScreen() {
       sessionStorage.removeItem(STORIES_JUST_PUBLISHED_STORAGE_KEY);
       list.prependStory(story);
       setTab("recent");
+      void portal.reload();
     } catch {
       sessionStorage.removeItem(STORIES_JUST_PUBLISHED_STORAGE_KEY);
     }
-  }, [list.prependStory]);
+  }, [list.prependStory, portal.reload]);
+
+  const [focusedStoryId, setFocusedStoryId] = useState<string | null>(null);
 
   useEffect(() => {
     const hash = window.location.hash;
-    if (!hash.startsWith("#story-")) return;
+    if (!hash.startsWith("#story-")) {
+      setFocusedStoryId(null);
+      return;
+    }
     const storyId = hash.slice("#story-".length);
     if (!storyId) return;
+    setFocusedStoryId(storyId);
     requestAnimationFrame(() => {
       document.getElementById(`story-${storyId}`)?.scrollIntoView({
         behavior: "smooth",
@@ -65,7 +72,8 @@ export function StoriesScreen() {
       rings: portal.rings,
     }).map((ring) => ({
       id: ring.id,
-      kind: ring.kind === "publish" ? "publish" : "tribe",
+      kind:
+        ring.kind === "publish" ? "publish" : ring.kind === "mine" ? "mine" : "tribe",
       name: ring.name,
       subtitle: ring.subtitle,
       imageUrl: ring.imageUrl,
@@ -161,7 +169,11 @@ export function StoriesScreen() {
         <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {list.items.map((story) => (
             <li key={story.id}>
-              <StoryCard story={story} city={portal.city} />
+              <StoryCard
+                story={story}
+                city={portal.city}
+                isHighlighted={story.id === focusedStoryId}
+              />
             </li>
           ))}
         </ul>

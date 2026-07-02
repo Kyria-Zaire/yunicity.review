@@ -7,6 +7,7 @@ import type {
   PartnerOfferPublic,
   PassportMe,
   ProfileMe,
+  StoryRingItem,
   Tribe,
 } from "@yunicity/types";
 import { filterAgendaUpcomingEvents, isEventWithinDays } from "@yunicity/utils";
@@ -26,6 +27,7 @@ export type FeedPortalContextState = {
   culturalPlaces: CulturalPlaceListItem[];
   passport: PassportMe | null;
   highlightOffer: PartnerOfferPublic | null;
+  storyRings: StoryRingItem[];
   reload: () => void;
 };
 
@@ -44,6 +46,7 @@ export function useFeedPortalContext(): FeedPortalContextState {
   const [culturalPlaces, setCulturalPlaces] = useState<CulturalPlaceListItem[]>([]);
   const [passport, setPassport] = useState<PassportMe | null>(null);
   const [highlightOffer, setHighlightOffer] = useState<PartnerOfferPublic | null>(null);
+  const [storyRings, setStoryRings] = useState<StoryRingItem[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -61,6 +64,7 @@ export function useFeedPortalContext(): FeedPortalContextState {
         api.fetchPublicPartnerOffers({ city: resolvedCity, limit: 8 }),
         api.getPassportMe(),
         api.events.listSavedEvents(),
+        api.listStoryRings(),
       ];
 
       const results = await Promise.allSettled(requests);
@@ -71,6 +75,7 @@ export function useFeedPortalContext(): FeedPortalContextState {
       const offersRes = results[4];
       const passportRes = results[5];
       const savedRes = results[6];
+      const ringsRes = results[7];
 
       if (eventsRes?.status === "fulfilled") {
         const value = eventsRes.value as Awaited<ReturnType<typeof api.events.listEvents>>;
@@ -121,10 +126,18 @@ export function useFeedPortalContext(): FeedPortalContextState {
       } else {
         setSavedEvents([]);
       }
+
+      if (ringsRes?.status === "fulfilled") {
+        const value = ringsRes.value as Awaited<ReturnType<typeof api.listStoryRings>>;
+        setStoryRings(value.items);
+      } else {
+        setStoryRings([]);
+      }
     } catch {
       setProfile(null);
       setEvents([]);
       setTribes([]);
+      setStoryRings([]);
     } finally {
       setLoading(false);
     }
@@ -145,6 +158,7 @@ export function useFeedPortalContext(): FeedPortalContextState {
     culturalPlaces,
     passport,
     highlightOffer,
+    storyRings,
     reload: load,
   };
 }
