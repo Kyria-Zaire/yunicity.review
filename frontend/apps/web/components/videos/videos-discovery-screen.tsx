@@ -115,24 +115,21 @@ export function VideosDiscoveryScreen({
                 </p>
               )}
 
-              {portal.hasMore ? (
+              {(portal.hasMore || hasMoreFeed) ? (
                 <button
                   type="button"
-                  onClick={portal.loadMore}
-                  className="flex w-full items-center justify-center gap-2 rounded-full border border-neutral-200/90 bg-white py-3.5 text-sm font-semibold text-yunicity-primary shadow-sm transition hover:border-yunicity-primary/30 hover:bg-yunicity-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
+                  onClick={() => {
+                    if (portal.hasMore) {
+                      portal.loadMore();
+                      return;
+                    }
+                    onLoadMoreFeed();
+                  }}
+                  disabled={isLoadingMore}
+                  className="flex w-full items-center justify-center gap-2 rounded-full border border-neutral-200/90 bg-white py-3.5 text-sm font-semibold text-yunicity-primary shadow-sm transition hover:border-yunicity-primary/30 hover:bg-yunicity-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {VIDEOS_PORTAL_LOAD_MORE}
                   <ChevronDown className="h-4 w-4" aria-hidden />
-                </button>
-              ) : null}
-
-              {hasMoreFeed && !isLoadingMore ? (
-                <button
-                  type="button"
-                  onClick={onLoadMoreFeed}
-                  className="flex w-full items-center justify-center gap-2 rounded-full border border-neutral-200/90 bg-white py-3.5 text-sm font-semibold text-neutral-700 shadow-sm transition hover:border-neutral-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
-                >
-                  Charger plus depuis le serveur
                 </button>
               ) : null}
 
