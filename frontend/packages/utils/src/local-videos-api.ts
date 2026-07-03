@@ -209,6 +209,7 @@ export function mapLocalVideoToFeedPreview(video: LocalVideo): LocalVideoFeedIte
     walk_minutes: null,
     like_count: 0,
     comment_count: 0,
+    view_count: 0,
     liked_by_me: false,
   };
 }

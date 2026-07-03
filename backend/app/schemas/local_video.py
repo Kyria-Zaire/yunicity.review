@@ -143,6 +143,7 @@ class LocalVideoFeedItem(BaseModel):
     walk_minutes: int | None
     like_count: int
     comment_count: int
+    view_count: int = 0
     liked_by_me: bool = False
 
 

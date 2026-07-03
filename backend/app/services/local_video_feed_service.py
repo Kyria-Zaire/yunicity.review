@@ -146,6 +146,7 @@ class LocalVideoFeedService:
             walk_minutes=walk_minutes,
             like_count=video.like_count,
             comment_count=video.comment_count,
+            view_count=video.view_count,
             liked_by_me=liked_by_me,
         )
 

@@ -1,12 +1,10 @@
 "use client";
 
 import { SessionExpiredPanel } from "@/components/auth/session-expired-panel";
-import { LocalVideoFeedViewport } from "@/components/videos/local-video-feed-viewport";
 import { LocalVideoReportSheet } from "@/components/videos/local-video-report-sheet";
-import { VideoCommentsSheet } from "@/components/videos/video-comments-sheet";
+import { VideoDetailScreen } from "@/components/videos/video-detail-screen";
 import { VideosAppShell } from "@/components/videos/videos-app-shell";
 import { VideosDiscoveryScreen } from "@/components/videos/videos-discovery-screen";
-import { VideosFeedEmpty } from "@/components/videos/videos-feed-empty";
 import { VideosFeedError } from "@/components/videos/videos-feed-error";
 import { VideosFeedSkeleton } from "@/components/videos/videos-feed-skeleton";
 import { useLocalVideoInteractions } from "@/hooks/use-local-video-interactions";
@@ -25,8 +23,6 @@ import {
   reorderLocalVideoFeedForFocus,
 } from "@yunicity/utils";
 import type { LocalVideoFeedItem } from "@yunicity/types";
-import { ChevronLeft } from "lucide-react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -45,7 +41,7 @@ function VideosScreenInner() {
   const api = useYunicityApi();
   const searchParams = useSearchParams();
   const focusVideoId = searchParams.get("video")?.trim() || null;
-  const isImmersiveMode = Boolean(focusVideoId);
+  const isDetailMode = Boolean(focusVideoId);
 
   const feed = useLocalVideosFeed();
   const pending = useLocalVideoPendingTracker({
@@ -60,9 +56,7 @@ function VideosScreenInner() {
     },
   });
   const interactions = useLocalVideoInteractions({ updateItem: feed.updateItem });
-  const [commentsOpen, setCommentsOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
-  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const [reportVideoId, setReportVideoId] = useState<string | null>(null);
   const [pinnedVideo, setPinnedVideo] = useState<LocalVideoFeedItem | null>(null);
 
@@ -128,74 +122,40 @@ function VideosScreenInner() {
     return map;
   }, [pending.tracks]);
 
-  const activeVideo = useMemo(
-    () => displayItems.find((item) => item.id === activeVideoId) ?? displayItems[0] ?? null,
-    [activeVideoId, displayItems],
-  );
-
-  const commentsVideo = useMemo(() => {
-    if (!commentsOpen) return null;
-    return displayItems.find((item) => item.id === activeVideoId) ?? activeVideo;
-  }, [activeVideo, activeVideoId, commentsOpen, displayItems]);
+  const detailProcessingError = focusVideoId ? processingErrors[focusVideoId] : null;
 
   return (
     <VideosAppShell>
       <div className="relative">
-        {isImmersiveMode ? (
-          <>
-            <header className="absolute left-0 right-0 top-0 z-50 flex items-center gap-2 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] md:relative md:px-0 md:pt-0">
-              <Link
-                href="/videos"
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-neutral-900/45 text-white backdrop-blur-sm md:bg-neutral-100 md:text-neutral-900"
-                aria-label="Retour aux vidéos"
-              >
-                <ChevronLeft className="h-6 w-6" aria-hidden />
-              </Link>
-              <h1 className="text-sm font-semibold text-white drop-shadow md:text-lg md:text-neutral-900 md:drop-shadow-none">
-                Vidéos
-              </h1>
-            </header>
-
-            {interactions.shareHint ? (
-              <p className="absolute left-1/2 top-20 z-[55] -translate-x-1/2 rounded-full bg-neutral-900/80 px-4 py-2 text-xs text-white">
-                {interactions.shareHint}
-              </p>
-            ) : null}
-
-            {feed.sessionExpired ? (
-              <SessionExpiredPanel
-                message={LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE}
-                returnPath="/videos"
-              />
-            ) : feed.isLoading && pending.processingFeedItems.length === 0 ? (
-              <VideosFeedSkeleton />
-            ) : feed.error ? (
-              <VideosFeedError onRetry={() => void feed.refresh()} />
-            ) : displayItems.length === 0 ? (
-              <VideosFeedEmpty />
-            ) : (
-              <LocalVideoFeedViewport
-                items={displayItems}
-                focusVideoId={focusVideoId}
-                processingErrors={processingErrors}
-                onDismissProcessing={pending.dismissTrack}
-                onActiveVideoChange={setActiveVideoId}
-                onOpenComments={(videoId) => {
-                  setActiveVideoId(videoId);
-                  setCommentsOpen(true);
-                }}
-                onToggleLike={(item) => void interactions.toggleLike(item)}
-                onShare={(item) => void interactions.shareVideo(item)}
-                onOpenReport={(videoId) => {
-                  setReportVideoId(videoId);
-                  setReportOpen(true);
-                }}
-                onEndReached={() => {
-                  if (!feed.isLoadingMore && feed.nextCursor) feed.loadMore();
-                }}
-              />
-            )}
-          </>
+        {isDetailMode && focusVideoId ? (
+          feed.sessionExpired ? (
+            <SessionExpiredPanel
+              message={LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE}
+              returnPath={`/videos?video=${encodeURIComponent(focusVideoId)}`}
+            />
+          ) : feed.isLoading && pending.processingFeedItems.length === 0 ? (
+            <VideosFeedSkeleton />
+          ) : feed.error && !displayItems.some((item) => item.id === focusVideoId) ? (
+            <VideosFeedError onRetry={() => void feed.refresh()} />
+          ) : (
+            <VideoDetailScreen
+              videoId={focusVideoId}
+              items={displayItems}
+              isLoading={feed.isLoading}
+              processingError={detailProcessingError}
+              onDismissProcessing={() => pending.dismissTrack(focusVideoId)}
+              onToggleLike={(item) => void interactions.toggleLike(item)}
+              onShare={(item) => void interactions.shareVideo(item)}
+              onOpenReport={(videoId) => {
+                setReportVideoId(videoId);
+                setReportOpen(true);
+              }}
+              onCommentCountDelta={(videoId, delta) => {
+                feed.updateItem(videoId, (item) => bumpLocalVideoCommentCount(item, delta));
+              }}
+              shareHint={interactions.shareHint}
+            />
+          )
         ) : feed.sessionExpired ? (
           <SessionExpiredPanel message={LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE} returnPath="/videos" />
         ) : (
@@ -211,15 +171,6 @@ function VideosScreenInner() {
             }}
           />
         )}
-
-        <VideoCommentsSheet
-          open={commentsOpen}
-          video={commentsVideo}
-          onClose={() => setCommentsOpen(false)}
-          onCommentCountDelta={(videoId, delta) => {
-            feed.updateItem(videoId, (item) => bumpLocalVideoCommentCount(item, delta));
-          }}
-        />
 
         <LocalVideoReportSheet
           open={reportOpen}

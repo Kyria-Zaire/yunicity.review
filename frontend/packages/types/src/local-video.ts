@@ -138,6 +138,7 @@ export type LocalVideoFeedItem = {
   walk_minutes: number | null;
   like_count: number;
   comment_count: number;
+  view_count: number;
   liked_by_me: boolean;
 };
 
