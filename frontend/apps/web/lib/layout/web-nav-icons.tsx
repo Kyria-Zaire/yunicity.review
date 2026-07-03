@@ -53,17 +53,23 @@ const ICONS: Record<WebNavIconId, (props: IconProps) => ReactElement> = {
   ),
   sortir: (p) => (
     <IconBase {...p}>
-      <path d="M12 3a6 6 0 109 9 9 9 0 01-9-9z" />
-      <path d="M18 4l.8 1.6L20.5 6l-1.7.8L18 8.5l-.8-1.7L15.5 6l1.7-.8L18 4z" />
-      <path d="M5 16l.6 1.2L6.8 18l-1.2.6L5 19.8l-.6-1.2L3.2 18l1.2-.6L5 16z" />
+      <path d="M8 4h8" />
+      <path d="M8 4L6.5 11.5c0 2.5 2.5 4.5 5.5 4.5s5.5-2 5.5-4.5L16 4" />
+      <path d="M7.5 11.2c1.4.9 2.9.9 4.5 0" />
+      <path d="M12 16v4" />
+      <path d="M9.5 20h5" />
     </IconBase>
   ),
   neighborhoods: (p) => (
     <IconBase {...p}>
-      <rect x="3" y="3" width="7" height="7" rx="1.5" />
-      <rect x="14" y="3" width="7" height="7" rx="1.5" />
-      <rect x="3" y="14" width="7" height="7" rx="1.5" />
-      <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      <path d="M2 21h20" />
+      <path d="M3 21V15" />
+      <path d="M3 15h6" />
+      <path d="M6 10.5L3 15h6L6 10.5z" />
+      <path d="M11 21V12" />
+      <path d="M11 12h9" />
+      <path d="M15.5 5.5L11 12h9l-4.5-6.5z" />
+      <path d="M14.5 15h3v6" />
     </IconBase>
   ),
   tribes: (p) => (
@@ -117,9 +123,13 @@ const ICONS: Record<WebNavIconId, (props: IconProps) => ReactElement> = {
   ),
   proposePlace: (p) => (
     <IconBase {...p}>
-      <path d="M12 21s-5.5-4.5-5.5-9.5a5.5 5.5 0 019.2-3.9" />
-      <circle cx="12" cy="10.5" r="2" />
-      <path d="M19 4v5M16.5 6.5H21.5" />
+      <path d="M4 8l2-3.5h12L20 8" />
+      <path d="M5 8v11" />
+      <path d="M19 8v11" />
+      <path d="M5 19h14" />
+      <path d="M9 13h6" />
+      <path d="M10 19v-4h4v4" />
+      <path d="M16.5 4.5l.65 1.32 1.46.21-1.06 1.03.25 1.45-1.3-.68-1.3.68.25-1.45-1.06-1.03 1.46-.21L16.5 4.5z" />
     </IconBase>
   ),
   publish: (p) => (

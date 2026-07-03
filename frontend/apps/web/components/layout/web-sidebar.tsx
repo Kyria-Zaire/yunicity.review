@@ -39,8 +39,8 @@ function NavIconButton({
         aria-current={active ? "page" : undefined}
         className={`relative flex items-center justify-center rounded-full transition-colors xl:hidden ${
           active
-            ? "bg-neutral-200 text-neutral-900"
-            : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+            ? "bg-yunicity-primary-soft text-yunicity-primary"
+            : "text-yunicity-primary hover:bg-yunicity-primary-soft hover:text-yunicity-primary-hover"
         }`}
         style={{ width: "var(--web-sidebar-icon-hit)", height: "var(--web-sidebar-icon-hit)" }}
       >
@@ -87,7 +87,7 @@ function NavLinkExpanded({
       ? "text-white"
       : active && !isPrimary
         ? "text-yunicity-primary"
-        : "text-neutral-600";
+        : "text-yunicity-primary";
 
   return (
     <Link
@@ -153,15 +153,13 @@ export function WebSidebar() {
       <div className="web-sidebar-column">
         <div className="flex shrink-0 flex-col items-center pb-1 pt-3 xl:mb-5 xl:items-stretch xl:pb-0 xl:pt-0">
           <WebSidebarTooltip label="Yunicity">
-            <span
-              className="flex items-center justify-center xl:justify-start"
-              style={{ width: "var(--web-sidebar-icon-hit)", height: "var(--web-sidebar-icon-hit)" }}
-            >
+            <span className="flex items-center justify-center overflow-visible py-0.5 xl:justify-start xl:py-0">
               <YunicityLogo
                 href="/feed"
-                size="md"
+                size="xl"
                 showWordmark
                 className="justify-center xl:justify-start"
+                mascotClassName="h-[4.75rem] w-[4.75rem] xl:h-10 xl:w-10"
                 wordmarkClassName="hidden xl:inline"
               />
             </span>

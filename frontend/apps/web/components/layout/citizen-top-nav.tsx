@@ -28,7 +28,7 @@ function TopNavLink({
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={`relative shrink-0 whitespace-nowrap px-2 py-2 text-sm font-medium transition-colors xl:px-2.5 ${
-        active ? "text-yunicity-primary" : "text-neutral-600 hover:text-neutral-900"
+        active ? "text-yunicity-primary" : "text-yunicity-primary hover:text-yunicity-primary-hover"
       }`}
     >
       <span className="inline-flex items-center gap-1.5">

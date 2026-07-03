@@ -195,7 +195,7 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
           className={
             isTopNav
               ? "inline-flex items-center gap-1 rounded-full py-1 pl-1 pr-2 transition hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2"
-              : `flex w-[var(--web-sidebar-icon-hit)] -translate-x-1.5 flex-col items-center justify-center gap-0.5 rounded-full py-1 transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 xl:w-full xl:translate-x-0 xl:flex-row xl:justify-start xl:gap-2 xl:rounded-xl xl:p-2 ${
+              : `flex w-[var(--web-sidebar-icon-hit)] flex-col items-center justify-center gap-0.5 rounded-full py-1 transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 xl:w-full xl:flex-row xl:justify-start xl:gap-2 xl:rounded-xl xl:p-2 ${
                   accountMenuActive ? "bg-neutral-100 xl:bg-neutral-50" : ""
                 }`
           }
@@ -215,7 +215,7 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
               <span className="flex flex-col items-center gap-0.5 xl:hidden">
                 <ProfileAvatar name={profileLabel} size="sm" />
                 <ChevronDown
-                  className={`h-3.5 w-3.5 shrink-0 text-neutral-500 transition-transform ${
+                  className={`h-3.5 w-3.5 shrink-0 text-yunicity-primary transition-transform ${
                     open ? "rotate-180" : ""
                   }`}
                   aria-hidden

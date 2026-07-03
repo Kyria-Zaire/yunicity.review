@@ -40,7 +40,7 @@ export function CreateHubTriggerButton({
         aria-label={CREATE_HUB_FAB_LABEL}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
-        className={`mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white shadow-sm transition hover:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${className}`}
+        className={`mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-yunicity-primary text-white shadow-sm transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${className}`}
       >
         <Plus className="h-5 w-5" strokeWidth={2.25} aria-hidden />
       </button>

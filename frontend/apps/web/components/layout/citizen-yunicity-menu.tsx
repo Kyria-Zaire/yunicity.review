@@ -130,7 +130,7 @@ export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenu
                     active ? "bg-yunicity-primary-soft/60" : ""
                   }`}
                 >
-                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-700">
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-yunicity-primary-soft text-yunicity-primary">
                     <WebNavIcon id={item.icon} className="h-[18px] w-[18px]" />
                   </span>
                   <span className="min-w-0 flex-1 text-sm font-semibold text-neutral-900">
@@ -159,8 +159,8 @@ export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenu
             aria-haspopup="menu"
             aria-expanded={open}
             aria-controls={menuId}
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-2 text-sm font-medium transition hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
-              triggerTone ? "text-yunicity-primary" : "text-neutral-600"
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-2 text-sm font-medium transition hover:bg-yunicity-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
+              triggerTone ? "text-yunicity-primary" : "text-yunicity-primary hover:text-yunicity-primary-hover"
             }`}
           >
             <Grid3x3 className="h-4 w-4 shrink-0" aria-hidden />
@@ -192,8 +192,8 @@ export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenu
             aria-controls={menuId}
             className={`relative flex items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 xl:hidden ${
               triggerTone
-                ? "bg-neutral-200 text-neutral-900"
-                : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+                ? "bg-yunicity-primary-soft text-yunicity-primary"
+                : "text-yunicity-primary hover:bg-yunicity-primary-soft hover:text-yunicity-primary-hover"
             }`}
             style={{ width: "var(--web-sidebar-icon-hit)", height: "var(--web-sidebar-icon-hit)" }}
           >
@@ -215,7 +215,7 @@ export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenu
               : "text-neutral-700 hover:bg-neutral-100"
           }`}
         >
-          <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center">
+          <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center text-yunicity-primary">
             <Grid3x3 className="h-[22px] w-[22px]" aria-hidden />
           </span>
           <span className="min-w-0 flex-1 truncate whitespace-nowrap text-left">

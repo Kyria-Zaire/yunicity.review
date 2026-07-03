@@ -16,6 +16,7 @@ type YunicityLogoProps = {
   href?: string;
   className?: string;
   wordmarkClassName?: string;
+  mascotClassName?: string;
   priority?: boolean;
 };
 
@@ -25,6 +26,7 @@ export function YunicityLogo({
   href,
   className = "",
   wordmarkClassName = "",
+  mascotClassName = "",
   priority = false,
 }: YunicityLogoProps) {
   const px = YUNICITY_LOGO_SIZES[size];
@@ -37,7 +39,7 @@ export function YunicityLogo({
         width={px}
         height={px}
         priority={priority}
-        className="shrink-0 object-contain"
+        className={`shrink-0 object-contain ${mascotClassName}`}
       />
       {showWordmark ? (
         <span
