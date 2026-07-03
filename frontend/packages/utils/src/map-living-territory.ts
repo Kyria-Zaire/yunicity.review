@@ -11,6 +11,7 @@ import { buildMapEventUrl, buildMapNeighborhoodUrl, buildMapPlaceUrl } from "./e
 import { tribeCategoryLabel, tribeHref } from "./tribe-labels";
 import { neighborhoodHref } from "./neighborhood-labels";
 import { mapEventPopupDate, mapEventPopupLocation } from "./map-labels";
+import { resolveMapPlaceImageUrl } from "./map-media-url";
 
 export const MAP_TERRITORY_LAYERS = [
   "all",
@@ -379,7 +380,7 @@ export function buildMapSelectedPanelPayload(input: {
       kind: "place",
       title: place.name,
       meta: place.category,
-      imageUrl: place.hero_image_url ?? place.image_url ?? place.thumbnail_image_url ?? null,
+      imageUrl: resolveMapPlaceImageUrl(place) ?? null,
       credit,
       href: buildMapPlaceUrl(place.slug, { city }),
       routeSlug: place.slug,

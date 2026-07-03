@@ -8,11 +8,9 @@ import { useEffect, useState } from "react";
  * - Aucun secret backend : seule la clé publique `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
  *   (restreinte par referrer dans Google Cloud) est utilisée.
  * - Le script n'est injecté qu'une seule fois (singleton de promesse).
- * - On utilise le `callback` officiel Google : il n'est invoqué qu'une fois
- *   l'API ENTIÈREMENT chargée, avec `google.maps.Map`/`Marker` disponibles.
- *   (Le mode `loading=async` ne garantit pas que les classes soient montées au
- *   `onload` du script, ce qui provoquait « google.maps.Map is not a
- *   constructor » ou un échec de `importLibrary`.)
+ * - On combine `loading=async` (recommandation Google, supprime le warning console)
+ *   avec le `callback` officiel : Google n'invoque le callback qu'une fois
+ *   l'API prête (`google.maps.Map`/`Marker` disponibles).
  */
 
 export type GoogleMapsStatus = "idle" | "loading" | "ready" | "error";
@@ -75,6 +73,7 @@ function loadGoogleMaps(apiKey: string): Promise<void> {
       v: "weekly",
       language: "fr",
       region: "FR",
+      loading: "async",
       callback: CALLBACK_NAME,
     });
 

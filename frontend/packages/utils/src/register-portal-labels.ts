@@ -6,8 +6,8 @@ export const REGISTER_PAGE_SUBTITLE =
 
 export const REGISTER_STEP_TYPE = "Type de compte";
 export const REGISTER_STEP_INFO = "Informations";
-export const REGISTER_STEP_VERIFY = "Vérification";
-export const REGISTER_STEP_FINISH = "Finalisation";
+export const REGISTER_STEP_VERIFY = "Sécurité du compte";
+export const REGISTER_STEP_FINISH = "Dernière étape";
 
 export const REGISTER_TYPE_SECTION_TITLE = "Choisissez le type de compte qui vous correspond";
 export const REGISTER_TYPE_SECTION_SUBTITLE =
@@ -49,7 +49,7 @@ export const REGISTER_TYPE_INFO_BODY =
 
 export const REGISTER_INFO_SECTION_TITLE = "Vos informations de connexion";
 export const REGISTER_INFO_SECTION_SUBTITLE =
-  "Ces identifiants créent votre compte Yunicity. Pour les structures, vous pourrez ensuite proposer votre organisation.";
+  "Créez votre compte avec votre email. Aucun numéro de téléphone ni SMS n'est requis. Pour les structures, vous pourrez ensuite proposer votre organisation.";
 
 export const REGISTER_FIELD_FULL_NAME = "Nom complet";
 export const REGISTER_FIELD_EMAIL = "Email";
@@ -60,9 +60,9 @@ export const REGISTER_FIELD_CITY = "Ville";
 export const REGISTER_PASSWORD_HINT =
   "12 caractères minimum, avec une majuscule, une minuscule et un chiffre.";
 
-export const REGISTER_VERIFY_SECTION_TITLE = "Sécurité & engagement";
+export const REGISTER_VERIFY_SECTION_TITLE = "Acceptation de la charte";
 export const REGISTER_VERIFY_SECTION_SUBTITLE =
-  "Yunicity protège vos données. Vérifiez votre mot de passe et acceptez la charte pour finaliser.";
+  "Confirmez que votre mot de passe respecte les exigences et acceptez la charte. Aucune vérification par SMS n'est requise.";
 
 export const REGISTER_VERIFY_PASSWORD_TITLE = "Exigences du mot de passe";
 export const REGISTER_VERIFY_RULE_LENGTH = "Au moins 12 caractères";
@@ -75,7 +75,7 @@ export const REGISTER_TERMS_LABEL =
 
 export const REGISTER_FINISH_SECTION_TITLE = "Prêt à rejoindre Yunicity ?";
 export const REGISTER_FINISH_SECTION_SUBTITLE =
-  "Vérifiez votre sélection avant de créer votre compte.";
+  "Relisez vos informations avant de créer votre compte.";
 
 export const REGISTER_FINISH_ACCOUNT_TYPE = "Type de compte";
 export const REGISTER_FINISH_FULL_NAME = "Nom";
@@ -89,9 +89,9 @@ export const REGISTER_SUBMITTING = "Création du compte…";
 
 export const REGISTER_SUCCESS_TITLE = "Bienvenue sur Yunicity !";
 export const REGISTER_SUCCESS_CITIZEN_BODY =
-  "Votre compte est créé. Explorez le fil local et activez votre passeport citoyen.";
+  "Votre compte est créé. Aucune étape supplémentaire n'est requise — explorez le fil local dès maintenant.";
 export const REGISTER_SUCCESS_ORG_BODY =
-  "Votre compte est créé. Continuez pour proposer votre structure à la communauté.";
+  "Votre compte est créé. Continuez pour proposer votre structure — aucune vérification par SMS n'est requise.";
 export const REGISTER_SUCCESS_CTA_FEED = "Découvrir le fil";
 export const REGISTER_SUCCESS_CTA_ORG = "Proposer mon organisation";
 

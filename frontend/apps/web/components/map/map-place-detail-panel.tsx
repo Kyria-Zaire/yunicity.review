@@ -16,6 +16,7 @@ import {
   MAP_PORTAL_DETAIL_SOURCE,
   MAP_PORTAL_DETAIL_WEBSITE,
   MAP_PORTAL_DISTANCE_AWAY,
+  resolveMapPlaceImageUrl,
   culturalPlaceCategoryLabel,
   haversineMeters,
   mapEventPopupDate,
@@ -29,6 +30,7 @@ import {
   Share2,
   X,
 } from "lucide-react";
+import { MapMediaThumbnail } from "@/components/map/map-media-thumbnail";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -166,8 +168,7 @@ export function MapPlaceDetailPanel({
     );
   }
 
-  const heroImage =
-    placeDetail.hero_image_url ?? placeDetail.image_url ?? placeDetail.thumbnail_image_url;
+  const heroImage = resolveMapPlaceImageUrl(placeDetail);
   const description =
     placeDetail.description?.trim() ||
     placeDetail.short_description?.trim() ||
@@ -186,8 +187,10 @@ export function MapPlaceDetailPanel({
     <PanelShell onClose={onClose}>
       {heroImage ? (
         <div className="relative h-44 bg-neutral-100">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={heroImage} alt="" className="h-full w-full object-cover" />
+          <MapMediaThumbnail
+            src={heroImage}
+            className="h-full w-full object-cover"
+          />
         </div>
       ) : null}
 

@@ -7,6 +7,7 @@ import {
   MAP_PANEL_NEIGHBORHOOD_VIEW,
   MAP_PANEL_TRIBE_VIEW,
 } from "@yunicity/utils";
+import { MapMediaThumbnail } from "@/components/map/map-media-thumbnail";
 import Link from "next/link";
 
 type MapSelectedPanelProps = {
@@ -65,10 +66,8 @@ export function MapSelectedPanel({ payload, onClose }: MapSelectedPanelProps) {
       {payload.kind === "place" ? (
         <>
           {payload.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <MapMediaThumbnail
               src={payload.imageUrl}
-              alt=""
               className="mt-3 h-24 w-full rounded-xl object-cover"
             />
           ) : null}

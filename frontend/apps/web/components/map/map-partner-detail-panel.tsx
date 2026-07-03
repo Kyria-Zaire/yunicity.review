@@ -14,6 +14,7 @@ import {
   resolvePartnerImage,
 } from "@yunicity/utils";
 import { ExternalLink, X } from "lucide-react";
+import { MapMediaThumbnail } from "@/components/map/map-media-thumbnail";
 import Link from "next/link";
 
 type MapPartnerDetailPanelProps = {
@@ -44,8 +45,7 @@ export function MapPartnerDetailPanel({
 
       {imageUrl ? (
         <div className="relative h-36 bg-neutral-100">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          <MapMediaThumbnail src={imageUrl} className="h-full w-full object-cover" />
         </div>
       ) : null}
 
