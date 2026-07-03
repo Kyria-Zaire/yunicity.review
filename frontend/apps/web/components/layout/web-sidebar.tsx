@@ -168,9 +168,9 @@ export function WebSidebar() {
           </WebSidebarTooltip>
         </div>
 
-        <div className="web-sidebar-nav-scroll px-1 pt-5 xl:px-0 xl:pt-0">
+        <div className="web-sidebar-nav-scroll flex min-h-0 flex-1 flex-col px-1 pt-3 xl:block xl:px-0 xl:pt-0">
           <nav
-            className="flex flex-col items-center gap-2 xl:items-stretch xl:gap-0.5"
+            className="flex min-h-full flex-1 flex-col items-center justify-evenly gap-4 py-2 xl:min-h-0 xl:flex-none xl:items-stretch xl:justify-start xl:gap-0.5 xl:py-0"
             aria-label="Navigation principale"
           >
             {WEB_CITIZEN_SIDEBAR_STRATEGIC.map((item) => (
@@ -206,10 +206,13 @@ export function WebSidebar() {
               active={notificationsActive}
               badge={unreadNotifications}
             />
+            <div className="flex w-full justify-center xl:hidden">
+              <CitizenAccountMenu variant="sidebar" />
+            </div>
           </nav>
         </div>
 
-        <div className="web-sidebar-footer -mt-12 flex flex-col items-center gap-0.5 border-t border-neutral-200/80 px-1 pb-5 pt-2 xl:mt-0 xl:items-stretch xl:px-0 xl:py-4">
+        <div className="web-sidebar-footer hidden flex-col items-center gap-0.5 border-t border-neutral-200/80 px-1 py-4 xl:flex xl:items-stretch xl:px-0">
           {showCreateHub ? (
             <div className="hidden w-full justify-center xl:flex xl:justify-stretch">
               <WebSidebarTooltip label="Créer">
@@ -225,7 +228,9 @@ export function WebSidebar() {
             size="primary"
             badge={unreadNotifications}
           />
-          <CitizenAccountMenu variant="sidebar" />
+          <div className="hidden xl:block">
+            <CitizenAccountMenu variant="sidebar" />
+          </div>
         </div>
       </div>
     </aside>
