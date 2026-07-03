@@ -40,6 +40,7 @@ function makeItem(overrides: Partial<LocalVideoFeedItem> = {}): LocalVideoFeedIt
     walk_minutes: null,
     like_count: 3,
     comment_count: 1,
+    view_count: 0,
     liked_by_me: false,
     ...overrides,
   };
