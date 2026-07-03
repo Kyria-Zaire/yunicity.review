@@ -15,6 +15,8 @@ Exemples déjà masqués : `/videos/new`, `/stories/new`, portail partenaire `/o
 
 Parcours définis dans `lib/create-hub/create-hub-actions.ts` :
 
+- **`/videos`** (portail + détail) : hub masqué — CTA **Publier une vidéo** dans le portail (`/videos/new`).
+
 - Filmer mon quartier → bientôt (route `/videos/new` non prod — badge désactivé)
 - Story éphémère → `/stories/new`
 - Publier sur le fil → `/feed#feed-composer`

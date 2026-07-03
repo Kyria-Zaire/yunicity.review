@@ -16,6 +16,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useCitizenChrome, useNotificationUnread } from "@/hooks/use-citizen-chrome";
+import { useCreateHubVisibility } from "@/hooks/use-create-hub-visibility";
 
 /** Cible tactile 52px — icône seule, style barre X en mode compact. */
 function NavIconButton({
@@ -147,6 +148,7 @@ export function WebSidebar() {
   const { user } = useAuth();
   const unreadNotifications = useNotificationUnread();
   const { displayName } = useCitizenChrome();
+  const showCreateHub = useCreateHubVisibility();
 
   const profileLabel = displayName ?? user?.email?.split("@")[0] ?? "Mon profil";
 
@@ -208,12 +210,14 @@ export function WebSidebar() {
             ))}
           </nav>
 
-          <div className="mt-8 flex flex-col items-center gap-3 xl:mt-10 xl:items-stretch">
-            <WebSidebarTooltip label="Créer">
-              <CreateHubTriggerButton variant="sidebar-icon" className="xl:hidden" />
-            </WebSidebarTooltip>
-            <CreateHubTriggerButton variant="sidebar-expanded" />
-          </div>
+          {showCreateHub ? (
+            <div className="mt-8 flex flex-col items-center gap-3 xl:mt-10 xl:items-stretch">
+              <WebSidebarTooltip label="Créer">
+                <CreateHubTriggerButton variant="sidebar-icon" className="xl:hidden" />
+              </WebSidebarTooltip>
+              <CreateHubTriggerButton variant="sidebar-expanded" />
+            </div>
+          ) : null}
         </div>
 
         <div className="web-sidebar-footer border-t border-neutral-200/80 px-1 py-3 xl:px-0 xl:py-4">
