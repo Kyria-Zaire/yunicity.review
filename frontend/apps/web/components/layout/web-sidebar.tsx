@@ -151,7 +151,7 @@ export function WebSidebar() {
   return (
     <aside className="web-sidebar-aside" aria-label="Navigation Yunicity">
       <div className="web-sidebar-column">
-        <div className="flex shrink-0 flex-col items-center pb-2 pt-3 xl:mb-5 xl:items-stretch xl:pb-0 xl:pt-0">
+        <div className="flex shrink-0 flex-col items-center pb-1 pt-3 xl:mb-5 xl:items-stretch xl:pb-0 xl:pt-0">
           <WebSidebarTooltip label="Yunicity">
             <span
               className="flex items-center justify-center xl:justify-start"
@@ -168,9 +168,9 @@ export function WebSidebar() {
           </WebSidebarTooltip>
         </div>
 
-        <div className="web-sidebar-nav-scroll px-1 xl:px-0">
+        <div className="web-sidebar-nav-scroll px-1 pt-5 xl:px-0 xl:pt-0">
           <nav
-            className="flex flex-col items-center gap-0.5 xl:items-stretch"
+            className="flex flex-col items-center gap-2 xl:items-stretch xl:gap-0.5"
             aria-label="Navigation principale"
           >
             {WEB_CITIZEN_SIDEBAR_STRATEGIC.map((item) => (
@@ -184,18 +184,40 @@ export function WebSidebar() {
               />
             ))}
             <CitizenYunicityMenu variant="sidebar" />
+            {showCreateHub ? (
+              <div className="flex w-full justify-center xl:hidden">
+                <WebSidebarTooltip label="Créer">
+                  <span
+                    className="flex items-center justify-center"
+                    style={{
+                      width: "var(--web-sidebar-icon-hit)",
+                      height: "var(--web-sidebar-icon-hit)",
+                    }}
+                  >
+                    <CreateHubTriggerButton variant="sidebar-icon" />
+                  </span>
+                </WebSidebarTooltip>
+              </div>
+            ) : null}
+            <NavIconButton
+              href={WEB_CITIZEN_NOTIFICATIONS_NAV.href}
+              label={WEB_CITIZEN_NOTIFICATIONS_NAV.label}
+              icon={WEB_CITIZEN_NOTIFICATIONS_NAV.icon}
+              active={notificationsActive}
+              badge={unreadNotifications}
+            />
           </nav>
         </div>
 
-        <div className="web-sidebar-footer flex flex-col items-center gap-0.5 border-t border-neutral-200/80 px-1 py-3 xl:items-stretch xl:px-0 xl:py-4">
+        <div className="web-sidebar-footer -mt-12 flex flex-col items-center gap-0.5 border-t border-neutral-200/80 px-1 pb-5 pt-2 xl:mt-0 xl:items-stretch xl:px-0 xl:py-4">
           {showCreateHub ? (
-            <div className="flex w-full justify-center xl:justify-stretch">
+            <div className="hidden w-full justify-center xl:flex xl:justify-stretch">
               <WebSidebarTooltip label="Créer">
                 <CreateHubTriggerButton variant="sidebar-icon" />
               </WebSidebarTooltip>
             </div>
           ) : null}
-          <NavItem
+          <NavLinkExpanded
             href={WEB_CITIZEN_NOTIFICATIONS_NAV.href}
             label={WEB_CITIZEN_NOTIFICATIONS_NAV.label}
             icon={WEB_CITIZEN_NOTIFICATIONS_NAV.icon}
