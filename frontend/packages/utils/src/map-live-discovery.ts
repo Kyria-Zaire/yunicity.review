@@ -6,6 +6,10 @@ import type {
 } from "@yunicity/types";
 
 import { buildMapEventUrl, buildMapPlaceUrl } from "./explorer-links";
+import {
+  resolveMapNeighborhoodImageUrl,
+  resolveMapPlaceImageUrl,
+} from "./map-media-url";
 
 export type MapLiveDiscoveryKind = "event" | "culture" | "passport" | "neighborhood";
 
@@ -125,7 +129,7 @@ export function buildMapLiveDiscoveryItems({
       badge: "Quartier",
       ctaLabel: "Explorer",
       href: `/neighborhoods/${encodeURIComponent(featuredNeighborhood.slug)}?city=${encodeURIComponent(city)}`,
-      imageUrl: featuredNeighborhood.cover_image_url,
+      imageUrl: resolveMapNeighborhoodImageUrl(featuredNeighborhood),
     });
     usedIds.add(`neighborhood:${featuredNeighborhood.slug}`);
   }
@@ -153,7 +157,7 @@ export function buildMapLiveDiscoveryItems({
 }
 
 function resolvePlaceImage(place: CulturalPlaceListItem): string | null {
-  return place.hero_image_url ?? place.image_url ?? place.thumbnail_image_url;
+  return resolveMapPlaceImageUrl(place);
 }
 
 function formatEventLine(startsAtIso: string, city: string): string {

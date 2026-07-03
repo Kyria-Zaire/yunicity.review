@@ -16,9 +16,9 @@ export const SETTINGS_ROW_PERSONAL_DESC =
 export const SETTINGS_ROW_SECURITY = "Sécurité";
 export const SETTINGS_ROW_SECURITY_DESC =
   "Mot de passe et protection de votre compte.";
-export const SETTINGS_ROW_VERIFICATION = "Vérification d'identité";
+export const SETTINGS_ROW_VERIFICATION = "Programme Yunicity Passport";
 export const SETTINGS_ROW_VERIFICATION_DESC =
-  "Statut de vérification de votre compte Yunicity.";
+  "Identité citoyenne réservée au futur programme Passport — disponible prochainement.";
 
 export const SETTINGS_ROW_NOTIFICATIONS = "Notifications";
 export const SETTINGS_ROW_NOTIFICATIONS_DESC =
@@ -61,8 +61,8 @@ export const SETTINGS_RAIL_CURRENT_DEVICE = "Appareil actuel";
 export const SETTINGS_RAIL_PUSH_DEVICES = "Appareils mobiles";
 export const SETTINGS_RAIL_VIEW_DEVICES = "Voir les appareils enregistrés";
 
-export const SETTINGS_VERIFIED = "Compte vérifié";
-export const SETTINGS_UNVERIFIED = "Compte non vérifié";
+export const SETTINGS_VERIFIED = "Programme Passport actif";
+export const SETTINGS_UNVERIFIED = "Programme Passport — bientôt disponible";
 export const SETTINGS_ONBOARDING_DONE = "Profil complété";
 export const SETTINGS_ONBOARDING_PENDING = "Profil à compléter";
 
@@ -80,11 +80,12 @@ export const SETTINGS_SECURITY_TITLE = "Sécurité";
 export const SETTINGS_SECURITY_BODY =
   "La modification du mot de passe et la gestion des sessions web seront disponibles prochainement. Votre session actuelle est protégée par un jeton sécurisé.";
 
-export const SETTINGS_VERIFICATION_TITLE = "Vérification d'identité";
+export const SETTINGS_VERIFICATION_TITLE = "Programme Yunicity Passport";
+export const SETTINGS_VERIFICATION_SOON_BADGE = "Disponible prochainement";
 export const SETTINGS_VERIFICATION_VERIFIED_BODY =
-  "Votre compte a été vérifié par l'équipe Yunicity.";
+  "Votre compte est reconnu dans le programme Passport par l'équipe Yunicity.";
 export const SETTINGS_VERIFICATION_UNVERIFIED_BODY =
-  "Votre compte n'est pas encore vérifié. La vérification citoyenne sera proposée lorsque le programme sera ouvert à Reims.";
+  "Réservé au futur programme Yunicity Passport. Disponible prochainement à Reims. Aucune vérification par SMS n'est requise pour utiliser Yunicity aujourd'hui.";
 
 export const SETTINGS_DISPLAY_TITLE = "Préférences d'affichage";
 export const SETTINGS_DISPLAY_LANGUAGE = "Langue de l'interface";

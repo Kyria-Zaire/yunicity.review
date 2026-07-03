@@ -3,6 +3,7 @@ import type { MapCulturalPlaceItem, MapEventItem, Neighborhood } from "@yunicity
 import { culturalPlaceCategoryLabel } from "./cultural-place-labels";
 import { buildMapEventUrl, buildMapPlaceUrl } from "./explorer-links";
 import { mapEventPopupDate } from "./map-labels";
+import { resolveMapPlaceImageUrl } from "./map-media-url";
 import type { MapLayerVisibility, MapTerritoryLayer } from "./map-living-territory";
 
 export type MapPortalCategoryId =
@@ -297,7 +298,11 @@ export function buildMapAroundYouItems(input: {
     slug: place.slug,
     title: place.name,
     subtitle: place.address,
-    imageUrl: place.thumbnail_image_url ?? place.image_url,
+    imageUrl: resolveMapPlaceImageUrl({
+      hero_image_url: null,
+      image_url: place.image_url,
+      thumbnail_image_url: place.thumbnail_image_url,
+    }),
     distanceMeters: haversineMeters(
       origin.latitude,
       origin.longitude,

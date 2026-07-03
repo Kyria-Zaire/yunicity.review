@@ -43,6 +43,7 @@ import {
   SETTINGS_SECURITY_TITLE,
   SETTINGS_SOON,
   SETTINGS_VERIFICATION_TITLE,
+  SETTINGS_VERIFICATION_SOON_BADGE,
   SETTINGS_VERIFICATION_UNVERIFIED_BODY,
   SETTINGS_VERIFICATION_VERIFIED_BODY,
   VISIBILITY_OPTIONS,
@@ -52,7 +53,7 @@ import {
   settingsSectionDomId,
   type SettingsVerificationView,
 } from "@yunicity/utils";
-import { BadgeCheck, ShieldAlert } from "lucide-react";
+import { BadgeCheck, Clock3 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 
@@ -263,10 +264,17 @@ export function SettingsSections({
           {verification.verified ? (
             <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
           ) : (
-            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden />
+            <Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-neutral-500" aria-hidden />
           )}
           <div className="space-y-2 text-sm">
-            <p className="font-semibold text-neutral-900">{verification.verifiedLabel}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-semibold text-neutral-900">{verification.verifiedLabel}</p>
+              {!verification.verified ? (
+                <span className="inline-flex rounded-full bg-neutral-200/80 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-neutral-600">
+                  {SETTINGS_VERIFICATION_SOON_BADGE}
+                </span>
+              ) : null}
+            </div>
             <p className="leading-relaxed text-neutral-600">
               {verification.verified
                 ? SETTINGS_VERIFICATION_VERIFIED_BODY

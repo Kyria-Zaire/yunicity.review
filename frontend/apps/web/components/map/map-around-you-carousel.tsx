@@ -10,6 +10,7 @@ import {
   MAP_PORTAL_PLACE_TAG,
 } from "@yunicity/utils";
 import { ChevronRight } from "lucide-react";
+import { MapMediaThumbnail } from "@/components/map/map-media-thumbnail";
 import Link from "next/link";
 
 type MapAroundYouCarouselProps = {
@@ -49,8 +50,15 @@ export function MapAroundYouCarousel({ items, onSelectItem }: MapAroundYouCarous
             >
               <div className="relative h-24 bg-neutral-100">
                 {item.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
+                  <MapMediaThumbnail
+                    src={item.imageUrl}
+                    className="h-full w-full object-cover"
+                    fallback={
+                      <div className="flex h-full items-center justify-center text-xs text-neutral-400">
+                        {item.kind === "event" ? MAP_PORTAL_EVENT_TAG : MAP_PORTAL_PLACE_TAG}
+                      </div>
+                    }
+                  />
                 ) : (
                   <div className="flex h-full items-center justify-center text-xs text-neutral-400">
                     {item.kind === "event" ? MAP_PORTAL_EVENT_TAG : MAP_PORTAL_PLACE_TAG}

@@ -18,6 +18,7 @@ import {
   buildNeighborhoodAmbianceRailItems,
   formatOfferValidUntil,
 } from "@yunicity/utils";
+import { MapMediaThumbnail } from "@/components/map/map-media-thumbnail";
 import Link from "next/link";
 import { CalendarClock, Landmark, MapPinHouse, TicketPercent } from "lucide-react";
 
@@ -82,11 +83,14 @@ export function MapRightRail({
                 <div className="group rounded-2xl border border-neutral-200/80 bg-white p-2.5 shadow-sm transition hover:border-neutral-300 hover:shadow-md">
                   <div className="flex items-start gap-2.5">
                     {item.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <MapMediaThumbnail
                         src={item.imageUrl}
-                        alt=""
                         className="h-12 w-12 shrink-0 rounded-xl object-cover"
+                        fallback={
+                          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-50 text-neutral-700">
+                            <LiveItemIcon kind={item.kind} />
+                          </span>
+                        }
                       />
                     ) : (
                       <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-50 text-neutral-700">

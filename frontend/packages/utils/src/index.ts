@@ -1079,6 +1079,7 @@ export {
   SETTINGS_SIDEBAR_TITLE,
   SETTINGS_SOON,
   SETTINGS_VERIFICATION_TITLE,
+  SETTINGS_VERIFICATION_SOON_BADGE,
   SETTINGS_VERIFICATION_UNVERIFIED_BODY,
   SETTINGS_VERIFICATION_VERIFIED_BODY,
 } from "./settings-portal-labels";
@@ -2011,6 +2012,11 @@ export {
   type MapLiveDiscoveryItem,
   type MapLiveDiscoveryKind,
 } from "./map-live-discovery";
+export {
+  isPendingYunicityHostedCoverUrl,
+  resolveMapNeighborhoodImageUrl,
+  resolveMapPlaceImageUrl,
+} from "./map-media-url";
 export {
   MAP_LIVING_RECENTER,
   MAP_LIVING_SEARCH_PLACEHOLDER,
