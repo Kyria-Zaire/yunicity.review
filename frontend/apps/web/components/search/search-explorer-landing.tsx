@@ -24,7 +24,6 @@ import { SearchExplorerEventsStrip } from "./search-explorer-events-strip";
 import { SearchExplorerNeighborhoodsSection } from "./search-explorer-neighborhoods-section";
 import { SearchExplorerOfferHighlight } from "./search-explorer-offer-highlight";
 import { SearchExplorerPartnersStrip } from "./search-explorer-partners-strip";
-import { SearchExplorerPointsRail } from "./search-explorer-points-rail";
 import { SearchExplorerTransitRail } from "./search-explorer-transit-rail";
 
 type SearchExplorerLandingProps = {
@@ -194,8 +193,6 @@ export function SearchExplorerLanding({ explorer, categoryId }: SearchExplorerLa
           </ul>
         )}
       </section>
-
-      {categoryId === "all" ? <SearchExplorerPointsRail /> : null}
 
       {categoryId === "all" ? <SearchExplorerTransitRail city={city} /> : null}
 
