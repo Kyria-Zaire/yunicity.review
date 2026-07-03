@@ -33,6 +33,17 @@ export type WebNavItem = {
   tier?: WebNavTier;
 };
 
+/** Entrées compte — menu profil (sidebar / top nav), pas la nav principale. */
+export const WEB_CITIZEN_ACCOUNT_MENU: WebNavItem[] = [
+  { href: "/profile/me", label: "Profil", icon: "profile", match: "prefix" },
+  { href: "/settings", label: "Paramètres", icon: "settings", match: "prefix" },
+  { href: "/passport", label: "Passport", icon: "passport", match: "prefix" },
+];
+
+const WEB_CITIZEN_ACCOUNT_MENU_HREFS = new Set(
+  WEB_CITIZEN_ACCOUNT_MENU.map((item) => item.href),
+);
+
 /** Navigation principale — ordre feed-first (WEB-HOME-01). */
 export const WEB_CITIZEN_NAV_PRIMARY: WebNavItem[] = [
   { href: "/feed", label: "Fil local", icon: "feed", match: "prefix", tier: "primary" },
@@ -47,30 +58,6 @@ export const WEB_CITIZEN_NAV_PRIMARY: WebNavItem[] = [
   { href: "/profile/me", label: "Profil", icon: "profile", match: "prefix", tier: "primary" },
 ];
 
-/**
- * Onglets centraux — barre haute xl (`CitizenTopNav`).
- * Même périmètre que la sidebar primaire (hors compte / notifications).
- */
-export const WEB_CITIZEN_TOP_NAV_CENTER: WebNavItem[] = WEB_CITIZEN_NAV_PRIMARY.filter(
-  (item) => item.href !== "/notifications" && item.href !== "/profile/me",
-);
-
-/**
- * Liens texte à droite — barre haute xl (avant recherche et menu utilisateur).
- */
-export const WEB_CITIZEN_TOP_NAV_UTILITY: WebNavItem[] = [
-  { href: "/notifications", label: "Notifications", icon: "notifications", match: "prefix" },
-  { href: "/profile/me", label: "Profil", icon: "profile", match: "prefix" },
-  { href: "/places", label: "Lieux", icon: "place", match: "prefix" },
-  {
-    href: "/organizations/request",
-    label: "Proposer un lieu",
-    icon: "proposePlace",
-    match: "prefix",
-  },
-  { href: "/settings", label: "Paramètres", icon: "settings", match: "prefix" },
-];
-
 /** Entrées occasionnelles — footer sidebar, pas la barre mobile compacte. */
 export const WEB_CITIZEN_NAV_SECONDARY: WebNavItem[] = [
   { href: "/places", label: "Lieux", icon: "place", match: "prefix", tier: "secondary" },
@@ -82,6 +69,48 @@ export const WEB_CITIZEN_NAV_SECONDARY: WebNavItem[] = [
     tier: "secondary",
   },
   { href: "/settings", label: "Paramètres", icon: "settings", match: "prefix", tier: "secondary" },
+];
+
+/** Sidebar — nav principale sans entrées regroupées dans le menu compte. */
+export const WEB_CITIZEN_SIDEBAR_PRIMARY: WebNavItem[] = WEB_CITIZEN_NAV_PRIMARY.filter(
+  (item) => !WEB_CITIZEN_ACCOUNT_MENU_HREFS.has(item.href),
+);
+
+/** Sidebar — nav secondaire sans Paramètres (menu compte). */
+export const WEB_CITIZEN_SIDEBAR_SECONDARY: WebNavItem[] = WEB_CITIZEN_NAV_SECONDARY.filter(
+  (item) => !WEB_CITIZEN_ACCOUNT_MENU_HREFS.has(item.href),
+);
+
+/**
+ * Sidebar — liste unique sans trou (compte dans le menu profil).
+ * Lieux / Proposer remontés pour combler Passport + Profil retirés.
+ */
+export const WEB_CITIZEN_SIDEBAR_NAV: WebNavItem[] = [
+  ...WEB_CITIZEN_SIDEBAR_PRIMARY.filter((item) => item.href !== "/notifications"),
+  ...WEB_CITIZEN_SIDEBAR_SECONDARY,
+  ...WEB_CITIZEN_SIDEBAR_PRIMARY.filter((item) => item.href === "/notifications"),
+];
+
+/**
+ * Onglets centraux — barre haute xl (`CitizenTopNav`).
+ * Même périmètre que la sidebar primaire (hors compte / notifications).
+ */
+export const WEB_CITIZEN_TOP_NAV_CENTER: WebNavItem[] = WEB_CITIZEN_SIDEBAR_PRIMARY.filter(
+  (item) => item.href !== "/notifications",
+);
+
+/**
+ * Liens texte à droite — barre haute xl (avant recherche et menu utilisateur).
+ */
+export const WEB_CITIZEN_TOP_NAV_UTILITY: WebNavItem[] = [
+  { href: "/notifications", label: "Notifications", icon: "notifications", match: "prefix" },
+  { href: "/places", label: "Lieux", icon: "place", match: "prefix" },
+  {
+    href: "/organizations/request",
+    label: "Proposer un lieu",
+    icon: "proposePlace",
+    match: "prefix",
+  },
 ];
 
 /** Liste complète — compat routes & mobile chrome legacy. */

@@ -1,7 +1,6 @@
 "use client";
 
-import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
-import { ProfileAvatar } from "@/components/profile-avatar";
+import { CitizenAccountMenu } from "@/components/layout/citizen-account-menu";
 import { YunicityLogo } from "@/components/brand";
 import {
   WEB_CITIZEN_TOP_NAV_CENTER,
@@ -10,8 +9,6 @@ import {
   type WebNavItem,
 } from "@/lib/layout/web-layout-config";
 import { useCitizenChrome } from "@/hooks/use-citizen-chrome";
-import { useAuth } from "@/lib/auth/auth-provider";
-import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -51,12 +48,10 @@ function TopNavLink({
   );
 }
 
-/** Top nav maquette — Sortir, Passport, Notifications, Paramètres, etc. (xl+). */
+/** Top nav desktop (xl+) — remplace la sidebar compacte sur feed, carte, etc. */
 export function CitizenTopNav() {
   const pathname = usePathname();
-  const { user } = useAuth();
-  const { unreadCount: unread, displayName } = useCitizenChrome();
-  const profileLabel = displayName?.trim() || user?.full_name?.trim() || "Citoyen";
+  const { unreadCount: unread } = useCitizenChrome();
 
   return (
     <header className="citizen-top-nav sticky top-0 z-40 hidden border-b border-neutral-200/90 bg-white/95 backdrop-blur-md">
@@ -73,8 +68,6 @@ export function CitizenTopNav() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2 xl:gap-3">
-          <CreateHubTriggerButton variant="nav" className="hidden xl:inline-flex" />
-
           <nav
             className="hidden items-center gap-0.5 border-r border-neutral-200 pr-2 lg:flex xl:gap-1 xl:pr-3"
             aria-label="Compte et lieux"
@@ -89,14 +82,7 @@ export function CitizenTopNav() {
             ))}
           </nav>
 
-          <Link
-            href="/profile/me"
-            className="inline-flex items-center gap-1 rounded-full py-1 pl-1 pr-2 transition hover:bg-neutral-100"
-            aria-label="Mon profil"
-          >
-            <ProfileAvatar name={profileLabel} size="sm" />
-            <ChevronDown className="hidden h-4 w-4 text-neutral-500 sm:block" aria-hidden />
-          </Link>
+          <CitizenAccountMenu variant="top-nav" />
         </div>
       </div>
     </header>

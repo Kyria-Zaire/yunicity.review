@@ -1,22 +1,19 @@
 "use client";
 
-import { ProfileAvatar } from "@/components/profile-avatar";
 import { YunicityLogo } from "@/components/brand";
 import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
+import { CitizenAccountMenu } from "@/components/layout/citizen-account-menu";
 import { WebSidebarTooltip } from "@/components/layout/web-sidebar-tooltip";
+import { useNotificationUnread } from "@/hooks/use-citizen-chrome";
+import { useCreateHubVisibility } from "@/hooks/use-create-hub-visibility";
 import {
-  WEB_CITIZEN_NAV_PRIMARY,
-  WEB_CITIZEN_NAV_SECONDARY,
+  WEB_CITIZEN_SIDEBAR_NAV,
   isWebNavActive,
   type WebNavItem,
 } from "@/lib/layout/web-layout-config";
 import { WebNavIcon } from "@/lib/layout/web-nav-icons";
-import { useAuth } from "@/lib/auth/auth-provider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-import { useCitizenChrome, useNotificationUnread } from "@/hooks/use-citizen-chrome";
-import { useCreateHubVisibility } from "@/hooks/use-create-hub-visibility";
 
 /** Cible tactile 52px — icône seule, style barre X en mode compact. */
 function NavIconButton({
@@ -141,16 +138,12 @@ function NavItem({
 }
 
 /**
- * WEB-HOME-01C — Colonne grille gauche, sticky 100dvh, Create Hub + profil en bas.
+ * WEB-HOME-01C — Colonne grille gauche, sticky 100dvh, Créer (compact) + menu compte en bas.
  */
 export function WebSidebar() {
   const pathname = usePathname();
-  const { user } = useAuth();
   const unreadNotifications = useNotificationUnread();
-  const { displayName } = useCitizenChrome();
   const showCreateHub = useCreateHubVisibility();
-
-  const profileLabel = displayName ?? user?.email?.split("@")[0] ?? "Mon profil";
 
   return (
     <aside className="web-sidebar-aside" aria-label="Navigation Yunicity">
@@ -177,68 +170,43 @@ export function WebSidebar() {
             className="flex flex-col items-center gap-0.5 xl:items-stretch"
             aria-label="Navigation principale"
           >
-            {WEB_CITIZEN_NAV_PRIMARY.map((item) => (
-              <NavItem
-                key={item.href}
-                href={item.href}
-                label={item.label}
-                icon={item.icon}
-                active={isWebNavActive(pathname, item)}
-                badge={item.href === "/notifications" ? unreadNotifications : undefined}
-              />
-            ))}
+            {WEB_CITIZEN_SIDEBAR_NAV.filter((item) => item.href !== "/notifications").map(
+              (item) => (
+                <NavItem
+                  key={item.href}
+                  href={item.href}
+                  label={item.label}
+                  icon={item.icon}
+                  active={isWebNavActive(pathname, item)}
+                  size={item.tier === "secondary" ? "secondary" : "primary"}
+                />
+              ),
+            )}
+            {showCreateHub ? (
+              <div className="xl:hidden">
+                <WebSidebarTooltip label="Créer">
+                  <CreateHubTriggerButton variant="sidebar-icon" />
+                </WebSidebarTooltip>
+              </div>
+            ) : null}
+            {WEB_CITIZEN_SIDEBAR_NAV.filter((item) => item.href === "/notifications").map(
+              (item) => (
+                <NavItem
+                  key={item.href}
+                  href={item.href}
+                  label={item.label}
+                  icon={item.icon}
+                  active={isWebNavActive(pathname, item)}
+                  size="primary"
+                  badge={unreadNotifications}
+                />
+              ),
+            )}
           </nav>
-
-          <div
-            className="mx-0 my-1 hidden h-px shrink-0 bg-neutral-100 xl:mx-3 xl:block"
-            aria-hidden
-          />
-
-          <nav
-            className="flex flex-col items-center gap-0.5 xl:items-stretch xl:gap-0.5"
-            aria-label="Navigation secondaire"
-          >
-            {WEB_CITIZEN_NAV_SECONDARY.map((item) => (
-              <NavItem
-                key={item.href}
-                href={item.href}
-                label={item.label}
-                icon={item.icon}
-                active={isWebNavActive(pathname, item)}
-                size="secondary"
-              />
-            ))}
-          </nav>
-
-          {showCreateHub ? (
-            <div className="mt-8 flex flex-col items-center gap-3 xl:mt-10 xl:items-stretch">
-              <WebSidebarTooltip label="Créer">
-                <CreateHubTriggerButton variant="sidebar-icon" className="xl:hidden" />
-              </WebSidebarTooltip>
-              <CreateHubTriggerButton variant="sidebar-expanded" />
-            </div>
-          ) : null}
         </div>
 
         <div className="web-sidebar-footer border-t border-neutral-200/80 px-1 py-3 xl:px-0 xl:py-4">
-          <WebSidebarTooltip label={profileLabel}>
-            <Link
-              href="/profile/me"
-              aria-label={`Profil — ${profileLabel}`}
-              className="mx-auto flex h-[var(--web-sidebar-icon-hit)] w-[var(--web-sidebar-icon-hit)] items-center justify-center rounded-full transition hover:opacity-90 xl:mx-0 xl:h-auto xl:w-auto xl:justify-start xl:gap-3 xl:rounded-xl xl:p-2 xl:hover:bg-neutral-50"
-            >
-              <span className="xl:hidden">
-                <ProfileAvatar name={profileLabel} size="sm" />
-              </span>
-              <span className="hidden shrink-0 xl:inline-flex">
-                <ProfileAvatar name={profileLabel} size="md" />
-              </span>
-              <div className="hidden min-w-0 flex-1 xl:block">
-                <p className="truncate text-sm font-semibold text-neutral-900">{profileLabel}</p>
-                <p className="truncate text-xs text-neutral-500">{user?.email}</p>
-              </div>
-            </Link>
-          </WebSidebarTooltip>
+          <CitizenAccountMenu variant="sidebar" />
         </div>
       </div>
     </aside>
