@@ -6,13 +6,13 @@ import { Z_INDEX } from "@/lib/layout/z-index";
 import { Plus } from "lucide-react";
 
 type CreateHubFabProps = {
-  /** Masquer sur desktop xl où le trigger top nav est affiché. */
+  /** Classes additionnelles (ex. masquer sur une route). */
   className?: string;
 };
 
 /**
- * FAB global — bas-gauche (CREATORS-ARCH-01 : évite le conflit action rail vidéo).
- * Visible mobile / tablette ; masqué xl via classes responsives.
+ * FAB global — bas-gauche (CREATORS-ARCH-01).
+ * Visible uniquement < 480px (sans sidebar) : au-delà, le trigger noir dans la sidebar suffit.
  */
 export function CreateHubFab({ className = "" }: CreateHubFabProps) {
   const { openCreateHub, isOpen } = useCreateHub();
@@ -24,7 +24,7 @@ export function CreateHubFab({ className = "" }: CreateHubFabProps) {
       aria-label={CREATE_HUB_FAB_LABEL}
       aria-haspopup="dialog"
       aria-expanded={isOpen}
-      className={`create-hub-fab fixed inline-flex h-14 w-14 items-center justify-center rounded-full bg-yunicity-primary text-white shadow-lg transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 xl:hidden ${className}`}
+      className={`create-hub-fab fixed hidden max-[479px]:inline-flex h-14 w-14 items-center justify-center rounded-full bg-yunicity-primary text-white shadow-lg transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${className}`}
       style={{
         zIndex: Z_INDEX.CREATE_FAB,
         left: "max(1rem, env(safe-area-inset-left))",
