@@ -3,11 +3,13 @@
 import { YunicityLogo } from "@/components/brand";
 import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
 import { CitizenAccountMenu } from "@/components/layout/citizen-account-menu";
+import { CitizenYunicityMenu } from "@/components/layout/citizen-yunicity-menu";
 import { WebSidebarTooltip } from "@/components/layout/web-sidebar-tooltip";
 import { useNotificationUnread } from "@/hooks/use-citizen-chrome";
 import { useCreateHubVisibility } from "@/hooks/use-create-hub-visibility";
 import {
-  WEB_CITIZEN_SIDEBAR_NAV,
+  WEB_CITIZEN_NOTIFICATIONS_NAV,
+  WEB_CITIZEN_SIDEBAR_STRATEGIC,
   isWebNavActive,
   type WebNavItem,
 } from "@/lib/layout/web-layout-config";
@@ -138,12 +140,13 @@ function NavItem({
 }
 
 /**
- * WEB-HOME-01C — Colonne grille gauche, sticky 100dvh, Créer (compact) + menu compte en bas.
+ * WEB-HOME-01C — 4 onglets stratégiques + Menu Yunicity ; footer : Créer, Notifications, Compte.
  */
 export function WebSidebar() {
   const pathname = usePathname();
   const unreadNotifications = useNotificationUnread();
   const showCreateHub = useCreateHubVisibility();
+  const notificationsActive = isWebNavActive(pathname, WEB_CITIZEN_NOTIFICATIONS_NAV);
 
   return (
     <aside className="web-sidebar-aside" aria-label="Navigation Yunicity">
@@ -170,46 +173,39 @@ export function WebSidebar() {
             className="flex flex-col items-center gap-0.5 xl:items-stretch"
             aria-label="Navigation principale"
           >
-            {WEB_CITIZEN_SIDEBAR_NAV.filter((item) => item.href !== "/notifications").map(
-              (item) => (
-                <NavItem
-                  key={item.href}
-                  href={item.href}
-                  label={item.label}
-                  icon={item.icon}
-                  active={isWebNavActive(pathname, item)}
-                  size={item.tier === "secondary" ? "secondary" : "primary"}
-                />
-              ),
-            )}
-            {showCreateHub ? (
-              <div className="xl:hidden">
-                <WebSidebarTooltip label="Créer">
-                  <CreateHubTriggerButton variant="sidebar-icon" />
-                </WebSidebarTooltip>
-              </div>
-            ) : null}
-            {WEB_CITIZEN_SIDEBAR_NAV.filter((item) => item.href === "/notifications").map(
-              (item) => (
-                <NavItem
-                  key={item.href}
-                  href={item.href}
-                  label={item.label}
-                  icon={item.icon}
-                  active={isWebNavActive(pathname, item)}
-                  size="primary"
-                  badge={unreadNotifications}
-                />
-              ),
-            )}
+            {WEB_CITIZEN_SIDEBAR_STRATEGIC.map((item) => (
+              <NavItem
+                key={item.href}
+                href={item.href}
+                label={item.label}
+                icon={item.icon}
+                active={isWebNavActive(pathname, item)}
+                size="primary"
+              />
+            ))}
+            <CitizenYunicityMenu variant="sidebar" />
           </nav>
         </div>
 
-        <div className="web-sidebar-footer border-t border-neutral-200/80 px-1 py-3 xl:px-0 xl:py-4">
+        <div className="web-sidebar-footer flex flex-col items-center gap-0.5 border-t border-neutral-200/80 px-1 py-3 xl:items-stretch xl:px-0 xl:py-4">
+          {showCreateHub ? (
+            <div className="flex w-full justify-center xl:justify-stretch">
+              <WebSidebarTooltip label="Créer">
+                <CreateHubTriggerButton variant="sidebar-icon" />
+              </WebSidebarTooltip>
+            </div>
+          ) : null}
+          <NavItem
+            href={WEB_CITIZEN_NOTIFICATIONS_NAV.href}
+            label={WEB_CITIZEN_NOTIFICATIONS_NAV.label}
+            icon={WEB_CITIZEN_NOTIFICATIONS_NAV.icon}
+            active={notificationsActive}
+            size="primary"
+            badge={unreadNotifications}
+          />
           <CitizenAccountMenu variant="sidebar" />
         </div>
       </div>
     </aside>
   );
 }
-

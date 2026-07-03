@@ -5,8 +5,10 @@ import { useCitizenChrome } from "@/hooks/use-citizen-chrome";
 import { useAuth } from "@/lib/auth/auth-provider";
 import {
   WEB_CITIZEN_ACCOUNT_MENU,
+  isCitizenAccountMenuActive,
   isWebNavActive,
 } from "@/lib/layout/web-layout-config";
+import { computeCitizenFlyoutPosition, type CitizenFlyoutPosition } from "@/lib/layout/citizen-flyout-position";
 import { WebNavIcon } from "@/lib/layout/web-nav-icons";
 import { Z_INDEX } from "@/lib/layout/z-index";
 import { SETTINGS_LOGOUT } from "@yunicity/utils";
@@ -21,46 +23,6 @@ type CitizenAccountMenuProps = {
   variant?: "sidebar" | "top-nav";
 };
 
-type MenuPosition = {
-  top: number;
-  left: number;
-  transform?: string;
-};
-
-const MENU_WIDTH_PX = 320;
-
-function computeMenuPosition(
-  trigger: HTMLElement,
-  variant: "sidebar" | "top-nav",
-): MenuPosition {
-  const rect = trigger.getBoundingClientRect();
-  const menuWidth = Math.min(MENU_WIDTH_PX, window.innerWidth - 32);
-  const maxLeft = window.innerWidth - menuWidth - 16;
-
-  if (variant === "top-nav") {
-    return {
-      top: rect.bottom + 8,
-      left: Math.max(16, Math.min(rect.right - menuWidth, maxLeft)),
-    };
-  }
-
-  const compactSidebar = window.matchMedia("(max-width: 1279.98px)").matches;
-
-  if (compactSidebar) {
-    return {
-      top: rect.bottom,
-      left: Math.max(16, Math.min(rect.right + 12, maxLeft)),
-      transform: "translateY(-100%)",
-    };
-  }
-
-  return {
-    top: rect.top - 8,
-    left: Math.max(16, Math.min(rect.left, maxLeft)),
-    transform: "translateY(-100%)",
-  };
-}
-
 /**
  * Menu compte — Profil, Paramètres, Passport (+ déconnexion).
  * Inspiré du menu profil Facebook (chevron bas).
@@ -72,7 +34,7 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
+  const [menuPosition, setMenuPosition] = useState<CitizenFlyoutPosition | null>(null);
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -94,7 +56,7 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
   const updateMenuPosition = useCallback(() => {
     const trigger = triggerRef.current;
     if (!trigger) return;
-    setMenuPosition(computeMenuPosition(trigger, isTopNav ? "top-nav" : "sidebar"));
+    setMenuPosition(computeCitizenFlyoutPosition(trigger, isTopNav ? "top-nav" : "sidebar"));
   }, [isTopNav]);
 
   useLayoutEffect(() => {
@@ -142,9 +104,7 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
     router.push("/login");
   }
 
-  const accountMenuActive = WEB_CITIZEN_ACCOUNT_MENU.some((item) =>
-    isWebNavActive(pathname, item),
-  );
+  const accountMenuActive = isCitizenAccountMenuActive(pathname);
 
   const menuPanel =
     open && menuPosition ? (

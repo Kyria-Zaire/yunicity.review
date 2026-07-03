@@ -1,6 +1,7 @@
 "use client";
 
 import { CitizenAccountMenu } from "@/components/layout/citizen-account-menu";
+import { CitizenYunicityMenu } from "@/components/layout/citizen-yunicity-menu";
 import { YunicityLogo } from "@/components/brand";
 import {
   WEB_CITIZEN_TOP_NAV_CENTER,
@@ -55,22 +56,28 @@ export function CitizenTopNav() {
 
   return (
     <header className="citizen-top-nav sticky top-0 z-40 hidden border-b border-neutral-200/90 bg-white/95 backdrop-blur-md">
-      <div className="mx-auto flex h-[4.25rem] max-w-[1400px] items-center gap-6 px-6">
-        <YunicityLogo href="/feed" size="sm" showWordmark priority />
+      <div className="relative mx-auto flex h-[4.25rem] max-w-[1400px] items-center justify-between px-6">
+        <div className="relative z-10 shrink-0">
+          <YunicityLogo href="/feed" size="sm" showWordmark priority />
+        </div>
 
         <nav
-          className="flex min-w-0 flex-1 items-center justify-center gap-0.5 overflow-x-auto px-1 [scrollbar-width:none] xl:gap-1.5 [&::-webkit-scrollbar]:hidden"
+          className="pointer-events-none absolute inset-x-6 top-1/2 flex -translate-y-1/2 justify-center"
           aria-label="Navigation principale"
         >
-          {WEB_CITIZEN_TOP_NAV_CENTER.map((item) => (
-            <TopNavLink key={item.href} item={item} pathname={pathname} />
-          ))}
+          <div className="pointer-events-auto flex max-w-full items-center gap-0.5 overflow-x-auto [scrollbar-width:none] xl:gap-1.5 [&::-webkit-scrollbar]:hidden">
+            {WEB_CITIZEN_TOP_NAV_CENTER.map((item) => (
+              <TopNavLink key={item.href} item={item} pathname={pathname} />
+            ))}
+          </div>
         </nav>
 
-        <div className="flex shrink-0 items-center gap-2 xl:gap-3">
+        <div className="relative z-10 flex shrink-0 items-center gap-2 xl:gap-3">
+          <CitizenYunicityMenu variant="top-nav" />
+
           <nav
             className="hidden items-center gap-0.5 border-r border-neutral-200 pr-2 lg:flex xl:gap-1 xl:pr-3"
-            aria-label="Compte et lieux"
+            aria-label="Notifications"
           >
             {WEB_CITIZEN_TOP_NAV_UTILITY.map((item) => (
               <TopNavLink

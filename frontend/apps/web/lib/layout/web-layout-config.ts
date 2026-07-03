@@ -71,46 +71,59 @@ export const WEB_CITIZEN_NAV_SECONDARY: WebNavItem[] = [
   { href: "/settings", label: "Paramètres", icon: "settings", match: "prefix", tier: "secondary" },
 ];
 
-/** Sidebar — nav principale sans entrées regroupées dans le menu compte. */
-export const WEB_CITIZEN_SIDEBAR_PRIMARY: WebNavItem[] = WEB_CITIZEN_NAV_PRIMARY.filter(
-  (item) => !WEB_CITIZEN_ACCOUNT_MENU_HREFS.has(item.href),
-);
-
-/** Sidebar — nav secondaire sans Paramètres (menu compte). */
-export const WEB_CITIZEN_SIDEBAR_SECONDARY: WebNavItem[] = WEB_CITIZEN_NAV_SECONDARY.filter(
-  (item) => !WEB_CITIZEN_ACCOUNT_MENU_HREFS.has(item.href),
-);
-
-/**
- * Sidebar — liste unique sans trou (compte dans le menu profil).
- * Lieux / Proposer remontés pour combler Passport + Profil retirés.
- */
-export const WEB_CITIZEN_SIDEBAR_NAV: WebNavItem[] = [
-  ...WEB_CITIZEN_SIDEBAR_PRIMARY.filter((item) => item.href !== "/notifications"),
-  ...WEB_CITIZEN_SIDEBAR_SECONDARY,
-  ...WEB_CITIZEN_SIDEBAR_PRIMARY.filter((item) => item.href === "/notifications"),
+/** 4 onglets stratégiques — sidebar + top nav centre. */
+export const WEB_CITIZEN_SIDEBAR_STRATEGIC: WebNavItem[] = [
+  { href: "/feed", label: "Fil local", icon: "feed", match: "prefix", tier: "primary" },
+  { href: "/map", label: "Carte", icon: "map", match: "prefix", tier: "primary" },
+  { href: "/sortir", label: "Sortir", icon: "sortir", match: "prefix", tier: "primary" },
+  { href: "/videos", label: "Vidéos", icon: "videos", match: "prefix", tier: "primary" },
 ];
 
-/**
- * Onglets centraux — barre haute xl (`CitizenTopNav`).
- * Même périmètre que la sidebar primaire (hors compte / notifications).
- */
-export const WEB_CITIZEN_TOP_NAV_CENTER: WebNavItem[] = WEB_CITIZEN_SIDEBAR_PRIMARY.filter(
-  (item) => item.href !== "/notifications",
-);
-
-/**
- * Liens texte à droite — barre haute xl (avant recherche et menu utilisateur).
- */
-export const WEB_CITIZEN_TOP_NAV_UTILITY: WebNavItem[] = [
-  { href: "/notifications", label: "Notifications", icon: "notifications", match: "prefix" },
-  { href: "/places", label: "Lieux", icon: "place", match: "prefix" },
+/** Menu Yunicity (grille) — exploration et contribution. */
+export const WEB_CITIZEN_YUNICITY_MENU: WebNavItem[] = [
+  { href: "/search", label: "Recherche", icon: "search", match: "prefix", tier: "secondary" },
+  { href: "/neighborhoods", label: "Quartiers", icon: "neighborhoods", match: "prefix", tier: "secondary" },
+  { href: "/tribes", label: "Tribus", icon: "tribes", match: "prefix", tier: "secondary" },
+  { href: "/places", label: "Lieux", icon: "place", match: "prefix", tier: "secondary" },
   {
     href: "/organizations/request",
     label: "Proposer un lieu",
     icon: "proposePlace",
     match: "prefix",
+    tier: "secondary",
   },
+];
+
+export const YUNICITY_MENU_LABEL = "Menu Yunicity";
+
+export const WEB_CITIZEN_NOTIFICATIONS_NAV: WebNavItem = {
+  href: "/notifications",
+  label: "Notifications",
+  icon: "notifications",
+  match: "prefix",
+  tier: "primary",
+};
+
+/** Onglets centraux — barre haute xl (`CitizenTopNav`). */
+export const WEB_CITIZEN_TOP_NAV_CENTER: WebNavItem[] = WEB_CITIZEN_SIDEBAR_STRATEGIC;
+
+/** Droite top nav xl — notifications uniquement (Menu Yunicity = composant dédié). */
+export const WEB_CITIZEN_TOP_NAV_UTILITY: WebNavItem[] = [WEB_CITIZEN_NOTIFICATIONS_NAV];
+
+/** Alias legacy — même périmètre que les 4 onglets stratégiques. */
+export const WEB_CITIZEN_SIDEBAR_PRIMARY = WEB_CITIZEN_SIDEBAR_STRATEGIC;
+
+/** Alias legacy — entrées du menu grille Yunicity. */
+export const WEB_CITIZEN_SIDEBAR_SECONDARY = WEB_CITIZEN_YUNICITY_MENU;
+
+/**
+ * Liste plate legacy (mobile chrome, tests) — stratégique + menu Yunicity + notifications.
+ * La sidebar web utilise les constantes dédiées + `CitizenYunicityMenu`.
+ */
+export const WEB_CITIZEN_SIDEBAR_NAV: WebNavItem[] = [
+  ...WEB_CITIZEN_SIDEBAR_STRATEGIC,
+  ...WEB_CITIZEN_YUNICITY_MENU,
+  WEB_CITIZEN_NOTIFICATIONS_NAV,
 ];
 
 /** Liste complète — compat routes & mobile chrome legacy. */
@@ -135,4 +148,12 @@ export function isWebNavActive(pathname: string, item: WebNavItem): boolean {
     return pathname === item.href;
   }
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
+}
+
+export function isYunicityMenuActive(pathname: string): boolean {
+  return WEB_CITIZEN_YUNICITY_MENU.some((item) => isWebNavActive(pathname, item));
+}
+
+export function isCitizenAccountMenuActive(pathname: string): boolean {
+  return WEB_CITIZEN_ACCOUNT_MENU.some((item) => isWebNavActive(pathname, item));
 }
