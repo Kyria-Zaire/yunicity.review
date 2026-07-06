@@ -24,6 +24,7 @@ from app.models.organization import Organization
 from app.models.passport import PartnerOffer
 from app.models.post import Post
 from app.repositories.neighborhood_repository import NeighborhoodRepository
+from app.repositories.post_visibility import visible_posts_filter
 from app.schemas.neighborhood import (
     NeighborhoodContextEventItem,
     NeighborhoodContextOfferItem,
@@ -142,7 +143,11 @@ class NeighborhoodContextService:
     async def _recent_posts(self, neighborhood_id: uuid.UUID) -> list[NeighborhoodContextPostItem]:
         stmt = (
             select(Post)
-            .where(Post.neighborhood_id == neighborhood_id, Post.is_active.is_(True))
+            .where(
+                Post.neighborhood_id == neighborhood_id,
+                Post.is_active.is_(True),
+                visible_posts_filter(None),
+            )
             .order_by(Post.created_at.desc())
             .limit(NEIGHBORHOOD_CONTEXT_POSTS_LIMIT)
         )

@@ -332,6 +332,98 @@ async def test_soft_delete_post_author_and_moderator(
 
 
 @pytest.mark.asyncio
+async def test_non_public_post_hidden_from_other_users_feed_and_detail(
+    auth_client: AsyncClient,
+) -> None:
+    author = await _register(auth_client, suffix="-privauthor", city="Reims")
+    other = await _register(auth_client, suffix="-privviewer", city="Reims")
+    created = await auth_client.post(
+        "/api/v1/posts",
+        json={
+            "author_type": "citizen",
+            "body": "Secret pour mes amis proches",
+            "visibility": "close_friends",
+        },
+        headers=auth_header(author["access_token"]),
+    )
+    assert created.status_code == 201, created.text
+    post_id = created.json()["id"]
+
+    feed = await auth_client.get(
+        "/api/v1/feed",
+        headers=auth_header(other["access_token"]),
+    )
+    assert feed.status_code == 200, feed.text
+    assert post_id not in [item["id"] for item in feed.json()["items"]]
+
+    detail = await auth_client.get(
+        f"/api/v1/posts/{post_id}",
+        headers=auth_header(other["access_token"]),
+    )
+    assert detail.status_code == 404, detail.text
+
+    comments = await auth_client.get(
+        f"/api/v1/posts/{post_id}/comments",
+        headers=auth_header(other["access_token"]),
+    )
+    assert comments.status_code == 404, comments.text
+
+
+@pytest.mark.asyncio
+async def test_non_public_post_still_visible_to_author(
+    auth_client: AsyncClient,
+) -> None:
+    author = await _register(auth_client, suffix="-privowner", city="Reims")
+    created = await auth_client.post(
+        "/api/v1/posts",
+        json={
+            "author_type": "citizen",
+            "body": "Visible uniquement par moi pour l'instant",
+            "visibility": "followers",
+        },
+        headers=auth_header(author["access_token"]),
+    )
+    assert created.status_code == 201, created.text
+    post_id = created.json()["id"]
+
+    feed = await auth_client.get(
+        "/api/v1/feed",
+        headers=auth_header(author["access_token"]),
+    )
+    assert feed.status_code == 200, feed.text
+    assert post_id in [item["id"] for item in feed.json()["items"]]
+
+    detail = await auth_client.get(
+        f"/api/v1/posts/{post_id}",
+        headers=auth_header(author["access_token"]),
+    )
+    assert detail.status_code == 200, detail.text
+    assert detail.json()["composer"]["visibility"] == "followers"
+
+
+@pytest.mark.asyncio
+async def test_public_post_remains_visible_to_everyone(
+    auth_client: AsyncClient,
+) -> None:
+    author = await _register(auth_client, suffix="-pubauthor", city="Reims")
+    viewer = await _register(auth_client, suffix="-pubviewer", city="Reims")
+    created = await auth_client.post(
+        "/api/v1/posts",
+        json={"author_type": "citizen", "body": "Bonjour tout le monde"},
+        headers=auth_header(author["access_token"]),
+    )
+    assert created.status_code == 201, created.text
+    post_id = created.json()["id"]
+
+    feed = await auth_client.get(
+        "/api/v1/feed",
+        headers=auth_header(viewer["access_token"]),
+    )
+    assert feed.status_code == 200, feed.text
+    assert post_id in [item["id"] for item in feed.json()["items"]]
+
+
+@pytest.mark.asyncio
 async def test_published_offer_appears_in_feed(
     auth_client: AsyncClient,
     rbac_user_factory: RbacUserFactory,

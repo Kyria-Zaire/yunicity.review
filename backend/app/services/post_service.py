@@ -15,6 +15,7 @@ from app.repositories.like_repository import LikeRepository
 from app.repositories.organization_repository import OrganizationRepository
 from app.repositories.passport_repository import PassportRepository
 from app.repositories.post_repository import PostRepository
+from app.repositories.post_visibility import can_view_post
 from app.repositories.profile_repository import ProfileRepository
 from app.schemas.post import PostCreateRequest, PostResponse, PostUpdateRequest
 from app.services.feed_author_resolver import FeedAuthorResolver
@@ -142,6 +143,12 @@ class PostService:
                 detail="Publication introuvable.",
             )
         if post is None:
+            raise AppError(
+                status_code=404,
+                code="POST_NOT_FOUND",
+                detail="Publication introuvable.",
+            )
+        if not can_view_post(post, user.id):
             raise AppError(
                 status_code=404,
                 code="POST_NOT_FOUND",
