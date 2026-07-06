@@ -1,5 +1,7 @@
 import type { LocalEvent, Neighborhood, Tribe } from "@yunicity/types";
 
+import { isPendingYunicityHostedCoverUrl } from "./map-media-url";
+
 /** Images éditoriales Unsplash — carrousel « À la une » + cards moments (Reims demo). */
 
 export const NEIGHBORHOODS_PORTAL_HERO_IMAGE_URL =
@@ -66,6 +68,20 @@ export const NEIGHBORHOOD_EDITORIAL_IMAGE_CLAIRMARAIS =
 export const NEIGHBORHOOD_EDITORIAL_IMAGE_CROIX_ROUGE =
   "https://media.lhebdoduvendredi.com/illustrations/00039997_normal.jpg";
 
+/** Fallbacks quartiers sans visuel dédié en seed (placeholders hero.jpg 1×1). */
+const NEIGHBORHOOD_EDITORIAL_IMAGE_MURIGNY =
+  "https://images.unsplash.com/photo-1467269209834-ffaff5f779eb?auto=format&fit=crop&w=900&q=80";
+const NEIGHBORHOOD_EDITORIAL_IMAGE_JEAN_JAURES =
+  "https://images.unsplash.com/photo-1449824913935-59a10b85d9bf?auto=format&fit=crop&w=900&q=80";
+const NEIGHBORHOOD_EDITORIAL_IMAGE_LA_NEUVILLETTE =
+  "https://images.unsplash.com/photo-1444084316824-dc26d6657664?auto=format&fit=crop&w=900&q=80";
+const NEIGHBORHOOD_EDITORIAL_IMAGE_ORGEVAL =
+  "https://images.unsplash.com/photo-1477959856517-8250ed8a1ed4?auto=format&fit=crop&w=900&q=80";
+const NEIGHBORHOOD_EDITORIAL_IMAGE_CHEMIN_VERT =
+  "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=900&q=80";
+const NEIGHBORHOOD_EDITORIAL_IMAGE_MAISON_BLANCHE =
+  "https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=900&q=80";
+
 const NEIGHBORHOOD_SLUG_EDITORIAL_IMAGES: Record<string, string> = {
   "centre-ville": NEIGHBORHOOD_EDITORIAL_IMAGE_CENTRE_VILLE,
   "saint-remi": NEIGHBORHOOD_EDITORIAL_IMAGE_SAINT_REMI,
@@ -73,6 +89,12 @@ const NEIGHBORHOOD_SLUG_EDITORIAL_IMAGES: Record<string, string> = {
   cernay: NEIGHBORHOOD_EDITORIAL_IMAGE_CERNAY,
   clairmarais: NEIGHBORHOOD_EDITORIAL_IMAGE_CLAIRMARAIS,
   "croix-rouge": NEIGHBORHOOD_EDITORIAL_IMAGE_CROIX_ROUGE,
+  murigny: NEIGHBORHOOD_EDITORIAL_IMAGE_MURIGNY,
+  "jean-jaures": NEIGHBORHOOD_EDITORIAL_IMAGE_JEAN_JAURES,
+  "la-neuvillette": NEIGHBORHOOD_EDITORIAL_IMAGE_LA_NEUVILLETTE,
+  orgeval: NEIGHBORHOOD_EDITORIAL_IMAGE_ORGEVAL,
+  "chemin-vert": NEIGHBORHOOD_EDITORIAL_IMAGE_CHEMIN_VERT,
+  "maison-blanche": NEIGHBORHOOD_EDITORIAL_IMAGE_MAISON_BLANCHE,
 };
 
 function normalizeEditorialKey(value: string): string {
@@ -116,8 +138,9 @@ export function resolveTribeEditorialImage(tribe: Tribe): string | null {
 export function resolveNeighborhoodEditorialImage(
   neighborhood: Pick<Neighborhood, "slug" | "cover_image_url">,
 ): string | null {
-  if (neighborhood.cover_image_url?.trim()) {
-    return neighborhood.cover_image_url;
+  const cover = neighborhood.cover_image_url?.trim();
+  if (cover && !isPendingYunicityHostedCoverUrl(cover)) {
+    return cover;
   }
   const slugKey = normalizeEditorialKey(neighborhood.slug);
   return NEIGHBORHOOD_SLUG_EDITORIAL_IMAGES[slugKey] ?? null;

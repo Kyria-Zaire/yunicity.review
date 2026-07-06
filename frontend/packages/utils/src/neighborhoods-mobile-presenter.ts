@@ -1,8 +1,7 @@
 import type { CulturalPlaceListItem, LocalEvent, Neighborhood, PartnerOfferPublic, Tribe } from "@yunicity/types";
 
+import { resolveCulturalPlaceDisplayUrl } from "./cultural-place-display-image";
 import { culturalPlaceCategoryLabel } from "./cultural-place-labels";
-import { resolveCulturalPlaceHeroUrl } from "./cultural-place-media";
-import { resolveCulturalPlaceImageOverride } from "./event-hero-image";
 import { buildMapPlaceUrl } from "./explorer-links";
 import {
   buildNeighborhoodCards,
@@ -210,7 +209,7 @@ export function buildNeighborhoodsMobileRecommendedPlaces(input: {
       name: place.name,
       neighborhoodName: place.neighborhood?.display_name ?? city,
       categoryLabel: culturalPlaceCategoryLabel(place.category),
-      imageUrl: resolveCulturalPlaceImageOverride(place) ?? resolveCulturalPlaceHeroUrl(place),
+      imageUrl: resolveCulturalPlaceDisplayUrl(place, "thumbnail"),
       href: buildMapPlaceUrl(place.slug, { city }),
     }));
 }

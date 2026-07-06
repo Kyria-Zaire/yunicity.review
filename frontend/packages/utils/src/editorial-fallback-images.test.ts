@@ -107,6 +107,17 @@ describe("resolveNeighborhoodEditorialImage", () => {
       resolveNeighborhoodEditorialImage(baseNeighborhood({ slug: "boulingrin", cover_image_url: cover })),
     ).toBe(cover);
   });
+
+  it("ignore les hero.jpg seed placeholders et utilise l’éditorial slug", () => {
+    expect(
+      resolveNeighborhoodEditorialImage(
+        baseNeighborhood({
+          slug: "centre-ville",
+          cover_image_url: "https://yunicity.city/neighborhoods/reims/centre-ville/hero.jpg",
+        }),
+      ),
+    ).toBe(NEIGHBORHOOD_EDITORIAL_IMAGE_CENTRE_VILLE);
+  });
 });
 
 describe("resolveTribeEditorialImage", () => {
