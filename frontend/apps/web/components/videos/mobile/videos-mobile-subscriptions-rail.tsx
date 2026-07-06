@@ -103,7 +103,7 @@ export function VideosMobileSubscriptionsRail({ creators }: VideosMobileSubscrip
                 <Link href={href} className={`flex ${ITEM_WIDTH} shrink-0 flex-col items-center gap-1.5`}>
                   <div className="relative">
                     {isOnline ? (
-                      <span className="absolute -left-0.5 top-1/2 z-10 h-2 w-2 -translate-y-1/2 rounded-full bg-emerald-500 ring-2 ring-[#F4F5F7]" />
+                      <span className="absolute -bottom-0.5 -right-0.5 z-10 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
                     ) : null}
                     <div className={`rounded-full ${RING_SIZE} bg-gradient-to-tr p-[2.5px] ${ringClass}`}>
                       <div className="relative h-full w-full overflow-hidden rounded-full bg-white p-[3px]">
