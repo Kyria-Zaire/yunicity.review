@@ -143,16 +143,17 @@ export function FeedMobileStoriesRail({
           return (
             <li key={item.id}>
               <Link href={item.href} className={`flex ${ITEM_WIDTH} shrink-0 flex-col items-center gap-1.5`}>
-                <div className="relative">
-                  {item.hasActivity ? (
-                    <span className="absolute -left-0.5 top-1/2 z-10 h-2 w-2 -translate-y-1/2 rounded-full bg-emerald-500 ring-2 ring-[#F4F5F7]" />
-                  ) : null}
-                  <div className={`rounded-full ${RING_SIZE} ${ringClass}`}>
-                    <div className="relative h-full w-full overflow-hidden rounded-full bg-white p-[3px]">
-                      {inner}
-                      <StoryPlayOverlay />
-                    </div>
+                <div className={`relative rounded-full ${RING_SIZE} ${ringClass}`}>
+                  <div className="relative h-full w-full overflow-hidden rounded-full bg-white p-[3px]">
+                    {inner}
+                    <StoryPlayOverlay />
                   </div>
+                  {item.hasActivity ? (
+                    <span
+                      className="absolute bottom-0 right-0 z-20 h-3 w-3 rounded-full border-2 border-white bg-emerald-500"
+                      aria-hidden
+                    />
+                  ) : null}
                 </div>
                 <span className="max-w-full truncate text-center text-[11px] font-semibold text-neutral-900">
                   {storyHandle(item.name, item.subtitle)}

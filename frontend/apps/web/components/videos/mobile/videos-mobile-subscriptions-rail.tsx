@@ -101,27 +101,28 @@ export function VideosMobileSubscriptionsRail({ creators }: VideosMobileSubscrip
             return (
               <li key={creator.authorUserId}>
                 <Link href={href} className={`flex ${ITEM_WIDTH} shrink-0 flex-col items-center gap-1.5`}>
-                  <div className="relative">
-                    {isOnline ? (
-                      <span className="absolute -bottom-0.5 -right-0.5 z-10 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
-                    ) : null}
-                    <div className={`rounded-full ${RING_SIZE} bg-gradient-to-tr p-[2.5px] ${ringClass}`}>
-                      <div className="relative h-full w-full overflow-hidden rounded-full bg-white p-[3px]">
-                        {creator.avatarUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={creator.avatarUrl}
-                            alt=""
-                            className="h-full w-full rounded-full object-cover"
-                          />
-                        ) : (
-                          <span className="flex h-full w-full items-center justify-center rounded-full bg-yunicity-primary text-sm font-bold text-white">
-                            {initials(creator.displayName)}
-                          </span>
-                        )}
-                        <CreatorPlayOverlay />
-                      </div>
+                  <div className={`relative rounded-full ${RING_SIZE} bg-gradient-to-tr p-[2.5px] ${ringClass}`}>
+                    <div className="relative h-full w-full overflow-hidden rounded-full bg-white p-[3px]">
+                      {creator.avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={creator.avatarUrl}
+                          alt=""
+                          className="h-full w-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="flex h-full w-full items-center justify-center rounded-full bg-yunicity-primary text-sm font-bold text-white">
+                          {initials(creator.displayName)}
+                        </span>
+                      )}
+                      <CreatorPlayOverlay />
                     </div>
+                    {isOnline ? (
+                      <span
+                        className="absolute bottom-0 right-0 z-20 h-3 w-3 rounded-full border-2 border-white bg-emerald-500"
+                        aria-hidden
+                      />
+                    ) : null}
                   </div>
                   <span className="max-w-full truncate text-center text-[11px] font-semibold text-neutral-900">
                     {creator.handle}
