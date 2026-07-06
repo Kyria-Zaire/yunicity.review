@@ -2,19 +2,29 @@
 
 import type { CulturalPlaceListItem } from "@yunicity/types";
 
+import { isPendingYunicityHostedCoverUrl } from "./map-media-url";
+
 export type CulturalPlaceImageSource = Pick<
   CulturalPlaceListItem,
   "image_url" | "hero_image_url" | "thumbnail_image_url" | "photo_credit" | "image_credit" | "source_name"
 >;
+
+function usableCulturalPlaceImageUrl(url: string | null | undefined): string | null {
+  const trimmed = url?.trim();
+  if (!trimmed || isPendingYunicityHostedCoverUrl(trimmed)) {
+    return null;
+  }
+  return trimmed;
+}
 
 /** Preferred display URL: thumbnail → hero → legacy image_url. */
 export function resolveCulturalPlaceImageUrl(
   place: CulturalPlaceImageSource,
 ): string | null {
   return (
-    place.thumbnail_image_url?.trim() ||
-    place.hero_image_url?.trim() ||
-    place.image_url?.trim() ||
+    usableCulturalPlaceImageUrl(place.thumbnail_image_url) ||
+    usableCulturalPlaceImageUrl(place.hero_image_url) ||
+    usableCulturalPlaceImageUrl(place.image_url) ||
     null
   );
 }
@@ -22,13 +32,22 @@ export function resolveCulturalPlaceImageUrl(
 export function resolveCulturalPlaceHeroUrl(
   place: CulturalPlaceImageSource,
 ): string | null {
-  return place.hero_image_url?.trim() || place.image_url?.trim() || null;
+  return (
+    usableCulturalPlaceImageUrl(place.hero_image_url) ||
+    usableCulturalPlaceImageUrl(place.image_url) ||
+    null
+  );
 }
 
 export function resolveCulturalPlaceThumbnailUrl(
   place: CulturalPlaceImageSource,
 ): string | null {
-  return place.thumbnail_image_url?.trim() || place.hero_image_url?.trim() || place.image_url?.trim() || null;
+  return (
+    usableCulturalPlaceImageUrl(place.thumbnail_image_url) ||
+    usableCulturalPlaceImageUrl(place.hero_image_url) ||
+    usableCulturalPlaceImageUrl(place.image_url) ||
+    null
+  );
 }
 
 export function hasCulturalPlaceImage(place: CulturalPlaceImageSource): boolean {

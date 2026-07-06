@@ -49,6 +49,10 @@ const CULTURAL_PLACE_SLUG_IMAGE_OVERRIDES: Record<string, string> = {
     "https://images.unsplash.com/photo-1449824913935-59a10b85d9bf?auto=format&fit=crop&w=900&q=80",
   "villa-demoiselle":
     "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=900&q=80",
+  "frac-grand-est":
+    "https://images.unsplash.com/photo-1549887534-1541e9326642?auto=format&fit=crop&w=900&q=80",
+  "planetarium-de-reims":
+    "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=900&q=80",
 };
 
 export type CulturalPlaceImageVariant = "hero" | "thumbnail";

@@ -10,7 +10,7 @@ import {
   buildPlaceMobileDetailHeroStatsLine,
   buildPlaceMobileDetailHeroStatusLine,
   countPlaceMobileDetailPhotos,
-  resolveCulturalPlaceHeroUrl,
+  resolveCulturalPlaceDisplayUrl,
 } from "@yunicity/utils";
 import { Camera, Heart } from "lucide-react";
 
@@ -21,7 +21,7 @@ type PlaceMobileDetailHeroProps = {
 
 /** Hero détail lieu mobile (MOBILE-LIEUX-02). */
 export function PlaceMobileDetailHero({ place, onOpenPhotos }: PlaceMobileDetailHeroProps) {
-  const heroUrl = resolveCulturalPlaceHeroUrl(place);
+  const heroUrl = resolveCulturalPlaceDisplayUrl(place, "hero");
   const categoryLabel = buildPlaceMobileDetailCategoryLabel(place);
   const statusLine = buildPlaceMobileDetailHeroStatusLine(place);
   const statsLine = buildPlaceMobileDetailHeroStatsLine(place);

@@ -68,4 +68,15 @@ describe("cultural-place-display-image", () => {
     );
     expect(url).toBeNull();
   });
+
+  it("utilise l’override FRAC plutôt qu’une cover seed pending", () => {
+    const url = resolveCulturalPlaceDisplayUrl(
+      basePlace({
+        slug: "frac-grand-est",
+        hero_image_url: "https://yunicity.city/places/reims/frac-grand-est/cover.jpg",
+      }),
+    );
+    expect(url).toContain("unsplash.com");
+    expect(url).not.toContain("yunicity.city/places");
+  });
 });

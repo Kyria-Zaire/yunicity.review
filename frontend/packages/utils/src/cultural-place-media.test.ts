@@ -58,6 +58,15 @@ describe("resolveCulturalPlaceHeroUrl", () => {
       }),
     ).toBe("https://example.com/hero.jpg");
   });
+
+  it("ignore les covers seed non déployées sur yunicity.city", () => {
+    expect(
+      resolveCulturalPlaceHeroUrl({
+        ...base,
+        hero_image_url: "https://yunicity.city/places/reims/frac-grand-est/cover.jpg",
+      }),
+    ).toBeNull();
+  });
 });
 
 describe("resolveCulturalPlaceThumbnailUrl", () => {

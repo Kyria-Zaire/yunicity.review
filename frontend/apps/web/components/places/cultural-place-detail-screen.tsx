@@ -10,7 +10,7 @@ import {
   culturalPlaceCategoryLabel,
   culturalPlaceLocationLine,
   culturalPlaceMapHref,
-  resolveCulturalPlaceHeroUrl,
+  resolveCulturalPlaceDisplayUrl,
 } from "@yunicity/utils";
 import { ChevronLeft, MapPin, Share2 } from "lucide-react";
 import Link from "next/link";
@@ -24,7 +24,7 @@ type CulturalPlaceDetailScreenProps = {
 
 export function CulturalPlaceDetailScreen({ place }: CulturalPlaceDetailScreenProps) {
   const [shareHint, setShareHint] = useState<string | null>(null);
-  const heroUrl = resolveCulturalPlaceHeroUrl(place);
+  const heroUrl = resolveCulturalPlaceDisplayUrl(place, "hero");
 
   async function handleShare() {
     const url = typeof window !== "undefined" ? window.location.href : "";
