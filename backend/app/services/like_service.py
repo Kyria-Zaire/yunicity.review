@@ -11,6 +11,7 @@ from app.core.errors import AppError
 from app.models.like import Like
 from app.repositories.like_repository import LikeRepository
 from app.repositories.post_repository import PostRepository
+from app.repositories.post_visibility import can_view_post
 from app.services.social_notification_hooks import notify_post_liked
 from app.services.tribe_authorization import TribeAuthorizationService
 
@@ -23,7 +24,7 @@ class LikeService:
 
     async def like_post(self, user_id: uuid.UUID, post_id: uuid.UUID) -> None:
         post = await self._posts.get_by_id(post_id, active_only=True)
-        if post is None:
+        if post is None or not can_view_post(post, user_id):
             raise AppError(
                 status_code=404,
                 code="POST_NOT_FOUND",
@@ -45,7 +46,7 @@ class LikeService:
 
     async def unlike_post(self, user_id: uuid.UUID, post_id: uuid.UUID) -> None:
         post = await self._posts.get_by_id(post_id)
-        if post is None:
+        if post is None or not can_view_post(post, user_id):
             raise AppError(
                 status_code=404,
                 code="POST_NOT_FOUND",
