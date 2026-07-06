@@ -3159,6 +3159,7 @@ export {
   VIDEOS_MOBILE_SEARCH_PLACEHOLDER,
   VIDEOS_MOBILE_RECENT_TITLE,
   VIDEOS_MOBILE_PUBLISH_ARIA,
+  VIDEOS_MOBILE_PUBLISH_LABEL,
 } from "./local-video-portal-labels";
 export {
   formatVideoDetailAuthorLine,
