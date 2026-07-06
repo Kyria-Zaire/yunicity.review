@@ -45,6 +45,7 @@ import { Crosshair, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
 type OrganizationRequestWizardProps = {
+  variant?: "desktop" | "mobile";
   step: OrganizationRequestStepId;
   draft: OrganizationRequestDraft;
   neighborhoods: Neighborhood[];
@@ -80,6 +81,7 @@ function ReviewRow({ label, value }: { label: string; value: string | null | und
 }
 
 export function OrganizationRequestWizard({
+  variant = "desktop",
   step,
   draft,
   neighborhoods,
@@ -93,9 +95,16 @@ export function OrganizationRequestWizard({
   onSubmit,
 }: OrganizationRequestWizardProps) {
   const shortDescCount = draft.shortDescription.length;
+  const isMobile = variant === "mobile";
 
   return (
-    <div className="rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-sm sm:p-8">
+    <div
+      className={
+        isMobile
+          ? "rounded-xl border border-neutral-200/90 bg-white p-4 shadow-sm"
+          : "rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-sm sm:p-8"
+      }
+    >
       {validationMessage ? (
         <p className="mb-5 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
           {validationMessage}
@@ -104,8 +113,14 @@ export function OrganizationRequestWizard({
 
       {step === "info" ? (
         <div>
-          <h2 className="text-xl font-bold text-neutral-900">{ORG_REQUEST_INFO_TITLE}</h2>
-          <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+          <h2
+            className={
+              isMobile ? "text-base font-bold text-neutral-900" : "text-xl font-bold text-neutral-900"
+            }
+          >
+            {ORG_REQUEST_INFO_TITLE}
+          </h2>
+          <div className={`mt-4 ${isMobile ? "space-y-5" : "mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]"}`}>
             <div className="space-y-5">
               <label className="block space-y-1.5 text-sm">
                 <FieldLabel required>{ORG_REQUEST_FIELD_NAME}</FieldLabel>
@@ -206,7 +221,13 @@ export function OrganizationRequestWizard({
 
       {step === "details" ? (
         <div className="space-y-5">
-          <h2 className="text-xl font-bold text-neutral-900">{ORG_REQUEST_DETAILS_TITLE}</h2>
+          <h2
+            className={
+              isMobile ? "text-base font-bold text-neutral-900" : "text-xl font-bold text-neutral-900"
+            }
+          >
+            {ORG_REQUEST_DETAILS_TITLE}
+          </h2>
           <label className="block space-y-1.5 text-sm">
             <FieldLabel>{ORG_REQUEST_FIELD_WEBSITE}</FieldLabel>
             <input
@@ -262,7 +283,13 @@ export function OrganizationRequestWizard({
 
       {step === "photos" ? (
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-neutral-900">{ORG_REQUEST_PHOTOS_TITLE}</h2>
+          <h2
+            className={
+              isMobile ? "text-base font-bold text-neutral-900" : "text-xl font-bold text-neutral-900"
+            }
+          >
+            {ORG_REQUEST_PHOTOS_TITLE}
+          </h2>
           <p className="text-sm leading-relaxed text-neutral-600">{ORG_REQUEST_PHOTOS_BODY}</p>
           <p className="rounded-xl bg-neutral-50 px-4 py-3 text-sm text-neutral-600">
             {ORG_REQUEST_PHOTOS_RULE}
@@ -272,7 +299,13 @@ export function OrganizationRequestWizard({
 
       {step === "review" ? (
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-neutral-900">{ORG_REQUEST_REVIEW_TITLE}</h2>
+          <h2
+            className={
+              isMobile ? "text-base font-bold text-neutral-900" : "text-xl font-bold text-neutral-900"
+            }
+          >
+            {ORG_REQUEST_REVIEW_TITLE}
+          </h2>
           <p className="text-sm text-neutral-600">{ORG_REQUEST_REVIEW_BODY}</p>
           <dl className="mt-4 rounded-xl border border-neutral-100 bg-neutral-50/60 px-4">
             <ReviewRow label="Nom" value={draft.name} />
@@ -290,7 +323,13 @@ export function OrganizationRequestWizard({
 
       {step === "publish" ? (
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-neutral-900">{ORG_REQUEST_PUBLISH_TITLE}</h2>
+          <h2
+            className={
+              isMobile ? "text-base font-bold text-neutral-900" : "text-xl font-bold text-neutral-900"
+            }
+          >
+            {ORG_REQUEST_PUBLISH_TITLE}
+          </h2>
           <p className="text-sm leading-relaxed text-neutral-600">{ORG_REQUEST_PUBLISH_BODY}</p>
           <div className="rounded-2xl bg-[#EEF0FF] p-5">
             <div className="flex items-start gap-3">
@@ -304,7 +343,13 @@ export function OrganizationRequestWizard({
         </div>
       ) : null}
 
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 pt-6">
+      <div
+        className={
+          isMobile
+            ? "mt-6 flex items-center justify-between gap-3 border-t border-neutral-100 pt-4"
+            : "mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 pt-6"
+        }
+      >
         {step === "info" ? (
           <Link
             href="/places"

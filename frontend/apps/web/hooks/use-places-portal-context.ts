@@ -126,6 +126,7 @@ export function usePlacesPortalContext(cityParam: string) {
     stats,
     featured,
     recentPlaces,
+    filteredPlaces,
     partnerCards,
     partners,
     showPartnersOnly,

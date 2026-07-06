@@ -21,6 +21,7 @@ from app.services.feed_author_resolver import FeedAuthorResolver
 from app.services.feed_post_mapper import to_post_response
 from app.services.organization_membership_service import OrganizationMembershipService
 from app.services.passport_level_hooks import evaluate_passport_level_after_activity
+from app.services.post_composer_mapper import apply_composer_create_payload
 from app.services.rbac_service import RbacService
 
 
@@ -48,6 +49,7 @@ class PostService:
                 body=payload.body,
                 media_url=payload.media_url,
             )
+            apply_composer_create_payload(post, payload)
             if payload.location:
                 post.set_location(payload.location.latitude, payload.location.longitude)
             await self._posts.add(post)
@@ -80,6 +82,7 @@ class PostService:
             body=payload.body,
             media_url=payload.media_url,
         )
+        apply_composer_create_payload(post, payload)
         if payload.location:
             post.set_location(payload.location.latitude, payload.location.longitude)
         await self._posts.add(post)

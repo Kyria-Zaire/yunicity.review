@@ -71,17 +71,35 @@ export const WEB_CITIZEN_NAV_SECONDARY: WebNavItem[] = [
   { href: "/settings", label: "Paramètres", icon: "settings", match: "prefix", tier: "secondary" },
 ];
 
-/** 4 onglets stratégiques — sidebar + top nav centre. */
+/** 5 onglets stratégiques — sidebar + top nav centre (desktop / tablette). */
 export const WEB_CITIZEN_SIDEBAR_STRATEGIC: WebNavItem[] = [
   { href: "/feed", label: "Fil local", icon: "feed", match: "prefix", tier: "primary" },
+  { href: "/videos", label: "Vidéos", icon: "videos", match: "prefix", tier: "primary" },
   { href: "/map", label: "Carte", icon: "map", match: "prefix", tier: "primary" },
   { href: "/sortir", label: "Sortir", icon: "sortir", match: "prefix", tier: "primary" },
-  { href: "/videos", label: "Vidéos", icon: "videos", match: "prefix", tier: "primary" },
+  { href: "/search", label: "Recherche", icon: "search", match: "prefix", tier: "primary" },
 ];
+
+/** Bottom nav mobile — onglets stratégiques (MOBILE-REFONDE-01). Menu Yunicity = FAB flottant. */
+export const WEB_CITIZEN_MOBILE_BOTTOM_NAV: WebNavItem[] = [
+  { href: "/feed", label: "Fil local", icon: "feed", match: "prefix", tier: "primary" },
+  { href: "/videos", label: "Vidéos", icon: "videos", match: "prefix", tier: "primary" },
+  { href: "/map", label: "Carte", icon: "map", match: "prefix", tier: "primary" },
+  { href: "/sortir", label: "Sortir", icon: "sortir", match: "prefix", tier: "primary" },
+  { href: "/search", label: "Recherche", icon: "search", match: "prefix", tier: "primary" },
+];
+
+/** @deprecated Menu Yunicity retiré de la bottom nav — alias legacy. */
+export const WEB_CITIZEN_MOBILE_BOTTOM_NAV_BEFORE_YUNICITY = WEB_CITIZEN_MOBILE_BOTTOM_NAV;
+
+/** @deprecated Menu Yunicity = FAB flottant. */
+export const WEB_CITIZEN_MOBILE_BOTTOM_NAV_AFTER_YUNICITY: WebNavItem[] = [];
+
+/** Libellé court du bouton Menu Yunicity (variant bottom-nav legacy). */
+export const WEB_CITIZEN_MOBILE_BOTTOM_NAV_YUNICITY_TAB_LABEL = "Menu";
 
 /** Menu Yunicity (grille) — exploration et contribution. */
 export const WEB_CITIZEN_YUNICITY_MENU: WebNavItem[] = [
-  { href: "/search", label: "Recherche", icon: "search", match: "prefix", tier: "secondary" },
   { href: "/neighborhoods", label: "Quartiers", icon: "neighborhoods", match: "prefix", tier: "secondary" },
   { href: "/tribes", label: "Tribus", icon: "tribes", match: "prefix", tier: "secondary" },
   { href: "/places", label: "Lieux", icon: "place", match: "prefix", tier: "secondary" },
@@ -110,7 +128,7 @@ export const WEB_CITIZEN_TOP_NAV_CENTER: WebNavItem[] = WEB_CITIZEN_SIDEBAR_STRA
 /** Droite top nav xl — notifications uniquement (Menu Yunicity = composant dédié). */
 export const WEB_CITIZEN_TOP_NAV_UTILITY: WebNavItem[] = [WEB_CITIZEN_NOTIFICATIONS_NAV];
 
-/** Alias legacy — même périmètre que les 4 onglets stratégiques. */
+/** Alias legacy — même périmètre que les onglets stratégiques. */
 export const WEB_CITIZEN_SIDEBAR_PRIMARY = WEB_CITIZEN_SIDEBAR_STRATEGIC;
 
 /** Alias legacy — entrées du menu grille Yunicity. */

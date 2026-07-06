@@ -79,6 +79,12 @@ class CommentService:
                 detail="Publication introuvable.",
             )
         await TribeAuthorizationService(self._session).require_can_interact_with_post(post, user)
+        if not post.allow_comments:
+            raise AppError(
+                status_code=403,
+                code="COMMENTS_DISABLED",
+                detail="Les commentaires sont désactivés sur cette publication.",
+            )
         comment = Comment(user_id=user.id, post_id=post_id, body=payload.body)
         await self._comments.add(comment)
         await self._posts.increment_comment_count(post_id, 1)

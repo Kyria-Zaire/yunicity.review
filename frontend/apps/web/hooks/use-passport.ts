@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/lib/auth/auth-provider";
 import type { PassportMe, ProfileMe } from "@yunicity/types";
-import { isAuthError, isPassportNotActiveError } from "@yunicity/utils";
+import { isAuthError } from "@yunicity/utils";
 import { useCallback, useEffect, useState } from "react";
 
 export function usePassport() {
@@ -24,15 +24,7 @@ export function usePassport() {
     try {
       const profileData = await yunicityApi.getProfileMe();
       setProfile(profileData);
-      try {
-        setPassport(await yunicityApi.getPassportMe());
-      } catch (err) {
-        if (isPassportNotActiveError(err) || (isAuthError(err) && err.status === 404)) {
-          setPassport(null);
-        } else {
-          throw err;
-        }
-      }
+      setPassport(await yunicityApi.getPassportMeIfActive(profileData));
     } catch (err) {
       setError(isAuthError(err) ? err.message : "Impossible de charger le passeport.");
     } finally {

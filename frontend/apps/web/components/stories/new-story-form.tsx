@@ -62,7 +62,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const ACCEPTED_TYPES = "image/jpeg,image/png,image/webp,video/mp4";
+const ACCEPTED_TYPES = "image/jpeg,image/png,image/webp,video/mp4,video/webm";
 const MAX_BYTES = STORIES_MEDIA_MAX_MB * 1024 * 1024;
 
 export type NewStoryPreviewState = {

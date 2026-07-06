@@ -1,6 +1,7 @@
 "use client";
 
 import { TribesAppShell } from "@/components/tribes/tribes-app-shell";
+import { TribeDetailMobileView } from "@/components/tribes/mobile";
 import { TribeDetailAboutGrid } from "@/components/tribes/tribe-detail-about-grid";
 import { TribeDetailBreadcrumbs } from "@/components/tribes/tribe-detail-breadcrumbs";
 import { TribeDetailEventsSection } from "@/components/tribes/tribe-detail-events-section";
@@ -139,7 +140,28 @@ export function TribeDetailScreen({ slug, city }: { slug: string; city: string }
 
   return (
     <TribesAppShell>
-      <div className="mx-auto w-full max-w-[1400px] px-3 pb-12 sm:px-4 lg:px-6">
+      <TribeDetailMobileView
+        tribe={currentTribe}
+        city={city}
+        slug={slug}
+        events={events}
+        places={places}
+        members={members}
+        membersTotal={membersTotal}
+        postsPreview={postsPreview}
+        isAuthenticated={isAuthenticated}
+        currentUserId={user?.id ?? null}
+        joining={joining}
+        leaving={leaving}
+        actionError={actionError}
+        onJoin={async (accepted) => {
+          await join(accepted);
+        }}
+        onLeave={leave}
+        onShare={() => void shareTribe()}
+      />
+
+      <div className="web-desktop-tribe-detail-only mx-auto w-full max-w-[1400px] px-3 pb-12 sm:px-4 lg:px-6">
         <div className="grid gap-8 xl:grid-cols-[15rem_minmax(0,1fr)] xl:gap-10">
           <TribeDetailInternalSidebar memberTribes={sidebarTribes} city={city} />
 

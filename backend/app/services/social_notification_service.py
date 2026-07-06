@@ -35,6 +35,7 @@ from app.schemas.social_notification import (
     UserNotificationListResponse,
     UserNotificationPreferencesResponse,
     UserNotificationPreferencesUpdate,
+    UserNotificationSummaryResponse,
 )
 from app.services.notification_service import NotificationService
 
@@ -273,6 +274,19 @@ class SocialNotificationService:
             unread_count=unread,
             total=len(items),
         )
+
+    async def get_inbox_summary(self, user: User) -> UserNotificationSummaryResponse:
+        now = datetime.now(UTC)
+        week_start = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(
+            days=now.weekday()
+        )
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        counts = await self._notifications.fetch_inbox_summary_counts(
+            user.id,
+            week_start=week_start,
+            month_start=month_start,
+        )
+        return UserNotificationSummaryResponse(**counts)
 
     async def mark_read(
         self,

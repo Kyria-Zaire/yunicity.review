@@ -21,6 +21,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { SearchAppShell } from "@/components/search/search-app-shell";
+import { SearchMobileView } from "@/components/search/mobile";
 import { SearchExplorerCategoryChips } from "@/components/search/search-explorer-category-chips";
 import { SearchExplorerLanding } from "@/components/search/search-explorer-landing";
 import { SearchExplorerSidebar } from "@/components/search/search-explorer-sidebar";
@@ -93,7 +94,26 @@ function SearchScreenInner({ urlQuery, urlCity, urlTab }: { urlQuery: string; ur
 
   return (
     <SearchAppShell>
-      <div className="mx-auto w-full max-w-[1400px] px-3 py-2 sm:px-4 sm:py-4">
+      <SearchMobileView
+        city={search.city}
+        query={search.query}
+        onQueryChange={search.setQuery}
+        typeFilter={search.typeFilter}
+        onTypeFilterChange={handleTabChange}
+        showExplorer={showExplorer}
+        explorer={explorer}
+        explorerLoading={explorer.loading}
+        explorerError={explorer.error}
+        onExplorerRetry={explorer.reload}
+        searchLoading={search.loading}
+        searchError={Boolean(search.error)}
+        onSearchRetry={search.retry}
+        groups={search.groups}
+        onLoadMore={search.loadMoreForGroup}
+        loadingMore={search.loading}
+      />
+
+      <div className="web-desktop-search-only mx-auto w-full max-w-[1400px] px-3 py-2 sm:px-4 sm:py-4">
         <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8 xl:grid-cols-[16rem_minmax(0,1fr)]">
           {showExplorer ? (
             <SearchExplorerSidebar

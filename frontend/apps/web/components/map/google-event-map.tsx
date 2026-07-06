@@ -54,6 +54,7 @@ export type GoogleEventMapProps = {
   recenterSignal?: number;
   flyToTarget?: LatLon | null;
   fullHeight?: boolean;
+  hideRecenterButton?: boolean;
 };
 
 function toBoundsLike(bounds: google.maps.LatLngBounds): MapBoundsLike {
@@ -126,6 +127,7 @@ export function GoogleEventMap({
   recenterSignal = 0,
   flyToTarget = null,
   fullHeight = false,
+  hideRecenterButton = false,
 }: GoogleEventMapProps) {
   const status = useGoogleMaps(apiKey);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -161,6 +163,7 @@ export function GoogleEventMap({
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: false,
+      rotateControl: false,
       zoomControl: true,
       gestureHandling: "greedy",
       disableDoubleClickZoom: false,
@@ -349,7 +352,7 @@ export function GoogleEventMap({
         </div>
       ) : null}
 
-      {status === "ready" ? (
+      {status === "ready" && !hideRecenterButton ? (
         <button
           type="button"
           onClick={handleRecenter}

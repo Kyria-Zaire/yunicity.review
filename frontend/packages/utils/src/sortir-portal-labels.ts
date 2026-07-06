@@ -88,3 +88,20 @@ export const SORTIR_FEATURED_LINK_NEIGHBORHOODS = "Quartiers";
 export const SORTIR_FEATURED_LINK_PLACES = "Lieux";
 export const SORTIR_FEATURED_LINK_TRIBES = "Tribus";
 export const SORTIR_FEATURED_LINK_MAP = "Carte";
+
+/** Copy mobile Sortir (MOBILE-SORTIR-01). */
+export const SORTIR_MOBILE_SEARCH_PLACEHOLDER =
+  "Rechercher un événement, un lieu, une soirée…";
+export const SORTIR_MOBILE_FILTERS_ARIA = "Filtres Sortir";
+export const SORTIR_MOBILE_CATEGORY_ALL = "Tous";
+export const SORTIR_MOBILE_CATEGORY_CONCERTS = "Concerts";
+export const SORTIR_MOBILE_CATEGORY_PARTIES = "Soirées";
+export const SORTIR_MOBILE_CATEGORY_EXPOS = "Expos";
+export const SORTIR_MOBILE_CATEGORY_SPORT = "Sport";
+export const SORTIR_MOBILE_CATEGORY_OTHER = "Autres";
+export const SORTIR_MOBILE_FEATURED_TITLE = "À ne pas manquer 🔥";
+export const SORTIR_MOBILE_UPCOMING_TITLE = "Prochains événements";
+export const SORTIR_MOBILE_POPULAR_PLACES_TITLE = "Lieux populaires";
+export const SORTIR_MOBILE_VIEW_ALL = "Voir tout";
+export const SORTIR_MOBILE_BOOKMARK_ARIA = "Enregistrer";
+export const SORTIR_MOBILE_BOOKMARK_SOON = "Enregistrer — bientôt disponible";

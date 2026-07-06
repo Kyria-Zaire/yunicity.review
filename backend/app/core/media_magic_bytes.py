@@ -38,6 +38,10 @@ def _is_iso_bmff(data: bytes) -> bool:
     return len(data) >= 8 and data[4:8] == b"ftyp"
 
 
+def _is_webm(data: bytes) -> bool:
+    return len(data) >= 4 and data[:4] == b"\x1a\x45\xdf\xa3"
+
+
 _MEDIA_SIGNATURES: tuple[MediaSignature, ...] = (
     MediaSignature(frozenset({"image/jpeg"}), _is_jpeg),
     MediaSignature(frozenset({"image/png"}), _is_png),
@@ -46,6 +50,7 @@ _MEDIA_SIGNATURES: tuple[MediaSignature, ...] = (
         frozenset({"video/mp4", "video/quicktime"}),
         _is_iso_bmff,
     ),
+    MediaSignature(frozenset({"video/webm"}), _is_webm),
 )
 
 _SIGNATURE_BY_CONTENT_TYPE: dict[str, Callable[[bytes], bool]] = {}

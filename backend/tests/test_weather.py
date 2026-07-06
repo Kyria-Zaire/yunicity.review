@@ -59,8 +59,9 @@ async def test_weather_cache_hits(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.anyio
-async def test_weather_key_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_weather_key_missing_outside_dev(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("OPENWEATHER_API_KEY", raising=False)
+    monkeypatch.setenv("APP_ENV", "recette")
     get_settings.cache_clear()
     settings = get_settings()
 
@@ -71,6 +72,25 @@ async def test_weather_key_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     with pytest.raises(AppError) as excinfo:
         await service.get_current(query)
     assert excinfo.value.code == "weather_key_missing"
+
+
+@pytest.mark.anyio
+async def test_weather_dev_stub_when_key_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("OPENWEATHER_API_KEY", raising=False)
+    monkeypatch.setenv("APP_ENV", "dev")
+    get_settings.cache_clear()
+    settings = get_settings()
+
+    clear_weather_cache_for_tests()
+    service = WeatherService(settings, cache_ttl_seconds=1)
+
+    query = WeatherCurrentQuery(city="Reims", lat=None, lon=None)
+    result = await service.get_current(query)
+
+    assert result.city == "Reims"
+    assert result.country == "FR"
+    assert 10.0 <= result.temperature <= 17.0
+    assert result.condition
 
 
 @pytest.mark.anyio

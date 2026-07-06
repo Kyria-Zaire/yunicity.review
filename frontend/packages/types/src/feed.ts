@@ -81,11 +81,17 @@ export interface FeedListParams {
   limit?: number;
 }
 
-export interface PostCreatePayload {
-  author_type?: "citizen";
-  body: string;
-  media_url?: string | null;
-}
+export type {
+  PostComposerMeta,
+  PostCreatePayload,
+  PostCrossPostTargets,
+  PostFormatId,
+  PostMediaItem,
+  PostMediaTypeId,
+  PostMediaUploadResponse,
+  PostPollPayload,
+  PostVisibilityId,
+} from "./post-composer";
 
 export interface FeedComment {
   id: string;

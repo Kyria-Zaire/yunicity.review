@@ -36,14 +36,28 @@ function formatApiErrorDetail(detail: unknown, status: number): string {
 }
 
 export async function parseApiError(response: Response): Promise<AuthError> {
-  let body: ApiErrorBody | null = null;
+  let body: unknown = null;
   try {
-    body = (await response.json()) as ApiErrorBody;
+    body = await response.json();
   } catch {
     body = null;
   }
-  const code = body?.code ?? "UNKNOWN_ERROR";
-  const detail = formatApiErrorDetail(body?.detail, response.status);
+
+  if (body && typeof body === "object" && "error" in body) {
+    const nested = (body as { error?: { code?: string; message?: string } }).error;
+    if (nested && typeof nested === "object") {
+      const code = nested.code ?? "UNKNOWN_ERROR";
+      const message =
+        typeof nested.message === "string" && nested.message.trim()
+          ? nested.message
+          : `Erreur API (${response.status})`;
+      return new AuthError(code, message, response.status);
+    }
+  }
+
+  const flat = body as ApiErrorBody | null;
+  const code = flat?.code ?? "UNKNOWN_ERROR";
+  const detail = formatApiErrorDetail(flat?.detail, response.status);
   return new AuthError(code, detail, response.status);
 }
 

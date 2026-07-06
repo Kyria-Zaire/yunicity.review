@@ -41,7 +41,7 @@ export function useFeedHomeContext(): FeedHomeContextState {
         api.events.listEvents({ city: resolvedCity }),
         api.neighborhoods.listNeighborhoods({ city: resolvedCity, page_size: 6 }),
         api.fetchPublicPartnerOffers({ city: resolvedCity, limit: 8 }),
-        api.getPassportMe(),
+        api.getPassportMeIfActive(profile),
         api.tribes.listTribes({ city: resolvedCity, page_size: 1, featured_only: true }),
       ]);
 

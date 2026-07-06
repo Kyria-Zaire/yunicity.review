@@ -13,6 +13,7 @@ export const CREATE_HUB_HIDDEN_PATH_PREFIXES: readonly string[] = [
   /** Portail Vidéos : CTA dédié « Publier une vidéo » remplace le hub Créer. */
   "/videos",
   "/stories/new",
+  "/feed/new",
 ];
 
 /** Préfixes réservés — pages auth / onboarding sans chrome create. */

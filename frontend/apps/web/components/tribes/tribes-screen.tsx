@@ -1,6 +1,7 @@
 "use client";
 
 import { TribesAppShell } from "@/components/tribes/tribes-app-shell";
+import { TribesMobileView } from "@/components/tribes/mobile";
 import { TribesFeaturedRail } from "@/components/tribes/tribes-featured-rail";
 import { TribesHeroBanner } from "@/components/tribes/tribes-hero-banner";
 import {
@@ -139,7 +140,16 @@ export function TribesScreen() {
 
   return (
     <TribesAppShell>
-      <div className="mx-auto w-full max-w-[1400px] px-3 pb-12 sm:px-4 lg:px-6">
+      <TribesMobileView
+        city={context.city}
+        loading={context.loading}
+        error={context.error}
+        tribes={context.tribes}
+        events={context.events}
+        onRetry={() => void context.reload()}
+      />
+
+      <div className="web-desktop-tribes-only mx-auto w-full max-w-[1400px] px-3 pb-12 sm:px-4 lg:px-6">
         <div className="grid gap-8 xl:grid-cols-[15rem_minmax(0,1fr)] xl:gap-10">
           <TribesInternalSidebar {...sidebarProps} />
 

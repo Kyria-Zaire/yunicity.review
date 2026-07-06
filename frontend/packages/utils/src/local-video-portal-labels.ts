@@ -36,6 +36,13 @@ export const VIDEOS_TAB_NEW = "Nouveautés";
 export const VIDEOS_TAB_SUBSCRIPTIONS = "Abonnements";
 export const VIDEOS_TAB_MINE = "Mes vidéos";
 
+/** Copy mobile portail Vidéos (MOBILE-VIDEOS-01). */
+export const VIDEOS_MOBILE_TAB_FOR_YOU = "Pour vous";
+export const VIDEOS_MOBILE_SEARCH_PLACEHOLDER =
+  "Rechercher une vidéo, un lieu, un moment…";
+export const VIDEOS_MOBILE_RECENT_TITLE = "Les plus récentes";
+export const VIDEOS_MOBILE_PUBLISH_ARIA = "Publier une vidéo";
+
 export const VIDEOS_SORT_LABEL = "Trier par :";
 export const VIDEOS_SORT_RECENT = "Les plus récents";
 export const VIDEOS_SORT_POPULAR = "Les plus populaires";

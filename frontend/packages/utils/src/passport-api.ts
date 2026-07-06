@@ -11,19 +11,49 @@ import type {
 
 import type { AuthClient } from "./auth/auth-client";
 import { parseApiError } from "./auth/auth-errors";
+import { isPassportEndpointMissingError, isPassportNotActiveError } from "./passport-labels";
+import {
+  markPassportSessionActive,
+  markPassportSessionInactive,
+  resolvePassportTryInFlight,
+} from "./passport-session-cache";
 import { ApiClientBase } from "./api-client";
+
+export {
+  resetPassportSessionCache,
+  syncPassportSessionUser,
+} from "./passport-session-cache";
 
 export class PassportApi extends ApiClientBase {
   getPassportMe(): Promise<PassportMe> {
     return this.getJson<PassportMe>("/passport/me");
   }
 
+  /** Passport absent, non activé ou route indisponible — retourne null sans propager. */
+  tryGetPassportMe(): Promise<PassportMe | null> {
+    return resolvePassportTryInFlight(async () => {
+      try {
+        const passport = await this.getPassportMe();
+        markPassportSessionActive(passport);
+        return passport;
+      } catch (error) {
+        if (isPassportNotActiveError(error) || isPassportEndpointMissingError(error)) {
+          markPassportSessionInactive();
+          return null;
+        }
+        throw error;
+      }
+    });
+  }
+
   getPassportQr(): Promise<PassportQr> {
     return this.getJson<PassportQr>("/passport/me/qr");
   }
 
-  activatePassport(payload: PassportActivateRequest = {}): Promise<PassportMe> {
-    return this.postJson<PassportMe>("/passport/activate", payload);
+  async activatePassport(payload: PassportActivateRequest = {}): Promise<PassportMe> {
+    const passport = await this.postJson<PassportMe>("/passport/activate", payload);
+    markPassportSessionActive(passport);
+    return passport;
   }
 
   listStamps(): Promise<PassportStampListResponse> {

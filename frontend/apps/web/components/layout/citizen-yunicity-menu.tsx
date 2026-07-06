@@ -7,6 +7,7 @@ import {
 } from "@/lib/layout/citizen-flyout-position";
 import {
   WEB_CITIZEN_YUNICITY_MENU,
+  WEB_CITIZEN_MOBILE_BOTTOM_NAV_YUNICITY_TAB_LABEL,
   YUNICITY_MENU_LABEL,
   isWebNavActive,
   isYunicityMenuActive,
@@ -20,11 +21,11 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from
 import { createPortal } from "react-dom";
 
 type CitizenYunicityMenuProps = {
-  variant?: "sidebar" | "top-nav";
+  variant?: "sidebar" | "top-nav" | "fab" | "bottom-nav";
 };
 
 /**
- * Menu Yunicity — grille d'exploration (Recherche, Quartiers, Tribus, Lieux, Proposer).
+ * Menu Yunicity — grille d'exploration (Quartiers, Tribus, Lieux, Proposer).
  */
 export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenuProps) {
   const menuId = useId();
@@ -37,6 +38,8 @@ export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenu
   const [menuPosition, setMenuPosition] = useState<CitizenFlyoutPosition | null>(null);
   const pathname = usePathname();
   const isTopNav = variant === "top-nav";
+  const isFab = variant === "fab";
+  const isBottomNav = variant === "bottom-nav";
   const menuActive = isYunicityMenuActive(pathname);
 
   const close = useCallback(() => setOpen(false), []);
@@ -50,14 +53,23 @@ export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenu
   }, [pathname, close]);
 
   const updateMenuPosition = useCallback(() => {
-    const trigger = isTopNav
+    const trigger = isFab || isBottomNav
       ? compactTriggerRef.current
-      : window.matchMedia("(min-width: 1280px)").matches
-        ? expandedTriggerRef.current
-        : compactTriggerRef.current;
+      : isTopNav
+        ? compactTriggerRef.current
+        : window.matchMedia("(min-width: 1280px)").matches
+          ? expandedTriggerRef.current
+          : compactTriggerRef.current;
     if (!trigger) return;
-    setMenuPosition(computeCitizenFlyoutPosition(trigger, isTopNav ? "top-nav" : "sidebar"));
-  }, [isTopNav]);
+    const flyoutVariant = isBottomNav
+      ? "bottom-nav"
+      : isFab
+        ? "fab"
+        : isTopNav
+          ? "top-nav"
+          : "sidebar";
+    setMenuPosition(computeCitizenFlyoutPosition(trigger, flyoutVariant));
+  }, [isBottomNav, isFab, isTopNav]);
 
   useLayoutEffect(() => {
     if (!open) {
@@ -146,6 +158,59 @@ export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenu
     ) : null;
 
   const triggerTone = menuActive || open;
+
+  if (isBottomNav) {
+    return (
+      <>
+        <div ref={containerRef} className="relative flex w-full justify-center">
+          <button
+            ref={compactTriggerRef}
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            aria-label={YUNICITY_MENU_LABEL}
+            aria-haspopup="menu"
+            aria-expanded={open}
+            aria-controls={menuId}
+            className={`flex min-h-[3.25rem] w-full flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1 text-yunicity-primary transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
+              triggerTone ? "bg-yunicity-primary-soft/50 opacity-100" : "opacity-90 hover:opacity-100"
+            }`}
+          >
+            <Grid3x3 className="h-[22px] w-[22px] shrink-0" aria-hidden />
+            <span className="max-w-full truncate text-[10px] font-semibold leading-tight">
+              {WEB_CITIZEN_MOBILE_BOTTOM_NAV_YUNICITY_TAB_LABEL}
+            </span>
+          </button>
+        </div>
+        {mounted && menuPanel ? createPortal(menuPanel, document.body) : null}
+      </>
+    );
+  }
+
+  if (isFab) {
+    return (
+      <>
+        <div ref={containerRef} className="relative">
+          <button
+            ref={compactTriggerRef}
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            aria-label={YUNICITY_MENU_LABEL}
+            aria-haspopup="menu"
+            aria-expanded={open}
+            aria-controls={menuId}
+            className={`flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
+              triggerTone
+                ? "bg-yunicity-primary-hover text-white"
+                : "bg-yunicity-primary text-white hover:bg-yunicity-primary-hover"
+            }`}
+          >
+            <Grid3x3 className="h-7 w-7" aria-hidden />
+          </button>
+        </div>
+        {mounted && menuPanel ? createPortal(menuPanel, document.body) : null}
+      </>
+    );
+  }
 
   if (isTopNav) {
     return (

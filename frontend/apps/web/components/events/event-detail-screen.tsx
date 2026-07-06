@@ -4,6 +4,7 @@ import { EventDetailAppShell } from "@/components/events/event-detail-app-shell"
 import { EventDetailCancelledState } from "@/components/events/event-detail-cancelled-state";
 import { EventDetailLeftRail } from "@/components/events/event-detail-left-rail";
 import { EventDetailMainTabs } from "@/components/events/event-detail-main-tabs";
+import { EventMobileDetailView } from "@/components/events/mobile";
 import { EventDetailPortalHero } from "@/components/events/event-detail-portal-hero";
 import { EventDetailRightPortalRail } from "@/components/events/event-detail-right-portal-rail";
 import { TransitNearbyCarouselRail } from "@/components/map/transit-nearby-carousel-rail";
@@ -90,8 +91,8 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
     );
   }, [event?.id]);
 
-  const main = (
-    <div className="space-y-6">
+  const desktopMain = (
+    <div className="web-desktop-event-detail-only space-y-6">
       <nav>
         <Link
           href="/sortir"
@@ -151,10 +152,53 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
     </div>
   );
 
+  const mobileMain = (
+    <>
+      {context.loading ? (
+        <p className="web-mobile-event-detail-only px-4 py-12 text-center text-sm text-neutral-500" role="status">
+          {EVENT_DETAIL_LOADING}
+        </p>
+      ) : null}
+
+      {context.isCancelled ? (
+        <div className="web-mobile-event-detail-only px-4 py-8">
+          <EventDetailCancelledState />
+        </div>
+      ) : null}
+
+      {!context.isCancelled && (context.error || context.isNotFound || (!context.loading && !event)) ? (
+        <div className="web-mobile-event-detail-only px-4 py-8">
+          <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-6 text-center">
+            <p className="text-red-800">{EVENT_DETAIL_NOT_FOUND}</p>
+            <button
+              type="button"
+              onClick={() => context.reload()}
+              className="mt-3 text-sm font-semibold text-yunicity-primary hover:underline"
+            >
+              {EVENT_DETAIL_RETRY}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {event && !context.isCancelled ? (
+        <EventMobileDetailView
+          event={event}
+          context={context}
+          venuePlace={venuePlace}
+          toggling={toggling}
+          isAuthenticated={Boolean(user)}
+          onToggleInterest={() => void handleInterest()}
+        />
+      ) : null}
+    </>
+  );
+
   if (!event || context.loading || context.isCancelled) {
     return (
       <EventDetailAppShell>
-        {main}
+        {mobileMain}
+        {desktopMain}
       </EventDetailAppShell>
     );
   }
@@ -171,7 +215,8 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
         />
       }
     >
-      {main}
+      {mobileMain}
+      {desktopMain}
     </EventDetailAppShell>
   );
 }

@@ -9,9 +9,15 @@ import { useMemo } from "react";
 type LocalWeatherHeroCardProps = {
   city: string;
   className?: string;
+  /** `compact` — bandeau mobile hub Recherche. */
+  variant?: "hero" | "compact";
 };
 
-export function LocalWeatherHeroCard({ city, className }: LocalWeatherHeroCardProps) {
+export function LocalWeatherHeroCard({
+  city,
+  className,
+  variant = "hero",
+}: LocalWeatherHeroCardProps) {
   const geo = useGeo();
 
   const coords = useMemo(() => {
@@ -39,9 +45,15 @@ export function LocalWeatherHeroCard({ city, className }: LocalWeatherHeroCardPr
       })
     : { bg: "bg-white", pill: "text-neutral-600", icon: "text-neutral-500" };
 
+  const isCompact = variant === "compact";
+
   return (
     <article
-      className={`flex h-full min-h-[200px] flex-col justify-between rounded-3xl border border-neutral-200/90 p-5 shadow-sm sm:min-h-[240px] ${tint.bg} ${className ?? ""}`}
+      className={`flex flex-col justify-between rounded-2xl border border-neutral-200/90 shadow-sm ${
+        isCompact
+          ? "min-h-0 p-4"
+          : "h-full min-h-[200px] rounded-3xl p-5 sm:min-h-[240px]"
+      } ${tint.bg} ${className ?? ""}`}
       aria-labelledby="explorer-hero-weather-title"
     >
       <p
@@ -52,15 +64,21 @@ export function LocalWeatherHeroCard({ city, className }: LocalWeatherHeroCardPr
       </p>
 
       {loading ? (
-        <div className="space-y-3 py-4" aria-busy="true">
-          <div className="h-10 w-24 animate-pulse rounded-lg bg-white/70" />
-          <div className="h-4 w-32 animate-pulse rounded bg-white/60" />
+        <div className={`space-y-3 ${isCompact ? "py-2" : "py-4"}`} aria-busy="true">
+          <div className={`animate-pulse rounded-lg bg-white/70 ${isCompact ? "h-8 w-20" : "h-10 w-24"}`} />
+          <div className={`animate-pulse rounded bg-white/60 ${isCompact ? "h-3 w-28" : "h-4 w-32"}`} />
         </div>
       ) : error || !weather ? (
-        <p className="py-4 text-sm text-neutral-500">Météo indisponible pour le moment.</p>
+        <p className={`text-sm text-neutral-500 ${isCompact ? "py-2" : "py-4"}`}>
+          Météo indisponible pour le moment.
+        </p>
       ) : (
-        <div className="flex flex-1 flex-col justify-center py-2">
-          <p className="flex items-center gap-3 text-3xl font-bold tracking-tight text-neutral-900">
+        <div className={`flex ${isCompact ? "items-center gap-3 py-1" : "flex-1 flex-col justify-center py-2"}`}>
+          <p
+            className={`flex items-center gap-2 font-bold tracking-tight text-neutral-900 ${
+              isCompact ? "text-2xl" : "gap-3 text-3xl"
+            }`}
+          >
             <span>{Math.round(weather.temperature)}°C</span>
             {(() => {
               const visual = getWeatherVisual({
@@ -71,23 +89,33 @@ export function LocalWeatherHeroCard({ city, className }: LocalWeatherHeroCardPr
               const Icon = visual.Icon;
               return (
                 <span
-                  className={`inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/85 shadow-sm ${tint.icon}`}
+                  className={`inline-flex items-center justify-center rounded-full bg-white/85 shadow-sm ${tint.icon} ${
+                    isCompact ? "h-9 w-9" : "h-12 w-12"
+                  }`}
                   aria-label={weather.condition}
                   title={weather.condition}
                 >
-                  <Icon className="h-6 w-6" aria-hidden="true" />
+                  <Icon className={isCompact ? "h-5 w-5" : "h-6 w-6"} aria-hidden="true" />
                 </span>
               );
             })()}
           </p>
-          <p className={`mt-2 text-sm font-medium ${tint.pill}`}>{weather.condition}</p>
-          <p className="mt-1 text-xs text-neutral-500">{weather.city}</p>
+          <div className={isCompact ? "min-w-0 flex-1" : undefined}>
+            <p className={`font-medium ${isCompact ? "text-xs" : "mt-2 text-sm"} ${tint.pill}`}>
+              {weather.condition}
+            </p>
+            <p className={`text-neutral-500 ${isCompact ? "text-[11px]" : "mt-1 text-xs"}`}>
+              {weather.city}
+            </p>
+          </div>
         </div>
       )}
 
-      <p className="text-[10px] leading-snug text-neutral-400">
-        {geo.currentPosition ? "Autour de vous" : `Centre ${city}`}
-      </p>
+      {!isCompact ? (
+        <p className="text-[10px] leading-snug text-neutral-400">
+          {geo.currentPosition ? "Autour de vous" : `Centre ${city}`}
+        </p>
+      ) : null}
     </article>
   );
 }

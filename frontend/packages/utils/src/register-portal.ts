@@ -262,6 +262,6 @@ export function buildRegisterApiPayload(draft: RegisterDraft): {
     email: draft.email.trim().toLowerCase(),
     password: draft.password,
     full_name: draft.fullName.trim(),
-    city: draft.city.trim(),
+    city: draft.city.trim() || REGISTER_DEFAULT_CITY,
   };
 }

@@ -49,9 +49,13 @@ class TestMediaMagicBytes:
         with pytest.raises(ContentTypeMismatchError, match="vide"):
             assert_content_matches_declared_type(b"", "video/mp4")
 
+    def test_valid_webm_accepted(self) -> None:
+        webm_bytes = b"\x1a\x45\xdf\xa3" + b"\x00" * 28
+        assert_content_matches_declared_type(webm_bytes, "video/webm")
+
     def test_unsupported_mime_rejected(self) -> None:
         with pytest.raises(ContentTypeMismatchError, match="non supporté"):
-            assert_content_matches_declared_type(MINIMAL_MP4_BYTES, "video/webm")
+            assert_content_matches_declared_type(MINIMAL_MP4_BYTES, "video/avi")
 
     def test_detect_supported_content_types(self) -> None:
         detected = detect_supported_content_types(MINIMAL_MP4_BYTES)

@@ -16,6 +16,7 @@ from app.schemas.feed import (
 )
 from app.schemas.post import PostResponse
 from app.services.neighborhood_summary import resolve_feed_neighborhood_summary
+from app.services.post_composer_mapper import to_composer_meta_response
 
 
 def _event_meta(post: Post, *, interested_by_me: bool = False) -> FeedEventMeta | None:
@@ -123,6 +124,7 @@ def to_post_response(
         event=_event_meta(post, interested_by_me=False),
         creator_content=_creator_content_meta(post),
         neighborhood_summary=resolve_feed_neighborhood_summary(post),
+        composer=to_composer_meta_response(post),
         created_at=post.created_at,
         updated_at=post.updated_at,
     )

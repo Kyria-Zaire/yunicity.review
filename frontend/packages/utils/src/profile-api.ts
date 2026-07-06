@@ -27,6 +27,10 @@ export class ProfileApi extends ApiClientBase {
     return this.getJson<ProfilePublic>(`/profile/${encodeURIComponent(username)}`);
   }
 
+  getPublicProfileByUserId(userId: string): Promise<ProfilePublic> {
+    return this.getJson<ProfilePublic>(`/users/${encodeURIComponent(userId)}/profile`);
+  }
+
   uploadProfileAvatar(file: File): Promise<UserProfile> {
     const formData = new FormData();
     formData.append("file", file);
@@ -51,6 +55,25 @@ export async function fetchPublicProfileAnonymous(
 ): Promise<ProfilePublic> {
   const base = apiBaseUrl.replace(/\/$/, "");
   const response = await fetch(`${base}/api/v1/profile/${encodeURIComponent(username)}`, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+  });
+  if (response.status === 404) {
+    throw new AuthError("PROFILE_NOT_FOUND", "Ce profil n'est pas accessible.", 404);
+  }
+  if (!response.ok) {
+    throw await parseApiError(response);
+  }
+  return (await response.json()) as ProfilePublic;
+}
+
+/** Profil public par identifiant utilisateur (sans session). */
+export async function fetchPublicProfileByUserIdAnonymous(
+  apiBaseUrl: string,
+  userId: string,
+): Promise<ProfilePublic> {
+  const base = apiBaseUrl.replace(/\/$/, "");
+  const response = await fetch(`${base}/api/v1/users/${encodeURIComponent(userId)}/profile`, {
     method: "GET",
     headers: { Accept: "application/json" },
   });

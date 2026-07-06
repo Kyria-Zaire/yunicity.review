@@ -21,6 +21,7 @@ from app.schemas.social_notification import (
     MarkAllNotificationsReadResponse,
     MarkNotificationReadResponse,
     UserNotificationListResponse,
+    UserNotificationSummaryResponse,
 )
 from app.services.notification_service import NotificationService
 from app.services.social_notification_service import SocialNotificationService
@@ -76,6 +77,14 @@ async def delete_push_subscription(
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> None:
     await NotificationService(session).delete_subscription(current_user, subscription_id)
+
+
+@router.get("/summary", response_model=UserNotificationSummaryResponse)
+async def get_notifications_summary(
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> UserNotificationSummaryResponse:
+    return await SocialNotificationService(session).get_inbox_summary(current_user)
 
 
 @router.get("", response_model=UserNotificationListResponse)

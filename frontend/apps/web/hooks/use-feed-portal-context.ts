@@ -5,7 +5,6 @@ import type {
   LocalEvent,
   Neighborhood,
   PartnerOfferPublic,
-  PassportMe,
   ProfileMe,
   StoryRingItem,
   Tribe,
@@ -25,7 +24,6 @@ export type FeedPortalContextState = {
   tribes: Tribe[];
   neighborhoods: Neighborhood[];
   culturalPlaces: CulturalPlaceListItem[];
-  passport: PassportMe | null;
   highlightOffer: PartnerOfferPublic | null;
   storyRings: StoryRingItem[];
   reload: () => void;
@@ -44,7 +42,6 @@ export function useFeedPortalContext(): FeedPortalContextState {
   const [tribes, setTribes] = useState<Tribe[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [culturalPlaces, setCulturalPlaces] = useState<CulturalPlaceListItem[]>([]);
-  const [passport, setPassport] = useState<PassportMe | null>(null);
   const [highlightOffer, setHighlightOffer] = useState<PartnerOfferPublic | null>(null);
   const [storyRings, setStoryRings] = useState<StoryRingItem[]>([]);
 
@@ -62,7 +59,6 @@ export function useFeedPortalContext(): FeedPortalContextState {
         api.listCulturalPlaces({ city: resolvedCity, featured: true, limit: 12 }),
         api.tribes.listTribes({ city: resolvedCity, page_size: 12 }),
         api.fetchPublicPartnerOffers({ city: resolvedCity, limit: 8 }),
-        api.getPassportMe(),
         api.events.listSavedEvents(),
         api.listStoryRings(),
       ];
@@ -73,9 +69,8 @@ export function useFeedPortalContext(): FeedPortalContextState {
       const cultureRes = results[2];
       const tribesRes = results[3];
       const offersRes = results[4];
-      const passportRes = results[5];
-      const savedRes = results[6];
-      const ringsRes = results[7];
+      const savedRes = results[5];
+      const ringsRes = results[6];
 
       if (eventsRes?.status === "fulfilled") {
         const value = eventsRes.value as Awaited<ReturnType<typeof api.events.listEvents>>;
@@ -114,12 +109,6 @@ export function useFeedPortalContext(): FeedPortalContextState {
         setHighlightOffer(null);
       }
 
-      if (passportRes?.status === "fulfilled") {
-        setPassport(passportRes.value as PassportMe);
-      } else {
-        setPassport(null);
-      }
-
       if (savedRes?.status === "fulfilled") {
         const value = savedRes.value as Awaited<ReturnType<typeof api.events.listSavedEvents>>;
         setSavedEvents(filterAgendaUpcomingEvents(value.items));
@@ -156,7 +145,6 @@ export function useFeedPortalContext(): FeedPortalContextState {
     tribes,
     neighborhoods,
     culturalPlaces,
-    passport,
     highlightOffer,
     storyRings,
     reload: load,

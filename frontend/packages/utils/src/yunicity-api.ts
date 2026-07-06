@@ -47,6 +47,7 @@ import type {
   PassportStampClaimResult,
   PassportStampListResponse,
   PostCreatePayload,
+  PostMediaUploadResponse,
   ProfileCompleteRequest,
   ProfilePublic,
   ProfileUpdateRequest,
@@ -403,6 +404,10 @@ export class YunicityApi {
     return this.profile.getPublicProfile(username);
   }
 
+  getPublicProfileByUserId(userId: string): Promise<ProfilePublic> {
+    return this.profile.getPublicProfileByUserId(userId);
+  }
+
   listMyOrganizations(): Promise<OrganizationMeListResponse> {
     return this.organization.listMyOrganizations();
   }
@@ -419,6 +424,20 @@ export class YunicityApi {
 
   getPassportMe(): Promise<PassportMe> {
     return this.passport.getPassportMe();
+  }
+
+  tryGetPassportMe(): Promise<PassportMe | null> {
+    return this.passport.tryGetPassportMe();
+  }
+
+  /** Évite tout appel réseau si le profil indique qu'aucun passport n'est actif. */
+  getPassportMeIfActive(
+    profile: Pick<UserProfile, "has_active_passport"> | null | undefined,
+  ): Promise<PassportMe | null> {
+    if (!profile?.has_active_passport) {
+      return Promise.resolve(null);
+    }
+    return this.passport.tryGetPassportMe();
   }
 
   activatePassport(payload?: PassportActivateRequest): Promise<PassportMe> {
@@ -483,6 +502,10 @@ export class YunicityApi {
 
   createFeedPost(payload: PostCreatePayload): Promise<FeedPost> {
     return this.feed.createPost(payload);
+  }
+
+  uploadPostMedia(file: File): Promise<PostMediaUploadResponse> {
+    return this.feed.uploadPostMedia(file);
   }
 
   likeFeedPost(postId: string): Promise<void> {

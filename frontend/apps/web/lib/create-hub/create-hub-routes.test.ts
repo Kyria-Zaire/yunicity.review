@@ -8,6 +8,10 @@ describe("create-hub-routes", () => {
     expect(isCreateHubVisiblePath("/videos/new")).toBe(false);
   });
 
+  it("hides Create Hub on feed new post flow", () => {
+    expect(isCreateHubVisiblePath("/feed/new")).toBe(false);
+  });
+
   it("keeps Create Hub visible on feed", () => {
     expect(isCreateHubVisiblePath("/feed")).toBe(true);
   });

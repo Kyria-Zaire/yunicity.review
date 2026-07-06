@@ -38,6 +38,24 @@ export const MAP_PORTAL_GEO_CTA = "Activer ma position";
 export const MAP_PORTAL_SEARCH_PLACEHOLDER =
   "Rechercher un lieu, un événement, une activité…";
 
+/** Copy mobile carte (MOBILE-MAP-01). */
+export const MAP_MOBILE_SEARCH_PLACEHOLDER =
+  "Rechercher un lieu, un événement, un quartier…";
+export const MAP_MOBILE_CATEGORY_ALL = "Tous";
+export const MAP_MOBILE_CATEGORY_DINING = "Restauration";
+export const MAP_MOBILE_CATEGORY_OUTINGS = "Sorties";
+export const MAP_MOBILE_CATEGORY_CULTURE = "Culture";
+export const MAP_MOBILE_CATEGORY_RETAIL = "Commerces";
+export const MAP_MOBILE_FILTERS_ARIA = "Filtres de la carte";
+export const MAP_MOBILE_LOCATE_ARIA = "Centrer sur ma position";
+export const MAP_MOBILE_NAVIGATE_ARIA = "Itinéraire";
+export const MAP_MOBILE_BOOKMARK_ARIA = "Enregistrer";
+export const MAP_MOBILE_BOOKMARK_SOON = "Enregistrer — bientôt disponible";
+export const MAP_MOBILE_EVENT_BADGE = "Événement";
+export const MAP_MOBILE_POPULAR_BADGE = "Populaire";
+export const MAP_MOBILE_WALK_MINUTES = (minutes: number) =>
+  minutes <= 1 ? "1 min" : `${minutes} min`;
+
 export const MAP_PORTAL_CHIP_ALL = "Tout";
 export const MAP_PORTAL_CHIP_EVENTS = "Événements";
 export const MAP_PORTAL_CHIP_PLACES = "Lieux";

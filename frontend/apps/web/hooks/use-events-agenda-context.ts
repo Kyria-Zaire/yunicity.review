@@ -61,7 +61,6 @@ export function useEventsAgendaContext(city: string): EventsAgendaContextState {
       if (user) {
         requests.push(api.events.listSavedEvents());
         requests.push(api.profile.getProfileMe());
-        requests.push(api.getPassportMe());
       }
 
       const results = await Promise.allSettled(requests);
@@ -72,7 +71,6 @@ export function useEventsAgendaContext(city: string): EventsAgendaContextState {
       const offersRes = results[4];
       const savedRes = user ? results[5] : undefined;
       const profileRes = user ? results[6] : undefined;
-      const passportRes = user ? results[7] : undefined;
 
       if (eventsRes?.status === "fulfilled") {
         const value = eventsRes.value as Awaited<ReturnType<typeof api.events.listEvents>>;
@@ -122,14 +120,10 @@ export function useEventsAgendaContext(city: string): EventsAgendaContextState {
       if (profileRes?.status === "fulfilled") {
         const value = profileRes.value as Awaited<ReturnType<typeof api.profile.getProfileMe>>;
         setInterests(value.interests ?? []);
+        const passport = await api.getPassportMeIfActive(value);
+        setPassportStampsCount(passport?.stats.stamps_count ?? 0);
       } else {
         setInterests([]);
-      }
-
-      if (passportRes?.status === "fulfilled") {
-        const value = passportRes.value as Awaited<ReturnType<typeof api.getPassportMe>>;
-        setPassportStampsCount(value.stats.stamps_count);
-      } else {
         setPassportStampsCount(0);
       }
     } finally {

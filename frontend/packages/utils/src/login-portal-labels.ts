@@ -1,8 +1,6 @@
 /** Connexion citoyen — micro-copy (WEB-LOGIN-PORTAL). */
 
 export const LOGIN_PAGE_TITLE = "Bienvenue sur Yunicity";
-export const LOGIN_PAGE_SUBTITLE =
-  "Connectez-vous pour profiter de votre communauté et ne rien manquer près de chez vous.";
 
 export const LOGIN_FIELD_EMAIL = "E-mail";
 export const LOGIN_FIELD_EMAIL_PLACEHOLDER = "Entrez votre e-mail";

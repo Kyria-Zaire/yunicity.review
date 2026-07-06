@@ -15,17 +15,25 @@ const TABS = [
   { id: "notifications", label: PROFILE_EDIT_TAB_NOTIFICATIONS, href: "/settings#notifications" },
 ] as const;
 
-export function ProfileEditTabs() {
+export function ProfileEditTabs({ variant = "desktop" }: { variant?: "desktop" | "mobile" }) {
   return (
     <nav
-      className="flex flex-wrap gap-6 border-b border-neutral-200"
+      className={
+        variant === "mobile"
+          ? "flex min-w-max gap-4 border-b border-neutral-200"
+          : "flex flex-wrap gap-6 border-b border-neutral-200"
+      }
       aria-label="Sections du profil"
     >
       {TABS.map((tab) =>
         "active" in tab && tab.active ? (
           <span
             key={tab.id}
-            className="-mb-px border-b-2 border-yunicity-primary pb-3 text-sm font-semibold text-yunicity-primary"
+            className={
+              variant === "mobile"
+                ? "-mb-px shrink-0 border-b-2 border-yunicity-primary pb-2.5 text-sm font-semibold text-yunicity-primary"
+                : "-mb-px border-b-2 border-yunicity-primary pb-3 text-sm font-semibold text-yunicity-primary"
+            }
             aria-current="page"
           >
             {tab.label}
@@ -34,7 +42,11 @@ export function ProfileEditTabs() {
           <Link
             key={tab.id}
             href={tab.href}
-            className="-mb-px pb-3 text-sm font-medium text-neutral-500 transition hover:text-neutral-900"
+            className={
+              variant === "mobile"
+                ? "-mb-px shrink-0 whitespace-nowrap pb-2.5 text-sm font-medium text-neutral-500 transition hover:text-neutral-900"
+                : "-mb-px pb-3 text-sm font-medium text-neutral-500 transition hover:text-neutral-900"
+            }
           >
             {tab.label}
           </Link>

@@ -8,6 +8,7 @@ import { CommentComposer } from "@/components/feed/comment-composer";
 import { CommentList } from "@/components/feed/comment-list";
 import { FeedCardShell } from "@/components/feed/feed-card-shell";
 import { FeedSocialActionBar } from "@/components/feed/feed-social-action-bar";
+import { FeedMobileSocialActionBar } from "@/components/feed/mobile/feed-mobile-social-action-bar";
 import { EventFeedCard } from "@/components/events/event-feed-card";
 import { OfferFeedCard } from "@/components/feed/offer-feed-card";
 import { OrganizationPostCard } from "@/components/feed/organization-post-card";
@@ -24,17 +25,25 @@ function feedCardVariant(
   return "default";
 }
 
-function FeedCardBody({ post }: { post: FeedPost }) {
+function FeedCardBody({
+  post,
+  layout = "default",
+  onReport,
+}: {
+  post: FeedPost;
+  layout?: "default" | "mobile";
+  onReport?: (reason: FeedReportReason) => Promise<void>;
+}) {
   if (post.type === "offer") {
-    return <OfferFeedCard post={post} />;
+    return <OfferFeedCard post={post} layout={layout} onReport={onReport} />;
   }
   if (post.type === "event") {
-    return <EventFeedCard post={post} />;
+    return <EventFeedCard post={post} layout={layout} onReport={onReport} />;
   }
   if (post.type === "partner_creator" || post.author.type === "organization") {
-    return <OrganizationPostCard post={post} />;
+    return <OrganizationPostCard post={post} layout={layout} onReport={onReport} />;
   }
-  return <CitizenPostCard post={post} />;
+  return <CitizenPostCard post={post} layout={layout} onReport={onReport} />;
 }
 
 export function FeedCard({
@@ -42,11 +51,13 @@ export function FeedCard({
   onToggleLike,
   onReport,
   openCommentsByDefault = false,
+  layout = "default",
 }: {
   post: FeedPost;
   onToggleLike: (post: FeedPost) => Promise<void>;
   onReport: (postId: string, reason: FeedReportReason) => Promise<void>;
   openCommentsByDefault?: boolean;
+  layout?: "default" | "mobile";
 }) {
   const api = useYunicityApi();
   const { user } = useAuth();
@@ -113,21 +124,36 @@ export function FeedCard({
     });
   }
 
+  const mobileFooter = (
+    <FeedMobileSocialActionBar
+      post={post}
+      commentsOpen={commentsOpen}
+      onToggleLike={() => void onToggleLike(post)}
+      onToggleComments={() => void toggleComments()}
+      onToggleEventInterest={
+        post.type === "event" && post.event ? () => toggleEventInterest() : undefined
+      }
+    />
+  );
+
+  const desktopFooter = (
+    <FeedSocialActionBar
+      post={post}
+      commentsOpen={commentsOpen}
+      onToggleLike={() => void onToggleLike(post)}
+      onToggleComments={() => void toggleComments()}
+      onToggleEventInterest={
+        post.type === "event" && post.event ? () => toggleEventInterest() : undefined
+      }
+      onReport={(reason) => onReport(post.id, reason)}
+    />
+  );
+
   return (
     <FeedCardShell
       variant={feedCardVariant(post)}
-      footer={
-        <FeedSocialActionBar
-          post={post}
-          commentsOpen={commentsOpen}
-          onToggleLike={() => void onToggleLike(post)}
-          onToggleComments={() => void toggleComments()}
-          onToggleEventInterest={
-            post.type === "event" && post.event ? () => toggleEventInterest() : undefined
-          }
-          onReport={(reason) => onReport(post.id, reason)}
-        />
-      }
+      layout={layout}
+      footer={layout === "mobile" ? mobileFooter : desktopFooter}
       expanded={
         commentsOpen ? (
           <>
@@ -145,7 +171,11 @@ export function FeedCard({
         ) : undefined
       }
     >
-      <FeedCardBody post={post} />
+      <FeedCardBody
+        post={post}
+        layout={layout}
+        onReport={(reason) => onReport(post.id, reason)}
+      />
     </FeedCardShell>
   );
 }

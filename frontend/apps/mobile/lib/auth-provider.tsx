@@ -4,6 +4,7 @@ import {
   createYunicityApi,
   getExpoApiBaseUrl,
   humanizeAuthFailure,
+  syncPassportSessionUser,
   type YunicityApi,
 } from "@yunicity/utils";
 import {
@@ -47,7 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         apiBaseUrl,
         platform: "mobile",
         storage,
-        onSessionCleared: () => setUser(null),
+        onSessionCleared: () => {
+          syncPassportSessionUser(null);
+          setUser(null);
+        },
       }),
     [apiBaseUrl, storage],
   );
@@ -93,6 +97,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [client, storage]);
+
+  useEffect(() => {
+    syncPassportSessionUser(user?.id ?? null);
+  }, [user?.id]);
 
   const login = useCallback(
     async (payload: LoginRequest) => {

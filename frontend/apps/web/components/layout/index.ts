@@ -18,6 +18,8 @@ export {
 } from "@/components/layout/web-context-rail";
 export { WebDesktopLayout } from "@/components/layout/web-desktop-layout";
 export { WebMobileFooter, WebMobileHeader } from "@/components/layout/web-mobile-chrome";
+export { WebMobileStrategicBottomNav } from "@/components/layout/web-mobile-strategic-bottom-nav";
+export { CitizenYunicityMenuFab } from "@/components/layout/citizen-yunicity-menu-fab";
 export { WebPageHeader, type WebPageHeaderProps } from "@/components/layout/web-page-header";
 export { WebResponsiveContainer } from "@/components/layout/web-responsive-container";
 export { WebSidebar } from "@/components/layout/web-sidebar";

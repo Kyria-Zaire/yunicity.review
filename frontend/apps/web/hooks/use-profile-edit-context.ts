@@ -56,18 +56,28 @@ export function useProfileEditContext() {
       setSavedDraft(nextDraft);
 
       const city = profileData.city?.trim() || "Reims";
-      const [passportRes, stampsRes, tribesRes, eventsRes, savedRes, feedRes] =
-        await Promise.allSettled([
-          api.getPassportMe(),
-          api.listPassportStamps(),
-          api.tribes.listTribes({ city, page_size: 40 }),
-          api.events.listEvents({ city }),
-          api.events.listSavedEvents(),
-          api.listFeed({ limit: 40 }),
-        ]);
 
-      setPassport(passportRes.status === "fulfilled" ? passportRes.value : null);
-      setStamps(stampsRes.status === "fulfilled" ? stampsRes.value.items : []);
+      // Passport + tampons uniquement si le profil indique un passeport actif.
+      const passportData = await api.getPassportMeIfActive(profileData);
+
+      const [tribesRes, eventsRes, savedRes, feedRes] = await Promise.allSettled([
+        api.tribes.listTribes({ city, page_size: 40 }),
+        api.events.listEvents({ city }),
+        api.events.listSavedEvents(),
+        api.listFeed({ limit: 40 }),
+      ]);
+
+      setPassport(passportData);
+      if (passportData) {
+        try {
+          const stampData = await api.listPassportStamps();
+          setStamps(stampData.items);
+        } catch {
+          setStamps([]);
+        }
+      } else {
+        setStamps([]);
+      }
       setTribes(
         tribesRes.status === "fulfilled"
           ? tribesRes.value.items.filter((tribe) => !tribe.is_archived)

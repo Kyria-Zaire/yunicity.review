@@ -15,6 +15,7 @@ export interface ProfileMe {
   onboarding_step: string | null;
   preferred_language: string | null;
   notification_preferences: Record<string, unknown>;
+  has_active_passport: boolean;
   created_at: string;
   updated_at: string;
 }

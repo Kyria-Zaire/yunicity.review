@@ -115,6 +115,37 @@ class Post(TimestampMixin, Base):
     story_tags: Mapped[list[str]] = mapped_column(
         JSONB, nullable=False, server_default=text("'[]'::jsonb")
     )
+    post_visibility: Mapped[str] = mapped_column(
+        String(24), nullable=False, server_default="public"
+    )
+    post_format: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    media_urls: Mapped[list[dict[str, str]]] = mapped_column(
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
+    )
+    allow_comments: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
+    allow_shares: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
+    scheduled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    location_label: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    activity_label: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    poll_data: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)
+    tagged_user_ids: Mapped[list[str]] = mapped_column(
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
+    )
+    audience_user_ids: Mapped[list[str]] = mapped_column(
+        JSONB, nullable=False, server_default=text("'[]'::jsonb")
+    )
+    cross_post_targets: Mapped[dict[str, bool]] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    use_media_caption: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
     story_media_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
     view_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default="0"

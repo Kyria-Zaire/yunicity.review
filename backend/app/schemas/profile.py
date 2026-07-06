@@ -60,6 +60,7 @@ class ProfileMeResponse(BaseModel):
     onboarding_step: str | None
     preferred_language: str | None
     notification_preferences: dict[str, Any]
+    has_active_passport: bool = False
     created_at: datetime
     updated_at: datetime
 

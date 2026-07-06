@@ -5,10 +5,11 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import select, update
+from sqlalchemy import case, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.social_notification_constants import SocialNotificationType
 from app.models.user_notification import UserNotification
 
 
@@ -56,8 +57,6 @@ class UserNotificationRepository:
         return list(result.scalars().all())
 
     async def count_unread(self, user_id: uuid.UUID) -> int:
-        from sqlalchemy import func
-
         result = await self._session.execute(
             select(func.count())
             .select_from(UserNotification)
@@ -67,6 +66,92 @@ class UserNotificationRepository:
             )
         )
         return int(result.scalar_one())
+
+    async def fetch_inbox_summary_counts(
+        self,
+        user_id: uuid.UUID,
+        *,
+        week_start: datetime,
+        month_start: datetime,
+    ) -> dict[str, int]:
+        unread = UserNotification.is_read.is_(False)
+        payload_category = UserNotification.payload["category"].as_string()
+        notification_type = UserNotification.type
+
+        social_unread = case(
+            (
+                unread
+                & notification_type.in_(
+                    (
+                        SocialNotificationType.POST_LIKED.value,
+                        SocialNotificationType.POST_COMMENTED.value,
+                    )
+                ),
+                1,
+            ),
+            else_=0,
+        )
+        events_unread = case(
+            (
+                unread
+                & or_(
+                    notification_type == SocialNotificationType.LOCAL_EVENT_PUBLISHED.value,
+                    payload_category == "events",
+                ),
+                1,
+            ),
+            else_=0,
+        )
+        passport_unread = case(
+            (
+                unread
+                & or_(
+                    notification_type.in_(
+                        (
+                            SocialNotificationType.PASSPORT_LEVEL_UNLOCKED.value,
+                            SocialNotificationType.LOCAL_STAMP_EARNED.value,
+                        )
+                    ),
+                    payload_category == "passport",
+                ),
+                1,
+            ),
+            else_=0,
+        )
+        system_unread = case(
+            (
+                unread
+                & UserNotification.actor_id.is_(None)
+                & (notification_type != SocialNotificationType.LOCAL_EVENT_PUBLISHED.value),
+                1,
+            ),
+            else_=0,
+        )
+        week_count = case((UserNotification.created_at >= week_start, 1), else_=0)
+        month_count = case((UserNotification.created_at >= month_start, 1), else_=0)
+
+        result = await self._session.execute(
+            select(
+                func.coalesce(func.sum(case((unread, 1), else_=0)), 0).label("unread_count"),
+                func.coalesce(func.sum(social_unread), 0).label("unread_social"),
+                func.coalesce(func.sum(events_unread), 0).label("unread_events"),
+                func.coalesce(func.sum(passport_unread), 0).label("unread_passport"),
+                func.coalesce(func.sum(system_unread), 0).label("unread_system"),
+                func.coalesce(func.sum(week_count), 0).label("count_this_week"),
+                func.coalesce(func.sum(month_count), 0).label("count_this_month"),
+            ).where(UserNotification.target_user_id == user_id)
+        )
+        row = result.one()
+        return {
+            "unread_count": int(row.unread_count),
+            "unread_mentions": 0,
+            "unread_social": int(row.unread_social),
+            "unread_events": int(row.unread_events),
+            "unread_passport": int(row.unread_passport),
+            "unread_system": int(row.unread_system),
+            "count_this_week": int(row.count_this_week),
+            "count_this_month": int(row.count_this_month),
+        }
 
     async def has_recent_duplicate(
         self,

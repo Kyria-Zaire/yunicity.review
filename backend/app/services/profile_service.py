@@ -20,6 +20,7 @@ from app.core.profile_username import (
 )
 from app.models.user import User
 from app.models.user_profile import ProfileVisibility, UserProfile
+from app.repositories.passport_repository import PassportRepository
 from app.repositories.profile_repository import ProfileRepository
 from app.schemas.profile import (
     ProfileCompleteRequest,
@@ -37,7 +38,7 @@ class ProfileService:
 
     async def get_me(self, user: User) -> ProfileMeResponse:
         profile = await self._get_profile_for_user(user.id)
-        return ProfileMeResponse.model_validate(profile)
+        return await self._build_me_response(user.id, profile)
 
     async def update_me(self, user: User, payload: ProfileUpdateRequest) -> ProfileMeResponse:
         profile = await self._get_profile_for_user(user.id)
@@ -77,7 +78,7 @@ class ProfileService:
         await self._profiles.update_fields(profile, fields=updates)
         await self._session.commit()
         await self._session.refresh(profile)
-        return ProfileMeResponse.model_validate(profile)
+        return await self._build_me_response(user.id, profile)
 
     async def set_avatar_url(self, user: User, url: str) -> ProfileMeResponse:
         return await self._set_media_url(user, field="avatar_url", url=url)
@@ -90,7 +91,7 @@ class ProfileService:
         await self._profiles.update_fields(profile, fields={field: url})
         await self._session.commit()
         await self._session.refresh(profile)
-        return ProfileMeResponse.model_validate(profile)
+        return await self._build_me_response(user.id, profile)
 
     async def complete_onboarding(
         self,
@@ -127,7 +128,7 @@ class ProfileService:
         )
         await self._session.commit()
         await self._session.refresh(profile)
-        return ProfileMeResponse.model_validate(profile)
+        return await self._build_me_response(user.id, profile)
 
     async def get_public_by_username(
         self,
@@ -144,6 +145,37 @@ class ProfileService:
             )
 
         profile = await self._profiles.get_by_username(normalized)
+        if profile is None:
+            raise AppError(
+                status_code=404,
+                code="PROFILE_NOT_FOUND",
+                detail="Profil introuvable.",
+            )
+
+        if not self._can_view_profile(profile, viewer=viewer):
+            raise AppError(
+                status_code=404,
+                code="PROFILE_NOT_FOUND",
+                detail="Profil introuvable.",
+            )
+
+        return ProfilePublicResponse(
+            username=profile.username,
+            display_name=profile.display_name,
+            bio=profile.bio,
+            avatar_url=profile.avatar_url,
+            banner_url=profile.banner_url,
+            city=profile.city,
+            interests=list(profile.interests),
+        )
+
+    async def get_public_by_user_id(
+        self,
+        user_id: uuid.UUID,
+        *,
+        viewer: User | None = None,
+    ) -> ProfilePublicResponse:
+        profile = await self._profiles.get_by_user_id(user_id)
         if profile is None:
             raise AppError(
                 status_code=404,
@@ -206,6 +238,18 @@ class ProfileService:
                 detail="Profil introuvable.",
             )
         return profile
+
+    async def _build_me_response(
+        self,
+        user_id: uuid.UUID,
+        profile: UserProfile,
+    ) -> ProfileMeResponse:
+        has_active_passport = (
+            await PassportRepository(self._session).get_active_for_user(user_id) is not None
+        )
+        return ProfileMeResponse.model_validate(profile).model_copy(
+            update={"has_active_passport": has_active_passport},
+        )
 
     def _validate_interests_list(self, values: list[str]) -> list[str]:
         try:

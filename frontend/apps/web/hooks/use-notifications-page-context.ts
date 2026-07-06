@@ -194,6 +194,7 @@ export function useNotificationsPageContext() {
     tab,
     setTab,
     items,
+    allItems,
     unreadCount,
     summary: resolvedSummary,
     preferences,

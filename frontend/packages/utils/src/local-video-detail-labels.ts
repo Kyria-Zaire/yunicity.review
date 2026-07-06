@@ -26,3 +26,8 @@ export const VIDEO_DETAIL_REPORT = "Signaler cette vidéo";
 export const VIDEO_DETAIL_LOADING = "Chargement de la vidéo…";
 export const VIDEO_DETAIL_NOT_FOUND = "Cette vidéo est introuvable ou indisponible.";
 export const VIDEO_DETAIL_PROCESSING = "Cette vidéo est en cours de traitement.";
+
+/** Copy mobile page détail (MOBILE-VIDEOS-02). */
+export const VIDEO_DETAIL_MOBILE_VIEW_ALL = "Voir tout";
+export const VIDEO_DETAIL_MOBILE_BOOKMARK = "Enregistrer";
+export const VIDEO_DETAIL_MOBILE_BOOKMARK_SOON = "Enregistrer — bientôt disponible";

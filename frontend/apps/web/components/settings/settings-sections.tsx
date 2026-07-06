@@ -51,6 +51,7 @@ import {
   formatSettingsDateTime,
   isAuthError,
   settingsSectionDomId,
+  type SettingsSectionId,
   type SettingsVerificationView,
 } from "@yunicity/utils";
 import { BadgeCheck, Clock3 } from "lucide-react";
@@ -66,6 +67,8 @@ type SettingsSectionsProps = {
   isSavingProfile: boolean;
   isSavingPrefs: boolean;
   removingDeviceId: string | null;
+  visibleSectionId?: SettingsSectionId | null;
+  variant?: "desktop" | "mobile";
   onSaveProfile: (payload: {
     display_name?: string | null;
     bio?: string | null;
@@ -81,19 +84,25 @@ type SettingsSectionsProps = {
 function SectionCard({
   sectionId,
   title,
+  variant = "desktop",
   children,
 }: {
   sectionId: string;
   title: string;
+  variant?: "desktop" | "mobile";
   children: ReactNode;
 }) {
   return (
     <section
       id={sectionId}
-      className="scroll-mt-24 rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-sm"
+      className={`rounded-2xl border border-neutral-200/90 bg-white shadow-sm ${
+        variant === "mobile" ? "p-4" : "scroll-mt-24 p-6"
+      }`}
     >
-      <h2 className="text-lg font-bold text-neutral-900">{title}</h2>
-      <div className="mt-5">{children}</div>
+      <h2 className={`font-bold text-neutral-900 ${variant === "mobile" ? "text-base" : "text-lg"}`}>
+        {title}
+      </h2>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }
@@ -138,6 +147,8 @@ export function SettingsSections({
   isSavingProfile,
   isSavingPrefs,
   removingDeviceId,
+  visibleSectionId = null,
+  variant = "desktop",
   onSaveProfile,
   onPreferenceChange,
   onRemoveDevice,
@@ -187,8 +198,16 @@ export function SettingsSections({
     await saveProfileSettings();
   }
 
+  const showSection = (sectionId: SettingsSectionId) =>
+    visibleSectionId === null || visibleSectionId === sectionId;
+
+  const wrapperClass =
+    variant === "mobile"
+      ? "space-y-4"
+      : "mt-10 space-y-6 border-t border-neutral-200/80 pt-10";
+
   return (
-    <div className="mt-10 space-y-6 border-t border-neutral-200/80 pt-10">
+    <div className={wrapperClass}>
       {profileError ? (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{profileError}</p>
       ) : null}
@@ -196,7 +215,12 @@ export function SettingsSections({
         <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{profileMessage}</p>
       ) : null}
 
-      <SectionCard sectionId={settingsSectionDomId("personal")} title={SETTINGS_PERSONAL_TITLE}>
+      {showSection("personal") ? (
+      <SectionCard
+        sectionId={settingsSectionDomId("personal")}
+        title={SETTINGS_PERSONAL_TITLE}
+        variant={variant}
+      >
         <form onSubmit={(event) => void handlePersonalSubmit(event)} className="space-y-5">
           <label className="block space-y-1.5 text-sm">
             <span className="font-medium text-neutral-800">{SETTINGS_PERSONAL_EMAIL}</span>
@@ -254,12 +278,16 @@ export function SettingsSections({
           </button>
         </form>
       </SectionCard>
+      ) : null}
 
-      <SectionCard sectionId={settingsSectionDomId("security")} title={SETTINGS_SECURITY_TITLE}>
+      {showSection("security") ? (
+      <SectionCard sectionId={settingsSectionDomId("security")} title={SETTINGS_SECURITY_TITLE} variant={variant}>
         <p className="text-sm leading-relaxed text-neutral-600">{SETTINGS_SECURITY_BODY}</p>
       </SectionCard>
+      ) : null}
 
-      <SectionCard sectionId={settingsSectionDomId("verification")} title={SETTINGS_VERIFICATION_TITLE}>
+      {showSection("verification") ? (
+      <SectionCard sectionId={settingsSectionDomId("verification")} title={SETTINGS_VERIFICATION_TITLE} variant={variant}>
         <div className="flex items-start gap-3 rounded-xl border border-neutral-100 bg-neutral-50/80 p-4">
           {verification.verified ? (
             <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
@@ -284,8 +312,10 @@ export function SettingsSections({
           </div>
         </div>
       </SectionCard>
+      ) : null}
 
-      <SectionCard sectionId={settingsSectionDomId("notifications")} title="Notifications">
+      {showSection("notifications") ? (
+      <SectionCard sectionId={settingsSectionDomId("notifications")} title="Notifications" variant={variant}>
         {preferences ? (
           <div className="space-y-2">
             <PrefToggle
@@ -314,8 +344,10 @@ export function SettingsSections({
           <p className="text-sm text-neutral-500">Préférences indisponibles pour le moment.</p>
         )}
       </SectionCard>
+      ) : null}
 
-      <SectionCard sectionId={settingsSectionDomId("display")} title={SETTINGS_DISPLAY_TITLE}>
+      {showSection("display") ? (
+      <SectionCard sectionId={settingsSectionDomId("display")} title={SETTINGS_DISPLAY_TITLE} variant={variant}>
         <label className="block space-y-1.5 text-sm">
           <span className="font-medium text-neutral-800">{SETTINGS_DISPLAY_LANGUAGE}</span>
           <select
@@ -340,8 +372,10 @@ export function SettingsSections({
           {isSavingProfile ? SETTINGS_PERSONAL_SAVING : SETTINGS_PERSONAL_SAVE}
         </button>
       </SectionCard>
+      ) : null}
 
-      <SectionCard sectionId={settingsSectionDomId("privacy")} title={SETTINGS_PRIVACY_TITLE}>
+      {showSection("privacy") ? (
+      <SectionCard sectionId={settingsSectionDomId("privacy")} title={SETTINGS_PRIVACY_TITLE} variant={variant}>
         <fieldset className="space-y-2">
           <legend className="sr-only">{SETTINGS_PRIVACY_TITLE}</legend>
           <div className="grid gap-2 sm:grid-cols-3">
@@ -383,8 +417,10 @@ export function SettingsSections({
           {isSavingProfile ? SETTINGS_PERSONAL_SAVING : SETTINGS_PERSONAL_SAVE}
         </button>
       </SectionCard>
+      ) : null}
 
-      <SectionCard sectionId={settingsSectionDomId("personalization")} title={SETTINGS_PERSONALIZATION_TITLE}>
+      {showSection("personalization") ? (
+      <SectionCard sectionId={settingsSectionDomId("personalization")} title={SETTINGS_PERSONALIZATION_TITLE} variant={variant}>
         <InterestPicker value={interests} onChange={setInterests} />
         <button
           type="button"
@@ -395,8 +431,10 @@ export function SettingsSections({
           {isSavingProfile ? SETTINGS_PERSONAL_SAVING : SETTINGS_PERSONAL_SAVE}
         </button>
       </SectionCard>
+      ) : null}
 
-      <SectionCard sectionId={settingsSectionDomId("devices")} title={SETTINGS_DEVICES_TITLE}>
+      {showSection("devices") ? (
+      <SectionCard sectionId={settingsSectionDomId("devices")} title={SETTINGS_DEVICES_TITLE} variant={variant}>
         <p className="mb-4 text-xs text-neutral-500">{SETTINGS_DEVICES_WEB_NOTE}</p>
         {pushDevices.length === 0 ? (
           <p className="text-sm text-neutral-600">{SETTINGS_DEVICES_EMPTY}</p>
@@ -428,22 +466,28 @@ export function SettingsSections({
           </ul>
         )}
       </SectionCard>
+      ) : null}
 
-      <SectionCard sectionId={settingsSectionDomId("export")} title={SETTINGS_EXPORT_TITLE}>
+      {showSection("export") ? (
+      <SectionCard sectionId={settingsSectionDomId("export")} title={SETTINGS_EXPORT_TITLE} variant={variant}>
         <p className="text-sm leading-relaxed text-neutral-600">{SETTINGS_EXPORT_BODY}</p>
         <span className="mt-3 inline-flex rounded-full bg-neutral-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-neutral-500">
           {SETTINGS_SOON}
         </span>
       </SectionCard>
+      ) : null}
 
-      <SectionCard sectionId={settingsSectionDomId("delete")} title={SETTINGS_DELETE_TITLE}>
+      {showSection("delete") ? (
+      <SectionCard sectionId={settingsSectionDomId("delete")} title={SETTINGS_DELETE_TITLE} variant={variant}>
         <p className="text-sm leading-relaxed text-neutral-600">{SETTINGS_DELETE_BODY}</p>
         <span className="mt-3 inline-flex rounded-full bg-neutral-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-neutral-500">
           {SETTINGS_SOON}
         </span>
       </SectionCard>
+      ) : null}
 
-      <SectionCard sectionId={settingsSectionDomId("help")} title={SETTINGS_HELP_TITLE}>
+      {showSection("help") ? (
+      <SectionCard sectionId={settingsSectionDomId("help")} title={SETTINGS_HELP_TITLE} variant={variant}>
         <p className="text-sm leading-relaxed text-neutral-600">{SETTINGS_HELP_BODY}</p>
         <Link
           href="/organizations/request"
@@ -452,13 +496,16 @@ export function SettingsSections({
           {SETTINGS_HELP_CTA}
         </Link>
       </SectionCard>
+      ) : null}
 
-      <SectionCard sectionId={settingsSectionDomId("about")} title={SETTINGS_ABOUT_TITLE}>
+      {showSection("about") ? (
+      <SectionCard sectionId={settingsSectionDomId("about")} title={SETTINGS_ABOUT_TITLE} variant={variant}>
         <p className="text-sm text-neutral-600">{SETTINGS_ABOUT_TAGLINE}</p>
         <p className="mt-3 text-sm font-medium text-neutral-800">
           {SETTINGS_ABOUT_VERSION} : 0.0.0
         </p>
       </SectionCard>
+      ) : null}
     </div>
   );
 }

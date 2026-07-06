@@ -1,7 +1,7 @@
 "use client";
 
 import type { Tribe, TribeMember } from "@yunicity/types";
-import type { CulturalPlaceListItem, FeedPost, LocalEvent, Neighborhood, PartnerOfferPublic, PassportMe } from "@yunicity/types";
+import type { CulturalPlaceListItem, FeedPost, LocalEvent, Neighborhood, PartnerOfferPublic } from "@yunicity/types";
 import { TRIBE_NOT_FOUND, filterAgendaUpcomingEvents, isAuthError } from "@yunicity/utils";
 import { useCallback, useEffect, useState } from "react";
 
@@ -16,7 +16,6 @@ export function useTribeDetail(slug: string, city: string) {
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [places, setPlaces] = useState<CulturalPlaceListItem[]>([]);
   const [offers, setOffers] = useState<PartnerOfferPublic[]>([]);
-  const [passport, setPassport] = useState<PassportMe | null>(null);
   const [members, setMembers] = useState<TribeMember[]>([]);
   const [relatedTribes, setRelatedTribes] = useState<Tribe[]>([]);
   const [memberTribes, setMemberTribes] = useState<Tribe[]>([]);
@@ -32,13 +31,12 @@ export function useTribeDetail(slug: string, city: string) {
     try {
       const tribeData = await api.tribes.getTribe(slug, city);
       setTribe(tribeData);
-      const [eventsRes, hoodsRes, placesRes, offersRes, passportRes, membersRes, tribesRes] =
+      const [eventsRes, hoodsRes, placesRes, offersRes, membersRes, tribesRes] =
         await Promise.allSettled([
           api.events.listEvents({ city }),
           api.neighborhoods.listNeighborhoods({ city, page_size: 20 }),
           api.listCulturalPlaces({ city, limit: 20 }),
           api.fetchPublicPartnerOffers({ city, limit: 8 }),
-          api.getPassportMe(),
           api.tribes.listTribeMembers(slug, city, { page_size: 12 }),
           api.tribes.listTribes({ city, page_size: 8 }),
         ]);
@@ -53,7 +51,6 @@ export function useTribeDetail(slug: string, city: string) {
       );
       setPlaces(placesRes.status === "fulfilled" ? placesRes.value.items : []);
       setOffers(offersRes.status === "fulfilled" ? offersRes.value.items.slice(0, 3) : []);
-      setPassport(passportRes.status === "fulfilled" ? passportRes.value : null);
       setMembers(membersRes.status === "fulfilled" ? membersRes.value.items : []);
       setMembersTotal(membersRes.status === "fulfilled" ? membersRes.value.total : 0);
       const allTribes =
@@ -133,7 +130,6 @@ export function useTribeDetail(slug: string, city: string) {
     neighborhoods,
     places,
     offers,
-    passport,
     members,
     membersTotal,
     memberTribes,

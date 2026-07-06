@@ -480,6 +480,17 @@ export type {
 } from "./feed";
 
 export type {
+  PostComposerMeta,
+  PostCrossPostTargets,
+  PostFormatId,
+  PostMediaItem,
+  PostMediaTypeId,
+  PostMediaUploadResponse,
+  PostPollPayload,
+  PostVisibilityId,
+} from "./post-composer";
+
+export type {
   EventInterestToggleResponse,
   LocalEvent,
   LocalEventCreatePayload,

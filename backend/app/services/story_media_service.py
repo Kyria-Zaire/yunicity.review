@@ -18,7 +18,7 @@ from app.services.story_media.r2_storage import build_story_media_storage
 from app.services.story_media.storage_keys import build_story_media_key
 
 ALLOWED_IMAGE_TYPES = frozenset({"image/jpeg", "image/png", "image/webp"})
-ALLOWED_VIDEO_TYPES = frozenset({"video/mp4"})
+ALLOWED_VIDEO_TYPES = frozenset({"video/mp4", "video/webm"})
 ALLOWED_MEDIA_TYPES = ALLOWED_IMAGE_TYPES | ALLOWED_VIDEO_TYPES
 
 EXTENSION_BY_MIME = {
@@ -26,6 +26,7 @@ EXTENSION_BY_MIME = {
     "image/png": ".png",
     "image/webp": ".webp",
     "video/mp4": ".mp4",
+    "video/webm": ".webm",
 }
 
 

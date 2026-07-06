@@ -6,6 +6,7 @@ import type {
   FeedListResponse,
   FeedPost,
   PostCreatePayload,
+  PostMediaUploadResponse,
   ReportPostPayload,
 } from "@yunicity/types";
 
@@ -41,7 +42,28 @@ export class FeedApi extends ApiClientBase {
       author_type: "citizen",
       body: payload.body,
       media_url: payload.media_url ?? null,
+      media_urls: payload.media_urls ?? [],
+      visibility: payload.visibility ?? "public",
+      post_format: payload.post_format ?? null,
+      allow_comments: payload.allow_comments ?? true,
+      allow_shares: payload.allow_shares ?? true,
+      scheduled_at: payload.scheduled_at ?? null,
+      location_label: payload.location_label ?? null,
+      activity_label: payload.activity_label ?? null,
+      linked_tribe_id: payload.linked_tribe_id ?? null,
+      tagged_user_ids: payload.tagged_user_ids ?? [],
+      audience_user_ids: payload.audience_user_ids ?? [],
+      poll: payload.poll ?? null,
+      cross_post_targets: payload.cross_post_targets ?? null,
+      use_media_caption: payload.use_media_caption ?? false,
+      location: payload.location ?? null,
     });
+  }
+
+  uploadPostMedia(file: File): Promise<PostMediaUploadResponse> {
+    const form = new FormData();
+    form.append("file", file);
+    return this.postFormData<PostMediaUploadResponse>("/posts/media", form);
   }
 
   likePost(postId: string): Promise<void> {

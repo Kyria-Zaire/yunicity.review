@@ -1,4 +1,4 @@
-export type CitizenFlyoutVariant = "sidebar" | "top-nav";
+export type CitizenFlyoutVariant = "sidebar" | "top-nav" | "fab" | "bottom-nav";
 
 export type CitizenFlyoutPosition = {
   top: number;
@@ -21,6 +21,23 @@ export function computeCitizenFlyoutPosition(
     return {
       top: rect.bottom + 8,
       left: Math.max(16, Math.min(rect.right - menuWidth, maxLeft)),
+    };
+  }
+
+  if (variant === "fab") {
+    return {
+      top: rect.top - 8,
+      left: Math.max(16, Math.min(rect.right - menuWidth, maxLeft)),
+      transform: "translateY(-100%)",
+    };
+  }
+
+  if (variant === "bottom-nav") {
+    const centeredLeft = rect.left + rect.width / 2 - menuWidth / 2;
+    return {
+      top: rect.top - 8,
+      left: Math.max(16, Math.min(centeredLeft, maxLeft)),
+      transform: "translateY(-100%)",
     };
   }
 

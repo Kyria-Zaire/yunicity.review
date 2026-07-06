@@ -72,3 +72,28 @@ export function formatVideoDetailCategory(item: LocalVideoFeedItem): string {
 export function formatVideoDetailAuthorLine(item: LocalVideoFeedItem): string {
   return formatVideoAuthorHandle(item);
 }
+
+/** Tags territoire / thème pour la page détail mobile. */
+export function buildVideoDetailMobileTags(item: LocalVideoFeedItem): string[] {
+  const tags: string[] = [];
+  const city = item.city?.trim();
+  if (city) tags.push(`#${city.toLowerCase()}`);
+  const category = formatLocalVideoTypeLabel(item.video_type);
+  if (category) {
+    const slug = category
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, "");
+    tags.push(`#${slug}`);
+  }
+  if (item.video_type === "bon_plan" || item.local_event_id) {
+    tags.push("#Sortir");
+  } else if (item.neighborhood_name?.trim()) {
+    tags.push(`#${item.neighborhood_name.trim().replace(/\s+/g, "")}`);
+  }
+  return [...new Set(tags)].slice(0, 3);
+}
+
+export function formatVideoDetailMobileMetaLine(item: LocalVideoFeedItem): string {
+  return `${formatVideoTemporalLabel(item.published_at)} • ${formatVideoViewCountLabel(item.view_count ?? 0)}`;
+}

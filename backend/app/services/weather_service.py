@@ -54,6 +54,10 @@ class WeatherService:
                 return cached[1]
 
         if not self._settings.openweather_api_key:
+            if self._settings.app_env == "dev":
+                stub = self._dev_stub_current(query)
+                _CACHE[key] = (now_mono, stub)
+                return stub
             raise AppError(
                 status_code=503,
                 code="weather_key_missing",
@@ -65,6 +69,36 @@ class WeatherService:
 
         _CACHE[key] = (now_mono, parsed)
         return parsed
+
+    def _dev_stub_current(self, query: WeatherCurrentQuery) -> WeatherCurrentOut:
+        """Deterministic local preview when OpenWeather is not configured (dev only)."""
+        city = (query.city or "Reims").strip() or "Reims"
+        seed = len(city) + datetime.now(UTC).day
+        temps = [11.0, 13.0, 15.0, 12.0, 14.0, 16.0]
+        labels = [
+            "Nuages légers",
+            "Éclaircies",
+            "Ciel clair",
+            "Brume matinale",
+            "Douceur printanière",
+            "Ciel voilé",
+        ]
+        index = seed % len(temps)
+        temperature = temps[index]
+        now_utc = datetime.now(UTC)
+        hour = now_utc.hour
+        is_day = 7 <= hour < 20
+        return WeatherCurrentOut(
+            temperature=temperature,
+            feels_like=temperature - 1.0,
+            condition=labels[index],
+            icon="02d" if is_day else "02n",
+            sunrise=None,
+            sunset=None,
+            is_day=is_day,
+            city=city,
+            country="FR",
+        )
 
     async def _fetch_openweather_current(self, query: WeatherCurrentQuery) -> dict[str, Any]:
         params: dict[str, str] = {

@@ -42,7 +42,11 @@ async def test_register_creates_profile(auth_client: AsyncClient) -> None:
     assert profile["username"]
     assert profile["user_id"] == data["user"]["id"]
     assert profile["onboarding_completed"] is False
+    assert profile["has_active_passport"] is True
     assert "email" not in profile
+    passport = await auth_client.get("/api/v1/passport/me", headers=_auth_headers(token))
+    assert passport.status_code == 200
+    assert passport.json()["city"] == "Reims"
 
 
 @pytest.mark.asyncio
@@ -164,6 +168,25 @@ async def test_private_profile_denied(auth_client: AsyncClient) -> None:
     response = await auth_client.get(f"/api/v1/profile/{username}")
     assert response.status_code == 404
     assert response.json()["code"] == "PROFILE_NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_public_profile_by_user_id(auth_client: AsyncClient) -> None:
+    data = await _register(auth_client, {}, suffix="byid")
+    token = data["access_token"]
+    me = await auth_client.get("/api/v1/profile/me", headers=_auth_headers(token))
+    user_id = me.json()["user_id"]
+    username = me.json()["username"]
+    await auth_client.post(
+        "/api/v1/profile/complete",
+        headers=_auth_headers(token),
+        json={"city": "Reims", "interests": ["tech"]},
+    )
+    response = await auth_client.get(f"/api/v1/users/{user_id}/profile")
+    assert response.status_code == 200, response.text
+    public = response.json()
+    assert public["username"] == username
+    assert "email" not in public
 
 
 @pytest.mark.asyncio

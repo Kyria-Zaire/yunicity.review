@@ -63,3 +63,14 @@ class MarkNotificationReadResponse(BaseModel):
 
 class MarkAllNotificationsReadResponse(BaseModel):
     marked_count: int
+
+
+class UserNotificationSummaryResponse(BaseModel):
+    unread_count: int
+    unread_mentions: int = 0
+    unread_social: int = 0
+    unread_events: int = 0
+    unread_passport: int = 0
+    unread_system: int = 0
+    count_this_week: int = 0
+    count_this_month: int = 0

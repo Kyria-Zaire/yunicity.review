@@ -11,6 +11,8 @@ export const Z_INDEX = {
   VIDEO_HINT: 55,
   /** FAB Create Hub (au-dessus player, sous sheets hub) */
   CREATE_FAB: 65,
+  /** FAB Menu Yunicity (mobile, droite) */
+  YUNICITY_MENU_FAB: 65,
   /** Commentaires vidéo */
   VIDEO_COMMENTS: 60,
   /** Signalement vidéo, modales quartier */

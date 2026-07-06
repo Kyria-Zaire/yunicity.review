@@ -22,6 +22,7 @@ import {
   buildProfilePortalImpactPercent,
   buildProfilePortalStats,
   buildProfileTribeCards,
+  filterProfileUserFeedPosts,
   formatProfileImpactLabel,
   resolveProfilePortalLevelTitle,
 } from "@yunicity/utils";
@@ -51,28 +52,29 @@ export function useProfilePortalContext() {
       setProfile(profileData);
       const city = profileData.city?.trim() || "Reims";
 
-      const [
-        passportRes,
-        stampsRes,
-        tribesRes,
-        eventsRes,
-        savedRes,
-        hoodsRes,
-        placesRes,
-        feedRes,
-      ] = await Promise.allSettled([
-        api.getPassportMe(),
-        api.listPassportStamps(),
-        api.tribes.listTribes({ city, page_size: 40 }),
-        api.events.listEvents({ city }),
-        api.events.listSavedEvents(),
-        api.neighborhoods.listNeighborhoods({ city, page_size: 20 }),
-        api.listCulturalPlaces({ city, limit: 24 }),
-        api.listFeed({ limit: 40 }),
-      ]);
+      const passportData = await api.getPassportMeIfActive(profileData);
 
-      setPassport(passportRes.status === "fulfilled" ? passportRes.value : null);
-      setStamps(stampsRes.status === "fulfilled" ? stampsRes.value.items : []);
+      const [tribesRes, eventsRes, savedRes, hoodsRes, placesRes, feedRes] =
+        await Promise.allSettled([
+          api.tribes.listTribes({ city, page_size: 40 }),
+          api.events.listEvents({ city }),
+          api.events.listSavedEvents(),
+          api.neighborhoods.listNeighborhoods({ city, page_size: 20 }),
+          api.listCulturalPlaces({ city, limit: 24 }),
+          api.listFeed({ limit: 40 }),
+        ]);
+
+      setPassport(passportData);
+      if (passportData) {
+        try {
+          const stampData = await api.listPassportStamps();
+          setStamps(stampData.items);
+        } catch {
+          setStamps([]);
+        }
+      } else {
+        setStamps([]);
+      }
       setTribes(
         tribesRes.status === "fulfilled"
           ? tribesRes.value.items.filter((tribe) => !tribe.is_archived)
@@ -245,6 +247,15 @@ export function useProfilePortalContext() {
     tribeCards,
     badges,
     badgesPreview,
+    userPosts: useMemo(
+      () => (profile ? filterProfileUserFeedPosts(feedPosts, profile) : []),
+      [feedPosts, profile],
+    ),
+    savedEventsCount: savedEvents.length,
+    interestedEventsCount: useMemo(
+      () => events.filter((event) => event.interested_by_me).length,
+      [events],
+    ),
     reload: load,
     setProfile,
   };

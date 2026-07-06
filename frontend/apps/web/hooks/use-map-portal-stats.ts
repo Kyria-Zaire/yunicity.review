@@ -13,19 +13,30 @@ export function useMapPortalStats() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    void Promise.allSettled([api.events.listSavedEvents(), api.getPassportMe()])
-      .then(([savedRes, passportRes]) => {
+
+    async function load() {
+      try {
+        const [savedRes, profileRes] = await Promise.allSettled([
+          api.events.listSavedEvents(),
+          api.getProfileMe(),
+        ]);
         if (cancelled) return;
+
         if (savedRes.status === "fulfilled") {
           setFavoritesCount(savedRes.value.items.length);
         }
-        if (passportRes.status === "fulfilled") {
-          setVisitedCount(passportRes.value.stats.stamps_count);
+
+        const profile = profileRes.status === "fulfilled" ? profileRes.value : null;
+        const passport = profile ? await api.getPassportMeIfActive(profile) : null;
+        if (!cancelled && passport) {
+          setVisitedCount(passport.stats.stamps_count);
         }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    }
+
+    void load();
     return () => {
       cancelled = true;
     };

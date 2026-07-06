@@ -1,6 +1,7 @@
 "use client";
 
 import { NeighborhoodDetailBreadcrumbs } from "@/components/neighborhoods/neighborhood-detail-breadcrumbs";
+import { NeighborhoodMobileDetailView } from "@/components/neighborhoods/mobile";
 import { NeighborhoodV2BelongingSection } from "@/components/neighborhoods/v2/neighborhood-v2-belonging-section";
 import { NeighborhoodV2ExploreSection } from "@/components/neighborhoods/v2/neighborhood-v2-explore-section";
 import { NeighborhoodV2Hero } from "@/components/neighborhoods/v2/neighborhood-v2-hero";
@@ -58,7 +59,12 @@ export function NeighborhoodDetailScreen({ slug, city }: { slug: string; city: s
   if (state.loading) {
     return (
       <NeighborhoodsAppShell>
-        <NeighborhoodV2Skeleton />
+        <div className="web-mobile-neighborhood-detail-only px-4 py-12">
+          <NeighborhoodV2Skeleton />
+        </div>
+        <div className="web-desktop-neighborhood-detail-only">
+          <NeighborhoodV2Skeleton />
+        </div>
       </NeighborhoodsAppShell>
     );
   }
@@ -66,7 +72,16 @@ export function NeighborhoodDetailScreen({ slug, city }: { slug: string; city: s
   if (state.isNotFound) {
     return (
       <NeighborhoodsAppShell>
-        <div className="mx-auto max-w-lg px-3 py-16 text-center">
+        <div className="web-mobile-neighborhood-detail-only px-4 py-16 text-center">
+          <p className="text-base font-medium text-neutral-800">{NEIGHBORHOOD_V2_NOT_FOUND}</p>
+          <Link
+            href={`/neighborhoods?city=${encodeURIComponent(city)}`}
+            className="mt-6 inline-flex rounded-full bg-yunicity-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-yunicity-primary/90"
+          >
+            {NEIGHBORHOOD_V2_BACK_TO_LIST}
+          </Link>
+        </div>
+        <div className="web-desktop-neighborhood-detail-only mx-auto max-w-lg px-3 py-16 text-center">
           <p className="text-base font-medium text-neutral-800">{NEIGHBORHOOD_V2_NOT_FOUND}</p>
           <Link
             href={`/neighborhoods?city=${encodeURIComponent(city)}`}
@@ -82,7 +97,17 @@ export function NeighborhoodDetailScreen({ slug, city }: { slug: string; city: s
   if (state.error || !detail) {
     return (
       <NeighborhoodsAppShell>
-        <div className="mx-auto max-w-lg px-3 py-16 text-center">
+        <div className="web-mobile-neighborhood-detail-only px-4 py-16 text-center">
+          <p className="text-sm text-red-800">{NEIGHBORHOOD_V2_ERROR}</p>
+          <button
+            type="button"
+            onClick={() => void state.reload()}
+            className="mt-4 rounded-full bg-yunicity-primary px-4 py-2 text-sm font-medium text-white"
+          >
+            {NEIGHBORHOOD_DETAIL_RETRY}
+          </button>
+        </div>
+        <div className="web-desktop-neighborhood-detail-only mx-auto max-w-lg px-3 py-16 text-center">
           <p className="text-sm text-red-800">{NEIGHBORHOOD_V2_ERROR}</p>
           <button
             type="button"
@@ -96,36 +121,41 @@ export function NeighborhoodDetailScreen({ slug, city }: { slug: string; city: s
     );
   }
 
+  const desktopContent = (
+    <div className="web-desktop-neighborhood-detail-only mx-auto w-full min-w-0 max-w-[1100px] space-y-6 overflow-x-hidden px-3 pb-12 sm:px-4 lg:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <NeighborhoodDetailBreadcrumbs items={breadcrumbs} />
+        <button
+          type="button"
+          onClick={() => void shareNeighborhood()}
+          className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-yunicity-primary hover:underline"
+        >
+          {NEIGHBORHOOD_V2_SHARE}
+        </button>
+      </div>
+
+      <NeighborhoodV2Hero detail={detail} />
+
+      {history ? <NeighborhoodV2HistorySection history={history} /> : null}
+
+      <NeighborhoodV2TimelineSection timeline={timeline} />
+
+      <NeighborhoodV2ExploreSection detail={detail} />
+
+      <NeighborhoodV2PracticalSection detail={detail} />
+
+      <NeighborhoodV2LocalLifeSection detail={detail} />
+
+      <NeighborhoodV2BelongingSection detail={detail} />
+
+      <NeighborhoodV2StatsSection detail={detail} />
+    </div>
+  );
+
   return (
     <NeighborhoodsAppShell>
-      <div className="mx-auto w-full min-w-0 max-w-[1100px] space-y-6 overflow-x-hidden px-3 pb-12 sm:px-4 lg:px-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <NeighborhoodDetailBreadcrumbs items={breadcrumbs} />
-          <button
-            type="button"
-            onClick={() => void shareNeighborhood()}
-            className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-yunicity-primary hover:underline"
-          >
-            {NEIGHBORHOOD_V2_SHARE}
-          </button>
-        </div>
-
-        <NeighborhoodV2Hero detail={detail} />
-
-        {history ? <NeighborhoodV2HistorySection history={history} /> : null}
-
-        <NeighborhoodV2TimelineSection timeline={timeline} />
-
-        <NeighborhoodV2ExploreSection detail={detail} />
-
-        <NeighborhoodV2PracticalSection detail={detail} />
-
-        <NeighborhoodV2LocalLifeSection detail={detail} />
-
-        <NeighborhoodV2BelongingSection detail={detail} />
-
-        <NeighborhoodV2StatsSection detail={detail} />
-      </div>
+      <NeighborhoodMobileDetailView detail={detail} />
+      {desktopContent}
     </NeighborhoodsAppShell>
   );
 }

@@ -5,7 +5,6 @@ import type {
   LocalEvent,
   Neighborhood,
   PartnerOfferPublic,
-  PassportMe,
   Tribe,
 } from "@yunicity/types";
 import { filterAgendaUpcomingEvents } from "@yunicity/utils";
@@ -23,7 +22,6 @@ export type TribesPortalContextState = {
   neighborhoods: Neighborhood[];
   culturalPlaces: CulturalPlaceListItem[];
   offers: PartnerOfferPublic[];
-  passport: PassportMe | null;
   reload: () => void;
 };
 
@@ -39,7 +37,6 @@ export function useTribesPortalContext(initialCity?: string): TribesPortalContex
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [culturalPlaces, setCulturalPlaces] = useState<CulturalPlaceListItem[]>([]);
   const [offers, setOffers] = useState<PartnerOfferPublic[]>([]);
-  const [passport, setPassport] = useState<PassportMe | null>(null);
 
   const city = useMemo(
     () => initialCity?.trim() || user?.city?.trim() || DEFAULT_CITY,
@@ -50,13 +47,12 @@ export function useTribesPortalContext(initialCity?: string): TribesPortalContex
     setLoading(true);
     setError(false);
     try {
-      const [tribesRes, eventsRes, hoodsRes, placesRes, offersRes, passportRes] = await Promise.allSettled([
+      const [tribesRes, eventsRes, hoodsRes, placesRes, offersRes] = await Promise.allSettled([
         api.tribes.listTribes({ city, page_size: 24 }),
         api.events.listEvents({ city }),
         api.neighborhoods.listNeighborhoods({ city, page_size: 20 }),
         api.listCulturalPlaces({ city, limit: 20 }),
         api.fetchPublicPartnerOffers({ city, limit: 8 }),
-        api.getPassportMe(),
       ]);
 
       setTribes(
@@ -70,7 +66,6 @@ export function useTribesPortalContext(initialCity?: string): TribesPortalContex
       );
       setCulturalPlaces(placesRes.status === "fulfilled" ? placesRes.value.items : []);
       setOffers(offersRes.status === "fulfilled" ? offersRes.value.items.slice(0, 4) : []);
-      setPassport(passportRes.status === "fulfilled" ? passportRes.value : null);
     } catch {
       setError(true);
     } finally {
@@ -91,7 +86,6 @@ export function useTribesPortalContext(initialCity?: string): TribesPortalContex
     neighborhoods,
     culturalPlaces,
     offers,
-    passport,
     reload: load,
   };
 }

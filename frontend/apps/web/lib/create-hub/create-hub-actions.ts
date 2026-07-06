@@ -44,7 +44,7 @@ const CITIZEN_ACTIONS: readonly CreateHubAction[] = [
     description: "Texte, photo ou information locale.",
     icon: PenLine,
     kind: "navigate",
-    href: CREATE_HUB_FEED_COMPOSER_HREF,
+    href: "/feed/new",
   },
   {
     id: "neighborhood-memory",

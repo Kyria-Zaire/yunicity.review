@@ -19,8 +19,8 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from
 import { createPortal } from "react-dom";
 
 type CitizenAccountMenuProps = {
-  /** Sidebar compacte (icône) ou barre haute. */
-  variant?: "sidebar" | "top-nav";
+  /** Sidebar compacte, barre haute, header mobile (hero) ou bottom nav. */
+  variant?: "sidebar" | "top-nav" | "bottom-nav" | "mobile-header";
 };
 
 /**
@@ -42,6 +42,9 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
 
   const profileLabel = displayName ?? user?.email?.split("@")[0] ?? "Mon profil";
   const isTopNav = variant === "top-nav";
+  const isMobileHeader = variant === "mobile-header";
+  const isBottomNav = variant === "bottom-nav";
+  const isCompactHeader = isTopNav || isMobileHeader;
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -56,8 +59,13 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
   const updateMenuPosition = useCallback(() => {
     const trigger = triggerRef.current;
     if (!trigger) return;
-    setMenuPosition(computeCitizenFlyoutPosition(trigger, isTopNav ? "top-nav" : "sidebar"));
-  }, [isTopNav]);
+    setMenuPosition(
+      computeCitizenFlyoutPosition(
+        trigger,
+        isBottomNav ? "bottom-nav" : isCompactHeader ? "top-nav" : "sidebar",
+      ),
+    );
+  }, [isBottomNav, isCompactHeader]);
 
   useLayoutEffect(() => {
     if (!open) {
@@ -183,7 +191,16 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
 
   return (
     <>
-      <div ref={containerRef} className="relative flex w-full justify-center xl:block">
+      <div
+        ref={containerRef}
+        className={
+          isBottomNav
+            ? "relative flex w-full justify-center"
+            : isCompactHeader
+              ? "relative shrink-0"
+              : "relative flex w-full justify-center xl:block"
+        }
+      >
         <button
           ref={triggerRef}
           type="button"
@@ -193,14 +210,38 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
           aria-expanded={open}
           aria-controls={menuId}
           className={
-            isTopNav
-              ? "inline-flex items-center gap-1 rounded-full py-1 pl-1 pr-2 transition hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2"
+            isBottomNav
+              ? `flex min-h-[3.25rem] w-full flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1 text-yunicity-primary transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
+                  accountMenuActive ? "opacity-100" : "opacity-90 hover:opacity-100"
+                }`
+              : isCompactHeader
+              ? "inline-flex items-center gap-0.5 rounded-full py-1 pl-1 pr-1.5 transition hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2"
               : `flex w-[var(--web-sidebar-icon-hit)] flex-col items-center justify-center gap-0.5 rounded-full py-1 transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 xl:w-full xl:flex-row xl:justify-start xl:gap-2 xl:rounded-xl xl:p-2 ${
                   accountMenuActive ? "bg-neutral-100 xl:bg-neutral-50" : ""
                 }`
           }
         >
-          {isTopNav ? (
+          {isBottomNav ? (
+            <>
+              <ProfileAvatar name={profileLabel} size="xs" />
+              <ChevronDown
+                className={`h-3 w-3 shrink-0 text-yunicity-primary transition-transform ${
+                  open ? "rotate-180" : ""
+                }`}
+                aria-hidden
+              />
+            </>
+          ) : isMobileHeader ? (
+            <>
+              <ProfileAvatar name={profileLabel} size="sm" />
+              <ChevronDown
+                className={`h-3 w-3 shrink-0 text-yunicity-primary transition-transform ${
+                  open ? "rotate-180" : ""
+                }`}
+                aria-hidden
+              />
+            </>
+          ) : isTopNav ? (
             <>
               <ProfileAvatar name={profileLabel} size="sm" />
               <ChevronDown

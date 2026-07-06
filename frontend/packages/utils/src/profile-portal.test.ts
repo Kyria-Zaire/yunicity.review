@@ -29,6 +29,7 @@ const PROFILE: ProfileMe = {
   onboarding_step: null,
   preferred_language: "fr",
   notification_preferences: {},
+  has_active_passport: false,
   created_at: "",
   updated_at: "",
 };

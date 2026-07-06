@@ -8,6 +8,8 @@ export const FEED_EMPTY_TITLE = "Votre ville est encore calme.";
 export const FEED_EMPTY_BODY =
   "Soyez le premier à partager une découverte locale. Les offres Passport de vos commerces apparaîtront ici au fil du temps.";
 
+export const FEED_EMPTY_DISCOVERY_TITLE = "En ce moment à";
+
 export const FEED_ERROR_TITLE = "Impossible de charger le fil";
 
 export const FEED_ERROR_BODY =

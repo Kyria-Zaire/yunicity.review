@@ -76,12 +76,8 @@ export function SearchExplorerLanding({ explorer, categoryId }: SearchExplorerLa
             </div>
           </section>
 
-          <LocalWeatherHeroCard city={city} className="hidden lg:flex" />
+          <LocalWeatherHeroCard city={city} className="lg:col-start-2 lg:row-start-1" />
         </div>
-      ) : null}
-
-      {categoryId === "all" || categoryId === "events" ? (
-        <LocalWeatherHeroCard city={city} className="lg:hidden" />
       ) : null}
 
       {categoryId !== "events" ? (

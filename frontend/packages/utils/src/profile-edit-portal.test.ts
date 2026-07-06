@@ -26,6 +26,7 @@ function baseProfile(overrides: Partial<ProfileMe> = {}): ProfileMe {
     onboarding_step: "done",
     preferred_language: "fr",
     notification_preferences: {},
+    has_active_passport: false,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,

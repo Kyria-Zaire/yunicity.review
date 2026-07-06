@@ -5,9 +5,10 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.dependencies import require_authenticated_user
 from app.core.feed_constants import FEED_PAGE_SIZE_DEFAULT, FEED_PAGE_SIZE_MAX
 from app.db.session import get_db
@@ -17,6 +18,7 @@ from app.schemas.post import (
     CommentListResponse,
     CommentResponse,
     PostCreateRequest,
+    PostMediaUploadResponse,
     PostResponse,
     PostUpdateRequest,
     ReportCreateRequest,
@@ -25,8 +27,19 @@ from app.services.comment_service import CommentService
 from app.services.like_service import LikeService
 from app.services.post_service import PostService
 from app.services.report_service import ReportService
+from app.services.story_media_service import StoryMediaService
 
 router = APIRouter(prefix="/posts", tags=["posts"])
+
+
+@router.post("/media", response_model=PostMediaUploadResponse, status_code=status.HTTP_201_CREATED)
+async def upload_post_media(
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    file: Annotated[UploadFile, File()],
+) -> PostMediaUploadResponse:
+    settings = get_settings()
+    url, media_type = await StoryMediaService(settings).upload(current_user, file)
+    return PostMediaUploadResponse(url=url, media_type=media_type if media_type in ("image", "video") else "image")
 
 
 @router.post("", response_model=PostResponse, status_code=status.HTTP_201_CREATED)

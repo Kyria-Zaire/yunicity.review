@@ -65,6 +65,62 @@ async def test_create_citizen_post(auth_client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
+async def test_create_citizen_post_with_composer_metadata(auth_client: AsyncClient) -> None:
+    user = await _register(auth_client, suffix="-composer", city="Reims")
+    response = await auth_client.post(
+        "/api/v1/posts",
+        json={
+            "author_type": "citizen",
+            "body": "Magnifique journée à Reims",
+            "visibility": "followers",
+            "post_format": "photo",
+            "allow_comments": False,
+            "allow_shares": True,
+            "media_urls": [
+                {"url": "https://cdn.example.com/photo.jpg", "media_type": "image"},
+            ],
+            "cross_post_targets": {
+                "instagram": True,
+                "tiktok": False,
+                "facebook": False,
+                "twitter": False,
+            },
+        },
+        headers=auth_header(user["access_token"]),
+    )
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["media_url"] == "https://cdn.example.com/photo.jpg"
+    assert body["composer"] is not None
+    assert body["composer"]["visibility"] == "followers"
+    assert body["composer"]["allow_comments"] is False
+    assert body["composer"]["cross_post_targets"]["instagram"] is True
+
+
+@pytest.mark.asyncio
+async def test_create_post_comments_disabled_blocks_comment(auth_client: AsyncClient) -> None:
+    user = await _register(auth_client, suffix="-nocomments", city="Reims")
+    create = await auth_client.post(
+        "/api/v1/posts",
+        json={
+            "author_type": "citizen",
+            "body": "Sans commentaires",
+            "allow_comments": False,
+        },
+        headers=auth_header(user["access_token"]),
+    )
+    assert create.status_code == 201, create.text
+    post_id = create.json()["id"]
+    comment = await auth_client.post(
+        f"/api/v1/posts/{post_id}/comments",
+        json={"body": "Test"},
+        headers=auth_header(user["access_token"]),
+    )
+    assert comment.status_code == 403, comment.text
+    assert comment.json()["code"] == "COMMENTS_DISABLED"
+
+
+@pytest.mark.asyncio
 async def test_create_organization_post_requires_admin(
     auth_client: AsyncClient,
     rbac_user_factory: RbacUserFactory,

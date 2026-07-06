@@ -1,6 +1,7 @@
 "use client";
 
 import { PassportAppShell } from "@/components/passport/passport-app-shell";
+import { PassportMobileView } from "@/components/passport/mobile";
 import { PassportBadgesSection } from "@/components/passport/passport-badges-section";
 import { PassportChallengesSection } from "@/components/passport/passport-challenges-section";
 import { PassportErrorState } from "@/components/passport/passport-error-state";
@@ -14,21 +15,26 @@ import { PassportStampsSection } from "@/components/passport/passport-stamps-sec
 import { PassportStatsGrid } from "@/components/passport/passport-stats-grid";
 import { PassportWalletCard } from "@/components/passport/passport-wallet-card";
 import { usePassportMe } from "@/hooks/use-passport-me";
+import { usePassportMobileExtras } from "@/hooks/use-passport-mobile-extras";
 import { usePassportOffers } from "@/hooks/use-passport-offers";
 import { usePassportStamps } from "@/hooks/use-passport-stamps";
+import { useAuth } from "@/lib/auth/auth-provider";
 import { yunicityBtnPrimaryLg } from "@/lib/brand-classes";
 import {
   PASSPORT_ACTIVATE_BODY,
   PASSPORT_ACTIVATE_CTA,
   PASSPORT_ACTIVATE_TITLE,
+  buildSettingsDisplayName,
   formatClaimSuccessBanner,
 } from "@yunicity/utils";
 
 export function PassportPage() {
+  const { user } = useAuth();
   const {
     overview,
     badges,
     challenges,
+    profile,
     error,
     isLoading,
     needsActivation,
@@ -53,35 +59,84 @@ export function PassportPage() {
     redeemingId,
     message: offersMessage,
   } = usePassportOffers(passportActive);
+  const mobileExtras = usePassportMobileExtras(passportActive);
+
+  const displayName = profile
+    ? buildSettingsDisplayName(profile, user)
+    : user?.full_name?.trim() || "Citoyen";
+
+  const activationCard = (
+    <div className="mx-auto max-w-lg rounded-3xl border border-neutral-200/90 bg-white p-8 shadow-sm">
+      <p className="text-xs font-bold uppercase tracking-widest text-yunicity-primary">
+        Territoire · Identité
+      </p>
+      <h1 className="mt-2 text-2xl font-bold text-neutral-900">{PASSPORT_ACTIVATE_TITLE}</h1>
+      <p className="mt-2 text-sm leading-relaxed text-neutral-600">{PASSPORT_ACTIVATE_BODY}</p>
+      {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+      <button
+        type="button"
+        onClick={() => void activate()}
+        disabled={isActivating}
+        className={`mt-6 w-full ${yunicityBtnPrimaryLg} disabled:opacity-60`}
+      >
+        {isActivating ? "Activation…" : PASSPORT_ACTIVATE_CTA}
+      </button>
+    </div>
+  );
 
   return (
     <PassportAppShell>
-      <div className="px-4 py-6 sm:px-6 sm:py-8">
-        {isSessionExpired ? (
-          <PassportSessionExpiredState />
-        ) : isLoading ? (
-          <PassportLoadingState />
-        ) : error && !needsActivation ? (
-          <PassportErrorState message={error} onRetry={() => void reload()} />
-        ) : needsActivation || !overview || !badges || !challenges ? (
-          <div className="mx-auto max-w-lg rounded-3xl border border-neutral-200/90 bg-white p-8 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-widest text-yunicity-primary">
-              Territoire · Identité
-            </p>
-            <h1 className="mt-2 text-2xl font-bold text-neutral-900">{PASSPORT_ACTIVATE_TITLE}</h1>
-            <p className="mt-2 text-sm leading-relaxed text-neutral-600">{PASSPORT_ACTIVATE_BODY}</p>
-            {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
-            <button
-              type="button"
-              onClick={() => void activate()}
-              disabled={isActivating}
-              className={`mt-6 w-full ${yunicityBtnPrimaryLg} disabled:opacity-60`}
-            >
-              {isActivating ? "Activation…" : PASSPORT_ACTIVATE_CTA}
-            </button>
+      {isSessionExpired ? (
+        <>
+          <div className="web-mobile-passport-only px-4 py-8">
+            <PassportSessionExpiredState />
           </div>
-        ) : (
-          <div className="mx-auto max-w-5xl space-y-10">
+          <div className="web-desktop-passport-only px-4 py-6 sm:px-6 sm:py-8">
+            <PassportSessionExpiredState />
+          </div>
+        </>
+      ) : isLoading ? (
+        <>
+          <p
+            className="web-mobile-passport-only px-4 py-12 text-center text-sm text-neutral-500"
+            role="status"
+          >
+            Chargement de votre passeport…
+          </p>
+          <div className="web-desktop-passport-only px-4 py-6 sm:px-6 sm:py-8">
+            <PassportLoadingState />
+          </div>
+        </>
+      ) : error && !needsActivation ? (
+        <>
+          <div className="web-mobile-passport-only px-4 py-8">
+            <PassportErrorState message={error} onRetry={() => void reload()} />
+          </div>
+          <div className="web-desktop-passport-only px-4 py-6 sm:px-6 sm:py-8">
+            <PassportErrorState message={error} onRetry={() => void reload()} />
+          </div>
+        </>
+      ) : needsActivation || !overview || !badges || !challenges || !profile ? (
+        <>
+          <div className="web-mobile-passport-only px-4 py-8">{activationCard}</div>
+          <div className="web-desktop-passport-only px-4 py-6 sm:px-6 sm:py-8">{activationCard}</div>
+        </>
+      ) : (
+        <>
+          <PassportMobileView
+            profile={profile}
+            displayName={displayName}
+            overview={overview}
+            passportMe={mobileExtras.passportMe}
+            qrPayload={mobileExtras.qrPayload}
+            qrLoading={mobileExtras.isLoading}
+            offers={offers}
+            stamps={stamps}
+            stampsLoading={stampsLoading}
+          />
+
+          <div className="web-desktop-passport-only px-4 py-6 sm:px-6 sm:py-8">
+            <div className="mx-auto max-w-5xl space-y-10">
             <PassportHero summary={overview.summary} passport={overview.passport} />
 
             <PassportStatsGrid summary={overview.summary} />
@@ -167,8 +222,9 @@ export function PassportPage() {
               </p>
             </footer>
           </div>
-        )}
-      </div>
+          </div>
+        </>
+      )}
     </PassportAppShell>
   );
 }

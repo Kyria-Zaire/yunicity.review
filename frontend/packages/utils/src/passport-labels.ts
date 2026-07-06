@@ -141,6 +141,28 @@ export function isPassportNotActiveError(error: unknown): boolean {
   );
 }
 
+/** Route `/passport/me` absente ou 404 générique (backend pas à jour, pas de passport). */
+export function isPassportEndpointMissingError(error: unknown): boolean {
+  if (
+    typeof error !== "object" ||
+    error === null ||
+    !("status" in error) ||
+    !("code" in error)
+  ) {
+    return false;
+  }
+  const authError = error as { status: number; code: string; message?: string };
+  if (authError.status !== 404) {
+    return false;
+  }
+  return (
+    authError.code === "NOT_FOUND" ||
+    authError.code === "UNKNOWN_ERROR" ||
+    authError.message === "Route not found" ||
+    authError.message === "Not Found"
+  );
+}
+
 export const PASSPORT_STAMP_CLAIM_LOADING = "Validation de votre tampon…";
 export const PASSPORT_STAMP_CLAIM_SUCCESS_TITLE = "Tampon ajouté à votre Passport";
 export const PASSPORT_STAMP_CLAIM_SUCCESS_BODY = "Bienvenue chez {partner}. Votre tampon Passport a bien été enregistré.";

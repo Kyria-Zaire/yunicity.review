@@ -140,7 +140,7 @@ function NavItem({
 }
 
 /**
- * WEB-HOME-01C — 4 onglets stratégiques + Menu Yunicity ; footer : Créer, Notifications, Compte.
+ * WEB-HOME-01C — onglets stratégiques + Menu Yunicity ; footer : Créer, Notifications, Compte.
  */
 export function WebSidebar() {
   const pathname = usePathname();

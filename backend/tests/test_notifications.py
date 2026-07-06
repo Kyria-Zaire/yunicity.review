@@ -279,3 +279,70 @@ async def test_send_expo_skipped_when_disabled() -> None:
         settings,
     )
     assert tickets == []
+
+
+@pytest.mark.asyncio
+async def test_notifications_summary_requires_auth(auth_client: AsyncClient) -> None:
+    response = await auth_client.get("/api/v1/notifications/summary")
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_notifications_summary_returns_counts(auth_client: AsyncClient) -> None:
+    from app.core.social_notification_constants import SocialNotificationType
+    from app.db.session import get_engine
+    from app.models.user_notification import UserNotification
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+    user = await register_user(auth_client, suffix="-notif-summary")
+    headers = auth_header(user["access_token"])
+
+    empty = await auth_client.get("/api/v1/notifications/summary", headers=headers)
+    assert empty.status_code == 200
+    assert empty.json() == {
+        "unread_count": 0,
+        "unread_mentions": 0,
+        "unread_social": 0,
+        "unread_events": 0,
+        "unread_passport": 0,
+        "unread_system": 0,
+        "count_this_week": 0,
+        "count_this_month": 0,
+    }
+
+    engine = get_engine()
+    assert engine is not None
+    factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async with factory() as session:
+        session.add(
+            UserNotification(
+                type=SocialNotificationType.POST_LIKED.value,
+                actor_id=None,
+                target_user_id=user["user"]["id"],
+                target_post_id=None,
+                deeplink="/feed",
+                payload={"category": "social"},
+                is_read=False,
+            )
+        )
+        session.add(
+            UserNotification(
+                type=SocialNotificationType.LOCAL_STAMP_EARNED.value,
+                actor_id=None,
+                target_user_id=user["user"]["id"],
+                target_post_id=None,
+                deeplink="/passport",
+                payload={"category": "passport"},
+                is_read=False,
+            )
+        )
+        await session.commit()
+
+    summary = await auth_client.get("/api/v1/notifications/summary", headers=headers)
+    assert summary.status_code == 200
+    body = summary.json()
+    assert body["unread_count"] == 2
+    assert body["unread_social"] == 1
+    assert body["unread_passport"] == 1
+    assert body["count_this_week"] >= 2
+    assert body["count_this_month"] >= 2

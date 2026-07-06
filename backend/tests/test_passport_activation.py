@@ -43,11 +43,13 @@ async def test_only_one_active_passport_per_user(auth_client: AsyncClient) -> No
 
 
 @pytest.mark.asyncio
-async def test_get_me_requires_active_passport(auth_client: AsyncClient) -> None:
-    data = await register_user(auth_client, suffix="-nome")
+async def test_register_auto_activates_passport(auth_client: AsyncClient) -> None:
+    data = await register_user(auth_client, suffix="-auto")
     response = await auth_client.get(
         "/api/v1/passport/me",
         headers=auth_header(data["access_token"]),
     )
-    assert response.status_code == 404
-    assert response.json()["code"] == "PASSPORT_NOT_ACTIVE"
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "active"
+    assert body["city"] == "Reims"

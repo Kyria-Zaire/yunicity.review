@@ -83,7 +83,7 @@ export function useSearchExplorerContext(city: string): SearchExplorerContextSta
         api.listCulturalPlaces({ city: activeCity, limit: CATALOG_LIMIT, sort: "featured" }),
         api.getCulturalPlacesStats(activeCity),
         api.tribes.listTribes({ city: activeCity, page_size: 8 }),
-        api.listPassportOffers(),
+        api.fetchPublicPartnerOffers({ city: activeCity, limit: 8 }),
         api.listPartners({ city: activeCity, limit: 12 }),
       ]);
 

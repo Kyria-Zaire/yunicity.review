@@ -31,6 +31,7 @@ export function useVideosPortalContext({ items }: UseVideosPortalContextOptions)
   );
   const [tab, setTab] = useState<VideosPortalTabId>("all");
   const [sort, setSort] = useState<VideosPortalSortId>("recent");
+  const [searchQuery, setSearchQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(VIDEOS_PORTAL_PAGE_SIZE);
 
   const playableItems = useMemo(
@@ -43,15 +44,30 @@ export function useVideosPortalContext({ items }: UseVideosPortalContextOptions)
     [playableItems],
   );
 
-  const filteredItems = useMemo(
-    () =>
-      sortVideosPortalItems(
-        filterVideosPortalItems(playableItems, sidebarFilters, tab, user?.id),
-        sort,
-        tab,
-      ),
-    [playableItems, sidebarFilters, sort, tab, user?.id],
-  );
+  const filteredItems = useMemo(() => {
+    let result = sortVideosPortalItems(
+      filterVideosPortalItems(playableItems, sidebarFilters, tab, user?.id),
+      sort,
+      tab,
+    );
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return result;
+    return result.filter((item) => {
+      const haystack = [
+        item.title,
+        item.description,
+        item.author.username,
+        item.author.full_name,
+        item.neighborhood_name,
+        item.cultural_place_name,
+        item.city,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [playableItems, sidebarFilters, searchQuery, sort, tab, user?.id]);
 
   const visibleItems = useMemo(
     () => filteredItems.slice(0, visibleCount),
@@ -88,6 +104,7 @@ export function useVideosPortalContext({ items }: UseVideosPortalContextOptions)
     sidebarFilters,
     tab,
     sort,
+    searchQuery,
     neighborhoods,
     featuredItems,
     visibleItems,
@@ -99,5 +116,6 @@ export function useVideosPortalContext({ items }: UseVideosPortalContextOptions)
     updateSidebarFilter,
     setTab: changeTab,
     setSort: changeSort,
+    setSearchQuery,
   };
 }

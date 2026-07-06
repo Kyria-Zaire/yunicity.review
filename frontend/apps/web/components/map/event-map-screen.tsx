@@ -24,17 +24,21 @@ import {
   filterPlacesByPortalFilters,
   filterPlacesForMapLayer,
   filterTribeMarkersForLayer,
+  haversineMeters,
   mapLayerToUrlSlug,
+  mapMobileCategoryToPortal,
   normalizeMapPortalCategory,
   parseMapLayer,
   MAP_PARTNER_GEO_NOTICE,
   hasPartnerCoordinates,
   parseMapParams,
   resolveCityMapCenter,
+  resolveMapMobilePartnerTypes,
   resolveMapPortalLayer,
   resolveMapPortalLayerVisibility,
   resolveMapPortalPlaceCategories,
   type MapAroundYouItem,
+  type MapMobileCategoryId,
   type MapPortalFilters,
 } from "@yunicity/utils";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -44,6 +48,14 @@ import { GoogleEventMap } from "@/components/map/google-event-map";
 import { MapAroundYouCarousel } from "@/components/map/map-around-you-carousel";
 import { MapAppShell } from "@/components/map/map-app-shell";
 import { MapLeftFilterRail } from "@/components/map/map-left-filter-rail";
+import {
+  MapMobileAroundSheet,
+  MapMobileCategoryPills,
+  MapMobileHeader,
+  MapMobileMapControls,
+  MapMobileNeighborhoodBadge,
+  MapMobileSearchBar,
+} from "@/components/map/mobile";
 import { MapPartnerDetailPanel } from "@/components/map/map-partner-detail-panel";
 import { MapPlaceDetailPanel } from "@/components/map/map-place-detail-panel";
 import { MapRightRail } from "@/components/map/map-right-rail";
@@ -97,6 +109,7 @@ export function EventMapScreen() {
   const [positionHintVisible, setPositionHintVisible] = useState(false);
   const [mapNotice, setMapNotice] = useState<string | null>(null);
   const [portalFilters, setPortalFilters] = useState<MapPortalFilters>(DEFAULT_MAP_PORTAL_FILTERS);
+  const [mobileCategory, setMobileCategory] = useState<MapMobileCategoryId>("all");
   const [userOrigin, setUserOrigin] = useState<LatLon | null>(null);
 
   const portalStats = useMapPortalStats();
@@ -165,7 +178,16 @@ export function EventMapScreen() {
 
   const showPartnerLayer =
     portalFilters.category === "all" || portalFilters.category === "partners";
-  const visiblePartnerMarkers = showPartnerLayer ? partnerMarkers : [];
+  const mobilePartnerTypes = resolveMapMobilePartnerTypes(mobileCategory);
+  const visiblePartnerMarkers = useMemo(() => {
+    if (!showPartnerLayer) return [];
+    if (!mobilePartnerTypes?.length) return partnerMarkers;
+    const allowed = new Set(mobilePartnerTypes);
+    return partnerMarkers.filter((marker) => {
+      const partner = mapPartners.find((item) => item.slug === marker.slug);
+      return partner ? allowed.has(partner.partnership_type) : false;
+    });
+  }, [showPartnerLayer, mobilePartnerTypes, partnerMarkers, mapPartners]);
 
   const tribeMarkers = useMemo(
     () =>
@@ -337,6 +359,87 @@ export function EventMapScreen() {
     },
     [updateQuery],
   );
+
+  const handleMobileCategorySelect = useCallback(
+    (category: MapMobileCategoryId) => {
+      setMobileCategory(category);
+      const portalCategory = mapMobileCategoryToPortal(category);
+      setPortalFilters((prev) => ({ ...prev, category: portalCategory }));
+      const layer = resolveMapPortalLayer(portalCategory);
+      updateQuery((params) => {
+        if (layer === "all") {
+          params.delete("layer");
+        } else {
+          params.set("layer", mapLayerToUrlSlug(layer));
+        }
+      });
+    },
+    [updateQuery],
+  );
+
+  const nearestNeighborhoodLabel = useMemo(() => {
+    const origin = userOrigin ?? resolveMapCenterOrigin(bbox, city);
+    let closest: string | null = null;
+    let minDistance = Infinity;
+    for (const hood of mapContext.neighborhoods) {
+      if (hood.latitude == null || hood.longitude == null) continue;
+      const distance = haversineMeters(
+        origin.latitude,
+        origin.longitude,
+        hood.latitude,
+        hood.longitude,
+      );
+      if (distance < minDistance) {
+        minDistance = distance;
+        closest = hood.display_name;
+      }
+    }
+    return closest;
+  }, [bbox, city, mapContext.neighborhoods, userOrigin]);
+
+  const handleMobileNavigate = useCallback(() => {
+    if (selection?.kind === "place") {
+      const place = culturalBySlug.get(selection.slug);
+      if (place?.latitude != null && place?.longitude != null) {
+        window.open(
+          `https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`,
+          "_blank",
+          "noopener,noreferrer",
+        );
+        return;
+      }
+    }
+    if (selection?.kind === "event") {
+      const event = visibleEvents.find((item) => item.id === selection.id);
+      if (event) {
+        window.open(
+          `https://www.google.com/maps/dir/?api=1&destination=${event.latitude},${event.longitude}`,
+          "_blank",
+          "noopener,noreferrer",
+        );
+        return;
+      }
+    }
+    if (selectedPartnerSlug) {
+      const partner = mapPartners.find((item) => item.slug === selectedPartnerSlug);
+      if (partner?.latitude != null && partner?.longitude != null) {
+        window.open(
+          `https://www.google.com/maps/dir/?api=1&destination=${partner.latitude},${partner.longitude}`,
+          "_blank",
+          "noopener,noreferrer",
+        );
+        return;
+      }
+    }
+    handleUsePositionOnMap();
+  }, [
+    culturalBySlug,
+    handleUsePositionOnMap,
+    mapPartners,
+    selectedPartnerSlug,
+    selection,
+    visibleEvents,
+  ]);
 
   const handleAroundYouSelect = useCallback(
     (item: MapAroundYouItem) => {
@@ -552,19 +655,87 @@ export function EventMapScreen() {
 
   return (
     <MapAppShell rightRail={rightRail}>
-      <MapLeftFilterRail
-        city={city}
-        filters={portalFilters}
-        favoritesCount={portalStats.favoritesCount}
-        visitedCount={portalStats.visitedCount}
-        partners={mapPartners}
-        selectedPartnerSlug={selectedPartnerSlug}
-        onSelectPartner={handleSelectPartner}
-        onChangeFilters={setPortalFilters}
-        onActivateGeolocation={handleUsePositionOnMap}
-      />
+      <div className="web-desktop-map-only">
+        <MapLeftFilterRail
+          city={city}
+          filters={portalFilters}
+          favoritesCount={portalStats.favoritesCount}
+          visitedCount={portalStats.visitedCount}
+          partners={mapPartners}
+          selectedPartnerSlug={selectedPartnerSlug}
+          onSelectPartner={handleSelectPartner}
+          onChangeFilters={setPortalFilters}
+          onActivateGeolocation={handleUsePositionOnMap}
+        />
+      </div>
 
-      <div className="min-w-0 flex-1 space-y-4">
+      <div className="web-mobile-map-only w-full min-w-0">
+        <MapMobileHeader />
+        <div className="relative h-[calc(100dvh-8.5rem)] min-h-[420px] overflow-hidden bg-white">
+          {mapNotice ? (
+            <p className="absolute inset-x-3 top-28 z-20 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              {mapNotice}
+            </p>
+          ) : null}
+
+          {!GOOGLE_MAPS_API_KEY ? (
+            <p className="absolute inset-x-4 top-1/2 -translate-y-1/2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {MAP_TOKEN_MISSING_GOOGLE_WEB}
+            </p>
+          ) : (
+            <>
+              <GoogleEventMap
+                city={city}
+                apiKey={GOOGLE_MAPS_API_KEY}
+                events={visibleEvents}
+                culturalPlaces={visiblePlaces}
+                partnerMarkers={visiblePartnerMarkers}
+                neighborhoodMarkers={neighborhoodMarkers}
+                tribeMarkers={tribeMarkers}
+                selection={selection}
+                onBoundsChange={updateFromBounds}
+                onSelectEvent={handleSelectEvent}
+                onSelectPlace={handleMapSelectCulturalSlug}
+                onSelectPartner={handleSelectPartner}
+                onSelectNeighborhood={handleSelectNeighborhood}
+                onSelectTribe={handleSelectTribe}
+                onClearSelection={() => setSelection(null)}
+                focusedEventId={focusedEventId}
+                selectedCulturalSlug={selectedCulturalSlug}
+                selectedPartnerSlug={selectedPartnerSlug}
+                recenterSignal={recenterSignal}
+                flyToTarget={flyToTarget}
+                fullHeight
+                hideRecenterButton
+              />
+              <MapMobileSearchBar filters={portalFilters} onChangeFilters={setPortalFilters} />
+              <MapMobileCategoryPills
+                activeCategory={mobileCategory}
+                onSelectCategory={handleMobileCategorySelect}
+              />
+              <MapMobileNeighborhoodBadge label={nearestNeighborhoodLabel} />
+              <MapMobileMapControls
+                onLocate={handleUsePositionOnMap}
+                onNavigate={handleMobileNavigate}
+              />
+              <MapMobileAroundSheet
+                items={aroundYouItems}
+                onSelectItem={handleAroundYouSelect}
+              />
+              {selectedPanel && !showDetailRail ? (
+                <MapSelectedPanel
+                  payload={selectedPanel}
+                  onClose={() => setSelection(null)}
+                />
+              ) : null}
+            </>
+          )}
+        </div>
+
+        {showDetailRail ? <div className="px-4 py-4">{detailRail}</div> : null}
+      </div>
+
+      <div className="web-desktop-map-only min-w-0 flex-1 space-y-4">
         {mapNotice ? (
           <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             {mapNotice}

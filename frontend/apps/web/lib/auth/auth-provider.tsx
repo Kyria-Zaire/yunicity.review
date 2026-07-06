@@ -7,6 +7,7 @@ import {
   createYunicityApi,
   getWebApiBaseUrl,
   humanizeAuthFailure,
+  syncPassportSessionUser,
   type YunicityApi,
 } from "@yunicity/utils";
 import {
@@ -49,7 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         apiBaseUrl,
         platform: "web",
         storage,
-        onSessionCleared: () => setUser(null),
+        onSessionCleared: () => {
+          syncPassportSessionUser(null);
+          setUser(null);
+        },
       }),
     [apiBaseUrl, storage],
   );
@@ -88,6 +92,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [client]);
+
+  useEffect(() => {
+    syncPassportSessionUser(user?.id ?? null);
+  }, [user?.id]);
 
   const login = useCallback(
     async (payload: LoginRequest) => {

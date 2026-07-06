@@ -29,6 +29,12 @@ import { FeedRightRail } from "@/components/feed/portal/feed-right-rail";
 import { FeedSavedEventsPanel } from "@/components/feed/portal/feed-saved-events-panel";
 import { FeedStoriesRail } from "@/components/feed/portal/feed-stories-rail";
 import { FeedViewTabs } from "@/components/feed/portal/feed-view-tabs";
+import {
+  FeedMobileComposer,
+  FeedMobileHeader,
+  FeedMobileStoriesRail,
+  FeedMobileViewPills,
+} from "@/components/feed/mobile";
 import { LocalVideoTeaserSection } from "@/components/videos/local-video-teaser-section";
 import { useFeed } from "@/hooks/use-feed";
 import { useFeedPortalContext } from "@/hooks/use-feed-portal-context";
@@ -179,8 +185,121 @@ export function FeedPortalScreen() {
     setLeftNav(nav);
   }
 
+  const filterHint =
+    filterOpen && interests.length > 0 ? (
+      <>
+        Filtre actif selon vos centres d&apos;intérêt : {interests.slice(0, 4).join(", ")}
+        {interests.length > 4 ? "…" : ""}
+      </>
+    ) : (
+      <>
+        Ajoutez vos centres d&apos;intérêt dans les{" "}
+        <Link href="/settings" className="font-semibold text-yunicity-primary hover:underline">
+          paramètres
+        </Link>{" "}
+        pour activer le filtrage.
+      </>
+    );
+
+  const feedStates = (
+    <>
+      {viewHint ? (
+        <p className="text-xs leading-relaxed text-neutral-500">{viewHint}</p>
+      ) : null}
+
+      {reportMessage ? (
+        <p className="rounded-xl bg-yunicity-primary-soft px-4 py-3 text-sm text-yunicity-primary">
+          {reportMessage}
+        </p>
+      ) : null}
+
+      {isLoading ? <FeedLoadingState /> : null}
+      {!isLoading && error ? <FeedErrorState onRetry={() => void refresh()} /> : null}
+
+      {!isLoading && !error && leftNav === "saved" ? (
+        <FeedSavedEventsPanel events={portal.savedEvents} city={city} />
+      ) : null}
+
+      {!isLoading && !error && leftNav !== "saved" && displayedPosts.length === 0 ? (
+        filterOpen && items.length > 0 ? (
+          <div className="rounded-2xl border border-dashed border-yunicity-border bg-white p-8 text-center shadow-sm">
+            <p className="text-base font-semibold text-neutral-900">
+              Aucune publication ne correspond à vos centres d&apos;intérêt
+            </p>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-neutral-600">
+              Désactivez le filtre ou ajustez vos préférences pour voir plus de contenu local.
+            </p>
+            <button
+              type="button"
+              onClick={() => setFilterOpen(false)}
+              className="mt-4 rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+            >
+              Désactiver le filtre
+            </button>
+          </div>
+        ) : (
+          <FeedEmptyState city={city} highlights={highlights} />
+        )
+      ) : null}
+
+      {!isLoading && !error && leftNav !== "saved" && displayedPosts.length > 0 ? (
+        <ul className="space-y-4" aria-label="Publications du fil local">
+          {displayedPosts.map((post) => (
+            <li key={post.id}>
+              <FeedCard
+                post={post}
+                layout="mobile"
+                onToggleLike={toggleLike}
+                onReport={handleReport}
+              />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {nextCursor && !isLoading && !error && leftNav !== "saved" ? (
+        <div className="flex justify-center pb-2">
+          <button
+            type="button"
+            disabled={isLoadingMore}
+            onClick={() => void loadMore()}
+            className="rounded-full border border-yunicity-border bg-white px-6 py-2.5 text-sm font-medium text-neutral-700 shadow-sm hover:bg-neutral-50 disabled:opacity-50"
+          >
+            {isLoadingMore ? "Chargement…" : FEED_LOAD_MORE_LABEL}
+          </button>
+        </div>
+      ) : null}
+    </>
+  );
+
   return (
     <FeedAppShell rightRail={rightRail}>
+      <div className="web-mobile-feed-only min-w-0 flex-1 space-y-4 px-4 pt-1">
+        <FeedMobileHeader />
+        <FeedMobileComposer city={city} onSubmit={handleCreate} />
+        <FeedMobileStoriesRail
+          profile={portal.profile}
+          storyRings={portal.storyRings}
+          storyShortcuts={stories}
+        />
+        <FeedMobileViewPills
+          activeView={activeView}
+          onViewChange={(view) => {
+            setLeftNav(null);
+            setActiveView(view);
+          }}
+          filterOpen={filterOpen}
+          onToggleFilter={() => setFilterOpen((v) => !v)}
+        />
+        {filterOpen ? (
+          <p className="rounded-xl bg-white px-3 py-2.5 text-xs text-neutral-500 ring-1 ring-neutral-200/90">
+            {filterHint}
+          </p>
+        ) : null}
+        {feedStates}
+      </div>
+
+      <div className="web-desktop-feed-only contents">
       <FeedLeftRail
         activeView={activeView}
         leftNav={leftNav}
@@ -272,7 +391,7 @@ export function FeedPortalScreen() {
               </button>
             </div>
           ) : (
-            <FeedEmptyState city={city} />
+            <FeedEmptyState city={city} highlights={highlights} />
           )
         ) : null}
 
@@ -300,6 +419,7 @@ export function FeedPortalScreen() {
         ) : null}
 
         <div className="mt-8 2xl:hidden">{rightRail}</div>
+      </div>
       </div>
     </FeedAppShell>
   );

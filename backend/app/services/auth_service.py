@@ -25,8 +25,12 @@ from app.repositories.rbac_repository import RbacRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import LoginRequest, RefreshTokenResponse, RegisterRequest
+from app.schemas.passport import PassportActivateRequest
 from app.schemas.user import UserPublic
+from app.services.passport_service import PassportService
 from app.services.profile_service import ProfileService
+
+_DEFAULT_REGISTER_CITY = "Reims"
 
 _INVALID_CREDENTIALS_MSG = "Identifiants invalides."
 
@@ -65,21 +69,26 @@ class AuthService:
             )
 
         hashed = hash_password(payload.password)
+        city = (payload.city or "").strip() or _DEFAULT_REGISTER_CITY
         try:
             user = await self._users.create(
                 email=email,
                 hashed_password=hashed,
                 full_name=payload.full_name,
-                city=payload.city,
+                city=city,
             )
             await self._rbac.assign_role_to_user(user.id, "USER")
             await ProfileService(self._session).create_profile_for_new_user(
                 user_id=user.id,
                 email=email,
                 full_name=payload.full_name,
-                city=payload.city,
+                city=city,
             )
             await self._session.commit()
+            await PassportService(self._session).activate(
+                user,
+                PassportActivateRequest(city=city),
+            )
         except IntegrityError as exc:
             await self._session.rollback()
             raise AppError(
