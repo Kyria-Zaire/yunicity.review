@@ -24,6 +24,7 @@ from app.models.post import Post
 from app.models.tribe import Tribe
 from app.models.user import User
 from app.models.user_profile import ProfileVisibility, UserProfile
+from app.repositories.post_visibility import visible_posts_filter
 
 
 @dataclass(frozen=True)
@@ -86,6 +87,8 @@ class SearchRepository:
             Post.tribe_id.is_(None),
             self._city_match(Post.city, city_lower),
             Post.search_vector.op("@@")(tsq),
+            # Fail closed: restricted-audience posts never surface in search.
+            visible_posts_filter(None),
         ]
         if neighborhood_id is not None:
             filters.append(Post.neighborhood_id == neighborhood_id)

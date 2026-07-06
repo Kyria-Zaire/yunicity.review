@@ -15,6 +15,7 @@ from app.core.feed_constants import PostAuthorType, PostType
 from app.models.local_event import LocalEvent
 from app.models.passport import PartnerOffer
 from app.models.post import Post
+from app.repositories.post_visibility import visible_posts_filter
 
 
 class PostRepository:
@@ -69,6 +70,7 @@ class PostRepository:
         self,
         *,
         user_city: str | None,
+        viewer_id: uuid.UUID | None,
         limit: int,
         cursor_priority: int | None,
         cursor_created_at: datetime | None,
@@ -82,6 +84,7 @@ class PostRepository:
                 Post.is_active.is_(True),
                 Post.tribe_id.is_(None),
                 Post.is_story.is_(False),
+                visible_posts_filter(viewer_id),
             )
             .options(
                 selectinload(Post.partner_offer).selectinload(PartnerOffer.neighborhood),
@@ -168,6 +171,7 @@ class PostRepository:
         self,
         *,
         user_city: str | None,
+        viewer_id: uuid.UUID | None,
         limit: int,
         require_comments: bool,
         cursor_comment_count: int | None,
@@ -182,6 +186,7 @@ class PostRepository:
                 Post.tribe_id.is_(None),
                 Post.type == PostType.POST.value,
                 Post.author_type == PostAuthorType.CITIZEN.value,
+                visible_posts_filter(viewer_id),
             )
             .options(
                 selectinload(Post.neighborhood),
@@ -222,6 +227,7 @@ class PostRepository:
         self,
         *,
         user_city: str | None,
+        viewer_id: uuid.UUID | None,
         limit: int = 120,
     ) -> list[Post]:
         city_priority = self._city_priority_expr(user_city)
@@ -233,6 +239,7 @@ class PostRepository:
                 Post.type == PostType.POST.value,
                 Post.author_type == PostAuthorType.CITIZEN.value,
                 Post.comment_count > 0,
+                visible_posts_filter(viewer_id),
             )
             .order_by(city_priority.desc(), Post.comment_count.desc(), Post.created_at.desc())
             .limit(limit)

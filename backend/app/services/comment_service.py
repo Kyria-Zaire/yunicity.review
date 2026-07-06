@@ -14,6 +14,7 @@ from app.models.comment import Comment
 from app.models.user import User
 from app.repositories.comment_repository import CommentRepository
 from app.repositories.post_repository import PostRepository
+from app.repositories.post_visibility import can_view_post
 from app.repositories.profile_repository import ProfileRepository
 from app.schemas.post import CommentCreateRequest, CommentListResponse, CommentResponse
 from app.services.rbac_service import RbacService
@@ -38,7 +39,7 @@ class CommentService:
         limit: int = FEED_PAGE_SIZE_DEFAULT,
     ) -> CommentListResponse:
         post = await self._posts.get_by_id(post_id, active_only=True)
-        if post is None:
+        if post is None or not can_view_post(post, viewer.id):
             raise AppError(
                 status_code=404,
                 code="POST_NOT_FOUND",
@@ -72,7 +73,7 @@ class CommentService:
         payload: CommentCreateRequest,
     ) -> CommentResponse:
         post = await self._posts.get_by_id(post_id, active_only=True)
-        if post is None:
+        if post is None or not can_view_post(post, user.id):
             raise AppError(
                 status_code=404,
                 code="POST_NOT_FOUND",

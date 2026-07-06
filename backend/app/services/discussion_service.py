@@ -178,6 +178,7 @@ class DiscussionService:
 
         rows = await self._posts.list_discussions(
             user_city=user_city,
+            viewer_id=viewer.id,
             limit=fetch_limit,
             require_comments=require_comments,
             cursor_comment_count=cursor_comment_count,
@@ -244,6 +245,7 @@ class DiscussionService:
 
         candidates = await self._posts.list_discussion_candidates_for_insights(
             user_city=user_city,
+            viewer_id=viewer.id,
         )
         post_ids = [post.id for post in candidates]
         activity_map = await self._comments.latest_activity_by_post(post_ids)

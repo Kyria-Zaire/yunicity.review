@@ -44,6 +44,7 @@ class FeedService:
 
         rows = await self._posts.list_feed(
             user_city=user_city,
+            viewer_id=viewer.id,
             limit=limit,
             cursor_priority=cursor_priority,
             cursor_created_at=cursor_created_at,
