@@ -402,6 +402,56 @@ async def test_non_public_post_still_visible_to_author(
 
 
 @pytest.mark.asyncio
+async def test_like_non_public_post_returns_404_and_no_notification(
+    auth_client: AsyncClient,
+) -> None:
+    author = await _register(auth_client, suffix="-likepriv", city="Reims")
+    other = await _register(auth_client, suffix="-likeout", city="Reims")
+    created = await auth_client.post(
+        "/api/v1/posts",
+        json={
+            "author_type": "citizen",
+            "body": "Post réservé aux amis proches",
+            "visibility": "close_friends",
+        },
+        headers=auth_header(author["access_token"]),
+    )
+    assert created.status_code == 201, created.text
+    post_id = created.json()["id"]
+
+    like = await auth_client.post(
+        f"/api/v1/posts/{post_id}/like",
+        headers=auth_header(other["access_token"]),
+    )
+    assert like.status_code == 404, like.text
+    assert like.json()["code"] == "POST_NOT_FOUND"
+
+    unlike = await auth_client.delete(
+        f"/api/v1/posts/{post_id}/like",
+        headers=auth_header(other["access_token"]),
+    )
+    assert unlike.status_code == 404, unlike.text
+    assert unlike.json()["code"] == "POST_NOT_FOUND"
+
+    notifications = await auth_client.get(
+        "/api/v1/notifications",
+        headers=auth_header(author["access_token"]),
+    )
+    assert notifications.status_code == 200, notifications.text
+    liked_items = [
+        item for item in notifications.json()["items"] if item["type"] == "POST_LIKED"
+    ]
+    assert liked_items == []
+
+    detail = await auth_client.get(
+        f"/api/v1/posts/{post_id}",
+        headers=auth_header(author["access_token"]),
+    )
+    assert detail.status_code == 200, detail.text
+    assert detail.json()["like_count"] == 0
+
+
+@pytest.mark.asyncio
 async def test_public_post_remains_visible_to_everyone(
     auth_client: AsyncClient,
 ) -> None:
