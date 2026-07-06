@@ -7,7 +7,7 @@ builder = "RAILPACK"
 buildCommand = "pnpm install --frozen-lockfile && pnpm --filter web build"
 
 [deploy]
-startCommand = "pnpm --filter web start -p ${PORT:-3000}"
+startCommand = "pnpm --filter web start"
 healthcheckPath = "/"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
