@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from app.core.config import get_settings
+from app.integrations.redis import get_redis_client
 from httpx import AsyncClient
 
 from tests.media_fixtures import (
@@ -54,8 +55,16 @@ def disable_story_media_rate_limits(monkeypatch: pytest.MonkeyPatch) -> None:
     async def _noop(*_args: object, **_kwargs: object) -> None:
         return None
 
-    # app.api.v1.stories no longer rate-limits (refactor 2558cbc); only auth remains.
+    # Only auth register is noop'd; the stories media rate limit stays active
+    # so test_upload_story_media_rate_limited can exercise the real 429 path.
     monkeypatch.setattr("app.api.v1.auth.enforce_rate_limit", _noop)
+
+
+@pytest.fixture(autouse=True)
+async def _clear_redis_rate_limits(auth_client: AsyncClient) -> None:
+    redis = get_redis_client()
+    if redis is not None:
+        await redis.flushdb()
 
 
 def _auth_headers(token: str) -> dict[str, str]:
@@ -139,6 +148,43 @@ async def test_upload_story_media_rejects_mismatch(
     )
     assert response.status_code == 400
     assert response.json()["code"] == "STORY_MEDIA_INVALID_CONTENT"
+
+
+@pytest.mark.asyncio
+async def test_upload_story_media_rate_limited_after_quota(
+    auth_client: AsyncClient,
+    mock_story_media_r2: dict[str, bytes],
+) -> None:
+    if get_redis_client() is None:
+        pytest.skip("Redis indisponible — rate limiting no-op")
+
+    auth = await _register(auth_client, "media-rl")
+    token = auth["access_token"]
+    headers = _auth_headers(token)
+
+    for index in range(20):
+        response = await auth_client.post(
+            "/api/v1/stories/media",
+            headers=headers,
+            files=_upload_file(
+                content=MINIMAL_JPEG_BYTES,
+                filename=f"story-{index}.jpg",
+                content_type="image/jpeg",
+            ),
+        )
+        assert response.status_code == 201, f"upload {index}: {response.text}"
+
+    blocked = await auth_client.post(
+        "/api/v1/stories/media",
+        headers=headers,
+        files=_upload_file(
+            content=MINIMAL_JPEG_BYTES,
+            filename="story-blocked.jpg",
+            content_type="image/jpeg",
+        ),
+    )
+    assert blocked.status_code == 429, blocked.text
+    assert blocked.json()["code"] == "RATE_LIMITED"
 
 
 @pytest.mark.asyncio
