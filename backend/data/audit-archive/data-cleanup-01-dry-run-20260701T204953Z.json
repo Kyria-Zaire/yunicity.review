@@ -1,0 +1,182 @@
+{
+  "script": "data_cleanup_01_purge",
+  "mode": "dry-run",
+  "created_at": "2026-07-01T20:49:53.006069+00:00",
+  "targets": {
+    "local_video_ids": [
+      "7d687d7e-e1b8-473d-a035-954642b1fd3d",
+      "00c48937-7ccf-492c-9200-807c5d454d71"
+    ],
+    "upload_ids": [
+      "b8b291b9-bc8c-4f14-8eae-9ad5c509a612",
+      "0462ff78-b19d-4173-9edd-31c02827eeee"
+    ],
+    "pilot_m00_user_ids": [
+      "c3c31cac-58ba-4c6f-bd0a-f6620736b07a",
+      "b5183bb3-864d-4cee-8b51-a3137afb0f29",
+      "f33d33da-5b28-40c2-828f-dfa4da0d6bc1",
+      "3c2543cd-4252-4f71-b862-d21500297767"
+    ]
+  },
+  "excluded": {
+    "user_ids": [
+      "46af7130-c2f4-46bd-a181-871e9c8b7502"
+    ],
+    "email_prefix": "qa06b."
+  },
+  "r2_keys": [
+    "local-video/reims/7d687d7e-e1b8-473d-a035-954642b1fd3d/processed.mp4",
+    "local-video/reims/7d687d7e-e1b8-473d-a035-954642b1fd3d/thumbnail.jpg",
+    "local-video/reims/00c48937-7ccf-492c-9200-807c5d454d71/processed.mp4",
+    "local-video/reims/00c48937-7ccf-492c-9200-807c5d454d71/thumbnail.jpg",
+    "local-video/prod/reims/c3c31cac-58ba-4c6f-bd0a-f6620736b07a/b8b291b9-bc8c-4f14-8eae-9ad5c509a612/source.mp4",
+    "local-video/reims/0462ff78-b19d-4173-9edd-31c02827eeee/source.mp4"
+  ],
+  "local_videos": [
+    {
+      "id": "7d687d7e-e1b8-473d-a035-954642b1fd3d",
+      "author_user_id": "f33d33da-5b28-40c2-828f-dfa4da0d6bc1",
+      "upload_id": "7d687d7e-e1b8-473d-a035-954642b1fd3d",
+      "city": "Reims",
+      "neighborhood_id": "d6010000-0000-4000-8000-000000000001",
+      "video_type": "moment",
+      "title": "INFRA-01 R2 smoke test",
+      "description": null,
+      "cultural_place_id": null,
+      "local_event_id": null,
+      "tribe_id": null,
+      "organization_id": null,
+      "storage_key": "local-video/reims/7d687d7e-e1b8-473d-a035-954642b1fd3d/processed.mp4",
+      "media_url": "https://media.recette.yunicity.city/local-video/reims/7d687d7e-e1b8-473d-a035-954642b1fd3d/processed.mp4",
+      "thumbnail_url": "https://media.recette.yunicity.city/local-video/reims/7d687d7e-e1b8-473d-a035-954642b1fd3d/thumbnail.jpg",
+      "duration_seconds": 3.0,
+      "file_size_bytes": 17577,
+      "mime_type": "video/mp4",
+      "latitude": 49.2583,
+      "longitude": 4.0317,
+      "status": "published",
+      "processing_error": null,
+      "report_count": 0,
+      "review_priority": false,
+      "like_count": 0,
+      "comment_count": 0,
+      "view_count": 0,
+      "published_at": "2026-06-29T21:21:23.161889+00:00",
+      "created_at": "2026-06-29T21:21:21.266573+00:00",
+      "updated_at": "2026-06-29T21:21:21.266573+00:00",
+      "author_email": "pilot-m00-43d84ccc@example.com"
+    },
+    {
+      "id": "00c48937-7ccf-492c-9200-807c5d454d71",
+      "author_user_id": "3c2543cd-4252-4f71-b862-d21500297767",
+      "upload_id": "00c48937-7ccf-492c-9200-807c5d454d71",
+      "city": "Reims",
+      "neighborhood_id": "d6010000-0000-4000-8000-000000000001",
+      "video_type": "moment",
+      "title": "INFRA-01 R2 smoke test",
+      "description": null,
+      "cultural_place_id": null,
+      "local_event_id": null,
+      "tribe_id": null,
+      "organization_id": null,
+      "storage_key": "local-video/reims/00c48937-7ccf-492c-9200-807c5d454d71/processed.mp4",
+      "media_url": "https://media.recette.yunicity.city/local-video/reims/00c48937-7ccf-492c-9200-807c5d454d71/processed.mp4",
+      "thumbnail_url": "https://media.recette.yunicity.city/local-video/reims/00c48937-7ccf-492c-9200-807c5d454d71/thumbnail.jpg",
+      "duration_seconds": 3.0,
+      "file_size_bytes": 17577,
+      "mime_type": "video/mp4",
+      "latitude": 49.2583,
+      "longitude": 4.0317,
+      "status": "published",
+      "processing_error": null,
+      "report_count": 0,
+      "review_priority": false,
+      "like_count": 0,
+      "comment_count": 0,
+      "view_count": 0,
+      "published_at": "2026-06-30T14:12:03.370953+00:00",
+      "created_at": "2026-06-30T14:12:00.150368+00:00",
+      "updated_at": "2026-06-30T14:12:01.032304+00:00",
+      "author_email": "pilot-m00-39896e44@example.com"
+    }
+  ],
+  "local_video_uploads": [
+    {
+      "id": "b8b291b9-bc8c-4f14-8eae-9ad5c509a612",
+      "author_user_id": "c3c31cac-58ba-4c6f-bd0a-f6620736b07a",
+      "storage_key": "local-video/prod/reims/c3c31cac-58ba-4c6f-bd0a-f6620736b07a/b8b291b9-bc8c-4f14-8eae-9ad5c509a612/source.mp4",
+      "content_type": "video/mp4",
+      "expected_size_bytes": 1024,
+      "status": "pending",
+      "expires_at": "2026-06-29T21:11:22.656560+00:00",
+      "created_at": "2026-06-29T20:56:22.152259+00:00",
+      "updated_at": "2026-06-29T20:56:22.152259+00:00",
+      "author_email": "pilot-m00-3fadc8a3@example.com"
+    },
+    {
+      "id": "0462ff78-b19d-4173-9edd-31c02827eeee",
+      "author_user_id": "b5183bb3-864d-4cee-8b51-a3137afb0f29",
+      "storage_key": "local-video/reims/0462ff78-b19d-4173-9edd-31c02827eeee/source.mp4",
+      "content_type": "video/mp4",
+      "expected_size_bytes": 1024,
+      "status": "pending",
+      "expires_at": "2026-06-29T21:33:25.545626+00:00",
+      "created_at": "2026-06-29T21:18:25.066524+00:00",
+      "updated_at": "2026-06-29T21:18:25.066524+00:00",
+      "author_email": "pilot-m00-f90d4322@example.com"
+    }
+  ],
+  "users": [
+    {
+      "id": "c3c31cac-58ba-4c6f-bd0a-f6620736b07a",
+      "email": "pilot-m00-3fadc8a3@example.com",
+      "full_name": "Pilot M00 Seed",
+      "city": null,
+      "is_active": true,
+      "created_at": "2026-06-29T20:56:20.783288+00:00"
+    },
+    {
+      "id": "b5183bb3-864d-4cee-8b51-a3137afb0f29",
+      "email": "pilot-m00-f90d4322@example.com",
+      "full_name": "Pilot M00 Seed",
+      "city": null,
+      "is_active": true,
+      "created_at": "2026-06-29T21:18:23.834422+00:00"
+    },
+    {
+      "id": "f33d33da-5b28-40c2-828f-dfa4da0d6bc1",
+      "email": "pilot-m00-43d84ccc@example.com",
+      "full_name": "Pilot M00 Seed",
+      "city": null,
+      "is_active": true,
+      "created_at": "2026-06-29T21:21:18.197008+00:00"
+    },
+    {
+      "id": "3c2543cd-4252-4f71-b862-d21500297767",
+      "email": "pilot-m00-39896e44@example.com",
+      "full_name": "Pilot M00 Seed",
+      "city": null,
+      "is_active": true,
+      "created_at": "2026-06-30T14:11:58.769098+00:00"
+    }
+  ],
+  "deletion_order": [
+    "r2_objects",
+    "local_video_uploads",
+    "local_videos",
+    "users_pilot_m00"
+  ],
+  "r2_cleanup": {
+    "attempted": true,
+    "backend": "r2",
+    "bucket": "yunicity-media-recette",
+    "deleted": [],
+    "failed": [],
+    "dry_run": true
+  },
+  "db_cleanup": {
+    "local_video_uploads": 2,
+    "local_videos": 2,
+    "users": 4
+  }
+}

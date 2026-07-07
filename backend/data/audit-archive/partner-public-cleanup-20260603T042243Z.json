@@ -1,0 +1,13 @@
+{
+  "entries": [
+    {
+      "organization_id": "31620362-9bb4-4e5b-9529-461308048a40",
+      "partner_profile_id": "75fe44ff-e317-4541-811b-a3c434324adf",
+      "slug": "admin-creator-org-reject",
+      "name": "Admin Creator Org reject",
+      "partner_status": "active",
+      "visibility": "public",
+      "backed_up_at": "2026-06-03T04:22:43.303541+00:00"
+    }
+  ]
+}
