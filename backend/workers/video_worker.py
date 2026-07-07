@@ -21,7 +21,10 @@ from app.services.local_video.processing_service import (
     mark_local_video_processing_exhausted,
     run_local_video_processing,
 )
+from arq import cron
 from arq.connections import RedisSettings
+
+from workers.scheduled_posts import publish_scheduled_posts_job
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +113,9 @@ def _redis_settings() -> RedisSettings:
 
 class WorkerSettings:
     functions = [process_local_video_job]
+    # Every minute (second=0): publish scheduled posts whose time has come.
+    # run_at_startup catches up overdue posts immediately after a restart.
+    cron_jobs = [cron(publish_scheduled_posts_job, run_at_startup=True)]
     on_startup = startup
     on_shutdown = shutdown
     on_job_failure = on_job_failure

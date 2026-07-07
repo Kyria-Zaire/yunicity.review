@@ -131,6 +131,11 @@ class Post(TimestampMixin, Base):
     scheduled_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True
     )
+    # Set when the scheduled-post worker auto-publishes the post. Explicit marker
+    # so a post soft-deleted after publication is never re-published (FEED-SCHED-01).
+    scheduled_published_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     location_label: Mapped[str | None] = mapped_column(String(120), nullable=True)
     activity_label: Mapped[str | None] = mapped_column(String(120), nullable=True)
     poll_data: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)
