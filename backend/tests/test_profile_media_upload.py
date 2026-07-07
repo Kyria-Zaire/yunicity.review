@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from io import BytesIO
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -36,7 +37,7 @@ def profile_media_r2_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture(autouse=True)
-def mock_profile_media_r2() -> dict[str, bytes]:
+def mock_profile_media_r2() -> Generator[dict[str, bytes], None, None]:
     stored: dict[str, bytes] = {}
     mock_client = MagicMock()
 

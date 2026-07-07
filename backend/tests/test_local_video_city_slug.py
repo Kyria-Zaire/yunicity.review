@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import uuid
+from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -21,8 +23,8 @@ from app.services.local_video.storage_keys import (
 )
 
 
-def _settings(**overrides: object) -> Settings:
-    base: dict[str, object] = {
+def _settings(**overrides: Any) -> Settings:
+    base: dict[str, Any] = {
         "app_env": "dev",
         "local_video_storage_backend": "filesystem",
         "local_video_default_city_slug": "reims",
@@ -69,7 +71,7 @@ class TestStorageKeyLayout:
         )
 
     @pytest.mark.parametrize("city_slug", ["reims", "paris", "lyon"])
-    def test_filesystem_and_r2_share_layout(self, city_slug: str, tmp_path) -> None:
+    def test_filesystem_and_r2_share_layout(self, city_slug: str, tmp_path: Path) -> None:
         video_id = uuid.uuid4()
         fs = FilesystemLocalVideoStorage(_settings(media_upload_dir=str(tmp_path)))
         with patch("app.services.local_video.r2_storage.boto3.client", return_value=MagicMock()):

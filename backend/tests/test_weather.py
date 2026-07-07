@@ -60,7 +60,8 @@ async def test_weather_cache_hits(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.mark.anyio
 async def test_weather_key_missing_outside_dev(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("OPENWEATHER_API_KEY", raising=False)
+    # setenv("") instead of delenv: a real key in local .env would otherwise leak in.
+    monkeypatch.setenv("OPENWEATHER_API_KEY", "")
     monkeypatch.setenv("APP_ENV", "recette")
     get_settings.cache_clear()
     settings = get_settings()
@@ -76,7 +77,8 @@ async def test_weather_key_missing_outside_dev(monkeypatch: pytest.MonkeyPatch) 
 
 @pytest.mark.anyio
 async def test_weather_dev_stub_when_key_missing(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("OPENWEATHER_API_KEY", raising=False)
+    # setenv("") instead of delenv: a real key in local .env would otherwise leak in.
+    monkeypatch.setenv("OPENWEATHER_API_KEY", "")
     monkeypatch.setenv("APP_ENV", "dev")
     get_settings.cache_clear()
     settings = get_settings()

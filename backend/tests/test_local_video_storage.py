@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import uuid
+from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -19,8 +21,8 @@ from app.services.local_video.r2_storage import R2LocalVideoStorage
 from app.services.local_video.storage import build_local_video_storage
 
 
-def _settings(**overrides: object) -> Settings:
-    base: dict[str, object] = {
+def _settings(**overrides: Any) -> Settings:
+    base: dict[str, Any] = {
         "app_env": "dev",
         "local_video_storage_backend": "filesystem",
         "media_upload_dir": "uploads",
@@ -109,7 +111,7 @@ class TestLocalVideoMediaPolicy:
 
 
 class TestFilesystemLocalVideoStorage:
-    def test_public_url_uses_media_prefix_without_duplicate(self, tmp_path) -> None:
+    def test_public_url_uses_media_prefix_without_duplicate(self, tmp_path: Path) -> None:
         settings = _settings(media_upload_dir=str(tmp_path))
         storage = FilesystemLocalVideoStorage(settings)
         key = "local-video/reims/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee/source.mp4"
@@ -118,7 +120,7 @@ class TestFilesystemLocalVideoStorage:
             "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee/source.mp4"
         )
 
-    def test_build_source_key_layout(self, tmp_path) -> None:
+    def test_build_source_key_layout(self, tmp_path: Path) -> None:
         settings = _settings(media_upload_dir=str(tmp_path))
         storage = FilesystemLocalVideoStorage(settings)
         video_id = uuid.uuid4()
@@ -169,7 +171,9 @@ class TestR2LocalVideoStorage:
 
 
 class TestStorageFactory:
-    def test_build_filesystem_backend(self, tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_build_filesystem_backend(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.setenv("LOCAL_VIDEO_STORAGE_BACKEND", "filesystem")
         monkeypatch.setenv("MEDIA_UPLOAD_DIR", str(tmp_path))
         get_settings.cache_clear()

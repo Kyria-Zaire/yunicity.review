@@ -26,7 +26,6 @@ import asyncio
 import json
 import logging
 import os
-import sys
 import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -288,7 +287,9 @@ def _print_plan(snapshot: dict[str, Any]) -> None:
 
     logger.info("local_video_uploads (%d):", len(snapshot["local_video_uploads"]))
     for row in snapshot["local_video_uploads"]:
-        logger.info("  - %s storage_key=%s author=%s", row["id"], row["storage_key"], row["author_email"])
+        logger.info(
+            "  - %s storage_key=%s author=%s", row["id"], row["storage_key"], row["author_email"]
+        )
 
     logger.info("local_videos (%d):", len(snapshot["local_videos"]))
     for row in snapshot["local_videos"]:
@@ -338,7 +339,14 @@ def _delete_r2_objects(keys: list[str], *, dry_run: bool) -> dict[str, Any]:
         logger.info("[dry-run] would delete %d R2 object(s) from bucket=%s", len(keys), bucket)
         for key in keys:
             logger.info("[dry-run]   R2 delete: s3://%s/%s", bucket, key)
-        return {"attempted": True, "backend": "r2", "bucket": bucket, "deleted": [], "failed": [], "dry_run": True}
+        return {
+            "attempted": True,
+            "backend": "r2",
+            "bucket": bucket,
+            "deleted": [],
+            "failed": [],
+            "dry_run": True,
+        }
 
     import boto3  # type: ignore[import-untyped]
     from botocore.client import Config  # type: ignore[import-untyped]
@@ -411,7 +419,10 @@ async def _purge_database(conn: asyncpg.Connection, *, execute: bool) -> dict[st
         counts["local_video_uploads"] = len(upload_ids)
         counts["local_videos"] = len(video_ids)
         counts["users"] = len(user_ids)
-        logger.info("[dry-run] would DELETE local_video_uploads: %d row(s)", counts["local_video_uploads"])
+        logger.info(
+            "[dry-run] would DELETE local_video_uploads: %d row(s)",
+            counts["local_video_uploads"],
+        )
         logger.info("[dry-run] would DELETE local_videos: %d row(s)", counts["local_videos"])
         logger.info("[dry-run] would DELETE users (pilot-m00): %d row(s)", counts["users"])
 
@@ -468,7 +479,9 @@ async def _run(*, execute: bool) -> int:
         if execute:
             logger.info("Purge complete.")
         else:
-            logger.info("Dry-run complete — no deletions performed. Re-run with --execute to apply.")
+            logger.info(
+                "Dry-run complete — no deletions performed. Re-run with --execute to apply."
+            )
     finally:
         await conn.close()
 

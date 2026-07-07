@@ -8,8 +8,10 @@ from app.core.post_composer_constants import PostFormat, PostVisibility
 from app.models.post import Post
 from app.schemas.post import (
     PostComposerMetaResponse,
+    PostCreateRequest,
     PostCrossPostTargetsInput,
     PostMediaItemInput,
+    PostMediaTypeLiteral,
     PostPollInput,
 )
 
@@ -34,9 +36,8 @@ def _parse_media_urls(raw: list[dict[str, str]] | None) -> list[PostMediaItemInp
         url = entry.get("url")
         if not url:
             continue
-        media_type = entry.get("media_type", "image")
-        if media_type not in ("image", "video"):
-            media_type = "image"
+        raw_media_type = entry.get("media_type", "image")
+        media_type: PostMediaTypeLiteral = "video" if raw_media_type == "video" else "image"
         items.append(PostMediaItemInput(url=url, media_type=media_type))
     return items
 
@@ -101,7 +102,7 @@ def to_composer_meta_response(post: Post) -> PostComposerMetaResponse | None:
     )
 
 
-def apply_composer_create_payload(post: Post, payload) -> None:
+def apply_composer_create_payload(post: Post, payload: PostCreateRequest) -> None:
     """Persist composer fields from PostCreateRequest onto a new Post."""
     post.post_visibility = payload.visibility.value
     post.post_format = payload.post_format.value if payload.post_format else None

@@ -53,4 +53,6 @@ class TestRetryPolicySummary:
         assert summary["strategy"] == "explicit_schedule_with_jitter"
         assert summary["max_tries"] == 3
         assert summary["backoff_seconds_by_failed_attempt"] == [30, 120, 300]
-        assert set(summary["non_retryable_codes"]) == set(LOCAL_VIDEO_PROCESSING_NON_RETRYABLE_CODES)
+        non_retryable = summary["non_retryable_codes"]
+        assert isinstance(non_retryable, list)
+        assert set(non_retryable) == set(LOCAL_VIDEO_PROCESSING_NON_RETRYABLE_CODES)

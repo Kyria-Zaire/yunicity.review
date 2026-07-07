@@ -18,6 +18,7 @@ from app.schemas.post import (
     CommentListResponse,
     CommentResponse,
     PostCreateRequest,
+    PostMediaTypeLiteral,
     PostMediaUploadResponse,
     PostResponse,
     PostUpdateRequest,
@@ -39,7 +40,8 @@ async def upload_post_media(
 ) -> PostMediaUploadResponse:
     settings = get_settings()
     url, media_type = await StoryMediaService(settings).upload(current_user, file)
-    return PostMediaUploadResponse(url=url, media_type=media_type if media_type in ("image", "video") else "image")
+    normalized_type: PostMediaTypeLiteral = "video" if media_type == "video" else "image"
+    return PostMediaUploadResponse(url=url, media_type=normalized_type)
 
 
 @router.post("", response_model=PostResponse, status_code=status.HTTP_201_CREATED)

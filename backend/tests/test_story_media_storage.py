@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -15,8 +16,8 @@ from app.services.story_media.storage_keys import build_story_media_key
 from tests.media_fixtures import MINIMAL_JPEG_BYTES
 
 
-def _settings(**overrides: object) -> Settings:
-    base: dict[str, object] = {
+def _settings(**overrides: Any) -> Settings:
+    base: dict[str, Any] = {
         "app_env": "recette",
         "local_video_r2_endpoint": "https://example.r2.cloudflarestorage.com",
         "local_video_r2_bucket": "yunicity-media-recette",
