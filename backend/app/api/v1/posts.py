@@ -5,12 +5,13 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Query, Request, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.dependencies import require_authenticated_user
 from app.core.feed_constants import FEED_PAGE_SIZE_DEFAULT, FEED_PAGE_SIZE_MAX
+from app.core.rate_limit import enforce_rate_limit
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.post import (
@@ -33,11 +34,33 @@ from app.services.story_media_service import StoryMediaService
 router = APIRouter(prefix="/posts", tags=["posts"])
 
 
+def _client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    if request.client:
+        return request.client.host
+    return "unknown"
+
+
 @router.post("/media", response_model=PostMediaUploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_post_media(
+    request: Request,
     current_user: Annotated[User, Depends(require_authenticated_user)],
     file: Annotated[UploadFile, File()],
 ) -> PostMediaUploadResponse:
+    # Higher than stories/media (20/40): one composer post can carry up to
+    # POST_MEDIA_MAX_COUNT (10) media, each uploaded as a separate request.
+    await enforce_rate_limit(
+        f"posts:media:{current_user.id}",
+        limit=60,
+        window_seconds=3600,
+    )
+    await enforce_rate_limit(
+        f"posts:media:ip:{_client_ip(request)}",
+        limit=120,
+        window_seconds=3600,
+    )
     settings = get_settings()
     url, media_type = await StoryMediaService(settings).upload(current_user, file)
     normalized_type: PostMediaTypeLiteral = "video" if media_type == "video" else "image"
