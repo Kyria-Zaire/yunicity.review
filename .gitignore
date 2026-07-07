@@ -76,6 +76,21 @@ docker-compose.override.yml
 .claude/settings.local.json
 CLAUDE.local.md
 
+# Cursor session artifacts (curl cookies, debug dumps, temp exports)
+.cursor-*
+
+# Local tool output dumps (lint/typecheck/build/pytest logs)
+lint_*.txt
+typecheck_*.txt
+build_*.txt
+pytest_*.txt
+
+# PR draft bodies (gh pr create --body-file), covers pr-*-body.md
+pr-*.md
+
+# Backend local media uploads (dev filesystem storage)
+backend/uploads/
+
 # OS
 .DS_Store
 Thumbs.db
