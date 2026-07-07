@@ -5,11 +5,12 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Query, Request, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.dependencies import require_authenticated_user
+from app.core.rate_limit import enforce_rate_limit
 from app.core.story_constants import (
     STORY_PAGE_SIZE_DEFAULT,
     STORY_PAGE_SIZE_MAX,
@@ -30,6 +31,15 @@ from app.services.story_media_service import StoryMediaService
 from app.services.story_service import StoryService
 
 router = APIRouter(prefix="/stories", tags=["stories"])
+
+
+def _client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    if request.client:
+        return request.client.host
+    return "unknown"
 
 
 @router.get("", response_model=StoryListResponse)
@@ -68,9 +78,21 @@ async def get_story_insights(
 
 @router.post("/media", response_model=StoryMediaUploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_story_media(
+    request: Request,
     current_user: Annotated[User, Depends(require_authenticated_user)],
     file: Annotated[UploadFile, File()],
 ) -> StoryMediaUploadResponse:
+    # Same thresholds as profile media uploads (avatar/banner).
+    await enforce_rate_limit(
+        f"stories:media:{current_user.id}",
+        limit=20,
+        window_seconds=3600,
+    )
+    await enforce_rate_limit(
+        f"stories:media:ip:{_client_ip(request)}",
+        limit=40,
+        window_seconds=3600,
+    )
     settings = get_settings()
     url, media_type = await StoryMediaService(settings).upload(current_user, file)
     return StoryMediaUploadResponse(url=url, media_type=media_type)
