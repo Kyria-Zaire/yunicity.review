@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from io import BytesIO
 from unittest.mock import MagicMock, patch
 
@@ -34,7 +35,7 @@ def story_media_r2_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture(autouse=True)
-def mock_story_media_r2() -> dict[str, bytes]:
+def mock_story_media_r2() -> Generator[dict[str, bytes], None, None]:
     stored: dict[str, bytes] = {}
     mock_client = MagicMock()
 
@@ -53,7 +54,7 @@ def disable_story_media_rate_limits(monkeypatch: pytest.MonkeyPatch) -> None:
     async def _noop(*_args: object, **_kwargs: object) -> None:
         return None
 
-    monkeypatch.setattr("app.api.v1.stories.enforce_rate_limit", _noop)
+    # app.api.v1.stories no longer rate-limits (refactor 2558cbc); only auth remains.
     monkeypatch.setattr("app.api.v1.auth.enforce_rate_limit", _noop)
 
 

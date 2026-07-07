@@ -47,7 +47,9 @@ class PostMediaItemInput(BaseModel):
 
 class PostPollInput(BaseModel):
     question: str = Field(..., min_length=1, max_length=POST_POLL_QUESTION_MAX_LENGTH)
-    options: list[str] = Field(..., min_length=POST_POLL_OPTIONS_MIN, max_length=POST_POLL_OPTIONS_MAX)
+    options: list[str] = Field(
+        ..., min_length=POST_POLL_OPTIONS_MIN, max_length=POST_POLL_OPTIONS_MAX
+    )
 
     @field_validator("options")
     @classmethod
@@ -90,7 +92,9 @@ class PostCreateRequest(BaseModel):
     organization_id: uuid.UUID | None = None
     body: str = Field(..., min_length=1, max_length=POST_BODY_MAX_LENGTH)
     media_url: str | None = Field(default=None, max_length=500)
-    media_urls: list[PostMediaItemInput] = Field(default_factory=list, max_length=POST_MEDIA_MAX_COUNT)
+    media_urls: list[PostMediaItemInput] = Field(
+        default_factory=list, max_length=POST_MEDIA_MAX_COUNT
+    )
     location: PostLocationInput | None = None
     visibility: PostVisibility = PostVisibility.PUBLIC
     post_format: PostFormat | None = None
@@ -101,7 +105,9 @@ class PostCreateRequest(BaseModel):
     activity_label: str | None = Field(default=None, max_length=POST_ACTIVITY_LABEL_MAX_LENGTH)
     linked_tribe_id: uuid.UUID | None = None
     tagged_user_ids: list[uuid.UUID] = Field(default_factory=list, max_length=POST_TAGGED_USERS_MAX)
-    audience_user_ids: list[uuid.UUID] = Field(default_factory=list, max_length=POST_TAGGED_USERS_MAX)
+    audience_user_ids: list[uuid.UUID] = Field(
+        default_factory=list, max_length=POST_TAGGED_USERS_MAX
+    )
     poll: PostPollInput | None = None
     cross_post_targets: PostCrossPostTargetsInput | None = None
     use_media_caption: bool = False

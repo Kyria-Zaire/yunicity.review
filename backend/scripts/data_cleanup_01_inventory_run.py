@@ -71,7 +71,10 @@ def _format_rows(columns: list[str], rows: list[asyncpg.Record]) -> None:
 async def _run() -> int:
     database_url = os.environ.get("DATABASE_URL", "").strip()
     if not database_url:
-        print("ERROR: DATABASE_URL is not set. Use: npx @railway/cli run -- uv run python ...", file=sys.stderr)
+        print(
+            "ERROR: DATABASE_URL is not set. Use: npx @railway/cli run -- uv run python ...",
+            file=sys.stderr,
+        )
         return 1
 
     if not SQL_PATH.is_file():

@@ -8,6 +8,7 @@ from app.core.media_magic_bytes import (
     assert_content_matches_declared_type,
     detect_supported_content_types,
 )
+
 from tests.media_fixtures import (
     FAKE_MP4_BYTES,
     MINIMAL_JPEG_BYTES,
