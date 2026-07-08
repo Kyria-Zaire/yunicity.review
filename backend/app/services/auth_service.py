@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -21,6 +22,7 @@ from app.core.security import (
     verify_password,
 )
 from app.models.user import User
+from app.repositories.passport_repository import PassportRepository
 from app.repositories.rbac_repository import RbacRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.user_repository import UserRepository
@@ -29,6 +31,8 @@ from app.schemas.passport import PassportActivateRequest
 from app.schemas.user import UserPublic
 from app.services.passport_service import PassportService
 from app.services.profile_service import ProfileService
+
+logger = logging.getLogger(__name__)
 
 _DEFAULT_REGISTER_CITY = "Reims"
 
@@ -85,10 +89,6 @@ class AuthService:
                 city=city,
             )
             await self._session.commit()
-            await PassportService(self._session).activate(
-                user,
-                PassportActivateRequest(city=city),
-            )
         except IntegrityError as exc:
             await self._session.rollback()
             raise AppError(
@@ -96,6 +96,11 @@ class AuthService:
                 code="EMAIL_ALREADY_EXISTS",
                 detail="Un compte existe déjà avec cet email.",
             ) from exc
+
+        # Passport activation is best-effort: the account is already committed,
+        # so a failure here (e.g. tiers not seeded) must not fail registration.
+        # It is retried on the user's next login via _ensure_passport_active.
+        await self._try_activate_passport(user, city)
 
         await self._session.refresh(user)
         return await self._issue_session(user, new_family=True)
@@ -116,6 +121,7 @@ class AuthService:
                 detail=_INVALID_CREDENTIALS_MSG,
             )
         self._ensure_active(user)
+        await self._ensure_passport_active(user)
         return await self._issue_session(user, new_family=True)
 
     async def refresh(
@@ -242,3 +248,36 @@ class AuthService:
                 code="ACCOUNT_SUSPENDED",
                 detail="Ce compte est suspendu.",
             )
+
+    async def _ensure_passport_active(self, user: User) -> None:
+        """Retry Passport activation for users who registered while it failed.
+
+        No-op when the user already has an active Passport (avoids a useless
+        retry). Never blocks login: a failed re-activation is logged, not raised.
+        """
+        existing = await PassportRepository(self._session).get_active_for_user(user.id)
+        if existing is not None:
+            return
+        await self._try_activate_passport(user, user.city)
+
+    async def _try_activate_passport(self, user: User, city: str | None) -> None:
+        """Best-effort Passport activation. Never blocks auth flows.
+
+        Activation is idempotent. A failure (e.g. tiers not seeded) is logged
+        for monitoring and retried on the user's next login.
+        """
+        user_id = user.id
+        try:
+            payload = PassportActivateRequest(city=city) if city else None
+            await PassportService(self._session).activate(user, payload)
+        except Exception:
+            # Deliberate broad catch: passport activation is a non-critical
+            # side effect of auth and must never break registration or login.
+            await self._session.rollback()
+            logger.exception(
+                "Passport activation failed for user %s; will retry on next login",
+                user_id,
+            )
+            # rollback() expired the ORM instance; reload it so callers (login's
+            # _issue_session) keep a live user and don't hit MissingGreenlet.
+            await self._session.refresh(user)
