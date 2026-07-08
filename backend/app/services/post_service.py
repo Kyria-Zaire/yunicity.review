@@ -17,6 +17,8 @@ from app.repositories.passport_repository import PassportRepository
 from app.repositories.post_repository import PostRepository
 from app.repositories.post_visibility import can_view_post
 from app.repositories.profile_repository import ProfileRepository
+from app.repositories.tribe_member_repository import TribeMemberRepository
+from app.repositories.tribe_repository import TribeRepository
 from app.schemas.post import PostCreateRequest, PostResponse, PostUpdateRequest
 from app.services.feed_author_resolver import FeedAuthorResolver
 from app.services.feed_post_mapper import to_post_response
@@ -36,8 +38,17 @@ class PostService:
         self._membership = OrganizationMembershipService(session)
         self._authors = FeedAuthorResolver(session)
         self._rbac = RbacService(session)
+        self._tribes = TribeRepository(session)
+        self._tribe_members = TribeMemberRepository(session)
 
     async def create_post(self, user: User, payload: PostCreateRequest) -> PostResponse:
+        # linked_tribe_id comes straight from the client. Validate membership the
+        # same way create_discussion does, otherwise the composer path lets a user
+        # associate a post with any (even private) tribe they don't belong to, and
+        # a non-existent id would violate the FK and 500 on commit.
+        if payload.linked_tribe_id is not None:
+            await self._require_linked_tribe_membership(user, payload.linked_tribe_id)
+
         if payload.author_type == PostAuthorType.CITIZEN.value:
             profile = await self._profiles.get_by_user_id(user.id)
             city = (profile.city if profile and profile.city else user.city) or None
@@ -168,6 +179,24 @@ class PostService:
         else:
             author = await self._authors.resolve_user(post.author_id)
         return to_post_response(post, author=author, liked_by_me=liked is not None)
+
+    async def _require_linked_tribe_membership(
+        self, user: User, tribe_id: uuid.UUID
+    ) -> None:
+        tribe = await self._tribes.get_by_id(tribe_id)
+        if tribe is None or tribe.archived_at is not None:
+            raise AppError(
+                status_code=404,
+                code="TRIBE_NOT_FOUND",
+                detail="Tribu introuvable.",
+            )
+        membership = await self._tribe_members.get_membership(tribe.id, user.id)
+        if membership is None or membership.left_at is not None:
+            raise AppError(
+                status_code=403,
+                code="FORBIDDEN",
+                detail="Vous devez être membre de cette tribu.",
+            )
 
     async def _require_mutable_post(self, user: User, post_id: uuid.UUID) -> Post:
         post = await self._posts.get_by_id(post_id)
