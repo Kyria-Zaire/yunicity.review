@@ -299,7 +299,7 @@ export function FeedPortalScreen() {
         {feedStates}
       </div>
 
-      <div className="web-desktop-feed-only contents">
+      <div className="web-feed-desktop-contents">
       <FeedLeftRail
         activeView={activeView}
         leftNav={leftNav}
