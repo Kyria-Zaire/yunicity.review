@@ -15,6 +15,7 @@ import {
   formatEventClockTime,
   formatEventDateRange,
   hasNeighborhoodV2ExploreContent,
+  resolveCulturalPlaceDisplayUrl,
 } from "@yunicity/utils";
 import Link from "next/link";
 
@@ -54,21 +55,15 @@ export function NeighborhoodV2ExploreSection({ detail }: NeighborhoodV2ExploreSe
                   className="group flex h-full min-h-11 gap-3 rounded-2xl border border-neutral-100 bg-neutral-50/60 p-3 transition hover:border-yunicity-primary/30 hover:bg-white"
                 >
                   <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-neutral-200">
-                    {place.image_url ? (
-                      <CulturalImage
-                        src={place.image_url}
-                        alt=""
-                        placeName={place.name}
-                        className="h-full w-full"
-                        sizes="64px"
-                        overlay={false}
-                        showFallbackCaption={false}
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-xs font-bold text-neutral-500">
-                        {place.name.charAt(0)}
-                      </div>
-                    )}
+                    <CulturalImage
+                      src={resolveCulturalPlaceDisplayUrl(place, "thumbnail")}
+                      alt=""
+                      placeName={place.name}
+                      className="h-full w-full"
+                      sizes="64px"
+                      overlay={false}
+                      showFallbackCaption={false}
+                    />
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col justify-between">
                     <div>

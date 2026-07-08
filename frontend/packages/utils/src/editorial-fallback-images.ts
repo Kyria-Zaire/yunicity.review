@@ -68,33 +68,19 @@ export const NEIGHBORHOOD_EDITORIAL_IMAGE_CLAIRMARAIS =
 export const NEIGHBORHOOD_EDITORIAL_IMAGE_CROIX_ROUGE =
   "https://media.lhebdoduvendredi.com/illustrations/00039997_normal.jpg";
 
-/** Fallbacks quartiers sans visuel dédié en seed (placeholders hero.jpg 1×1). */
-const NEIGHBORHOOD_EDITORIAL_IMAGE_MURIGNY =
-  "https://images.unsplash.com/photo-1467269209834-ffaff5f779eb?auto=format&fit=crop&w=900&q=80";
-const NEIGHBORHOOD_EDITORIAL_IMAGE_JEAN_JAURES =
-  "https://images.unsplash.com/photo-1449824913935-59a10b85d9bf?auto=format&fit=crop&w=900&q=80";
-const NEIGHBORHOOD_EDITORIAL_IMAGE_LA_NEUVILLETTE =
-  "https://images.unsplash.com/photo-1444084316824-dc26d6657664?auto=format&fit=crop&w=900&q=80";
-const NEIGHBORHOOD_EDITORIAL_IMAGE_ORGEVAL =
-  "https://images.unsplash.com/photo-1477959856517-8250ed8a1ed4?auto=format&fit=crop&w=900&q=80";
-const NEIGHBORHOOD_EDITORIAL_IMAGE_CHEMIN_VERT =
-  "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=900&q=80";
-const NEIGHBORHOOD_EDITORIAL_IMAGE_MAISON_BLANCHE =
-  "https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=900&q=80";
-
+// SEED-PROD-01A: only quartiers with a working AND Reims-relevant editorial photo
+// are mapped. Others (dead 404/403 URLs or generic non-Reims stock) are removed so
+// resolveNeighborhoodEditorialImage returns null → the card renders a clean gradient
+// + name fallback (CulturalImage) instead of a broken/irrelevant image. Real photos
+// land in a separate seed ticket (SEED-PROD-01B).
+// Removed here: murigny, jean-jaures, orgeval (404), clairmarais (403),
+// la-neuvillette, chemin-vert, maison-blanche (generic non-Reims stock).
 const NEIGHBORHOOD_SLUG_EDITORIAL_IMAGES: Record<string, string> = {
   "centre-ville": NEIGHBORHOOD_EDITORIAL_IMAGE_CENTRE_VILLE,
   "saint-remi": NEIGHBORHOOD_EDITORIAL_IMAGE_SAINT_REMI,
   boulingrin: NEIGHBORHOOD_EDITORIAL_IMAGE_BOULINGRIN,
   cernay: NEIGHBORHOOD_EDITORIAL_IMAGE_CERNAY,
-  clairmarais: NEIGHBORHOOD_EDITORIAL_IMAGE_CLAIRMARAIS,
   "croix-rouge": NEIGHBORHOOD_EDITORIAL_IMAGE_CROIX_ROUGE,
-  murigny: NEIGHBORHOOD_EDITORIAL_IMAGE_MURIGNY,
-  "jean-jaures": NEIGHBORHOOD_EDITORIAL_IMAGE_JEAN_JAURES,
-  "la-neuvillette": NEIGHBORHOOD_EDITORIAL_IMAGE_LA_NEUVILLETTE,
-  orgeval: NEIGHBORHOOD_EDITORIAL_IMAGE_ORGEVAL,
-  "chemin-vert": NEIGHBORHOOD_EDITORIAL_IMAGE_CHEMIN_VERT,
-  "maison-blanche": NEIGHBORHOOD_EDITORIAL_IMAGE_MAISON_BLANCHE,
 };
 
 function normalizeEditorialKey(value: string): string {

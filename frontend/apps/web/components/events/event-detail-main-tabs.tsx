@@ -19,6 +19,7 @@ import {
   buildSearchUrl,
   culturalPlaceCategoryLabel,
   formatOrganizationMemberSince,
+  resolveCulturalPlaceDisplayUrl,
   type EventDetailTabId,
 } from "@yunicity/utils";
 import { BadgeCheck, Calendar, MapPin, Music2, Ticket, Users } from "lucide-react";
@@ -136,7 +137,7 @@ export function EventDetailMainTabs({ event, context, venuePlace }: EventDetailM
       {tab === "venue" && venuePlace ? (
         <section className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm">
           <CulturalImage
-            src={venuePlace.hero_image_url ?? venuePlace.image_url}
+            src={resolveCulturalPlaceDisplayUrl(venuePlace, "hero")}
             alt={venuePlace.name}
             placeName={venuePlace.name}
             className="aspect-[21/9] w-full"

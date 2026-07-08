@@ -13,6 +13,7 @@ import {
   buildPlaceBreadcrumbJsonLd,
   buildPlaceLocalBusinessJsonLd,
 } from "@/lib/seo/structured-data";
+import { resolveCulturalPlaceDisplayUrl } from "@yunicity/utils";
 import type { Metadata } from "next";
 
 type PlaceDetailPageProps = {
@@ -64,9 +65,10 @@ export async function generateMetadata({
       plainTextExcerpt(place.description) ||
       `Découvrez ${place.name}, un lieu à ${place.city}, sur Yunicity.`,
   );
-  const image = resolveMediaUrl(
-    place.hero_image_url || place.image_url || place.thumbnail_image_url,
-  );
+  // SEED-PROD-01A: route the OG image through the display resolver so broken
+  // yunicity-hosted cover.jpg URLs are dropped (→ no image) instead of shipping a 404
+  // social preview; a working slug override is used when available.
+  const image = resolveMediaUrl(resolveCulturalPlaceDisplayUrl(place, "hero"));
 
   return buildPageMetadata({
     title,
