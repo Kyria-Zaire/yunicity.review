@@ -4,9 +4,19 @@ import type { CulturalPlaceListItem } from "@yunicity/types";
 
 import { isPendingYunicityHostedCoverUrl } from "./map-media-url";
 
-export type CulturalPlaceImageSource = Pick<
-  CulturalPlaceListItem,
-  "image_url" | "hero_image_url" | "thumbnail_image_url" | "photo_credit" | "image_credit" | "source_name"
+// Fields optional so lighter shapes (e.g. NeighborhoodDetailPlaceItem, which only
+// carries image_url) can flow through the resolvers. Every accessor below already
+// tolerates undefined via usableCulturalPlaceImageUrl / optional chaining.
+export type CulturalPlaceImageSource = Partial<
+  Pick<
+    CulturalPlaceListItem,
+    | "image_url"
+    | "hero_image_url"
+    | "thumbnail_image_url"
+    | "photo_credit"
+    | "image_credit"
+    | "source_name"
+  >
 >;
 
 function usableCulturalPlaceImageUrl(url: string | null | undefined): string | null {

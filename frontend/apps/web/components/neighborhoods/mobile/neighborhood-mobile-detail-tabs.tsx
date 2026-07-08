@@ -26,6 +26,7 @@ import {
   buildNeighborhoodDetailMapUrl,
   buildPublicPlaceHref,
   formatEventDateRange,
+  resolveCulturalPlaceDisplayUrl,
   resolveNeighborhoodV2HistoryStoryForDisplay,
   selectApprovedContributionsForDisplay,
   type NeighborhoodMobileDetailTabId,
@@ -195,16 +196,14 @@ export function NeighborhoodMobileDetailTabs({
                     className="flex gap-3 rounded-2xl border border-neutral-200/80 bg-white p-3"
                   >
                     <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
-                      {place.image_url ? (
-                        <CulturalImage
-                          src={place.image_url}
-                          alt=""
-                          placeName={place.name}
-                          className="size-full object-cover"
-                          sizes="64px"
-                          showFallbackCaption={false}
-                        />
-                      ) : null}
+                      <CulturalImage
+                        src={resolveCulturalPlaceDisplayUrl(place, "thumbnail")}
+                        alt=""
+                        placeName={place.name}
+                        className="size-full object-cover"
+                        sizes="64px"
+                        showFallbackCaption={false}
+                      />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-neutral-900">{place.name}</p>

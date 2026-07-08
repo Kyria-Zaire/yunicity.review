@@ -11,6 +11,8 @@ type CulturalImageProps = {
   sizes: string;
   priority?: boolean;
   showFallbackCaption?: boolean;
+  /** Badge affiché dans le fallback (dégradé + nom). Défaut « Culture ». */
+  fallbackLabel?: string;
   /** @deprecated Ignoré — préférer un overlay via un conteneur parent. */
   overlay?: boolean;
 };
@@ -34,6 +36,7 @@ export function CulturalImage({
   sizes,
   priority = false,
   showFallbackCaption = true,
+  fallbackLabel = "Culture",
 }: CulturalImageProps) {
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -67,7 +70,7 @@ export function CulturalImage({
         <div className="absolute inset-0 flex items-end p-3">
           <div className="rounded-lg bg-white/12 px-2.5 py-2 backdrop-blur-sm">
             <div className="mb-1 inline-block rounded bg-white/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/90">
-              Culture
+              {fallbackLabel}
             </div>
             <p className="line-clamp-2 text-xs font-medium text-white/90">{placeName}</p>
           </div>
