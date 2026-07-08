@@ -64,6 +64,14 @@ body {
   display: none;
 }
 
+/* Desktop feed layout wrapper: on ≥640px it must be `display: contents` so the
+   left rail and the main column become direct flex children of the shell row.
+   It cannot reuse .web-desktop-feed-only (which is display:block ≥640 and would
+   override the Tailwind `contents` utility, collapsing the desktop feed layout). */
+.web-feed-desktop-contents {
+  display: none;
+}
+
 .web-main-column {
   min-width: 0;
   width: 100%;
@@ -128,6 +136,10 @@ body {
 
   .web-desktop-feed-only {
     display: block;
+  }
+
+  .web-feed-desktop-contents {
+    display: contents;
   }
 
   .feed-mobile-shell .web-three-col {
