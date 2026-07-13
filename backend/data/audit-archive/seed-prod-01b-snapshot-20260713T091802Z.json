@@ -1,0 +1,225 @@
+{
+  "_ticket": "SEED-PROD-01B",
+  "_kind": "authoritative-pre-execute-DB-snapshot",
+  "captured_at_utc": "20260713T091802Z",
+  "source": "SELECT cultural_places (prod DB via Railway)",
+  "targets_total": 12,
+  "captured_count": 12,
+  "missing_slugs": [],
+  "columns": [
+    "slug",
+    "hero_image_url",
+    "image_url",
+    "thumbnail_image_url",
+    "image_source",
+    "image_license",
+    "photo_credit",
+    "gallery_images"
+  ],
+  "rows": {
+    "cathedrale-notre-dame": {
+      "slug": "cathedrale-notre-dame",
+      "hero_image_url": "https://yunicity.city/places/reims/cathedrale-notre-dame/cover.jpg",
+      "image_url": "https://yunicity.city/places/reims/cathedrale-notre-dame/cover.jpg",
+      "thumbnail_image_url": "https://yunicity.city/places/reims/cathedrale-notre-dame/cover.jpg",
+      "image_source": "yunicity_asset",
+      "image_license": null,
+      "photo_credit": "Yunicity",
+      "gallery_images": [
+        {
+          "url": "https://yunicity.city/places/reims/cathedrale-notre-dame/cover.jpg",
+          "alt": "Cathédrale Notre-Dame de Reims — Reims",
+          "credit": "Yunicity",
+          "source": "yunicity_asset"
+        }
+      ]
+    },
+    "palais-du-tau": {
+      "slug": "palais-du-tau",
+      "hero_image_url": "https://yunicity.city/places/reims/palais-du-tau/cover.jpg",
+      "image_url": "https://yunicity.city/places/reims/palais-du-tau/cover.jpg",
+      "thumbnail_image_url": "https://yunicity.city/places/reims/palais-du-tau/cover.jpg",
+      "image_source": "yunicity_asset",
+      "image_license": null,
+      "photo_credit": "Yunicity",
+      "gallery_images": [
+        {
+          "url": "https://yunicity.city/places/reims/palais-du-tau/cover.jpg",
+          "alt": "Palais du Tau — Reims",
+          "credit": "Yunicity",
+          "source": "yunicity_asset"
+        }
+      ]
+    },
+    "basilique-saint-remi": {
+      "slug": "basilique-saint-remi",
+      "hero_image_url": "https://yunicity.city/places/reims/basilique-saint-remi/cover.jpg",
+      "image_url": "https://yunicity.city/places/reims/basilique-saint-remi/cover.jpg",
+      "thumbnail_image_url": "https://yunicity.city/places/reims/basilique-saint-remi/cover.jpg",
+      "image_source": "yunicity_asset",
+      "image_license": null,
+      "photo_credit": "Yunicity",
+      "gallery_images": [
+        {
+          "url": "https://yunicity.city/places/reims/basilique-saint-remi/cover.jpg",
+          "alt": "Basilique Saint-Remi — Reims",
+          "credit": "Yunicity",
+          "source": "yunicity_asset"
+        }
+      ]
+    },
+    "musee-saint-remi": {
+      "slug": "musee-saint-remi",
+      "hero_image_url": "https://yunicity.city/places/reims/musee-saint-remi/cover.jpg",
+      "image_url": "https://yunicity.city/places/reims/musee-saint-remi/cover.jpg",
+      "thumbnail_image_url": "https://yunicity.city/places/reims/musee-saint-remi/cover.jpg",
+      "image_source": "yunicity_asset",
+      "image_license": null,
+      "photo_credit": "Yunicity",
+      "gallery_images": [
+        {
+          "url": "https://yunicity.city/places/reims/musee-saint-remi/cover.jpg",
+          "alt": "Musée Saint-Remi — Reims",
+          "credit": "Yunicity",
+          "source": "yunicity_asset"
+        }
+      ]
+    },
+    "porte-de-mars": {
+      "slug": "porte-de-mars",
+      "hero_image_url": "https://yunicity.city/places/reims/porte-de-mars/cover.jpg",
+      "image_url": "https://yunicity.city/places/reims/porte-de-mars/cover.jpg",
+      "thumbnail_image_url": "https://yunicity.city/places/reims/porte-de-mars/cover.jpg",
+      "image_source": "yunicity_asset",
+      "image_license": null,
+      "photo_credit": "Yunicity",
+      "gallery_images": [
+        {
+          "url": "https://yunicity.city/places/reims/porte-de-mars/cover.jpg",
+          "alt": "Porte de Mars — Reims",
+          "credit": "Yunicity",
+          "source": "yunicity_asset"
+        }
+      ]
+    },
+    "halles-boulingrin": {
+      "slug": "halles-boulingrin",
+      "hero_image_url": "https://yunicity.city/places/reims/halles-boulingrin/cover.jpg",
+      "image_url": "https://yunicity.city/places/reims/halles-boulingrin/cover.jpg",
+      "thumbnail_image_url": "https://yunicity.city/places/reims/halles-boulingrin/cover.jpg",
+      "image_source": "yunicity_asset",
+      "image_license": null,
+      "photo_credit": "Yunicity",
+      "gallery_images": [
+        {
+          "url": "https://yunicity.city/places/reims/halles-boulingrin/cover.jpg",
+          "alt": "Halles du Boulingrin — Reims",
+          "credit": "Yunicity",
+          "source": "yunicity_asset"
+        }
+      ]
+    },
+    "opera-de-reims": {
+      "slug": "opera-de-reims",
+      "hero_image_url": "https://yunicity.city/places/reims/opera-de-reims/cover.jpg",
+      "image_url": "https://yunicity.city/places/reims/opera-de-reims/cover.jpg",
+      "thumbnail_image_url": "https://yunicity.city/places/reims/opera-de-reims/cover.jpg",
+      "image_source": "yunicity_asset",
+      "image_license": null,
+      "photo_credit": "Yunicity",
+      "gallery_images": [
+        {
+          "url": "https://yunicity.city/places/reims/opera-de-reims/cover.jpg",
+          "alt": "Opéra de Reims — Reims",
+          "credit": "Yunicity",
+          "source": "yunicity_asset"
+        }
+      ]
+    },
+    "parc-de-champagne": {
+      "slug": "parc-de-champagne",
+      "hero_image_url": "https://yunicity.city/places/reims/parc-de-champagne/cover.jpg",
+      "image_url": "https://yunicity.city/places/reims/parc-de-champagne/cover.jpg",
+      "thumbnail_image_url": "https://yunicity.city/places/reims/parc-de-champagne/cover.jpg",
+      "image_source": "yunicity_asset",
+      "image_license": null,
+      "photo_credit": "Yunicity",
+      "gallery_images": [
+        {
+          "url": "https://yunicity.city/places/reims/parc-de-champagne/cover.jpg",
+          "alt": "Parc de Champagne — Reims",
+          "credit": "Yunicity",
+          "source": "yunicity_asset"
+        }
+      ]
+    },
+    "musee-des-beaux-arts": {
+      "slug": "musee-des-beaux-arts",
+      "hero_image_url": "https://yunicity.city/places/reims/musee-des-beaux-arts/cover.jpg",
+      "image_url": "https://yunicity.city/places/reims/musee-des-beaux-arts/cover.jpg",
+      "thumbnail_image_url": "https://yunicity.city/places/reims/musee-des-beaux-arts/cover.jpg",
+      "image_source": "yunicity_asset",
+      "image_license": null,
+      "photo_credit": "Yunicity",
+      "gallery_images": [
+        {
+          "url": "https://yunicity.city/places/reims/musee-des-beaux-arts/cover.jpg",
+          "alt": "Musée des Beaux-Arts — Reims",
+          "credit": "Yunicity",
+          "source": "yunicity_asset"
+        }
+      ]
+    },
+    "cryptoportique": {
+      "slug": "cryptoportique",
+      "hero_image_url": "https://yunicity.city/places/reims/cryptoportique/cover.jpg",
+      "image_url": "https://yunicity.city/places/reims/cryptoportique/cover.jpg",
+      "thumbnail_image_url": "https://yunicity.city/places/reims/cryptoportique/cover.jpg",
+      "image_source": "yunicity_asset",
+      "image_license": null,
+      "photo_credit": "Yunicity",
+      "gallery_images": [
+        {
+          "url": "https://yunicity.city/places/reims/cryptoportique/cover.jpg",
+          "alt": "Cryptoportique — Reims",
+          "credit": "Yunicity",
+          "source": "yunicity_asset"
+        }
+      ]
+    },
+    "planetarium-de-reims": {
+      "slug": "planetarium-de-reims",
+      "hero_image_url": "https://yunicity.city/places/reims/planetarium-de-reims/cover.jpg",
+      "image_url": "https://yunicity.city/places/reims/planetarium-de-reims/cover.jpg",
+      "thumbnail_image_url": "https://yunicity.city/places/reims/planetarium-de-reims/cover.jpg",
+      "image_source": "yunicity_asset",
+      "image_license": null,
+      "photo_credit": "Yunicity",
+      "gallery_images": [
+        {
+          "url": "https://yunicity.city/places/reims/planetarium-de-reims/cover.jpg",
+          "alt": "Planétarium de Reims — Reims",
+          "credit": "Yunicity",
+          "source": "yunicity_asset"
+        }
+      ]
+    },
+    "frac-grand-est": {
+      "slug": "frac-grand-est",
+      "hero_image_url": "https://yunicity.city/places/reims/frac-grand-est/cover.jpg",
+      "image_url": "https://yunicity.city/places/reims/frac-grand-est/cover.jpg",
+      "thumbnail_image_url": "https://yunicity.city/places/reims/frac-grand-est/cover.jpg",
+      "image_source": "yunicity_asset",
+      "image_license": null,
+      "photo_credit": "Yunicity",
+      "gallery_images": [
+        {
+          "url": "https://yunicity.city/places/reims/frac-grand-est/cover.jpg",
+          "alt": "FRAC Champagne-Ardenne — Reims",
+          "credit": "Yunicity",
+          "source": "yunicity_asset"
+        }
+      ]
+    }
+  }
+}

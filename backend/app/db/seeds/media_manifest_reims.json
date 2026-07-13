@@ -1,0 +1,136 @@
+{
+  "_comment": "SEED-PROD-01B media manifest. Sources Wikimedia Commons -> self-hosted R2/CDN. Option A: reuse bucket yunicity-media-{env} + credentials LOCAL_VIDEO_R2_* existants, prefixe places/reims/. Licences/credits VERIFIES sur page File: (voir docs/prd/active/SEED-PROD-01B.md). EXECUTE en PROD le 2026-07-13 (12/12 lieux) via `railway run` sur le service API prod: --execute derive l'URL publique de LOCAL_VIDEO_CDN_BASE_URL (=media.yunicity.city) et upload dans LOCAL_VIDEO_R2_BUCKET. cdn_base_url ci-dessous ne sert qu'a l'affichage dry-run. Env recette non provisionne. gallery_images non touche.",
+  "version": 1,
+  "city_slug": "reims",
+  "cdn_base_url": "https://media.yunicity.city",
+  "cdn_base_url_by_env": {
+    "dev": "https://media.dev.yunicity.city",
+    "recette": "https://media.recette.yunicity.city",
+    "preprod": "https://media.preprod.yunicity.city",
+    "prod": "https://media.yunicity.city"
+  },
+  "target": "cultural_places.hero_image_url (+ image_url legacy mirror), image_source='wikimedia_commons', image_license, photo_credit",
+  "places": [
+    {
+      "slug": "basilique-saint-remi",
+      "commons_file": "Reims, Abteikirche Saint-Remi.jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Reims,_Abteikirche_Saint-Remi.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Reims,_Abteikirche_Saint-Remi.jpg",
+      "target_key": "places/reims/basilique-saint-remi/cover.jpg",
+      "resolution": "2896x3939",
+      "license": "CC BY-SA 4.0",
+      "credit": "Rolf Kranz / CC BY-SA 4.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "cathedrale-notre-dame",
+      "commons_file": "Exterior view of the west facade of Notre-Dame Cathedral in Reims.jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Exterior_view_of_the_west_facade_of_Notre-Dame_Cathedral_in_Reims.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Exterior_view_of_the_west_facade_of_Notre-Dame_Cathedral_in_Reims.jpg",
+      "target_key": "places/reims/cathedrale-notre-dame/cover.jpg",
+      "resolution": "4821x7500",
+      "license": "CC BY-SA 4.0",
+      "credit": "Gennadii Saus i Segura / CC BY-SA 4.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "cryptoportique",
+      "commons_file": "Cryptoportique1.jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Cryptoportique1.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Cryptoportique1.jpg",
+      "target_key": "places/reims/cryptoportique/cover.jpg",
+      "resolution": "1024x768",
+      "license": "CC BY-SA 1.0",
+      "credit": "Jean-Pierre Riocreux / CC BY-SA 1.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "frac-grand-est",
+      "commons_file": "Entrée FRAC Champagne-Ardenne dans l'Ancien Collège des Jésuites de Reims.JPG",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Entr%C3%A9e_FRAC_Champagne-Ardenne_dans_l%27Ancien_Coll%C3%A8ge_des_J%C3%A9suites_de_Reims.JPG",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Entr%C3%A9e_FRAC_Champagne-Ardenne_dans_l%27Ancien_Coll%C3%A8ge_des_J%C3%A9suites_de_Reims.JPG",
+      "target_key": "places/reims/frac-grand-est/cover.jpg",
+      "resolution": "4240x2832",
+      "license": "CC BY-SA 4.0",
+      "credit": "Gérald Garitan / CC BY-SA 4.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "halles-boulingrin",
+      "commons_file": "Reims - halles du Boulingrin (04).JPG",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Reims_-_halles_du_Boulingrin_(04).JPG",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Reims_-_halles_du_Boulingrin_(04).JPG",
+      "target_key": "places/reims/halles-boulingrin/cover.jpg",
+      "resolution": "3264x2448",
+      "license": "CC BY-SA 3.0",
+      "credit": "Fab5669 / CC BY-SA 3.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "musee-des-beaux-arts",
+      "commons_file": "Musée des beaux arts 024.JPG",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Mus%C3%A9e_des_beaux_arts_024.JPG",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Mus%C3%A9e_des_beaux_arts_024.JPG",
+      "target_key": "places/reims/musee-des-beaux-arts/cover.jpg",
+      "resolution": "2592x1944",
+      "license": "CC BY-SA 3.0",
+      "credit": "Gérald Garitan / CC BY-SA 3.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "musee-saint-remi",
+      "commons_file": "Reims-Musée St Rémi-02.jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Reims-Mus%C3%A9e_St_R%C3%A9mi-02.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Reims-Mus%C3%A9e_St_R%C3%A9mi-02.jpg",
+      "target_key": "places/reims/musee-saint-remi/cover.jpg",
+      "resolution": "1772x1240",
+      "license": "Public Domain",
+      "credit": "Vassil / Domaine public via Wikimedia Commons"
+    },
+    {
+      "slug": "opera-de-reims",
+      "commons_file": "2026-05-10 19-15-22 - Reims - Opéra.jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:2026-05-10_19-15-22_-_Reims_-_Op%C3%A9ra.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/2026-05-10_19-15-22_-_Reims_-_Op%C3%A9ra.jpg",
+      "target_key": "places/reims/opera-de-reims/cover.jpg",
+      "resolution": "8160x6120",
+      "license": "CC BY-SA 4.0",
+      "credit": "Baidax / CC BY-SA 4.0 via Wikimedia Commons",
+      "note": "Facade exterieure confirmee visuellement (angle rue de Vesle). Le resume auto 'interieur' etait errone."
+    },
+    {
+      "slug": "palais-du-tau",
+      "commons_file": "Reims Palace of Tau 016 7893.jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Reims_Palace_of_Tau_016_7893.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Reims_Palace_of_Tau_016_7893.jpg",
+      "target_key": "places/reims/palais-du-tau/cover.jpg",
+      "resolution": "8488x5961",
+      "license": "CC BY-SA 4.0",
+      "credit": "Ludvig14 / CC BY-SA 4.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "parc-de-champagne",
+      "commons_file": "Parc de champagne 225.JPG",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Parc_de_champagne_225.JPG",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Parc_de_champagne_225.JPG",
+      "target_key": "places/reims/parc-de-champagne/cover.jpg",
+      "resolution": "4592x2576",
+      "license": "CC BY-SA 3.0",
+      "credit": "Garitan / CC BY-SA 3.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "planetarium-de-reims",
+      "commons_file": "Planétarium de Reims Vue extérieure.jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Plan%C3%A9tarium_de_Reims_Vue_ext%C3%A9rieure.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Plan%C3%A9tarium_de_Reims_Vue_ext%C3%A9rieure.jpg",
+      "target_key": "places/reims/planetarium-de-reims/cover.jpg",
+      "resolution": "3543x2362",
+      "license": "CC BY-SA 4.0",
+      "credit": "Planétarium de Reims / Fred Laures (Pégase51) / CC BY-SA 4.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "porte-de-mars",
+      "commons_file": "Reims Portede Mars 016 7344.jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Reims_Portede_Mars_016_7344.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Reims_Portede_Mars_016_7344.jpg",
+      "target_key": "places/reims/porte-de-mars/cover.jpg",
+      "resolution": "8673x4852",
+      "license": "CC BY-SA 4.0",
+      "credit": "Ludvig14 / CC BY-SA 4.0 via Wikimedia Commons"
+    }
+  ]
+}
