@@ -32,3 +32,30 @@ Les assets R2/CDN (`cdn.yunicity.fr`, `media.yunicity.city`) ne sont pas encore 
 4. Retirer le filtre `isPendingYunicityHostedCoverUrl` une fois les assets servis.
 
 Références : `docs/quartiers/NEIGHBORHOOD-HERO-ASSETS.md`, `backend/tests/test_prod_cultural_places_catalog_seed.py`.
+
+## Dette suivie — INFRA-CDN-FIX-01 (incohérence CDN quartiers prod/preprod)
+
+**Statut :** ouverte — hors scope actuel · **Priorité :** P2
+
+**Corrigé (PR #105)** : la branche **recette** de `neighborhood_seed_cover_url`
+sert désormais via `media.recette.yunicity.city` (convention INFRA-01), au lieu
+du domaine erroné `cdn.yunicity.fr` codé en dur.
+
+**Reste à unifier** : en **prod / preprod**, les heros quartiers sont encore
+servis via `web_frontend_url` (fichiers statiques Next.js), **pas** via
+`media.{env}.yunicity.city` comme le sont les **lieux culturels**, les **vidéos**
+et les **médias profil**. Incohérence architecturale : deux voies de service
+d'assets coexistent.
+
+**À faire quand on standardise tous les assets sur le CDN média :**
+
+1. Uploader les heros quartiers sur R2 (`neighborhoods/reims/{slug}/hero.jpg`).
+2. Faire pointer `neighborhood_seed_cover_url` (prod/preprod) vers
+   `neighborhood_media_cdn_base_url(app_env)` au lieu de `web_frontend_url`.
+3. Aligner la même logique côté lieux culturels (`cultural_place_assets.py`) et
+   le manifest SEED-PROD-01B (`media_manifest_reims.json` référence encore
+   `cdn.yunicity.fr`).
+4. Décider bucket : réutilisation `yunicity-media-{env}` (recommandé) vs dédié.
+
+Référence code : `backend/app/core/neighborhood_hero_assets.py`
+(`neighborhood_media_cdn_base_url`).
