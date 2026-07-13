@@ -6,17 +6,30 @@ const PENDING_YUNICITY_HOSTED_COVER =
   /^\/(?:places|neighborhoods)\/reims\/[^/]+\/(?:cover|hero)\.jpg$/i;
 
 /**
- * Seed prod URLs pointing at static files not yet deployed on the web app (CONTENT-ASSETS).
- * Skipping these avoids noisy 404s in the map UI until R2/static hosting is wired.
+ * The legitimate self-hosted media CDN (`media.yunicity.city`, `media.<env>.yunicity.city`)
+ * serves REAL covers (SEED-PROD-01B). It shares the `/places/reims/.../cover.jpg` path with
+ * the old web-app static host, so the pending filter MUST distinguish by host — never drop it.
+ */
+const MEDIA_CDN_HOST = /^media\.(?:[a-z0-9-]+\.)?yunicity\.city$/i;
+
+/**
+ * Legacy seed prod URLs pointing at static files never deployed on the web app (CONTENT-ASSETS):
+ * `https://yunicity.city/places/reims/.../cover.jpg` (and the dev-relative equivalent). Skipping
+ * these avoids noisy 404s. The `media.*.yunicity.city` CDN is explicitly excluded — it is valid.
  */
 export function isPendingYunicityHostedCoverUrl(url: string | null | undefined): boolean {
-  if (!url?.trim()) return false;
+  const trimmed = url?.trim();
+  if (!trimmed) return false;
+  let parsed: URL;
   try {
-    const pathname = new URL(url, "https://yunicity.city").pathname;
-    return PENDING_YUNICITY_HOSTED_COVER.test(pathname);
+    parsed = new URL(trimmed, "https://yunicity.city");
   } catch {
-    return PENDING_YUNICITY_HOSTED_COVER.test(url.trim());
+    // Unparseable → best-effort path-only match (no host to inspect).
+    return PENDING_YUNICITY_HOSTED_COVER.test(trimmed);
   }
+  if (!PENDING_YUNICITY_HOSTED_COVER.test(parsed.pathname)) return false;
+  // media.*.yunicity.city = real self-hosted cover, not a broken pending URL.
+  return !MEDIA_CDN_HOST.test(parsed.hostname);
 }
 
 export function resolveMapPlaceImageUrl(
