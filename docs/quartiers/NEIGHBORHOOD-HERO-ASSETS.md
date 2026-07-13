@@ -32,8 +32,9 @@ neighborhood_hero_storage_key("boulingrin")
 neighborhood_dev_public_hero_url("boulingrin")
 # → "/neighborhoods/reims/boulingrin/hero.jpg"
 
-neighborhood_cdn_hero_url("boulingrin")
-# → "https://cdn.yunicity.fr/neighborhoods/reims/boulingrin/hero.jpg"
+neighborhood_cdn_hero_url("boulingrin", app_env="recette")
+# → "https://media.recette.yunicity.city/neighborhoods/reims/boulingrin/hero.jpg"
+# prod → "https://media.yunicity.city/neighborhoods/reims/boulingrin/hero.jpg"
 ```
 
 ---
@@ -62,7 +63,8 @@ Les placeholders actuels sont des **JPEG minimaux contrôlés** (1×1 px). Ils s
 | Environnement | `cover_image_url` seed | CDN |
 |---------------|------------------------|-----|
 | DEV | `/neighborhoods/reims/{slug}/hero.jpg` | Next `public/` |
-| RECETTE+ | `https://cdn.yunicity.fr/neighborhoods/reims/{slug}/hero.jpg` | R2 + CDN Yunicity |
+| RECETTE | `https://media.recette.yunicity.city/neighborhoods/reims/{slug}/hero.jpg` | R2 + CDN Yunicity (INFRA-01) |
+| PROD | `https://media.yunicity.city/neighborhoods/reims/{slug}/hero.jpg` | via web frontend statique aujourd'hui — voir note |
 
 Upload R2 : **hors scope Q2-S1-04** — clés et chemins sont déjà alignés Local Video (`neighborhoods/…`).
 
