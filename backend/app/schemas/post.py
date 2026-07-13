@@ -141,8 +141,7 @@ class PostCreateRequest(BaseModel):
         if self.post_format == PostFormat.POLL and self.poll is None:
             raise ValueError("Un sondage requiert une question et des options.")
         if self.poll is not None and self.post_format not in (PostFormat.POLL, None):
-            if self.post_format != PostFormat.POLL:
-                raise ValueError("poll incompatible avec ce format de publication.")
+            raise ValueError("poll incompatible avec ce format de publication.")
         return self
 
 
