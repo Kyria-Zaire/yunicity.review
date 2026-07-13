@@ -8,7 +8,8 @@ NEIGHBORHOOD_HERO_FILENAME = "hero.jpg"
 NEIGHBORHOOD_COVER_FILENAME = "cover.jpg"
 NEIGHBORHOOD_HERO_PLACEHOLDER_FILENAME = "hero-placeholder.jpg"
 
-YUNICITY_CDN_BASE_URL = "https://cdn.yunicity.fr"
+# Media CDN per environment (INFRA-01): media.{env}.yunicity.city, prod drops the env label.
+YUNICITY_MEDIA_CDN_DOMAIN = "yunicity.city"
 DEV_PUBLIC_NEIGHBORHOOD_MEDIA_PREFIX = f"/neighborhoods/{REIMS_CITY_SLUG}"
 
 FORBIDDEN_COVER_URL_FRAGMENTS: frozenset[str] = frozenset(
@@ -68,12 +69,25 @@ def neighborhood_seed_cover_url(
     if app_env in ("prod", "preprod"):
         return f"{web_frontend_url.rstrip('/')}{relative}"
     if app_env == "recette":
-        return neighborhood_cdn_hero_url(slug)
+        return neighborhood_cdn_hero_url(slug, app_env=app_env)
     return relative
 
 
-def neighborhood_cdn_hero_url(slug: str) -> str:
-    return f"{YUNICITY_CDN_BASE_URL}/{neighborhood_hero_storage_key(slug)}"
+def neighborhood_media_cdn_base_url(app_env: str) -> str:
+    """Media CDN base for an environment (INFRA-01 convention).
+
+    dev/recette/preprod -> https://media.{env}.yunicity.city
+    prod                -> https://media.yunicity.city
+    """
+    env = app_env.strip().lower()
+    if env == "prod":
+        return f"https://media.{YUNICITY_MEDIA_CDN_DOMAIN}"
+    return f"https://media.{env}.{YUNICITY_MEDIA_CDN_DOMAIN}"
+
+
+def neighborhood_cdn_hero_url(slug: str, *, app_env: str) -> str:
+    base = neighborhood_media_cdn_base_url(app_env)
+    return f"{base}/{neighborhood_hero_storage_key(slug)}"
 
 
 def is_forbidden_neighborhood_cover_url(url: str | None) -> bool:

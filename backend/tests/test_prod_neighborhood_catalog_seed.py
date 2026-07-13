@@ -47,6 +47,23 @@ def test_neighborhood_seed_cover_url_dev() -> None:
     assert url == neighborhood_dev_public_hero_url("boulingrin")
 
 
+def test_neighborhood_seed_cover_url_recette_uses_media_cdn() -> None:
+    """Recette must serve via the INFRA-01 media CDN, not the legacy cdn.yunicity.fr."""
+    url = neighborhood_seed_cover_url(
+        "boulingrin",
+        app_env="recette",
+        web_frontend_url="https://recette.yunicity.city",
+    )
+    assert url == "https://media.recette.yunicity.city/neighborhoods/reims/boulingrin/hero.jpg"
+
+
+def test_neighborhood_cdn_hero_url_prod_drops_env_label() -> None:
+    from app.core.neighborhood_hero_assets import neighborhood_cdn_hero_url
+
+    url = neighborhood_cdn_hero_url("boulingrin", app_env="prod")
+    assert url == "https://media.yunicity.city/neighborhoods/reims/boulingrin/hero.jpg"
+
+
 @pytest.mark.asyncio
 async def test_reims_neighborhoods_seed_logging_does_not_crash() -> None:
     """LogRecord reserves 'created' — extra must use neighborhoods_created instead."""
