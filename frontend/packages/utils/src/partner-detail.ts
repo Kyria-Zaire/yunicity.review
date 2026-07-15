@@ -75,12 +75,16 @@ export function resolvePartnerImage(
   if (variant === "logo") {
     return partner.logo_url?.trim() || partner.cover_image_url?.trim() || null;
   }
-  const cover = partner.cover_image_url?.trim();
-  if (cover) return cover;
+  // Card thumbnails (places, map, passport rails): the logo/monogram is the most
+  // informative visual; the banner (cover_image_url) is often a generic gradient
+  // placeholder. Prefer the logo, fall back to the cover, then the category image.
+  // The full-screen "hero" banner keeps cover-first (below) — unchanged.
   if (variant === "card") {
     const logo = partner.logo_url?.trim();
     if (logo) return logo;
   }
+  const cover = partner.cover_image_url?.trim();
+  if (cover) return cover;
   const category = partner.category?.trim().toLowerCase() ?? "";
   return PARTNER_HERO_FALLBACKS[category] ?? EDITORIAL_IMAGE_CAFE_RENCONTRE_ENTREPRENEURS;
 }
