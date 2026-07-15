@@ -1,0 +1,14 @@
+# osv-scanner exceptions — per-advisory, time-boxed, NEVER a blanket bypass.
+# CI gates on High/Critical only (see .github/scripts/osv_gate_high.py). Medium/Low
+# are reported but tolerated, matching the previous `pnpm audit --audit-level=high`.
+#
+# Entries below are PRE-EXISTING High findings present before osv-scanner adoption,
+# ignored with a near-term expiry so they resurface and force re-triage. New
+# vulnerabilities are NOT covered here and will fail CI.
+
+[[IgnoredVulns]]
+id = "GHSA-w5hq-g745-h8pq"
+# uuid@7.0.3 (transitive) — High (CVSS 7.5), fixed in uuid 11.1.1.
+# Pre-existing before this workflow migration; scheduled for dependency remediation.
+ignoreUntil = 2026-08-14T00:00:00Z
+reason = "Pre-existing transitive uuid@7.0.3 High; tracked for bump to a fixed line. Expiry forces re-triage."

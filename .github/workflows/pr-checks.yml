@@ -96,21 +96,27 @@ jobs:
           # Isolated venv: skip editable yunicity-api + avoid Ubuntu system packages (e.g. bcc).
           pip-audit --skip-editable --strict --desc --format columns
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.9
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - name: pnpm audit (frontend)
-        working-directory: frontend
+      # `pnpm audit` was retired by npm (legacy audit endpoint returns HTTP 410, and pnpm
+      # has not migrated to the bulk advisory endpoint on any version). We use osv-scanner
+      # instead: it reads pnpm-lock.yaml directly and queries OSV.dev (no npm endpoint), and
+      # is genuinely functional (fails on real vulnerabilities). CI gates on High/Critical
+      # only (CVSS >= 7.0), preserving the previous `--audit-level=high` policy; Medium/Low
+      # are reported but tolerated. Per-advisory, time-boxed exceptions: frontend/osv-scanner.toml.
+      - name: osv-scanner (frontend, gate on High/Critical)
         run: |
           set -euo pipefail
-          pnpm install --frozen-lockfile
-          pnpm audit --audit-level=high
+          OSV=/usr/local/bin/osv-scanner
+          curl -sSfL "https://github.com/google/osv-scanner/releases/download/v2.4.0/osv-scanner_linux_amd64" -o "$OSV"
+          chmod +x "$OSV"
+          # Human-readable report (all severities) for the log:
+          "$OSV" scan source --lockfile=frontend/pnpm-lock.yaml --config=frontend/osv-scanner.toml || true
+          # Machine-readable output for the High/Critical gate:
+          rc=0
+          "$OSV" scan source --lockfile=frontend/pnpm-lock.yaml --config=frontend/osv-scanner.toml \
+            --format json > osv-frontend.json || rc=$?
+          # osv-scanner: 0 = clean, 1 = vulnerabilities found (the gate decides); any other
+          # code is a real tool/network error and must NOT be swallowed.
+          if [ "$rc" != "0" ] && [ "$rc" != "1" ]; then
+            echo "::error::osv-scanner failed to run (exit $rc)"; exit "$rc"
+          fi
+          python3 .github/scripts/osv_gate_high.py osv-frontend.json
