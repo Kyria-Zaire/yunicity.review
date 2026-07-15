@@ -84,6 +84,33 @@ describe("partner-detail", () => {
     expect(resolvePartnerImage(BASE, "hero")).toBeTruthy();
   });
 
+  it("card variant prefers the logo over the (placeholder) banner", () => {
+    const withBoth = {
+      ...BASE,
+      logo_url: "https://cdn.example/logo.png",
+      cover_image_url: "https://cdn.example/banner.svg",
+    };
+    expect(resolvePartnerImage(withBoth, "card")).toBe("https://cdn.example/logo.png");
+  });
+
+  it("card variant falls back to the cover when there is no logo", () => {
+    const coverOnly = {
+      ...BASE,
+      logo_url: null,
+      cover_image_url: "https://cdn.example/banner.svg",
+    };
+    expect(resolvePartnerImage(coverOnly, "card")).toBe("https://cdn.example/banner.svg");
+  });
+
+  it("hero variant is unchanged: cover-first (full-screen partner banner)", () => {
+    const withBoth = {
+      ...BASE,
+      logo_url: "https://cdn.example/logo.png",
+      cover_image_url: "https://cdn.example/banner.svg",
+    };
+    expect(resolvePartnerImage(withBoth, "hero")).toBe("https://cdn.example/banner.svg");
+  });
+
   it("filters offers by organization without inventing data", () => {
     const offers = filterPartnerOffersForOrganization(
       [
