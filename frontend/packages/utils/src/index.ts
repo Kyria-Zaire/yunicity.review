@@ -2063,6 +2063,7 @@ export {
   resolveCulturalPlaceHeroUrl,
   resolveCulturalPlaceImageUrl,
   resolveCulturalPlaceThumbnailUrl,
+  usableCulturalGalleryImages,
 } from "./cultural-place-media";
 export {
   fetchMapboxRoute,

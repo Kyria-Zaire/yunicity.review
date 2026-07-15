@@ -1,6 +1,7 @@
 import type { CulturalPlaceDetail } from "@yunicity/types";
 
 import { culturalPlaceCategoryLabel } from "./cultural-place-labels";
+import { usableCulturalGalleryImages } from "./cultural-place-media";
 import { buildMapPlaceUrl } from "./explorer-links";
 import { formatPlaceOpenedLabel, formatPlaceTrustLine } from "./places-portal";
 import {
@@ -111,5 +112,5 @@ export function buildPlaceMobileDetailCategoryLabel(place: CulturalPlaceDetail):
 }
 
 export function countPlaceMobileDetailPhotos(place: CulturalPlaceDetail): number {
-  return place.gallery_images.length;
+  return usableCulturalGalleryImages(place.gallery_images).length;
 }

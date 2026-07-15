@@ -11,6 +11,7 @@ import {
   culturalPlaceLocationLine,
   culturalPlaceMapHref,
   resolveCulturalPlaceDisplayUrl,
+  usableCulturalGalleryImages,
 } from "@yunicity/utils";
 import { ChevronLeft, MapPin, Share2 } from "lucide-react";
 import Link from "next/link";
@@ -25,6 +26,7 @@ type CulturalPlaceDetailScreenProps = {
 export function CulturalPlaceDetailScreen({ place }: CulturalPlaceDetailScreenProps) {
   const [shareHint, setShareHint] = useState<string | null>(null);
   const heroUrl = resolveCulturalPlaceDisplayUrl(place, "hero");
+  const galleryImages = usableCulturalGalleryImages(place.gallery_images);
 
   async function handleShare() {
     const url = typeof window !== "undefined" ? window.location.href : "";
@@ -148,11 +150,11 @@ export function CulturalPlaceDetailScreen({ place }: CulturalPlaceDetailScreenPr
         </dl>
       </section>
 
-      {place.gallery_images.length > 0 ? (
+      {galleryImages.length > 0 ? (
         <section className="rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-bold text-neutral-900">Galerie</h2>
           <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {place.gallery_images.map((image, index) => (
+            {galleryImages.map((image, index) => (
               <li key={`${image.url}-${index}`} className="overflow-hidden rounded-xl bg-neutral-100">
                 <CulturalImage
                   src={image.url}

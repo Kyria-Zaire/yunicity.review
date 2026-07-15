@@ -537,6 +537,7 @@ export type {
 } from "./neighborhood";
 
 export type {
+  CulturalGalleryImage,
   CulturalPlaceDetail,
   CulturalPlaceListItem,
   CulturalPlaceListResponse,

@@ -19,6 +19,7 @@ import {
   LOCAL_VIDEO_TEASER_SECTION_PLACE,
   buildPlaceMobileDetailAboutText,
   buildPlaceMobileDetailMapHref,
+  usableCulturalGalleryImages,
   type PlaceMobileDetailTabId,
 } from "@yunicity/utils";
 import { useState } from "react";
@@ -99,11 +100,11 @@ export function PlaceMobileDetailTabs({
       ) : null}
 
       {tab === "photos" ? (
-        place.gallery_images.length === 0 ? (
+        usableCulturalGalleryImages(place.gallery_images).length === 0 ? (
           <p className="text-sm text-neutral-500">{PLACE_DETAIL_MOBILE_PHOTOS_EMPTY}</p>
         ) : (
           <ul className="grid grid-cols-2 gap-3">
-            {place.gallery_images.map((image, index) => (
+            {usableCulturalGalleryImages(place.gallery_images).map((image, index) => (
               <li key={`${image.url}-${index}`} className="overflow-hidden rounded-xl bg-neutral-100">
                 <CulturalImage
                   src={image.url}

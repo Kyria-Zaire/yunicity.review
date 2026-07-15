@@ -1,6 +1,6 @@
 /** Cultural place image resolution (WEB-SEARCH-02B.1). */
 
-import type { CulturalPlaceListItem } from "@yunicity/types";
+import type { CulturalGalleryImage, CulturalPlaceListItem } from "@yunicity/types";
 
 import { isPendingYunicityHostedCoverUrl } from "./map-media-url";
 
@@ -75,4 +75,16 @@ export function getCulturalPlaceImageCredit(place: CulturalPlaceImageSource): st
 
 export function culturalPlaceHasGallery(place: CulturalPlaceListItem): boolean {
   return (place.gallery_images?.length ?? 0) > 0;
+}
+
+/**
+ * Garde-fou galerie : ne conserve que les entrées dont l'URL est réellement servable.
+ * Écarte les URLs vides ET les covers "pending" (ancien host `yunicity.city` mort) — même
+ * doctrine fail-safe que le reste : jamais de `<img>` 404 visible, on affiche l'état vide propre.
+ */
+export function usableCulturalGalleryImages(
+  gallery: readonly CulturalGalleryImage[] | null | undefined,
+): CulturalGalleryImage[] {
+  if (!gallery) return [];
+  return gallery.filter((image) => usableCulturalPlaceImageUrl(image.url) !== null);
 }
