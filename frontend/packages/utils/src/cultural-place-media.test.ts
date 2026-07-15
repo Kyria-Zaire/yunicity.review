@@ -7,6 +7,7 @@ import {
   resolveCulturalPlaceHeroUrl,
   resolveCulturalPlaceImageUrl,
   resolveCulturalPlaceThumbnailUrl,
+  usableCulturalGalleryImages,
 } from "./cultural-place-media";
 
 const base = {
@@ -180,5 +181,40 @@ describe("culturalPlaceHasGallery", () => {
         gallery_images: [],
       }),
     ).toBe(false);
+  });
+});
+
+describe("usableCulturalGalleryImages", () => {
+  it("drops entries whose URL is a dead pending yunicity.city cover", () => {
+    const result = usableCulturalGalleryImages([
+      { url: "https://yunicity.city/places/reims/cathedrale-notre-dame/cover.jpg" },
+      { url: "https://media.yunicity.city/places/reims/cathedrale-notre-dame/cover.jpg" },
+    ]);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.url).toBe(
+      "https://media.yunicity.city/places/reims/cathedrale-notre-dame/cover.jpg",
+    );
+  });
+
+  it("returns an empty array when the only entry is a dead cover (no visible 404)", () => {
+    expect(
+      usableCulturalGalleryImages([
+        { url: "https://yunicity.city/places/reims/opera-de-reims/cover.jpg" },
+      ]),
+    ).toEqual([]);
+  });
+
+  it("keeps external editorial URLs and drops empty ones", () => {
+    const result = usableCulturalGalleryImages([
+      { url: "https://images.example/photo.jpg", alt: "x" },
+      { url: "   " },
+    ]);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.url).toBe("https://images.example/photo.jpg");
+  });
+
+  it("tolerates null / undefined galleries", () => {
+    expect(usableCulturalGalleryImages(null)).toEqual([]);
+    expect(usableCulturalGalleryImages(undefined)).toEqual([]);
   });
 });
