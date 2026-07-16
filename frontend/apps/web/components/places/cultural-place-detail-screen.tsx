@@ -54,18 +54,21 @@ export function CulturalPlaceDetailScreen({ place }: CulturalPlaceDetailScreenPr
       </Link>
 
       <article className="relative overflow-hidden rounded-3xl bg-neutral-950 shadow-lg">
-        <div className="relative min-h-[280px] sm:min-h-[320px]">
+        <div className="relative">
+          {/* Definite height on the image (like the working gallery's aspect-ratio): the
+              CulturalImage root is position:relative, so its inner absolute <img> needs a
+              sized box. A min-height container made height:100% collapse to 0 → black hero. */}
           <CulturalImage
             src={heroUrl}
             alt={place.name}
             placeName={place.name}
-            className="absolute inset-0 h-full w-full"
-            sizes="(max-width: 1100px) 100vw"
+            className="h-[280px] w-full sm:h-[320px]"
+            sizes="(max-width: 1100px) 100vw, 1100px"
             priority
             showFallbackCaption={false}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/90 via-neutral-950/40 to-transparent" />
-          <div className="relative flex min-h-[280px] flex-col justify-end p-6 sm:min-h-[320px] sm:p-8">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-neutral-950/90 via-neutral-950/40 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 flex flex-col p-6 sm:p-8">
             <span className="w-fit rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
               {culturalPlaceCategoryLabel(place.category)}
             </span>

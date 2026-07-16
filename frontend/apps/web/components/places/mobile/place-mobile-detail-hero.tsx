@@ -29,17 +29,19 @@ export function PlaceMobileDetailHero({ place, onOpenPhotos }: PlaceMobileDetail
 
   return (
     <section className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-neutral-900 shadow-sm">
-      <div className="relative min-h-[260px]">
+      <div className="relative">
+        {/* Definite height (like the gallery) so the CulturalImage's inner absolute <img>
+            has a sized box; min-height made height:100% collapse to 0 → black hero. */}
         <CulturalImage
           src={heroUrl}
           alt={place.name}
           placeName={place.name}
-          className="absolute inset-0 size-full object-cover"
+          className="h-[260px] w-full"
           sizes="100vw"
           priority
           showFallbackCaption={false}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/95 via-neutral-950/45 to-neutral-900/15" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-neutral-950/95 via-neutral-950/45 to-neutral-900/15" />
 
         <button
           type="button"
@@ -51,7 +53,7 @@ export function PlaceMobileDetailHero({ place, onOpenPhotos }: PlaceMobileDetail
           <Heart className="h-4 w-4" strokeWidth={2} aria-hidden />
         </button>
 
-        <div className="relative flex min-h-[260px] flex-col justify-end p-4">
+        <div className="absolute inset-x-0 bottom-0 flex flex-col p-4">
           <span className="mb-2 inline-flex w-fit items-center gap-1.5 rounded-full bg-violet-600/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
             {categoryLabel}
           </span>
