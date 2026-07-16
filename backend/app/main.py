@@ -11,6 +11,7 @@ from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.errors import AppError, app_error_handler
 from app.core.logging import configure_logging
+from app.core.observability import RequestContextMiddleware, init_sentry
 from app.db.session import dispose_db, init_db
 from app.integrations.redis import close_redis, init_redis
 
@@ -21,6 +22,8 @@ logger = logging.getLogger(__name__)
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     configure_logging(settings)
+    if init_sentry(settings):
+        logger.info("sentry_enabled environment=%s", settings.app_env)
     if settings.app_env == "prod" and settings.email_provider == "console":
         logger.warning("Production email provider is console; real emails are disabled.")
     init_db(settings)
@@ -60,6 +63,9 @@ def create_app() -> FastAPI:
             allow_methods=["*"],
             allow_headers=["*"],
         )
+    # Added last → outermost: sets request_id (contextvar + X-Request-ID response header)
+    # before anything else runs, so every downstream log/error is correlated.
+    app.add_middleware(RequestContextMiddleware)
     app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type]
     upload_root = Path(settings.media_upload_dir)
     upload_root.mkdir(parents=True, exist_ok=True)

@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     redis_url: str | None = Field(default=None, alias="REDIS_URL")
     cors_origins: list[str] | str = Field(default="", alias="CORS_ORIGINS")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+    sentry_dsn: str | None = Field(default=None, alias="SENTRY_DSN")
+    sentry_traces_sample_rate: float = Field(
+        default=0.1, alias="SENTRY_TRACES_SAMPLE_RATE"
+    )
 
     @field_validator("database_url", mode="before")
     @classmethod
