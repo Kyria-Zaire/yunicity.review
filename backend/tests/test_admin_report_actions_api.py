@@ -22,6 +22,15 @@ pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 BASE = "/api/v1/admin/reports"
 COCKPIT_BASE = "/api/v1/admin/cockpit/summary"
 
+# ADMIN-PERF-02A caches the whole cockpit summary in Redis for
+# COCKPIT_SUMMARY_TTL_SECONDS (= 45s) with NO write-invalidation — a deliberate
+# eventual-consistency perf trade-off (absorbs dashboard reload bursts), not a bug.
+# Tests asserting the count reflects the DB *immediately* must therefore drop this
+# key between a mutation and the next read (see `_cockpit_pending`); otherwise the
+# second read returns the stale cached summary rather than a fresh DB count.
+_COCKPIT_CITY = "Reims"
+_COCKPIT_CACHE_KEY = f"admin:cockpit:summary:v1:{_COCKPIT_CITY.lower()}"
+
 
 @pytest.fixture(autouse=True)
 async def _clear_redis_rate_limits(auth_client: AsyncClient) -> AsyncIterator[None]:
@@ -78,8 +87,13 @@ async def _create_pending_report(auth_client: AsyncClient) -> tuple[uuid.UUID, s
 
 
 async def _cockpit_pending(auth_client: AsyncClient, token: str) -> int:
+    # Drop the cached summary so this read reflects current DB state deterministically,
+    # independent of the 45s TTL or any global Redis flush (see _COCKPIT_CACHE_KEY note).
+    redis = get_redis_client()
+    if redis is not None:
+        await redis.delete(_COCKPIT_CACHE_KEY)
     response = await auth_client.get(
-        f"{COCKPIT_BASE}?city=Reims",
+        f"{COCKPIT_BASE}?city={_COCKPIT_CITY}",
         headers=auth_header(token),
     )
     assert response.status_code == 200, response.text
