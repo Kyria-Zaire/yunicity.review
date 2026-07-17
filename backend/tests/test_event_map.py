@@ -44,9 +44,16 @@ def _map_query(**extra: float | str | int) -> str:
     return "&".join(parts)
 
 
+@pytest.fixture
+async def author_id(auth_client: AsyncClient) -> uuid.UUID:
+    """A real persisted user id to satisfy the created_by_user_id FK on seeded events."""
+    return (await register_user(auth_client)).user_id
+
+
 async def _seed_event(
     session: AsyncSession,
     *,
+    created_by_user_id: uuid.UUID,
     title: str,
     latitude: float | None,
     longitude: float | None,
@@ -56,7 +63,7 @@ async def _seed_event(
     is_cancelled: bool = False,
 ) -> uuid.UUID:
     event = LocalEvent(
-        created_by_user_id=uuid.uuid4(),
+        created_by_user_id=created_by_user_id,
         title=title,
         city=city,
         starts_at=starts_at or datetime.now(UTC) + timedelta(days=2),
@@ -73,7 +80,9 @@ async def _seed_event(
 
 
 @pytest.mark.asyncio
-async def test_map_events_returns_events_in_bbox(auth_client: AsyncClient) -> None:
+async def test_map_events_returns_events_in_bbox(
+    auth_client: AsyncClient, author_id: uuid.UUID
+) -> None:
     engine = get_engine()
     assert engine is not None
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -81,12 +90,14 @@ async def test_map_events_returns_events_in_bbox(auth_client: AsyncClient) -> No
     async with factory() as session:
         await _seed_event(
             session,
+            created_by_user_id=author_id,
             title=marker,
             latitude=49.25,
             longitude=4.0,
         )
         await _seed_event(
             session,
+            created_by_user_id=author_id,
             title="hors bbox",
             latitude=48.5,
             longitude=4.0,
@@ -104,13 +115,17 @@ async def test_map_events_returns_events_in_bbox(auth_client: AsyncClient) -> No
 
 
 @pytest.mark.asyncio
-async def test_map_events_excludes_without_coordinates(auth_client: AsyncClient) -> None:
+async def test_map_events_excludes_without_coordinates(
+    auth_client: AsyncClient, author_id: uuid.UUID
+) -> None:
     engine = get_engine()
     assert engine is not None
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     marker = f"map-nocoords-{uuid.uuid4().hex[:8]}"
     async with factory() as session:
-        await _seed_event(session, title=marker, latitude=None, longitude=None)
+        await _seed_event(
+            session, created_by_user_id=author_id, title=marker, latitude=None, longitude=None
+        )
         await session.commit()
 
     response = await auth_client.get(f"/api/v1/map/events?{_map_query()}")
@@ -120,7 +135,9 @@ async def test_map_events_excludes_without_coordinates(auth_client: AsyncClient)
 
 
 @pytest.mark.asyncio
-async def test_map_events_excludes_expired(auth_client: AsyncClient) -> None:
+async def test_map_events_excludes_expired(
+    auth_client: AsyncClient, author_id: uuid.UUID
+) -> None:
     engine = get_engine()
     assert engine is not None
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -128,6 +145,7 @@ async def test_map_events_excludes_expired(auth_client: AsyncClient) -> None:
     async with factory() as session:
         await _seed_event(
             session,
+            created_by_user_id=author_id,
             title=marker,
             latitude=49.25,
             longitude=4.0,
@@ -141,7 +159,9 @@ async def test_map_events_excludes_expired(auth_client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_map_events_excludes_cancelled_and_pending(auth_client: AsyncClient) -> None:
+async def test_map_events_excludes_cancelled_and_pending(
+    auth_client: AsyncClient, author_id: uuid.UUID
+) -> None:
     engine = get_engine()
     assert engine is not None
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -150,6 +170,7 @@ async def test_map_events_excludes_cancelled_and_pending(auth_client: AsyncClien
     async with factory() as session:
         await _seed_event(
             session,
+            created_by_user_id=author_id,
             title=cancelled,
             latitude=49.25,
             longitude=4.0,
@@ -157,6 +178,7 @@ async def test_map_events_excludes_cancelled_and_pending(auth_client: AsyncClien
         )
         await _seed_event(
             session,
+            created_by_user_id=author_id,
             title=pending,
             latitude=49.25,
             longitude=4.0,
@@ -172,7 +194,9 @@ async def test_map_events_excludes_cancelled_and_pending(auth_client: AsyncClien
 
 
 @pytest.mark.asyncio
-async def test_map_events_city_filter(auth_client: AsyncClient) -> None:
+async def test_map_events_city_filter(
+    auth_client: AsyncClient, author_id: uuid.UUID
+) -> None:
     engine = get_engine()
     assert engine is not None
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -181,6 +205,7 @@ async def test_map_events_city_filter(auth_client: AsyncClient) -> None:
     async with factory() as session:
         await _seed_event(
             session,
+            created_by_user_id=author_id,
             title=reims_title,
             latitude=49.25,
             longitude=4.0,
@@ -188,6 +213,7 @@ async def test_map_events_city_filter(auth_client: AsyncClient) -> None:
         )
         await _seed_event(
             session,
+            created_by_user_id=author_id,
             title=lyon_title,
             latitude=49.25,
             longitude=4.0,
@@ -203,7 +229,9 @@ async def test_map_events_city_filter(auth_client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_map_events_respects_limit_and_truncated(auth_client: AsyncClient) -> None:
+async def test_map_events_respects_limit_and_truncated(
+    auth_client: AsyncClient, author_id: uuid.UUID
+) -> None:
     engine = get_engine()
     assert engine is not None
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -213,6 +241,7 @@ async def test_map_events_respects_limit_and_truncated(auth_client: AsyncClient)
         for index in range(6):
             await _seed_event(
                 session,
+                created_by_user_id=author_id,
                 title=f"{prefix}-{index}",
                 latitude=49.241 + index * 0.001,
                 longitude=4.0,
@@ -275,7 +304,9 @@ async def test_map_events_uses_profile_city_when_authenticated(
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     marker = f"map-auth-{uuid.uuid4().hex[:8]}"
     async with factory() as session:
-        await _seed_event(session, title=marker, latitude=49.25, longitude=4.0)
+        await _seed_event(
+            session, created_by_user_id=user.user_id, title=marker, latitude=49.25, longitude=4.0
+        )
         await session.commit()
 
     query = "&".join(f"{key}={value}" for key, value in REIMS_BBOX.items())
