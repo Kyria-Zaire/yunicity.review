@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
@@ -35,11 +36,40 @@ async def test_redis_outage_fails_closed_by_default() -> None:
     assert exc.value.code == RATE_LIMIT_BACKEND_UNAVAILABLE
 
 
-async def test_redis_outage_logs_identifiable_error(caplog: pytest.LogCaptureFixture) -> None:
-    with _patch_client(_FakeRedis(incr_exc=ConnectionError("redis down"))):
-        with caplog.at_level("ERROR"), pytest.raises(AppError):
-            await enforce_rate_limit("rl:key", limit=5, window_seconds=60)
-    assert any("rate_limit_backend_unavailable" in r.getMessage() for r in caplog.records)
+class _CapturingHandler(logging.Handler):
+    """Collect emitted records for assertions, independent of pytest's caplog."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.records: list[logging.LogRecord] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.records.append(record)
+
+
+async def test_redis_outage_logs_identifiable_error() -> None:
+    # Capture off the rate-limit logger directly rather than via pytest's caplog. An
+    # earlier Alembic migration test runs logging.config.fileConfig() with Alembic's
+    # default disable_existing_loggers=True, which sets app.core.rate_limit.disabled=True
+    # and leaks into later tests — that suppresses the ERROR emission itself, so caplog
+    # (or any root handler) would capture nothing. Re-enabling the logger and attaching a
+    # local handler makes this test immune to global logging state left by other tests,
+    # without touching production logging.
+    rl_logger = logging.getLogger("app.core.rate_limit")
+    handler = _CapturingHandler()
+    saved_disabled, saved_level = rl_logger.disabled, rl_logger.level
+    rl_logger.addHandler(handler)
+    rl_logger.disabled = False
+    rl_logger.setLevel(logging.ERROR)
+    try:
+        with _patch_client(_FakeRedis(incr_exc=ConnectionError("redis down"))):
+            with pytest.raises(AppError):
+                await enforce_rate_limit("rl:key", limit=5, window_seconds=60)
+    finally:
+        rl_logger.removeHandler(handler)
+        rl_logger.disabled = saved_disabled
+        rl_logger.setLevel(saved_level)
+    assert any("rate_limit_backend_unavailable" in r.getMessage() for r in handler.records)
 
 
 async def test_redis_outage_fail_open_only_when_explicitly_opted_in() -> None:
