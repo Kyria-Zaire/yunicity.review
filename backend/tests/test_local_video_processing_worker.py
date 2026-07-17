@@ -81,8 +81,15 @@ async def _register(auth_client: AsyncClient) -> dict[str, Any]:
     return await register_user(auth_client, suffix=f"-lvw-{uuid.uuid4().hex[:8]}")
 
 
+@pytest.fixture
+async def author_id(auth_client: AsyncClient) -> uuid.UUID:
+    """A real persisted user id to satisfy the author_user_id FK on seeded videos."""
+    return uuid.UUID((await _register(auth_client))["user"]["id"])
+
+
 async def _create_processing_video(
     *,
+    author_user_id: uuid.UUID,
     city_slug: str = "reims",
     content_type: str = "video/mp4",
 ) -> uuid.UUID:
@@ -92,7 +99,7 @@ async def _create_processing_video(
     async with session_factory() as session:
         upload = LocalVideoUpload(
             id=video_id,
-            author_user_id=uuid.uuid4(),
+            author_user_id=author_user_id,
             storage_key=f"local-video/{city_slug}/{video_id}/source.mp4",
             content_type=content_type,
             expected_size_bytes=4096,
@@ -116,7 +123,11 @@ async def _create_processing_video(
             mime_type=content_type,
             status=LocalVideoStatus.PROCESSING.value,
         )
-        session.add_all([upload, video])
+        # No ORM relationship maps LocalVideo.upload_id → LocalVideoUpload, so SQLAlchemy
+        # will not order these inserts; flush the upload first to satisfy the FK.
+        session.add(upload)
+        await session.flush()
+        session.add(video)
         await session.commit()
     return video_id
 
@@ -189,11 +200,10 @@ async def test_video_invisible_in_feed_during_processing(
 
 @pytest.mark.asyncio
 async def test_worker_success_sets_ready(
-    auth_client: AsyncClient,
+    author_id: uuid.UUID,
     mock_processor: None,
 ) -> None:
-    del auth_client
-    video_id = await _create_processing_video()
+    video_id = await _create_processing_video(author_user_id=author_id)
     await run_local_video_processing(video_id)
 
     session_factory = get_session_factory()
@@ -210,10 +220,9 @@ async def test_worker_success_sets_ready(
 
 @pytest.mark.asyncio
 async def test_worker_failure_sets_failed(
-    auth_client: AsyncClient,
+    author_id: uuid.UUID,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    del auth_client
     def _fail_process(self, **kwargs):  # type: ignore[no-untyped-def]
         del self, kwargs
         raise AppError(
@@ -226,7 +235,7 @@ async def test_worker_failure_sets_failed(
         "app.services.local_video.processor.LocalVideoMediaProcessor.process",
         _fail_process,
     )
-    video_id = await _create_processing_video()
+    video_id = await _create_processing_video(author_user_id=author_id)
     await run_local_video_processing(video_id)
 
     session_factory = get_session_factory()
@@ -243,10 +252,9 @@ async def test_worker_failure_sets_failed(
 
 @pytest.mark.asyncio
 async def test_worker_retryable_error_reraises(
-    auth_client: AsyncClient,
+    author_id: uuid.UUID,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    del auth_client
     def _transient_fail(self, **kwargs):  # type: ignore[no-untyped-def]
         del self, kwargs
         raise AppError(
@@ -259,7 +267,7 @@ async def test_worker_retryable_error_reraises(
         "app.services.local_video.processor.LocalVideoMediaProcessor.process",
         _transient_fail,
     )
-    video_id = await _create_processing_video()
+    video_id = await _create_processing_video(author_user_id=author_id)
     with pytest.raises(AppError) as exc_info:
         await run_local_video_processing(video_id, job_try=1)
     assert exc_info.value.code == "LOCAL_VIDEO_STORAGE_UNAVAILABLE"
@@ -274,11 +282,10 @@ async def test_worker_retryable_error_reraises(
 
 @pytest.mark.asyncio
 async def test_worker_skips_already_ready(
-    auth_client: AsyncClient,
+    author_id: uuid.UUID,
     mock_processor: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    del auth_client
     calls: list[uuid.UUID] = []
 
     def _counting_process(self, **kwargs):  # type: ignore[no-untyped-def]
@@ -298,7 +305,7 @@ async def test_worker_skips_already_ready(
         "app.services.local_video.processor.LocalVideoMediaProcessor.process",
         _counting_process,
     )
-    video_id = await _create_processing_video()
+    video_id = await _create_processing_video(author_user_id=author_id)
     await run_local_video_processing(video_id)
     await run_local_video_processing(video_id)
     assert len(calls) == 1
@@ -336,10 +343,9 @@ async def test_publish_then_worker_ready_flow(
 
 @pytest.mark.asyncio
 async def test_worker_exhausted_marks_failed(
-    auth_client: AsyncClient,
+    author_id: uuid.UUID,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    del auth_client
     def _transient_fail(self, **kwargs):  # type: ignore[no-untyped-def]
         del self, kwargs
         raise AppError(
@@ -352,7 +358,7 @@ async def test_worker_exhausted_marks_failed(
         "app.services.local_video.processor.LocalVideoMediaProcessor.process",
         _transient_fail,
     )
-    video_id = await _create_processing_video()
+    video_id = await _create_processing_video(author_user_id=author_id)
     await mark_local_video_processing_exhausted(video_id)
 
     session_factory = get_session_factory()
@@ -366,11 +372,10 @@ async def test_worker_exhausted_marks_failed(
 
 @pytest.mark.asyncio
 async def test_worker_idempotent_when_derivatives_exist(
-    auth_client: AsyncClient,
+    author_id: uuid.UUID,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    del auth_client
-    video_id = await _create_processing_video()
+    video_id = await _create_processing_video(author_user_id=author_id)
     settings = get_settings()
     storage = build_local_video_storage(settings)
     video_path = (
