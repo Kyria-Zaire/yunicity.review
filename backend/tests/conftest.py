@@ -11,14 +11,22 @@ from fastapi import FastAPI  # noqa: E402
 from httpx import ASGITransport, AsyncClient  # noqa: E402
 
 
-@pytest.fixture
-def anyio_backend() -> str:
-    return "asyncio"
-
-
 @pytest.fixture(autouse=True)
 async def reset_async_runtime_state() -> AsyncGenerator[None, None]:
-    """Prevent asyncpg/SQLAlchemy engines from leaking across asyncio loops."""
+    """Isolate each test: flush Redis (rate-limit counters etc.) up front with a
+    dedicated connection — the shared global client is torn down by the DB fixtures
+    before this fixture's teardown runs, so flushing here on setup is what actually
+    clears cross-test state. Dispose engine/redis after so nothing leaks across loops.
+    """
+    settings = get_settings()
+    if settings.redis_url:
+        from redis.asyncio import Redis
+
+        flush_client = Redis.from_url(settings.redis_url, decode_responses=True)
+        try:
+            await flush_client.flushdb()
+        finally:
+            await flush_client.aclose()
     yield
     await close_redis()
     await dispose_db()
