@@ -17,7 +17,6 @@ from app.core.local_video_constants import (
 from app.db.session import get_session_factory
 from app.integrations.redis import get_redis_client
 from app.models.local_video import LocalVideo
-from app.services.local_video.processing_service import run_local_video_processing
 from app.services.local_video.processor import LocalVideoProcessResult
 from httpx import AsyncClient
 from sqlalchemy import update
@@ -62,14 +61,12 @@ def mock_processor(monkeypatch: pytest.MonkeyPatch) -> None:
         _fake_process,
     )
 
-    async def _enqueue(video_id: uuid.UUID, *, settings=None) -> str:  # type: ignore[no-untyped-def]
-        await run_local_video_processing(video_id, settings=settings or get_settings())
-        return f"local-video:{video_id}"
 
-    monkeypatch.setattr(
-        "app.services.local_video.job_queue.enqueue_local_video_processing",
-        _enqueue,
-    )
+@pytest.fixture(autouse=True)
+def _publish_videos_synchronously(mock_processor: None, auto_run_video_worker: None) -> None:
+    """VIDEO-03A publish is async (video stays PROCESSING until the worker runs). Run the
+    worker inline with a stubbed processor so published videos reach PUBLISHED and appear
+    in the feed within each test — otherwise the feed is empty / GET returns PROCESSING."""
 
 
 @pytest.fixture
@@ -173,6 +170,18 @@ async def test_upload_init_prod_requires_city_slug(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("APP_ENV", "prod")
+    # Booting Settings in prod enforces stricter rules (secure cookies, no localhost URLs,
+    # a real email provider…). Provide a valid prod config so the app can start; this test
+    # only exercises the prod city-slug branch of upload-init, not the config validation.
+    for _key, _value in {
+        "DEBUG": "false",
+        "REFRESH_COOKIE_SECURE": "true",
+        "WEB_FRONTEND_URL": "https://app.yunicity.city",
+        "CORS_ORIGINS": '["https://app.yunicity.city"]',
+        "MEDIA_PUBLIC_BASE_URL": "https://media.yunicity.city",
+        "EMAIL_PROVIDER": "console",
+    }.items():
+        monkeypatch.setenv(_key, _value)
     get_settings.cache_clear()
     user = await _register(auth_client)
     response = await auth_client.post(

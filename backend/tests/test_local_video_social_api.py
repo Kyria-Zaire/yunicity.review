@@ -54,6 +54,13 @@ def mock_processor(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
+@pytest.fixture(autouse=True)
+def _publish_videos_synchronously(mock_processor: None, auto_run_video_worker: None) -> None:
+    """VIDEO-03A publish is async (video stays PROCESSING until the worker runs). Run the
+    worker inline with a stubbed processor so published videos reach PUBLISHED and are
+    findable within each test — otherwise every interaction 404s on an unpublished video."""
+
+
 async def _register(auth_client: AsyncClient) -> dict[str, Any]:
     return await register_user(auth_client, suffix=f"-lvs-{uuid.uuid4().hex[:8]}")
 
