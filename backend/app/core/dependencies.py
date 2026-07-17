@@ -11,6 +11,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
+from app.core.observability import bind_user_id
 from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.user import User
@@ -53,6 +54,7 @@ async def get_current_user(
             code="ACCOUNT_SUSPENDED",
             detail="Ce compte est suspendu.",
         )
+    bind_user_id(str(user.id))  # UUID only — correlates logs/Sentry, never PII
     return user
 
 
@@ -77,6 +79,7 @@ async def get_current_user_optional(
     user = await UserRepository(session).get_by_id(user_id)
     if user is None or not user.is_active:
         return None
+    bind_user_id(str(user.id))  # UUID only — correlates logs/Sentry, never PII
     return user
 
 
