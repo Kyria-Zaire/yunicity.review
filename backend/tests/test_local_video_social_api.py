@@ -49,7 +49,7 @@ def mock_processor(monkeypatch: pytest.MonkeyPatch) -> None:
         )
 
     monkeypatch.setattr(
-        "app.services.local_video_service.LocalVideoMediaProcessor.process",
+        "app.services.local_video.processor.LocalVideoMediaProcessor.process",
         _fake_process,
     )
 
