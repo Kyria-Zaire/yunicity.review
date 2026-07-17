@@ -62,12 +62,20 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+# CI-FIX-02: disable the anyio pytest plugin so pytest-asyncio is the ONLY async test
+# runner. Two runners created distinct event loops for the module-global DB engine, so
+# its pooled connections were terminated on a foreign/closed loop ("attached to a
+# different loop"). One runner => engine created and disposed on the same per-test loop.
+addopts = "-p no:anyio"
 asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "session"
-asyncio_default_test_loop_scope = "session"
+asyncio_default_fixture_loop_scope = "function"
+asyncio_default_test_loop_scope = "function"
 markers = [
     "integration: tests requiring DATABASE_URL and PostgreSQL",
     "unit: pure unit tests without database",
+    # Legacy marker kept registered (no-op) while anyio-marked tests run under
+    # pytest-asyncio. Stripped in the CI-FIX-02 follow-up cleanup.
+    "anyio: legacy async marker — now executed by pytest-asyncio (see addopts)",
 ]
 
 [tool.pydantic-mypy]
