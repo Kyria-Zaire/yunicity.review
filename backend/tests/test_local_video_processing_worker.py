@@ -77,18 +77,6 @@ def noop_enqueue(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-@pytest.fixture
-def auto_run_video_worker(monkeypatch: pytest.MonkeyPatch) -> None:
-    async def _enqueue(video_id: uuid.UUID, *, settings=None) -> str:  # type: ignore[no-untyped-def]
-        await run_local_video_processing(video_id, settings=settings or get_settings())
-        return f"local-video:{video_id}"
-
-    monkeypatch.setattr(
-        "app.services.local_video.job_queue.enqueue_local_video_processing",
-        _enqueue,
-    )
-
-
 async def _register(auth_client: AsyncClient) -> dict[str, Any]:
     return await register_user(auth_client, suffix=f"-lvw-{uuid.uuid4().hex[:8]}")
 
@@ -320,6 +308,7 @@ async def test_worker_skips_already_ready(
 async def test_publish_then_worker_ready_flow(
     auth_client: AsyncClient,
     mock_processor: None,
+    auto_run_video_worker: None,
 ) -> None:
     user = await _register(auth_client)
     accepted = await _publish_video(auth_client, user["access_token"], title="Ready flow")
