@@ -68,8 +68,9 @@ export function filterNeighborhoodUpcomingEvents(
   hood: Neighborhood,
   events: LocalEvent[],
   maxItems = NEIGHBORHOOD_DETAIL_MAX_MOMENTS,
+  now = new Date(),
 ): LocalEvent[] {
-  return filterAgendaUpcomingEvents(events)
+  return filterAgendaUpcomingEvents(events, now)
     .filter((event) => eventBelongsToNeighborhood(event, hood))
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
     .slice(0, maxItems);
