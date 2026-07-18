@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-import os
 import uuid
-from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
@@ -19,18 +17,6 @@ from sqlalchemy import text
 pytestmark = pytest.mark.integration
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
-
-
-@pytest.fixture
-def migration_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
-    database_url = os.environ.get("DATABASE_URL")
-    if not database_url:
-        pytest.skip("DATABASE_URL not set — skip migration tests")
-    monkeypatch.setenv("DATABASE_URL", database_url)
-    monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-at-least-32-characters-long!!")
-    get_settings.cache_clear()
-    yield
-    get_settings.cache_clear()
 
 
 async def _rewind_to_revision_0001() -> None:
