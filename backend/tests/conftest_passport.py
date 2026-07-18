@@ -9,8 +9,10 @@ from app.core.organization_constants import (
     OrganizationVisibility,
     VerificationStatus,
 )
+from app.core.partner_constants import PartnershipType, PartnerStatus
 from app.core.passport_constants import PartnerOfferStatus, PartnerOfferType
 from app.models.organization import Organization
+from app.models.partner_profile import PartnerProfile
 from app.models.passport import PartnerOffer
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -68,6 +70,18 @@ async def create_verified_org_with_offer(
         visibility=visibility,
     )
     session.add(org)
+    await session.flush()
+    # The public offer catalog joins PartnerProfile and requires a public partner status
+    # (see _public_catalog_filters): being a verified organization is not enough. Always
+    # attach the profile — including for unverified/private orgs — so exclusion from the
+    # catalog is proven by verification_status/visibility, never by a missing profile.
+    session.add(
+        PartnerProfile(
+            organization_id=org.id,
+            partnership_type=PartnershipType.LOCAL_BUSINESS,
+            partner_status=PartnerStatus.ACTIVE,
+        )
+    )
     await session.flush()
     offer = PartnerOffer(
         organization_id=org.id,
