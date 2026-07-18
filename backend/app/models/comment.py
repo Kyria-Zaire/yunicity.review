@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Text, Uuid
+from sqlalchemy import DateTime, ForeignKey, Index, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -19,6 +19,13 @@ if TYPE_CHECKING:
 
 class Comment(TimestampMixin, Base):
     __tablename__ = "comments"
+
+    # Every read path filters on post_id then orders/aggregates on created_at; list_for_post
+    # paginates on the (created_at, id) tuple, so the third column is what removes the sort
+    # entirely rather than leaving an incremental one (DB-INDEX-01, migration 20260718_0056).
+    # Declared here as well as in the migration because the test suite builds its schema with
+    # create_all, not Alembic — without this the tests would run against a different shape.
+    __table_args__ = (Index("ix_comments_post_id_created_at_id", "post_id", "created_at", "id"),)
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
