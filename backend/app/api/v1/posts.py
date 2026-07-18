@@ -69,10 +69,26 @@ async def upload_post_media(
 
 @router.post("", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
 async def create_post(
+    request: Request,
     payload: PostCreateRequest,
     current_user: Annotated[User, Depends(require_authenticated_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> PostResponse:
+    # Same thresholds as stories, the closest content-creation endpoint. A text post costs
+    # no upload, so /media above (60/120) does not gate it: without this, publishing was
+    # unlimited. 20/h is one post every three minutes sustained — far above any genuine
+    # burst, far below automated spam. IP limit at 2x, as everywhere else, leaves room for
+    # a few users behind one NAT.
+    await enforce_rate_limit(
+        f"posts:create:{current_user.id}",
+        limit=20,
+        window_seconds=3600,
+    )
+    await enforce_rate_limit(
+        f"posts:create:ip:{_client_ip(request)}",
+        limit=40,
+        window_seconds=3600,
+    )
     return await PostService(session).create_post(current_user, payload)
 
 
