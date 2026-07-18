@@ -1,13 +1,21 @@
-# Config Railway — API FastAPI.
+# Config Railway — API FastAPI (powerful-abundance).
 # Root directory du service : backend/
-# Config path absolu à renseigner dans Railway : /backend/railway.toml
+# Config path absolu à renseigner dans Railway : /backend/railway.api.toml
 #
-# ⚠️  À CONFIGURER SUR LE SERVICE API (powerful-abundance) UNIQUEMENT.
-#     Ne JAMAIS pointer ce fichier sur le worker (creative-commitment) : les deux services
-#     partagent la même base, donc un preDeployCommand des deux côtés ferait tourner deux
-#     `alembic upgrade head` concurrents à chaque déploiement. L'advisory lock posé dans
-#     alembic/env.py les sérialiserait au lieu de les laisser se percuter, mais c'est un
+# ⚠️  À POINTER SUR LE SERVICE API UNIQUEMENT — jamais sur le worker (creative-commitment)
+#     ni sur un futur service : les migrations sont la responsabilité exclusive de l'API.
+#     Plusieurs services lançant `alembic upgrade head` au même déploiement se
+#     percuteraient ; l'advisory lock d'alembic/env.py les sérialiserait, mais c'est un
 #     filet de sécurité — pas une raison de créer la course.
+#
+# POURQUOI CE NOM, ET PAS railway.toml
+#
+# L'API et le worker partagent le même Root Directory (backend/). Railway auto-détecte un
+# fichier nommé railway.toml à cet endroit, donc le worker héritait du preDeployCommand
+# destiné à l'API seule. Aucun fichier ne portant plus ce nom, il n'y a plus d'héritage
+# implicite possible : chaque service lit uniquement le chemin explicitement configuré.
+# Ne pas renommer ce fichier en railway.toml — cela réarmerait le piège pour tout service
+# rooté sur backend/, présent ou futur.
 #
 # Ce fichier ne déclare QUE preDeployCommand, volontairement.
 #
