@@ -70,7 +70,6 @@ async def partners_ready(partners_client: AsyncClient) -> AsyncGenerator[None, N
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_seed_idempotent(partners_env: None) -> None:
     session_factory = get_session_factory()
     if session_factory is None:
@@ -89,7 +88,6 @@ async def test_seed_idempotent(partners_env: None) -> None:
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_partner_profile_linked_to_organization(
     partners_ready: None,
 ) -> None:
@@ -108,7 +106,6 @@ async def test_partner_profile_linked_to_organization(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_list_partners_default_public_only(
     partners_client: AsyncClient,
     partners_ready: None,
@@ -132,7 +129,6 @@ async def test_list_partners_default_public_only(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_signed_only_not_exposed_publicly(
     partners_client: AsyncClient,
     partners_ready: None,
@@ -152,7 +148,6 @@ async def test_signed_only_not_exposed_publicly(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_internal_fields_never_exposed(
     partners_client: AsyncClient,
     partners_ready: None,
@@ -168,7 +163,6 @@ async def test_internal_fields_never_exposed(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_filters_city_type_featured(
     partners_client: AsyncClient,
     partners_ready: None,
@@ -206,7 +200,6 @@ async def test_filters_city_type_featured(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_slug_detail_public_partner(
     partners_client: AsyncClient,
     partners_ready: None,
@@ -224,7 +217,6 @@ async def test_slug_detail_public_partner(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_signed_partner_has_no_sensitive_location_when_queried_via_db(
     partners_ready: None,
 ) -> None:
@@ -246,7 +238,6 @@ async def test_signed_partner_has_no_sensitive_location_when_queried_via_db(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_public_partner_detail_includes_created_at(
     partners_client: AsyncClient,
     partners_ready: None,
@@ -262,7 +253,6 @@ async def test_public_partner_detail_includes_created_at(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_partner_without_coords_returns_null_coordinates(
     partners_client: AsyncClient,
     partners_ready: None,
@@ -288,7 +278,6 @@ async def test_partner_without_coords_returns_null_coordinates(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_list_partners_active_status_filter(
     partners_client: AsyncClient,
     partners_ready: None,

@@ -156,7 +156,6 @@ def _make_expired_token(organization_id: str, partner_profile_id: str) -> str:
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_claim_valid_token_creates_stamp(
     stamp_client: AsyncClient,
     seeded_partners: None,
@@ -182,7 +181,6 @@ async def test_claim_valid_token_creates_stamp(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_claim_persists_stamp_with_active_logging(
     stamp_client: AsyncClient,
     seeded_partners: None,
@@ -216,7 +214,6 @@ async def test_claim_persists_stamp_with_active_logging(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_claim_same_token_twice_returns_already_claimed(
     stamp_client: AsyncClient,
     seeded_partners: None,
@@ -246,7 +243,6 @@ async def test_claim_same_token_twice_returns_already_claimed(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_existing_stamp_from_old_flow_returns_already_claimed(
     stamp_client: AsyncClient,
     seeded_partners: None,
@@ -285,7 +281,6 @@ async def test_existing_stamp_from_old_flow_returns_already_claimed(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_claim_expired_token_returns_410(
     stamp_client: AsyncClient,
     seeded_partners: None,
@@ -307,7 +302,6 @@ async def test_claim_expired_token_returns_410(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_claim_invalid_signature_returns_400(
     stamp_client: AsyncClient,
     seeded_partners: None,
@@ -342,7 +336,6 @@ async def test_claim_invalid_signature_returns_400(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_claim_signed_partner_returns_403(
     stamp_client: AsyncClient,
     seeded_partners: None,
@@ -375,7 +368,6 @@ async def test_claim_signed_partner_returns_403(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_claim_unauthenticated_returns_401(
     stamp_client: AsyncClient,
     seeded_partners: None,
@@ -388,7 +380,6 @@ async def test_claim_unauthenticated_returns_401(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_claim_response_does_not_expose_internal_fields(
     stamp_client: AsyncClient,
     seeded_partners: None,
@@ -412,7 +403,6 @@ async def test_claim_response_does_not_expose_internal_fields(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_list_stamps_returns_only_current_user_stamps(
     stamp_client: AsyncClient,
     seeded_partners: None,
@@ -443,7 +433,6 @@ async def test_list_stamps_returns_only_current_user_stamps(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_generate_qr_requires_auth(stamp_client: AsyncClient) -> None:
     response = await stamp_client.post(
         "/api/v1/partners/belga-queen/passport-qr",
@@ -453,7 +442,6 @@ async def test_generate_qr_requires_auth(stamp_client: AsyncClient) -> None:
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_generate_qr_non_member_returns_403(
     stamp_client: AsyncClient,
     seeded_partners: None,

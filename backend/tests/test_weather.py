@@ -29,7 +29,6 @@ def _openweather_payload(now_ts: float) -> dict[str, Any]:
     }
 
 
-@pytest.mark.anyio
 async def test_weather_cache_hits(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OPENWEATHER_API_KEY", "test-key")
     get_settings.cache_clear()
@@ -58,7 +57,6 @@ async def test_weather_cache_hits(monkeypatch: pytest.MonkeyPatch) -> None:
     assert second.temperature == 20.0
 
 
-@pytest.mark.anyio
 async def test_weather_key_missing_outside_dev(monkeypatch: pytest.MonkeyPatch) -> None:
     # setenv("") instead of delenv: a real key in local .env would otherwise leak in.
     monkeypatch.setenv("OPENWEATHER_API_KEY", "")
@@ -75,7 +73,6 @@ async def test_weather_key_missing_outside_dev(monkeypatch: pytest.MonkeyPatch) 
     assert excinfo.value.code == "weather_key_missing"
 
 
-@pytest.mark.anyio
 async def test_weather_dev_stub_when_key_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     # setenv("") instead of delenv: a real key in local .env would otherwise leak in.
     monkeypatch.setenv("OPENWEATHER_API_KEY", "")
@@ -95,7 +92,6 @@ async def test_weather_dev_stub_when_key_missing(monkeypatch: pytest.MonkeyPatch
     assert result.condition
 
 
-@pytest.mark.anyio
 async def test_weather_fetch_error(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OPENWEATHER_API_KEY", "test-key")
     get_settings.cache_clear()
