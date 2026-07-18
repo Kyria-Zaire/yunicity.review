@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import os
-from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
@@ -25,18 +23,6 @@ PASSPORT_TABLES = (
     "passports",
     "passport_tiers",
 )
-
-
-@pytest.fixture
-def migration_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
-    database_url = os.environ.get("DATABASE_URL")
-    if not database_url:
-        pytest.skip("DATABASE_URL not set — skip passport migration tests")
-    monkeypatch.setenv("DATABASE_URL", database_url)
-    monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-at-least-32-characters-long!!")
-    get_settings.cache_clear()
-    yield
-    get_settings.cache_clear()
 
 
 async def _reset_to_revision_0004() -> None:
@@ -112,6 +98,10 @@ async def test_migration_upgrade_and_downgrade(migration_env: None) -> None:
     cfg = Config(str(BACKEND_ROOT / "alembic.ini"))
     cfg.set_main_option("script_location", str(BACKEND_ROOT / "alembic"))
 
+    # Build the schema up to the baseline first (creates alembic_version), like the
+    # organization/profile migration tests do — _reset_to_revision_0004 rewinds an
+    # existing Alembic state and cannot run against an empty database.
+    await asyncio.to_thread(command.upgrade, cfg, "20260518_0004")
     await _reset_to_revision_0004()
     await asyncio.to_thread(command.upgrade, cfg, "20260519_0005")
     await _assert_passport_tables_exist()

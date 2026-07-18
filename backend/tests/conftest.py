@@ -1,4 +1,9 @@
-pytest_plugins = ["tests.conftest_auth", "tests.conftest_rbac", "tests.conftest_local_video"]
+pytest_plugins = [
+    "tests.conftest_auth",
+    "tests.conftest_rbac",
+    "tests.conftest_local_video",
+    "tests.conftest_migration",
+]
 
 from collections.abc import AsyncGenerator, Iterator  # noqa: E402
 
