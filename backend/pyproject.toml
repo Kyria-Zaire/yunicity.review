@@ -73,9 +73,6 @@ asyncio_default_test_loop_scope = "function"
 markers = [
     "integration: tests requiring DATABASE_URL and PostgreSQL",
     "unit: pure unit tests without database",
-    # Legacy marker kept registered (no-op) while anyio-marked tests run under
-    # pytest-asyncio. Stripped in the CI-FIX-02 follow-up cleanup.
-    "anyio: legacy async marker — now executed by pytest-asyncio (see addopts)",
 ]
 
 [tool.pydantic-mypy]

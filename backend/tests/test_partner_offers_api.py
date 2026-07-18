@@ -109,7 +109,6 @@ async def offers_ready(offers_client: AsyncClient) -> AsyncGenerator[None, None]
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_seed_offers_idempotent(offers_env: None) -> None:
     await asyncio.to_thread(_upgrade_db_for_partner_offers)
     settings = get_settings()
@@ -137,7 +136,6 @@ async def test_seed_offers_idempotent(offers_env: None) -> None:
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_public_catalog_lists_active_offers(
     offers_client: AsyncClient,
     offers_ready: None,
@@ -162,7 +160,6 @@ async def test_public_catalog_lists_active_offers(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_partner_slug_offers_endpoint(
     offers_client: AsyncClient,
     offers_ready: None,
@@ -178,7 +175,6 @@ async def test_partner_slug_offers_endpoint(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_signed_only_partner_has_no_public_offers(
     offers_client: AsyncClient,
     offers_ready: None,
@@ -191,7 +187,6 @@ async def test_signed_only_partner_has_no_public_offers(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_expired_offer_not_visible(
     offers_client: AsyncClient,
     offers_ready: None,
@@ -214,7 +209,6 @@ async def test_expired_offer_not_visible(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_inactive_offer_not_visible(
     offers_client: AsyncClient,
     offers_ready: None,
@@ -238,7 +232,6 @@ async def test_inactive_offer_not_visible(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_featured_filter(
     offers_client: AsyncClient,
     offers_ready: None,
@@ -254,7 +247,6 @@ async def test_featured_filter(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_offer_type_filter(
     offers_client: AsyncClient,
     offers_ready: None,

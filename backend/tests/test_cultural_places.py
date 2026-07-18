@@ -61,7 +61,6 @@ async def cultural_ready(cultural_client: AsyncClient) -> AsyncGenerator[None, N
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_list_cultural_places_city(
     cultural_client: AsyncClient,
     cultural_ready: None,
@@ -85,7 +84,6 @@ async def test_list_cultural_places_city(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_list_featured_filter(
     cultural_client: AsyncClient,
     cultural_ready: None,
@@ -105,7 +103,6 @@ async def test_list_featured_filter(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_inactive_excluded(
     cultural_client: AsyncClient,
     cultural_ready: None,
@@ -140,7 +137,6 @@ async def test_inactive_excluded(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_map_bbox_filters_places(
     cultural_client: AsyncClient,
     cultural_ready: None,
@@ -173,7 +169,6 @@ async def test_map_bbox_filters_places(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_get_place_by_slug(
     cultural_client: AsyncClient,
     cultural_ready: None,

@@ -78,7 +78,6 @@ async def db_session(transit_client: AsyncClient) -> AsyncGenerator[AsyncSession
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_transit_nearby_empty_without_data(transit_client: AsyncClient) -> None:
     session_factory = get_session_factory()
     assert session_factory is not None
@@ -98,7 +97,6 @@ async def test_transit_nearby_empty_without_data(transit_client: AsyncClient) ->
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_transit_nearby_returns_departures(
     transit_client: AsyncClient,
     db_session: AsyncSession,
@@ -177,7 +175,6 @@ async def test_transit_nearby_returns_departures(
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_transit_nearby_filters_departures_outside_max_minutes(
     transit_client: AsyncClient,
     db_session: AsyncSession,

@@ -44,7 +44,6 @@ def pilot_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_pilot_public_data_has_coordinates_for_all_pilots() -> None:
     for slug, fields in REIMS_PILOT_PARTNER_PUBLIC_DATA.items():
         assert fields.get("address"), slug
@@ -54,7 +53,6 @@ async def test_pilot_public_data_has_coordinates_for_all_pilots() -> None:
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_signed_partners_seed_enriches_belga_location(pilot_env: None) -> None:
     session_factory = get_session_factory()
     if session_factory is None:
@@ -72,7 +70,6 @@ async def test_signed_partners_seed_enriches_belga_location(pilot_env: None) -> 
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_pilot_memberships_idempotent(pilot_env: None) -> None:
     session_factory = get_session_factory()
     if session_factory is None:
@@ -98,7 +95,6 @@ async def test_pilot_memberships_idempotent(pilot_env: None) -> None:
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_partner_events_seed_syncs_feed_posts(pilot_env: None) -> None:
     session_factory = get_session_factory()
     if session_factory is None:
@@ -117,7 +113,6 @@ async def test_partner_events_seed_syncs_feed_posts(pilot_env: None) -> None:
 
 
 @pytest.mark.integration
-@pytest.mark.anyio
 async def test_partner_service_exposes_belga_coordinates(pilot_env: None) -> None:
     session_factory = get_session_factory()
     if session_factory is None:
