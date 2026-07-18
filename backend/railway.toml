@@ -1,0 +1,30 @@
+# Config Railway — API FastAPI.
+# Root directory du service : backend/
+# Config path absolu à renseigner dans Railway : /backend/railway.toml
+#
+# ⚠️  À CONFIGURER SUR LE SERVICE API (powerful-abundance) UNIQUEMENT.
+#     Ne JAMAIS pointer ce fichier sur le worker (creative-commitment) : les deux services
+#     partagent la même base, donc un preDeployCommand des deux côtés ferait tourner deux
+#     `alembic upgrade head` concurrents à chaque déploiement. L'advisory lock posé dans
+#     alembic/env.py les sérialiserait au lieu de les laisser se percuter, mais c'est un
+#     filet de sécurité — pas une raison de créer la course.
+#
+# Ce fichier ne déclare QUE preDeployCommand, volontairement.
+#
+# Un champ déclaré ici écrase le réglage du dashboard ; un champ omis le conserve. Comme
+# aucun autre réglage du service n'est vérifiable depuis le CLI Railway, tout champ ajouté
+# « pour faire bon compte » changerait un comportement prod non vérifié — alors que
+# l'omission ne peut rien casser. En particulier :
+#
+#   - pas de [build]      : le builder du service n'est pas exposé par le CLI.
+#   - pas de startCommand : backend/Dockerfile porte déjà le CMD, qui tourne en prod
+#                           aujourd'hui. Le recopier ici en ferait une seconde source de
+#                           vérité, libre de diverger en silence si le CMD change un jour.
+#   - pas de restartPolicy* : réglage actuel du service non vérifié.
+
+[deploy]
+# Applique les migrations entre le build et le déploiement. Railway bloque le déploiement
+# si la commande échoue : l'ancienne version continue de servir, au lieu d'une nouvelle
+# version démarrée sur un schéma incohérent. C'est la raison de ne PAS mettre alembic dans
+# le CMD du conteneur (échec = service qui ne démarre pas = indisponibilité).
+preDeployCommand = ["/bin/sh -c 'alembic upgrade head'"]
