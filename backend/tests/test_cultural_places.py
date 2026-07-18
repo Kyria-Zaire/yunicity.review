@@ -77,7 +77,10 @@ async def test_list_cultural_places_city(
     cathedral = next(i for i in body["items"] if i["slug"] == "cathedrale-notre-dame")
     assert cathedral["hero_image_url"]
     assert cathedral["photo_credit"]
-    assert cathedral["image_source"] == "wikimedia_commons"
+    # The seed deliberately serves Unsplash placeholders (see reims_cultural_media.py:
+    # stable MVP URLs while the R2/CDN provenance pipeline is built), so assert the
+    # provenance the seed actually carries.
+    assert cathedral["image_source"] == "unsplash"
     assert len(cathedral["gallery_images"]) >= 2
 
 

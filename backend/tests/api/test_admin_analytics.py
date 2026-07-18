@@ -137,16 +137,30 @@ async def _seed_analytics_fixtures(
     )
 
     tier = await _get_basic_tier(session)
-    passport = Passport(
-        user_id=owner.id,
-        tier_id=tier.id,
-        city=city,
-        passport_number=f"YC-AN-{suffix}",
-        qr_token=f"qr-analytics-{suffix}",
-        status=PassportStatus.ACTIVE,
-        created_at=now - timedelta(days=3),
+    # Registration auto-activates a passport (AuthService._try_activate_passport) and
+    # uq_passports_one_active_per_user forbids a second active one — reuse the owner's
+    # existing passport instead of inserting a duplicate.
+    passport = await session.scalar(
+        select(Passport).where(
+            Passport.user_id == owner.id,
+            Passport.status == PassportStatus.ACTIVE,
+        )
     )
-    session.add(passport)
+    if passport is None:
+        passport = Passport(
+            user_id=owner.id,
+            tier_id=tier.id,
+            city=city,
+            passport_number=f"YC-AN-{suffix}",
+            qr_token=f"qr-analytics-{suffix}",
+            status=PassportStatus.ACTIVE,
+            created_at=now - timedelta(days=3),
+        )
+        session.add(passport)
+    else:
+        passport.tier_id = tier.id
+        passport.city = city
+        passport.created_at = now - timedelta(days=3)
     await session.flush()
 
     offer_published = PartnerOffer(

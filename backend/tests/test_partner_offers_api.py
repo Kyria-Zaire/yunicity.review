@@ -259,9 +259,14 @@ async def test_offer_type_filter(
     offers_client: AsyncClient,
     offers_ready: None,
 ) -> None:
+    # REIMS_PARTNER_OFFERS_SEED carries one offer per type (VIP, GIFT, EVENT_ACCESS,
+    # DISCOUNT) and none of type CUSTOM, so filter on a type the seed actually has and
+    # assert the filter is honoured, rather than a count the seed cannot satisfy.
     response = await offers_client.get(
         "/api/v1/partner-offers",
-        params={"city": "Reims", "type": PartnerOfferType.CUSTOM.value, "limit": 50},
+        params={"city": "Reims", "type": PartnerOfferType.DISCOUNT.value, "limit": 50},
     )
     assert response.status_code == 200
-    assert len(response.json()["items"]) >= 4
+    items = response.json()["items"]
+    assert items
+    assert all(item["offer_type"] == PartnerOfferType.DISCOUNT.value for item in items)

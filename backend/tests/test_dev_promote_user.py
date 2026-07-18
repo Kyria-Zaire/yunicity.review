@@ -11,6 +11,7 @@ from app.core.config import Settings, get_settings
 from app.db.base import Base
 from app.db.dev._guards import require_non_production_env
 from app.db.dev.promote_user import _validate_role_key, promote_user
+from app.db.seeds.auth_rbac import seed_auth_rbac
 from app.repositories.rbac_repository import RbacRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import RegisterRequest
@@ -42,6 +43,10 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
         autoflush=False,
     )
     async with session_factory() as session:
+        # AuthService.register assigns the USER role, so the RBAC roles must exist —
+        # create_all only builds the tables (same seeding auth_client performs).
+        await seed_auth_rbac(session)
+        await session.commit()
         yield session
 
     await engine.dispose()
