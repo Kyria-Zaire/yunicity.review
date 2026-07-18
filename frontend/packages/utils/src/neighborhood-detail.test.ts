@@ -33,6 +33,11 @@ const HOOD: Neighborhood = {
   updated_at: "",
 };
 
+// Les événements de test démarrent le 2026-06-10 : sans horloge figée, le filtrage
+// « à venir » les exclut dès cette date passée, et le test pourrit tout seul (il était
+// rouge depuis le 2026-06-10, invisible car la CI ne lance pas les tests — voir #138).
+const NOW_BEFORE_EVENTS = new Date("2026-06-08T09:00:00.000Z");
+
 function event(overrides: Partial<LocalEvent> = {}): LocalEvent {
   return {
     id: "e1",
@@ -76,7 +81,7 @@ describe("neighborhood-detail", () => {
       district: "Saint-Remi",
       neighborhood_summary: { slug: "saint-remi", display_name: "Saint-Remi" },
     });
-    const filtered = filterNeighborhoodUpcomingEvents(HOOD, [other, event()], 4);
+    const filtered = filterNeighborhoodUpcomingEvents(HOOD, [other, event()], 4, NOW_BEFORE_EVENTS);
     expect(filtered).toHaveLength(1);
     expect(filtered[0]?.id).toBe("e1");
   });

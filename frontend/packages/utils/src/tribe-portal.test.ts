@@ -45,6 +45,11 @@ const BASE_TRIBE: Tribe = {
   updated_at: "",
 };
 
+// BASE_EVENT démarre le 2026-06-01 : sans horloge figée, le filtrage « à venir » l'exclut
+// dès que cette date est passée, et le test pourrit tout seul (il était rouge depuis le
+// 2026-06-01, invisible car la CI ne lance pas les tests — voir #138).
+const NOW_BEFORE_BASE_EVENT = new Date("2026-05-30T12:00:00.000Z");
+
 const BASE_EVENT: LocalEvent = {
   id: "e1",
   organization_id: null,
@@ -206,6 +211,7 @@ describe("tribe-portal helpers", () => {
       city: "Reims",
       tribes: [BASE_TRIBE],
       events: [BASE_EVENT],
+      now: NOW_BEFORE_BASE_EVENT,
     });
     expect(featured).toHaveLength(1);
     expect(featured[0]?.memberCount).toBe(16);
@@ -215,6 +221,7 @@ describe("tribe-portal helpers", () => {
       tribes: [BASE_TRIBE],
       events: [BASE_EVENT],
       culturalPlaces: [BASE_PLACE],
+      now: NOW_BEFORE_BASE_EVENT,
     });
     expect(meetups).toHaveLength(1);
     expect(meetups[0]?.tribeName).toContain("Lecteurs");
