@@ -1,0 +1,28 @@
+# Config Railway — API FastAPI.
+# Root directory du service : backend/
+# Config path absolu à renseigner dans Railway : /backend/railway.toml
+#
+# ⚠️  À CONFIGURER SUR LE SERVICE API (powerful-abundance) UNIQUEMENT.
+#     Ne JAMAIS pointer ce fichier sur le worker (creative-commitment) : les deux services
+#     partagent la même base, donc un preDeployCommand des deux côtés ferait tourner deux
+#     `alembic upgrade head` concurrents à chaque déploiement. L'advisory lock posé dans
+#     alembic/env.py les sérialiserait au lieu de les laisser se percuter, mais c'est un
+#     filet de sécurité — pas une raison de créer la course.
+#
+# Pas de section [build] volontairement : le builder du service n'est pas exposé par le
+# CLI Railway, et un champ omis conserve le réglage actuel du dashboard. Déclarer un
+# builder non vérifié casserait le build ; l'omission ne peut rien casser.
+
+[deploy]
+# Applique les migrations entre le build et le déploiement. Railway bloque le déploiement
+# si la commande échoue : l'ancienne version continue de servir, au lieu d'une nouvelle
+# version démarrée sur un schéma incohérent. C'est la raison de ne PAS mettre alembic dans
+# le CMD du conteneur (échec = service qui ne démarre pas = indisponibilité).
+preDeployCommand = ["/bin/sh -c 'alembic upgrade head'"]
+
+# Doit rester identique au CMD de backend/Dockerfile (dupliqué ici car un startCommand
+# déclaré remplace le CMD de l'image).
+startCommand = "uvicorn app.main:create_app --factory --host 0.0.0.0 --port ${PORT:-8000}"
+
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
