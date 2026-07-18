@@ -49,6 +49,13 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # Place avant le build, qui est de loin l'etape la plus lente : un test rouge doit
+      # arreter le pipeline sans attendre une compilation Next complete.
+      # Couvre @yunicity/utils (833) et admin (27). apps/web n'a pas encore de runner
+      # (#138 etape 3) — son unique fichier de test n'est donc pas execute ici.
+      - name: Test
+        run: pnpm test
+
       - name: Clean Next build artifacts
         run: pnpm clean:next
 
