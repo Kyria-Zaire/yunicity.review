@@ -17,7 +17,15 @@ import type { MetadataRoute } from "next";
 import { getAbsoluteUrl, SEO_DEFAULT_CITY } from "./site";
 
 const REVALIDATE_SECONDS = 300;
-const SITEMAP_LIST_LIMIT = 100;
+
+// Doit rester <= au plafond le plus bas des endpoints listés ci-dessous. Ils plafonnent tous
+// a 50 (CREATOR_HUB_LIST_LIMIT_MAX, CREATOR_DIRECTORY_LIST_LIMIT_MAX,
+// NEIGHBORHOOD_LIST_PAGE_SIZE_MAX, LOCAL_EVENT_LIST_PAGE_SIZE_MAX) ; seul /cultural-places
+// accepte 100. Demander plus renvoie 422, que fetchPublicJson convertit en null puis en liste
+// vide : le sitemap s'ampute alors sans aucune erreur visible (PROD-BUG-01).
+// TODO(debt): tronque silencieusement au-dela de 50 entrees par type — paginer. Voir
+// PROD-BUG-02.
+const SITEMAP_LIST_LIMIT = 50;
 
 function apiUrl(segment: string): string {
   const base = getWebApiBaseUrl();
