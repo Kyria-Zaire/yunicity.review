@@ -9,9 +9,18 @@
 #     alembic/env.py les sérialiserait au lieu de les laisser se percuter, mais c'est un
 #     filet de sécurité — pas une raison de créer la course.
 #
-# Pas de section [build] volontairement : le builder du service n'est pas exposé par le
-# CLI Railway, et un champ omis conserve le réglage actuel du dashboard. Déclarer un
-# builder non vérifié casserait le build ; l'omission ne peut rien casser.
+# Ce fichier ne déclare QUE preDeployCommand, volontairement.
+#
+# Un champ déclaré ici écrase le réglage du dashboard ; un champ omis le conserve. Comme
+# aucun autre réglage du service n'est vérifiable depuis le CLI Railway, tout champ ajouté
+# « pour faire bon compte » changerait un comportement prod non vérifié — alors que
+# l'omission ne peut rien casser. En particulier :
+#
+#   - pas de [build]      : le builder du service n'est pas exposé par le CLI.
+#   - pas de startCommand : backend/Dockerfile porte déjà le CMD, qui tourne en prod
+#                           aujourd'hui. Le recopier ici en ferait une seconde source de
+#                           vérité, libre de diverger en silence si le CMD change un jour.
+#   - pas de restartPolicy* : réglage actuel du service non vérifié.
 
 [deploy]
 # Applique les migrations entre le build et le déploiement. Railway bloque le déploiement
@@ -19,10 +28,3 @@
 # version démarrée sur un schéma incohérent. C'est la raison de ne PAS mettre alembic dans
 # le CMD du conteneur (échec = service qui ne démarre pas = indisponibilité).
 preDeployCommand = ["/bin/sh -c 'alembic upgrade head'"]
-
-# Doit rester identique au CMD de backend/Dockerfile (dupliqué ici car un startCommand
-# déclaré remplace le CMD de l'image).
-startCommand = "uvicorn app.main:create_app --factory --host 0.0.0.0 --port ${PORT:-8000}"
-
-restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 3
