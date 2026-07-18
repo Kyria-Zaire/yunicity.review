@@ -81,7 +81,23 @@ class AuthService:
                 full_name=payload.full_name,
                 city=city,
             )
-            await self._rbac.assign_role_to_user(user.id, "USER")
+            try:
+                await self._rbac.assign_role_to_user(user.id, "USER")
+            except ValueError as exc:
+                # Roles are seeded by migration 20260718_0055. A missing one means the
+                # database was built or restored without that seed, which would otherwise
+                # surface as an opaque 500 on every registration.
+                await self._session.rollback()
+                logger.error(
+                    "rbac_seed_missing role=USER detail=%s — run `alembic upgrade head` "
+                    "(or `python -m app.db.seeds`) to restore RBAC roles",
+                    exc,
+                )
+                raise AppError(
+                    status_code=503,
+                    code="RBAC_SEED_MISSING",
+                    detail="Configuration du serveur incomplète. Réessayez plus tard.",
+                ) from exc
             await ProfileService(self._session).create_profile_for_new_user(
                 user_id=user.id,
                 email=email,
