@@ -297,6 +297,7 @@ export function placesCategoryBadgeTone(category: string): string {
     case "winery":
       return "bg-amber-50 text-amber-800";
     case "park":
+    case "sport":
       return "bg-emerald-50 text-emerald-800";
     case "museum":
     case "library":

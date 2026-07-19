@@ -1,5 +1,5 @@
 {
-  "_comment": "SEED-PROD-01B media manifest. Sources Wikimedia Commons -> self-hosted R2/CDN. Option A: reuse bucket yunicity-media-{env} + credentials LOCAL_VIDEO_R2_* existants, prefixe places/reims/. Licences/credits VERIFIES sur page File: (voir docs/prd/active/SEED-PROD-01B.md). EXECUTE en PROD le 2026-07-13 (12/12 lieux) via `railway run` sur le service API prod: --execute derive l'URL publique de LOCAL_VIDEO_CDN_BASE_URL (=media.yunicity.city) et upload dans LOCAL_VIDEO_R2_BUCKET. cdn_base_url ci-dessous ne sert qu'a l'affichage dry-run. Env recette non provisionne. gallery_images non touche.",
+  "_comment": "SEED-PROD-01B media manifest. Sources Wikimedia Commons -> self-hosted R2/CDN. Option A: reuse bucket yunicity-media-{env} + credentials LOCAL_VIDEO_R2_* existants, prefixe places/reims/. Licences/credits VERIFIES sur page File: (voir docs/prd/active/SEED-PROD-01B.md). EXECUTE en PROD le 2026-07-13 (12/12 lieux) via `railway run` sur le service API prod: --execute derive l'URL publique de LOCAL_VIDEO_CDN_BASE_URL (=media.yunicity.city) et upload dans LOCAL_VIDEO_R2_BUCKET. cdn_base_url ci-dessous ne sert qu'a l'affichage dry-run. Env recette non provisionne. gallery_images non touche. | QUARTIER-01 phase 1 (2026-07-19): +11 lieux (6 creations + 5 fiches seed jamais appliquees en prod). Licences verifiees sur page File:, images inspectees visuellement une par une.",
   "version": 1,
   "city_slug": "reims",
   "cdn_base_url": "https://media.yunicity.city",
@@ -131,6 +131,116 @@
       "resolution": "8673x4852",
       "license": "CC BY-SA 4.0",
       "credit": "Ludvig14 / CC BY-SA 4.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "domaine-pommery",
+      "commons_file": "Maison Vrancken - Domaine Pommery - Reims.jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Maison_Vrancken_-_Domaine_Pommery_-_Reims.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Maison_Vrancken_-_Domaine_Pommery_-_Reims.jpg",
+      "target_key": "places/reims/domaine-pommery/cover.jpg",
+      "resolution": "6016x3273",
+      "license": "CC BY-SA 4.0",
+      "credit": "Edison McCullen / CC BY-SA 4.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "villa-demoiselle",
+      "commons_file": "Reims - La Villa Demoiselle 20.jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Reims_-_La_Villa_Demoiselle_20.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Reims_-_La_Villa_Demoiselle_20.jpg",
+      "target_key": "places/reims/villa-demoiselle/cover.jpg",
+      "resolution": "6000x4000",
+      "license": "CC0",
+      "credit": "Renhour48 / CC0 via Wikimedia Commons"
+    },
+    {
+      "slug": "place-royale",
+      "commons_file": "2026-05-10 19-29-39 - Reims - Place Royale.jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:2026-05-10_19-29-39_-_Reims_-_Place_Royale.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/2026-05-10_19-29-39_-_Reims_-_Place_Royale.jpg",
+      "target_key": "places/reims/place-royale/cover.jpg",
+      "resolution": "8160x6120",
+      "license": "CC BY-SA 4.0",
+      "credit": "Baidax / CC BY-SA 4.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "place-erlon",
+      "commons_file": "Place Drouet Erlon - Reims (FR51) - 2024-01-27 - 1.jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Place_Drouet_Erlon_-_Reims_%28FR51%29_-_2024-01-27_-_1.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Place_Drouet_Erlon_-_Reims_%28FR51%29_-_2024-01-27_-_1.jpg",
+      "target_key": "places/reims/place-erlon/cover.jpg",
+      "resolution": "4032x3024",
+      "license": "CC BY-SA 4.0",
+      "credit": "Chabe01 / CC BY-SA 4.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "bibliotheque-carnegie",
+      "commons_file": "Reims - bibliothèque Carnegie (1).JPG",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Reims_-_biblioth%C3%A8que_Carnegie_%281%29.JPG",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Reims_-_biblioth%C3%A8que_Carnegie_%281%29.JPG",
+      "target_key": "places/reims/bibliotheque-carnegie/cover.jpg",
+      "resolution": "3264x2448",
+      "license": "CC BY-SA 3.0",
+      "credit": "Fab5669 / CC BY-SA 3.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "basilique-sainte-clotilde",
+      "commons_file": "Basilique Sainte Clotilde - Reims (FR51) - 2024-01-28 - 12.jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Basilique_Sainte_Clotilde_-_Reims_%28FR51%29_-_2024-01-28_-_12.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Basilique_Sainte_Clotilde_-_Reims_%28FR51%29_-_2024-01-28_-_12.jpg",
+      "target_key": "places/reims/basilique-sainte-clotilde/cover.jpg",
+      "resolution": "3019x3213",
+      "license": "CC BY-SA 4.0",
+      "credit": "Chabe01 / CC BY-SA 4.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "eglise-saint-jean-baptiste-neuvillette",
+      "commons_file": "Reims Église Saint-Jean (la Neuvillette).jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Reims_%C3%89glise_Saint-Jean_%28la_Neuvillette%29.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Reims_%C3%89glise_Saint-Jean_%28la_Neuvillette%29.jpg",
+      "target_key": "places/reims/eglise-saint-jean-baptiste-neuvillette/cover.jpg",
+      "resolution": "3000x4000",
+      "license": "CC BY-SA 4.0",
+      "credit": "Aimelaime / CC BY-SA 4.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "porte-de-paris",
+      "commons_file": "Reims - porte de Paris - 2023-06-04 - 01.jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Reims_-_porte_de_Paris_-_2023-06-04_-_01.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Reims_-_porte_de_Paris_-_2023-06-04_-_01.jpg",
+      "target_key": "places/reims/porte-de-paris/cover.jpg",
+      "resolution": "3000x4000",
+      "license": "CC BY-SA 4.0",
+      "credit": "Mathieu Kappler / CC BY-SA 4.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "eglise-saint-andre",
+      "commons_file": "Reims - église Saint-André (01).jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Reims_-_%C3%A9glise_Saint-Andr%C3%A9_%2801%29.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Reims_-_%C3%A9glise_Saint-Andr%C3%A9_%2801%29.jpg",
+      "target_key": "places/reims/eglise-saint-andre/cover.jpg",
+      "resolution": "2448x3264",
+      "license": "CC BY-SA 4.0",
+      "credit": "Fab5669 / CC BY-SA 4.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "hotel-de-ville",
+      "commons_file": "Hôtel de Ville de Reims, Southeast View 20140306 1.jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:H%C3%B4tel_de_Ville_de_Reims%2C_Southeast_View_20140306_1.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/H%C3%B4tel_de_Ville_de_Reims%2C_Southeast_View_20140306_1.jpg",
+      "target_key": "places/reims/hotel-de-ville/cover.jpg",
+      "resolution": "5379x3585",
+      "license": "CC BY-SA 3.0",
+      "credit": "DXR / CC BY-SA 3.0 via Wikimedia Commons"
+    },
+    {
+      "slug": "stade-auguste-delaune",
+      "commons_file": "Stade Auguste Delaune - Reims (FR51) - 2024-01-28 - 1.jpg",
+      "file_page_url": "https://commons.wikimedia.org/wiki/File:Stade_Auguste_Delaune_-_Reims_%28FR51%29_-_2024-01-28_-_1.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Stade_Auguste_Delaune_-_Reims_%28FR51%29_-_2024-01-28_-_1.jpg",
+      "target_key": "places/reims/stade-auguste-delaune/cover.jpg",
+      "resolution": "4032x3024",
+      "license": "CC BY-SA 4.0",
+      "credit": "Chabe01 / CC BY-SA 4.0 via Wikimedia Commons"
     }
   ]
 }

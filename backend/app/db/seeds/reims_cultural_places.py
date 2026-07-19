@@ -254,6 +254,93 @@ REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
         "neighborhood_slug": "centre-ville",
         "is_featured": True,
     },
+    # QUARTIER-01 phase 1 — nouveaux lieux. Coordonnees issues des articles Wikipedia
+    # geolocalises, recoupees par geocodage Nominatim de l'adresse (voir la PR).
+    #
+    # Trois d'entre eux referencent des quartiers pas encore crees (europe-pommery,
+    # courlancy, cernay-jean-jaures) : hood_ids.get() renvoie None, donc
+    # neighborhood_id reste NULL. Le slug est ecrit quand meme plutot que None, pour
+    # documenter l'intention et laisser le rattachement se faire au prochain seed une
+    # fois ces quartiers crees (phase 3).
+    {
+        "id": uuid.UUID("d6030000-0000-4000-8000-000000000018"),
+        "slug": "basilique-sainte-clotilde",
+        "name": "Basilique Sainte-Clotilde",
+        "short_description": "Basilique mineure erigee par le pape Leon XIII.",
+        "description": (
+            "Edifice de style romano-byzantin, coiffe d'un dome et encadre de deux tours."
+        ),
+        "address": "Place Sainte-Clotilde",
+        "latitude": 49.2378,
+        "longitude": 4.0325,
+        "category": "heritage",
+        "neighborhood_slug": "maison-blanche",
+    },
+    {
+        "id": uuid.UUID("d6030000-0000-4000-8000-000000000019"),
+        "slug": "eglise-saint-jean-baptiste-neuvillette",
+        "name": "Eglise Saint-Jean-Baptiste de La Neuvillette",
+        "short_description": "Eglise paroissiale en pierre meuliere, style champenois.",
+        "description": (
+            "Repere du quartier La Neuvillette, batie dans le style regionaliste champenois."
+        ),
+        "address": "1 Rue Jules Corpelet",
+        "latitude": 49.2892,
+        "longitude": 4.0059,
+        "category": "heritage",
+        "neighborhood_slug": "la-neuvillette",
+    },
+    {
+        "id": uuid.UUID("d6030000-0000-4000-8000-000000000020"),
+        "slug": "porte-de-paris",
+        "name": "Porte de Paris",
+        "short_description": "Monument classe, nomme d'apres la route sortant vers Paris.",
+        "description": "Grille monumentale classee au titre des monuments historiques en 1919.",
+        "address": "Rue Bir Hakeim",
+        "latitude": 49.2550,
+        "longitude": 4.0221,
+        "category": "monument",
+        # quartier pas encore cree (phase 3) -> neighborhood_id NULL
+        "neighborhood_slug": "courlancy",
+    },
+    {
+        "id": uuid.UUID("d6030000-0000-4000-8000-000000000021"),
+        "slug": "eglise-saint-andre",
+        "name": "Eglise Saint-Andre",
+        "short_description": "Eglise du XIXe siecle elevee sur un edifice du XIIIe.",
+        "description": "Reconstruite plus grande au XIXe siecle avec la croissance du quartier.",
+        "address": "Avenue Jean-Jaures",
+        "latitude": 49.2592,
+        "longitude": 4.0413,
+        "category": "heritage",
+        # quartier pas encore cree (phase 3) -> neighborhood_id NULL
+        "neighborhood_slug": "cernay-jean-jaures",
+    },
+    {
+        "id": uuid.UUID("d6030000-0000-4000-8000-000000000022"),
+        "slug": "hotel-de-ville",
+        "name": "Hotel de Ville de Reims",
+        "short_description": "Siege des institutions municipales remoises depuis 1499.",
+        "description": "Facade classique et beffroi, au coeur du centre-ville.",
+        "address": "Esplanade Simone Veil",
+        "latitude": 49.2580,
+        "longitude": 4.0317,
+        "category": "heritage",
+        "neighborhood_slug": "centre-ville",
+    },
+    {
+        "id": uuid.UUID("d6030000-0000-4000-8000-000000000023"),
+        "slug": "stade-auguste-delaune",
+        "name": "Stade Auguste-Delaune",
+        "short_description": "Stade du Stade de Reims, quatre tribunes.",
+        "description": "Nomme en memoire d'Auguste Delaune, sportif mort sous la torture en 1943.",
+        "address": "Voie Jean Taittinger",
+        "latitude": 49.2467,
+        "longitude": 4.0250,
+        "category": "sport",
+        # quartier pas encore cree (phase 3) -> neighborhood_id NULL
+        "neighborhood_slug": "courlancy",
+    },
 )
 
 _MEDIA_SYNC_FIELDS = (
