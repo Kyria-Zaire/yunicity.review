@@ -117,9 +117,9 @@ async def test_prod_cultural_places_catalog_seed_creates_twelve() -> None:
             )
         ).scalar_one()
 
-    assert result.places_official == REIMS_OFFICIAL_CULTURAL_PLACE_COUNT == 12
-    assert count == 12
-    assert result.places_created == 12
+    assert result.places_official == REIMS_OFFICIAL_CULTURAL_PLACE_COUNT
+    assert count == REIMS_OFFICIAL_CULTURAL_PLACE_COUNT
+    assert result.places_created == REIMS_OFFICIAL_CULTURAL_PLACE_COUNT
 
 
 @pytest.mark.asyncio
@@ -151,9 +151,9 @@ async def test_prod_cultural_places_catalog_seed_idempotent() -> None:
         second = await seed_reims_cultural_places_catalog(session, settings)
         await session.commit()
 
-    assert first.places_created == 12
+    assert first.places_created == REIMS_OFFICIAL_CULTURAL_PLACE_COUNT
     assert second.places_created == 0
-    assert second.places_updated == 12
+    assert second.places_updated == REIMS_OFFICIAL_CULTURAL_PLACE_COUNT
 
 
 @pytest.mark.asyncio
@@ -191,7 +191,7 @@ async def test_prod_cultural_places_catalog_prod_image_urls() -> None:
             )
         ).scalars().all()
 
-    assert len(rows) == 12
+    assert len(rows) == REIMS_OFFICIAL_CULTURAL_PLACE_COUNT
     for place in rows:
         expected = cultural_place_seed_cover_url(
             place.slug,
@@ -249,4 +249,6 @@ def test_official_seed_subset_of_full_catalog() -> None:
     official = set(REIMS_OFFICIAL_CULTURAL_PLACE_SLUGS)
     full = {entry["slug"] for entry in REIMS_CULTURAL_PLACES_SEED}
     assert official.issubset(full)
-    assert len(official) == 12
+    # Pas de nombre fige : le catalogue grandit (QUARTIER-01). L'invariant utile est
+    # que la liste officielle reste un sous-ensemble du seed, verifie juste au-dessus.
+    assert len(official) == REIMS_OFFICIAL_CULTURAL_PLACE_COUNT
