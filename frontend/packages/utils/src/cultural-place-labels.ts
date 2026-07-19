@@ -36,6 +36,9 @@ const CATEGORY_LABELS: Record<string, string> = {
   winery: "Maison de champagne",
   theatre: "Opéra & théâtre",
   park: "Parc",
+  // Le filtre « Sport » existait déjà dans places-portal, mais sans libellé : une fiche
+  // de catégorie `sport` retombait sur « Lieu culturel » (QUARTIER-01 phase 1).
+  sport: "Sport",
 };
 
 export function culturalPlaceCategoryLabel(category: string): string {
