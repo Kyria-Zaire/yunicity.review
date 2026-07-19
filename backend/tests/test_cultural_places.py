@@ -72,7 +72,11 @@ async def test_list_cultural_places_city(
     assert response.status_code == 200
     body = response.json()
     assert body["city"] == "Reims"
-    assert body["count"] >= len(REIMS_CULTURAL_PLACES_SEED) - 2
+    # `total` = taille du catalogue ; `count` = taille de la page, plafonnee par le
+    # limit=20 ci-dessus. Avec un seed de 23 entrees, asserter sur `count` exigeait 21
+    # elements dans une page qui ne peut pas en contenir plus de 20 : impossible a
+    # satisfaire quel que soit le contenu reel de la base (QUARTIER-01).
+    assert body["total"] >= len(REIMS_CULTURAL_PLACES_SEED) - 2
     cathedral = next(i for i in body["items"] if i["slug"] == "cathedrale-notre-dame")
     assert cathedral["hero_image_url"]
     assert cathedral["photo_credit"]
