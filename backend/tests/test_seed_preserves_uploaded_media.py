@@ -7,9 +7,10 @@ passage credit et licence d'images CC BY-SA.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import pytest
+from app.core.config import Settings
 from app.db.seeds.reims_cultural_places import (
     _UPLOAD_OWNED_MEDIA_FIELDS,
     _apply_sync_fields,
@@ -23,8 +24,19 @@ CDN = "https://media.yunicity.city"
 
 
 class _FakeSettings:
+    """Double minimal : les helpers ne lisent que local_video_public_base_url.
+
+    Instancier un vrai Settings exigerait toute la config d'un environnement pour
+    exercer un seul attribut. Le cast ci-dessous est donc assume et circonscrit aux
+    tests — il ne masque pas un probleme de typage du code de production.
+    """
+
     def __init__(self, base: str | None = CDN) -> None:
         self.local_video_public_base_url = base
+
+
+def _settings(base: str | None = CDN) -> Settings:
+    return cast(Settings, _FakeSettings(base))
 
 
 def _place(**kwargs: Any) -> CulturalPlace:
@@ -45,7 +57,7 @@ def _place(**kwargs: Any) -> CulturalPlace:
 
 def test_detects_a_cover_already_hosted_on_the_cdn() -> None:
     row = _place(hero_image_url=f"{CDN}/places/reims/place-test/cover.jpg")
-    assert _has_uploaded_media(row, _FakeSettings()) is True
+    assert _has_uploaded_media(row, _settings()) is True
 
 
 @pytest.mark.parametrize(
@@ -58,7 +70,7 @@ def test_detects_a_cover_already_hosted_on_the_cdn() -> None:
     ],
 )
 def test_anything_that_is_not_a_cdn_url_is_not_protected(hero: str | None) -> None:
-    assert _has_uploaded_media(_place(hero_image_url=hero), _FakeSettings()) is False
+    assert _has_uploaded_media(_place(hero_image_url=hero), _settings()) is False
 
 
 def test_without_settings_nothing_is_protected() -> None:
@@ -86,7 +98,7 @@ def test_seed_keeps_url_credit_and_licence_when_media_came_from_the_upload() -> 
         name="Nom mis a jour",
     )
 
-    _apply_sync_fields(uploaded, from_seed, _FakeSettings())
+    _apply_sync_fields(uploaded, from_seed, _settings())
 
     # Les champs media/attribution survivent...
     assert uploaded.hero_image_url == f"{CDN}/places/reims/place-test/cover.jpg"
@@ -105,7 +117,7 @@ def test_seed_writes_media_normally_when_no_upload_has_run() -> None:
         name="Nom mis a jour",
     )
 
-    _apply_sync_fields(row, from_seed, _FakeSettings())
+    _apply_sync_fields(row, from_seed, _settings())
 
     assert row.hero_image_url == "https://yunicity.city/places/reims/place-test/cover.jpg"
     assert row.name == "Nom mis a jour"
