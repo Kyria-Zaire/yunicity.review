@@ -343,6 +343,32 @@ REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
     },
 )
 
+# Champs ecrits par scripts/seed_prod_01b_upload_media.py (upload R2 -> CDN). Le seed ne
+# les reecrit PAS quand la ligne porte deja une URL CDN : sinon relancer le seed apres un
+# upload remet une URL derivee de web_frontend_url, qui renvoie 404 en prod, et efface au
+# passage le credit et la licence d'images CC BY-SA — une obligation d'attribution, pas
+# seulement un defaut d'affichage. Constate en prod le 2026-07-19 : 12 lieux casses.
+_UPLOAD_OWNED_MEDIA_FIELDS = frozenset(
+    {
+        "image_url",
+        "hero_image_url",
+        "thumbnail_image_url",
+        "image_source",
+        "image_license",
+        "photo_credit",
+    }
+)
+
+
+def _has_uploaded_media(row: CulturalPlace, settings: Settings | None) -> bool:
+    """True si la couverture pointe deja vers le CDN media (donc posee par l'upload)."""
+    if settings is None:
+        return False
+    base = (settings.local_video_public_base_url or "").rstrip("/")
+    current = (row.hero_image_url or "").strip()
+    return bool(base) and current.startswith(f"{base}/")
+
+
 _MEDIA_SYNC_FIELDS = (
     "name",
     "short_description",
@@ -465,6 +491,17 @@ def _build_place_row(
     )
 
 
+def _apply_sync_fields(
+    target: CulturalPlace, source: CulturalPlace, settings: Settings | None
+) -> None:
+    """Recopie les champs du seed, en preservant les medias deja uploades sur le CDN."""
+    skip = _UPLOAD_OWNED_MEDIA_FIELDS if _has_uploaded_media(target, settings) else frozenset()
+    for field in _MEDIA_SYNC_FIELDS:
+        if field in skip:
+            continue
+        setattr(target, field, getattr(source, field))
+
+
 async def seed_reims_cultural_places(
     session: AsyncSession,
     *,
@@ -505,12 +542,10 @@ async def seed_reims_cultural_places(
                 session.add(row)
                 places_created += 1
             else:
-                for field in _MEDIA_SYNC_FIELDS:
-                    setattr(found, field, getattr(row, field))
+                _apply_sync_fields(found, row, settings)
                 places_updated += 1
         else:
-            for field in _MEDIA_SYNC_FIELDS:
-                setattr(repo_row, field, getattr(row, field))
+            _apply_sync_fields(repo_row, row, settings)
             places_updated += 1
 
     await session.flush()
