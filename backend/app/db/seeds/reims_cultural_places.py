@@ -10,10 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
-from app.core.cultural_place_assets import (
-    REIMS_OFFICIAL_CULTURAL_PLACE_SLUGS,
-    cultural_place_seed_cover_url,
-)
+from app.core.cultural_place_assets import REIMS_OFFICIAL_CULTURAL_PLACE_SLUGS
 from app.db.seeds.reims_cultural_media import REIMS_CULTURAL_MEDIA_BY_SLUG
 from app.models.cultural_place import CulturalPlace
 from app.models.neighborhood import Neighborhood
@@ -405,24 +402,39 @@ async def _neighborhood_ids_by_slug(session: AsyncSession, city: str) -> dict[st
 
 
 def _prod_media_for_place(entry: dict[str, Any], settings: Settings) -> dict[str, Any]:
+    """Metadonnees editoriales pour prod/preprod — deliberement SANS media (#145).
+
+    Ce bloc fabriquait auparavant une couverture :
+
+        hero_image_url  = {web_frontend_url}/places/reims/{slug}/cover.jpg
+        photo_credit    = "Yunicity"
+        image_source    = "yunicity_asset"
+
+    Deux problemes, tous deux invisibles a l'execution.
+
+    L'URL renvoie 404 en production : elle vise l'app web, qui ne sert pas ces chemins.
+    C'est un defaut pense pour le dev (fichiers dans public/ de Next, cf.
+    DEV_PUBLIC_CULTURAL_MEDIA_PREFIX) applique tel quel en prod.
+
+    Plus grave, le credit attribuait a Yunicity des photographies qui sont en realite
+    sous CC BY-SA, dues a des auteurs Wikimedia. Une fiche fraichement seedee affirmait
+    donc une paternite fausse sur une image dont la licence exige l'attribution.
+
+    Ces champs restent desormais vides jusqu'a ce que scripts/seed_prod_01b_upload_media.py
+    ecrive l'URL CDN reelle et le credit reel. Un champ vide est un etat observable ; une
+    URL qui 404 et un credit errone ressemblent a un succes.
+
+    Option B ecartee volontairement — NE PAS la reintroduire en croyant corriger un oubli.
+    Elle consistait a deriver l'URL depuis settings.local_video_public_base_url, la meme
+    source que l'upload. Le format aurait ete correct, mais l'objet R2 n'existe pas encore
+    a cet instant : on aurait remplace une URL qui 404 par une autre URL qui 404, en la
+    rendant seulement plus credible. C'est exactement le piege traque toute la session —
+    une donnee qui a l'air juste sans l'etre.
+    """
     slug = str(entry["slug"])
-    cover = cultural_place_seed_cover_url(
-        slug,
-        app_env=settings.app_env,
-        web_frontend_url=settings.web_frontend_url,
-    )
-    alt = f"{entry['name']} — Reims"
     featured = bool(entry.get("is_featured", slug in _OFFICIAL_FEATURED_SLUGS))
     priority = 100 if slug == "cathedrale-notre-dame" else (80 if featured else 10)
     return {
-        "hero_image_url": cover,
-        "thumbnail_image_url": cover,
-        "image_source": "yunicity_asset",
-        "photo_credit": "Yunicity",
-        "image_credit": "Yunicity",
-        "gallery_images": [
-            {"url": cover, "alt": alt, "credit": "Yunicity", "source": "yunicity_asset"},
-        ],
         "featured_priority": priority,
         "is_featured": featured,
     }
