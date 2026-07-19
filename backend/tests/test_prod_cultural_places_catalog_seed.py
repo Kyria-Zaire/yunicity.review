@@ -7,10 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from app.core.config import Settings
-from app.core.cultural_place_assets import (
-    REIMS_OFFICIAL_CULTURAL_PLACE_SLUGS,
-    cultural_place_seed_cover_url,
-)
+from app.core.cultural_place_assets import REIMS_OFFICIAL_CULTURAL_PLACE_SLUGS
 from app.db.seeds.reims_cultural_places import (
     REIMS_CULTURAL_PLACES_SEED,
     seed_reims_cultural_places,
@@ -28,16 +25,6 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 pytestmark_integration = [pytest.mark.integration, pytest.mark.asyncio]
-
-
-def test_cultural_place_seed_cover_url_prod() -> None:
-    url = cultural_place_seed_cover_url(
-        "cathedrale-notre-dame",
-        app_env="prod",
-        web_frontend_url="https://yunicity.city",
-    )
-    assert url == "https://yunicity.city/places/reims/cathedrale-notre-dame/cover.jpg"
-    assert "localhost" not in url
 
 
 @pytest.mark.asyncio
@@ -183,24 +170,29 @@ async def test_prod_cultural_places_catalog_prod_image_urls() -> None:
         await seed_reims_cultural_places_catalog(session, settings)
         await session.commit()
         rows = (
-            await session.execute(
-                select(CulturalPlace).where(
-                    CulturalPlace.city == "Reims",
-                    CulturalPlace.slug.in_(REIMS_OFFICIAL_CULTURAL_PLACE_SLUGS),
+            (
+                await session.execute(
+                    select(CulturalPlace).where(
+                        CulturalPlace.city == "Reims",
+                        CulturalPlace.slug.in_(REIMS_OFFICIAL_CULTURAL_PLACE_SLUGS),
+                    )
                 )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
 
     assert len(rows) == REIMS_OFFICIAL_CULTURAL_PLACE_COUNT
     for place in rows:
-        expected = cultural_place_seed_cover_url(
-            place.slug,
-            app_env="prod",
-            web_frontend_url="https://yunicity.city",
-        )
-        assert place.hero_image_url == expected
-        assert place.image_source == "yunicity_asset"
-        assert "localhost" not in (place.hero_image_url or "")
+        # Le seed prod ne fabrique plus de couverture (#145). Il posait auparavant une URL
+        # derivee de web_frontend_url — qui renvoie 404, l'app web ne servant pas ces
+        # chemins — et un credit "Yunicity" sur des photographies CC BY-SA dues a des
+        # auteurs Wikimedia. Ces champs restent vides jusqu'a l'upload R2, qui ecrit l'URL
+        # CDN reelle et le credit reel. Ce test assertait l'ancien comportement, donc un
+        # defaut.
+        assert place.hero_image_url is None, f"{place.slug} : couverture fabriquee"
+        assert place.image_source != "yunicity_asset", f"{place.slug} : attribution fausse"
+        assert place.photo_credit != "Yunicity", f"{place.slug} : credit fabrique"
 
 
 @pytest.mark.asyncio

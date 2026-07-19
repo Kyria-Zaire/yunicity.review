@@ -46,12 +46,9 @@ def cultural_place_dev_public_cover_url(slug: str) -> str:
     return f"{DEV_PUBLIC_CULTURAL_MEDIA_PREFIX}/{normalized}/{CULTURAL_PLACE_COVER_FILENAME}"
 
 
-def cultural_place_seed_cover_url(
-    slug: str,
-    *,
-    app_env: str,
-    web_frontend_url: str,
-) -> str:
-    """Absolute cover URL for prod-safe cultural place seeds."""
-    relative = cultural_place_dev_public_cover_url(slug)
-    return f"{web_frontend_url.rstrip('/')}{relative}"
+# cultural_place_seed_cover_url() a ete supprimee (#145). Elle construisait
+# {web_frontend_url}/places/reims/{slug}/cover.jpg pour le seed prod — une URL qui renvoie
+# 404, l'app web ne servant pas ces chemins. La supprimer plutot que de la laisser inutilisee
+# est volontaire : une fonction absente ne peut pas etre rappelee par erreur en croyant
+# reparer un oubli. Les couvertures de prod viennent de scripts/seed_prod_01b_upload_media.py,
+# seul endroit qui connait l'URL CDN reelle.
