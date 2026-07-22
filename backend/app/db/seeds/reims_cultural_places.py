@@ -111,7 +111,10 @@ REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
         "latitude": 49.26034,
         "longitude": 4.03203,
         "category": "market",
-        "neighborhood_slug": "boulingrin",
+        # Reaffecte de boulingrin vers le quartier fusionne (QUARTIER-01 phase 3b). Le seed
+        # met a jour neighborhood_id (dans _MEDIA_SYNC_FIELDS) sans toucher la cover CDN
+        # deja posee (protegee par _UPLOAD_OWNED_MEDIA_FIELDS, #144).
+        "neighborhood_slug": "cernay-jean-jaures",
     },
     {
         "id": uuid.UUID("d6030000-0000-4000-8000-000000000007"),
