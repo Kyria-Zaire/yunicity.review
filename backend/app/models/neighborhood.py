@@ -29,7 +29,9 @@ if TYPE_CHECKING:
     from app.models.local_event import LocalEvent
     from app.models.neighborhood_editorial import (
         NeighborhoodAlias,
+        NeighborhoodCommunityTagAssignment,
         NeighborhoodContribution,
+        NeighborhoodLandmark,
         NeighborhoodMoodAssignment,
         NeighborhoodTimelineEntry,
     )
@@ -74,6 +76,15 @@ class Neighborhood(TimestampMixin, Base):
     why_locals_love: Mapped[str | None] = mapped_column(Text, nullable=True)
     featured_quote: Mapped[str | None] = mapped_column(String(512), nullable=True)
     official_label: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    # Identite et vie du quartier (QUARTIER-01 phase 3a) — texte libre, nullable : les
+    # douze quartiers se remplissent au fil de la redaction editoriale.
+    audience: Mapped[str | None] = mapped_column(Text, nullable=True)
+    neighborhood_type: Mapped[str | None] = mapped_column(Text, nullable=True)
+    local_life: Mapped[str | None] = mapped_column(Text, nullable=True)
+    green_spaces: Mapped[str | None] = mapped_column(Text, nullable=True)
+    mobility: Mapped[str | None] = mapped_column(Text, nullable=True)
+    daily_life: Mapped[str | None] = mapped_column(Text, nullable=True)
     hero_image_storage_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
     editorial_updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
@@ -109,6 +120,17 @@ class Neighborhood(TimestampMixin, Base):
         "NeighborhoodTimelineEntry",
         back_populates="neighborhood",
         cascade="all, delete-orphan",
+    )
+    community_tag_assignments: Mapped[list[NeighborhoodCommunityTagAssignment]] = relationship(
+        "NeighborhoodCommunityTagAssignment",
+        back_populates="neighborhood",
+        cascade="all, delete-orphan",
+    )
+    landmarks: Mapped[list[NeighborhoodLandmark]] = relationship(
+        "NeighborhoodLandmark",
+        back_populates="neighborhood",
+        cascade="all, delete-orphan",
+        order_by="NeighborhoodLandmark.sort_order",
     )
     contributions: Mapped[list[NeighborhoodContribution]] = relationship(
         "NeighborhoodContribution",
