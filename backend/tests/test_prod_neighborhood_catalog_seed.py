@@ -17,6 +17,7 @@ from app.db.seeds.reims_neighborhoods import (
     seed_reims_neighborhoods,
 )
 from app.db.seeds.reims_neighborhoods_catalog import (
+    REIMS_MERGED_NEIGHBORHOOD_SLUGS,
     REIMS_OFFICIAL_NEIGHBORHOOD_COUNT,
     seed_reims_neighborhoods_catalog,
 )
@@ -123,6 +124,31 @@ async def test_prod_catalog_seed_creates_twelve(auth_client: AsyncClient) -> Non
     assert result.hero_assets_applied == len(REIMS_NEIGHBORHOOD_HERO_SLUGS)  # 12 : idem hero assets
     assert count == REIMS_OFFICIAL_NEIGHBORHOOD_COUNT
     assert result.neighborhoods_created == REIMS_OFFICIAL_NEIGHBORHOOD_COUNT
+    # QUARTIER-01 3c : les quartiers fusionnes sont crees puis desactives dans la meme passe.
+    assert result.merged_deactivated == len(REIMS_MERGED_NEIGHBORHOOD_SLUGS)
+    async with factory() as session:
+        active_merged = (
+            await session.execute(
+                select(func.count())
+                .select_from(Neighborhood)
+                .where(
+                    Neighborhood.slug.in_(REIMS_MERGED_NEIGHBORHOOD_SLUGS),
+                    Neighborhood.is_active.is_(True),
+                )
+            )
+        ).scalar_one()
+        featured_merged = (
+            await session.execute(
+                select(func.count())
+                .select_from(Neighborhood)
+                .where(
+                    Neighborhood.slug.in_(REIMS_MERGED_NEIGHBORHOOD_SLUGS),
+                    Neighborhood.is_featured.is_(True),
+                )
+            )
+        ).scalar_one()
+    assert active_merged == 0, "les quartiers fusionnes doivent etre inactifs"
+    assert featured_merged == 0, "aucun quartier fusionne ne doit rester featured"
 
 
 @pytest.mark.asyncio
@@ -160,6 +186,8 @@ async def test_prod_catalog_seed_idempotent(auth_client: AsyncClient) -> None:
     assert first.neighborhoods_created == REIMS_OFFICIAL_NEIGHBORHOOD_COUNT
     assert second.neighborhoods_created == 0
     assert count == REIMS_OFFICIAL_NEIGHBORHOOD_COUNT
+    assert first.merged_deactivated == len(REIMS_MERGED_NEIGHBORHOOD_SLUGS)
+    assert second.merged_deactivated == 0  # idempotent : deja inactifs au 2e passage
 
 
 @pytest.mark.asyncio

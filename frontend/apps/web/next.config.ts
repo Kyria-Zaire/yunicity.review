@@ -36,11 +36,23 @@ function assertSiteUrlConfiguredForDeploy(phase: string): void {
   }
 }
 
+// Quartiers fusionnes dans cernay-jean-jaures (QUARTIER-01 phase 3c). Redirect permanent
+// (301) plutot que de laisser leurs anciennes URLs tomber en 404 : elles etaient dans le
+// sitemap, et un 404 ferait perdre l'indexation acquise (lecon PROD-BUG-01).
+const MERGED_NEIGHBORHOOD_SLUGS = ["cernay", "jean-jaures", "boulingrin"] as const;
+
 const nextConfig: NextConfig = {
   transpilePackages: ["@yunicity/types", "@yunicity/utils", "@yunicity/ui"],
   outputFileTracingRoot: workspaceRoot,
   images: {
     remotePatterns: culturalImageRemotePatterns(),
+  },
+  async redirects() {
+    return MERGED_NEIGHBORHOOD_SLUGS.map((slug) => ({
+      source: `/neighborhoods/${slug}`,
+      destination: "/neighborhoods/cernay-jean-jaures",
+      permanent: true,
+    }));
   },
   // Dev uses `.next` ; production build uses `.next-build` (see package.json) to avoid races with `next dev`.
   distDir: process.env.NEXT_BUILD_DIR ?? ".next",
