@@ -204,6 +204,11 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
             "Quartier réunissant Cernay, Jean-Jaurès et le Boulingrin autour de ses "
             "halles et de sa vie de proximité."
         ),
+        # Coordonnees = centroide des 3 quartiers fusionnes ; radius elargi pour les couvrir.
+        # Structurel (placement carte), pas editorial : le seed exige des coords non NULL.
+        "latitude": 49.2503,
+        "longitude": 4.0217,
+        "radius_meters": 900,
         # Herite du statut mis en avant de boulingrin (fusionne ici), pour ne pas laisser
         # de trou dans la selection le temps que 3c desactive les anciennes lignes.
         "is_featured": True,
@@ -213,6 +218,10 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
         "slug": "courlancy",
         "display_name": "Courlancy",
         "short_description": "Quartier du sud de Reims, entre équipements sportifs et habitat.",
+        # Nominatim : Courlancy, avenue Paul Marchandeau, Reims.
+        "latitude": 49.2426,
+        "longitude": 4.0255,
+        "radius_meters": 700,
         "is_featured": False,
     },
     {
@@ -220,6 +229,10 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
         "slug": "chatillons",
         "display_name": "Châtillons",
         "short_description": "Quartier de l’ouest rémois, résidentiel et familial.",
+        # Nominatim : Les Châtillons, Reims.
+        "latitude": 49.2343,
+        "longitude": 4.0386,
+        "radius_meters": 700,
         "is_featured": False,
     },
 )

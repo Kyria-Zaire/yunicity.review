@@ -41,7 +41,7 @@ async def test_reims_neighborhood_catalog_has_twelve(auth_client: AsyncClient) -
                 select(func.count()).select_from(Neighborhood).where(Neighborhood.city == "Reims")
             )
         ).scalar_one()
-    assert count == len(REIMS_NEIGHBORHOOD_SEED) == 12
+    assert count == len(REIMS_NEIGHBORHOOD_SEED)  # 15 depuis QUARTIER-01 3b
 
 
 @pytest.mark.asyncio
@@ -67,10 +67,14 @@ async def test_v2_editorial_seed_boulingrin(auth_client: AsyncClient) -> None:
         assert hood.featured_quote == "Le cœur gourmand de Reims."
 
         aliases = (
-            await session.execute(
-                select(NeighborhoodAlias).where(NeighborhoodAlias.neighborhood_id == hood.id)
+            (
+                await session.execute(
+                    select(NeighborhoodAlias).where(NeighborhoodAlias.neighborhood_id == hood.id)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         assert any(a.alias == "Halles du Boulingrin" and a.is_primary for a in aliases)
 
         timeline = (
