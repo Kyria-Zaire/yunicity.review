@@ -50,6 +50,22 @@ class NeighborhoodTimelineItem(BaseModel):
     display_order: int
 
 
+class NeighborhoodLandmarkItem(BaseModel):
+    """Lieu emblematique — reference vers cultural_places (QUARTIER-01 phase 3a)."""
+
+    slug: str
+    name: str
+    category: str
+    hero_image_url: str | None = None
+
+
+class NeighborhoodCommunityTagItem(BaseModel):
+    """Tag communaute — sert a suggerer des tribus a la lecture, sans lien dur."""
+
+    slug: str
+    label: str
+
+
 class NeighborhoodResponse(BaseModel):
     id: uuid.UUID
     city: str
@@ -68,9 +84,18 @@ class NeighborhoodResponse(BaseModel):
     updated_at: datetime
     long_story: str | None = None
     featured_quote: str | None = None
+    # Identite et vie du quartier (QUARTIER-01 phase 3a)
+    audience: str | None = None
+    neighborhood_type: str | None = None
+    local_life: str | None = None
+    green_spaces: str | None = None
+    mobility: str | None = None
+    daily_life: str | None = None
     aliases: list[NeighborhoodAliasItem] = Field(default_factory=list)
     moods: list[str] = Field(default_factory=list)
     timeline: list[NeighborhoodTimelineItem] = Field(default_factory=list)
+    community_tags: list[NeighborhoodCommunityTagItem] = Field(default_factory=list)
+    landmarks: list[NeighborhoodLandmarkItem] = Field(default_factory=list)
 
 
 class NeighborhoodListResponse(BaseModel):
