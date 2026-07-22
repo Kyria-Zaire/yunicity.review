@@ -143,8 +143,7 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
         "slug": "la-neuvillette",
         "display_name": "La Neuvillette",
         "short_description": (
-            "Au nord de Reims — zones d'activité, logements récents et "
-            "dynamisme en développement."
+            "Au nord de Reims — zones d'activité, logements récents et dynamisme en développement."
         ),
         "ambiance": NeighborhoodAmbiance.LIVELY.value,
         "latitude": 49.2800,
@@ -171,8 +170,7 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
         "slug": "chemin-vert",
         "display_name": "Chemin-Vert",
         "short_description": (
-            "Entre centre et faubourgs — un Reims habité, accessible et "
-            "en mouvement."
+            "Entre centre et faubourgs — un Reims habité, accessible et en mouvement."
         ),
         "ambiance": NeighborhoodAmbiance.LIVELY.value,
         "latitude": 49.2350,
@@ -185,13 +183,56 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
         "slug": "maison-blanche",
         "display_name": "Maison-Blanche",
         "short_description": (
-            "Quartier au sud-est — diversité, associations locales et "
-            "solidarité de proximité."
+            "Quartier au sud-est — diversité, associations locales et solidarité de proximité."
         ),
         "ambiance": NeighborhoodAmbiance.CALM.value,
         "latitude": 49.2100,
         "longitude": 4.0100,
         "radius_meters": 800,
+        "is_featured": False,
+    },
+    # QUARTIER-01 phase 3b — champs minimaux : le contenu editorial (ambiance, lat/lng,
+    # accent, sections) arrive en 3d/3e. La cover_image_url est laissee derivee (pending) :
+    # le path yunicity.city/neighborhoods/reims/<slug>/hero.jpg est reconnu par
+    # isPendingYunicityHostedCoverUrl cote frontend, qui affiche un gradient + nom tant que
+    # l'image n'est pas committee dans public/, y compris sur une carte featured.
+    {
+        "id": uuid.UUID("d6010000-0000-4000-8000-000000000013"),
+        "slug": "cernay-jean-jaures",
+        "display_name": "Cernay – Jean-Jaurès",
+        "short_description": (
+            "Quartier réunissant Cernay, Jean-Jaurès et le Boulingrin autour de ses "
+            "halles et de sa vie de proximité."
+        ),
+        # Coordonnees = centroide des 3 quartiers fusionnes ; radius elargi pour les couvrir.
+        # Structurel (placement carte), pas editorial : le seed exige des coords non NULL.
+        "latitude": 49.2503,
+        "longitude": 4.0217,
+        "radius_meters": 900,
+        # Herite du statut mis en avant de boulingrin (fusionne ici), pour ne pas laisser
+        # de trou dans la selection le temps que 3c desactive les anciennes lignes.
+        "is_featured": True,
+    },
+    {
+        "id": uuid.UUID("d6010000-0000-4000-8000-000000000014"),
+        "slug": "courlancy",
+        "display_name": "Courlancy",
+        "short_description": "Quartier du sud de Reims, entre équipements sportifs et habitat.",
+        # Nominatim : Courlancy, avenue Paul Marchandeau, Reims.
+        "latitude": 49.2426,
+        "longitude": 4.0255,
+        "radius_meters": 700,
+        "is_featured": False,
+    },
+    {
+        "id": uuid.UUID("d6010000-0000-4000-8000-000000000015"),
+        "slug": "chatillons",
+        "display_name": "Châtillons",
+        "short_description": "Quartier de l’ouest rémois, résidentiel et familial.",
+        # Nominatim : Les Châtillons, Reims.
+        "latitude": 49.2343,
+        "longitude": 4.0386,
+        "radius_meters": 700,
         "is_featured": False,
     },
 )

@@ -37,12 +37,18 @@ async def test_all_twelve_neighborhoods_have_hero_storage_keys(auth_client: Asyn
         await _seed_all_v2(session)
         await session.commit()
         rows = (
-            await session.execute(
-                select(Neighborhood).where(Neighborhood.city == "Reims").order_by(Neighborhood.slug)
+            (
+                await session.execute(
+                    select(Neighborhood)
+                    .where(Neighborhood.city == "Reims")
+                    .order_by(Neighborhood.slug)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
 
-    assert len(rows) == len(REIMS_NEIGHBORHOOD_SEED) == 12
+    assert len(rows) == len(REIMS_NEIGHBORHOOD_SEED)
     for hood in rows:
         assert hood.hero_image_storage_key == neighborhood_hero_storage_key(hood.slug)
 
@@ -57,10 +63,12 @@ async def test_all_twelve_neighborhoods_have_cover_image_url(auth_client: AsyncC
         await _seed_all_v2(session)
         await session.commit()
         rows = (
-            await session.execute(select(Neighborhood).where(Neighborhood.city == "Reims"))
-        ).scalars().all()
+            (await session.execute(select(Neighborhood).where(Neighborhood.city == "Reims")))
+            .scalars()
+            .all()
+        )
 
-    assert len(rows) == 12
+    assert len(rows) == len(REIMS_NEIGHBORHOOD_SEED)
     for hood in rows:
         assert hood.cover_image_url == neighborhood_dev_public_hero_url(hood.slug)
 
@@ -91,12 +99,16 @@ async def test_seeded_cover_urls_have_no_forbidden_hotlinks(
         await _seed_all_v2(session)
         await session.commit()
         rows = (
-            await session.execute(
-                select(Neighborhood.cover_image_url).where(Neighborhood.city == "Reims")
+            (
+                await session.execute(
+                    select(Neighborhood.cover_image_url).where(Neighborhood.city == "Reims")
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
 
-    assert len(rows) == 12
+    assert len(rows) == len(REIMS_NEIGHBORHOOD_SEED)
     for url in rows:
         assert url
         lowered = url.lower()

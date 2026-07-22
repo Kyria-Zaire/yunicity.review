@@ -20,6 +20,7 @@ from app.db.seeds.reims_neighborhoods_catalog import (
     REIMS_OFFICIAL_NEIGHBORHOOD_COUNT,
     seed_reims_neighborhoods_catalog,
 )
+from app.db.seeds.reims_neighborhoods_v2_editorial import REIMS_NEIGHBORHOOD_V2_EDITORIAL
 from app.db.session import get_engine
 from app.models.neighborhood import Neighborhood
 from httpx import AsyncClient
@@ -115,11 +116,13 @@ async def test_prod_catalog_seed_creates_twelve(auth_client: AsyncClient) -> Non
             )
         ).scalar_one()
 
-    assert result.neighborhoods_total == REIMS_OFFICIAL_NEIGHBORHOOD_COUNT == 12
-    assert result.editorial_applied == 12
-    assert result.hero_assets_applied == 12
-    assert count == 12
-    assert result.neighborhoods_created == 12
+    assert result.neighborhoods_total == REIMS_OFFICIAL_NEIGHBORHOOD_COUNT
+    assert result.editorial_applied == len(
+        REIMS_NEIGHBORHOOD_V2_EDITORIAL
+    )  # 12 : nouveaux quartiers sans editorial (3d/3e)
+    assert result.hero_assets_applied == len(REIMS_NEIGHBORHOOD_HERO_SLUGS)  # 12 : idem hero assets
+    assert count == REIMS_OFFICIAL_NEIGHBORHOOD_COUNT
+    assert result.neighborhoods_created == REIMS_OFFICIAL_NEIGHBORHOOD_COUNT
 
 
 @pytest.mark.asyncio
@@ -154,9 +157,9 @@ async def test_prod_catalog_seed_idempotent(auth_client: AsyncClient) -> None:
             )
         ).scalar_one()
 
-    assert first.neighborhoods_created == 12
+    assert first.neighborhoods_created == REIMS_OFFICIAL_NEIGHBORHOOD_COUNT
     assert second.neighborhoods_created == 0
-    assert count == 12
+    assert count == REIMS_OFFICIAL_NEIGHBORHOOD_COUNT
 
 
 @pytest.mark.asyncio
@@ -183,10 +186,12 @@ async def test_prod_catalog_seed_prod_cover_urls(auth_client: AsyncClient) -> No
         await seed_reims_neighborhoods_catalog(session, settings)
         await session.commit()
         rows = (
-            await session.execute(select(Neighborhood).where(Neighborhood.city == "Reims"))
-        ).scalars().all()
+            (await session.execute(select(Neighborhood).where(Neighborhood.city == "Reims")))
+            .scalars()
+            .all()
+        )
 
-    assert len(rows) == 12
+    assert len(rows) == REIMS_OFFICIAL_NEIGHBORHOOD_COUNT
     for hood in rows:
         expected = neighborhood_seed_cover_url(
             hood.slug,
