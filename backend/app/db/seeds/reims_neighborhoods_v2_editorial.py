@@ -15,6 +15,7 @@ from app.core.neighborhood_v2_constants import (
     NEIGHBORHOOD_V2_MOOD_LABELS,
     NeighborhoodMood,
 )
+from app.db.seeds.reims_neighborhoods_3d_content import REIMS_NEIGHBORHOOD_3D_CONTENT
 from app.models.neighborhood import Neighborhood
 from app.models.neighborhood_editorial import (
     NeighborhoodAlias,
@@ -266,6 +267,15 @@ async def _apply_editorial_row(session: AsyncSession, hood: Neighborhood, row: d
                 sort_order=int(entry.get("sort_order", 0)),
             )
         )
+
+    # Phase 3d : contenu editorial des 9 quartiers reutilises. Applique PAR-DESSUS les champs
+    # ci-dessus (override long_story/short_description, pose official_label/ambiance + les 6
+    # colonnes 3a). Ne touche ni moods, ni timeline, ni aliases. Les 3 quartiers fusionnes ne
+    # sont pas dans ce dict -> .get() renvoie None, ils gardent leur contenu de base.
+    content_3d = REIMS_NEIGHBORHOOD_3D_CONTENT.get(str(row["slug"]))
+    if content_3d is not None:
+        for field, value in content_3d.items():
+            setattr(hood, field, value)
 
 
 async def seed_reims_neighborhoods_v2_editorial(session: AsyncSession) -> int:
