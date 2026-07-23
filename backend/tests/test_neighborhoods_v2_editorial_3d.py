@@ -51,17 +51,21 @@ _NEW_3A_COLUMNS = (
     "daily_life",
 )
 
-_PROD_SETTINGS = Settings(
-    APP_ENV="prod",
-    DEBUG=False,
-    JWT_SECRET_KEY="x" * 48,
-    REFRESH_TOKEN_PEPPER="y" * 32,
-    REFRESH_COOKIE_SECURE=True,
-    WEB_FRONTEND_URL="https://yunicity.city",
-    CORS_ORIGINS=["https://yunicity.city"],
-    MEDIA_PUBLIC_BASE_URL="https://api.yunicity.city",
-    EMAIL_PROVIDER="console",
-)
+def _prod_settings() -> Settings:
+    # Construit dans le corps des tests (jamais au niveau module) : en prod, Settings exige
+    # DATABASE_URL, lu depuis l'env. Le job CI lint tourne sans DATABASE_URL et les tests
+    # d'integration sont skippes par auth_client — construire ici evite de casser la collection.
+    return Settings(
+        APP_ENV="prod",
+        DEBUG=False,
+        JWT_SECRET_KEY="x" * 48,
+        REFRESH_TOKEN_PEPPER="y" * 32,
+        REFRESH_COOKIE_SECURE=True,
+        WEB_FRONTEND_URL="https://yunicity.city",
+        CORS_ORIGINS=["https://yunicity.city"],
+        MEDIA_PUBLIC_BASE_URL="https://api.yunicity.city",
+        EMAIL_PROVIDER="console",
+    )
 
 
 def _editorial_entry(slug: str) -> dict[str, Any]:
@@ -89,7 +93,7 @@ def _expected_timeline_years(slug: str) -> list[int]:
 async def _seed_fresh(session: AsyncSession) -> None:
     await session.execute(delete(Neighborhood))
     await session.flush()
-    await seed_reims_neighborhoods_catalog(session, _PROD_SETTINGS)
+    await seed_reims_neighborhoods_catalog(session, _prod_settings())
     await session.commit()
 
 
@@ -230,7 +234,7 @@ async def test_3d_idempotent(auth_client: AsyncClient) -> None:
     async with factory() as session:
         await _seed_fresh(session)
         # Deuxieme passe complete du catalog dans la meme base.
-        await seed_reims_neighborhoods_catalog(session, _PROD_SETTINGS)
+        await seed_reims_neighborhoods_catalog(session, _prod_settings())
         await session.commit()
 
     async with factory() as session:
