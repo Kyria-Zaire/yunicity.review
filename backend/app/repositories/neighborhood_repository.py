@@ -9,6 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.neighborhood import Neighborhood
+from app.models.neighborhood_editorial import (
+    NeighborhoodCommunityTagAssignment,
+    NeighborhoodLandmark,
+)
 
 
 class NeighborhoodRepository:
@@ -54,6 +58,12 @@ class NeighborhoodRepository:
                 selectinload(Neighborhood.aliases),
                 selectinload(Neighborhood.mood_assignments),
                 selectinload(Neighborhood.timeline_entries),
+                selectinload(Neighborhood.community_tag_assignments).selectinload(
+                    NeighborhoodCommunityTagAssignment.tag
+                ),
+                selectinload(Neighborhood.landmarks).selectinload(
+                    NeighborhoodLandmark.cultural_place
+                ),
             )
         )
         if active_only:

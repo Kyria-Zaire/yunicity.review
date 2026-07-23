@@ -33,6 +33,31 @@ class TribeRepository:
         await self._session.flush()
         return tribe
 
+    async def list_public_by_categories(
+        self,
+        *,
+        city: str,
+        categories: set[str],
+    ) -> list[Tribe]:
+        """Tribus publiques d'une ville dans un ensemble de categories (resolution tags 3f).
+
+        Une seule requete pour toutes les categories du quartier (pas de N+1) ; le service
+        regroupe ensuite par categorie. Vide si aucune categorie (compteur honnete a zero).
+        """
+        if not categories:
+            return []
+        stmt = (
+            select(Tribe)
+            .where(
+                Tribe.city == city,
+                Tribe.archived_at.is_(None),
+                Tribe.visibility == TribeVisibility.PUBLIC.value,
+                Tribe.category.in_(categories),
+            )
+            .order_by(Tribe.name.asc())
+        )
+        return list((await self._session.execute(stmt)).scalars().all())
+
     async def list_public(
         self,
         *,

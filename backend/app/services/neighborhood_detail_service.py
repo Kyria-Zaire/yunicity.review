@@ -30,7 +30,9 @@ from app.models.passport import PartnerOffer
 from app.repositories.cultural_place_repository import CulturalPlaceRepository
 from app.repositories.local_video_repository import LocalVideoRepository
 from app.repositories.neighborhood_repository import NeighborhoodRepository
+from app.repositories.tribe_repository import TribeRepository
 from app.schemas.neighborhood import (
+    NeighborhoodCommunityTagItem,
     NeighborhoodDetailContributionItem,
     NeighborhoodDetailEventItem,
     NeighborhoodDetailHero,
@@ -41,6 +43,8 @@ from app.schemas.neighborhood import (
     NeighborhoodDetailStats,
     NeighborhoodDetailVideoAuthor,
     NeighborhoodDetailVideoItem,
+    NeighborhoodLandmarkItem,
+    NeighborhoodTribeSuggestionItem,
 )
 from app.services.neighborhood_v2_presenter import (
     map_alias_item,
@@ -49,7 +53,11 @@ from app.services.neighborhood_v2_presenter import (
 )
 
 # Tribes / creators: no direct neighborhood FK on Tribe or creator profile (Q2-S1-03).
-# Post-based tribe linkage is indirect; creator domain has no quartier scope yet.
+# `tribes` reste vide (pas de lien dur) ; les tribus sont SUGGEREES via les tags communautes,
+# resolus par categorie a la lecture (QUARTIER-01 phase 3f). Creator domain sans scope quartier.
+
+# Plafond de tribus suggerees par tag — la maquette montre quelques suggestions, pas une liste.
+_TRIBE_SUGGESTIONS_PER_TAG = 6
 
 
 class NeighborhoodDetailService:
@@ -58,6 +66,7 @@ class NeighborhoodDetailService:
         self._neighborhoods = NeighborhoodRepository(session)
         self._videos = LocalVideoRepository(session)
         self._places = CulturalPlaceRepository(session)
+        self._tribes = TribeRepository(session)
 
     async def get_detail(self, *, city: str, slug: str) -> NeighborhoodDetailResponse:
         hood = await self._neighborhoods.get_by_city_slug_with_editorial(
@@ -81,6 +90,7 @@ class NeighborhoodDetailService:
         events = await self._upcoming_events(hood_id, now=now)
         contributions = await self._approved_contributions(hood_id)
         passport_offers = await self._passport_offers(hood_id)
+        community_tags = await self._resolve_community_tags(hood)
 
         stats = NeighborhoodDetailStats(
             places_count=await self._count_places(hood_id),
@@ -91,8 +101,15 @@ class NeighborhoodDetailService:
             contributions_count=await self._count_approved_contributions(hood_id),
         )
 
+        # landmarks + community_tags sont des champs de base (scaffolding 3a) laisses vides par
+        # le presenter : on les peuple ici (relations eager-loadees + resolution tribus). Les 6
+        # colonnes 3a, elles, sont deja dans base (peuplees par le presenter). model_dump puis
+        # override evite le conflit de kwargs (ces cles sont deja dans le dump de base).
+        base_data = base.model_dump()
+        base_data["landmarks"] = self._build_landmarks(hood)
+        base_data["community_tags"] = community_tags
         return NeighborhoodDetailResponse(
-            **base.model_dump(),
+            **base_data,
             hero=self._build_hero(hood),
             history=self._build_history(hood),
             videos=videos,
@@ -129,6 +146,54 @@ class NeighborhoodDetailService:
             long_story=hood.long_story,
             featured_quote=hood.featured_quote,
         )
+
+    @staticmethod
+    def _build_landmarks(hood: Neighborhood) -> list[NeighborhoodLandmarkItem]:
+        # Les 6 colonnes 3a sont deja peuplees dans la reponse de base (presenter) ; ici on
+        # derive les landmarks du cultural_place lie, en portant l'image ET son attribution.
+        items: list[NeighborhoodLandmarkItem] = []
+        for landmark in sorted(hood.landmarks, key=lambda x: x.sort_order):
+            place = landmark.cultural_place
+            # Meilleure image d'abord (hero = format cover), pour la reutilisation eventuelle
+            # en cover de quartier cote frontend.
+            image = place.hero_image_url or place.image_url or place.thumbnail_image_url
+            items.append(
+                NeighborhoodLandmarkItem(
+                    slug=place.slug,
+                    name=place.name,
+                    category=place.category,
+                    hero_image_url=image,
+                    # L'attribution suit l'image : obligation CC BY-SA (photo_credit + licence).
+                    photo_credit=place.photo_credit,
+                    image_license=place.image_license,
+                )
+            )
+        return items
+
+    async def _resolve_community_tags(
+        self, hood: Neighborhood
+    ) -> list[NeighborhoodCommunityTagItem]:
+        assignments = sorted(hood.community_tag_assignments, key=lambda a: a.sort_order)
+        if not assignments:
+            return []
+        # tag_slug == slug de categorie (aligne en 3e) : une requete pour toutes les categories.
+        categories = {a.tag_slug for a in assignments}
+        tribes = await self._tribes.list_public_by_categories(city=hood.city, categories=categories)
+        by_category: dict[str, list[NeighborhoodTribeSuggestionItem]] = {}
+        for tribe in tribes:
+            bucket = by_category.setdefault(tribe.category, [])
+            if len(bucket) < _TRIBE_SUGGESTIONS_PER_TAG:
+                bucket.append(
+                    NeighborhoodTribeSuggestionItem(id=tribe.id, slug=tribe.slug, name=tribe.name)
+                )
+        return [
+            NeighborhoodCommunityTagItem(
+                slug=assignment.tag.slug,
+                label=assignment.tag.label,
+                tribes=by_category.get(assignment.tag_slug, []),
+            )
+            for assignment in assignments
+        ]
 
     async def _videos_for_neighborhood(
         self, hood: Neighborhood
