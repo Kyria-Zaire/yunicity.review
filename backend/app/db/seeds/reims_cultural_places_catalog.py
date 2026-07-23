@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings
 from app.core.cultural_place_assets import REIMS_OFFICIAL_CULTURAL_PLACE_SLUGS
 from app.db.seeds.reims_cultural_places import seed_reims_cultural_places
+from app.db.seeds.reims_neighborhood_landmarks import seed_reims_neighborhood_landmarks
 from app.models.cultural_place import CulturalPlace
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ class ReimsCulturalPlacesCatalogSeedResult:
     places_created: int
     places_updated: int
     places_official: int
+    landmarks_linked: int
 
 
 async def _count_official_places(session: AsyncSession) -> int:
@@ -59,10 +61,15 @@ async def seed_reims_cultural_places_catalog(
             f"(created={places_created}, updated={places_updated})"
         )
 
+    # Landmarks (3e) : les lieux officiels existent maintenant, les quartiers doivent avoir ete
+    # seedes au prealable (--neighborhoods). Leve si un lieu reference manque.
+    landmarks_linked = await seed_reims_neighborhood_landmarks(session)
+
     result = ReimsCulturalPlacesCatalogSeedResult(
         places_created=places_created,
         places_updated=places_updated,
         places_official=official_count,
+        landmarks_linked=landmarks_linked,
     )
     logger.info(
         "reims_cultural_places_catalog_seed_completed",
@@ -70,6 +77,7 @@ async def seed_reims_cultural_places_catalog(
             "places_created": result.places_created,
             "places_updated": result.places_updated,
             "places_official": result.places_official,
+            "landmarks_linked": result.landmarks_linked,
         },
     )
     return result

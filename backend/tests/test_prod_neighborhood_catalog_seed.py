@@ -12,6 +12,9 @@ from app.core.neighborhood_hero_assets import (
     neighborhood_dev_public_hero_url,
     neighborhood_seed_cover_url,
 )
+from app.db.seeds.reims_neighborhood_community_tags import (
+    REIMS_NEIGHBORHOOD_COMMUNITY_TAG_ASSIGNMENTS,
+)
 from app.db.seeds.reims_neighborhoods import (
     REIMS_NEIGHBORHOOD_SEED,
     seed_reims_neighborhoods,
@@ -120,8 +123,13 @@ async def test_prod_catalog_seed_creates_twelve(auth_client: AsyncClient) -> Non
     assert result.neighborhoods_total == REIMS_OFFICIAL_NEIGHBORHOOD_COUNT
     assert result.editorial_applied == len(
         REIMS_NEIGHBORHOOD_V2_EDITORIAL
-    )  # 12 : nouveaux quartiers sans editorial (3d/3e)
-    assert result.hero_assets_applied == len(REIMS_NEIGHBORHOOD_HERO_SLUGS)  # 12 : idem hero assets
+    )  # 15 : les 12 originaux + les 3 crees ont desormais un editorial (3e)
+    # 12 : les 3 quartiers crees n'ont pas encore de hero.
+    assert result.hero_assets_applied == len(REIMS_NEIGHBORHOOD_HERO_SLUGS)
+    # 3e : tags communautes assignes aux 3 quartiers crees (3 tags chacun).
+    assert result.community_tags_assigned == sum(
+        len(tags) for tags in REIMS_NEIGHBORHOOD_COMMUNITY_TAG_ASSIGNMENTS.values()
+    )
     assert count == REIMS_OFFICIAL_NEIGHBORHOOD_COUNT
     assert result.neighborhoods_created == REIMS_OFFICIAL_NEIGHBORHOOD_COUNT
     # QUARTIER-01 3c : les quartiers fusionnes sont crees puis desactives dans la meme passe.

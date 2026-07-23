@@ -9,6 +9,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
+from app.db.seeds.reims_neighborhood_community_tags import seed_reims_neighborhood_community_tags
 from app.db.seeds.reims_neighborhoods import REIMS_NEIGHBORHOOD_SEED, seed_reims_neighborhoods
 from app.db.seeds.reims_neighborhoods_v2_editorial import seed_reims_neighborhoods_v2_editorial
 from app.db.seeds.reims_neighborhoods_v2_hero_assets import seed_reims_neighborhoods_v2_hero_assets
@@ -35,6 +36,7 @@ class ReimsNeighborhoodsCatalogSeedResult:
     editorial_applied: int
     hero_assets_applied: int
     merged_deactivated: int
+    community_tags_assigned: int
 
 
 async def _count_reims_neighborhoods(session: AsyncSession) -> int:
@@ -86,6 +88,9 @@ async def seed_reims_neighborhoods_catalog(
     editorial_applied = await seed_reims_neighborhoods_v2_editorial(session)
     hero_assets_applied = await seed_reims_neighborhoods_v2_hero_assets(session, settings=settings)
     merged_deactivated = await _deactivate_merged_neighborhoods(session)
+    # Tags communautes (3e) : besoin des quartiers uniquement -> ici. Les landmarks (aussi 3e)
+    # dependent des cultural_places et vivent dans le catalog cultural-places.
+    community_tags_assigned = await seed_reims_neighborhood_community_tags(session)
 
     total = await _count_reims_neighborhoods(session)
     if total != REIMS_OFFICIAL_NEIGHBORHOOD_COUNT:
@@ -101,6 +106,7 @@ async def seed_reims_neighborhoods_catalog(
         editorial_applied=editorial_applied,
         hero_assets_applied=hero_assets_applied,
         merged_deactivated=merged_deactivated,
+        community_tags_assigned=community_tags_assigned,
     )
     logger.info(
         "reims_neighborhoods_catalog_seed_completed",
@@ -111,6 +117,7 @@ async def seed_reims_neighborhoods_catalog(
             "editorial_applied": result.editorial_applied,
             "hero_assets_applied": result.hero_assets_applied,
             "merged_deactivated": result.merged_deactivated,
+            "community_tags_assigned": result.community_tags_assigned,
         },
     )
     return result

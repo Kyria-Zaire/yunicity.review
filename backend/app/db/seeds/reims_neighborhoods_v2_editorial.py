@@ -16,6 +16,7 @@ from app.core.neighborhood_v2_constants import (
     NeighborhoodMood,
 )
 from app.db.seeds.reims_neighborhoods_3d_content import REIMS_NEIGHBORHOOD_3D_CONTENT
+from app.db.seeds.reims_neighborhoods_3e_content import REIMS_NEIGHBORHOOD_3E_CONTENT
 from app.models.neighborhood import Neighborhood
 from app.models.neighborhood_editorial import (
     NeighborhoodAlias,
@@ -27,6 +28,14 @@ from app.models.neighborhood_editorial import (
 logger = logging.getLogger(__name__)
 
 REIMS_CITY = "Reims"
+
+# Contenu editorial riche (official_label, ambiance, short_description, long_story, 6 colonnes 3a),
+# applique PAR-DESSUS la ligne de base. 3d = 9 quartiers reutilises, 3e = 3 quartiers crees ;
+# slugs disjoints, donc la fusion ne peut pas se recouvrir.
+_EDITORIAL_CONTENT_BY_SLUG: dict[str, dict[str, Any]] = {
+    **REIMS_NEIGHBORHOOD_3D_CONTENT,
+    **REIMS_NEIGHBORHOOD_3E_CONTENT,
+}
 
 _DEFAULT_TIMELINE: tuple[dict[str, Any], ...] = (
     {"year": 1900, "title": "Origines du quartier", "body": "Le quartier prend forme autour de son identité locale.", "sort_order": 0},
@@ -190,6 +199,54 @@ REIMS_NEIGHBORHOOD_V2_EDITORIAL: tuple[dict[str, Any], ...] = (
         "aliases": ({"alias": "Maison Blanche", "is_primary": True, "sort_order": 0},),
         "moods": (NeighborhoodMood.FAMILY.value, NeighborhoodMood.CALM.value, NeighborhoodMood.CREATIVE.value),
     },
+    # QUARTIER-01 phase 3e — les 3 quartiers crees en 3b. long_story + featured_quote ici ;
+    # les autres colonnes editoriales (official_label, ambiance, short_description, 6 colonnes 3a)
+    # vivent dans REIMS_NEIGHBORHOOD_3E_CONTENT et sont appliquees par-dessus. timeline = defaut.
+    {
+        "slug": "cernay-jean-jaures",
+        "featured_quote": "Le marché, les commerces et la vie de quartier au quotidien.",
+        "long_story": (
+            "Convivial, commerçant, authentique et familial. Le quartier Cernay – Jamin – "
+            "Jean-Jaurès – Épinettes est situé au nord-est du centre-ville. C'est l'un des "
+            "quartiers les plus vivants de Reims, réputé pour son marché historique, ses "
+            "nombreux commerces indépendants, ses cafés de quartier et son ambiance conviviale."
+        ),
+        "aliases": (
+            {"alias": "Boulingrin", "is_primary": True, "sort_order": 0},
+            {"alias": "Jamin", "is_primary": False, "sort_order": 1},
+            {"alias": "Épinettes", "is_primary": False, "sort_order": 2},
+        ),
+        "moods": (NeighborhoodMood.GOURMET.value, NeighborhoodMood.FESTIVE.value, NeighborhoodMood.FAMILY.value),
+    },
+    {
+        "slug": "courlancy",
+        "featured_quote": "Entre stade, parcs et Bois d'Amour, Reims au grand air.",
+        "long_story": (
+            "Sportif, nature, familial et élégant. Le quartier Courlancy – Porte de Paris – "
+            "Bois d'Amour est situé au sud-ouest du Centre-Ville. Il est reconnu pour son "
+            "équilibre entre nature, sport, patrimoine et habitat. On y retrouve le stade du "
+            "Stade de Reims, de vastes espaces verts, des quartiers résidentiels recherchés "
+            "et des établissements de santé majeurs."
+        ),
+        "aliases": (
+            {"alias": "Porte de Paris", "is_primary": True, "sort_order": 0},
+            {"alias": "Bois d'Amour", "is_primary": False, "sort_order": 1},
+        ),
+        "moods": (NeighborhoodMood.FAMILY.value, NeighborhoodMood.CALM.value, NeighborhoodMood.HERITAGE.value),
+    },
+    {
+        "slug": "chatillons",
+        "featured_quote": "Un quartier qui se réinvente, porté par ses habitants.",
+        "long_story": (
+            "Solidaire, jeune, familial et en transformation. Le quartier des Châtillons est "
+            "situé au sud de Reims. Construit dans les années 1960-1970, il fait aujourd'hui "
+            "l'objet d'importants projets de renouvellement urbain. Il se distingue par une "
+            "forte vie associative, des équipements de proximité et une population jeune et "
+            "multiculturelle."
+        ),
+        "aliases": ({"alias": "Les Châtillons", "is_primary": True, "sort_order": 0},),
+        "moods": (NeighborhoodMood.FAMILY.value, NeighborhoodMood.CREATIVE.value, NeighborhoodMood.FESTIVE.value),
+    },
 )
 
 
@@ -268,13 +325,13 @@ async def _apply_editorial_row(session: AsyncSession, hood: Neighborhood, row: d
             )
         )
 
-    # Phase 3d : contenu editorial des 9 quartiers reutilises. Applique PAR-DESSUS les champs
+    # Contenu editorial riche (3d : 9 reutilises · 3e : 3 crees). Applique PAR-DESSUS les champs
     # ci-dessus (override long_story/short_description, pose official_label/ambiance + les 6
-    # colonnes 3a). Ne touche ni moods, ni timeline, ni aliases. Les 3 quartiers fusionnes ne
-    # sont pas dans ce dict -> .get() renvoie None, ils gardent leur contenu de base.
-    content_3d = REIMS_NEIGHBORHOOD_3D_CONTENT.get(str(row["slug"]))
-    if content_3d is not None:
-        for field, value in content_3d.items():
+    # colonnes 3a). Ne touche ni moods, ni timeline, ni aliases. Un quartier absent du dict
+    # (les 3 fusionnes) garde son contenu de base.
+    content = _EDITORIAL_CONTENT_BY_SLUG.get(str(row["slug"]))
+    if content is not None:
+        for field, value in content.items():
             setattr(hood, field, value)
 
 

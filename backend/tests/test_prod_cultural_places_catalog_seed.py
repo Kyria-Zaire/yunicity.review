@@ -16,6 +16,7 @@ from app.db.seeds.reims_cultural_places_catalog import (
     REIMS_OFFICIAL_CULTURAL_PLACE_COUNT,
     seed_reims_cultural_places_catalog,
 )
+from app.db.seeds.reims_neighborhood_landmarks import REIMS_NEIGHBORHOOD_LANDMARKS
 from app.db.seeds.reims_neighborhoods import seed_reims_neighborhoods
 from app.db.session import get_engine
 from app.main import create_app
@@ -25,6 +26,8 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 pytestmark_integration = [pytest.mark.integration, pytest.mark.asyncio]
+
+_EXPECTED_LANDMARKS = sum(len(places) for places in REIMS_NEIGHBORHOOD_LANDMARKS.values())
 
 
 @pytest.mark.asyncio
@@ -107,6 +110,8 @@ async def test_prod_cultural_places_catalog_seed_creates_twelve() -> None:
     assert result.places_official == REIMS_OFFICIAL_CULTURAL_PLACE_COUNT
     assert count == REIMS_OFFICIAL_CULTURAL_PLACE_COUNT
     assert result.places_created == REIMS_OFFICIAL_CULTURAL_PLACE_COUNT
+    # 3e : landmarks lies apres le seed des lieux (les quartiers ont ete seedes plus haut).
+    assert result.landmarks_linked == _EXPECTED_LANDMARKS
 
 
 @pytest.mark.asyncio
@@ -141,6 +146,8 @@ async def test_prod_cultural_places_catalog_seed_idempotent() -> None:
     assert first.places_created == REIMS_OFFICIAL_CULTURAL_PLACE_COUNT
     assert second.places_created == 0
     assert second.places_updated == REIMS_OFFICIAL_CULTURAL_PLACE_COUNT
+    # Landmarks stables (DELETE+INSERT idempotent), pas d'accumulation au 2e passage.
+    assert first.landmarks_linked == second.landmarks_linked == _EXPECTED_LANDMARKS
 
 
 @pytest.mark.asyncio
