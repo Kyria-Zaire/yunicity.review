@@ -134,6 +134,12 @@ async def run(
                 await seed_reims_partners_catalog(session, settings)
             else:
                 from app.db.seeds.reims_cultural_places import seed_reims_cultural_places
+                from app.db.seeds.reims_neighborhood_community_tags import (
+                    seed_reims_neighborhood_community_tags,
+                )
+                from app.db.seeds.reims_neighborhood_landmarks import (
+                    seed_reims_neighborhood_landmarks,
+                )
                 from app.db.seeds.reims_neighborhoods import seed_reims_neighborhoods
 
                 await seed_auth_rbac(session)
@@ -146,7 +152,10 @@ async def run(
                 await seed_reims_neighborhoods(session, settings=settings)
                 await seed_reims_neighborhoods_v2_editorial(session)
                 await seed_reims_neighborhoods_v2_hero_assets(session, settings=settings)
+                await seed_reims_neighborhood_community_tags(session)
                 await seed_reims_cultural_places(session)
+                # Landmarks apres les cultural_places (dependance) et les quartiers.
+                await seed_reims_neighborhood_landmarks(session)
                 await seed_reims_signed_partners(session)
                 await seed_reims_activation_waves(session)
                 await seed_reims_partner_offers(session)

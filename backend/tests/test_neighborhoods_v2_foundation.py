@@ -93,7 +93,7 @@ async def test_v2_editorial_seed_boulingrin(auth_client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_v2_editorial_seed_all_twelve(auth_client: AsyncClient) -> None:
+async def test_v2_editorial_seed_covers_every_neighborhood(auth_client: AsyncClient) -> None:
     engine = get_engine()
     assert engine is not None
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -111,9 +111,13 @@ async def test_v2_editorial_seed_all_twelve(auth_client: AsyncClient) -> None:
                 )
             )
         ).scalar_one()
-        assert with_story == 12
+        # Chaque entree editoriale pose un long_story (pas de nombre fige : le catalogue grandit).
+        assert with_story == len(REIMS_NEIGHBORHOOD_V2_EDITORIAL)
 
-    assert len(REIMS_NEIGHBORHOOD_V2_EDITORIAL) == 12
+    # Couverture totale : chaque quartier du catalogue a une entree editoriale, et inversement.
+    editorial_slugs = {row["slug"] for row in REIMS_NEIGHBORHOOD_V2_EDITORIAL}
+    base_slugs = {row["slug"] for row in REIMS_NEIGHBORHOOD_SEED}
+    assert editorial_slugs == base_slugs
 
 
 @pytest.mark.asyncio
