@@ -94,6 +94,13 @@ def to_neighborhood_response(
         updated_at=row.updated_at,
         long_story=row.long_story if include_editorial else None,
         featured_quote=row.featured_quote if include_editorial else None,
+        # Les 6 colonnes 3a suivent le meme gate editorial (colonnes directes, pas de relation).
+        audience=row.audience if include_editorial else None,
+        neighborhood_type=row.neighborhood_type if include_editorial else None,
+        local_life=row.local_life if include_editorial else None,
+        green_spaces=row.green_spaces if include_editorial else None,
+        mobility=row.mobility if include_editorial else None,
+        daily_life=row.daily_life if include_editorial else None,
         aliases=aliases,
         moods=moods,
         timeline=timeline,

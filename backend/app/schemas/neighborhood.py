@@ -50,20 +50,36 @@ class NeighborhoodTimelineItem(BaseModel):
     display_order: int
 
 
+class NeighborhoodTribeSuggestionItem(BaseModel):
+    id: uuid.UUID
+    slug: str
+    name: str
+
+
 class NeighborhoodLandmarkItem(BaseModel):
-    """Lieu emblematique — reference vers cultural_places (QUARTIER-01 phase 3a)."""
+    """Lieu emblematique — reference vers cultural_places (QUARTIER-01 phase 3a/3f).
+
+    Porte l'attribution (photo_credit + image_license) AVEC l'image : une photo CC BY-SA
+    reutilisee — y compris en cover de quartier cote frontend — doit toujours afficher son credit.
+    """
 
     slug: str
     name: str
     category: str
     hero_image_url: str | None = None
+    photo_credit: str | None = None
+    image_license: str | None = None
 
 
 class NeighborhoodCommunityTagItem(BaseModel):
-    """Tag communaute — sert a suggerer des tribus a la lecture, sans lien dur."""
+    """Tag communaute + tribus publiques suggerees, resolues par categorie a la lecture (3f).
+
+    tribes vide = compteur honnete : aucune tribu publique de cette categorie dans la ville.
+    """
 
     slug: str
     label: str
+    tribes: list[NeighborhoodTribeSuggestionItem] = Field(default_factory=list)
 
 
 class NeighborhoodResponse(BaseModel):
@@ -261,12 +277,6 @@ class NeighborhoodDetailContributionItem(BaseModel):
     created_at: datetime
 
 
-class NeighborhoodDetailTribeItem(BaseModel):
-    id: uuid.UUID
-    slug: str
-    name: str
-
-
 class NeighborhoodDetailCreatorItem(BaseModel):
     id: uuid.UUID
     username: str | None = None
@@ -284,14 +294,18 @@ class NeighborhoodDetailStats(BaseModel):
 
 
 class NeighborhoodDetailResponse(NeighborhoodResponse):
-    """Quartier vivant — superset V1 + blocs structurés (FEATURE-QUARTIERS-V2 / Q2-S1-03)."""
+    """Quartier vivant — superset V1 + blocs structurés (FEATURE-QUARTIERS-V2 / Q2-S1-03).
+
+    Les 6 colonnes 3a, community_tags (avec tribus suggérées) et landmarks (avec crédit) sont
+    hérités de NeighborhoodResponse et peuplés ici par le service détail (QUARTIER-01 phase 3f).
+    """
 
     hero: NeighborhoodDetailHero | None = None
     history: NeighborhoodDetailHistory | None = None
     videos: list[NeighborhoodDetailVideoItem] = Field(default_factory=list)
     places: list[NeighborhoodDetailPlaceItem] = Field(default_factory=list)
     events: list[NeighborhoodDetailEventItem] = Field(default_factory=list)
-    tribes: list[NeighborhoodDetailTribeItem] = Field(default_factory=list)
+    tribes: list[NeighborhoodTribeSuggestionItem] = Field(default_factory=list)
     creators: list[NeighborhoodDetailCreatorItem] = Field(default_factory=list)
     passport_offers: list[NeighborhoodDetailPassportOfferItem] = Field(default_factory=list)
     contributions: list[NeighborhoodDetailContributionItem] = Field(default_factory=list)
