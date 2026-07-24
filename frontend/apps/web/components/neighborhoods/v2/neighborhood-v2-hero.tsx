@@ -11,7 +11,9 @@ import {
   formatNeighborhoodV2MoodLabels,
   mapNeighborhoodDetailVideosToFeedItems,
   NEIGHBORHOOD_V2_EXPLORE_ANCHOR,
+  NEIGHBORHOOD_V2_PHOTO_CREDIT_PREFIX,
   resolveNeighborhoodV2HeroImage,
+  resolveNeighborhoodV2HeroImageCredit,
   resolveNeighborhoodV2HeroQuote,
 } from "@yunicity/utils";
 import { useMemo } from "react";
@@ -26,6 +28,7 @@ export function NeighborhoodV2Hero({ detail }: NeighborhoodV2HeroProps) {
   const aliases = detail.hero?.aliases ?? detail.aliases ?? [];
   const moodSlugs = detail.hero?.moods ?? detail.moods ?? [];
   const heroImage = resolveNeighborhoodV2HeroImage(detail);
+  const heroCredit = resolveNeighborhoodV2HeroImageCredit(detail);
   const quote = resolveNeighborhoodV2HeroQuote(detail);
   const aliasLine = formatNeighborhoodV2AliasLine(aliases);
   const moodLabels = formatNeighborhoodV2MoodLabels(moodSlugs);
@@ -56,6 +59,12 @@ export function NeighborhoodV2Hero({ detail }: NeighborhoodV2HeroProps) {
           className="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-neutral-950/25 to-transparent"
           aria-hidden
         />
+
+        {heroCredit?.photo_credit ? (
+          <p className="absolute right-2 top-2 max-w-[70%] truncate rounded bg-black/40 px-2 py-1 text-[10px] font-medium text-white/90 backdrop-blur-sm">
+            {NEIGHBORHOOD_V2_PHOTO_CREDIT_PREFIX} {heroCredit.photo_credit}
+          </p>
+        ) : null}
 
         <div className="absolute inset-x-0 bottom-0 space-y-2 p-4 sm:p-6">
           <span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">

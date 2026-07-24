@@ -20,6 +20,34 @@ export interface NeighborhoodTimelineItem {
   display_order: number;
 }
 
+/** Tribu publique suggérée par un tag communauté (QUARTIER-01 phase 3f). */
+export interface NeighborhoodTribeSuggestionItem {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+/**
+ * Lieu emblématique dérivé d'un cultural_place (QUARTIER-01 phase 3a/3f).
+ * L'attribution (photo_credit + image_license) voyage AVEC l'image : une photo CC BY-SA
+ * réutilisée — y compris en cover de quartier — doit toujours afficher son crédit.
+ */
+export interface NeighborhoodLandmarkItem {
+  slug: string;
+  name: string;
+  category: string;
+  hero_image_url: string | null;
+  photo_credit: string | null;
+  image_license: string | null;
+}
+
+/** Tag communauté + tribus publiques suggérées (résolues par catégorie). tribes [] = honnête. */
+export interface NeighborhoodCommunityTagItem {
+  slug: string;
+  label: string;
+  tribes: NeighborhoodTribeSuggestionItem[];
+}
+
 export interface Neighborhood {
   id: string;
   city: string;
@@ -38,9 +66,18 @@ export interface Neighborhood {
   updated_at: string;
   long_story?: string | null;
   featured_quote?: string | null;
+  // Identité et vie du quartier (QUARTIER-01 phase 3a), peuplées sur le détail (3f).
+  audience?: string | null;
+  neighborhood_type?: string | null;
+  local_life?: string | null;
+  green_spaces?: string | null;
+  mobility?: string | null;
+  daily_life?: string | null;
   aliases?: NeighborhoodAliasItem[];
   moods?: string[];
   timeline?: NeighborhoodTimelineItem[];
+  community_tags?: NeighborhoodCommunityTagItem[];
+  landmarks?: NeighborhoodLandmarkItem[];
 }
 
 export interface NeighborhoodListResponse {

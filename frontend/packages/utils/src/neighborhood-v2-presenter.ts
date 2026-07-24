@@ -1,11 +1,14 @@
 import type {
   LocalVideoFeedItem,
+  NeighborhoodCommunityTagItem,
   NeighborhoodDetail,
   NeighborhoodDetailHistory,
+  NeighborhoodLandmarkItem,
   NeighborhoodTimelineItem,
 } from "@yunicity/types";
 
 import { neighborhoodHasMapCoordinates, resolveNeighborhoodHeroImage } from "./neighborhood-detail";
+import { isPendingYunicityHostedCoverUrl } from "./map-media-url";
 
 export const NEIGHBORHOOD_V2_NOT_FOUND = "Ce quartier n'existe pas encore.";
 export const NEIGHBORHOOD_V2_BACK_TO_LIST = "Retour aux quartiers";
@@ -41,6 +44,32 @@ export const NEIGHBORHOOD_V2_PRACTICAL_PLACES = "Lieux à découvrir";
 export const NEIGHBORHOOD_V2_PRACTICAL_EVENTS = "Moments à venir";
 export const NEIGHBORHOOD_V2_PRACTICAL_MAP_CTA = "Voir sur la carte";
 export const NEIGHBORHOOD_V2_EXPLORE_ANCHOR = "neighborhood-explore";
+
+// QUARTIER-01 phase 3f — vie du quartier (6 colonnes 3a), incontournables (landmarks),
+// tags communautes (tribus suggerees) et credit photo du cover derive d'un landmark.
+export const NEIGHBORHOOD_V2_LIFE_TITLE = "Le quartier au quotidien";
+export const NEIGHBORHOOD_V2_LIFE_LABELS = {
+  neighborhood_type: "Type de quartier",
+  audience: "Pour qui",
+  local_life: "Commerces & services",
+  green_spaces: "Espaces verts",
+  mobility: "Mobilité",
+  daily_life: "Animations & vie de quartier",
+} as const;
+export const NEIGHBORHOOD_V2_LANDMARKS_TITLE = "Incontournables";
+export const NEIGHBORHOOD_V2_COMMUNITY_TAGS_TITLE = "Communautés du quartier";
+export const NEIGHBORHOOD_V2_COMMUNITY_TAG_EMPTY = "Aucune tribu pour le moment — à créer !";
+export const NEIGHBORHOOD_V2_PHOTO_CREDIT_PREFIX = "Photo :";
+
+// Ordre d'affichage des 6 colonnes de vie du quartier.
+export const NEIGHBORHOOD_V2_LIFE_FIELD_ORDER = [
+  "neighborhood_type",
+  "audience",
+  "local_life",
+  "green_spaces",
+  "mobility",
+  "daily_life",
+] as const satisfies readonly (keyof typeof NEIGHBORHOOD_V2_LIFE_LABELS)[];
 
 export const NEIGHBORHOOD_V2_HISTORY_COLLAPSE_CHARS = 250;
 
@@ -86,12 +115,49 @@ export function formatNeighborhoodV2ContributionsTitle(displayName: string): str
   return `${NEIGHBORHOOD_V2_CONTRIBUTIONS_TITLE} ${displayName}`;
 }
 
+/** Premier landmark disposant d'une image — source de cover réutilisable, avec son crédit. */
+export function firstNeighborhoodV2LandmarkWithImage(
+  detail: NeighborhoodDetail,
+): NeighborhoodLandmarkItem | null {
+  return (detail.landmarks ?? []).find((lm) => Boolean(lm.hero_image_url?.trim())) ?? null;
+}
+
 export function resolveNeighborhoodV2HeroImage(detail: NeighborhoodDetail): string | null {
-  const cover = detail.hero?.cover_image_url ?? detail.cover_image_url;
-  if (cover?.trim()) {
-    return cover.trim();
+  const cover = (detail.hero?.cover_image_url ?? detail.cover_image_url)?.trim() || null;
+  // Cover « pending » (placeholder sans fichier committé) + landmark disponible : réutiliser
+  // l'image du landmark (QUARTIER-01 phase 3f). Ne touche NI un cover réel (les 12 quartiers,
+  // pending-flaggés mais servis en 200, restent affichés faute de landmark), NI un quartier sans
+  // landmark (chatillons reste sur le fallback gradient de CulturalImage via son cover 404).
+  if (cover && isPendingYunicityHostedCoverUrl(cover)) {
+    const landmark = firstNeighborhoodV2LandmarkWithImage(detail);
+    if (landmark?.hero_image_url?.trim()) {
+      return landmark.hero_image_url.trim();
+    }
+  }
+  if (cover) {
+    return cover;
   }
   return resolveNeighborhoodHeroImage(detail);
+}
+
+/** Crédit du cover UNIQUEMENT quand il est dérivé d'un landmark (obligation CC BY-SA). */
+export function resolveNeighborhoodV2HeroImageCredit(
+  detail: NeighborhoodDetail,
+): { photo_credit: string | null; image_license: string | null } | null {
+  const cover = (detail.hero?.cover_image_url ?? detail.cover_image_url)?.trim() || null;
+  if (!cover || !isPendingYunicityHostedCoverUrl(cover)) {
+    return null;
+  }
+  const landmark = firstNeighborhoodV2LandmarkWithImage(detail);
+  if (!landmark?.hero_image_url?.trim()) {
+    return null;
+  }
+  const credit = landmark.photo_credit?.trim() || null;
+  const license = landmark.image_license?.trim() || null;
+  if (!credit && !license) {
+    return null;
+  }
+  return { photo_credit: credit, image_license: license };
 }
 
 export function resolveNeighborhoodV2HeroQuote(detail: NeighborhoodDetail): string | null {
@@ -240,7 +306,47 @@ export function hasNeighborhoodV2ExploreContent(detail: NeighborhoodDetail): boo
 }
 
 export function hasNeighborhoodV2LocalLife(detail: NeighborhoodDetail): boolean {
-  return detail.tribes.length > 0 || detail.creators.length > 0;
+  return (
+    detail.tribes.length > 0 ||
+    detail.creators.length > 0 ||
+    (detail.community_tags ?? []).length > 0
+  );
+}
+
+export interface NeighborhoodV2LifeField {
+  key: keyof typeof NEIGHBORHOOD_V2_LIFE_LABELS;
+  label: string;
+  value: string;
+}
+
+/** Les 6 colonnes de vie du quartier non vides, dans l'ordre — vides masquées (jamais inventé). */
+export function listNeighborhoodV2LifeFields(detail: NeighborhoodDetail): NeighborhoodV2LifeField[] {
+  return NEIGHBORHOOD_V2_LIFE_FIELD_ORDER.flatMap((key) => {
+    const value = detail[key]?.trim();
+    return value ? [{ key, label: NEIGHBORHOOD_V2_LIFE_LABELS[key], value }] : [];
+  });
+}
+
+export function hasNeighborhoodV2Life(detail: NeighborhoodDetail): boolean {
+  return listNeighborhoodV2LifeFields(detail).length > 0;
+}
+
+export function hasNeighborhoodV2Landmarks(detail: NeighborhoodDetail): boolean {
+  return (detail.landmarks ?? []).length > 0;
+}
+
+export function listNeighborhoodV2Landmarks(detail: NeighborhoodDetail): NeighborhoodLandmarkItem[] {
+  return detail.landmarks ?? [];
+}
+
+export function hasNeighborhoodV2CommunityTags(detail: NeighborhoodDetail): boolean {
+  return (detail.community_tags ?? []).length > 0;
+}
+
+export function listNeighborhoodV2CommunityTags(
+  detail: NeighborhoodDetail,
+): NeighborhoodCommunityTagItem[] {
+  return detail.community_tags ?? [];
 }
 
 export function hasNeighborhoodV2Stats(detail: NeighborhoodDetail): boolean {

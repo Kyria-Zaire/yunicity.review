@@ -532,8 +532,11 @@ export type {
   NeighborhoodDetailTribeItem,
   NeighborhoodDetailVideoAuthor,
   NeighborhoodDetailVideoItem,
+  NeighborhoodCommunityTagItem,
+  NeighborhoodLandmarkItem,
   NeighborhoodListResponse,
   NeighborhoodTimelineItem,
+  NeighborhoodTribeSuggestionItem,
 } from "./neighborhood";
 
 export type {

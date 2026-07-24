@@ -3,12 +3,15 @@
 import { CulturalImage } from "@/components/culture/cultural-image";
 import type { NeighborhoodDetail } from "@yunicity/types";
 import {
+  NEIGHBORHOOD_V2_COMMUNITY_TAG_EMPTY,
+  NEIGHBORHOOD_V2_COMMUNITY_TAGS_TITLE,
   NEIGHBORHOOD_V2_CREATOR_CTA,
   NEIGHBORHOOD_V2_CREATORS_LABEL,
   NEIGHBORHOOD_V2_LOCAL_LIFE_TITLE,
   NEIGHBORHOOD_V2_TRIBES_LABEL,
   buildCreatorProfileHref,
   hasNeighborhoodV2LocalLife,
+  listNeighborhoodV2CommunityTags,
   tribeHref,
 } from "@yunicity/utils";
 import Link from "next/link";
@@ -22,9 +25,42 @@ export function NeighborhoodV2LocalLifeSection({ detail }: NeighborhoodV2LocalLi
     return null;
   }
 
+  const communityTags = listNeighborhoodV2CommunityTags(detail);
+
   return (
     <section className="space-y-6 rounded-2xl border border-neutral-200/90 bg-white px-5 py-6 shadow-sm sm:px-6">
       <h2 className="text-lg font-bold tracking-tight text-neutral-900">{NEIGHBORHOOD_V2_LOCAL_LIFE_TITLE}</h2>
+
+      {communityTags.length > 0 ? (
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+            {NEIGHBORHOOD_V2_COMMUNITY_TAGS_TITLE}
+          </h3>
+          <ul className="space-y-3">
+            {communityTags.map((tag) => (
+              <li key={tag.slug} className="space-y-2">
+                <p className="text-sm font-bold text-neutral-800">{tag.label}</p>
+                {tag.tribes.length > 0 ? (
+                  <ul className="flex flex-wrap gap-2">
+                    {tag.tribes.map((tribe) => (
+                      <li key={tribe.id}>
+                        <Link
+                          href={tribeHref(tribe.slug, detail.city)}
+                          className="inline-flex rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm font-medium text-neutral-800 transition hover:border-yunicity-primary/40 hover:text-yunicity-primary"
+                        >
+                          {tribe.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-neutral-500">{NEIGHBORHOOD_V2_COMMUNITY_TAG_EMPTY}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {detail.tribes.length > 0 ? (
         <div className="space-y-3">
