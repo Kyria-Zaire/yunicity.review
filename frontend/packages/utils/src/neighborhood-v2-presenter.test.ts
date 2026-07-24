@@ -6,12 +6,20 @@ import {
   formatNeighborhoodV2AliasLine,
   formatNeighborhoodV2MoodLabels,
   buildNeighborhoodV2SeoDescription,
+  hasNeighborhoodV2Life,
+  hasNeighborhoodV2LocalLife,
+  listNeighborhoodV2LifeFields,
   mapNeighborhoodDetailVideosToFeedItems,
+  resolveNeighborhoodV2HeroImage,
+  resolveNeighborhoodV2HeroImageCredit,
   resolveNeighborhoodV2HistoryStory,
   resolveNeighborhoodV2HistoryStoryForDisplay,
   sortNeighborhoodV2Timeline,
   truncateNeighborhoodV2Story,
 } from "./neighborhood-v2-presenter";
+
+const LANDMARK_COVER = "https://media.yunicity.city/places/reims/porte-de-paris/cover.jpg";
+const REAL_CDN_COVER = "https://media.yunicity.city/neighborhoods/reims/centre-ville/hero.jpg";
 
 const BASE_DETAIL: NeighborhoodDetail = {
   id: "hood-1",
@@ -68,6 +76,20 @@ const BASE_DETAIL: NeighborhoodDetail = {
   passport_offers: [],
   contributions: [],
   stats: null,
+};
+
+const DETAIL_WITH_LANDMARK: NeighborhoodDetail = {
+  ...BASE_DETAIL,
+  landmarks: [
+    {
+      slug: "porte-de-paris",
+      name: "Porte de Paris",
+      category: "culture",
+      hero_image_url: LANDMARK_COVER,
+      photo_credit: "Mathieu Kappler / CC BY-SA 4.0 via Wikimedia Commons",
+      image_license: "CC BY-SA 4.0",
+    },
+  ],
 };
 
 describe("neighborhood-v2-presenter", () => {
@@ -130,5 +152,52 @@ describe("neighborhood-v2-presenter", () => {
 
   it("builds SEO description from featured quote first", () => {
     expect(buildNeighborhoodV2SeoDescription(BASE_DETAIL)).toBe("Les halles retrouvent leur rythme.");
+  });
+});
+
+describe("neighborhood-v2-presenter — phase 3f", () => {
+  it("keeps a pending cover when there is no landmark (12 quartiers inchangés)", () => {
+    expect(resolveNeighborhoodV2HeroImage(BASE_DETAIL)).toBe(BASE_DETAIL.cover_image_url);
+    expect(resolveNeighborhoodV2HeroImageCredit(BASE_DETAIL)).toBeNull();
+  });
+
+  it("derives the cover from the first landmark when the cover is pending", () => {
+    expect(resolveNeighborhoodV2HeroImage(DETAIL_WITH_LANDMARK)).toBe(LANDMARK_COVER);
+    const credit = resolveNeighborhoodV2HeroImageCredit(DETAIL_WITH_LANDMARK);
+    expect(credit?.photo_credit).toContain("Mathieu Kappler");
+    expect(credit?.image_license).toBe("CC BY-SA 4.0");
+  });
+
+  it("never overrides a real (non-pending) cover with a landmark image", () => {
+    const detail: NeighborhoodDetail = {
+      ...DETAIL_WITH_LANDMARK,
+      cover_image_url: REAL_CDN_COVER,
+      hero: { ...BASE_DETAIL.hero!, cover_image_url: REAL_CDN_COVER },
+    };
+    expect(resolveNeighborhoodV2HeroImage(detail)).toBe(REAL_CDN_COVER);
+    expect(resolveNeighborhoodV2HeroImageCredit(detail)).toBeNull();
+  });
+
+  it("lists only non-empty life fields, in order", () => {
+    const detail: NeighborhoodDetail = {
+      ...BASE_DETAIL,
+      neighborhood_type: "Quartier résidentiel",
+      audience: "  ",
+      green_spaces: "Parc de Champagne",
+    };
+    const fields = listNeighborhoodV2LifeFields(detail);
+    expect(fields.map((f) => f.key)).toEqual(["neighborhood_type", "green_spaces"]);
+    expect(fields[0]!.label).toBe("Type de quartier");
+    expect(hasNeighborhoodV2Life(detail)).toBe(true);
+    expect(hasNeighborhoodV2Life(BASE_DETAIL)).toBe(false);
+  });
+
+  it("counts community tags as local life", () => {
+    expect(hasNeighborhoodV2LocalLife(BASE_DETAIL)).toBe(false);
+    const detail: NeighborhoodDetail = {
+      ...BASE_DETAIL,
+      community_tags: [{ slug: "sport", label: "Sport", tribes: [] }],
+    };
+    expect(hasNeighborhoodV2LocalLife(detail)).toBe(true);
   });
 });

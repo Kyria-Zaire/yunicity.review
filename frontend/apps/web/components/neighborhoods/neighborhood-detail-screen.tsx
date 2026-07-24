@@ -6,6 +6,8 @@ import { NeighborhoodV2BelongingSection } from "@/components/neighborhoods/v2/ne
 import { NeighborhoodV2ExploreSection } from "@/components/neighborhoods/v2/neighborhood-v2-explore-section";
 import { NeighborhoodV2Hero } from "@/components/neighborhoods/v2/neighborhood-v2-hero";
 import { NeighborhoodV2HistorySection } from "@/components/neighborhoods/v2/neighborhood-v2-history-section";
+import { NeighborhoodV2LandmarksSection } from "@/components/neighborhoods/v2/neighborhood-v2-landmarks-section";
+import { NeighborhoodV2LifeSection } from "@/components/neighborhoods/v2/neighborhood-v2-life-section";
 import { NeighborhoodV2LocalLifeSection } from "@/components/neighborhoods/v2/neighborhood-v2-local-life-section";
 import { NeighborhoodV2PracticalSection } from "@/components/neighborhoods/v2/neighborhood-v2-practical-section";
 import { NeighborhoodV2Skeleton } from "@/components/neighborhoods/v2/neighborhood-v2-skeleton";
@@ -139,6 +141,10 @@ export function NeighborhoodDetailScreen({ slug, city }: { slug: string; city: s
       {history ? <NeighborhoodV2HistorySection history={history} /> : null}
 
       <NeighborhoodV2TimelineSection timeline={timeline} />
+
+      <NeighborhoodV2LifeSection detail={detail} />
+
+      <NeighborhoodV2LandmarksSection detail={detail} />
 
       <NeighborhoodV2ExploreSection detail={detail} />
 
