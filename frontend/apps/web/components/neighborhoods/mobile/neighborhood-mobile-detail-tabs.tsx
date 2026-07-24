@@ -16,9 +16,13 @@ import {
   NEIGHBORHOOD_DETAIL_MOBILE_TAB_INFO,
   NEIGHBORHOOD_DETAIL_MOBILE_TAB_PLACES,
   NEIGHBORHOOD_DETAIL_MOBILE_TAB_PUBLICATIONS,
+  NEIGHBORHOOD_V2_COMMUNITY_TAG_EMPTY,
+  NEIGHBORHOOD_V2_COMMUNITY_TAGS_TITLE,
   NEIGHBORHOOD_V2_CONTRIBUTION_SUCCESS_MESSAGE,
   NEIGHBORHOOD_V2_EVENT_CTA,
   NEIGHBORHOOD_V2_HISTORY_TITLE,
+  NEIGHBORHOOD_V2_LANDMARKS_TITLE,
+  NEIGHBORHOOD_V2_PHOTO_CREDIT_PREFIX,
   NEIGHBORHOOD_V2_PLACE_CTA,
   NEIGHBORHOOD_V2_PRACTICAL_MAP_CTA,
   NEIGHBORHOOD_V2_PRACTICAL_TITLE,
@@ -26,9 +30,13 @@ import {
   buildNeighborhoodDetailMapUrl,
   buildPublicPlaceHref,
   formatEventDateRange,
+  listNeighborhoodV2CommunityTags,
+  listNeighborhoodV2Landmarks,
+  listNeighborhoodV2LifeFields,
   resolveCulturalPlaceDisplayUrl,
   resolveNeighborhoodV2HistoryStoryForDisplay,
   selectApprovedContributionsForDisplay,
+  tribeHref,
   type NeighborhoodMobileDetailTabId,
   type NeighborhoodMobileActivityItem,
   type NeighborhoodMobileFeaturedCard,
@@ -77,6 +85,9 @@ export function NeighborhoodMobileDetailTabs({
   const displayName = detail.hero?.display_name ?? detail.display_name;
   const contributions = selectApprovedContributionsForDisplay(detail.contributions);
   const history = resolveNeighborhoodV2HistoryStoryForDisplay(detail);
+  const lifeFields = listNeighborhoodV2LifeFields(detail);
+  const landmarks = listNeighborhoodV2Landmarks(detail);
+  const communityTags = listNeighborhoodV2CommunityTags(detail);
 
   const loadPassportEligibility = useCallback(async () => {
     if (!user) {
@@ -131,6 +142,38 @@ export function NeighborhoodMobileDetailTabs({
       {tab === "featured" ? (
         <div className="space-y-5">
           <NeighborhoodMobileDetailFeaturedRail items={featuredCards} />
+
+          {communityTags.length > 0 ? (
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-neutral-900">
+                {NEIGHBORHOOD_V2_COMMUNITY_TAGS_TITLE}
+              </h3>
+              <ul className="space-y-3">
+                {communityTags.map((communityTag) => (
+                  <li key={communityTag.slug} className="space-y-2">
+                    <p className="text-sm font-bold text-neutral-800">{communityTag.label}</p>
+                    {communityTag.tribes.length > 0 ? (
+                      <ul className="flex flex-wrap gap-2">
+                        {communityTag.tribes.map((tribe) => (
+                          <li key={tribe.id}>
+                            <Link
+                              href={tribeHref(tribe.slug, detail.city)}
+                              className="inline-flex rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs font-medium text-neutral-800"
+                            >
+                              {tribe.name}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs text-neutral-500">{NEIGHBORHOOD_V2_COMMUNITY_TAG_EMPTY}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           <NeighborhoodMobileDetailActivityList items={activityItems} />
           {!isMember && onJoin ? (
             <NeighborhoodMobileDetailJoinBanner
@@ -184,7 +227,42 @@ export function NeighborhoodMobileDetailTabs({
       ) : null}
 
       {tab === "places" ? (
-        <div className="space-y-3">
+        <div className="space-y-5">
+          {landmarks.length > 0 ? (
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-neutral-900">{NEIGHBORHOOD_V2_LANDMARKS_TITLE}</h3>
+              <ul className="space-y-3">
+                {landmarks.map((landmark) => (
+                  <li
+                    key={landmark.slug}
+                    className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white"
+                  >
+                    <div className="relative aspect-[16/10] w-full bg-neutral-100">
+                      {landmark.hero_image_url ? (
+                        <CulturalImage
+                          src={landmark.hero_image_url}
+                          alt={landmark.name}
+                          placeName={landmark.name}
+                          className="absolute inset-0 size-full object-cover"
+                          sizes="100vw"
+                          showFallbackCaption={false}
+                        />
+                      ) : null}
+                    </div>
+                    <div className="space-y-1 p-3">
+                      <p className="text-sm font-bold text-neutral-900">{landmark.name}</p>
+                      {landmark.photo_credit ? (
+                        <p className="text-[11px] leading-snug text-neutral-500">
+                          {NEIGHBORHOOD_V2_PHOTO_CREDIT_PREFIX} {landmark.photo_credit}
+                        </p>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           {detail.places.length === 0 ? (
             <p className="text-sm text-neutral-500">{NEIGHBORHOOD_DETAIL_MOBILE_PLACES_EMPTY}</p>
           ) : (
@@ -267,6 +345,18 @@ export function NeighborhoodMobileDetailTabs({
               <dd className="mt-1 font-medium text-neutral-900">{displayName}</dd>
             </div>
           </dl>
+          {lifeFields.length > 0 ? (
+            <dl className="space-y-3 border-t border-neutral-100 pt-4 text-sm">
+              {lifeFields.map((field) => (
+                <div key={field.key}>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                    {field.label}
+                  </dt>
+                  <dd className="mt-1 leading-relaxed text-neutral-700">{field.value}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
           {history?.long_story ? (
             <div>
               <h3 className="text-sm font-bold text-neutral-900">{NEIGHBORHOOD_V2_HISTORY_TITLE}</h3>

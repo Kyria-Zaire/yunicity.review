@@ -6,6 +6,7 @@ import {
   formatNeighborhoodV2AliasLine,
   formatNeighborhoodV2MoodLabels,
   buildNeighborhoodV2SeoDescription,
+  deriveHeroImageFromLandmarkIfPending,
   hasNeighborhoodV2Life,
   hasNeighborhoodV2LocalLife,
   listNeighborhoodV2LifeFields,
@@ -156,6 +157,17 @@ describe("neighborhood-v2-presenter", () => {
 });
 
 describe("neighborhood-v2-presenter — phase 3f", () => {
+  it("shared core: returns the landmark only when the cover is pending and one exists", () => {
+    // Pending cover + landmark → le landmark (source unique image + crédit).
+    expect(deriveHeroImageFromLandmarkIfPending(DETAIL_WITH_LANDMARK, "/neighborhoods/reims/x/hero.jpg")?.slug).toBe(
+      "porte-de-paris",
+    );
+    // Cover réel (host media CDN) → jamais dérivé.
+    expect(deriveHeroImageFromLandmarkIfPending(DETAIL_WITH_LANDMARK, REAL_CDN_COVER)).toBeNull();
+    // Pending mais aucun landmark → null.
+    expect(deriveHeroImageFromLandmarkIfPending(BASE_DETAIL, "/neighborhoods/reims/x/hero.jpg")).toBeNull();
+  });
+
   it("keeps a pending cover when there is no landmark (12 quartiers inchangés)", () => {
     expect(resolveNeighborhoodV2HeroImage(BASE_DETAIL)).toBe(BASE_DETAIL.cover_image_url);
     expect(resolveNeighborhoodV2HeroImageCredit(BASE_DETAIL)).toBeNull();
