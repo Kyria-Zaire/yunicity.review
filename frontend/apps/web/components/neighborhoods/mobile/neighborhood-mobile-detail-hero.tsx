@@ -5,9 +5,11 @@ import type { NeighborhoodDetail } from "@yunicity/types";
 import {
   NEIGHBORHOOD_DETAIL_MOBILE_LOCATION,
   NEIGHBORHOOD_V2_OFFICIAL_BADGE,
+  NEIGHBORHOOD_V2_PHOTO_CREDIT_PREFIX,
   buildNeighborhoodMobileHeroDescription,
   buildNeighborhoodMobileHeroStatsLine,
   resolveNeighborhoodMobileHeroImage,
+  resolveNeighborhoodV2HeroImageCredit,
 } from "@yunicity/utils";
 import { MapPin, Users } from "lucide-react";
 
@@ -19,6 +21,7 @@ type NeighborhoodMobileDetailHeroProps = {
 export function NeighborhoodMobileDetailHero({ detail }: NeighborhoodMobileDetailHeroProps) {
   const displayName = detail.hero?.display_name ?? detail.display_name;
   const heroImage = resolveNeighborhoodMobileHeroImage(detail);
+  const heroCredit = resolveNeighborhoodV2HeroImageCredit(detail);
   const description = buildNeighborhoodMobileHeroDescription(detail);
   const statsLine = buildNeighborhoodMobileHeroStatsLine(detail.stats);
   const officialLabel = detail.hero?.official_label ?? NEIGHBORHOOD_V2_OFFICIAL_BADGE;
@@ -40,6 +43,12 @@ export function NeighborhoodMobileDetailHero({ detail }: NeighborhoodMobileDetai
           <div className="absolute inset-0 bg-neutral-800" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/95 via-neutral-950/45 to-neutral-900/15" />
+
+        {heroCredit?.photo_credit ? (
+          <p className="absolute right-2 top-2 max-w-[65%] truncate rounded bg-black/40 px-2 py-1 text-[10px] font-medium text-white/90 backdrop-blur-sm">
+            {NEIGHBORHOOD_V2_PHOTO_CREDIT_PREFIX} {heroCredit.photo_credit}
+          </p>
+        ) : null}
 
         <div className="relative flex min-h-[240px] flex-col justify-end p-4">
           <div className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-lg bg-white/95 text-yunicity-primary shadow-sm">

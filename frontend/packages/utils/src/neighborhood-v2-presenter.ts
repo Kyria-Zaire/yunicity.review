@@ -122,17 +122,36 @@ export function firstNeighborhoodV2LandmarkWithImage(
   return (detail.landmarks ?? []).find((lm) => Boolean(lm.hero_image_url?.trim())) ?? null;
 }
 
+function neighborhoodOwnCover(detail: NeighborhoodDetail): string | null {
+  return (detail.hero?.cover_image_url ?? detail.cover_image_url)?.trim() || null;
+}
+
+/**
+ * Cœur PARTAGÉ (desktop + mobile) de la règle de cover 3f : le landmark dont l'image doit
+ * REMPLACER le cover, quand le cover propre du quartier est « pending » (placeholder sans
+ * fichier committé). null sinon — l'appelant garde alors son cover ou son fallback.
+ *
+ * Un seul endroit pour la règle « pending + landmark » : les deux resolvers (desktop et, par
+ * délégation, mobile) l'appellent, donc image et crédit ne peuvent pas diverger. Ne touche NI
+ * un cover réel (les 12 quartiers, pending-flaggés mais servis en 200, n'ont pas de landmark),
+ * NI un quartier sans landmark (chatillons reste sur son fallback gradient).
+ */
+export function deriveHeroImageFromLandmarkIfPending(
+  detail: NeighborhoodDetail,
+  cover: string | null,
+): NeighborhoodLandmarkItem | null {
+  if (!cover || !isPendingYunicityHostedCoverUrl(cover)) {
+    return null;
+  }
+  const landmark = firstNeighborhoodV2LandmarkWithImage(detail);
+  return landmark?.hero_image_url?.trim() ? landmark : null;
+}
+
 export function resolveNeighborhoodV2HeroImage(detail: NeighborhoodDetail): string | null {
-  const cover = (detail.hero?.cover_image_url ?? detail.cover_image_url)?.trim() || null;
-  // Cover « pending » (placeholder sans fichier committé) + landmark disponible : réutiliser
-  // l'image du landmark (QUARTIER-01 phase 3f). Ne touche NI un cover réel (les 12 quartiers,
-  // pending-flaggés mais servis en 200, restent affichés faute de landmark), NI un quartier sans
-  // landmark (chatillons reste sur le fallback gradient de CulturalImage via son cover 404).
-  if (cover && isPendingYunicityHostedCoverUrl(cover)) {
-    const landmark = firstNeighborhoodV2LandmarkWithImage(detail);
-    if (landmark?.hero_image_url?.trim()) {
-      return landmark.hero_image_url.trim();
-    }
+  const cover = neighborhoodOwnCover(detail);
+  const landmark = deriveHeroImageFromLandmarkIfPending(detail, cover);
+  if (landmark) {
+    return landmark.hero_image_url!.trim();
   }
   if (cover) {
     return cover;
@@ -144,12 +163,8 @@ export function resolveNeighborhoodV2HeroImage(detail: NeighborhoodDetail): stri
 export function resolveNeighborhoodV2HeroImageCredit(
   detail: NeighborhoodDetail,
 ): { photo_credit: string | null; image_license: string | null } | null {
-  const cover = (detail.hero?.cover_image_url ?? detail.cover_image_url)?.trim() || null;
-  if (!cover || !isPendingYunicityHostedCoverUrl(cover)) {
-    return null;
-  }
-  const landmark = firstNeighborhoodV2LandmarkWithImage(detail);
-  if (!landmark?.hero_image_url?.trim()) {
+  const landmark = deriveHeroImageFromLandmarkIfPending(detail, neighborhoodOwnCover(detail));
+  if (!landmark) {
     return null;
   }
   const credit = landmark.photo_credit?.trim() || null;

@@ -1623,6 +1623,7 @@ export {
   listNeighborhoodV2CommunityTags,
   listNeighborhoodV2VisibleStatKeys,
   firstNeighborhoodV2LandmarkWithImage,
+  deriveHeroImageFromLandmarkIfPending,
   mapNeighborhoodDetailVideosToFeedItems,
   resolveNeighborhoodV2HeroImage,
   resolveNeighborhoodV2HeroImageCredit,
