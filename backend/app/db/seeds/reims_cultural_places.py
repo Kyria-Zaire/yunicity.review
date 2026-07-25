@@ -232,11 +232,14 @@ REIMS_CULTURAL_PLACES_SEED: tuple[dict[str, Any], ...] = (
         "description": (
             "Espace de médiation scientifique pour les familles et les curieux du ciel."
         ),
-        "address": "49 Rue du Général Ponty",
+        "address": "49 avenue du Général de Gaulle",
         "latitude": 49.24285,
         "longitude": 4.01563,
         "category": "museum",
-        "neighborhood_slug": "murigny",
+        # Rattachement corrige murigny -> maison-blanche : OSM point-in-polygon des coords
+        # (verifiees correctes vs Wikipedia) place le planetarium dans "Cite-Jardin de la
+        # Maison Blanche / La Haubette". murigny etait a 3,56 km (2e quartier le plus loin).
+        "neighborhood_slug": "maison-blanche",
         "is_featured": False,
     },
     {

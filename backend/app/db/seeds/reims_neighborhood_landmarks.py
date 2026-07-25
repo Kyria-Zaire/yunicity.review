@@ -9,9 +9,10 @@ Selection par quartier = liste "Les incontournables" du doc editorial (3d) CROIS
 catalogue des 23 lieux officiels ; l'ordre des landmarks suit celui de la liste. Un quartier
 dont les incontournables ne recoupent aucun lieu du catalogue n'a PAS d'entree (pas de landmark
 force) : chatillons (Place des Argonautes / Parc des Chatillons hors catalogue, decision 3e),
-et 5 des 9 reutilises -> murigny (lac / parc / complexe sportif hors catalogue ; planetarium
-rattache par FK mais absent de ses incontournables), chemin-vert, croix-rouge, orgeval,
-clairmarais. Meme traitement : pas de landmark plutot qu'un lieu non pertinent.
+et 5 des 9 reutilises -> murigny (lac / parc / complexe sportif hors catalogue), chemin-vert,
+croix-rouge, orgeval, clairmarais. Meme traitement : pas de landmark plutot qu'un lieu non
+pertinent. (Le planetarium, longtemps mal rattache a murigny par FK, a ete corrige vers
+maison-blanche -- cf. test_cultural_place_planetarium_attachment ; sans impact ici.)
 
 Garde-fou : un slug de lieu reference mais absent leve une RuntimeError (lien casse = bug de
 configuration, pas donnee silencieusement manquante). Tous les lieux references ici sont
