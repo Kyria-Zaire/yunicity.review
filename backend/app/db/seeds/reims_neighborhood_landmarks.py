@@ -5,13 +5,17 @@ ordonnes par quartier (cf. docstring migration 20260719_0058). A cabler APRES le
 cultural_places (les slugs references sont des lieux officiels), donc dans le catalog
 cultural-places, pas dans le catalog neighborhoods.
 
-Portee 3e : seuls les 3 quartiers crees. chatillons n'a aucun cultural_place source (Place des
-Argonautes / Parc des Chatillons absents du catalogue) -> aucun landmark (decision 3e, Founder).
-Les incontournables des 9 quartiers reutilises restent a cabler dans un lot ulterieur.
+Selection par quartier = liste "Les incontournables" du doc editorial (3d) CROISEE avec le
+catalogue des 23 lieux officiels ; l'ordre des landmarks suit celui de la liste. Un quartier
+dont les incontournables ne recoupent aucun lieu du catalogue n'a PAS d'entree (pas de landmark
+force) : chatillons (Place des Argonautes / Parc des Chatillons hors catalogue, decision 3e),
+et 5 des 9 reutilises -> murigny (lac / parc / complexe sportif hors catalogue ; planetarium
+rattache par FK mais absent de ses incontournables), chemin-vert, croix-rouge, orgeval,
+clairmarais. Meme traitement : pas de landmark plutot qu'un lieu non pertinent.
 
 Garde-fou : un slug de lieu reference mais absent leve une RuntimeError (lien casse = bug de
-configuration, pas donnee silencieusement manquante). Les 4 lieux ici sont officiels, donc
-garantis presents apres seed_reims_cultural_places_catalog.
+configuration, pas donnee silencieusement manquante). Tous les lieux references ici sont
+officiels, donc garantis presents apres seed_reims_cultural_places_catalog.
 """
 
 from __future__ import annotations
@@ -32,8 +36,22 @@ REIMS_CITY = "Reims"
 
 # quartier -> lieux emblematiques ordonnes (slugs de cultural_places officiels de Reims).
 REIMS_NEIGHBORHOOD_LANDMARKS: dict[str, tuple[str, ...]] = {
+    # Phase 3e — 2 quartiers crees.
     "courlancy": ("porte-de-paris", "stade-auguste-delaune"),
     "cernay-jean-jaures": ("halles-boulingrin", "eglise-saint-andre"),
+    # Lot 9 quartiers reutilises — incontournables (doc 3d) croises avec le catalogue 23 lieux.
+    "centre-ville": (
+        "cathedrale-notre-dame",
+        "place-erlon",
+        "porte-de-mars",
+        "cryptoportique",
+        "place-royale",
+        "opera-de-reims",
+        "hotel-de-ville",
+    ),
+    "saint-remi": ("basilique-saint-remi", "musee-saint-remi", "parc-de-champagne"),
+    "maison-blanche": ("basilique-sainte-clotilde",),
+    "la-neuvillette": ("eglise-saint-jean-baptiste-neuvillette",),
 }
 
 
