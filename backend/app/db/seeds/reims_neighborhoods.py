@@ -6,7 +6,7 @@ import logging
 import uuid
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
@@ -22,6 +22,13 @@ logger = logging.getLogger(__name__)
 
 REIMS_CITY = "Reims"
 
+# latitude/longitude = centroide REPRESENTATIF de chaque quartier actif, re-derive apres l'audit
+# ayant trouve 3/12 centroides dans une commune voisine (Betheny, Cormontreuil, Villers-aux-Noeuds).
+# Methode : forward-geocode Nominatim (nom d'ancrage) + reverse-controle Reims/51100, revu 1 a 1.
+# Points REPRESENTATIFS (ancre geocodee / centroide de `suburb` OSM), PAS des centroides
+# geometriques exacts (aucun polygone officiel des 12 conseils de quartier en open data).
+# cernay-jean-jaures (fusion 3 zones) = moyenne des ancres Boulingrin + Jaures + Cernay.
+# Garde-fou permanent : tests/test_reims_neighborhood_centroids.py (lock + bbox Reims).
 REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
     {
         "id": uuid.UUID("d6010000-0000-4000-8000-000000000001"),
@@ -32,8 +39,8 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
             "sans l’agitation des grandes métropoles."
         ),
         "ambiance": NeighborhoodAmbiance.LIVELY.value,
-        "latitude": 49.2583,
-        "longitude": 4.0317,
+        "latitude": 49.25553,
+        "longitude": 4.03414,
         "radius_meters": 800,
         "accent_color": "#EEF0FF",
         "is_featured": True,
@@ -47,8 +54,8 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
             "et habitée, idéale pour flâner."
         ),
         "ambiance": NeighborhoodAmbiance.CULTURAL.value,
-        "latitude": 49.2430,
-        "longitude": 4.0310,
+        "latitude": 49.24343,
+        "longitude": 4.03857,
         "radius_meters": 700,
         "accent_color": "#F5F3FF",
         "is_featured": True,
@@ -62,8 +69,8 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
             "et vie locale au rythme du quotidien."
         ),
         "ambiance": NeighborhoodAmbiance.LIVELY.value,
-        "latitude": 49.2620,
-        "longitude": 4.0280,
+        "latitude": 49.26031,
+        "longitude": 4.02216,
         "radius_meters": 650,
         "is_featured": False,
     },
@@ -105,8 +112,8 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
             "quartier loin du tumulte du centre."
         ),
         "ambiance": NeighborhoodAmbiance.CALM.value,
-        "latitude": 49.2385,
-        "longitude": 4.0780,
+        "latitude": 49.23361,
+        "longitude": 4.00493,
         "radius_meters": 900,
         "is_featured": False,
     },
@@ -119,8 +126,8 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
             "proximité et cadre de vie familial."
         ),
         "ambiance": NeighborhoodAmbiance.CALM.value,
-        "latitude": 49.2200,
-        "longitude": 4.0500,
+        "latitude": 49.22098,
+        "longitude": 4.01571,
         "radius_meters": 750,
         "is_featured": False,
     },
@@ -146,8 +153,8 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
             "Au nord de Reims — zones d'activité, logements récents et dynamisme en développement."
         ),
         "ambiance": NeighborhoodAmbiance.LIVELY.value,
-        "latitude": 49.2800,
-        "longitude": 4.0600,
+        "latitude": 49.28904,
+        "longitude": 4.00584,
         "radius_meters": 850,
         "is_featured": False,
     },
@@ -160,8 +167,8 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
             "proximité avec la campagne champenoise."
         ),
         "ambiance": NeighborhoodAmbiance.GREEN.value,
-        "latitude": 49.2700,
-        "longitude": 4.0000,
+        "latitude": 49.27062,
+        "longitude": 4.02165,
         "radius_meters": 800,
         "is_featured": False,
     },
@@ -173,8 +180,8 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
             "Entre centre et faubourgs — un Reims habité, accessible et en mouvement."
         ),
         "ambiance": NeighborhoodAmbiance.LIVELY.value,
-        "latitude": 49.2350,
-        "longitude": 4.0400,
+        "latitude": 49.24775,
+        "longitude": 4.05645,
         "radius_meters": 700,
         "is_featured": False,
     },
@@ -186,8 +193,8 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
             "Quartier au sud-est — diversité, associations locales et solidarité de proximité."
         ),
         "ambiance": NeighborhoodAmbiance.CALM.value,
-        "latitude": 49.2100,
-        "longitude": 4.0100,
+        "latitude": 49.23331,
+        "longitude": 4.01850,
         "radius_meters": 800,
         "is_featured": False,
     },
@@ -206,8 +213,8 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
         ),
         # Coordonnees = centroide des 3 quartiers fusionnes ; radius elargi pour les couvrir.
         # Structurel (placement carte), pas editorial : le seed exige des coords non NULL.
-        "latitude": 49.2503,
-        "longitude": 4.0217,
+        "latitude": 49.25916,
+        "longitude": 4.04914,
         "radius_meters": 900,
         # Herite du statut mis en avant de boulingrin (fusionne ici), pour ne pas laisser
         # de trou dans la selection le temps que 3c desactive les anciennes lignes.
@@ -219,8 +226,8 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
         "display_name": "Courlancy",
         "short_description": "Quartier du sud de Reims, entre équipements sportifs et habitat.",
         # Nominatim : Courlancy, avenue Paul Marchandeau, Reims.
-        "latitude": 49.2426,
-        "longitude": 4.0255,
+        "latitude": 49.24410,
+        "longitude": 4.01746,
         "radius_meters": 700,
         "is_featured": False,
     },
@@ -230,8 +237,8 @@ REIMS_NEIGHBORHOOD_SEED: tuple[dict[str, Any], ...] = (
         "display_name": "Châtillons",
         "short_description": "Quartier de l’ouest rémois, résidentiel et familial.",
         # Nominatim : Les Châtillons, Reims.
-        "latitude": 49.2343,
-        "longitude": 4.0386,
+        "latitude": 49.22650,
+        "longitude": 4.03620,
         "radius_meters": 700,
         "is_featured": False,
     },
@@ -254,7 +261,17 @@ async def seed_reims_neighborhoods(
             )
             .limit(1)
         )
-        if result.scalar_one_or_none() is not None:
+        existing_id = result.scalar_one_or_none()
+        if existing_id is not None:
+            # Deja en base : pas de re-creation, mais on synchronise les COORDS (structurelles, pas
+            # du contenu editable) pour propager une re-derivation de centroides aux lignes
+            # existantes -- sans ce sync, changer le seed serait un no-op silencieux en prod.
+            # Garde-fou : tests/test_reims_neighborhood_centroids.py.
+            await session.execute(
+                update(Neighborhood)
+                .where(Neighborhood.id == existing_id)
+                .values(latitude=row.get("latitude"), longitude=row.get("longitude"))
+            )
             continue
         hood_id = row["id"]
         assert isinstance(hood_id, uuid.UUID)
