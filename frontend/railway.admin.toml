@@ -1,0 +1,16 @@
+# Config Railway — app admin Next.js (monorepo pnpm).
+# Root directory du service : frontend/
+# Config path absolu dans Railway : /frontend/railway.admin.toml
+#
+# Symetrique de railway.toml (app web) : sans config dediee, le service admin
+# auto-detecte railway.toml et build/lance apps/web au lieu d'apps/admin
+# (meme classe de bug qu'OPS-02 avec railway.toml partage API/worker).
+
+[build]
+builder = "RAILPACK"
+buildCommand = "pnpm install --frozen-lockfile && pnpm --filter admin build"
+
+[deploy]
+startCommand = "pnpm --filter admin start"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
