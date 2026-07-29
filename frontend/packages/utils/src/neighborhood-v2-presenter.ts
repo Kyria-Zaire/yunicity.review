@@ -58,7 +58,9 @@ export const NEIGHBORHOOD_V2_LIFE_LABELS = {
 } as const;
 export const NEIGHBORHOOD_V2_LANDMARKS_TITLE = "Incontournables";
 export const NEIGHBORHOOD_V2_COMMUNITY_TAGS_TITLE = "Communautés du quartier";
-export const NEIGHBORHOOD_V2_COMMUNITY_TAG_EMPTY = "Aucune tribu pour le moment — à créer !";
+export function neighborhoodV2CommunityTagCreateCta(label: string): string {
+  return `Créer la tribu ${label}`;
+}
 export const NEIGHBORHOOD_V2_PHOTO_CREDIT_PREFIX = "Photo :";
 
 // Ordre d'affichage des 6 colonnes de vie du quartier.

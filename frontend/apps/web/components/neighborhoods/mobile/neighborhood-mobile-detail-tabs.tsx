@@ -16,7 +16,6 @@ import {
   NEIGHBORHOOD_DETAIL_MOBILE_TAB_INFO,
   NEIGHBORHOOD_DETAIL_MOBILE_TAB_PLACES,
   NEIGHBORHOOD_DETAIL_MOBILE_TAB_PUBLICATIONS,
-  NEIGHBORHOOD_V2_COMMUNITY_TAG_EMPTY,
   NEIGHBORHOOD_V2_COMMUNITY_TAGS_TITLE,
   NEIGHBORHOOD_V2_CONTRIBUTION_SUCCESS_MESSAGE,
   NEIGHBORHOOD_V2_EVENT_CTA,
@@ -29,8 +28,10 @@ import {
   NEIGHBORHOOD_V2_SHARE_MEMORY_CTA,
   buildNeighborhoodDetailMapUrl,
   buildPublicPlaceHref,
+  buildTribeCreateHref,
   formatEventDateRange,
   listNeighborhoodV2CommunityTags,
+  neighborhoodV2CommunityTagCreateCta,
   listNeighborhoodV2Landmarks,
   listNeighborhoodV2LifeFields,
   resolveCulturalPlaceDisplayUrl,
@@ -42,6 +43,7 @@ import {
   type NeighborhoodMobileFeaturedCard,
 } from "@yunicity/utils";
 import { useAuth } from "@/lib/auth/auth-provider";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
@@ -166,7 +168,13 @@ export function NeighborhoodMobileDetailTabs({
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-xs text-neutral-500">{NEIGHBORHOOD_V2_COMMUNITY_TAG_EMPTY}</p>
+                      <Link
+                        href={buildTribeCreateHref(communityTag.slug, detail.city)}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-yunicity-primary/50 px-3 py-1.5 text-xs font-semibold text-yunicity-primary"
+                      >
+                        <Plus className="h-3.5 w-3.5" aria-hidden />
+                        {neighborhoodV2CommunityTagCreateCta(communityTag.label)}
+                      </Link>
                     )}
                   </li>
                 ))}

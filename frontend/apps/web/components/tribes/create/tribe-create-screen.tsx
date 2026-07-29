@@ -17,9 +17,14 @@ import {
   tribeHref,
 } from "@yunicity/utils";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 export function TribeCreateScreen() {
-  const ctx = useTribeCreateContext();
+  const searchParams = useSearchParams();
+  const ctx = useTribeCreateContext({
+    category: searchParams.get("category"),
+    city: searchParams.get("city"),
+  });
 
   if (ctx.loading) {
     return (

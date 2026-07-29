@@ -63,6 +63,24 @@ export function createEmptyTribeCreateDraft(city = "Reims"): TribeCreateDraft {
   };
 }
 
+/**
+ * Draft amorce depuis les query params (CTA "Créer la tribu {label}" d'un tag communaute).
+ * La ville amorcee l'emporte sur le fallback ; la categorie n'est pre-selectionnee QUE si
+ * elle correspond a une categorie reelle (l'URL est un input non fiable).
+ */
+export function createTribeCreateDraftFromParams(
+  params: { category?: string | null; city?: string | null },
+  fallbackCity = "Reims",
+): TribeCreateDraft {
+  const city = params.city?.trim() || fallbackCity;
+  const draft = createEmptyTribeCreateDraft(city);
+  const category = params.category?.trim() ?? "";
+  if (category && category in TRIBE_CATEGORY_LABELS) {
+    draft.category = category;
+  }
+  return draft;
+}
+
 export function validateTribeCreateStep(
   stepId: TribeCreateStepId,
   draft: TribeCreateDraft,

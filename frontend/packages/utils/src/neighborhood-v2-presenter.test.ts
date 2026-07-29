@@ -11,6 +11,7 @@ import {
   hasNeighborhoodV2LocalLife,
   listNeighborhoodV2LifeFields,
   mapNeighborhoodDetailVideosToFeedItems,
+  neighborhoodV2CommunityTagCreateCta,
   resolveNeighborhoodV2HeroImage,
   resolveNeighborhoodV2HeroImageCredit,
   resolveNeighborhoodV2HistoryStory,
@@ -211,5 +212,14 @@ describe("neighborhood-v2-presenter — phase 3f", () => {
       community_tags: [{ slug: "sport", label: "Sport", tribes: [] }],
     };
     expect(hasNeighborhoodV2LocalLife(detail)).toBe(true);
+  });
+});
+
+describe("neighborhoodV2CommunityTagCreateCta", () => {
+  it("construit le CTA « Créer la tribu {label} »", () => {
+    expect(neighborhoodV2CommunityTagCreateCta("Sport")).toBe("Créer la tribu Sport");
+    expect(neighborhoodV2CommunityTagCreateCta("Santé & Famille")).toBe(
+      "Créer la tribu Santé & Famille",
+    );
   });
 });

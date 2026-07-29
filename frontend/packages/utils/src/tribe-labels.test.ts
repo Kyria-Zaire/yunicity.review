@@ -8,6 +8,7 @@ import {
   TRIBES_PAGE_TITLE,
   TRIBE_INVITATION_CTA,
   TRIBE_WALL_CONTEXT_BADGE,
+  buildTribeCreateHref,
   tribeCategoryLabel,
   tribeDiscoveryActionLabel,
   tribeDiscoveryTheme,
@@ -103,5 +104,21 @@ describe("feed isolation contract (UI)", () => {
     type TribeIdAbsent = "tribe_id" extends FeedPostKeys ? false : true;
     const check: TribeIdAbsent = true;
     expect(check).toBe(true);
+  });
+});
+
+describe("buildTribeCreateHref", () => {
+  it("construit un lien de création pré-rempli catégorie + ville", () => {
+    expect(buildTribeCreateHref("sport", "Reims")).toBe(
+      "/tribes/create?category=sport&city=Reims",
+    );
+  });
+
+  it("encode les valeurs à risque (espaces, accents)", () => {
+    const href = buildTribeCreateHref("well being", "Saint-Étienne");
+    expect(href.startsWith("/tribes/create?")).toBe(true);
+    const params = new URLSearchParams(href.split("?")[1]);
+    expect(params.get("category")).toBe("well being");
+    expect(params.get("city")).toBe("Saint-Étienne");
   });
 });
