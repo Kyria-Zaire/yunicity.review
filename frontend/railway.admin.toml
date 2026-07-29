@@ -10,7 +10,10 @@
 builder = "RAILPACK"
 buildCommand = "pnpm install --frozen-lockfile && pnpm --filter admin build"
 
+# `exec next start` (pas le script `start` du package, qui fige `--port 3001`) : Next se cale sur
+# $PORT injecte par Railway, aligne sur le domaine admin (port 8080) et sur la config dashboard
+# du service (qui utilise deja `pnpm --filter admin exec next start`).
 [deploy]
-startCommand = "pnpm --filter admin start"
+startCommand = "pnpm --filter admin exec next start"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
