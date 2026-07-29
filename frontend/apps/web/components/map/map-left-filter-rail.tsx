@@ -4,6 +4,7 @@ import { MapPartnersRail } from "@/components/map/map-partners-rail";
 import type { PartnerPublic } from "@yunicity/types";
 import type { MapPortalAmbianceId, MapPortalCategoryId, MapPortalFilters } from "@yunicity/utils";
 import {
+  NEIGHBORHOOD_AMBIANCE_LABELS,
   DEFAULT_MAP_PORTAL_FILTERS,
   MAP_PORTAL_AMBIANCE_TITLE,
   MAP_PORTAL_CATEGORY_ALL,
@@ -48,14 +49,19 @@ const CATEGORIES: {
   { id: "partners", label: MAP_PORTAL_CATEGORY_PASSPORT, icon: TicketPercent },
 ];
 
-const AMBIANCES: { id: MapPortalAmbianceId; label: string }[] = [
-  { id: "calm", label: "Calme" },
-  { id: "lively", label: "Animé" },
-  { id: "romantic", label: "Romantique" },
-  { id: "family", label: "Familial" },
-  { id: "festive", label: "Festif" },
-  { id: "nature", label: "Nature" },
+// Les 5 valeurs reelles de l'enum backend (NeighborhoodAmbiance). Libelles derives de
+// NEIGHBORHOOD_AMBIANCE_LABELS (source unique) et capitalises pour les chips.
+const AMBIANCE_IDS: readonly MapPortalAmbianceId[] = [
+  "calm",
+  "lively",
+  "cultural",
+  "student",
+  "green",
 ];
+const AMBIANCES: { id: MapPortalAmbianceId; label: string }[] = AMBIANCE_IDS.map((id) => {
+  const label = NEIGHBORHOOD_AMBIANCE_LABELS[id] ?? id;
+  return { id, label: label.charAt(0).toUpperCase() + label.slice(1) };
+});
 
 type MapLeftFilterRailProps = {
   city: string;
