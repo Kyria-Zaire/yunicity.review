@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import AppError
 from app.core.partner_constants import PUBLIC_PARTNER_STATUSES, PartnerStatus
 from app.core.passport_constants import PartnerOfferType, PassportTierCode
+from app.core.passport_level_rules import tier_can_access
 from app.models.organization import Organization
 from app.models.partner_profile import PartnerProfile
 from app.models.passport import PartnerOffer
@@ -112,7 +113,7 @@ class PublicPartnerOfferService:
         filtered = [
             item
             for item in catalog.items
-            if self._tier_allows_offer(item.tier_code_required, tier_code)
+            if tier_can_access(item.tier_code_required, tier_code)
         ]
         return catalog.model_copy(
             update={
@@ -182,9 +183,3 @@ class PublicPartnerOfferService:
             is_verified=PartnerRepository.is_verified_organization(org),
             partner_status=partner_status,
         )
-
-    @staticmethod
-    def _tier_allows_offer(required: str | None, tier_code: str) -> bool:
-        if required is None:
-            return True
-        return required == tier_code

@@ -17,6 +17,7 @@ from app.core.passport_constants import (
     PartnerOfferStatus,
     PassportTierCode,
 )
+from app.core.passport_level_rules import tier_can_access
 from app.core.passport_qr import normalize_qr_secret
 from app.models.local_stamp import CitizenLocalStamp
 from app.models.passport import PartnerOffer, Passport, PassportOfferRedemption
@@ -165,7 +166,7 @@ class ScanRedemptionService:
             )
 
         tier_code = passport.tier.code if passport.tier else PassportTierCode.BASIC.value
-        if not self._offer_accessible(offer, tier_code):
+        if not tier_can_access(offer.tier_code_required, tier_code):
             raise AppError(
                 status_code=403,
                 code="OFFER_TIER_REQUIRED",
@@ -332,13 +333,6 @@ class ScanRedemptionService:
             tier_code=tier_code,
             display_label=label,
         )
-
-    @staticmethod
-    def _offer_accessible(offer: PartnerOffer, tier_code: str) -> bool:
-        required = offer.tier_code_required
-        if required is None:
-            return True
-        return required == tier_code
 
     @staticmethod
     def _success_message(offer: PartnerOffer) -> str:
