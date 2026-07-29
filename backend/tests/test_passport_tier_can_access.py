@@ -9,6 +9,9 @@ Test PUR, sans DB.
 
 from __future__ import annotations
 
+import inspect
+from types import ModuleType
+
 import pytest
 from app.core.passport_level_rules import tier_can_access
 from app.services import (
@@ -71,15 +74,22 @@ class TestSpecialTiersAreParallel:
 
 
 class TestSingleSourceOfTruth:
-    """La regle vit a UN seul endroit : les 3 services referencent la meme fonction,
-    et aucune copie locale (_offer_accessible / _tier_allows_offer) ne subsiste."""
+    """La regle vit a UN seul endroit : chaque service APPELLE la fonction partagee et ne
+    contient aucune copie inline de la regle (egalite stricte), et les anciennes methodes
+    dupliquees ont disparu."""
 
-    def test_all_three_services_reference_the_shared_rule(self) -> None:
-        assert public_partner_offer_service.tier_can_access is tier_can_access
-        assert passport_service.tier_can_access is tier_can_access
-        assert scan_redemption_service.tier_can_access is tier_can_access
+    @pytest.mark.parametrize(
+        "module",
+        [public_partner_offer_service, passport_service, scan_redemption_service],
+    )
+    def test_service_calls_shared_rule_without_inlined_copy(self, module: ModuleType) -> None:
+        source = inspect.getsource(module)
+        # Le call site delegue a la fonction partagee...
+        assert "tier_can_access(" in source
+        # ...et aucune copie inline de la regle (egalite stricte) ne subsiste.
+        assert "required == tier_code" not in source
 
-    def test_no_local_copy_of_the_rule_remains(self) -> None:
+    def test_old_duplicated_methods_are_gone(self) -> None:
         assert not hasattr(PublicPartnerOfferService, "_tier_allows_offer")
         assert not hasattr(PassportService, "_offer_accessible")
         assert not hasattr(ScanRedemptionService, "_offer_accessible")
