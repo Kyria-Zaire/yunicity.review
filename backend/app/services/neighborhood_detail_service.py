@@ -238,7 +238,13 @@ class NeighborhoodDetailService:
 
     @staticmethod
     def _map_place_item(row: CulturalPlace) -> NeighborhoodDetailPlaceItem:
-        image_url = row.image_url or row.thumbnail_image_url or row.hero_image_url
+        # Ordre canonique partage avec le frontend (cultural-place-media.ts,
+        # resolveCulturalPlaceThumbnailUrl) : format d'affichage d'abord, puis la hero,
+        # et l'image_url "legacy" en dernier recours. Le champ alimente une carte/vignette
+        # de la section "lieux" du detail quartier -> contexte thumbnail. Avant : image_url
+        # (legacy) en premier -> un lieu affichait sa vieille image ici alors que la carte et
+        # la page detail montraient la hero self-hosted (#159, divergence silencieuse).
+        image_url = row.thumbnail_image_url or row.hero_image_url or row.image_url
         return NeighborhoodDetailPlaceItem(
             id=row.id,
             slug=row.slug,
