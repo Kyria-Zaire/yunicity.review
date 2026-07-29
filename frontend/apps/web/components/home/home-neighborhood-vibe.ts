@@ -14,8 +14,10 @@ export function neighborhoodVibeLabel(neighborhood: Neighborhood): NeighborhoodV
   if (neighborhood.is_featured) {
     return HOME_NEIGHBORHOOD_VIBE_DISCOVER;
   }
-  const ambiance = (neighborhood.ambiance ?? "").toLowerCase();
-  if (ambiance.includes("calme") || ambiance.includes("tranquille") || ambiance.includes("quiet")) {
+  // Aligne sur l'enum backend NeighborhoodAmbiance : calm/green = vibe paisible,
+  // lively/cultural/student = vibe active. (Avant : includes("calme") ne matchait jamais "calm".)
+  const ambiance = (neighborhood.ambiance ?? "").trim().toLowerCase();
+  if (ambiance === "calm" || ambiance === "green") {
     return HOME_NEIGHBORHOOD_VIBE_CALM;
   }
   return HOME_NEIGHBORHOOD_VIBE_ACTIVE;

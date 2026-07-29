@@ -38,13 +38,10 @@ export function normalizeMapPortalCategory(category: MapPortalCategoryId): MapPo
   return "all";
 }
 
-export type MapPortalAmbianceId =
-  | "calm"
-  | "lively"
-  | "romantic"
-  | "family"
-  | "festive"
-  | "nature";
+// Aligne sur l'enum backend NeighborhoodAmbiance (calm/lively/cultural/student/green).
+// Anciennement un jeu "vibe" (romantic/family/festive/nature) matche par sous-chaines FR qui ne
+// correspondait a aucune valeur reelle -> 5 chips sur 6 vidaient la carte (bug silencieux).
+export type MapPortalAmbianceId = "calm" | "lively" | "cultural" | "student" | "green";
 
 export type MapPortalFilters = {
   category: MapPortalCategoryId;
@@ -86,15 +83,6 @@ const CULTURE_CATEGORIES = [
 ] as const;
 
 const NATURE_CATEGORIES = ["park"] as const;
-
-const AMBIANCE_TO_NEIGHBORHOOD: Record<MapPortalAmbianceId, string[]> = {
-  calm: ["calme", "residential", "quiet"],
-  lively: ["anime", "animé", "centre"],
-  romantic: ["romantique", "historique"],
-  family: ["familial", "family"],
-  festive: ["festif", "nocturne"],
-  nature: ["nature", "verdure", "green"],
-};
 
 export function resolveMapPortalLayer(category: MapPortalCategoryId): MapTerritoryLayer {
   if (category === "events") return "moments";
@@ -258,9 +246,8 @@ export function filterNeighborhoodsByAmbiance(
   return neighborhoods.filter((hood) => {
     const value = hood.ambiance?.trim().toLowerCase() ?? "";
     if (!value) return false;
-    return ambiances.some((ambiance) =>
-      AMBIANCE_TO_NEIGHBORHOOD[ambiance].some((token) => value.includes(token)),
-    );
+    // Match EXACT sur la valeur de l'enum backend (fini le matching par sous-chaines).
+    return ambiances.some((ambiance) => ambiance === value);
   });
 }
 
