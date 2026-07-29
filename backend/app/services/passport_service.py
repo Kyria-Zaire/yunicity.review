@@ -16,6 +16,7 @@ from app.core.passport_constants import (
     PassportStatus,
     PassportTierCode,
 )
+from app.core.passport_level_rules import tier_can_access
 from app.core.passport_qr import build_qr_payload
 from app.core.passport_tokens import generate_passport_number, generate_qr_token_placeholder
 from app.models.local_stamp import CitizenLocalStamp
@@ -177,13 +178,12 @@ class PassportService:
         now = datetime.now(UTC)
         offers = await self._offers.list_visible_offers(now=now)
         tier_code = passport.tier.code if passport.tier else PassportTierCode.BASIC.value
-        filtered = [o for o in offers if self._offer_accessible(o, tier_code)]
+        filtered = [o for o in offers if tier_can_access(o.tier_code_required, tier_code)]
         items = [self._to_partner_offer_response(o) for o in filtered]
         return PartnerOfferListResponse(items=items, total=len(items))
 
     @staticmethod
     def _to_partner_offer_response(offer: object) -> PartnerOfferResponse:
-        from app.models.passport import PartnerOffer
 
         assert isinstance(offer, PartnerOffer)
         flash = build_flash_snapshot(offer)
@@ -209,7 +209,7 @@ class PassportService:
             )
 
         tier_code = passport.tier.code if passport.tier else PassportTierCode.BASIC.value
-        if not self._offer_accessible(offer, tier_code):
+        if not tier_can_access(offer.tier_code_required, tier_code):
             raise AppError(
                 status_code=403,
                 code="OFFER_TIER_REQUIRED",
@@ -370,10 +370,3 @@ class PassportService:
             code="PASSPORT_CITY_REQUIRED",
             detail="La ville est requise pour activer votre Passport.",
         )
-
-    @staticmethod
-    def _offer_accessible(offer: PartnerOffer, tier_code: str) -> bool:
-        required = offer.tier_code_required
-        if required is None:
-            return True
-        return required == tier_code
