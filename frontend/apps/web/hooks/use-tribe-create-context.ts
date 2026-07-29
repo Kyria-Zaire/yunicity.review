@@ -4,7 +4,7 @@ import type { Tribe } from "@yunicity/types";
 import type { TribeCreateDraft, TribeCreateStepId } from "@yunicity/utils";
 import {
   buildTribeCreatePayload,
-  createEmptyTribeCreateDraft,
+  createTribeCreateDraftFromParams,
   nextTribeCreateStep,
   previousTribeCreateStep,
   validateTribeCreateStep,
@@ -16,11 +16,17 @@ import { useAuth } from "@/lib/auth/auth-provider";
 
 const DEFAULT_CITY = "Reims";
 
-export function useTribeCreateContext() {
+type TribeCreateSeed = { category?: string | null; city?: string | null };
+
+export function useTribeCreateContext(seed?: TribeCreateSeed) {
   const api = useYunicityApi();
   const { user } = useAuth();
+  const seedCity = seed?.city?.trim() || null;
   const [draft, setDraft] = useState<TribeCreateDraft>(() =>
-    createEmptyTribeCreateDraft(user?.city?.trim() || DEFAULT_CITY),
+    createTribeCreateDraftFromParams(
+      { category: seed?.category, city: seedCity },
+      user?.city?.trim() || DEFAULT_CITY,
+    ),
   );
   const [step, setStep] = useState<TribeCreateStepId>("info");
   const [exampleTribes, setExampleTribes] = useState<Tribe[]>([]);
@@ -35,7 +41,8 @@ export function useTribeCreateContext() {
     async function load() {
       setLoading(true);
       try {
-        const city = user?.city?.trim() || DEFAULT_CITY;
+        // La ville amorcee (query param du CTA quartier) l'emporte sur la ville du profil.
+        const city = seedCity || user?.city?.trim() || DEFAULT_CITY;
         const data = await api.tribes.listTribes({ city, page_size: 6 });
         if (!cancelled) {
           setExampleTribes(data.items.filter((item) => !item.is_archived).slice(0, 5));
@@ -51,7 +58,7 @@ export function useTribeCreateContext() {
     return () => {
       cancelled = true;
     };
-  }, [api, user?.city]);
+  }, [api, user?.city, seedCity]);
 
   const updateDraft = useCallback((patch: Partial<TribeCreateDraft>) => {
     setDraft((prev) => ({ ...prev, ...patch }));

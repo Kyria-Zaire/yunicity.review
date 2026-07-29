@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  TRIBE_CREATE_CATEGORY_OPTIONS,
   TRIBE_CREATE_DESC_MAX,
   TRIBE_CREATE_NAME_MAX,
   buildTribeCreatePayload,
   createEmptyTribeCreateDraft,
+  createTribeCreateDraftFromParams,
   nextTribeCreateStep,
   previousTribeCreateStep,
   validateTribeCreateStep,
@@ -76,5 +78,37 @@ describe("tribe-create-portal", () => {
       cover_image_url: undefined,
       charter_accepted: true,
     });
+  });
+});
+
+describe("createTribeCreateDraftFromParams (amorçage CTA tag communauté)", () => {
+  const validCategory = TRIBE_CREATE_CATEGORY_OPTIONS[0]?.value ?? "";
+
+  it("pré-sélectionne une catégorie réelle + la ville amorcée", () => {
+    expect(validCategory).toBeTruthy();
+    const draft = createTribeCreateDraftFromParams({ category: validCategory, city: "Reims" }, "X");
+    expect(draft.category).toBe(validCategory);
+    expect(draft.city).toBe("Reims");
+  });
+
+  it("ignore une catégorie inconnue (l'URL est un input non fiable)", () => {
+    const draft = createTribeCreateDraftFromParams(
+      { category: "not-a-real-category", city: "Reims" },
+      "X",
+    );
+    expect(draft.category).toBe("");
+  });
+
+  it("la ville amorcée l'emporte sur le fallback ; vide/absente → fallback", () => {
+    expect(createTribeCreateDraftFromParams({ city: "  Épernay " }, "Reims").city).toBe("Épernay");
+    expect(createTribeCreateDraftFromParams({ city: "  " }, "Reims").city).toBe("Reims");
+    expect(createTribeCreateDraftFromParams({ city: null }, "Reims").city).toBe("Reims");
+  });
+
+  it("sans catégorie → draft par défaut (comme empty)", () => {
+    const draft = createTribeCreateDraftFromParams({ city: "Reims" }, "Reims");
+    expect(draft.category).toBe("");
+    expect(draft.visibility).toBe("public");
+    expect(draft.name).toBe("");
   });
 });

@@ -157,6 +157,12 @@ export function tribeHref(slug: string, city: string): string {
   return `/tribes/${encodeURIComponent(slug)}?city=${encodeURIComponent(city)}`;
 }
 
+/** Lien vers le wizard de creation, pre-remplissage categorie + ville (CTA tag communaute). */
+export function buildTribeCreateHref(category: string, city: string): string {
+  const params = new URLSearchParams({ category, city });
+  return `/tribes/create?${params.toString()}`;
+}
+
 export function tribeInvitationHref(token: string, slug?: string, city?: string): string {
   const params = new URLSearchParams({ token });
   if (slug) {

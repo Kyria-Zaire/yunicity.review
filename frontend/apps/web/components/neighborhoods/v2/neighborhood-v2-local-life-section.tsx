@@ -3,17 +3,19 @@
 import { CulturalImage } from "@/components/culture/cultural-image";
 import type { NeighborhoodDetail } from "@yunicity/types";
 import {
-  NEIGHBORHOOD_V2_COMMUNITY_TAG_EMPTY,
   NEIGHBORHOOD_V2_COMMUNITY_TAGS_TITLE,
   NEIGHBORHOOD_V2_CREATOR_CTA,
   NEIGHBORHOOD_V2_CREATORS_LABEL,
   NEIGHBORHOOD_V2_LOCAL_LIFE_TITLE,
   NEIGHBORHOOD_V2_TRIBES_LABEL,
   buildCreatorProfileHref,
+  buildTribeCreateHref,
   hasNeighborhoodV2LocalLife,
   listNeighborhoodV2CommunityTags,
+  neighborhoodV2CommunityTagCreateCta,
   tribeHref,
 } from "@yunicity/utils";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 
 type NeighborhoodV2LocalLifeSectionProps = {
@@ -54,7 +56,13 @@ export function NeighborhoodV2LocalLifeSection({ detail }: NeighborhoodV2LocalLi
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-xs text-neutral-500">{NEIGHBORHOOD_V2_COMMUNITY_TAG_EMPTY}</p>
+                  <Link
+                    href={buildTribeCreateHref(tag.slug, detail.city)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-yunicity-primary/50 px-4 py-2 text-sm font-semibold text-yunicity-primary transition hover:border-yunicity-primary hover:bg-yunicity-primary/5"
+                  >
+                    <Plus className="h-4 w-4" aria-hidden />
+                    {neighborhoodV2CommunityTagCreateCta(tag.label)}
+                  </Link>
                 )}
               </li>
             ))}
