@@ -1,9 +1,16 @@
 "use client";
 
 import { ProfileAvatar } from "@/components/profile-avatar";
+import { useComposerMedia } from "@/hooks/use-composer-media";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
-import { homeComposerPlaceholder } from "@yunicity/utils";
+import {
+  COMPOSER_MEDIA_ACCEPT_ATTR,
+  COMPOSER_MEDIA_ADD_LABEL,
+  COMPOSER_MEDIA_REMOVE_LABEL,
+  COMPOSER_MEDIA_UPLOADING_LABEL,
+  homeComposerPlaceholder,
+} from "@yunicity/utils";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -82,10 +89,10 @@ export function FeedComposer({
 }) {
   const { user } = useAuth();
   const api = useYunicityApi();
+  const { fileInputRef, mediaUrl, uploading, mediaError, openPicker, onFileChange, clearMedia } =
+    useComposerMedia();
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [body, setBody] = useState("");
-  const [mediaUrl, setMediaUrl] = useState("");
-  const [showMedia, setShowMedia] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,7 +100,7 @@ export function FeedComposer({
     placeholder ?? (city ? homeComposerPlaceholder(city) : "Partagez un moment local…");
 
   const authorLabel = displayName ?? user?.email?.split("@")[0] ?? "Vous";
-  const canPublish = Boolean(body.trim()) && !isSubmitting;
+  const canPublish = Boolean(body.trim()) && !isSubmitting && !uploading;
 
   useEffect(() => {
     void api
@@ -114,10 +121,9 @@ export function FeedComposer({
     setIsSubmitting(true);
     setError(null);
     try {
-      await onSubmit(trimmed, mediaUrl.trim() || null);
+      await onSubmit(trimmed, mediaUrl);
       setBody("");
-      setMediaUrl("");
-      setShowMedia(false);
+      clearMedia();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Publication impossible pour le moment.");
     } finally {
@@ -149,25 +155,38 @@ export function FeedComposer({
             className="min-h-[3.25rem] w-full resize-none border-0 bg-transparent p-0 text-xl leading-snug text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:ring-0 sm:min-h-[3.5rem] sm:text-[1.35rem]"
           />
 
-          {showMedia ? (
-            <input
-              id="feed-composer-media"
-              type="url"
-              value={mediaUrl}
-              onChange={(event) => setMediaUrl(event.target.value)}
-              placeholder="URL de l’image (https://…)"
-              className="mt-3 w-full border-0 border-b border-neutral-200/90 bg-transparent py-2 text-sm text-neutral-800 placeholder:text-neutral-400 focus:border-yunicity-primary focus:outline-none"
-            />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={COMPOSER_MEDIA_ACCEPT_ATTR}
+            className="hidden"
+            onChange={(event) => void onFileChange(event.target.files?.[0] ?? null)}
+          />
+          {uploading ? (
+            <p className="mt-3 text-sm text-neutral-500">{COMPOSER_MEDIA_UPLOADING_LABEL}</p>
+          ) : mediaUrl ? (
+            <div className="relative mt-3 inline-block">
+              {/* eslint-disable-next-line @next/next/no-img-element -- aperçu média R2, hors next/image */}
+              <img
+                src={mediaUrl}
+                alt=""
+                className="max-h-56 rounded-xl border border-neutral-200/90 object-cover"
+              />
+              <button
+                type="button"
+                onClick={clearMedia}
+                className="absolute right-2 top-2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-black/75"
+              >
+                {COMPOSER_MEDIA_REMOVE_LABEL}
+              </button>
+            </div>
           ) : null}
         </div>
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-3 pl-11 sm:mt-4 sm:pl-[3.75rem]">
         <div className="flex min-w-0 flex-wrap items-center gap-0.5 sm:gap-1">
-          <ComposerIconButton
-            label={showMedia ? "Masquer l’image" : "Ajouter une image"}
-            onClick={() => setShowMedia((value) => !value)}
-          >
+          <ComposerIconButton label={COMPOSER_MEDIA_ADD_LABEL} onClick={openPicker}>
             <IconImage />
           </ComposerIconButton>
           <ComposerIconButton label="Explorer les quartiers" href="/neighborhoods">
@@ -192,9 +211,9 @@ export function FeedComposer({
         </button>
       </div>
 
-      {error ? (
+      {error || mediaError ? (
         <p className="mt-3 pl-11 text-sm text-red-600 sm:pl-[3.75rem]" role="alert">
-          {error}
+          {error ?? mediaError}
         </p>
       ) : null}
     </section>

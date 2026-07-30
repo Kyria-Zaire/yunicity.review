@@ -3797,3 +3797,16 @@ export {
   POST_VISIBILITY_OPTIONS,
   type PostComposerMobileStepId,
 } from "./post-composer-labels";
+export {
+  COMPOSER_MEDIA_ACCEPT_ATTR,
+  COMPOSER_MEDIA_ACCEPTED_TYPES,
+  COMPOSER_MEDIA_ADD_LABEL,
+  COMPOSER_MEDIA_INVALID_TYPE,
+  COMPOSER_MEDIA_MAX_BYTES,
+  COMPOSER_MEDIA_REMOVE_LABEL,
+  COMPOSER_MEDIA_TOO_LARGE,
+  COMPOSER_MEDIA_UPLOAD_FAILED,
+  COMPOSER_MEDIA_UPLOADING_LABEL,
+  validateComposerMediaFile,
+  type ComposerMediaValidation,
+} from "./composer-media";
