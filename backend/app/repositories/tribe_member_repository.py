@@ -79,6 +79,20 @@ class TribeMemberRepository:
         )
         return list(result.scalars().all())
 
+    async def list_notifiable_member_user_ids(
+        self, tribe_id: uuid.UUID, *, exclude_user_id: uuid.UUID
+    ) -> list[uuid.UUID]:
+        """Membres actifs à notifier : hors auteur, hors mute par tribu (une seule requête)."""
+        result = await self._session.execute(
+            select(TribeMember.user_id).where(
+                TribeMember.tribe_id == tribe_id,
+                TribeMember.left_at.is_(None),
+                TribeMember.notifications_muted.is_(False),
+                TribeMember.user_id != exclude_user_id,
+            )
+        )
+        return list(result.scalars().all())
+
     async def get_active_owner(self, tribe_id: uuid.UUID) -> TribeMember | None:
         result = await self._session.execute(
             select(TribeMember).where(

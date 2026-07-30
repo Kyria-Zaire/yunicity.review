@@ -22,6 +22,7 @@ from app.schemas.tribe import (
     TribeMemberListResponse,
     TribeMemberResponse,
     TribeMemberRoleUpdateRequest,
+    TribeNotificationSettingsRequest,
     TribePostCreateRequest,
     TribePostListResponse,
     TribeResponse,
@@ -129,6 +130,19 @@ async def leave_tribe(
     await TribeService(session).leave(current_user, city=city, slug=slug)
 
 
+@router.put("/{slug}/notifications", status_code=status.HTTP_204_NO_CONTENT)
+async def set_tribe_notifications(
+    slug: str,
+    payload: TribeNotificationSettingsRequest,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    city: str = Query(min_length=1),
+) -> None:
+    await TribeService(session).set_notifications_muted(
+        current_user, city=city, slug=slug, muted=payload.muted
+    )
+
+
 @router.get("/{slug}/posts", response_model=TribePostListResponse)
 async def list_tribe_posts(
     slug: str,
@@ -140,6 +154,20 @@ async def list_tribe_posts(
 ) -> TribePostListResponse:
     return await TribePostService(session).list_posts(
         current_user, city=city, slug=slug, cursor=cursor, limit=limit
+    )
+
+
+@router.get("/{slug}/posts/new", response_model=TribePostListResponse)
+async def list_new_tribe_posts(
+    slug: str,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    city: str = Query(min_length=1),
+    after: str = Query(min_length=1),
+) -> TribePostListResponse:
+    # Delta de polling temps réel : posts strictement plus récents que `after`.
+    return await TribePostService(session).list_posts_since(
+        current_user, city=city, slug=slug, after=after
     )
 
 

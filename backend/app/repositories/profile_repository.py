@@ -28,6 +28,14 @@ class ProfileRepository:
         )
         return result.scalar_one_or_none()
 
+    async def list_by_user_ids(self, user_ids: list[uuid.UUID]) -> list[UserProfile]:
+        if not user_ids:
+            return []
+        result = await self._session.execute(
+            select(UserProfile).where(UserProfile.user_id.in_(user_ids))
+        )
+        return list(result.scalars().all())
+
     async def get_by_username(self, username: str) -> UserProfile | None:
         result = await self._session.execute(
             select(UserProfile).where(UserProfile.username == username)

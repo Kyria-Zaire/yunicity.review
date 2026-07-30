@@ -134,6 +134,12 @@ class TribePostCreateRequest(BaseModel):
 class TribePostListResponse(BaseModel):
     items: list[PostResponse]
     next_cursor: str | None = None
+    # Curseur du post le plus récent — point de départ du polling temps réel (bloc 3).
+    latest_cursor: str | None = None
+
+
+class TribeNotificationSettingsRequest(BaseModel):
+    muted: bool
 
 
 class TribeInvitationCreateResponse(BaseModel):

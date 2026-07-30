@@ -8,11 +8,13 @@ DEFAULT_NOTIFICATION_PREFERENCES: dict[str, bool] = {
     "social": True,
     "passport": True,
     "offers": True,
+    "tribe": True,
 }
 
 PREFERENCE_KEY_SOCIAL = "social"
 PREFERENCE_KEY_PASSPORT = "passport"
 PREFERENCE_KEY_OFFERS = "offers"
+PREFERENCE_KEY_TRIBE = "tribe"
 
 
 def merge_notification_preferences(raw: dict[str, Any] | None) -> dict[str, bool]:

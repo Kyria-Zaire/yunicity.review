@@ -152,6 +152,32 @@ class PostRepository:
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
+    async def list_tribe_posts_since(
+        self,
+        tribe_id: uuid.UUID,
+        *,
+        after_created_at: datetime,
+        after_id: uuid.UUID,
+        limit: int,
+    ) -> list[Post]:
+        # Direction AVANT (polling) : posts strictement plus récents que le curseur, en ordre
+        # chronologique ASC + capé -> gap-free si plus de `limit` posts arrivent entre deux polls.
+        stmt = (
+            select(Post)
+            .where(
+                Post.is_active.is_(True),
+                Post.tribe_id == tribe_id,
+                or_(
+                    Post.created_at > after_created_at,
+                    and_(Post.created_at == after_created_at, Post.id > after_id),
+                ),
+            )
+            .order_by(Post.created_at.asc(), Post.id.asc())
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
     async def get_last_tribe_post_at(
         self, tribe_id: uuid.UUID, author_id: uuid.UUID
     ) -> datetime | None:

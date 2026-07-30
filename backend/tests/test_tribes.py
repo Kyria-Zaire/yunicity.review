@@ -285,3 +285,164 @@ async def test_citizen_create_requires_charter_acceptance(
     )
     assert resp.status_code == 422, resp.text
     assert resp.json()["code"] == "TRIBE_CHARTER_REQUIRED"
+
+
+async def _staff_create_tribe(client: AsyncClient, staff_token: str, slug: str) -> None:
+    create = await client.post(
+        "/api/v1/admin/tribes",
+        json={
+            "slug": slug,
+            "name": f"Tribu {slug}",
+            "description": "Description suffisamment longue pour la tribu de test.",
+            "city": "Reims",
+            "category": "photography",
+            "visibility": "public",
+        },
+        headers=rbac_auth_header(staff_token),
+    )
+    assert create.status_code == 201, create.text
+
+
+async def _join(client: AsyncClient, slug: str, token: str) -> None:
+    join = await client.post(
+        f"/api/v1/tribes/{slug}/join?city=Reims",
+        json={"charter_accepted": True},
+        headers=auth_header(token),
+    )
+    assert join.status_code == 200, join.text
+
+
+async def _notification_types(client: AsyncClient, token: str) -> list[str]:
+    resp = await client.get("/api/v1/notifications", headers=auth_header(token))
+    assert resp.status_code == 200, resp.text
+    return [item["type"] for item in resp.json()["items"]]
+
+
+@pytest.mark.asyncio
+async def test_tribe_post_notifies_members_except_author(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    staff = await rbac_user_factory("SUPER_ADMIN")
+    slug = "notif-fanout"
+    await _staff_create_tribe(auth_client, staff.access_token, slug)
+    poster = await _register(auth_client, suffix="-notif-poster")
+    reader = await _register(auth_client, suffix="-notif-reader")
+    await _join(auth_client, slug, poster["access_token"])
+    await _join(auth_client, slug, reader["access_token"])
+
+    created = await auth_client.post(
+        f"/api/v1/tribes/{slug}/posts?city=Reims",
+        json={"body": "Bonjour la tribu !"},
+        headers=auth_header(poster["access_token"]),
+    )
+    assert created.status_code == 201, created.text
+
+    # Le lecteur reçoit la notif ; l'auteur NON (pas de notif pour son propre post).
+    assert "TRIBE_POST_CREATED" in await _notification_types(auth_client, reader["access_token"])
+    assert "TRIBE_POST_CREATED" not in await _notification_types(
+        auth_client, poster["access_token"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_tribe_post_respects_per_tribe_mute(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    staff = await rbac_user_factory("SUPER_ADMIN")
+    slug = "notif-mute"
+    await _staff_create_tribe(auth_client, staff.access_token, slug)
+    poster = await _register(auth_client, suffix="-mute-poster")
+    reader = await _register(auth_client, suffix="-mute-reader")
+    await _join(auth_client, slug, poster["access_token"])
+    await _join(auth_client, slug, reader["access_token"])
+
+    muted = await auth_client.put(
+        f"/api/v1/tribes/{slug}/notifications?city=Reims",
+        json={"muted": True},
+        headers=auth_header(reader["access_token"]),
+    )
+    assert muted.status_code == 204, muted.text
+
+    posted = await auth_client.post(
+        f"/api/v1/tribes/{slug}/posts?city=Reims",
+        json={"body": "Message qui ne doit pas notifier le membre muté."},
+        headers=auth_header(poster["access_token"]),
+    )
+    assert posted.status_code == 201, posted.text
+
+    assert "TRIBE_POST_CREATED" not in await _notification_types(
+        auth_client, reader["access_token"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_posts_new_returns_only_delta(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    staff = await rbac_user_factory("SUPER_ADMIN")
+    slug = "posts-delta"
+    await _staff_create_tribe(auth_client, staff.access_token, slug)
+    # Deux membres distincts : le cooldown de 60s interdit à un même user de poster 2x.
+    member_a = await _register(auth_client, suffix="-delta-a")
+    member_b = await _register(auth_client, suffix="-delta-b")
+    await _join(auth_client, slug, member_a["access_token"])
+    await _join(auth_client, slug, member_b["access_token"])
+
+    await auth_client.post(
+        f"/api/v1/tribes/{slug}/posts?city=Reims",
+        json={"body": "ancien message"},
+        headers=auth_header(member_a["access_token"]),
+    )
+    listing = await auth_client.get(
+        f"/api/v1/tribes/{slug}/posts?city=Reims",
+        headers=auth_header(member_a["access_token"]),
+    )
+    latest = listing.json()["latest_cursor"]
+    assert latest
+
+    posted = await auth_client.post(
+        f"/api/v1/tribes/{slug}/posts?city=Reims",
+        json={"body": "nouveau message"},
+        headers=auth_header(member_b["access_token"]),
+    )
+    assert posted.status_code == 201, posted.text
+    delta = await auth_client.get(
+        f"/api/v1/tribes/{slug}/posts/new",
+        params={"city": "Reims", "after": latest},
+        headers=auth_header(member_a["access_token"]),
+    )
+    assert delta.status_code == 200, delta.text
+    # Seul le delta est renvoyé — pas l'ancien post.
+    assert [item["body"] for item in delta.json()["items"]] == ["nouveau message"]
+
+
+@pytest.mark.asyncio
+async def test_create_post_succeeds_when_notification_fails(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    staff = await rbac_user_factory("SUPER_ADMIN")
+    slug = "notif-besteffort"
+    await _staff_create_tribe(auth_client, staff.access_token, slug)
+    poster = await _register(auth_client, suffix="-be-poster")
+    reader = await _register(auth_client, suffix="-be-reader")
+    await _join(auth_client, slug, poster["access_token"])
+    await _join(auth_client, slug, reader["access_token"])
+
+    async def _boom(*_args: Any, **_kwargs: Any) -> None:
+        raise RuntimeError("notification backend down")
+
+    monkeypatch.setattr(
+        "app.services.tribe_post_service.SocialNotificationService.notify_tribe_post", _boom
+    )
+    posted = await auth_client.post(
+        f"/api/v1/tribes/{slug}/posts?city=Reims",
+        json={"body": "Le post doit réussir malgré l'échec de notification."},
+        headers=auth_header(poster["access_token"]),
+    )
+    # Best-effort : la création du post ne doit JAMAIS échouer à cause de la notif.
+    assert posted.status_code == 201, posted.text
