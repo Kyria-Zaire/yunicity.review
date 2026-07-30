@@ -192,6 +192,20 @@ class TribeService:
                 break
         return candidate
 
+    async def set_notifications_muted(
+        self, user: User, *, city: str, slug: str, muted: bool
+    ) -> None:
+        tribe = await self._authz.require_active_tribe(city, slug)
+        member = await self._members.get_active_membership(tribe.id, user.id)
+        if member is None:
+            raise AppError(
+                status_code=403,
+                code="TRIBE_NOT_MEMBER",
+                detail="Vous n'êtes pas membre de cette tribu.",
+            )
+        member.notifications_muted = muted
+        await self._session.commit()
+
     async def update(
         self,
         actor: User,

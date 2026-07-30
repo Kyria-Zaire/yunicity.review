@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     ForeignKey,
     Index,
@@ -99,6 +100,10 @@ class TribeMember(Base):
     )
     left_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     charter_accepted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # Mute des notifications de la tribu pour ce membre (bloc 3 — temps réel/notifs).
+    notifications_muted: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
 
     tribe: Mapped[Tribe] = relationship("Tribe", back_populates="members")
     user: Mapped[User] = relationship("User", foreign_keys=[user_id])

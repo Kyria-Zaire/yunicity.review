@@ -12,6 +12,7 @@ from app.core.feed_constants import PostAuthorType
 from app.core.notification_preferences import (
     PREFERENCE_KEY_PASSPORT,
     PREFERENCE_KEY_SOCIAL,
+    PREFERENCE_KEY_TRIBE,
     is_notification_enabled,
 )
 from app.core.social_notification_constants import (
@@ -24,6 +25,7 @@ from app.core.social_notification_helpers import (
     skip_notification_if_self,
 )
 from app.models.post import Post
+from app.models.tribe import Tribe
 from app.models.user import User
 from app.models.user_notification import UserNotification
 from app.repositories.profile_repository import ProfileRepository
@@ -47,6 +49,7 @@ _PUSH_BODIES: dict[SocialNotificationType, str] = {
     SocialNotificationType.PASSPORT_LEVEL_UNLOCKED: "Votre Passport évolue.",
     SocialNotificationType.LOCAL_STAMP_EARNED: "Nouveau souvenir ajouté à votre Passport.",
     SocialNotificationType.LOCAL_EVENT_PUBLISHED: "Votre événement local est visible.",
+    SocialNotificationType.TRIBE_POST_CREATED: "{actor_name} a publié dans {tribe_name}.",
 }
 
 
@@ -105,6 +108,88 @@ class SocialNotificationService:
             ),
             extra_payload={"comment_excerpt": excerpt},
         )
+
+    async def notify_tribe_post(
+        self,
+        *,
+        post: Post,
+        tribe: Tribe,
+        actor_id: uuid.UUID,
+        recipient_user_ids: list[uuid.UUID],
+    ) -> None:
+        # TODO(debt): fan-out synchrone. ~15 utilisateurs aujourd'hui, aucune tribu à volume.
+        # Seuil de bascule : si une tribu approche ~50-100 membres actifs, déplacer ce fan-out
+        # vers ARQ (worker creative-commitment, déjà en place) pour ne pas ralentir create_post.
+        # Même doctrine que PgBouncer/multi-replica : différé consciemment, pas oublié.
+        if not recipient_user_ids:
+            return
+        # Préférence globale "tribe" filtrée en UN batch de profils (pas de N+1). Le mute
+        # par tribu est déjà appliqué en amont (recipient_user_ids vient d'une seule requête).
+        profiles = await self._profiles.list_by_user_ids(recipient_user_ids)
+        globally_muted = {
+            profile.user_id
+            for profile in profiles
+            if not is_notification_enabled(
+                profile.notification_preferences, key=PREFERENCE_KEY_TRIBE
+            )
+        }
+        targets = [uid for uid in recipient_user_ids if uid not in globally_muted]
+        if not targets:
+            return
+
+        actor_name = await self._actor_display_name(actor_id)
+        deeplink = f"/tribes/{tribe.slug}?city={tribe.city}"
+        payload: dict[str, object] = {
+            "actor_name": actor_name,
+            "tribe_slug": tribe.slug,
+            "tribe_name": tribe.name,
+            "post_excerpt": build_post_excerpt(post.body),
+            "category": "tribe",
+        }
+        rows = [
+            UserNotification(
+                type=SocialNotificationType.TRIBE_POST_CREATED.value,
+                actor_id=actor_id,
+                target_user_id=target_user_id,
+                target_post_id=post.id,
+                deeplink=deeplink,
+                payload=payload,
+            )
+            for target_user_id in targets
+        ]
+        self._session.add_all(rows)
+        await self._session.commit()
+        logger.info(
+            "tribe_post_notifications_created",
+            extra={
+                "tribe_id": str(tribe.id),
+                "post_id": str(post.id),
+                "recipients": len(rows),
+            },
+        )
+
+        push_body = _PUSH_BODIES[SocialNotificationType.TRIBE_POST_CREATED].format(
+            actor_name=actor_name, tribe_name=tribe.name
+        )
+        for target_user_id in targets:
+            try:
+                await self._push.send_to_user(
+                    target_user_id,
+                    title=tribe.name,
+                    body=push_body,
+                    data={
+                        "type": "tribe",
+                        "tribe_slug": tribe.slug,
+                        "post_id": str(post.id),
+                        "notification_type": SocialNotificationType.TRIBE_POST_CREATED.value,
+                    },
+                )
+            except Exception:
+                logger.warning(
+                    "push_notification_failed",
+                    extra={"event": "tribe_post", "user_id": str(target_user_id)},
+                    exc_info=True,
+                )
 
     async def notify_passport_level_unlocked(
         self,

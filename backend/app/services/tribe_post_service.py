@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import UTC, datetime
 
@@ -21,6 +22,7 @@ from app.models.tribe import Tribe, TribeMember
 from app.models.user import User
 from app.repositories.like_repository import LikeRepository
 from app.repositories.post_repository import PostRepository
+from app.repositories.tribe_member_repository import TribeMemberRepository
 from app.schemas.post import PostResponse
 from app.schemas.tribe import (
     TribePostCreateRequest,
@@ -29,8 +31,14 @@ from app.schemas.tribe import (
 )
 from app.services.feed_author_resolver import FeedAuthorResolver
 from app.services.feed_post_mapper import to_post_response
+from app.services.social_notification_service import SocialNotificationService
 from app.services.tribe_authorization import TribeAuthorizationService
 from app.services.tribe_moderation_log_service import TribeModerationLogService
+
+logger = logging.getLogger(__name__)
+
+# Cap du delta de polling (GET /posts/new) : ordre chronologique, gap-free entre deux polls.
+_SINCE_LIMIT = 50
 
 
 class TribePostService:
@@ -38,6 +46,7 @@ class TribePostService:
         self._session = session
         self._posts = PostRepository(session)
         self._likes = LikeRepository(session)
+        self._members = TribeMemberRepository(session)
         self._authors = FeedAuthorResolver(session)
         self._authz = TribeAuthorizationService(session)
         self._audit = TribeModerationLogService(session)
@@ -75,7 +84,40 @@ class TribePostService:
         if has_more and page:
             last = page[-1]
             next_cursor = encode_comment_cursor(last.created_at, last.id)
-        return TribePostListResponse(items=items, next_cursor=next_cursor)
+        # Curseur du post le PLUS RÉCENT (page en ordre DESC) — point de départ du polling.
+        latest_cursor = (
+            encode_comment_cursor(page[0].created_at, page[0].id) if page else None
+        )
+        return TribePostListResponse(
+            items=items, next_cursor=next_cursor, latest_cursor=latest_cursor
+        )
+
+    async def list_posts_since(
+        self,
+        viewer: User,
+        *,
+        city: str,
+        slug: str,
+        after: str,
+    ) -> TribePostListResponse:
+        tribe = await self._authz.require_active_tribe(city, slug)
+        await self._authz.require_active_member(tribe, viewer)
+        after_created_at, after_id = decode_comment_cursor(after)
+        rows = await self._posts.list_tribe_posts_since(
+            tribe.id,
+            after_created_at=after_created_at,
+            after_id=after_id,
+            limit=_SINCE_LIMIT,
+        )
+        liked_ids = await self._likes.list_liked_post_ids(viewer.id, [post.id for post in rows])
+        items = []
+        for post in rows:
+            author = await self._authors.resolve_user(post.author_id)
+            items.append(to_post_response(post, author=author, liked_by_me=post.id in liked_ids))
+        # rows en ordre ASC : le plus récent est le dernier. Sans nouveau post, on renvoie
+        # le curseur inchangé pour que le client reparte du même point au prochain poll.
+        latest_cursor = encode_comment_cursor(rows[-1].created_at, rows[-1].id) if rows else after
+        return TribePostListResponse(items=items, next_cursor=None, latest_cursor=latest_cursor)
 
     async def create_post(
         self,
@@ -100,6 +142,21 @@ class TribePostService:
         await self._posts.add(post)
         await self._session.commit()
         await self._session.refresh(post)
+        # Notification aux membres — best-effort, n'échoue JAMAIS la création du post.
+        try:
+            recipient_ids = await self._members.list_notifiable_member_user_ids(
+                tribe.id, exclude_user_id=user.id
+            )
+            if recipient_ids:
+                await SocialNotificationService(self._session).notify_tribe_post(
+                    post=post, tribe=tribe, actor_id=user.id, recipient_user_ids=recipient_ids
+                )
+        except Exception:
+            logger.warning(
+                "tribe_post_notify_failed",
+                extra={"tribe_id": str(tribe.id), "post_id": str(post.id)},
+                exc_info=True,
+            )
         author = await self._authors.resolve_user(user.id)
         return to_post_response(post, author=author, liked_by_me=False)
 
