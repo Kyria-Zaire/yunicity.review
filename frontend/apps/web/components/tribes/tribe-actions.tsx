@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { yunicityBtnPrimary } from "@/lib/brand-classes";
+import { TribeMuteToggle } from "@/components/tribes/tribe-mute-toggle";
 
 export function TribeActions({
   tribe,
@@ -45,14 +46,17 @@ export function TribeActions({
   if (tribe.viewer_is_member) {
     if (!confirmLeave) {
       return (
-        <button
-          type="button"
-          onClick={() => setConfirmLeave(true)}
-          disabled={leaving}
-          className="rounded-full border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
-        >
-          {TRIBE_LEAVE_CTA}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setConfirmLeave(true)}
+            disabled={leaving}
+            className="rounded-full border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+          >
+            {TRIBE_LEAVE_CTA}
+          </button>
+          <TribeMuteToggle tribe={tribe} />
+        </div>
       );
     }
     return (

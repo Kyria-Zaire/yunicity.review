@@ -99,6 +99,7 @@ describe("sortir-portal", () => {
       is_archived: false,
       viewer_is_member: true,
       viewer_role: "member",
+      viewer_notifications_muted: false,
       created_at: "",
       updated_at: "",
     };

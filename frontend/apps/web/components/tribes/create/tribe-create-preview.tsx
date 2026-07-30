@@ -40,6 +40,7 @@ function resolvePreviewCoverUrl(draft: TribeCreateDraft): string | null {
     is_archived: false,
     viewer_is_member: true,
     viewer_role: "owner",
+    viewer_notifications_muted: false,
     created_at: "",
     updated_at: "",
   });
