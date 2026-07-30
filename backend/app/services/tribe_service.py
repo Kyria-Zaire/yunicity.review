@@ -231,6 +231,9 @@ class TribeService:
         return await self._to_response(tribe, actor)
 
     async def archive(self, actor: User, *, city: str, slug: str) -> TribeResponse:
+        # TODO(debt): archivage one-way — aucun unarchive n'existe (ni owner ni staff). Différé
+        # consciemment (même doctrine que PgBouncer/ARQ) : pas de signal d'usage justifiant un
+        # flux de restauration aujourd'hui. À rouvrir si des owners demandent à revenir en arrière.
         tribe = await self._authz.require_active_tribe(city, slug)
         is_staff = await self._authz.is_staff(actor.id)
         if not is_staff:

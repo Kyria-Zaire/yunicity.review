@@ -485,3 +485,59 @@ async def test_viewer_notifications_muted_reflects_state(
         headers=auth_header(member["access_token"]),
     )
     assert await viewer_muted() is False
+
+
+@pytest.mark.asyncio
+async def test_owner_can_archive_own_tribe_and_blocks_joins(
+    auth_client: AsyncClient,
+) -> None:
+    owner = await _register(auth_client, suffix="-arch-owner")
+    create = await auth_client.post(
+        "/api/v1/tribes",
+        json={
+            "name": "Tribu à archiver",
+            "description": "Tribu créée puis archivée par son propre owner.",
+            "city": "Reims",
+            "category": "photography",
+            "visibility": "public",
+            "charter_accepted": True,
+        },
+        headers=auth_header(owner["access_token"]),
+    )
+    assert create.status_code == 201, create.text
+    slug = create.json()["slug"]
+
+    archive = await auth_client.post(
+        f"/api/v1/tribes/{slug}/archive?city=Reims",
+        headers=auth_header(owner["access_token"]),
+    )
+    assert archive.status_code == 200, archive.text
+    assert archive.json()["is_archived"] is True
+
+    # Après archivage : plus de nouveaux membres (tribu archivée = introuvable pour le join).
+    joiner = await _register(auth_client, suffix="-arch-joiner")
+    join = await auth_client.post(
+        f"/api/v1/tribes/{slug}/join?city=Reims",
+        json={"charter_accepted": True},
+        headers=auth_header(joiner["access_token"]),
+    )
+    assert join.status_code == 404, join.text
+
+
+@pytest.mark.asyncio
+async def test_non_owner_cannot_archive_tribe(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    staff = await rbac_user_factory("SUPER_ADMIN")
+    slug = "arch-forbidden"
+    await _staff_create_tribe(auth_client, staff.access_token, slug)
+    member = await _register(auth_client, suffix="-arch-member")
+    await _join(auth_client, slug, member["access_token"])
+
+    archive = await auth_client.post(
+        f"/api/v1/tribes/{slug}/archive?city=Reims",
+        headers=auth_header(member["access_token"]),
+    )
+    assert archive.status_code == 403, archive.text
+    assert archive.json()["code"] == "TRIBE_FORBIDDEN"

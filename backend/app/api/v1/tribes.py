@@ -143,6 +143,18 @@ async def set_tribe_notifications(
     )
 
 
+@router.post("/{slug}/archive", response_model=TribeResponse)
+async def archive_tribe(
+    slug: str,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    city: str = Query(min_length=1),
+) -> TribeResponse:
+    # Owner-facing : le service exige déjà le rôle OWNER pour un non-staff (même logique
+    # que le chemin staff /admin/tribes/{slug}/archive). Archivage one-way (pas d'unarchive).
+    return await TribeService(session).archive(current_user, city=city, slug=slug)
+
+
 @router.get("/{slug}/posts", response_model=TribePostListResponse)
 async def list_tribe_posts(
     slug: str,
