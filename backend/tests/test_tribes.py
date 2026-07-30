@@ -228,3 +228,60 @@ async def test_tribe_post_rate_limit(
     )
     assert second.status_code == 429, second.text
     assert second.json()["code"] == "TRIBE_POST_RATE_LIMIT"
+
+
+@pytest.mark.asyncio
+async def test_citizen_creates_tribe_via_public_endpoint_and_becomes_owner(
+    auth_client: AsyncClient,
+) -> None:
+    # Chemin CITOYEN (POST /tribes), PAS le chemin staff (/admin/tribes) — ferme le trou
+    # d'audit : la suite verte ne testait que la creation staff, jamais celle du wizard citoyen.
+    creator = await _register(auth_client, suffix="-citizen-create")
+    resp = await auth_client.post(
+        "/api/v1/tribes",
+        json={
+            "name": "Reims Runners Citoyen",
+            "description": "Une tribu creee par un citoyen via le wizard public.",
+            "city": "Reims",
+            "category": "photography",
+            "visibility": "public",
+            "charter_accepted": True,
+        },
+        headers=auth_header(creator["access_token"]),
+    )
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    slug = body["slug"]
+    assert slug  # slug derive du nom
+    assert body["is_featured"] is False  # champ privilegie force serveur-side
+    assert body["member_limit"] == 150
+
+    # Le createur est bien OWNER de la tribu creee.
+    detail = await auth_client.get(
+        f"/api/v1/tribes/{slug}?city=Reims",
+        headers=auth_header(creator["access_token"]),
+    )
+    assert detail.status_code == 200
+    assert detail.json()["viewer_is_member"] is True
+    assert detail.json()["viewer_role"] == "owner"
+
+
+@pytest.mark.asyncio
+async def test_citizen_create_requires_charter_acceptance(
+    auth_client: AsyncClient,
+) -> None:
+    creator = await _register(auth_client, suffix="-citizen-nocharter")
+    resp = await auth_client.post(
+        "/api/v1/tribes",
+        json={
+            "name": "Tribu Sans Charte",
+            "description": "Cette creation doit echouer sans acceptation de charte.",
+            "city": "Reims",
+            "category": "photography",
+            "visibility": "public",
+            "charter_accepted": False,
+        },
+        headers=auth_header(creator["access_token"]),
+    )
+    assert resp.status_code == 422, resp.text
+    assert resp.json()["code"] == "TRIBE_CHARTER_REQUIRED"

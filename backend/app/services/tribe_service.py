@@ -12,11 +12,15 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
+from app.core.organization_slug import slugify_organization_name
 from app.core.tribe_constants import (
     TRIBE_CATEGORIES,
     TRIBE_CHARTER_VERSION,
     TRIBE_INVITATION_TTL_DAYS,
+    TRIBE_MAX_ACTIVE_PER_USER,
+    TRIBE_MEMBER_LIMIT_DEFAULT,
     TRIBE_PERSISTENCE_KINDS,
+    TRIBE_SLUG_MAX_LENGTH,
     TRIBE_VISIBILITYS,
     TribeMemberRole,
     TribeModerationAction,
@@ -39,6 +43,7 @@ from app.schemas.tribe import (
     TribeMemberRoleUpdateRequest,
     TribeResponse,
     TribeUpdateRequest,
+    TribeUserCreateRequest,
     clamp_list_page_size,
 )
 from app.services.tribe_authorization import TribeAuthorizationService
@@ -87,10 +92,8 @@ class TribeService:
     async def create(self, actor: User, payload: TribeCreateRequest) -> TribeResponse:
         await self._authz.require_staff(actor)
         self._validate_create(payload)
-        slug = payload.slug.strip().lower()
-        now = datetime.now(UTC)
         tribe = Tribe(
-            slug=slug,
+            slug=payload.slug.strip().lower(),
             name=payload.name.strip(),
             description=payload.description.strip(),
             city=payload.city.strip(),
@@ -104,6 +107,55 @@ class TribeService:
             member_limit=payload.member_limit,
             is_featured=payload.is_featured,
         )
+        return await self._persist_tribe_with_owner(tribe, actor)
+
+    async def create_for_member(
+        self, actor: User, payload: TribeUserCreateRequest
+    ) -> TribeResponse:
+        """Création citoyenne (authentifié, pas staff) : le créateur devient owner.
+
+        Champs privilégiés forcés serveur-side (organization_id/is_featured/member_limit/
+        persistence_kind) — un citoyen ne peut pas les fixer. Slug dérivé du nom.
+        """
+        if not payload.charter_accepted:
+            raise AppError(
+                status_code=422,
+                code="TRIBE_CHARTER_REQUIRED",
+                detail="Vous devez accepter la charte pour créer une tribu.",
+            )
+        if payload.category not in TRIBE_CATEGORIES:
+            raise AppError(status_code=422, code="INVALID_CATEGORY", detail="Catégorie invalide.")
+        if payload.visibility not in TRIBE_VISIBILITYS:
+            raise AppError(
+                status_code=422, code="INVALID_VISIBILITY", detail="Visibilité invalide."
+            )
+        if await self._members.is_at_user_tribe_limit(actor.id):
+            raise AppError(
+                status_code=429,
+                code="TRIBE_LIMIT_REACHED",
+                detail=f"Limite de {TRIBE_MAX_ACTIVE_PER_USER} tribus actives atteinte.",
+            )
+        city = payload.city.strip()
+        tribe = Tribe(
+            slug=await self._unique_slug_for(city, payload.name),
+            name=payload.name.strip(),
+            description=payload.description.strip(),
+            city=city,
+            category=payload.category,
+            visibility=payload.visibility,
+            persistence_kind="persistent",
+            cover_image_url=payload.cover_image_url,
+            created_by_user_id=actor.id,
+            organization_id=None,
+            charter_version=TRIBE_CHARTER_VERSION,
+            member_limit=TRIBE_MEMBER_LIMIT_DEFAULT,
+            is_featured=False,
+        )
+        return await self._persist_tribe_with_owner(tribe, actor)
+
+    async def _persist_tribe_with_owner(self, tribe: Tribe, actor: User) -> TribeResponse:
+        """Cœur commun staff/citoyen : insère la tribu + le créateur en OWNER."""
+        now = datetime.now(UTC)
         try:
             await self._tribes.add(tribe)
             await self._members.add(
@@ -125,6 +177,20 @@ class TribeService:
                 detail="Une tribu avec ce slug existe déjà dans cette ville.",
             ) from exc
         return await self._to_response(tribe, actor)
+
+    async def _unique_slug_for(self, city: str, name: str) -> str:
+        """Slug dérivé du nom, unique dans la ville (suffixe -2/-3… sur conflit)."""
+        base = slugify_organization_name(name)[:TRIBE_SLUG_MAX_LENGTH] or "tribu"
+        candidate = base
+        suffix = 2
+        while await self._tribes.get_by_slug(city=city, slug=candidate) is not None:
+            tail = f"-{suffix}"
+            candidate = f"{base[: TRIBE_SLUG_MAX_LENGTH - len(tail)]}{tail}"
+            suffix += 1
+            if suffix > 200:
+                candidate = f"{base[: TRIBE_SLUG_MAX_LENGTH - 7]}-{secrets.token_hex(3)}"
+                break
+        return candidate
 
     async def update(
         self,
