@@ -5,10 +5,11 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_user_optional, require_authenticated_user
+from app.core.rate_limit import enforce_rate_limit
 from app.core.tribe_constants import TRIBE_LIST_PAGE_SIZE_DEFAULT, TRIBE_LIST_PAGE_SIZE_MAX
 from app.db.session import get_db
 from app.models.user import User
@@ -25,11 +26,25 @@ from app.schemas.tribe import (
     TribePostListResponse,
     TribeResponse,
     TribeUpdateRequest,
+    TribeUserCreateRequest,
 )
 from app.services.tribe_post_service import TribePostService
 from app.services.tribe_service import TribeService
 
 router = APIRouter(prefix="/tribes", tags=["tribes"])
+
+# Création de tribu : coûteuse, réservée aux membres authentifiés. Rate limit Redis
+# (même mécanisme que /posts/media & register), dual-clé user + IP, fenêtre 1 h.
+_TRIBE_CREATE_LIMIT_PER_USER = 5
+_TRIBE_CREATE_LIMIT_PER_IP = 10
+_TRIBE_CREATE_WINDOW_SECONDS = 3600
+
+
+def _client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
 
 
 @router.get("", response_model=TribeListResponse)
@@ -48,6 +63,26 @@ async def list_tribes(
         page_size=page_size,
         viewer=viewer,
     )
+
+
+@router.post("", response_model=TribeResponse, status_code=status.HTTP_201_CREATED)
+async def create_tribe(
+    payload: TribeUserCreateRequest,
+    request: Request,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> TribeResponse:
+    await enforce_rate_limit(
+        f"tribes:create:{current_user.id}",
+        _TRIBE_CREATE_LIMIT_PER_USER,
+        _TRIBE_CREATE_WINDOW_SECONDS,
+    )
+    await enforce_rate_limit(
+        f"tribes:create:ip:{_client_ip(request)}",
+        _TRIBE_CREATE_LIMIT_PER_IP,
+        _TRIBE_CREATE_WINDOW_SECONDS,
+    )
+    return await TribeService(session).create_for_member(current_user, payload)
 
 
 @router.get("/{slug}", response_model=TribeResponse)

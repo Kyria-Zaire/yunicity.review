@@ -59,6 +59,23 @@ class TribeCreateRequest(BaseModel):
     member_limit: int = Field(default=150, ge=10, le=150)
 
 
+class TribeUserCreateRequest(BaseModel):
+    """Citizen tribe creation — isomorphe au TribeUserCreatePayload du wizard front.
+
+    Volontairement SANS slug (dérivé serveur-side du nom) ni champ privilégié
+    (organization_id / is_featured / member_limit / persistence_kind) : un citoyen ne peut
+    pas les fixer (anti mass-assignment). Le créateur devient owner automatiquement.
+    """
+
+    name: str = Field(min_length=2, max_length=TRIBE_NAME_MAX_LENGTH)
+    description: str = Field(min_length=10, max_length=TRIBE_DESCRIPTION_MAX_LENGTH)
+    city: str = Field(min_length=1, max_length=100)
+    category: str = Field(min_length=1, max_length=32)
+    visibility: str = Field(min_length=1, max_length=24)
+    cover_image_url: str | None = Field(default=None, max_length=500)
+    charter_accepted: bool = False
+
+
 class TribeUpdateRequest(BaseModel):
     name: str | None = Field(default=None, min_length=2, max_length=TRIBE_NAME_MAX_LENGTH)
     description: str | None = Field(
