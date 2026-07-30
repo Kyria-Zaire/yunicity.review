@@ -10,6 +10,7 @@ import { TribeDetailPortalHero } from "@/components/tribes/tribe-detail-portal-h
 import { TribeDetailPostsRail } from "@/components/tribes/tribe-detail-posts-rail";
 import { TribeDetailTabs } from "@/components/tribes/tribe-detail-tabs";
 import { TribeMembersSection } from "@/components/tribes/tribe-members-section";
+import { TribeEditForm } from "@/components/tribes/tribe-edit-form";
 import { TribeModerationPanel } from "@/components/tribes/tribe-moderation-panel";
 import { TribeWallSection } from "@/components/tribes/tribe-wall-section";
 import { useTribeDetail } from "@/hooks/use-tribe-detail";
@@ -230,6 +231,7 @@ export function TribeDetailScreen({ slug, city }: { slug: string; city: string }
                   </section>
                 ) : null}
 
+                <TribeEditForm tribe={currentTribe} city={city} />
                 <TribeModerationPanel tribe={currentTribe} city={city} />
               </>
             ) : null}

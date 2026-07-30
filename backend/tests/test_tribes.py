@@ -541,3 +541,51 @@ async def test_non_owner_cannot_archive_tribe(
     )
     assert archive.status_code == 403, archive.text
     assert archive.json()["code"] == "TRIBE_FORBIDDEN"
+
+
+async def _citizen_create_tribe(client: AsyncClient, token: str, name: str) -> str:
+    create = await client.post(
+        "/api/v1/tribes",
+        json={
+            "name": name,
+            "description": "Description suffisamment longue pour la tribu de test.",
+            "city": "Reims",
+            "category": "photography",
+            "visibility": "public",
+            "charter_accepted": True,
+        },
+        headers=auth_header(token),
+    )
+    assert create.status_code == 201, create.text
+    return cast(str, create.json()["slug"])
+
+
+@pytest.mark.asyncio
+async def test_owner_can_edit_tribe_fields(auth_client: AsyncClient) -> None:
+    owner = await _register(auth_client, suffix="-edit-owner")
+    slug = await _citizen_create_tribe(auth_client, owner["access_token"], "Tribu à éditer")
+
+    patch = await auth_client.patch(
+        f"/api/v1/tribes/{slug}?city=Reims",
+        json={"name": "Nom modifié", "description": "Nouvelle description assez longue."},
+        headers=auth_header(owner["access_token"]),
+    )
+    assert patch.status_code == 200, patch.text
+    body = patch.json()
+    assert body["name"] == "Nom modifié"
+    assert body["description"] == "Nouvelle description assez longue."
+
+
+@pytest.mark.asyncio
+async def test_owner_cannot_feature_own_tribe(auth_client: AsyncClient) -> None:
+    # Fuite de privilège corrigée : un owner citoyen ne peut pas mettre sa tribu en avant.
+    owner = await _register(auth_client, suffix="-feat-owner")
+    slug = await _citizen_create_tribe(auth_client, owner["access_token"], "Tribu non featurable")
+
+    patch = await auth_client.patch(
+        f"/api/v1/tribes/{slug}?city=Reims",
+        json={"is_featured": True},
+        headers=auth_header(owner["access_token"]),
+    )
+    assert patch.status_code == 403, patch.text
+    assert patch.json()["code"] == "TRIBE_FEATURED_STAFF_ONLY"

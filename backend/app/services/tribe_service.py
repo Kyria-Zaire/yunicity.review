@@ -223,6 +223,14 @@ class TribeService:
         if payload.cover_image_url is not None:
             tribe.cover_image_url = payload.cover_image_url
         if payload.is_featured is not None:
+            # Mise en avant = décision éditoriale STAFF, jamais self-service par un owner citoyen.
+            # Rejet explicite (anti fuite de privilège) — pas seulement absent de l'UI.
+            if not await self._authz.is_staff(actor.id):
+                raise AppError(
+                    status_code=403,
+                    code="TRIBE_FEATURED_STAFF_ONLY",
+                    detail="La mise en avant d'une tribu est réservée au staff.",
+                )
             tribe.is_featured = payload.is_featured
         if payload.member_limit is not None:
             tribe.member_limit = payload.member_limit
