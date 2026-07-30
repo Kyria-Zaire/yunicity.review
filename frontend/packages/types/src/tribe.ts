@@ -87,6 +87,8 @@ export interface TribePostCreatePayload {
 export interface TribePostListResponse {
   items: FeedPost[];
   next_cursor: string | null;
+  // Curseur du post le plus récent — point de départ du polling temps réel (bloc 3).
+  latest_cursor: string | null;
 }
 
 export interface TribeInvitationCreateResponse {

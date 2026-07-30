@@ -2,11 +2,13 @@
 
 import type { FeedPost, FeedReportReason } from "@yunicity/types";
 import { applyFeedLikeToggle, mergeFeedItems, isAuthError } from "@yunicity/utils";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 
 const PAGE_SIZE = 20;
+// Polling temps réel : fréquence de récupération des nouveaux posts (transport = polling, bloc 3).
+const POLL_INTERVAL_MS = 12000;
 
 export function useTribeWall(slug: string, city: string, enabled: boolean) {
   const api = useYunicityApi();
@@ -15,6 +17,9 @@ export function useTribeWall(slug: string, city: string, enabled: boolean) {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Curseur du post le plus récent connu — en ref (pas d'état) pour garder `poll` stable
+  // et éviter de recréer l'intervalle à chaque nouveau delta.
+  const latestCursorRef = useRef<string | null>(null);
 
   const loadPage = useCallback(
     async (cursor: string | null, mode: "initial" | "more") => {
@@ -36,6 +41,9 @@ export function useTribeWall(slug: string, city: string, enabled: boolean) {
           mode === "more" ? mergeFeedItems(prev, response.items) : response.items,
         );
         setNextCursor(response.next_cursor);
+        if (mode === "initial") {
+          latestCursorRef.current = response.latest_cursor;
+        }
       } catch (err) {
         if (!isAuthError(err)) {
           setError(
@@ -58,6 +66,59 @@ export function useTribeWall(slug: string, city: string, enabled: boolean) {
     }
     void loadPage(nextCursor, "more");
   }, [loadPage, loadingMore, nextCursor]);
+
+  const poll = useCallback(async () => {
+    if (!enabled || !latestCursorRef.current) {
+      return;
+    }
+    try {
+      const response = await api.tribes.getNewTribePosts(slug, city, latestCursorRef.current);
+      if (response.items.length > 0) {
+        // Le delta arrive en ordre chronologique ASC : on l'inverse pour préfixer le mur
+        // (newest-first) ; mergeFeedItems dédupe (dont notre propre post déjà affiché).
+        setItems((prev) => mergeFeedItems([...response.items].reverse(), prev));
+      }
+      if (response.latest_cursor) {
+        latestCursorRef.current = response.latest_cursor;
+      }
+    } catch {
+      // Poll silencieux : une erreur ponctuelle ne casse ni le mur ni la boucle.
+    }
+  }, [api.tribes, slug, city, enabled]);
+
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    let interval: ReturnType<typeof setInterval> | null = null;
+    const start = () => {
+      if (!interval) {
+        interval = setInterval(() => void poll(), POLL_INTERVAL_MS);
+      }
+    };
+    const stop = () => {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    };
+    const onVisibility = () => {
+      if (document.hidden) {
+        stop();
+      } else {
+        void poll(); // rattrapage immédiat au retour sur l'onglet
+        start();
+      }
+    };
+    if (!document.hidden) {
+      start();
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [enabled, poll]);
 
   const createPost = useCallback(
     async (body: string, mediaUrl?: string | null) => {

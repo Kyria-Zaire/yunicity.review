@@ -87,6 +87,13 @@ export class TribesApi extends ApiClientBase {
     );
   }
 
+  getNewTribePosts(slug: string, city: string, after: string): Promise<TribePostListResponse> {
+    const search = new URLSearchParams({ city, after });
+    return this.getJson<TribePostListResponse>(
+      `/tribes/${encodeURIComponent(slug)}/posts/new?${search.toString()}`,
+    );
+  }
+
   createTribePost(
     slug: string,
     city: string,
