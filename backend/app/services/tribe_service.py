@@ -591,11 +591,13 @@ class TribeService:
         count = await self._members.count_active_members(tribe.id)
         viewer_role = None
         is_member = False
+        viewer_notifications_muted = False
         if viewer is not None:
             member = await self._members.get_active_membership(tribe.id, viewer.id)
             if member is not None:
                 is_member = True
                 viewer_role = member.role
+                viewer_notifications_muted = member.notifications_muted
             elif await self._authz.is_staff(viewer.id):
                 is_member = True
         return TribeResponse(
@@ -614,6 +616,7 @@ class TribeService:
             is_archived=tribe.archived_at is not None,
             viewer_is_member=is_member,
             viewer_role=viewer_role,
+            viewer_notifications_muted=viewer_notifications_muted,
             created_at=tribe.created_at,
             updated_at=tribe.updated_at,
         )

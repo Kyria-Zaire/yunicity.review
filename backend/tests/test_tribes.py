@@ -446,3 +446,42 @@ async def test_create_post_succeeds_when_notification_fails(
     )
     # Best-effort : la création du post ne doit JAMAIS échouer à cause de la notif.
     assert posted.status_code == 201, posted.text
+
+
+@pytest.mark.asyncio
+async def test_viewer_notifications_muted_reflects_state(
+    auth_client: AsyncClient,
+    rbac_user_factory: RbacUserFactory,
+) -> None:
+    staff = await rbac_user_factory("SUPER_ADMIN")
+    slug = "mute-reflect"
+    await _staff_create_tribe(auth_client, staff.access_token, slug)
+    member = await _register(auth_client, suffix="-mute-reflect")
+    await _join(auth_client, slug, member["access_token"])
+
+    async def viewer_muted() -> bool:
+        detail = await auth_client.get(
+            f"/api/v1/tribes/{slug}?city=Reims",
+            headers=auth_header(member["access_token"]),
+        )
+        assert detail.status_code == 200, detail.text
+        return bool(detail.json()["viewer_notifications_muted"])
+
+    # Par défaut : notifications actives.
+    assert await viewer_muted() is False
+
+    muted = await auth_client.put(
+        f"/api/v1/tribes/{slug}/notifications?city=Reims",
+        json={"muted": True},
+        headers=auth_header(member["access_token"]),
+    )
+    assert muted.status_code == 204, muted.text
+    # Le champ reflète l'état réel après l'appel.
+    assert await viewer_muted() is True
+
+    await auth_client.put(
+        f"/api/v1/tribes/{slug}/notifications?city=Reims",
+        json={"muted": False},
+        headers=auth_header(member["access_token"]),
+    )
+    assert await viewer_muted() is False

@@ -34,6 +34,7 @@ class TribeResponse(BaseModel):
     is_archived: bool
     viewer_is_member: bool = False
     viewer_role: str | None = None
+    viewer_notifications_muted: bool = False
     created_at: datetime
     updated_at: datetime
 

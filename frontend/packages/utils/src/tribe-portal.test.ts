@@ -41,6 +41,7 @@ const BASE_TRIBE: Tribe = {
   is_archived: false,
   viewer_is_member: false,
   viewer_role: null,
+  viewer_notifications_muted: false,
   created_at: "",
   updated_at: "",
 };

@@ -70,6 +70,11 @@ export class TribesApi extends ApiClientBase {
     return this.postVoid(`/tribes/${encodeURIComponent(slug)}/leave?${qs}`);
   }
 
+  setTribeNotifications(slug: string, city: string, muted: boolean): Promise<void> {
+    const qs = tribeCityQuery(city);
+    return this.putVoid(`/tribes/${encodeURIComponent(slug)}/notifications?${qs}`, { muted });
+  }
+
   listTribePosts(
     slug: string,
     city: string,

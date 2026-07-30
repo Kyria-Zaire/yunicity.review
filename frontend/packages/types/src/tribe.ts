@@ -32,6 +32,7 @@ export interface Tribe {
   is_archived: boolean;
   viewer_is_member: boolean;
   viewer_role: TribeMemberRole | null;
+  viewer_notifications_muted: boolean;
   created_at: string;
   updated_at: string;
 }

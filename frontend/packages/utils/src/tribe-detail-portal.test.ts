@@ -31,6 +31,7 @@ const TRIBE: Tribe = {
   is_archived: false,
   viewer_is_member: true,
   viewer_role: "member",
+  viewer_notifications_muted: false,
   created_at: "2024-01-12T10:00:00.000Z",
   updated_at: "",
 };
