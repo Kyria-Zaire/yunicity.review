@@ -93,6 +93,19 @@ class TribeMemberRepository:
         )
         return list(result.scalars().all())
 
+    async def list_manager_user_ids(self, tribe_id: uuid.UUID) -> list[uuid.UUID]:
+        """user_ids des membres actifs owner/modérateur (destinataires notif de demande)."""
+        result = await self._session.execute(
+            select(TribeMember.user_id).where(
+                TribeMember.tribe_id == tribe_id,
+                TribeMember.left_at.is_(None),
+                TribeMember.role.in_(
+                    [TribeMemberRole.OWNER.value, TribeMemberRole.MODERATOR.value]
+                ),
+            )
+        )
+        return list(result.scalars().all())
+
     async def get_active_owner(self, tribe_id: uuid.UUID) -> TribeMember | None:
         result = await self._session.execute(
             select(TribeMember).where(

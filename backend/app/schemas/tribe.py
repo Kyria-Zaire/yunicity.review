@@ -35,6 +35,7 @@ class TribeResponse(BaseModel):
     viewer_is_member: bool = False
     viewer_role: str | None = None
     viewer_notifications_muted: bool = False
+    viewer_has_pending_join_request: bool = False
     created_at: datetime
     updated_at: datetime
 
@@ -141,6 +142,22 @@ class TribePostListResponse(BaseModel):
 
 class TribeNotificationSettingsRequest(BaseModel):
     muted: bool
+
+
+class TribeJoinRequestCreateRequest(BaseModel):
+    message: str | None = Field(default=None, max_length=500)
+
+
+class TribeJoinRequestItem(BaseModel):
+    id: uuid.UUID
+    requested_by: uuid.UUID
+    requester_name: str
+    message: str | None
+    created_at: datetime
+
+
+class TribeJoinRequestListResponse(BaseModel):
+    items: list[TribeJoinRequestItem]
 
 
 class TribeInvitationCreateResponse(BaseModel):

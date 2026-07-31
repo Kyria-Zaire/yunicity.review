@@ -18,6 +18,8 @@ from app.schemas.tribe import (
     TribeInvitationCreateRequest,
     TribeInvitationCreateResponse,
     TribeJoinRequest,
+    TribeJoinRequestCreateRequest,
+    TribeJoinRequestListResponse,
     TribeListResponse,
     TribeMemberListResponse,
     TribeMemberResponse,
@@ -153,6 +155,59 @@ async def archive_tribe(
     # Owner-facing : le service exige déjà le rôle OWNER pour un non-staff (même logique
     # que le chemin staff /admin/tribes/{slug}/archive). Archivage one-way (pas d'unarchive).
     return await TribeService(session).archive(current_user, city=city, slug=slug)
+
+
+@router.post("/{slug}/join-requests", status_code=status.HTTP_201_CREATED)
+async def create_join_request(
+    slug: str,
+    payload: TribeJoinRequestCreateRequest,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    city: str = Query(min_length=1),
+) -> None:
+    # Demander à rejoindre une tribu privée (le join direct ne marche que pour le public).
+    await TribeService(session).create_join_request(
+        current_user, city=city, slug=slug, payload=payload
+    )
+
+
+@router.get("/{slug}/join-requests", response_model=TribeJoinRequestListResponse)
+async def list_join_requests(
+    slug: str,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    city: str = Query(min_length=1),
+) -> TribeJoinRequestListResponse:
+    return await TribeService(session).list_join_requests(current_user, city=city, slug=slug)
+
+
+@router.post("/{slug}/join-requests/{request_id}/accept", response_model=TribeMemberResponse)
+async def accept_join_request(
+    slug: str,
+    request_id: uuid.UUID,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    city: str = Query(min_length=1),
+) -> TribeMemberResponse:
+    return await TribeService(session).accept_join_request(
+        current_user, city=city, slug=slug, request_id=request_id
+    )
+
+
+@router.post(
+    "/{slug}/join-requests/{request_id}/decline",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def decline_join_request(
+    slug: str,
+    request_id: uuid.UUID,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    city: str = Query(min_length=1),
+) -> None:
+    await TribeService(session).decline_join_request(
+        current_user, city=city, slug=slug, request_id=request_id
+    )
 
 
 @router.get("/{slug}/posts", response_model=TribePostListResponse)

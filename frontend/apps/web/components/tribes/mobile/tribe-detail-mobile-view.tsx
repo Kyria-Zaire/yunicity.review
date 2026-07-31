@@ -8,6 +8,7 @@ import {
   TribeDetailMobileTabs,
 } from "@/components/tribes/mobile";
 import { TerritoryMobilePostComposer } from "@/components/shared/mobile";
+import { TribeJoinRequestButton } from "@/components/tribes/tribe-join-request-button";
 import { useTribeWall } from "@/hooks/use-tribe-wall";
 import type { FeedPost, Tribe, TribeMember } from "@yunicity/types";
 import type { CulturalPlaceListItem, LocalEvent } from "@yunicity/types";
@@ -128,6 +129,11 @@ export function TribeDetailMobileView({
           <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-6">
             <h2 className="font-semibold text-neutral-900">{TRIBE_PRIVATE_TITLE}</h2>
             <p className="mt-2 text-sm text-neutral-600">{TRIBE_PRIVATE_BODY}</p>
+            {isAuthenticated ? (
+              <div className="mt-4">
+                <TribeJoinRequestButton tribe={tribe} />
+              </div>
+            ) : null}
           </div>
         ) : null}
 

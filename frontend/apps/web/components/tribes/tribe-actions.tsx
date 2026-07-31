@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { yunicityBtnPrimary } from "@/lib/brand-classes";
+import { TribeJoinRequestButton } from "@/components/tribes/tribe-join-request-button";
 import { TribeMuteToggle } from "@/components/tribes/tribe-mute-toggle";
 
 export function TribeActions({
@@ -81,11 +82,7 @@ export function TribeActions({
   }
 
   if (tribe.visibility === "private_invite") {
-    return (
-      <p className="text-sm text-neutral-600">
-        Cette tribu est sur invitation. Utilisez le lien reçu d’un membre.
-      </p>
-    );
+    return <TribeJoinRequestButton tribe={tribe} />;
   }
 
   return (

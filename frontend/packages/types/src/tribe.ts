@@ -33,6 +33,7 @@ export interface Tribe {
   viewer_is_member: boolean;
   viewer_role: TribeMemberRole | null;
   viewer_notifications_muted: boolean;
+  viewer_has_pending_join_request: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -78,6 +79,22 @@ export interface TribeMemberListResponse {
 
 export interface TribeJoinPayload {
   charter_accepted: boolean;
+}
+
+export interface TribeJoinRequestPayload {
+  message?: string | null;
+}
+
+export interface TribeJoinRequestItem {
+  id: string;
+  requested_by: string;
+  requester_name: string;
+  message: string | null;
+  created_at: string;
+}
+
+export interface TribeJoinRequestListResponse {
+  items: TribeJoinRequestItem[];
 }
 
 export interface TribePostCreatePayload {

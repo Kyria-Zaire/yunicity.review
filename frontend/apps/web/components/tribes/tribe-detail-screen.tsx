@@ -11,6 +11,8 @@ import { TribeDetailPostsRail } from "@/components/tribes/tribe-detail-posts-rai
 import { TribeDetailTabs } from "@/components/tribes/tribe-detail-tabs";
 import { TribeMembersSection } from "@/components/tribes/tribe-members-section";
 import { TribeEditForm } from "@/components/tribes/tribe-edit-form";
+import { TribeJoinRequestButton } from "@/components/tribes/tribe-join-request-button";
+import { TribeJoinRequestsSection } from "@/components/tribes/tribe-join-requests-section";
 import { TribeModerationPanel } from "@/components/tribes/tribe-moderation-panel";
 import { TribeWallSection } from "@/components/tribes/tribe-wall-section";
 import { useTribeDetail } from "@/hooks/use-tribe-detail";
@@ -180,6 +182,11 @@ export function TribeDetailScreen({ slug, city }: { slug: string; city: string }
               <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-6 py-8">
                 <h2 className="font-semibold text-neutral-900">{TRIBE_PRIVATE_TITLE}</h2>
                 <p className="mt-2 text-sm text-neutral-600">{TRIBE_PRIVATE_BODY}</p>
+                {isAuthenticated ? (
+                  <div className="mt-4">
+                    <TribeJoinRequestButton tribe={currentTribe} />
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -231,6 +238,7 @@ export function TribeDetailScreen({ slug, city }: { slug: string; city: string }
                   </section>
                 ) : null}
 
+                <TribeJoinRequestsSection tribe={currentTribe} city={city} />
                 <TribeEditForm tribe={currentTribe} city={city} />
                 <TribeModerationPanel tribe={currentTribe} city={city} />
               </>

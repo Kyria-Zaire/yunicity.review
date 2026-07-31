@@ -53,7 +53,13 @@ from app.models.report import Report
 from app.models.report_admin_action import ReportAdminAction
 from app.models.staff_admin_action import StaffAdminAction
 from app.models.transit import TransitDeparture, TransitFeedMeta, TransitStop
-from app.models.tribe import Tribe, TribeInvitation, TribeMember, TribeModerationLog
+from app.models.tribe import (
+    Tribe,
+    TribeInvitation,
+    TribeJoinRequest,
+    TribeMember,
+    TribeModerationLog,
+)
 from app.models.user import User
 from app.models.user_notification import UserNotification
 from app.models.user_profile import ProfileVisibility, UserProfile
@@ -102,6 +108,7 @@ __all__ = [
     "TransitStop",
     "Tribe",
     "TribeInvitation",
+    "TribeJoinRequest",
     "TribeMember",
     "TribeModerationLog",
     "PushSubscription",
