@@ -33,7 +33,10 @@ export const NEIGHBORHOODS_PORTAL_CARDS_TITLE = "Quartiers à explorer";
 export const NEIGHBORHOODS_PORTAL_CARDS_SUBTITLE =
   "Des repères humains pour choisir où flâner, sortir ou respirer.";
 
-export const NEIGHBORHOODS_PORTAL_LIST_TITLE = "Tous les quartiers";
+// "Autres quartiers" (not "Tous"): this section excludes the 4 already shown in
+// the "à la une" rail above (buildNeighborhoodListCards uses excludeSlugs), so
+// "Tous les quartiers" was misleading — it never lists the full 12 here.
+export const NEIGHBORHOODS_PORTAL_LIST_TITLE = "Autres quartiers";
 export const NEIGHBORHOODS_PORTAL_FEATURED_TITLE = "Habitudes & quartiers";
 export const NEIGHBORHOODS_PORTAL_FEATURED_CTA = "Tout explorer";
 
