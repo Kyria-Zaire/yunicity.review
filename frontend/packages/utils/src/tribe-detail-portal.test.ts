@@ -32,6 +32,7 @@ const TRIBE: Tribe = {
   viewer_is_member: true,
   viewer_role: "member",
   viewer_notifications_muted: false,
+  viewer_has_pending_join_request: false,
   created_at: "2024-01-12T10:00:00.000Z",
   updated_at: "",
 };

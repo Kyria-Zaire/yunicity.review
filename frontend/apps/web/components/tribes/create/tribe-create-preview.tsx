@@ -41,6 +41,7 @@ function resolvePreviewCoverUrl(draft: TribeCreateDraft): string | null {
     viewer_is_member: true,
     viewer_role: "owner",
     viewer_notifications_muted: false,
+    viewer_has_pending_join_request: false,
     created_at: "",
     updated_at: "",
   });

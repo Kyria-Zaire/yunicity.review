@@ -50,6 +50,8 @@ _PUSH_BODIES: dict[SocialNotificationType, str] = {
     SocialNotificationType.LOCAL_STAMP_EARNED: "Nouveau souvenir ajouté à votre Passport.",
     SocialNotificationType.LOCAL_EVENT_PUBLISHED: "Votre événement local est visible.",
     SocialNotificationType.TRIBE_POST_CREATED: "{actor_name} a publié dans {tribe_name}.",
+    SocialNotificationType.TRIBE_JOIN_REQUEST: "{actor_name} demande à rejoindre {tribe_name}.",
+    SocialNotificationType.TRIBE_JOIN_REQUEST_ACCEPTED: "Vous avez rejoint {tribe_name}.",
 }
 
 
@@ -190,6 +192,112 @@ class SocialNotificationService:
                     extra={"event": "tribe_post", "user_id": str(target_user_id)},
                     exc_info=True,
                 )
+
+    async def notify_tribe_join_request(
+        self,
+        *,
+        tribe: Tribe,
+        requester_id: uuid.UUID,
+        recipient_user_ids: list[uuid.UUID],
+    ) -> None:
+        """Nouvelle demande d'adhésion → notifie owner/mods (in-app + push, pattern bloc 3)."""
+        if not recipient_user_ids:
+            return
+        profiles = await self._profiles.list_by_user_ids(recipient_user_ids)
+        globally_muted = {
+            profile.user_id
+            for profile in profiles
+            if not is_notification_enabled(
+                profile.notification_preferences, key=PREFERENCE_KEY_TRIBE
+            )
+        }
+        targets = [uid for uid in recipient_user_ids if uid not in globally_muted]
+        if not targets:
+            return
+        requester_name = await self._actor_display_name(requester_id)
+        deeplink = f"/tribes/{tribe.slug}?city={tribe.city}"
+        payload: dict[str, object] = {
+            "actor_name": requester_name,
+            "tribe_slug": tribe.slug,
+            "tribe_name": tribe.name,
+            "category": "tribe",
+        }
+        rows = [
+            UserNotification(
+                type=SocialNotificationType.TRIBE_JOIN_REQUEST.value,
+                actor_id=requester_id,
+                target_user_id=target_user_id,
+                target_post_id=None,
+                deeplink=deeplink,
+                payload=payload,
+            )
+            for target_user_id in targets
+        ]
+        self._session.add_all(rows)
+        await self._session.commit()
+        push_body = _PUSH_BODIES[SocialNotificationType.TRIBE_JOIN_REQUEST].format(
+            actor_name=requester_name, tribe_name=tribe.name
+        )
+        for target_user_id in targets:
+            try:
+                await self._push.send_to_user(
+                    target_user_id,
+                    title=tribe.name,
+                    body=push_body,
+                    data={
+                        "type": "tribe",
+                        "tribe_slug": tribe.slug,
+                        "notification_type": SocialNotificationType.TRIBE_JOIN_REQUEST.value,
+                    },
+                )
+            except Exception:
+                logger.warning(
+                    "push_notification_failed",
+                    extra={"event": "tribe_join_request", "user_id": str(target_user_id)},
+                    exc_info=True,
+                )
+
+    async def notify_tribe_join_request_accepted(
+        self,
+        *,
+        tribe: Tribe,
+        target_user_id: uuid.UUID,
+    ) -> None:
+        """Demande acceptée → notifie le demandeur (in-app + push)."""
+        profile = await self._profiles.get_by_user_id(target_user_id)
+        if profile is not None and not is_notification_enabled(
+            profile.notification_preferences, key=PREFERENCE_KEY_TRIBE
+        ):
+            return
+        row = UserNotification(
+            type=SocialNotificationType.TRIBE_JOIN_REQUEST_ACCEPTED.value,
+            actor_id=None,
+            target_user_id=target_user_id,
+            target_post_id=None,
+            deeplink=f"/tribes/{tribe.slug}?city={tribe.city}",
+            payload={"tribe_slug": tribe.slug, "tribe_name": tribe.name, "category": "tribe"},
+        )
+        self._session.add(row)
+        await self._session.commit()
+        try:
+            await self._push.send_to_user(
+                target_user_id,
+                title=tribe.name,
+                body=_PUSH_BODIES[SocialNotificationType.TRIBE_JOIN_REQUEST_ACCEPTED].format(
+                    tribe_name=tribe.name
+                ),
+                data={
+                    "type": "tribe",
+                    "tribe_slug": tribe.slug,
+                    "notification_type": SocialNotificationType.TRIBE_JOIN_REQUEST_ACCEPTED.value,
+                },
+            )
+        except Exception:
+            logger.warning(
+                "push_notification_failed",
+                extra={"event": "tribe_join_request_accepted", "user_id": str(target_user_id)},
+                exc_info=True,
+            )
 
     async def notify_passport_level_unlocked(
         self,

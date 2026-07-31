@@ -26,9 +26,11 @@ from app.core.tribe_constants import (
     TribeModerationAction,
     TribeVisibility,
 )
-from app.models.tribe import Tribe, TribeInvitation, TribeMember
+from app.models.tribe import Tribe, TribeInvitation, TribeJoinRequest, TribeMember
 from app.models.user import User
+from app.repositories.profile_repository import ProfileRepository
 from app.repositories.tribe_invitation_repository import TribeInvitationRepository
+from app.repositories.tribe_join_request_repository import TribeJoinRequestRepository
 from app.repositories.tribe_member_repository import TribeMemberRepository
 from app.repositories.tribe_repository import TribeRepository
 from app.schemas.tribe import (
@@ -37,6 +39,9 @@ from app.schemas.tribe import (
     TribeInvitationCreateResponse,
     TribeInvitationListResponse,
     TribeInvitationPendingItem,
+    TribeJoinRequestCreateRequest,
+    TribeJoinRequestItem,
+    TribeJoinRequestListResponse,
     TribeListResponse,
     TribeMemberListResponse,
     TribeMemberResponse,
@@ -46,6 +51,7 @@ from app.schemas.tribe import (
     TribeUserCreateRequest,
     clamp_list_page_size,
 )
+from app.services.social_notification_service import SocialNotificationService
 from app.services.tribe_authorization import TribeAuthorizationService
 from app.services.tribe_moderation_log_service import TribeModerationLogService
 from app.services.tribe_notification_hooks import (
@@ -62,6 +68,8 @@ class TribeService:
         self._tribes = TribeRepository(session)
         self._members = TribeMemberRepository(session)
         self._invitations = TribeInvitationRepository(session)
+        self._join_requests = TribeJoinRequestRepository(session)
+        self._profiles = ProfileRepository(session)
         self._authz = TribeAuthorizationService(session)
         self._audit = TribeModerationLogService(session)
 
@@ -536,6 +544,122 @@ class TribeService:
             )
         return member_resp
 
+    async def create_join_request(
+        self, user: User, *, city: str, slug: str, payload: TribeJoinRequestCreateRequest
+    ) -> None:
+        tribe = await self._authz.require_active_tribe(city, slug)
+        if tribe.visibility == TribeVisibility.PUBLIC.value:
+            raise AppError(
+                status_code=400,
+                code="TRIBE_ALREADY_PUBLIC",
+                detail="Cette tribu est publique — rejoignez-la directement.",
+            )
+        if await self._members.get_active_membership(tribe.id, user.id) is not None:
+            raise AppError(
+                status_code=409,
+                code="TRIBE_ALREADY_MEMBER",
+                detail="Vous êtes déjà membre de cette tribu.",
+            )
+        # Cooldown re-join vérifié DÈS la création (défense en profondeur : _add_member le
+        # re-vérifie à l'accept, au cas où le délai expire entre-temps).
+        if not await self._members.can_rejoin(tribe.id, user.id):
+            raise AppError(
+                status_code=409,
+                code="TRIBE_REJOIN_COOLDOWN",
+                detail="Vous pourrez demander à rejoindre cette tribu plus tard.",
+            )
+        if await self._join_requests.get_pending_for_user_tribe(tribe.id, user.id) is not None:
+            raise AppError(
+                status_code=409,
+                code="TRIBE_REQUEST_PENDING",
+                detail="Vous avez déjà une demande en attente pour cette tribu.",
+            )
+        message = payload.message.strip() if payload.message else None
+        request = TribeJoinRequest(tribe_id=tribe.id, requested_by=user.id, message=message or None)
+        await self._join_requests.add(request)
+        await self._session.commit()
+        recipients = await self._members.list_manager_user_ids(tribe.id)
+        if recipients:
+            await SocialNotificationService(self._session).notify_tribe_join_request(
+                tribe=tribe, requester_id=user.id, recipient_user_ids=recipients
+            )
+
+    async def list_join_requests(
+        self, actor: User, *, city: str, slug: str
+    ) -> TribeJoinRequestListResponse:
+        tribe = await self._authz.require_active_tribe(city, slug)
+        await self._authz.require_role_at_least(tribe, actor, min_role=TribeMemberRole.MODERATOR)
+        rows = await self._join_requests.list_pending_for_tribe(tribe.id)
+        items = [
+            TribeJoinRequestItem(
+                id=row.id,
+                requested_by=row.requested_by,
+                requester_name=await self._resolve_requester_name(row.requested_by),
+                message=row.message,
+                created_at=row.created_at,
+            )
+            for row in rows
+        ]
+        return TribeJoinRequestListResponse(items=items)
+
+    async def accept_join_request(
+        self, actor: User, *, city: str, slug: str, request_id: uuid.UUID
+    ) -> TribeMemberResponse:
+        tribe = await self._authz.require_active_tribe(city, slug)
+        await self._authz.require_role_at_least(tribe, actor, min_role=TribeMemberRole.MODERATOR)
+        request = await self._pending_join_request(tribe, request_id)
+        requester = await self._session.get(User, request.requested_by)
+        if requester is None:
+            raise AppError(
+                status_code=404, code="TRIBE_REQUEST_NOT_FOUND", detail="Demande introuvable."
+            )
+        member_resp = await self._add_member(requester, tribe, invited_by=actor.id)
+        request.accepted_at = datetime.now(UTC)
+        request.decided_by = actor.id
+        await self._session.commit()
+        await SocialNotificationService(self._session).notify_tribe_join_request_accepted(
+            tribe=tribe, target_user_id=request.requested_by
+        )
+        return member_resp
+
+    async def decline_join_request(
+        self, actor: User, *, city: str, slug: str, request_id: uuid.UUID
+    ) -> None:
+        # TODO(debt): pas de cooldown après un refus (MVP, ~15 utilisateurs). Si un pattern de
+        # demandes répétées abusives apparaît en usage réel, ajouter un cooldown post-decline
+        # (ex: 24-48h) à ce moment-là — différé faute de signal, l'owner garde le contrôle.
+        tribe = await self._authz.require_active_tribe(city, slug)
+        await self._authz.require_role_at_least(tribe, actor, min_role=TribeMemberRole.MODERATOR)
+        request = await self._pending_join_request(tribe, request_id)
+        request.declined_at = datetime.now(UTC)
+        request.decided_by = actor.id
+        await self._session.commit()
+
+    async def _pending_join_request(
+        self, tribe: Tribe, request_id: uuid.UUID
+    ) -> TribeJoinRequest:
+        request = await self._join_requests.get_by_id(request_id)
+        if (
+            request is None
+            or request.tribe_id != tribe.id
+            or request.accepted_at is not None
+            or request.declined_at is not None
+        ):
+            raise AppError(
+                status_code=404,
+                code="TRIBE_REQUEST_NOT_FOUND",
+                detail="Demande introuvable ou déjà traitée.",
+            )
+        return request
+
+    async def _resolve_requester_name(self, user_id: uuid.UUID) -> str:
+        profile = await self._profiles.get_by_user_id(user_id)
+        if profile is not None and profile.display_name:
+            return profile.display_name.strip()
+        if profile is not None and profile.username:
+            return profile.username
+        return "Un citoyen"
+
     async def _add_member(
         self,
         user: User,
@@ -603,6 +727,7 @@ class TribeService:
         viewer_role = None
         is_member = False
         viewer_notifications_muted = False
+        viewer_has_pending_join_request = False
         if viewer is not None:
             member = await self._members.get_active_membership(tribe.id, viewer.id)
             if member is not None:
@@ -611,6 +736,10 @@ class TribeService:
                 viewer_notifications_muted = member.notifications_muted
             elif await self._authz.is_staff(viewer.id):
                 is_member = True
+            elif tribe.visibility != TribeVisibility.PUBLIC.value:
+                # Non-membre d'une tribu privée : a-t-il une demande en attente ? (état du bouton)
+                pending = await self._join_requests.get_pending_for_user_tribe(tribe.id, viewer.id)
+                viewer_has_pending_join_request = pending is not None
         return TribeResponse(
             id=tribe.id,
             slug=tribe.slug,
@@ -628,6 +757,7 @@ class TribeService:
             viewer_is_member=is_member,
             viewer_role=viewer_role,
             viewer_notifications_muted=viewer_notifications_muted,
+            viewer_has_pending_join_request=viewer_has_pending_join_request,
             created_at=tribe.created_at,
             updated_at=tribe.updated_at,
         )

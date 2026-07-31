@@ -134,6 +134,42 @@ class TribeInvitation(Base):
     tribe: Mapped[Tribe] = relationship("Tribe")
 
 
+class TribeJoinRequest(TimestampMixin, Base):
+    """Demande d'adhésion à une tribu privée (bloc 4). Statut par timestamps (à la TribeInvitation).
+
+    Une seule demande *pending* par (tribe, user) est garantie EN BASE par un index unique
+    partiel (pas seulement en applicatif) — pas de trou de concurrence.
+    """
+
+    __tablename__ = "tribe_join_requests"
+    __table_args__ = (
+        Index(
+            "uq_tribe_join_request_pending",
+            "tribe_id",
+            "requested_by",
+            unique=True,
+            postgresql_where=text("accepted_at IS NULL AND declined_at IS NULL"),
+        ),
+        Index("ix_tribe_join_requests_tribe_created", "tribe_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    tribe_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("tribes.id", ondelete="CASCADE"), nullable=False
+    )
+    requested_by: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    message: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    declined_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    decided_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+
+    tribe: Mapped[Tribe] = relationship("Tribe")
+
+
 class TribeModerationLog(Base):
     """Audit trail for tribe moderation (TICKET-A.2)."""
 

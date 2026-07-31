@@ -119,6 +119,7 @@ const baseTribe: Tribe = {
   viewer_is_member: false,
   viewer_role: null,
   viewer_notifications_muted: false,
+  viewer_has_pending_join_request: false,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };

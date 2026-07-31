@@ -37,6 +37,7 @@ const sampleTribe: Tribe = {
   viewer_is_member: false,
   viewer_role: null,
   viewer_notifications_muted: false,
+  viewer_has_pending_join_request: false,
   created_at: "2026-01-01T00:00:00Z",
   updated_at: "2026-01-01T00:00:00Z",
 };

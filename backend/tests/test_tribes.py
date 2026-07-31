@@ -589,3 +589,163 @@ async def test_owner_cannot_feature_own_tribe(auth_client: AsyncClient) -> None:
     )
     assert patch.status_code == 403, patch.text
     assert patch.json()["code"] == "TRIBE_FEATURED_STAFF_ONLY"
+
+
+async def _citizen_create_private_tribe(client: AsyncClient, token: str, name: str) -> str:
+    create = await client.post(
+        "/api/v1/tribes",
+        json={
+            "name": name,
+            "description": "Tribu privée de test, sur invitation ou demande.",
+            "city": "Reims",
+            "category": "photography",
+            "visibility": "private_invite",
+            "charter_accepted": True,
+        },
+        headers=auth_header(token),
+    )
+    assert create.status_code == 201, create.text
+    return cast(str, create.json()["slug"])
+
+
+async def _request_join(client: AsyncClient, slug: str, token: str) -> Any:
+    return await client.post(
+        f"/api/v1/tribes/{slug}/join-requests?city=Reims",
+        json={"message": "Je souhaite rejoindre."},
+        headers=auth_header(token),
+    )
+
+
+@pytest.mark.asyncio
+async def test_join_request_flow_private_tribe(auth_client: AsyncClient) -> None:
+    owner = await _register(auth_client, suffix="-jr-owner")
+    slug = await _citizen_create_private_tribe(auth_client, owner["access_token"], "Privée JR")
+    requester = await _register(auth_client, suffix="-jr-requester")
+
+    # 1. Demande sur tribu privée -> 201.
+    created = await _request_join(auth_client, slug, requester["access_token"])
+    assert created.status_code == 201, created.text
+
+    # 6. L'owner voit la demande en attente ; un étranger (non-membre) -> 403.
+    stranger = await _register(auth_client, suffix="-jr-stranger")
+    forbidden = await auth_client.get(
+        f"/api/v1/tribes/{slug}/join-requests?city=Reims",
+        headers=auth_header(stranger["access_token"]),
+    )
+    assert forbidden.status_code == 403, forbidden.text
+
+    listing = await auth_client.get(
+        f"/api/v1/tribes/{slug}/join-requests?city=Reims",
+        headers=auth_header(owner["access_token"]),
+    )
+    assert listing.status_code == 200, listing.text
+    items = listing.json()["items"]
+    assert len(items) == 1
+    request_id = items[0]["id"]
+
+    # 7. L'owner accepte -> le demandeur devient membre.
+    accept = await auth_client.post(
+        f"/api/v1/tribes/{slug}/join-requests/{request_id}/accept?city=Reims",
+        headers=auth_header(owner["access_token"]),
+    )
+    assert accept.status_code == 200, accept.text
+    detail = await auth_client.get(
+        f"/api/v1/tribes/{slug}?city=Reims",
+        headers=auth_header(requester["access_token"]),
+    )
+    assert detail.json()["viewer_is_member"] is True
+
+
+@pytest.mark.asyncio
+async def test_join_request_rejected_on_public_tribe(auth_client: AsyncClient) -> None:
+    owner = await _register(auth_client, suffix="-jr-pub-owner")
+    slug = await _citizen_create_tribe(auth_client, owner["access_token"], "Publique JR")
+    requester = await _register(auth_client, suffix="-jr-pub-req")
+    resp = await _request_join(auth_client, slug, requester["access_token"])
+    assert resp.status_code == 400, resp.text
+    assert resp.json()["code"] == "TRIBE_ALREADY_PUBLIC"
+
+
+@pytest.mark.asyncio
+async def test_member_cannot_request_join(auth_client: AsyncClient) -> None:
+    owner = await _register(auth_client, suffix="-jr-mem-owner")
+    slug = await _citizen_create_private_tribe(auth_client, owner["access_token"], "Privée mem")
+    # L'owner est déjà membre -> sa propre demande est rejetée.
+    resp = await _request_join(auth_client, slug, owner["access_token"])
+    assert resp.status_code == 409, resp.text
+    assert resp.json()["code"] == "TRIBE_ALREADY_MEMBER"
+
+
+@pytest.mark.asyncio
+async def test_duplicate_pending_request_rejected(auth_client: AsyncClient) -> None:
+    owner = await _register(auth_client, suffix="-jr-dup-owner")
+    slug = await _citizen_create_private_tribe(auth_client, owner["access_token"], "Privée dup")
+    requester = await _register(auth_client, suffix="-jr-dup-req")
+    first = await _request_join(auth_client, slug, requester["access_token"])
+    assert first.status_code == 201, first.text
+    second = await _request_join(auth_client, slug, requester["access_token"])
+    assert second.status_code == 409, second.text
+    assert second.json()["code"] == "TRIBE_REQUEST_PENDING"
+
+
+@pytest.mark.asyncio
+async def test_join_request_decline_and_non_owner_forbidden(auth_client: AsyncClient) -> None:
+    owner = await _register(auth_client, suffix="-jr-dec-owner")
+    slug = await _citizen_create_private_tribe(auth_client, owner["access_token"], "Privée dec")
+    requester = await _register(auth_client, suffix="-jr-dec-req")
+    stranger = await _register(auth_client, suffix="-jr-dec-str")
+    created = await _request_join(auth_client, slug, requester["access_token"])
+    assert created.status_code == 201, created.text
+    request_id = (
+        await auth_client.get(
+            f"/api/v1/tribes/{slug}/join-requests?city=Reims",
+            headers=auth_header(owner["access_token"]),
+        )
+    ).json()["items"][0]["id"]
+
+    # 9. Un non-owner ne peut pas refuser.
+    forbidden = await auth_client.post(
+        f"/api/v1/tribes/{slug}/join-requests/{request_id}/decline?city=Reims",
+        headers=auth_header(stranger["access_token"]),
+    )
+    assert forbidden.status_code == 403, forbidden.text
+
+    # 8. L'owner refuse -> le demandeur n'est pas membre.
+    decline = await auth_client.post(
+        f"/api/v1/tribes/{slug}/join-requests/{request_id}/decline?city=Reims",
+        headers=auth_header(owner["access_token"]),
+    )
+    assert decline.status_code == 204, decline.text
+    detail = await auth_client.get(
+        f"/api/v1/tribes/{slug}?city=Reims",
+        headers=auth_header(requester["access_token"]),
+    )
+    assert detail.json()["viewer_is_member"] is False
+
+
+@pytest.mark.asyncio
+async def test_rejoin_cooldown_blocks_new_request(auth_client: AsyncClient) -> None:
+    owner = await _register(auth_client, suffix="-jr-cd-owner")
+    slug = await _citizen_create_private_tribe(auth_client, owner["access_token"], "Privée cd")
+    requester = await _register(auth_client, suffix="-jr-cd-req")
+    created = await _request_join(auth_client, slug, requester["access_token"])
+    assert created.status_code == 201, created.text
+    request_id = (
+        await auth_client.get(
+            f"/api/v1/tribes/{slug}/join-requests?city=Reims",
+            headers=auth_header(owner["access_token"]),
+        )
+    ).json()["items"][0]["id"]
+    await auth_client.post(
+        f"/api/v1/tribes/{slug}/join-requests/{request_id}/accept?city=Reims",
+        headers=auth_header(owner["access_token"]),
+    )
+    leave = await auth_client.post(
+        f"/api/v1/tribes/{slug}/leave?city=Reims",
+        headers=auth_header(requester["access_token"]),
+    )
+    assert leave.status_code == 204, leave.text
+    # Re-demande immédiate après un départ -> cooldown (défense en profondeur à la création).
+    again = await _request_join(auth_client, slug, requester["access_token"])
+    assert again.status_code == 409, again.text
+    assert again.json()["code"] == "TRIBE_REJOIN_COOLDOWN"

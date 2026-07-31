@@ -5,6 +5,8 @@ import type {
   TribeInvitationCreateResponse,
   TribeInvitationListResponse,
   TribeJoinPayload,
+  TribeJoinRequestListResponse,
+  TribeJoinRequestPayload,
   TribeListResponse,
   TribeMember,
   TribeMemberListResponse,
@@ -78,6 +80,36 @@ export class TribesApi extends ApiClientBase {
   archiveTribe(slug: string, city: string): Promise<Tribe> {
     const qs = tribeCityQuery(city);
     return this.postJson<Tribe>(`/tribes/${encodeURIComponent(slug)}/archive?${qs}`, {});
+  }
+
+  createTribeJoinRequest(
+    slug: string,
+    city: string,
+    payload: TribeJoinRequestPayload,
+  ): Promise<void> {
+    const qs = tribeCityQuery(city);
+    return this.postVoid(`/tribes/${encodeURIComponent(slug)}/join-requests?${qs}`, payload);
+  }
+
+  listTribeJoinRequests(slug: string, city: string): Promise<TribeJoinRequestListResponse> {
+    const qs = tribeCityQuery(city);
+    return this.getJson<TribeJoinRequestListResponse>(
+      `/tribes/${encodeURIComponent(slug)}/join-requests?${qs}`,
+    );
+  }
+
+  acceptTribeJoinRequest(slug: string, city: string, requestId: string): Promise<void> {
+    const qs = tribeCityQuery(city);
+    return this.postVoid(
+      `/tribes/${encodeURIComponent(slug)}/join-requests/${encodeURIComponent(requestId)}/accept?${qs}`,
+    );
+  }
+
+  declineTribeJoinRequest(slug: string, city: string, requestId: string): Promise<void> {
+    const qs = tribeCityQuery(city);
+    return this.postVoid(
+      `/tribes/${encodeURIComponent(slug)}/join-requests/${encodeURIComponent(requestId)}/decline?${qs}`,
+    );
   }
 
   listTribePosts(
