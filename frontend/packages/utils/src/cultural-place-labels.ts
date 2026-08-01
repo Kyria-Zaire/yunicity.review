@@ -45,6 +45,12 @@ export function culturalPlaceCategoryLabel(category: string): string {
   return CATEGORY_LABELS[category] ?? "Lieu culturel";
 }
 
+/** Toutes les catégories connues de lieu culturel — SOURCE UNIQUE (les clés de CATEGORY_LABELS). */
+export const CULTURAL_PLACE_CATEGORIES: readonly string[] = Object.keys(CATEGORY_LABELS);
+
+/** Catégories classées « nature ». TOUT le reste est « culture » → aucune ne disparaît du filtre. */
+export const NATURE_PLACE_CATEGORIES: readonly string[] = ["park"];
+
 export function culturalPlaceLocationLine(place: CulturalPlaceListItem): string {
   const hood = place.neighborhood?.display_name;
   if (hood) {
