@@ -1,6 +1,10 @@
 import type { MapCulturalPlaceItem, MapEventItem, Neighborhood } from "@yunicity/types";
 
-import { culturalPlaceCategoryLabel } from "./cultural-place-labels";
+import {
+  CULTURAL_PLACE_CATEGORIES,
+  NATURE_PLACE_CATEGORIES,
+  culturalPlaceCategoryLabel,
+} from "./cultural-place-labels";
 import { buildMapEventUrl, buildMapPlaceUrl } from "./explorer-links";
 import { mapEventPopupDate } from "./map-labels";
 import { resolveMapPlaceImageUrl } from "./map-media-url";
@@ -73,17 +77,6 @@ export type MapAroundYouItem =
       href: string;
     };
 
-const CULTURE_CATEGORIES = [
-  "museum",
-  "heritage",
-  "cathedral",
-  "theatre",
-  "library",
-  "monument",
-] as const;
-
-const NATURE_CATEGORIES = ["park"] as const;
-
 export function resolveMapPortalLayer(category: MapPortalCategoryId): MapTerritoryLayer {
   if (category === "events") return "moments";
   if (category === "places" || category === "culture" || category === "nature") return "lieux";
@@ -97,8 +90,15 @@ export function resolveMapPortalLayer(category: MapPortalCategoryId): MapTerrito
 export function resolveMapPortalPlaceCategories(
   category: MapPortalCategoryId,
 ): string[] | null {
-  if (category === "culture") return [...CULTURE_CATEGORIES];
-  if (category === "nature") return [...NATURE_CATEGORIES];
+  if (category === "culture") {
+    // Culture = TOUTES les catégories connues sauf nature. Dérivé de la source unique
+    // (CULTURAL_PLACE_CATEGORIES) : aucune catégorie réelle ne disparaît silencieusement du
+    // filtre ni du fetch backend (fini le drop de market/square/sport/winery — cf #167).
+    return CULTURAL_PLACE_CATEGORIES.filter(
+      (candidate) => !NATURE_PLACE_CATEGORIES.includes(candidate),
+    );
+  }
+  if (category === "nature") return [...NATURE_PLACE_CATEGORIES];
   return null;
 }
 
