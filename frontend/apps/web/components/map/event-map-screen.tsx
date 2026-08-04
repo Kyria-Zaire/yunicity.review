@@ -62,6 +62,7 @@ import { MapRightRail } from "@/components/map/map-right-rail";
 import { MapSearchChips } from "@/components/map/map-search-chips";
 import { MapSelectedPanel } from "@/components/map/map-selected-panel";
 import { useMapPortalStats } from "@/hooks/use-map-portal-stats";
+import { useIsDesktop } from "@/hooks/use-is-desktop";
 import { useMapBbox } from "@/hooks/use-map-bbox";
 import { useMapCulturalPlaces } from "@/hooks/use-map-cultural-places";
 import { useMapPartners } from "@/hooks/use-map-partners";
@@ -120,6 +121,9 @@ export function EventMapScreen() {
   );
 
   const { bbox, updateFromBounds } = useMapBbox();
+  // Une seule instance Google Maps montée à la fois (mobile OU desktop). `display:none` ne
+  // démonte pas React : sans ce garde, les DEUX cartes s'instancient (double coût de tout rebuild).
+  const isDesktop = useIsDesktop();
   const { events, loading, error, truncated, hasLoaded, retry } = useMapEvents(
     profileCity,
     bbox,
@@ -684,30 +688,32 @@ export function EventMapScreen() {
             </p>
           ) : (
             <>
-              <GoogleEventMap
-                city={city}
-                apiKey={GOOGLE_MAPS_API_KEY}
-                events={visibleEvents}
-                culturalPlaces={visiblePlaces}
-                partnerMarkers={visiblePartnerMarkers}
-                neighborhoodMarkers={neighborhoodMarkers}
-                tribeMarkers={tribeMarkers}
-                selection={selection}
-                onBoundsChange={updateFromBounds}
-                onSelectEvent={handleSelectEvent}
-                onSelectPlace={handleMapSelectCulturalSlug}
-                onSelectPartner={handleSelectPartner}
-                onSelectNeighborhood={handleSelectNeighborhood}
-                onSelectTribe={handleSelectTribe}
-                onClearSelection={() => setSelection(null)}
-                focusedEventId={focusedEventId}
-                selectedCulturalSlug={selectedCulturalSlug}
-                selectedPartnerSlug={selectedPartnerSlug}
-                recenterSignal={recenterSignal}
-                flyToTarget={flyToTarget}
-                fullHeight
-                hideRecenterButton
-              />
+              {isDesktop === false ? (
+                <GoogleEventMap
+                  city={city}
+                  apiKey={GOOGLE_MAPS_API_KEY}
+                  events={visibleEvents}
+                  culturalPlaces={visiblePlaces}
+                  partnerMarkers={visiblePartnerMarkers}
+                  neighborhoodMarkers={neighborhoodMarkers}
+                  tribeMarkers={tribeMarkers}
+                  selection={selection}
+                  onBoundsChange={updateFromBounds}
+                  onSelectEvent={handleSelectEvent}
+                  onSelectPlace={handleMapSelectCulturalSlug}
+                  onSelectPartner={handleSelectPartner}
+                  onSelectNeighborhood={handleSelectNeighborhood}
+                  onSelectTribe={handleSelectTribe}
+                  onClearSelection={() => setSelection(null)}
+                  focusedEventId={focusedEventId}
+                  selectedCulturalSlug={selectedCulturalSlug}
+                  selectedPartnerSlug={selectedPartnerSlug}
+                  recenterSignal={recenterSignal}
+                  flyToTarget={flyToTarget}
+                  fullHeight
+                  hideRecenterButton
+                />
+              ) : null}
               <MapMobileSearchBar filters={portalFilters} onChangeFilters={setPortalFilters} />
               <MapMobileCategoryPills
                 activeCategory={mobileCategory}
@@ -752,29 +758,31 @@ export function EventMapScreen() {
               activeCategory={portalFilters.category}
               onSelectCategory={handlePortalCategoryChange}
             />
-            <GoogleEventMap
-              city={city}
-              apiKey={GOOGLE_MAPS_API_KEY}
-              events={visibleEvents}
-              culturalPlaces={visiblePlaces}
-              partnerMarkers={visiblePartnerMarkers}
-              neighborhoodMarkers={neighborhoodMarkers}
-              tribeMarkers={tribeMarkers}
-              selection={selection}
-              onBoundsChange={updateFromBounds}
-              onSelectEvent={handleSelectEvent}
-              onSelectPlace={handleMapSelectCulturalSlug}
-              onSelectPartner={handleSelectPartner}
-              onSelectNeighborhood={handleSelectNeighborhood}
-              onSelectTribe={handleSelectTribe}
-              onClearSelection={() => setSelection(null)}
-              focusedEventId={focusedEventId}
-              selectedCulturalSlug={selectedCulturalSlug}
-              selectedPartnerSlug={selectedPartnerSlug}
-              recenterSignal={recenterSignal}
-              flyToTarget={flyToTarget}
-              fullHeight
-            />
+            {isDesktop === true ? (
+              <GoogleEventMap
+                city={city}
+                apiKey={GOOGLE_MAPS_API_KEY}
+                events={visibleEvents}
+                culturalPlaces={visiblePlaces}
+                partnerMarkers={visiblePartnerMarkers}
+                neighborhoodMarkers={neighborhoodMarkers}
+                tribeMarkers={tribeMarkers}
+                selection={selection}
+                onBoundsChange={updateFromBounds}
+                onSelectEvent={handleSelectEvent}
+                onSelectPlace={handleMapSelectCulturalSlug}
+                onSelectPartner={handleSelectPartner}
+                onSelectNeighborhood={handleSelectNeighborhood}
+                onSelectTribe={handleSelectTribe}
+                onClearSelection={() => setSelection(null)}
+                focusedEventId={focusedEventId}
+                selectedCulturalSlug={selectedCulturalSlug}
+                selectedPartnerSlug={selectedPartnerSlug}
+                recenterSignal={recenterSignal}
+                flyToTarget={flyToTarget}
+                fullHeight
+              />
+            ) : null}
             <MapAroundYouCarousel items={aroundYouItems} onSelectItem={handleAroundYouSelect} />
             {selectedPanel && !showDetailRail ? (
               <MapSelectedPanel
