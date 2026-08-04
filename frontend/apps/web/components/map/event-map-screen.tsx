@@ -36,7 +36,6 @@ import {
   resolveMapMobilePartnerTypes,
   resolveMapPortalLayer,
   resolveMapPortalLayerVisibility,
-  resolveMapPortalPlaceCategories,
   type MapAroundYouItem,
   type MapMobileCategoryId,
   type MapPortalFilters,
@@ -115,24 +114,15 @@ export function EventMapScreen() {
 
   const portalStats = useMapPortalStats();
 
-  const placeCategories = useMemo(
-    () => resolveMapPortalPlaceCategories(portalFilters.category),
-    [portalFilters.category],
-  );
-
   const { bbox, updateFromBounds } = useMapBbox();
   // Une seule instance Google Maps montée à la fois (mobile OU desktop). `display:none` ne
   // démonte pas React : sans ce garde, les DEUX cartes s'instancient (double coût de tout rebuild).
   const isDesktop = useIsDesktop();
-  const { events, loading, error, truncated, hasLoaded, retry } = useMapEvents(
-    profileCity,
-    bbox,
-  );
-  const { places: mapCulturalPlaces } = useMapCulturalPlaces(
-    profileCity,
-    bbox,
-    placeCategories,
-  );
+  // T5 — données carte chargées UNE fois par ville, filtrées côté client ensuite (culture/nature,
+  // distance, calques). Le pan ne déclenche plus de re-fetch réseau. `bbox` ne sert plus qu'au
+  // recentrage/centre local (resolveMapCenterOrigin), pas au fetch.
+  const { events, loading, error, truncated, hasLoaded, retry } = useMapEvents(profileCity);
+  const { places: mapCulturalPlaces } = useMapCulturalPlaces(profileCity);
 
   const city = profileCity || mapContext.city || DEFAULT_MAP_CITY;
   const { partners: mapPartners, markers: partnerMarkers } = useMapPartners(city);
