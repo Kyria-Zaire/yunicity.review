@@ -1,16 +1,17 @@
 "use client";
 
 import type { MapCulturalPlaceItem } from "@yunicity/types";
+import { resolveCityLoadBbox } from "@yunicity/utils";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { MAP_CITY_WIDE_BBOX } from "@/hooks/use-map-bbox";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 
 const MAP_CULTURAL_LIMIT = 50;
 
 // T5 — chargement UNIQUE : tous les lieux de la ville (toutes catégories) en une requête au
-// montage. Le filtrage culture/nature se fait côté client (filterPlacesByPortalFilters), donc
-// plus de re-fetch réseau ni au pan ni au changement de filtre catégorie.
+// montage, bbox ville borné sous le garde-fou serveur. Le filtrage culture/nature se fait côté
+// client (filterPlacesByPortalFilters), donc plus de re-fetch réseau ni au pan ni au changement
+// de filtre catégorie.
 export function useMapCulturalPlaces(city: string) {
   const api = useYunicityApi();
   const [places, setPlaces] = useState<MapCulturalPlaceItem[]>([]);
@@ -25,7 +26,7 @@ export function useMapCulturalPlaces(city: string) {
     setLoading(true);
     try {
       const response = await api.listMapCulturalPlaces({
-        ...MAP_CITY_WIDE_BBOX,
+        ...resolveCityLoadBbox(trimmedCity),
         city: trimmedCity,
         limit: MAP_CULTURAL_LIMIT,
       });

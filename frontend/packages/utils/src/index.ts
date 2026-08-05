@@ -2091,6 +2091,7 @@ export { geocodeMapboxAddress, type GeocodeResult } from "./mapbox-geocoding";
 export {
   CITY_MAP_CENTERS,
   DEFAULT_MAP_CITY,
+  resolveCityLoadBbox,
   resolveCityMapCenter,
   type CityMapCenter,
 } from "./map-city-defaults";
