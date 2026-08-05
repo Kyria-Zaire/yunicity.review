@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@googlemaps/markerclusterer": "^2.6.2",
     "@yunicity/types": "workspace:*",
     "@yunicity/ui": "workspace:*",
     "@yunicity/utils": "workspace:*",

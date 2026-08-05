@@ -1,5 +1,6 @@
 "use client";
 
+import { MarkerClusterer, type Renderer } from "@googlemaps/markerclusterer";
 import type {
   MapCulturalPlaceItem,
   MapEventItem,
@@ -13,7 +14,10 @@ import {
   MAP_GOOGLE_LOAD_ERROR,
   MAP_LOADING,
   MAP_RECENTER,
+  mapMarkerKey,
+  resolveActiveMapMarkerKeys,
   resolveCityMapCenter,
+  type MapMarkerKind,
 } from "@yunicity/utils";
 import { useCallback, useEffect, useRef } from "react";
 
@@ -26,6 +30,7 @@ const CULTURAL_MARKER_COLOR = "#5C4D7D";
 const NEIGHBORHOOD_MARKER_COLOR = "#0F766E";
 const TRIBE_MARKER_COLOR = "#7C3AED";
 const PARTNER_MARKER_COLOR = "#FF2D78";
+const CLUSTER_COLOR = "#2A2FFF";
 
 const DIAMOND_PATH = "M 0,-9 L 9,0 L 0,9 L -9,0 Z";
 const SQUARE_PATH = "M -8,-8 L 8,-8 L 8,8 L -8,8 Z";
@@ -34,6 +39,11 @@ const SQUARE_EXTENT = 8;
 
 const MARKER_STROKE_COLOR = "#ffffff";
 const MARKER_STROKE_WIDTH = 2;
+
+// T4 — seules les couches DENSES sont clusterisées (lieux culturels, events). Les quartiers,
+// tribus et partenaires restent individuels (peu nombreux, sémantiquement distincts — on préserve
+// la structure des 12 quartiers, pas de cluster hétérogène).
+const CLUSTERED_KINDS: ReadonlySet<MapMarkerKind> = new Set(["place", "event"]);
 
 type LatLon = { latitude: number; longitude: number };
 
@@ -126,34 +136,106 @@ function markerContent(shape: SVGElement): HTMLDivElement {
   return el;
 }
 
-function createAdvancedMarker(
-  map: google.maps.Map,
-  position: google.maps.LatLngLiteral,
-  title: string,
-  content: HTMLElement,
-  zIndex: number,
-  onClick: () => void,
-): google.maps.marker.AdvancedMarkerElement {
+// Rendu (contenu + zIndex) par type de marqueur, en fonction de l'état actif (sélectionné/focus).
+// Couleurs / tailles / zIndex STRICTEMENT identiques à l'existant (T3).
+type MarkerVisual = {
+  content: (active: boolean) => HTMLDivElement;
+  zIndex: (active: boolean) => number;
+};
+
+const MARKER_VISUALS: Record<MapMarkerKind, MarkerVisual> = {
+  neighborhood: {
+    content: (a) =>
+      markerContent(pathShape(SQUARE_PATH, NEIGHBORHOOD_MARKER_COLOR, a ? 1.3 : 1, SQUARE_EXTENT)),
+    zIndex: (a) => (a ? 30 : 10),
+  },
+  tribe: {
+    content: (a) => markerContent(circleShape(TRIBE_MARKER_COLOR, a ? 9 : 7)),
+    zIndex: (a) => (a ? 30 : 11),
+  },
+  place: {
+    content: (a) =>
+      markerContent(pathShape(DIAMOND_PATH, CULTURAL_MARKER_COLOR, a ? 1.3 : 1, DIAMOND_EXTENT)),
+    zIndex: (a) => (a ? 40 : 12),
+  },
+  partner: {
+    content: (a) => markerContent(circleShape(PARTNER_MARKER_COLOR, a ? 10 : 8)),
+    zIndex: (a) => (a ? 40 : 13),
+  },
+  event: {
+    content: (a) => markerContent(circleShape(EVENT_MARKER_COLOR, a ? 7 : 5)),
+    zIndex: (a) => (a ? 50 : 14),
+  },
+};
+
+// Un marqueur géré par le registre : on peut mettre à jour son état actif sans le recréer.
+type ManagedMarker = {
+  kind: MapMarkerKind;
+  marker: google.maps.marker.AdvancedMarkerElement;
+  clustered: boolean;
+  setActive: (active: boolean) => void;
+};
+
+function createManagedMarker(input: {
+  map: google.maps.Map;
+  kind: MapMarkerKind;
+  position: google.maps.LatLngLiteral;
+  title: string;
+  onClick: () => void;
+}): ManagedMarker {
+  const visual = MARKER_VISUALS[input.kind];
+  const clustered = CLUSTERED_KINDS.has(input.kind);
   const marker = new google.maps.marker.AdvancedMarkerElement({
-    map,
-    position,
-    title,
-    content,
-    zIndex,
+    // Les marqueurs clusterisés sont posés sur la carte par le MarkerClusterer, pas directement.
+    map: clustered ? undefined : input.map,
+    position: input.position,
+    title: input.title,
+    content: visual.content(false),
+    zIndex: visual.zIndex(false),
     gmpClickable: true,
   });
-  marker.addListener("gmp-click", onClick);
-  return marker;
+  marker.addListener("gmp-click", input.onClick);
+  return {
+    kind: input.kind,
+    marker,
+    clustered,
+    setActive: (active) => {
+      marker.content = visual.content(active);
+      marker.zIndex = visual.zIndex(active);
+    },
+  };
 }
 
-function isSelectionActive(
-  selection: MapTerritorySelection | null,
-  kind: MapTerritorySelection["kind"],
-  id: string,
-): boolean {
-  if (!selection || selection.kind !== kind) return false;
-  if (selection.kind === "event") return selection.id === id;
-  return selection.slug === id;
+// Icône de cluster aux couleurs marque (cercle bleu + compteur). textContent uniquement.
+function clusterContent(count: number): HTMLDivElement {
+  const size = count < 10 ? 34 : count < 100 ? 40 : 46;
+  const el = document.createElement("div");
+  el.style.width = `${size}px`;
+  el.style.height = `${size}px`;
+  el.style.display = "flex";
+  el.style.alignItems = "center";
+  el.style.justifyContent = "center";
+  el.style.borderRadius = "9999px";
+  el.style.background = CLUSTER_COLOR;
+  el.style.color = "#ffffff";
+  el.style.border = `2px solid ${MARKER_STROKE_COLOR}`;
+  el.style.fontWeight = "600";
+  el.style.fontSize = "13px";
+  el.style.boxShadow = "0 1px 3px rgba(0,0,0,0.3)";
+  el.textContent = String(count);
+  return el;
+}
+
+function buildClusterRenderer(): Renderer {
+  return {
+    render: (cluster) =>
+      new google.maps.marker.AdvancedMarkerElement({
+        position: cluster.position,
+        content: clusterContent(cluster.count),
+        // Au-dessus des marqueurs individuels (zIndex max 50 en état actif).
+        zIndex: 100 + cluster.count,
+      }),
+  };
 }
 
 export function GoogleEventMap({
@@ -184,21 +266,41 @@ export function GoogleEventMap({
   const status = useGoogleMaps(apiKey);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  // Registre id→marqueur : la donnée et la sélection le mutent SANS tout reconstruire (T4).
+  const registryRef = useRef<Map<string, ManagedMarker>>(new Map());
+  const clustererRef = useRef<MarkerClusterer | null>(null);
+  const activeKeysRef = useRef<Set<string>>(new Set());
 
-  // Les écouteurs niveau carte sont attachés une seule fois : on lit les
-  // callbacks à jour via une ref pour éviter de recréer la carte.
-  const handlersRef = useRef({ onBoundsChange, onClearSelection });
+  // Les callbacks (bounds, sélection, clic marqueur) sont lus via une ref à jour : ni la carte ni
+  // les marqueurs ne se reconstruisent quand l'identité d'un callback change.
+  const handlersRef = useRef({
+    onBoundsChange,
+    onClearSelection,
+    onSelectEvent,
+    onSelectPlace,
+    onSelectPartner,
+    onSelectNeighborhood,
+    onSelectTribe,
+  });
   useEffect(() => {
-    handlersRef.current = { onBoundsChange, onClearSelection };
-  }, [onBoundsChange, onClearSelection]);
-
-  const clearMarkers = useCallback(() => {
-    for (const marker of markersRef.current) {
-      marker.map = null;
-    }
-    markersRef.current = [];
-  }, []);
+    handlersRef.current = {
+      onBoundsChange,
+      onClearSelection,
+      onSelectEvent,
+      onSelectPlace,
+      onSelectPartner,
+      onSelectNeighborhood,
+      onSelectTribe,
+    };
+  }, [
+    onBoundsChange,
+    onClearSelection,
+    onSelectEvent,
+    onSelectPlace,
+    onSelectPartner,
+    onSelectNeighborhood,
+    onSelectTribe,
+  ]);
 
   // Initialisation de la carte (une fois Google prêt).
   useEffect(() => {
@@ -261,124 +363,136 @@ export function GoogleEventMap({
     map.setZoom(next.zoom);
   }, [city]);
 
-  // (Re)construction des marqueurs à chaque changement de données/sélection.
+  // Réconciliation des marqueurs sur changement de DONNÉES uniquement (pas de sélection ici).
+  // On diff le registre (ajoute/retire), on confie lieux+events à un MarkerClusterer persistant,
+  // et on repose l'état actif courant. Le pan/zoom ne déclenche plus aucune reconstruction.
   useEffect(() => {
     const map = mapRef.current;
     if (status !== "ready" || !map) return;
+    if (typeof google.maps.marker?.AdvancedMarkerElement !== "function") return;
 
-    clearMarkers();
-    const next: google.maps.marker.AdvancedMarkerElement[] = [];
+    type Spec = {
+      kind: MapMarkerKind;
+      position: google.maps.LatLngLiteral;
+      title: string;
+      onClick: () => void;
+    };
+    const desired = new Map<string, Spec>();
 
     for (const hood of neighborhoodMarkers) {
-      const active = isSelectionActive(selection, "neighborhood", hood.slug);
-      const content = markerContent(
-        pathShape(SQUARE_PATH, NEIGHBORHOOD_MARKER_COLOR, active ? 1.3 : 1, SQUARE_EXTENT),
-      );
-      next.push(
-        createAdvancedMarker(
-          map,
-          { lat: hood.latitude, lng: hood.longitude },
-          hood.name,
-          content,
-          active ? 30 : 10,
-          () => onSelectNeighborhood(hood.slug),
-        ),
-      );
+      desired.set(mapMarkerKey("neighborhood", hood.slug), {
+        kind: "neighborhood",
+        position: { lat: hood.latitude, lng: hood.longitude },
+        title: hood.name,
+        onClick: () => handlersRef.current.onSelectNeighborhood(hood.slug),
+      });
     }
-
     for (const tribe of tribeMarkers) {
-      const active = isSelectionActive(selection, "tribe", tribe.slug);
-      const content = markerContent(circleShape(TRIBE_MARKER_COLOR, active ? 9 : 7));
-      next.push(
-        createAdvancedMarker(
-          map,
-          { lat: tribe.latitude, lng: tribe.longitude },
-          tribe.name,
-          content,
-          active ? 30 : 11,
-          () => onSelectTribe(tribe.slug),
-        ),
-      );
+      desired.set(mapMarkerKey("tribe", tribe.slug), {
+        kind: "tribe",
+        position: { lat: tribe.latitude, lng: tribe.longitude },
+        title: tribe.name,
+        onClick: () => handlersRef.current.onSelectTribe(tribe.slug),
+      });
     }
-
     for (const place of culturalPlaces) {
-      const active =
-        selectedCulturalSlug === place.slug ||
-        isSelectionActive(selection, "place", place.slug);
-      const content = markerContent(
-        pathShape(DIAMOND_PATH, CULTURAL_MARKER_COLOR, active ? 1.3 : 1, DIAMOND_EXTENT),
-      );
-      next.push(
-        createAdvancedMarker(
-          map,
-          { lat: place.latitude, lng: place.longitude },
-          place.name,
-          content,
-          active ? 40 : 12,
-          () => onSelectPlace(place.slug),
-        ),
-      );
+      desired.set(mapMarkerKey("place", place.slug), {
+        kind: "place",
+        position: { lat: place.latitude, lng: place.longitude },
+        title: place.name,
+        onClick: () => handlersRef.current.onSelectPlace(place.slug),
+      });
     }
-
     for (const partner of partnerMarkers) {
-      const active = selectedPartnerSlug === partner.slug;
-      const content = markerContent(circleShape(PARTNER_MARKER_COLOR, active ? 10 : 8));
-      next.push(
-        createAdvancedMarker(
-          map,
-          { lat: partner.latitude, lng: partner.longitude },
-          partner.name,
-          content,
-          active ? 40 : 13,
-          () => onSelectPartner?.(partner.slug),
-        ),
-      );
+      desired.set(mapMarkerKey("partner", partner.slug), {
+        kind: "partner",
+        position: { lat: partner.latitude, lng: partner.longitude },
+        title: partner.name,
+        onClick: () => handlersRef.current.onSelectPartner?.(partner.slug),
+      });
     }
-
     for (const event of events) {
-      const active =
-        isSelectionActive(selection, "event", event.id) ||
-        focusedEventId === event.id;
-      const content = markerContent(circleShape(EVENT_MARKER_COLOR, active ? 7 : 5));
-      next.push(
-        createAdvancedMarker(
-          map,
-          { lat: event.latitude, lng: event.longitude },
-          event.title,
-          content,
-          active ? 50 : 14,
-          () => onSelectEvent(event.id),
-        ),
-      );
+      desired.set(mapMarkerKey("event", event.id), {
+        kind: "event",
+        position: { lat: event.latitude, lng: event.longitude },
+        title: event.title,
+        onClick: () => handlersRef.current.onSelectEvent(event.id),
+      });
     }
 
-    markersRef.current = next;
-  }, [
-    status,
-    clearMarkers,
-    events,
-    culturalPlaces,
-    partnerMarkers,
-    neighborhoodMarkers,
-    tribeMarkers,
-    selection,
-    focusedEventId,
-    selectedCulturalSlug,
-    selectedPartnerSlug,
-    onSelectEvent,
-    onSelectPlace,
-    onSelectPartner,
-    onSelectNeighborhood,
-    onSelectTribe,
-  ]);
+    const registry = registryRef.current;
+
+    // Retire les marqueurs disparus.
+    for (const [key, managed] of registry) {
+      if (!desired.has(key)) {
+        managed.marker.map = null;
+        registry.delete(key);
+      }
+    }
+    // Ajoute les nouveaux (état inactif ; l'état actif est reposé plus bas).
+    for (const [key, spec] of desired) {
+      if (!registry.has(key)) {
+        registry.set(key, createManagedMarker({ map, ...spec }));
+      }
+    }
+
+    // (Re)confie l'ensemble lieux+events au clusterer persistant.
+    const clustered = [...registry.values()]
+      .filter((managed) => managed.clustered)
+      .map((managed) => managed.marker);
+    if (!clustererRef.current) {
+      clustererRef.current = new MarkerClusterer({
+        map,
+        markers: clustered,
+        renderer: buildClusterRenderer(),
+      });
+    } else {
+      clustererRef.current.clearMarkers(true);
+      clustererRef.current.addMarkers(clustered);
+    }
+
+    // Repose l'état actif courant (nouveaux marqueurs créés inactifs, existants inchangés).
+    for (const [key, managed] of registry) {
+      managed.setActive(activeKeysRef.current.has(key));
+    }
+  }, [status, events, culturalPlaces, partnerMarkers, neighborhoodMarkers, tribeMarkers]);
+
+  // Sélection : met à jour UNIQUEMENT les marqueurs dont l'état actif change. Fini le rebuild-tout.
+  useEffect(() => {
+    const registry = registryRef.current;
+    const nextActive = resolveActiveMapMarkerKeys({
+      selection,
+      focusedEventId,
+      selectedCulturalSlug,
+      selectedPartnerSlug,
+    });
+    const prevActive = activeKeysRef.current;
+    for (const key of prevActive) {
+      if (!nextActive.has(key)) registry.get(key)?.setActive(false);
+    }
+    for (const key of nextActive) {
+      if (!prevActive.has(key)) registry.get(key)?.setActive(true);
+    }
+    activeKeysRef.current = nextActive;
+  }, [selection, focusedEventId, selectedCulturalSlug, selectedPartnerSlug]);
 
   // Nettoyage au démontage.
   useEffect(() => {
+    // Le Map du registre est le MÊME objet pour toute la vie du composant (jamais réassigné, juste
+    // muté) → capture sûre ici pour le cleanup, sans risque de valeur périmée.
+    const registry = registryRef.current;
     return () => {
-      clearMarkers();
+      clustererRef.current?.clearMarkers(true);
+      clustererRef.current?.setMap(null);
+      clustererRef.current = null;
+      for (const managed of registry.values()) {
+        managed.marker.map = null;
+      }
+      registry.clear();
+      activeKeysRef.current = new Set();
       mapRef.current = null;
     };
-  }, [clearMarkers]);
+  }, []);
 
   useEffect(() => {
     if (recenterSignal <= 0) return;
