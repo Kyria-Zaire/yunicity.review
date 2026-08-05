@@ -2209,6 +2209,12 @@ export {
   type MapTribeMarker,
 } from "./map-living-territory";
 export {
+  mapMarkerKey,
+  resolveActiveMapMarkerKeys,
+  type MapMarkerKind,
+  type MapMarkerSelectionInputs,
+} from "./map-marker-keys";
+export {
   DEFAULT_MAP_PORTAL_FILTERS,
   MAP_V2_A_FILTER_CATEGORY_IDS,
   buildMapAroundYouItems,
