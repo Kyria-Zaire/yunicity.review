@@ -1,68 +1,49 @@
 "use client";
 
 import type { MapCulturalPlaceItem } from "@yunicity/types";
-import { hasBboxChangedSignificantly } from "@yunicity/utils";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { MAP_CITY_WIDE_BBOX } from "@/hooks/use-map-bbox";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
-import type { MapBbox } from "@yunicity/types";
 
 const MAP_CULTURAL_LIMIT = 50;
 
-export function useMapCulturalPlaces(
-  city: string,
-  bbox: MapBbox | null,
-  categories: string[] | null = null,
-) {
+// T5 — chargement UNIQUE : tous les lieux de la ville (toutes catégories) en une requête au
+// montage. Le filtrage culture/nature se fait côté client (filterPlacesByPortalFilters), donc
+// plus de re-fetch réseau ni au pan ni au changement de filtre catégorie.
+export function useMapCulturalPlaces(city: string) {
   const api = useYunicityApi();
   const [places, setPlaces] = useState<MapCulturalPlaceItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const lastFetchedRef = useRef<MapBbox | null>(null);
-  const lastCategoriesRef = useRef<string | null>(null);
   const requestIdRef = useRef(0);
 
-  const categoriesKey = categories?.slice().sort().join(",") ?? "";
+  const fetchPlaces = useCallback(async () => {
+    const trimmedCity = city.trim();
+    if (!trimmedCity) return;
 
-  const fetchPlaces = useCallback(
-    async (targetBbox: MapBbox) => {
-      const trimmedCity = city.trim();
-      if (!trimmedCity) return;
-      if (
-        !hasBboxChangedSignificantly(lastFetchedRef.current, targetBbox) &&
-        lastCategoriesRef.current === categoriesKey
-      ) {
-        return;
+    const requestId = ++requestIdRef.current;
+    setLoading(true);
+    try {
+      const response = await api.listMapCulturalPlaces({
+        ...MAP_CITY_WIDE_BBOX,
+        city: trimmedCity,
+        limit: MAP_CULTURAL_LIMIT,
+      });
+      if (requestId !== requestIdRef.current) return;
+      setPlaces(response.places);
+    } catch {
+      if (requestId !== requestIdRef.current) return;
+      setPlaces([]);
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
       }
-
-      const requestId = ++requestIdRef.current;
-      setLoading(true);
-      try {
-        const response = await api.listMapCulturalPlaces({
-          ...targetBbox,
-          city: trimmedCity,
-          limit: MAP_CULTURAL_LIMIT,
-          category: categories ?? undefined,
-        });
-        if (requestId !== requestIdRef.current) return;
-        lastFetchedRef.current = targetBbox;
-        lastCategoriesRef.current = categoriesKey;
-        setPlaces(response.places);
-      } catch {
-        if (requestId !== requestIdRef.current) return;
-        setPlaces([]);
-      } finally {
-        if (requestId === requestIdRef.current) {
-          setLoading(false);
-        }
-      }
-    },
-    [api, categories, categoriesKey, city],
-  );
+    }
+  }, [api, city]);
 
   useEffect(() => {
-    if (!bbox) return;
-    void fetchPlaces(bbox);
-  }, [bbox, city, categoriesKey, fetchPlaces]);
+    void fetchPlaces();
+  }, [fetchPlaces]);
 
   return { places, loading };
 }
