@@ -1,15 +1,16 @@
 "use client";
 
 import type { MapEventItem } from "@yunicity/types";
+import { resolveCityLoadBbox } from "@yunicity/utils";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { MAP_CITY_WIDE_BBOX } from "@/hooks/use-map-bbox";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 
 const MAP_EVENTS_LIMIT = 100;
 
-// T5 — chargement UNIQUE : tous les events de la ville en une requête au montage (bbox « ville
-// entière », le backend filtre par city), puis filtrage côté client. Plus de re-fetch au pan.
+// T5 — chargement UNIQUE : tous les events de la ville en une requête au montage (bbox ville borné
+// sous le garde-fou serveur, le backend filtre par city), puis filtrage côté client. Plus de
+// re-fetch au pan.
 export function useMapEvents(city: string) {
   const api = useYunicityApi();
   const [events, setEvents] = useState<MapEventItem[]>([]);
@@ -29,7 +30,7 @@ export function useMapEvents(city: string) {
     setError(null);
     try {
       const response = await api.listMapEvents({
-        ...MAP_CITY_WIDE_BBOX,
+        ...resolveCityLoadBbox(trimmedCity),
         city: trimmedCity,
         limit: MAP_EVENTS_LIMIT,
       });
