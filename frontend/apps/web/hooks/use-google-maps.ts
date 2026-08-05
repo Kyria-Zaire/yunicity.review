@@ -24,7 +24,10 @@ function isGoogleMapsReady(): boolean {
     typeof window !== "undefined" &&
     typeof google !== "undefined" &&
     typeof google.maps !== "undefined" &&
-    typeof google.maps.Map === "function"
+    typeof google.maps.Map === "function" &&
+    // T3 — la lib `marker` (AdvancedMarkerElement) doit être chargée avant de se déclarer prêt,
+    // sinon la (re)construction des marqueurs échouerait silencieusement.
+    typeof google.maps.marker?.AdvancedMarkerElement === "function"
   );
 }
 
@@ -74,6 +77,8 @@ function loadGoogleMaps(apiKey: string): Promise<void> {
       language: "fr",
       region: "FR",
       loading: "async",
+      // T3 — `marker` fournit AdvancedMarkerElement/PinElement (remplace google.maps.Marker legacy).
+      libraries: "marker",
       callback: CALLBACK_NAME,
     });
 
