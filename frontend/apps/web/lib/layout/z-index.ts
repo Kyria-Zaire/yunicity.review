@@ -17,6 +17,8 @@ export const Z_INDEX = {
   VIDEO_COMMENTS: 60,
   /** Signalement vidéo, modales quartier */
   VIDEO_REPORT: 70,
+  /** Drawer contextuel carte medium (filtres/détail, T6) */
+  MAP_DRAWER: 70,
   /** Create Hub sheet / dialog */
   CREATE_HUB: 75,
 } as const;
