@@ -71,6 +71,8 @@ import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
+// T3 — mapId Vector (Cloud Console) : active le rendu vectoriel + AdvancedMarkerElement.
+const GOOGLE_MAPS_MAP_ID = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID ?? "";
 
 type LatLon = { latitude: number; longitude: number };
 
@@ -682,6 +684,7 @@ export function EventMapScreen() {
                 <GoogleEventMap
                   city={city}
                   apiKey={GOOGLE_MAPS_API_KEY}
+                  mapId={GOOGLE_MAPS_MAP_ID}
                   events={visibleEvents}
                   culturalPlaces={visiblePlaces}
                   partnerMarkers={visiblePartnerMarkers}
@@ -752,6 +755,7 @@ export function EventMapScreen() {
               <GoogleEventMap
                 city={city}
                 apiKey={GOOGLE_MAPS_API_KEY}
+                mapId={GOOGLE_MAPS_MAP_ID}
                 events={visibleEvents}
                 culturalPlaces={visiblePlaces}
                 partnerMarkers={visiblePartnerMarkers}

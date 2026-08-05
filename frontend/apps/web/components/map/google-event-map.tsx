@@ -29,12 +29,18 @@ const PARTNER_MARKER_COLOR = "#FF2D78";
 
 const DIAMOND_PATH = "M 0,-9 L 9,0 L 0,9 L -9,0 Z";
 const SQUARE_PATH = "M -8,-8 L 8,-8 L 8,8 L -8,8 Z";
+const DIAMOND_EXTENT = 9;
+const SQUARE_EXTENT = 8;
+
+const MARKER_STROKE_COLOR = "#ffffff";
+const MARKER_STROKE_WIDTH = 2;
 
 type LatLon = { latitude: number; longitude: number };
 
 export type GoogleEventMapProps = {
   city: string;
   apiKey: string;
+  mapId: string;
   events: MapEventItem[];
   culturalPlaces: MapCulturalPlaceItem[];
   partnerMarkers?: MapPartnerMarker[];
@@ -68,31 +74,76 @@ function toBoundsLike(bounds: google.maps.LatLngBounds): MapBoundsLike {
   };
 }
 
-function circleIcon(color: string, scale: number): google.maps.Symbol {
-  return {
-    path: google.maps.SymbolPath.CIRCLE,
-    fillColor: color,
-    fillOpacity: 1,
-    strokeColor: "#ffffff",
-    strokeWeight: 2,
-    scale,
-  };
+// T3 — AdvancedMarkerElement n'accepte pas les google.maps.Symbol (SVG path). On reproduit à
+// l'identique les formes historiques (cercle / losange / carré, mêmes couleurs, même trait blanc)
+// via du contenu SVG DOM construit par createElementNS (aucun innerHTML, aucune donnée dynamique),
+// pour ne rien perdre du langage visuel par catégorie.
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+function svgRoot(half: number): SVGSVGElement {
+  const size = half * 2;
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("width", String(size));
+  svg.setAttribute("height", String(size));
+  svg.setAttribute("viewBox", `${-half} ${-half} ${size} ${size}`);
+  return svg;
 }
 
-function pathIcon(
-  path: string,
-  color: string,
-  scale: number,
-): google.maps.Symbol {
-  return {
-    path,
-    fillColor: color,
-    fillOpacity: 1,
-    strokeColor: "#ffffff",
-    strokeWeight: 2,
-    scale,
-    anchor: new google.maps.Point(0, 0),
-  };
+function circleShape(color: string, radius: number): SVGSVGElement {
+  const svg = svgRoot(radius + MARKER_STROKE_WIDTH);
+  const circle = document.createElementNS(SVG_NS, "circle");
+  circle.setAttribute("cx", "0");
+  circle.setAttribute("cy", "0");
+  circle.setAttribute("r", String(radius));
+  circle.setAttribute("fill", color);
+  circle.setAttribute("stroke", MARKER_STROKE_COLOR);
+  circle.setAttribute("stroke-width", String(MARKER_STROKE_WIDTH));
+  svg.appendChild(circle);
+  return svg;
+}
+
+function pathShape(path: string, color: string, scale: number, extent: number): SVGSVGElement {
+  const svg = svgRoot(extent * scale + MARKER_STROKE_WIDTH);
+  const el = document.createElementNS(SVG_NS, "path");
+  el.setAttribute("transform", `scale(${scale})`);
+  el.setAttribute("d", path);
+  el.setAttribute("fill", color);
+  el.setAttribute("stroke", MARKER_STROKE_COLOR);
+  // Le `scale` du Symbol legacy multipliait le path mais PAS le trait (2px fixes) : on contre-scale
+  // le stroke-width pour rester à 2px après la mise à l'échelle du path.
+  el.setAttribute("stroke-width", String(MARKER_STROKE_WIDTH / scale));
+  svg.appendChild(el);
+  return svg;
+}
+
+function markerContent(shape: SVGElement): HTMLDivElement {
+  const el = document.createElement("div");
+  el.style.lineHeight = "0";
+  // AdvancedMarkerElement ancre le contenu par son bas-centre. Un décalage vertical de +50%
+  // replace le CENTRE de la forme sur le point géographique (équivalent de l'ancrage 0,0 du Symbol).
+  el.style.transform = "translateY(50%)";
+  el.appendChild(shape);
+  return el;
+}
+
+function createAdvancedMarker(
+  map: google.maps.Map,
+  position: google.maps.LatLngLiteral,
+  title: string,
+  content: HTMLElement,
+  zIndex: number,
+  onClick: () => void,
+): google.maps.marker.AdvancedMarkerElement {
+  const marker = new google.maps.marker.AdvancedMarkerElement({
+    map,
+    position,
+    title,
+    content,
+    zIndex,
+    gmpClickable: true,
+  });
+  marker.addListener("gmp-click", onClick);
+  return marker;
 }
 
 function isSelectionActive(
@@ -108,6 +159,7 @@ function isSelectionActive(
 export function GoogleEventMap({
   city,
   apiKey,
+  mapId,
   events,
   culturalPlaces,
   partnerMarkers = [],
@@ -132,7 +184,7 @@ export function GoogleEventMap({
   const status = useGoogleMaps(apiKey);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<google.maps.Marker[]>([]);
+  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
 
   // Les écouteurs niveau carte sont attachés une seule fois : on lit les
   // callbacks à jour via une ref pour éviter de recréer la carte.
@@ -143,7 +195,7 @@ export function GoogleEventMap({
 
   const clearMarkers = useCallback(() => {
     for (const marker of markersRef.current) {
-      marker.setMap(null);
+      marker.map = null;
     }
     markersRef.current = [];
   }, []);
@@ -155,10 +207,20 @@ export function GoogleEventMap({
       return;
     }
 
+    // T3 — le mapId (type Vector, Cloud Console) active le rendu vectoriel ET conditionne
+    // AdvancedMarkerElement. Absent, on le signale explicitement en console (pas de repli raster
+    // silencieux) ; Google émettra en plus sa propre erreur si le mapId est invalide.
+    if (!mapId) {
+      console.error(
+        "[map] NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID manquant — rendu vectoriel et Advanced Markers indisponibles.",
+      );
+    }
+
     const center = resolveCityMapCenter(city);
     const map = new google.maps.Map(containerRef.current, {
       center: { lat: center.latitude, lng: center.longitude },
       zoom: center.zoom,
+      mapId: mapId || undefined,
       clickableIcons: false,
       mapTypeControl: false,
       streetViewControl: false,
@@ -205,75 +267,89 @@ export function GoogleEventMap({
     if (status !== "ready" || !map) return;
 
     clearMarkers();
-    const next: google.maps.Marker[] = [];
+    const next: google.maps.marker.AdvancedMarkerElement[] = [];
 
     for (const hood of neighborhoodMarkers) {
       const active = isSelectionActive(selection, "neighborhood", hood.slug);
-      const marker = new google.maps.Marker({
-        map,
-        position: { lat: hood.latitude, lng: hood.longitude },
-        title: hood.name,
-        icon: pathIcon(SQUARE_PATH, NEIGHBORHOOD_MARKER_COLOR, active ? 1.3 : 1),
-        zIndex: active ? 30 : 10,
-      });
-      marker.addListener("click", () => onSelectNeighborhood(hood.slug));
-      next.push(marker);
+      const content = markerContent(
+        pathShape(SQUARE_PATH, NEIGHBORHOOD_MARKER_COLOR, active ? 1.3 : 1, SQUARE_EXTENT),
+      );
+      next.push(
+        createAdvancedMarker(
+          map,
+          { lat: hood.latitude, lng: hood.longitude },
+          hood.name,
+          content,
+          active ? 30 : 10,
+          () => onSelectNeighborhood(hood.slug),
+        ),
+      );
     }
 
     for (const tribe of tribeMarkers) {
       const active = isSelectionActive(selection, "tribe", tribe.slug);
-      const marker = new google.maps.Marker({
-        map,
-        position: { lat: tribe.latitude, lng: tribe.longitude },
-        title: tribe.name,
-        icon: circleIcon(TRIBE_MARKER_COLOR, active ? 9 : 7),
-        zIndex: active ? 30 : 11,
-      });
-      marker.addListener("click", () => onSelectTribe(tribe.slug));
-      next.push(marker);
+      const content = markerContent(circleShape(TRIBE_MARKER_COLOR, active ? 9 : 7));
+      next.push(
+        createAdvancedMarker(
+          map,
+          { lat: tribe.latitude, lng: tribe.longitude },
+          tribe.name,
+          content,
+          active ? 30 : 11,
+          () => onSelectTribe(tribe.slug),
+        ),
+      );
     }
 
     for (const place of culturalPlaces) {
       const active =
         selectedCulturalSlug === place.slug ||
         isSelectionActive(selection, "place", place.slug);
-      const marker = new google.maps.Marker({
-        map,
-        position: { lat: place.latitude, lng: place.longitude },
-        title: place.name,
-        icon: pathIcon(DIAMOND_PATH, CULTURAL_MARKER_COLOR, active ? 1.3 : 1),
-        zIndex: active ? 40 : 12,
-      });
-      marker.addListener("click", () => onSelectPlace(place.slug));
-      next.push(marker);
+      const content = markerContent(
+        pathShape(DIAMOND_PATH, CULTURAL_MARKER_COLOR, active ? 1.3 : 1, DIAMOND_EXTENT),
+      );
+      next.push(
+        createAdvancedMarker(
+          map,
+          { lat: place.latitude, lng: place.longitude },
+          place.name,
+          content,
+          active ? 40 : 12,
+          () => onSelectPlace(place.slug),
+        ),
+      );
     }
 
     for (const partner of partnerMarkers) {
       const active = selectedPartnerSlug === partner.slug;
-      const marker = new google.maps.Marker({
-        map,
-        position: { lat: partner.latitude, lng: partner.longitude },
-        title: partner.name,
-        icon: circleIcon(PARTNER_MARKER_COLOR, active ? 10 : 8),
-        zIndex: active ? 40 : 13,
-      });
-      marker.addListener("click", () => onSelectPartner?.(partner.slug));
-      next.push(marker);
+      const content = markerContent(circleShape(PARTNER_MARKER_COLOR, active ? 10 : 8));
+      next.push(
+        createAdvancedMarker(
+          map,
+          { lat: partner.latitude, lng: partner.longitude },
+          partner.name,
+          content,
+          active ? 40 : 13,
+          () => onSelectPartner?.(partner.slug),
+        ),
+      );
     }
 
     for (const event of events) {
       const active =
         isSelectionActive(selection, "event", event.id) ||
         focusedEventId === event.id;
-      const marker = new google.maps.Marker({
-        map,
-        position: { lat: event.latitude, lng: event.longitude },
-        title: event.title,
-        icon: circleIcon(EVENT_MARKER_COLOR, active ? 7 : 5),
-        zIndex: active ? 50 : 14,
-      });
-      marker.addListener("click", () => onSelectEvent(event.id));
-      next.push(marker);
+      const content = markerContent(circleShape(EVENT_MARKER_COLOR, active ? 7 : 5));
+      next.push(
+        createAdvancedMarker(
+          map,
+          { lat: event.latitude, lng: event.longitude },
+          event.title,
+          content,
+          active ? 50 : 14,
+          () => onSelectEvent(event.id),
+        ),
+      );
     }
 
     markersRef.current = next;
