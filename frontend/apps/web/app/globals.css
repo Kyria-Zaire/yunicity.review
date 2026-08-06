@@ -217,6 +217,15 @@ body {
   display: none;
 }
 
+/* T6 — scroll-lock du drawer Filtres medium. Borné à < 1280px : au-delà, le drawer est masqué
+   (xl:hidden) même si son state reste ouvert, donc le lock ne doit PAS s'appliquer. Le breakpoint
+   vit ici (CSS), pas dans un listener JS. */
+@media (max-width: 1279.98px) {
+  body.map-drawer-scroll-lock {
+    overflow: hidden;
+  }
+}
+
 .map-mobile-shell .web-three-col {
   padding-left: 0;
   padding-right: 0;

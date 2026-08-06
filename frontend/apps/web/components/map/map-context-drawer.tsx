@@ -1,0 +1,153 @@
+"use client";
+
+import { Z_INDEX } from "@/lib/layout/z-index";
+import { X } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+
+const FOCUSABLE_SELECTOR =
+  'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
+export type MapContextDrawerProps = {
+  open: boolean;
+  onClose: () => void;
+  /** Côté d'ouverture. Filtres = gauche (modal), détail = droite (non-modal, T6.2). */
+  side: "left" | "right";
+  /**
+   * `modal` : backdrop + focus trap + scroll-lock (filtres).
+   * `non-modal` : pas de backdrop bloquant, carte derrière interactive (détail, T6.2).
+   */
+  variant: "modal" | "non-modal";
+  /** Titre visible + label accessible du panneau. */
+  title: string;
+  /** Classe appliquée au conteneur — le medium l'utilise pour rester `xl:hidden`. */
+  className?: string;
+  children: ReactNode;
+};
+
+/**
+ * Drawer contextuel carte (T6). Deux variantes via `variant`. Rendu uniquement quand `open`.
+ *
+ * Invariant clé : la VISIBILITÉ est pilotée par CSS (le conteneur reçoit `xl:hidden` du medium),
+ * jamais par un breakpoint JS. Les effets de bord se défèrent à cette visibilité :
+ * - scroll-lock = classe body `map-drawer-scroll-lock`, elle-même bornée à `<1280` en CSS (globals) ;
+ * - focus-trap = no-op si le panneau est masqué (`offsetParent === null`).
+ * Ainsi, si le state reste ouvert au passage ≥1280, le drawer disparaît proprement sans bloquer
+ * le scroll ni le focus desktop, et réapparaît si l'on revient en medium.
+ */
+export function MapContextDrawer({
+  open,
+  onClose,
+  side,
+  variant,
+  title,
+  className,
+  children,
+}: MapContextDrawerProps) {
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const [entered, setEntered] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const modal = variant === "modal";
+    const trigger = document.activeElement as HTMLElement | null;
+    const panel = panelRef.current;
+    const raf = requestAnimationFrame(() => setEntered(true));
+
+    if (modal) document.body.classList.add("map-drawer-scroll-lock");
+
+    // Focus initial : premier élément focusable du panneau (ou le panneau).
+    const focusables = panel?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+    (focusables && focusables.length > 0 ? focusables[0] : panel)?.focus();
+
+    function onKeyDown(event: KeyboardEvent) {
+      const el = panelRef.current;
+      // Panneau masqué par CSS (≥1280) : on ne fait rien, on défère au CSS.
+      if (!el || el.offsetParent === null) return;
+
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        onCloseRef.current();
+        return;
+      }
+      if (modal && event.key === "Tab") {
+        const items = Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+          (node) => node.offsetParent !== null,
+        );
+        if (items.length === 0) {
+          event.preventDefault();
+          return;
+        }
+        const first = items[0]!;
+        const last = items[items.length - 1]!;
+        const active = document.activeElement;
+        if (event.shiftKey && active === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && active === last) {
+          event.preventDefault();
+          first.focus();
+        } else if (active instanceof Node && !el.contains(active)) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown, true);
+      document.body.classList.remove("map-drawer-scroll-lock");
+      cancelAnimationFrame(raf);
+      setEntered(false);
+      // Retour du focus au déclencheur.
+      trigger?.focus?.();
+    };
+  }, [open, variant]);
+
+  if (!open) return null;
+
+  const closedTransform = side === "left" ? "translateX(-100%)" : "translateX(100%)";
+
+  return (
+    <div className={className}>
+      {variant === "modal" ? (
+        <div
+          aria-hidden
+          onClick={onClose}
+          className="fixed inset-0 bg-black/40 transition-opacity duration-200 motion-reduce:transition-none"
+          style={{ zIndex: Z_INDEX.MAP_DRAWER, opacity: entered ? 1 : 0 }}
+        />
+      ) : null}
+
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal={variant === "modal" ? true : undefined}
+        aria-label={title}
+        tabIndex={-1}
+        className={`fixed inset-y-0 ${
+          side === "left" ? "left-0" : "right-0"
+        } flex w-[min(400px,88vw)] flex-col bg-[#F4F5F7] shadow-xl outline-none transition-transform duration-200 motion-reduce:transition-none`}
+        style={{
+          zIndex: Z_INDEX.MAP_DRAWER,
+          transform: entered ? "translateX(0)" : closedTransform,
+        }}
+      >
+        <div className="flex items-center justify-between border-b border-neutral-200 bg-white px-4 py-3">
+          <span className="text-sm font-bold text-neutral-900">{title}</span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer"
+            className="rounded-full p-1.5 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
+          >
+            <X className="h-5 w-5" aria-hidden />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
+      </div>
+    </div>
+  );
+}

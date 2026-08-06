@@ -8,6 +8,7 @@ import {
   MAP_EMPTY,
   MAP_EMPTY_HINT,
   MAP_ERROR,
+  MAP_PORTAL_FILTERS_TITLE,
   MAP_LOADING,
   MAP_RETRY,
   MAP_TOKEN_MISSING_GOOGLE_WEB,
@@ -46,7 +47,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { GoogleEventMap } from "@/components/map/google-event-map";
 import { MapAroundYouCarousel } from "@/components/map/map-around-you-carousel";
 import { MapAppShell } from "@/components/map/map-app-shell";
+import { MapContextDrawer } from "@/components/map/map-context-drawer";
+import { MapFilterRailContent } from "@/components/map/map-filter-rail-content";
 import { MapLeftFilterRail } from "@/components/map/map-left-filter-rail";
+import { SlidersHorizontal } from "lucide-react";
 import {
   MapMobileAroundSheet,
   MapMobileCategoryPills,
@@ -113,6 +117,8 @@ export function EventMapScreen() {
   const [portalFilters, setPortalFilters] = useState<MapPortalFilters>(DEFAULT_MAP_PORTAL_FILTERS);
   const [mobileCategory, setMobileCategory] = useState<MapMobileCategoryId>("all");
   const [userOrigin, setUserOrigin] = useState<LatLon | null>(null);
+  // T6 — drawer Filtres medium (640–1279). State conservé au passage ≥1280 (drawer masqué CSS).
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const portalStats = useMapPortalStats();
 
@@ -735,6 +741,42 @@ export function EventMapScreen() {
       </div>
 
       <div className="web-desktop-map-only min-w-0 flex-1 space-y-4">
+        {/* T6 — accès filtres en medium (640–1279). Masqué ≥1280 (`xl:hidden`) où le rail
+            persistant prend le relais. Le parent `web-desktop-map-only` gère déjà le seuil 640. */}
+        <div className="xl:hidden">
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={filtersOpen}
+            className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 shadow-sm transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
+          >
+            <SlidersHorizontal className="h-4 w-4" aria-hidden />
+            {MAP_PORTAL_FILTERS_TITLE}
+          </button>
+        </div>
+
+        <MapContextDrawer
+          open={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
+          side="left"
+          variant="modal"
+          title={MAP_PORTAL_FILTERS_TITLE}
+          className="xl:hidden"
+        >
+          <MapFilterRailContent
+            city={city}
+            filters={portalFilters}
+            favoritesCount={portalStats.favoritesCount}
+            visitedCount={portalStats.visitedCount}
+            partners={mapPartners}
+            selectedPartnerSlug={selectedPartnerSlug}
+            onSelectPartner={handleSelectPartner}
+            onChangeFilters={setPortalFilters}
+            onActivateGeolocation={handleUsePositionOnMap}
+          />
+        </MapContextDrawer>
+
         {mapNotice ? (
           <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             {mapNotice}
