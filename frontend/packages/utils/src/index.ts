@@ -2214,6 +2214,7 @@ export {
   type MapMarkerKind,
   type MapMarkerSelectionInputs,
 } from "./map-marker-keys";
+export { resolveMapMediumPanel, type MapMediumPanel } from "./map-medium-panel";
 export {
   DEFAULT_MAP_PORTAL_FILTERS,
   MAP_V2_A_FILTER_CATEGORY_IDS,

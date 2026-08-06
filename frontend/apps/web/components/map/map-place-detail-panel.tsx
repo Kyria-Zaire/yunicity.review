@@ -34,14 +34,17 @@ import { MapMediaThumbnail } from "@/components/map/map-media-thumbnail";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-import { useYunicityApi } from "@/hooks/use-yunicity-api";
-
 type MapPlaceDetailPanelProps = {
   city: string;
   selection: MapTerritorySelection | null;
   events: MapEventItem[];
   origin: { latitude: number; longitude: number } | null;
   onClose: () => void;
+  // T6.2 — détail fetché une seule fois en amont (useSelectedCulturalPlaceDetail) et passé ici :
+  // la fiche est présentational, rendable en plusieurs positions sans dupliquer le fetch.
+  placeDetail: CulturalPlaceDetail | null;
+  loading: boolean;
+  error: boolean;
 };
 
 export function MapPlaceDetailPanel({
@@ -50,11 +53,10 @@ export function MapPlaceDetailPanel({
   events,
   origin,
   onClose,
+  placeDetail,
+  loading,
+  error,
 }: MapPlaceDetailPanelProps) {
-  const api = useYunicityApi();
-  const [placeDetail, setPlaceDetail] = useState<CulturalPlaceDetail | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
   const [expandedDescription, setExpandedDescription] = useState(false);
 
   const selectedEvent = useMemo(() => {
@@ -62,31 +64,10 @@ export function MapPlaceDetailPanel({
     return events.find((event) => event.id === selection.id) ?? null;
   }, [events, selection]);
 
+  // Replie la description longue à chaque changement de sélection.
   useEffect(() => {
     setExpandedDescription(false);
-    if (!selection || selection.kind !== "place") {
-      setPlaceDetail(null);
-      setError(false);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    setError(false);
-    void api
-      .getCulturalPlace(selection.slug, city)
-      .then((detail) => {
-        if (!cancelled) setPlaceDetail(detail);
-      })
-      .catch(() => {
-        if (!cancelled) setError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [api, city, selection]);
+  }, [selection]);
 
   const nearbyEvents = useMemo(() => {
     if (!placeDetail || !origin) return [];
