@@ -20,11 +20,15 @@ import Link from "next/link";
 type MapPartnerDetailPanelProps = {
   partner: PartnerPublic;
   onClose: () => void;
+  // T6.3 — masque le X propre de la fiche quand le drawer medium possède déjà un close sticky
+  // (évite le double bouton ×). Les surfaces desktop (sous-carte/aside) gardent leur X.
+  hideClose?: boolean;
 };
 
 export function MapPartnerDetailPanel({
   partner,
   onClose,
+  hideClose = false,
 }: MapPartnerDetailPanelProps) {
   const imageUrl = resolvePartnerImage(partner, "card");
   const actions = partnerContactActions(partner);
@@ -32,16 +36,18 @@ export function MapPartnerDetailPanel({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-lg">
-      <div className="flex justify-end p-2">
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={MAP_PORTAL_DETAIL_CLOSE}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
-        >
-          <X className="h-4 w-4" aria-hidden />
-        </button>
-      </div>
+      {hideClose ? null : (
+        <div className="flex justify-end p-2">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={MAP_PORTAL_DETAIL_CLOSE}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+      )}
 
       {imageUrl ? (
         <div className="relative h-36 bg-neutral-100">

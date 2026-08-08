@@ -17,10 +17,10 @@ export type MapContextDrawerProps = {
    * `non-modal` : pas de backdrop bloquant, carte derrière interactive (détail, T6.2).
    */
   variant: "modal" | "non-modal";
-  /** Titre visible + label accessible du panneau. */
+  /** Titre visible (filtres) + label accessible du panneau. */
   title: string;
-  /** Masque l'entête du drawer (le détail réutilise le bouton de fermeture propre à la fiche). */
-  hideHeader?: boolean;
+  /** Label accessible du bouton de fermeture (ex. « Fermer les filtres » / « Fermer le détail »). */
+  closeLabel?: string;
   /** Classe appliquée au conteneur — le medium l'utilise pour rester `xl:hidden`. */
   className?: string;
   children: ReactNode;
@@ -42,7 +42,7 @@ export function MapContextDrawer({
   side,
   variant,
   title,
-  hideHeader = false,
+  closeLabel = "Fermer",
   className,
   children,
 }: MapContextDrawerProps) {
@@ -145,20 +145,32 @@ export function MapContextDrawer({
           transform: entered ? "translateX(0)" : closedTransform,
         }}
       >
-        {hideHeader ? null : (
-          // Filtres : entête drawer (titre + fermeture). Le détail passe `hideHeader` et réutilise
-          // le bouton de fermeture propre à la fiche (X en haut de carte) ; `Escape` ferme aussi.
+        {modal ? (
+          // Filtres : entête drawer (titre + fermeture), fixe en haut.
           <div className="flex items-center justify-between border-b border-neutral-200 bg-white px-4 py-3">
             <span className="text-sm font-bold text-neutral-900">{title}</span>
             <button
               type="button"
               onClick={onClose}
-              aria-label="Fermer"
-              className="rounded-full p-1.5 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
+              aria-label={closeLabel}
+              className="flex h-11 w-11 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
             >
               <X className="h-5 w-5" aria-hidden />
             </button>
           </div>
+        ) : (
+          // Détail : bouton de fermeture STICKY (T6.3) — `absolute` dans le panneau `fixed`, il ne
+          // défile pas avec le contenu et reste donc toujours accessible même très défilé. 44×44
+          // (h-11 w-11). Le drawer est l'unique propriétaire de la fermeture en medium (la fiche
+          // masque son propre X via `hideClose`), donc pas de double bouton ×.
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={closeLabel}
+            className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-neutral-600 shadow-sm backdrop-blur transition hover:bg-white hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
+          >
+            <X className="h-5 w-5" aria-hidden />
+          </button>
         )}
         <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
       </div>

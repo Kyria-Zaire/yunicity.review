@@ -45,6 +45,8 @@ type MapPlaceDetailPanelProps = {
   placeDetail: CulturalPlaceDetail | null;
   loading: boolean;
   error: boolean;
+  // T6.3 — masque le X propre de la fiche quand le drawer medium a déjà un close sticky.
+  hideClose?: boolean;
 };
 
 export function MapPlaceDetailPanel({
@@ -56,6 +58,7 @@ export function MapPlaceDetailPanel({
   placeDetail,
   loading,
   error,
+  hideClose = false,
 }: MapPlaceDetailPanelProps) {
   const [expandedDescription, setExpandedDescription] = useState(false);
 
@@ -98,7 +101,7 @@ export function MapPlaceDetailPanel({
         selectedEvent.longitude,
       );
     return (
-      <PanelShell onClose={onClose}>
+      <PanelShell onClose={onClose} hideClose={hideClose}>
         <div className="space-y-4 p-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wide text-violet-600">
@@ -135,7 +138,7 @@ export function MapPlaceDetailPanel({
 
   if (loading) {
     return (
-      <PanelShell onClose={onClose}>
+      <PanelShell onClose={onClose} hideClose={hideClose}>
         <p className="p-6 text-sm text-neutral-500">{MAP_PORTAL_DETAIL_LOADING}</p>
       </PanelShell>
     );
@@ -143,7 +146,7 @@ export function MapPlaceDetailPanel({
 
   if (error || !placeDetail) {
     return (
-      <PanelShell onClose={onClose}>
+      <PanelShell onClose={onClose} hideClose={hideClose}>
         <p className="p-6 text-sm text-red-700">{MAP_PORTAL_DETAIL_ERROR}</p>
       </PanelShell>
     );
@@ -165,7 +168,7 @@ export function MapPlaceDetailPanel({
     );
 
   return (
-    <PanelShell onClose={onClose}>
+    <PanelShell onClose={onClose} hideClose={hideClose}>
       {heroImage ? (
         <div className="relative h-44 bg-neutral-100">
           <MapMediaThumbnail
@@ -304,22 +307,26 @@ export function MapPlaceDetailPanel({
 function PanelShell({
   children,
   onClose,
+  hideClose = false,
 }: {
   children: React.ReactNode;
   onClose: () => void;
+  hideClose?: boolean;
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-lg">
-      <div className="flex justify-end p-2">
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={MAP_PORTAL_DETAIL_CLOSE}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
-        >
-          <X className="h-4 w-4" aria-hidden />
-        </button>
-      </div>
+      {hideClose ? null : (
+        <div className="flex justify-end p-2">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={MAP_PORTAL_DETAIL_CLOSE}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+      )}
       {children}
     </div>
   );
