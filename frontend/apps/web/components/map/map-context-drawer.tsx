@@ -19,6 +19,8 @@ export type MapContextDrawerProps = {
   variant: "modal" | "non-modal";
   /** Titre visible + label accessible du panneau. */
   title: string;
+  /** Masque l'entête du drawer (le détail réutilise le bouton de fermeture propre à la fiche). */
+  hideHeader?: boolean;
   /** Classe appliquée au conteneur — le medium l'utilise pour rester `xl:hidden`. */
   className?: string;
   children: ReactNode;
@@ -40,6 +42,7 @@ export function MapContextDrawer({
   side,
   variant,
   title,
+  hideHeader = false,
   className,
   children,
 }: MapContextDrawerProps) {
@@ -57,9 +60,12 @@ export function MapContextDrawer({
 
     if (modal) document.body.classList.add("map-drawer-scroll-lock");
 
-    // Focus initial : premier élément focusable du panneau (ou le panneau).
-    const focusables = panel?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
-    (focusables && focusables.length > 0 ? focusables[0] : panel)?.focus();
+    // Focus initial : seulement en modal (le détail non-modal ne doit pas voler le focus alors
+    // que la carte reste explorable derrière).
+    if (modal) {
+      const focusables = panel?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+      (focusables && focusables.length > 0 ? focusables[0] : panel)?.focus();
+    }
 
     function onKeyDown(event: KeyboardEvent) {
       const el = panelRef.current;
@@ -101,18 +107,22 @@ export function MapContextDrawer({
       document.body.classList.remove("map-drawer-scroll-lock");
       cancelAnimationFrame(raf);
       setEntered(false);
-      // Retour du focus au déclencheur.
-      trigger?.focus?.();
+      // Retour du focus au déclencheur s'il existe encore (pertinent surtout en modal ; en
+      // non-modal le déclencheur est un marqueur carte, on ne restaure que s'il est encore là).
+      if (trigger?.isConnected) trigger.focus?.();
     };
   }, [open, variant]);
 
   if (!open) return null;
 
+  const modal = variant === "modal";
   const closedTransform = side === "left" ? "translateX(-100%)" : "translateX(100%)";
+  // Filtres (modal) plus large ; détail (non-modal) borné pour laisser la carte visible derrière.
+  const widthClass = modal ? "w-[min(400px,88vw)]" : "w-[clamp(288px,40vw,380px)]";
 
   return (
     <div className={className}>
-      {variant === "modal" ? (
+      {modal ? (
         <div
           aria-hidden
           onClick={onClose}
@@ -123,29 +133,33 @@ export function MapContextDrawer({
 
       <div
         ref={panelRef}
-        role="dialog"
-        aria-modal={variant === "modal" ? true : undefined}
+        role={modal ? "dialog" : "complementary"}
+        aria-modal={modal ? true : undefined}
         aria-label={title}
         tabIndex={-1}
         className={`fixed inset-y-0 ${
           side === "left" ? "left-0" : "right-0"
-        } flex w-[min(400px,88vw)] flex-col bg-[#F4F5F7] shadow-xl outline-none transition-transform duration-200 motion-reduce:transition-none`}
+        } flex ${widthClass} flex-col bg-[#F4F5F7] shadow-xl outline-none transition-transform duration-200 motion-reduce:transition-none`}
         style={{
           zIndex: Z_INDEX.MAP_DRAWER,
           transform: entered ? "translateX(0)" : closedTransform,
         }}
       >
-        <div className="flex items-center justify-between border-b border-neutral-200 bg-white px-4 py-3">
-          <span className="text-sm font-bold text-neutral-900">{title}</span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Fermer"
-            className="rounded-full p-1.5 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
-          >
-            <X className="h-5 w-5" aria-hidden />
-          </button>
-        </div>
+        {hideHeader ? null : (
+          // Filtres : entête drawer (titre + fermeture). Le détail passe `hideHeader` et réutilise
+          // le bouton de fermeture propre à la fiche (X en haut de carte) ; `Escape` ferme aussi.
+          <div className="flex items-center justify-between border-b border-neutral-200 bg-white px-4 py-3">
+            <span className="text-sm font-bold text-neutral-900">{title}</span>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Fermer"
+              className="rounded-full p-1.5 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
+            >
+              <X className="h-5 w-5" aria-hidden />
+            </button>
+          </div>
+        )}
         <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
       </div>
     </div>

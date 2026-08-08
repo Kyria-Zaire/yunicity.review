@@ -35,6 +35,7 @@ import {
   parseMapParams,
   resolveCityMapCenter,
   resolveMapMobilePartnerTypes,
+  resolveMapMediumPanel,
   resolveMapPortalLayer,
   resolveMapPortalLayerVisibility,
   type MapAroundYouItem,
@@ -71,6 +72,7 @@ import { useMapCulturalPlaces } from "@/hooks/use-map-cultural-places";
 import { useMapPartners } from "@/hooks/use-map-partners";
 import { useMapEvents } from "@/hooks/use-map-events";
 import { useMapPageContext } from "@/hooks/use-map-page-context";
+import { useSelectedCulturalPlaceDetail } from "@/hooks/use-selected-cultural-place-detail";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
 
@@ -621,25 +623,41 @@ export function EventMapScreen() {
   const showDetailRail =
     selection?.kind === "place" || selection?.kind === "event" || selectedPartner != null;
 
+  // T6.2 — fetch UNIQUE du détail lieu, partagé par toutes les instances de la fiche (aside,
+  // sous-carte, drawer medium). Fini le double-fetch dû au multi-montage CSS-caché.
+  const { placeDetail, loading: placeLoading, error: placeError } =
+    useSelectedCulturalPlaceDetail(selection, city);
+
+  // Fermeture explicite du détail : efface la sélection, sémantique identique aux surfaces
+  // existantes (partenaire → slug+query ; lieu/event → selection).
+  const handleCloseDetail = useCallback(() => {
+    if (selectedPartner) {
+      setSelectedPartnerSlug(null);
+      updateQuery((params) => {
+        params.delete("partner");
+      });
+    } else {
+      setSelection(null);
+    }
+  }, [selectedPartner, updateQuery]);
+
   const detailRail = selectedPartner ? (
-    <MapPartnerDetailPanel
-      partner={selectedPartner}
-      onClose={() => {
-        setSelectedPartnerSlug(null);
-        updateQuery((params) => {
-          params.delete("partner");
-        });
-      }}
-    />
+    <MapPartnerDetailPanel partner={selectedPartner} onClose={handleCloseDetail} />
   ) : showDetailRail ? (
     <MapPlaceDetailPanel
       city={city}
       selection={selection}
       events={visibleEvents}
       origin={userOrigin}
-      onClose={() => setSelection(null)}
+      onClose={handleCloseDetail}
+      placeDetail={placeDetail}
+      loading={placeLoading}
+      error={placeError}
     />
   ) : null;
+
+  // T6.2 — surface medium active (640–1279), source unique. Filtres prioritaire, sinon détail.
+  const mediumPanel = resolveMapMediumPanel({ filtersOpen, hasDetail: showDetailRail });
 
   const rightRail =
     detailRail ??
@@ -757,7 +775,7 @@ export function EventMapScreen() {
         </div>
 
         <MapContextDrawer
-          open={filtersOpen}
+          open={mediumPanel === "filters"}
           onClose={() => setFiltersOpen(false)}
           side="left"
           variant="modal"
@@ -775,6 +793,21 @@ export function EventMapScreen() {
             onChangeFilters={setPortalFilters}
             onActivateGeolocation={handleUsePositionOnMap}
           />
+        </MapContextDrawer>
+
+        {/* T6.2 — drawer Détail non-modal (droite), medium seulement. Overlay : la carte derrière
+            reste cliquable (sélection d'un autre marqueur). Détail rendu fetch-free (placeDetail
+            partagé). À ≥1280 : masqué CSS (`xl:hidden`), la sélection repasse sous la carte. */}
+        <MapContextDrawer
+          open={mediumPanel === "detail"}
+          onClose={handleCloseDetail}
+          side="right"
+          variant="non-modal"
+          title="Détail du lieu sélectionné"
+          hideHeader
+          className="xl:hidden"
+        >
+          {detailRail}
         </MapContextDrawer>
 
         {mapNotice ? (
@@ -865,7 +898,11 @@ export function EventMapScreen() {
           </p>
         ) : null}
 
-        {showDetailRail ? <div className="2xl:hidden">{detailRail}</div> : null}
+        {/* T6.2 — détail sous la carte : conservé UNIQUEMENT en 1280–1535 (`hidden xl:block
+            2xl:hidden`). En medium (640–1279) le drawer droit prend le relais ; à ≥1536 l'aside. */}
+        {showDetailRail ? (
+          <div className="hidden xl:block 2xl:hidden">{detailRail}</div>
+        ) : null}
       </div>
     </MapAppShell>
   );

@@ -28,8 +28,11 @@ export function MapAppShell({
           </div>
           <div className={`flex gap-4 pb-16 lg:gap-6 lg:pb-20 ${CITIZEN_MOBILE_BOTTOM_NAV_PADDING}`}>
             {children}
+            {/* T6.2 R1 — aside detail SANS `web-desktop-map-only` : cette classe force display:block
+                dès 640px (source postérieure) et écrasait `hidden`, rendant l'aside visible en
+                medium/1280-1535 derrière le drawer. `hidden … 2xl:block` = aside 2xl-only voulu. */}
             {rightRail ? (
-              <aside className="web-desktop-map-only hidden w-80 shrink-0 2xl:block">
+              <aside className="hidden w-80 shrink-0 2xl:block">
                 <div className="sticky top-24 max-h-[calc(100dvh-7rem)] overflow-y-auto">
                   {rightRail}
                 </div>
