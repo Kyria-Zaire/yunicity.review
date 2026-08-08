@@ -641,20 +641,32 @@ export function EventMapScreen() {
     }
   }, [selectedPartner, updateQuery]);
 
-  const detailRail = selectedPartner ? (
-    <MapPartnerDetailPanel partner={selectedPartner} onClose={handleCloseDetail} />
-  ) : showDetailRail ? (
-    <MapPlaceDetailPanel
-      city={city}
-      selection={selection}
-      events={visibleEvents}
-      origin={userOrigin}
-      onClose={handleCloseDetail}
-      placeDetail={placeDetail}
-      loading={placeLoading}
-      error={placeError}
-    />
-  ) : null;
+  // T6.3 — `hideClose` : le drawer medium possède son propre close sticky et devient l'unique
+  // propriétaire de la fermeture (pas de double ×) ; les surfaces desktop (sous-carte/aside)
+  // gardent le X propre de la fiche. Détail rendu fetch-free (placeDetail partagé).
+  const buildDetailRail = (hideClose: boolean) =>
+    selectedPartner ? (
+      <MapPartnerDetailPanel
+        partner={selectedPartner}
+        onClose={handleCloseDetail}
+        hideClose={hideClose}
+      />
+    ) : showDetailRail ? (
+      <MapPlaceDetailPanel
+        city={city}
+        selection={selection}
+        events={visibleEvents}
+        origin={userOrigin}
+        onClose={handleCloseDetail}
+        placeDetail={placeDetail}
+        loading={placeLoading}
+        error={placeError}
+        hideClose={hideClose}
+      />
+    ) : null;
+
+  // Surfaces desktop (sous-carte 1280-1535 + aside ≥1536) : la fiche garde son propre X.
+  const detailRail = buildDetailRail(false);
 
   // T6.2 — surface medium active (640–1279), source unique. Filtres prioritaire, sinon détail.
   const mediumPanel = resolveMapMediumPanel({ filtersOpen, hasDetail: showDetailRail });
@@ -780,6 +792,7 @@ export function EventMapScreen() {
           side="left"
           variant="modal"
           title={MAP_PORTAL_FILTERS_TITLE}
+          closeLabel="Fermer les filtres"
           className="xl:hidden"
         >
           <MapFilterRailContent
@@ -804,10 +817,11 @@ export function EventMapScreen() {
           side="right"
           variant="non-modal"
           title="Détail du lieu sélectionné"
-          hideHeader
+          closeLabel="Fermer le détail"
           className="xl:hidden"
         >
-          {detailRail}
+          {/* T6.3 — le drawer possède le close sticky ⇒ la fiche masque son X (hideClose). */}
+          {buildDetailRail(true)}
         </MapContextDrawer>
 
         {mapNotice ? (
