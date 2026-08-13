@@ -124,7 +124,9 @@ export function MapMobileAroundSheet({ items, onSelectItem }: MapMobileAroundShe
         </div>
 
         {items.length === 0 ? (
-          <p className="px-4 pb-5 text-sm text-neutral-500">{MAP_PORTAL_AROUND_EMPTY}</p>
+          // T6.4-R1 — même réservation `pr-20` que l'en-tête : le texte descriptif de l'état vide
+          // occupe toute la largeur et son coin bas-droite tombait sous le FAB Menu (mots illisibles).
+          <p className="pb-5 pl-4 pr-20 text-sm text-neutral-500">{MAP_PORTAL_AROUND_EMPTY}</p>
         ) : (
           <ul className="divide-y divide-neutral-100 overflow-y-auto px-4 pb-4 [max-height:min(38dvh,320px)]">
             {items.map((item) => (
