@@ -35,7 +35,7 @@ export function CreateHubFab({ className = "" }: CreateHubFabProps) {
       aria-label={CREATE_HUB_FAB_LABEL}
       aria-haspopup="dialog"
       aria-expanded={isOpen}
-      className={`create-hub-fab fixed hidden max-[639px]:inline-flex h-14 w-14 items-center justify-center rounded-full bg-yunicity-primary text-white shadow-lg transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${className}`}
+      className={`create-hub-fab fixed hidden max-[639.98px]:inline-flex h-14 w-14 items-center justify-center rounded-full bg-yunicity-primary text-white shadow-lg transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${className}`}
       style={{
         zIndex: Z_INDEX.CREATE_FAB,
         left: "max(1rem, env(safe-area-inset-left))",

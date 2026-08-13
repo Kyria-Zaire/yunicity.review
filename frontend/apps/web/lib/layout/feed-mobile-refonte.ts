@@ -7,4 +7,4 @@ export const FEED_MOBILE_REFONTE_CLASS = "max-[639px]" as const;
 export const CITIZEN_MOBILE_FLOATING_NAV_BOTTOM_GAP = "1.75rem";
 
 export const CITIZEN_MOBILE_BOTTOM_NAV_PADDING =
-  "max-[639px]:pb-[calc(6rem+env(safe-area-inset-bottom))]" as const;
+  "max-[639.98px]:pb-[calc(6rem+env(safe-area-inset-bottom))]" as const;
