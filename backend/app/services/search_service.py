@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import uuid
 from datetime import UTC, datetime
 from typing import Literal
@@ -142,9 +141,16 @@ class SearchService:
         viewer_city_lower: str | None,
         limit_per_type: int,
     ) -> tuple[SearchGroups, bool]:
-        async def _run(
-            search_type: SearchEntityType,
-        ) -> tuple[SearchEntityType, list[SearchResultItem], int]:
+        group_data: dict[str, SearchResultGroup] = {
+            key: SearchResultGroup(items=[], count=0, has_more=False)
+            for key in _GROUP_KEY_BY_TYPE.values()
+        }
+        has_more = False
+        # Serialize the per-type branches: they all share this service's single
+        # AsyncSession, which is NOT safe for concurrent use. Running them with
+        # asyncio.gather raised sqlalchemy IllegalStateChangeError (C3-F0-T2).
+        # Order, per-type limits, ranking and merge are unchanged.
+        for search_type in SEARCH_ALL_TYPE_ORDER:
             items, total = await self._fetch_type(
                 search_type=search_type,
                 query=query,
@@ -156,15 +162,6 @@ class SearchService:
                 limit=limit_per_type,
                 offset=0,
             )
-            return search_type, items, total
-
-        results = await asyncio.gather(*[_run(t) for t in SEARCH_ALL_TYPE_ORDER])
-        group_data: dict[str, SearchResultGroup] = {
-            key: SearchResultGroup(items=[], count=0, has_more=False)
-            for key in _GROUP_KEY_BY_TYPE.values()
-        }
-        has_more = False
-        for search_type, items, total in results:
             key = _GROUP_KEY_BY_TYPE[search_type]
             group_has_more = total > limit_per_type
             if group_has_more:
