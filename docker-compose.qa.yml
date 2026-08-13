@@ -1,0 +1,99 @@
+# Yunicity — QA isolated stack (C3-F0-T1)
+#
+# ⚠️  QA ONLY — disposable, hermetic-by-configuration stack.
+#     Distinct from the dev stack (docker-compose.yml): distinct project name,
+#     distinct container names, distinct host ports, NO persistent volumes.
+#
+# Always drive it with an explicit project name AND this file:
+#   docker compose -p yunicity-qa -f docker-compose.qa.yml <cmd>
+#
+# It deliberately does NOT load backend/.env (which may hold real provider keys):
+# every variable below is set inline so the anti-production guard stays green.
+#
+# Ports: postgres 5455 (dev=5434) · redis 6399 (dev=6379) · backend 8010 (dev=8000).
+
+name: yunicity-qa
+
+services:
+  postgres-qa:
+    image: postgis/postgis:16-3.4
+    container_name: yunicity-postgres-qa
+    # QA ONLY credentials — never reused elsewhere.
+    environment:
+      POSTGRES_DB: yunicity_qa
+      POSTGRES_USER: yunicity_qa
+      POSTGRES_PASSWORD: yunicity_qa_password
+    ports:
+      - "5455:5432"
+    # No named volume: data lives only in the container layer -> disposable.
+    volumes:
+      - ./infra/docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yunicity_qa -d yunicity_qa"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: "no"
+
+  redis-qa:
+    image: redis:7-alpine
+    container_name: yunicity-redis-qa
+    ports:
+      - "6399:6379"
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: "no"
+
+  backend-qa:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: yunicity-backend-qa
+    command: uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8010:8000"
+    # NOTE: no env_file — inline QA config only, so no real provider key can leak in.
+    environment:
+      APP_NAME: Yunicity QA API
+      APP_ENV: dev
+      DEBUG: "true"
+      API_V1_PREFIX: /api/v1
+      DATABASE_URL: postgresql+asyncpg://yunicity_qa:yunicity_qa_password@postgres-qa:5432/yunicity_qa
+      TEST_DATABASE_URL: postgresql+asyncpg://yunicity_qa:yunicity_qa_password@postgres-qa:5432/yunicity_qa
+      REDIS_URL: redis://redis-qa:6379/0
+      CORS_ORIGINS: '["http://localhost:3000","http://localhost:3002"]'
+      LOG_LEVEL: INFO
+      JWT_SECRET_KEY: qa-only-jwt-secret-at-least-32-characters-long!!
+      REFRESH_TOKEN_PEPPER: qa-only-pepper-32-chars-minimum!!
+      # External effects neutralized by configuration (guard-enforced).
+      EMAIL_PROVIDER: console
+      EXPO_PUSH_ENABLED: "false"
+      LOCAL_VIDEO_STORAGE_BACKEND: filesystem
+      MEDIA_UPLOAD_DIR: /tmp/yunicity-uploads
+      MEDIA_PUBLIC_BASE_URL: http://localhost:8010
+      # QA run marker — lets the destructive-test policy (pytest_sessionstart / guard)
+      # validate this container as an authorized QA target (C3-F0-T1-R1).
+      YUNICITY_QA_MODE: "1"
+      YUNICITY_QA_RUN_TOKEN: qa-compose-run-token
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres-qa:
+        condition: service_healthy
+      redis-qa:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    restart: "no"

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from collections.abc import AsyncGenerator, Iterator
 
 import pytest
@@ -22,6 +21,8 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 
+from tests.qa_support import configure_destructive_qa_db
+
 _TEST_JWT_SECRET = "test-secret-key-at-least-32-characters-long!!"
 
 
@@ -38,16 +39,10 @@ def _reset_database_schema(connection) -> None:  # type: ignore[no-untyped-def]
     Base.metadata.create_all(connection)
 
 
-def _database_url() -> str | None:
-    return os.environ.get("DATABASE_URL")
-
-
 @pytest.fixture
 def auth_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
-    database_url = _database_url()
-    if not database_url:
-        pytest.skip("DATABASE_URL not set — skip auth integration tests")
-    monkeypatch.setenv("DATABASE_URL", database_url)
+    # Fail-closed: guard runs before any engine/connection; QA target only (C3-F0-T1-R1).
+    configure_destructive_qa_db(monkeypatch)
     monkeypatch.setenv("JWT_SECRET_KEY", _TEST_JWT_SECRET)
     monkeypatch.setenv("REFRESH_COOKIE_SECURE", "false")
     get_settings.cache_clear()
