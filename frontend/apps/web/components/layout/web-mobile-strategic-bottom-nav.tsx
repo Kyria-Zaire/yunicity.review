@@ -58,7 +58,7 @@ export function WebMobileStrategicBottomNav() {
   return (
     <>
       <nav
-        className="web-mobile-strategic-bottom-nav pointer-events-none fixed inset-x-0 bottom-0 hidden max-[639px]:block px-3"
+        className="web-mobile-strategic-bottom-nav pointer-events-none fixed inset-x-0 bottom-0 hidden max-[639.98px]:block px-3"
         style={{
           zIndex: Z_INDEX.CHROME,
           paddingBottom: `max(${CITIZEN_MOBILE_FLOATING_NAV_BOTTOM_GAP}, env(safe-area-inset-bottom))`,

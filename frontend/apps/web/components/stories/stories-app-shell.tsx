@@ -33,7 +33,7 @@ export function StoriesAppShell({
             className={
               variant === "new-story"
                 ? "pb-[max(0.75rem,env(safe-area-inset-bottom))]"
-                : "flex gap-6 pb-16 lg:pb-20 max-[639px]:pb-[calc(6rem+env(safe-area-inset-bottom))]"
+                : "flex gap-6 pb-16 lg:pb-20 max-[639.98px]:pb-[calc(6rem+env(safe-area-inset-bottom))]"
             }
           >
             {children}

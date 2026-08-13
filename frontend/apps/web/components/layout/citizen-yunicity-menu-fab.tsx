@@ -11,7 +11,7 @@ import { Z_INDEX } from "@/lib/layout/z-index";
 export function CitizenYunicityMenuFab() {
   return (
     <div
-      className="citizen-yunicity-menu-fab pointer-events-none fixed hidden max-[639px]:block"
+      className="citizen-yunicity-menu-fab pointer-events-none fixed hidden max-[639.98px]:block"
       style={{
         zIndex: Z_INDEX.YUNICITY_MENU_FAB,
         right: "max(1rem, env(safe-area-inset-right))",
