@@ -112,7 +112,11 @@ export function MapMobileAroundSheet({ items, onSelectItem }: MapMobileAroundShe
           <span className="h-1 w-10 rounded-full bg-neutral-300" />
         </div>
 
-        <div className="flex items-center justify-between gap-3 px-4 pb-2 pt-1">
+        {/* T6.4-R1 — `pr-20` (80px) réserve la colonne droite occupée par le FAB Menu Yunicity
+            (rond 56px + marge 16px = 72px, `CitizenYunicityMenuFab`, z-65, ancré bas-droite ≤639px).
+            Sans ça, quand le sheet est court, le FAB recouvre « Voir tout → » et intercepte son tap.
+            Tient sur une ligne dès 320px (16+titre+gap+lien+80 ≈ 297px). */}
+        <div className="flex items-center justify-between gap-3 pb-2 pl-4 pr-20 pt-1">
           <h2 className="text-base font-bold text-neutral-900">{MAP_PORTAL_AROUND_TITLE}</h2>
           <Link href="/events" className="text-sm font-semibold text-yunicity-primary">
             {MAP_PORTAL_AROUND_SEE_ALL} →
