@@ -38,6 +38,7 @@ from app.core.organization_constants import (
     OrganizationVisibility,
     VerificationStatus,
 )
+from app.core.partner_constants import PartnershipType, PartnerStatus
 from app.core.passport_constants import (
     PartnerOfferStatus,
     PartnerOfferType,
@@ -52,6 +53,7 @@ from app.models.local_event import EventInterest, LocalEvent
 from app.models.local_video import LocalVideo
 from app.models.neighborhood import Neighborhood
 from app.models.organization import Organization
+from app.models.partner_profile import PartnerProfile
 from app.models.passport import PartnerOffer, Passport, PassportTier
 from app.models.post import Post
 from app.models.tribe import Tribe, TribeMember
@@ -158,8 +160,10 @@ async def seed_qa_fixtures(
     hashed = hash_password(_QA_PASSWORD)
     created_users = 0
     for uid_, email, full_name in (
-        (citizen_a_id, "qa.citizen.a@yunicity.test", "QA Citoyen A"),
-        (citizen_b_id, "qa.citizen.b@yunicity.test", "QA Citoyen B"),
+        # @example.com is accepted by EmailStr (the .test TLD is rejected) → these QA
+        # actors are loginnable via API and UI with the deterministic QA password below.
+        (citizen_a_id, "qa.citizen.a@example.com", "QA Citoyen A"),
+        (citizen_b_id, "qa.citizen.b@example.com", "QA Citoyen B"),
     ):
         created_users += await _get_or_add(
             session,
@@ -180,7 +184,8 @@ async def seed_qa_fixtures(
 
     created_profiles = 0
     for uid_, user_id, username, interests in (
-        (_uid("profile-a"), citizen_a_id, "qa_citizen_a", ["culture", "sport_local"]),
+        # Valid profile-interest vocabulary (ALLOWED_INTERESTS), not tribe categories.
+        (_uid("profile-a"), citizen_a_id, "qa_citizen_a", ["culture"]),
         (_uid("profile-b"), citizen_b_id, "qa_citizen_b", []),
     ):
         created_profiles += await _get_or_add(
@@ -367,6 +372,27 @@ async def seed_qa_fixtures(
     await session.flush()
     counts["organizations"] = int(created_org)
 
+    # PartnerProfile with a public status is REQUIRED for the public offers catalog:
+    # GET /partner-offers inner-joins partner_profiles and filters partner_status in
+    # {active, premium, founding_partner} (see PublicPartnerOfferService). Without it the
+    # seeded offers never surface publicly. (C3-F0-T3-R2 fixture completion.)
+    partner_profile_id = _uid("partner-profile")
+    created_partner_profile = await _get_or_add(
+        session,
+        PartnerProfile,
+        partner_profile_id,
+        lambda: PartnerProfile(
+            id=partner_profile_id,
+            organization_id=org_id,
+            partner_status=PartnerStatus.ACTIVE.value,
+            partnership_type=PartnershipType.LOCAL_BUSINESS.value,
+            activated_at=now - timedelta(days=30),
+            public_partner_label="QA Partenaire Local",
+        ),
+    )
+    await session.flush()
+    counts["partner_profiles"] = int(created_partner_profile)
+
     offer_flash_id = _uid("offer-flash-future")
     offer_expired_id = _uid("offer-expired")
     created_offers = 0
@@ -497,6 +523,7 @@ EXPECTED_VOLUMES: dict[str, int] = {
     "events": 2,
     "event_interests": 1,
     "organizations": 1,
+    "partner_profiles": 1,
     "partner_offers": 2,
     "local_videos": 1,
     "notifications": 2,

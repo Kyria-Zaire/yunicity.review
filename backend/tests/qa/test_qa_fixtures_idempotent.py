@@ -18,6 +18,7 @@ from app.db.seeds.qa_fixtures import EXPECTED_VOLUMES, seed_qa_fixtures
 from app.models.local_event import EventInterest, LocalEvent
 from app.models.local_video import LocalVideo
 from app.models.organization import Organization
+from app.models.partner_profile import PartnerProfile
 from app.models.passport import PartnerOffer, Passport
 from app.models.post import Post
 from app.models.tribe import Tribe, TribeMember
@@ -40,6 +41,7 @@ _COUNT_MODELS: dict[str, type] = {
     "events": LocalEvent,
     "event_interests": EventInterest,
     "organizations": Organization,
+    "partner_profiles": PartnerProfile,
     "partner_offers": PartnerOffer,
     "local_videos": LocalVideo,
     "notifications": UserNotification,

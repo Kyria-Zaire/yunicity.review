@@ -17,6 +17,7 @@ from app.qa.guard import (
     QaTarget,
     evaluate_qa_database_target,
     evaluate_qa_guard,
+    evaluate_qa_redis_target,
 )
 
 _VALID_QA_URL = f"postgresql+asyncpg://qa_user:qa_pass@localhost:5455/{QA_DB_NAME}"
@@ -218,3 +219,50 @@ def test_full_guard_still_rejects_external_key() -> None:
     env = _base_env(LOCAL_VIDEO_R2_ACCESS_KEY_ID="r2-mock-key")
     with pytest.raises(QaGuardError, match="EXTERNAL_KEY_PRESENT"):
         evaluate_qa_guard(env)
+
+
+# --- QA Redis rate-limit reset guard (C3-F0-T3-R4) -----------------------------------
+
+
+def _redis_env(url: str, **overrides: str) -> dict[str, str]:
+    env = {
+        "YUNICITY_QA_MODE": "1",
+        "YUNICITY_QA_RUN_TOKEN": "qa-run-token-fixture",
+        "REDIS_URL": url,
+    }
+    env.update(overrides)
+    return env
+
+
+def test_redis_guard_allows_qa_container() -> None:
+    t = evaluate_qa_redis_target(_redis_env("redis://redis-qa:6379/0"))
+    assert (t.host, t.port) == ("redis-qa", 6379)
+
+
+def test_redis_guard_allows_qa_localhost() -> None:
+    t = evaluate_qa_redis_target(_redis_env("redis://localhost:6399/0"))
+    assert (t.host, t.port) == ("localhost", 6399)
+
+
+def test_redis_guard_refuses_dev_redis_6379() -> None:
+    with pytest.raises(QaGuardError, match="DEV_REDIS_PORT_6379"):
+        evaluate_qa_redis_target(_redis_env("redis://localhost:6379/0"))
+
+
+def test_redis_guard_refuses_remote() -> None:
+    with pytest.raises(QaGuardError, match="REDIS_HOST_(FORBIDDEN|PORT_NOT_ALLOWED)"):
+        evaluate_qa_redis_target(_redis_env("redis://cache.railway.app:6399/0"))
+
+
+def test_redis_guard_refuses_missing_marker() -> None:
+    env = _redis_env("redis://redis-qa:6379/0")
+    del env["YUNICITY_QA_MODE"]
+    with pytest.raises(QaGuardError, match="QA_MODE_ABSENT"):
+        evaluate_qa_redis_target(env)
+
+
+def test_redis_guard_refuses_absent_url() -> None:
+    env = _redis_env("redis://redis-qa:6379/0")
+    del env["REDIS_URL"]
+    with pytest.raises(QaGuardError, match="REDIS_URL_ABSENT"):
+        evaluate_qa_redis_target(env)

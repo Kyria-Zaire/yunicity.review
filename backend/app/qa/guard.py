@@ -219,3 +219,66 @@ def resolve_test_database_url() -> str:
     """Return the validated TEST_DATABASE_URL after the guard has approved it."""
     ensure_qa_destructive_target()
     return os.environ[TEST_DB_ENV].strip()
+
+
+# --- QA Redis target (rate-limit reset) -----------------------------------------------
+
+REDIS_URL_ENV = "REDIS_URL"
+
+# (host, port) allowed for the QA Redis. Dev Redis is localhost:6379 — explicitly refused.
+_ALLOWED_REDIS_HOST_PORTS: frozenset[tuple[str, int]] = frozenset(
+    {
+        ("localhost", 6399),
+        ("127.0.0.1", 6399),
+        ("redis-qa", 6379),
+    }
+)
+_DEV_REDIS_PORT = 6379
+
+
+@dataclass(frozen=True)
+class QaRedisTarget:
+    host: str
+    port: int
+
+    def confirmation(self) -> str:
+        return f"QA redis OK -> host={self.host} port={self.port}"
+
+
+def evaluate_qa_redis_target(env: Mapping[str, str]) -> QaRedisTarget:
+    """Validate the QA Redis target (for a guarded rate-limit reset). Fail-closed, no I/O.
+
+    Refuses dev Redis (localhost:6379), any remote host, and a missing QA marker. It never
+    disables the rate limiter — it only authorizes flushing the disposable QA counters.
+    """
+    from urllib.parse import urlparse
+
+    if env.get(QA_MODE_ENV, "").strip() != "1":
+        raise QaGuardError("QA_MODE_ABSENT")
+    if not env.get(QA_TOKEN_ENV, "").strip():
+        raise QaGuardError("QA_RUN_TOKEN_ABSENT")
+    raw = env.get(REDIS_URL_ENV, "").strip()
+    if not raw:
+        raise QaGuardError("REDIS_URL_ABSENT")
+    _reject_if_railway_env(env)
+
+    parsed = urlparse(raw)
+    host = (parsed.hostname or "").strip().lower()
+    port = parsed.port
+    if not host:
+        raise QaGuardError("REDIS_HOST_MISSING")
+    if port is None:
+        raise QaGuardError("REDIS_PORT_MISSING")
+    for substring in _FORBIDDEN_HOST_SUBSTRINGS:
+        if substring in host:
+            raise QaGuardError(f"REDIS_HOST_FORBIDDEN:{substring}")
+    if host in ("localhost", "127.0.0.1") and port == _DEV_REDIS_PORT:
+        raise QaGuardError("DEV_REDIS_PORT_6379")
+    if (host, port) not in _ALLOWED_REDIS_HOST_PORTS:
+        raise QaGuardError(f"REDIS_HOST_PORT_NOT_ALLOWED:{host}:{port}")
+    return QaRedisTarget(host=host, port=port)
+
+
+def ensure_qa_redis_target() -> QaRedisTarget:
+    """Guard entry point for the QA Redis rate-limit reset, reading the process env."""
+    return evaluate_qa_redis_target(os.environ)

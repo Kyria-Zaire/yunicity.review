@@ -43,6 +43,12 @@ pnpm-debug.log*
 .next/
 out/
 
+# Playwright E2E artifacts (C3-F0-T3) — never commit reports/traces/screenshots/videos
+**/playwright-report/
+**/test-results/
+**/.playwright/
+playwright/.cache/
+
 # Expo / React Native
 .expo/
 .expo-shared/

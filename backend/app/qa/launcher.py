@@ -29,6 +29,7 @@ from app.db.seeds.qa_fixtures import EXPECTED_VOLUMES, seed_qa_fixtures
 from app.models.local_event import EventInterest, LocalEvent
 from app.models.local_video import LocalVideo
 from app.models.organization import Organization
+from app.models.partner_profile import PartnerProfile
 from app.models.passport import PartnerOffer, Passport
 from app.models.post import Post
 from app.models.tribe import Tribe, TribeMember
@@ -38,8 +39,10 @@ from app.models.user_profile import UserProfile
 from app.qa.guard import (
     QA_MODE_ENV,
     QA_TOKEN_ENV,
+    REDIS_URL_ENV,
     QaGuardError,
     ensure_qa_destructive_target,
+    ensure_qa_redis_target,
     resolve_test_database_url,
 )
 from app.qa.reset import reset_qa_schema
@@ -53,6 +56,7 @@ _COUNT_MODELS: dict[str, type] = {
     "events": LocalEvent,
     "event_interests": EventInterest,
     "organizations": Organization,
+    "partner_profiles": PartnerProfile,
     "partner_offers": PartnerOffer,
     "local_videos": LocalVideo,
     "notifications": UserNotification,
@@ -114,9 +118,28 @@ async def _cmd_verify() -> int:
     return 0 if ok else 1
 
 
+async def _cmd_reset_rate_limits() -> int:
+    """Flush the disposable QA Redis (clears rate-limit counters). Guarded, QA-only.
+
+    Never disables the rate limiter — only resets its counters between account-creating
+    E2E groups so the run is not contaminated by prior registrations.
+    """
+    target = ensure_qa_redis_target()
+    from redis.asyncio import Redis
+
+    client = Redis.from_url(os.environ[REDIS_URL_ENV].strip())
+    try:
+        await client.flushdb()
+    finally:
+        await client.aclose()
+    print(f"rate-limit reset OK -> {target.confirmation()}")
+    return 0
+
+
 _COMMANDS = {
     "guard-check": _cmd_guard_check,
     "reset": _cmd_reset,
+    "reset-rate-limits": _cmd_reset_rate_limits,
     "seed": _cmd_seed,
     "verify": _cmd_verify,
 }
