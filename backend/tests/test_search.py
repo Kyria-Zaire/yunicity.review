@@ -265,3 +265,49 @@ async def test_search_requires_city_when_anonymous(auth_client: AsyncClient) -> 
     response = await auth_client.get("/api/v1/search?q=reims")
     assert response.status_code == 400, response.text
     assert response.json()["code"] == "CITY_REQUIRED"
+
+
+@pytest.mark.asyncio
+async def test_search_all_empty_returns_200_with_empty_groups(auth_client: AsyncClient) -> None:
+    """Multi-type search with no match must be 200 with the empty-state contract (C3-F0-T2)."""
+    response = await auth_client.get(
+        f"/api/v1/search?q=zzz{_SEARCH_TOKEN}absent&city=Reims&type=all",
+    )
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["type_filter"] == "all"
+    assert data["has_more"] is False
+    assert "items" not in data
+    for key in ("events", "organizations", "posts", "offers", "tribes", "users", "neighborhoods"):
+        group = data["groups"][key]
+        assert group["items"] == []
+        assert group["count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_search_all_repeated_calls_stay_200(auth_client: AsyncClient) -> None:
+    """Serialized branches must not leak session state across successive multi-type calls."""
+    for _ in range(4):
+        response = await auth_client.get(
+            f"/api/v1/search?q=reims{_SEARCH_TOKEN}&city=Reims&type=all",
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["type_filter"] == "all"
+
+
+@pytest.mark.asyncio
+async def test_search_all_accepts_period_and_limit(auth_client: AsyncClient) -> None:
+    """The 'all' contract accepts period (event-scoped) and limit without regression."""
+    response = await auth_client.get(
+        "/api/v1/search",
+        params={"q": "reims", "city": "Reims", "type": "all", "period": "past", "limit": 5},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["page_size"] <= 5
+
+
+@pytest.mark.asyncio
+async def test_search_invalid_type_returns_400(auth_client: AsyncClient) -> None:
+    response = await auth_client.get("/api/v1/search?q=reims&city=Reims&type=bogus")
+    assert response.status_code == 400, response.text
+    assert response.json()["code"] == "INVALID_SEARCH_TYPE"

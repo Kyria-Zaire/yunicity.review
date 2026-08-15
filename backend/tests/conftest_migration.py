@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import asyncio
-import os
 from collections.abc import Iterator
 
 import pytest
 from app.core.config import get_settings
+
+from tests.qa_support import configure_destructive_qa_db
 
 _TEST_JWT_SECRET = "test-secret-key-at-least-32-characters-long!!"
 
@@ -38,10 +39,8 @@ def migration_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     pytest runs sequentially here (no xdist installed, no ``-n``), so no other test can be
     mid-flight against this database while the schema is dropped.
     """
-    database_url = os.environ.get("DATABASE_URL")
-    if not database_url:
-        pytest.skip("DATABASE_URL not set — skip migration tests")
-    monkeypatch.setenv("DATABASE_URL", database_url)
+    # Fail-closed: guard runs before the destructive reset; QA target only (C3-F0-T1-R1).
+    database_url = configure_destructive_qa_db(monkeypatch)
     monkeypatch.setenv("JWT_SECRET_KEY", _TEST_JWT_SECRET)
     get_settings.cache_clear()
     asyncio.run(_reset_schema_to_empty(database_url))

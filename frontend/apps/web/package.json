@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
+    "@playwright/test": "^1.62.1",
     "@types/google.maps": "^3.58.1",
     "@types/node": "^22.15.21",
     "eslint": "^9.27.0",
