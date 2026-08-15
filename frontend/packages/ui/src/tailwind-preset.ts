@@ -52,6 +52,7 @@ export const yunicityTailwindExtend = {
     "yunicity-lg": s.radius.lg,
     "yunicity-xl": s.radius.xl,
     "yunicity-2xl": s.radius["2xl"],
+    "yunicity-pill": s.radius.pill,
   },
   boxShadow: {
     "yunicity-sm": s.shadow.sm,
