@@ -2,13 +2,33 @@
 # CI gates on High/Critical only (see .github/scripts/osv_gate_high.py). Medium/Low
 # are reported but tolerated, matching the previous `pnpm audit --audit-level=high`.
 #
-# Entries below are PRE-EXISTING High findings present before osv-scanner adoption,
-# ignored with a near-term expiry so they resurface and force re-triage. New
-# vulnerabilities are NOT covered here and will fail CI.
+# Only findings that are BUILD/DEV-only AND have no reasonable immediate remediation
+# are ignored here, each with an owner, a follow-up ticket and a short explicit expiry
+# so they resurface and force re-triage. Runtime-reachable findings are NEVER ignored
+# (sharp is fixed via override, not waived). New vulnerabilities are NOT covered here
+# and will fail CI.
 
+# uuid@7.0.3 (transitive, BUILD-ONLY): apps/mobile → expo → @expo/config-plugins →
+# xcode → uuid. The advisory affects uuid.v3/v5/v6 when given a buffer/offset that is not
+# correctly validated (NOT a randomness weakness). Used only by the Expo/Xcode iOS prebuild
+# tooling; web/admin do not import uuid at all and no app code calls v3/v5/v6. Fixed in uuid
+# 11.1.1, but that is a major bump incompatible with xcode@3.0.1's CommonJS v4 API — not
+# forced here. Follow-up: SEC-FE-04.
 [[IgnoredVulns]]
 id = "GHSA-w5hq-g745-h8pq"
-# uuid@7.0.3 (transitive) — High (CVSS 7.5), fixed in uuid 11.1.1.
-# Pre-existing before this workflow migration; scheduled for dependency remediation.
-ignoreUntil = 2026-08-14T00:00:00Z
-reason = "Pre-existing transitive uuid@7.0.3 High; tracked for bump to a fixed line. Expiry forces re-triage."
+ignoreUntil = 2026-09-15T00:00:00Z
+reason = "BUILD-ONLY uuid@7.0.3 (Expo/Xcode prebuild); no app v3/v5/v6 usage; fix is a risky major 7→11. Owner: frontend. Tracked in SEC-FE-04."
+
+# image-size@1.2.1 (transitive, BUILD-ONLY): apps/mobile → expo → metro / metro-config.
+# Used only by the Metro bundler on the app's OWN bundled assets at build time; no
+# untrusted input, no web/admin runtime path. No upstream fix exists (all versions
+# ≤ 2.0.2 affected). DoS (infinite loop) on crafted JXL/HEIF/ICNS. Follow-up: SEC-FE-04.
+[[IgnoredVulns]]
+id = "GHSA-5p2g-fcmc-qvqq"
+ignoreUntil = 2026-09-15T00:00:00Z
+reason = "BUILD-ONLY image-size@1.2.1 (Expo/Metro bundler, own assets); no upstream fix (all ≤2.0.2 affected). Owner: frontend. Tracked in SEC-FE-04."
+
+[[IgnoredVulns]]
+id = "GHSA-w3rx-r6r6-pgpr"
+ignoreUntil = 2026-09-15T00:00:00Z
+reason = "BUILD-ONLY image-size@1.2.1 (Expo/Metro bundler, own assets); no upstream fix (all ≤2.0.2 affected). Owner: frontend. Tracked in SEC-FE-04."
