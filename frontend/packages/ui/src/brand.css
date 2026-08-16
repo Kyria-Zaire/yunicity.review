@@ -20,4 +20,70 @@
   /* shadcn admin — primary = brand blue (HSL ~239 100% 58%) */
   --primary: 239 100% 58%;
   --primary-foreground: 0 0% 100%;
+
+  /* --- Couche sémantique C3.0-T2 (additif ; alias des primitives ci-dessus) --- */
+  --yunicity-canvas: #ffffff;
+  --yunicity-surface-elevated: #ffffff;
+  --yunicity-text-muted: #9ca3af;
+  --yunicity-text-inverse: #ffffff;
+  --yunicity-divider: #f3f4f6;
+  --yunicity-focus-ring: var(--yunicity-primary);
+  --yunicity-info: #2563eb;
+  --yunicity-info-soft: #eff6ff;
+  --yunicity-success-soft: #f0fdf4;
+  --yunicity-warning-soft: #fffbeb;
+  --yunicity-danger-soft: #fff1f2;
+
+  /* Passport premium — surface navy pleine, validée DA (#0B1533, sans gradient) */
+  --yunicity-premium-surface: #0b1533;
+  --yunicity-premium-foreground: #ffffff;
+  --yunicity-premium-accent: var(--yunicity-primary-soft);
+
+  /* Rayons */
+  --yunicity-radius-sm: 0.375rem;
+  --yunicity-radius-md: 0.5rem;
+  --yunicity-radius-lg: 0.75rem;
+  --yunicity-radius-xl: 1rem;
+  --yunicity-radius-2xl: 1.5rem;
+
+  /* Ombres sobres */
+  --yunicity-shadow-sm: 0 1px 2px 0 rgb(17 24 39 / 0.05);
+  --yunicity-shadow-md: 0 4px 12px -2px rgb(17 24 39 / 0.1);
+  --yunicity-shadow-lg: 0 12px 32px -8px rgb(17 24 39 / 0.16);
+
+  /* Largeurs de contenu & rails */
+  --yunicity-content-form: 36rem;
+  --yunicity-content-readable: 42rem;
+  --yunicity-content-wide: 48rem;
+  --yunicity-shell-max: 87.5rem;
+  --yunicity-rail-nav: 15rem;
+  --yunicity-rail-context: 18rem;
+
+  /* Chrome & cibles tactiles */
+  --yunicity-header-height: 3.5rem;
+  --yunicity-bottom-nav-height: 4rem;
+  --yunicity-touch-min: 2.75rem;
+
+  /* Z-index sémantiques */
+  --yunicity-z-dropdown: 10;
+  --yunicity-z-sticky: 20;
+  --yunicity-z-drawer: 40;
+  --yunicity-z-modal: 50;
+  --yunicity-z-popover: 60;
+  --yunicity-z-toast: 70;
+
+  /* Mouvement */
+  --yunicity-duration-fast: 150ms;
+  --yunicity-duration-base: 200ms;
+  --yunicity-duration-slow: 300ms;
+  --yunicity-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Respect explicite de prefers-reduced-motion (doctrine motion). */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --yunicity-duration-fast: 0ms;
+    --yunicity-duration-base: 0ms;
+    --yunicity-duration-slow: 0ms;
+  }
 }
