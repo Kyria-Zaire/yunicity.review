@@ -53,6 +53,41 @@ NEXT_PUBLIC_API_URL=http://localhost:8010 pnpm --filter web dev   # port 3002
 cd frontend/apps/web && pnpm exec playwright test
 ```
 
+### 4.1 Contrat de rejeu de la suite Playwright (C3.0-T4-R2)
+
+La suite E2E **mute réellement la base** (adhésion tribu, demande d'adhésion privée, like vidéo,
+notifications lues, intérêts de profil, publication…). Elle **n'est donc pas rejouable deux fois
+sur une base déjà mutée** : un second passage sans remise à zéro échoue sur `06-mutations-ui`
+(bouton « Rejoindre » absent, `aria-pressed` déjà à `true`, compteur de non-lus déjà nul…).
+
+**Avant CHAQUE suite Playwright complète :**
+
+```bash
+CQA="docker compose -p yunicity-qa -f docker-compose.qa.yml"
+$CQA exec -T backend-qa python -m app.qa.launcher reset   # DROP+recreate du schéma (guardé)
+$CQA exec -T backend-qa alembic upgrade head              # obligatoire : reset laisse un schéma vide
+$CQA exec -T backend-qa python -m app.qa.launcher seed
+$CQA exec -T backend-qa python -m app.qa.launcher verify  # doit afficher "verify PASS"
+$CQA exec -T backend-qa python -m app.qa.launcher reset-rate-limits
+cd frontend/apps/web && pnpm exec playwright test
+```
+
+Règles associées :
+
+- le `reset` cible **exclusivement `yunicity_qa`**, résolu depuis `TEST_DATABASE_URL` ;
+- la garde `TEST_DATABASE_URL` est **obligatoire** — aucun fallback vers `DATABASE_URL` ;
+- **ne jamais** utiliser `DATABASE_URL` seul pour une opération destructive ;
+- la base **dev n'est jamais visée** (ni `yunicity_dev`, ni le port 5434) ;
+- une seconde exécution **sans** ce cycle n'est **pas un protocole valide** : ses échecs ne
+  constituent pas une régression produit ;
+- Playwright ne déclenche **aucun** mécanisme destructif automatique — le cycle reste manuel
+  et explicite, pour qu'aucune suite ne puisse effacer une base par inadvertance.
+
+> Démarrage à froid : avec `.next` vide, la première compilation d'une route par `next dev`
+> dépasse le budget d'assertion par défaut (mesuré à **28,2 s** pour la page de connexion).
+> Les specs réellement exposées à cette première compilation (`00-smoke`, `07-video-report-drawer`)
+> portent un plafond explicite via `e2e/cold-start.ts` — jamais d'attente fixe ni de warm-up.
+
 ## 5. Commandes interdites / dangereuses
 
 - ❌ `docker compose down` **sans** `-p yunicity-qa -f docker-compose.qa.yml` (risque stack dev).

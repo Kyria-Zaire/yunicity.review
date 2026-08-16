@@ -1,4 +1,6 @@
 import { API_URL, bearer, expect, test, type QaUser } from "../fixtures";
+import { evaluateBrowserFailures, type FailedRequestRecord } from "../browser-failure-policy";
+import { COLD_START_TEST_TIMEOUT, COLD_START_TIMEOUT, gotoCold } from "../cold-start";
 import type { APIRequestContext, Locator, Page } from "@playwright/test";
 
 /**
@@ -57,7 +59,33 @@ async function openDrawer(page: Page, trigger: Locator) {
   await expect(page.getByRole("dialog")).toBeVisible();
 }
 
+/**
+ * Navigation vers le détail vidéo, prête à l'emploi même à froid.
+ *
+ * Étapes d'état (aucun sleep, aucun warm-up préalable) :
+ * 1. navigation terminée (`domcontentloaded`) ;
+ * 2. l'URL est bien la route vidéo et non une redirection d'authentification — si la session
+ *    n'était pas hydratée, l'app renverrait vers `/login` ;
+ * 3. le véritable déclencheur produit « Plus d'options » est rendu et visible.
+ */
+async function gotoVideoDetail(page: Page, videoId: string): Promise<Locator> {
+  await gotoCold(page, `/videos?video=${encodeURIComponent(videoId)}`, /\/videos\?video=/);
+
+  const trigger = page.getByRole("button", { name: REPORT_TRIGGER }).first();
+  await expect(trigger, "déclencheur du signalement indisponible").toBeVisible({
+    timeout: COLD_START_TIMEOUT,
+  });
+  return trigger;
+}
+
 test.describe("Signalement vidéo — Drawer partagé", () => {
+  // Le tout premier test qui atteint `/videos` après un démarrage à froid paie la compilation
+  // de la route par `next dev`. On alloue le budget correspondant au test lui-même, faute de
+  // quoi l'attente d'état (60 s) dépasserait le timeout global de 60 s.
+  test.beforeEach(() => {
+    test.setTimeout(COLD_START_TEST_TIMEOUT);
+  });
+
   test("ouverture, focus, inertie, Escape et restauration complète (390 px)", async ({
     citizenAPage: page,
     api,
@@ -73,27 +101,22 @@ test.describe("Signalement vidéo — Drawer partagé", () => {
       const host = new URL(request.url()).hostname;
       if (host !== "localhost" && host !== "127.0.0.1") externalRequests.push(request.url());
     });
-    const failedRequests: string[] = [];
+    // Les défaillances réseau sont enregistrées avec leur URL RÉELLE : c'est sur elles, et
+    // jamais sur le texte d'un message console, que la politique tranche.
+    const failedRequests: FailedRequestRecord[] = [];
     page.on("requestfailed", (request) => {
-      failedRequests.push(`${request.method()} ${request.url()} -> ${request.failure()?.errorText}`);
+      failedRequests.push({
+        url: request.url(),
+        method: request.method(),
+        errorText: request.failure()?.errorText ?? "",
+      });
     });
 
     await page.setViewportSize({ width: 390, height: 844 });
     const videoId = await seededVideoId(api, citizenA);
-    await page.goto(`/videos?video=${encodeURIComponent(videoId)}`);
 
-    // 1. Le vrai CTA produit est visible.
-    const trigger = page.getByRole("button", { name: REPORT_TRIGGER }).first();
-    await expect(trigger).toBeVisible();
-
-    // Ligne de base MESURÉE avant toute ouverture : la stack QA produit un bruit console
-    // reproductible et indépendant de l'overlay (requête notifications annulée au bootstrap,
-    // média placeholder QA bloqué par ORB). Vérifié en T4 sur la même page sans jamais ouvrir
-    // le panneau. On n'exige donc pas zéro erreur absolue — on exige que l'ouverture, la
-    // fermeture et la réouverture de l'overlay n'en ajoutent AUCUNE.
-    const baselineErrorCount = consoleErrors.length;
-    const isEnvironmentNoise = (message: string) =>
-      /notifications\?limit=1|ERR_BLOCKED_BY_ORB|net::ERR_FAILED/.test(message);
+    // 1. Le vrai CTA produit est visible (attente d'état, tolérante au démarrage à froid).
+    const trigger = await gotoVideoDetail(page, videoId);
 
     // 2-4. Ouverture : un seul dialogue, nom accessible correct, aria-modal.
     await openDrawer(page, trigger);
@@ -154,11 +177,11 @@ test.describe("Signalement vidéo — Drawer partagé", () => {
     expect(final.appAnyNeutralized).toBe(false);
     expect(final.overlayRootsEmpty).toBe(true);
 
-    const overlayErrors = consoleErrors.slice(baselineErrorCount).filter((m) => !isEnvironmentNoise(m));
-    expect(
-      overlayErrors,
-      `erreurs console imputables à l'overlay : ${overlayErrors.join(" | ")} || bruit QA mesuré : ${failedRequests.join(" | ")}`,
-    ).toEqual([]);
+    // Politique EXACTE (cf. `e2e/browser-failure-policy.ts`) : seules les signatures QA
+    // documentées (QA-NOTIF-01, QA-MEDIA-01) sont tolérées, par URL + méthode + erreur.
+    // Toute autre requête échouée — y compris avec le même `net::ERR_FAILED` — est bloquante.
+    const verdict = evaluateBrowserFailures({ failedRequests, consoleErrors });
+    expect(verdict.violations, verdict.violations.join(" | ")).toEqual([]);
     expect(externalRequests, `requêtes externes : ${externalRequests.join(" | ")}`).toEqual([]);
   });
 
@@ -169,9 +192,7 @@ test.describe("Signalement vidéo — Drawer partagé", () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const videoId = await seededVideoId(api, citizenA);
-    await page.goto(`/videos?video=${encodeURIComponent(videoId)}`);
-
-    const trigger = page.getByRole("button", { name: REPORT_TRIGGER }).first();
+    const trigger = await gotoVideoDetail(page, videoId);
     await openDrawer(page, trigger);
     expect((await overlayState(page)).bodyOverflow).toBe("hidden");
 
@@ -184,8 +205,7 @@ test.describe("Signalement vidéo — Drawer partagé", () => {
     expect(afterRoute.appAnyNeutralized, "aucune inertie ne survit au changement de route").toBe(false);
 
     // Réouverture après démontage.
-    await page.goto(`/videos?video=${encodeURIComponent(videoId)}`);
-    const reopened = page.getByRole("button", { name: REPORT_TRIGGER }).first();
+    const reopened = await gotoVideoDetail(page, videoId);
     await openDrawer(page, reopened);
     expect((await overlayState(page)).appNeutralized).toBe(true);
     await page.keyboard.press("Escape");
@@ -199,9 +219,7 @@ test.describe("Signalement vidéo — Drawer partagé", () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const videoId = await seededVideoId(api, citizenA);
-    await page.goto(`/videos?video=${encodeURIComponent(videoId)}`);
-
-    const trigger = page.getByRole("button", { name: REPORT_TRIGGER }).first();
+    const trigger = await gotoVideoDetail(page, videoId);
     await openDrawer(page, trigger);
 
     const dialog = page.getByRole("dialog");
@@ -232,9 +250,7 @@ test.describe("Signalement vidéo — Drawer partagé", () => {
 
     for (const width of [390, 900, 1366]) {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto(`/videos?video=${encodeURIComponent(videoId)}`);
-
-      const trigger = page.getByRole("button", { name: REPORT_TRIGGER }).first();
+      const trigger = await gotoVideoDetail(page, videoId);
       await expect(trigger, `déclencheur absent en ${width}px`).toBeVisible();
       await openDrawer(page, trigger);
 
