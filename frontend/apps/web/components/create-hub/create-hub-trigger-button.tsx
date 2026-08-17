@@ -8,7 +8,7 @@ import { Plus } from "lucide-react";
 import type { ReactNode } from "react";
 
 type CreateHubTriggerButtonProps = {
-  variant?: "nav" | "sidebar-icon" | "sidebar-expanded";
+  variant?: "nav" | "sidebar-icon" | "sidebar-expanded" | "bottom-nav";
   className?: string;
   children?: ReactNode;
 };
@@ -43,6 +43,22 @@ export function CreateHubTriggerButton({
         className={`mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-yunicity-primary text-white shadow-sm transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${className}`}
       >
         <Plus className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+      </button>
+    );
+  }
+
+  // CTA central de la bottom-nav mobile (C3.1-T2) — cible tactile 48px, ≥ 44px requis.
+  if (variant === "bottom-nav") {
+    return (
+      <button
+        type="button"
+        onClick={openCreateHub}
+        aria-label={CREATE_HUB_FAB_LABEL}
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-yunicity-primary text-white shadow-md transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 motion-reduce:transition-none ${className}`}
+      >
+        <Plus className="h-6 w-6" strokeWidth={2.25} aria-hidden />
       </button>
     );
   }

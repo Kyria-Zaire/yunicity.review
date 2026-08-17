@@ -7,8 +7,8 @@ import {
 } from "@/lib/layout/citizen-flyout-position";
 import {
   WEB_CITIZEN_YUNICITY_MENU,
-  WEB_CITIZEN_MOBILE_BOTTOM_NAV_YUNICITY_TAB_LABEL,
   YUNICITY_MENU_LABEL,
+  YUNICITY_MENU_SHORT_LABEL,
   isWebNavActive,
   isYunicityMenuActive,
 } from "@/lib/layout/web-layout-config";
@@ -177,7 +177,7 @@ export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenu
           >
             <Grid3x3 className="h-[22px] w-[22px] shrink-0" aria-hidden />
             <span className="max-w-full truncate text-[10px] font-semibold leading-tight">
-              {WEB_CITIZEN_MOBILE_BOTTOM_NAV_YUNICITY_TAB_LABEL}
+              {YUNICITY_MENU_SHORT_LABEL}
             </span>
           </button>
         </div>
@@ -229,7 +229,8 @@ export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenu
             }`}
           >
             <Grid3x3 className="h-4 w-4 shrink-0" aria-hidden />
-            <span className="whitespace-nowrap">{YUNICITY_MENU_LABEL}</span>
+            <span className="whitespace-nowrap xl:hidden">{YUNICITY_MENU_SHORT_LABEL}</span>
+            <span className="hidden whitespace-nowrap xl:inline">{YUNICITY_MENU_LABEL}</span>
             <ChevronDown
               className={`h-4 w-4 shrink-0 text-neutral-500 transition-transform ${
                 open ? "rotate-180" : ""
@@ -255,7 +256,7 @@ export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenu
             aria-haspopup="menu"
             aria-expanded={open}
             aria-controls={menuId}
-            className={`relative flex items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 xl:hidden ${
+            className={`relative flex flex-col items-center justify-center gap-0.5 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 xl:hidden ${
               triggerTone
                 ? "bg-yunicity-primary-soft text-yunicity-primary"
                 : "text-yunicity-primary hover:bg-yunicity-primary-soft hover:text-yunicity-primary-hover"
@@ -263,6 +264,9 @@ export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenu
             style={{ width: "var(--web-sidebar-icon-hit)", height: "var(--web-sidebar-icon-hit)" }}
           >
             <Grid3x3 className="h-[26px] w-[26px]" aria-hidden />
+            <span className="max-w-full truncate text-[10px] font-semibold leading-tight">
+              {YUNICITY_MENU_SHORT_LABEL}
+            </span>
           </button>
         </WebSidebarTooltip>
 

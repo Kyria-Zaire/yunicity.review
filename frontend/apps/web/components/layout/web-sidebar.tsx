@@ -9,6 +9,7 @@ import { useNotificationUnread } from "@/hooks/use-citizen-chrome";
 import { useCreateHubVisibility } from "@/hooks/use-create-hub-visibility";
 import {
   WEB_CITIZEN_NOTIFICATIONS_NAV,
+  WEB_CITIZEN_SEARCH_ACCESS,
   WEB_CITIZEN_SIDEBAR_STRATEGIC,
   isWebNavActive,
   type WebNavItem,
@@ -181,6 +182,21 @@ export function WebSidebar() {
                 size="primary"
               />
             ))}
+          </nav>
+
+          {/*
+            Fonctions stratégiques — Explorer Reims, Menu, Créer, notifications, compte.
+            Volontairement HORS du landmark « Navigation principale » : celui-ci ne doit
+            contenir que les quatre destinations (Navbar V3).
+          */}
+          <div className="flex flex-col items-center gap-4 py-2 xl:items-stretch xl:gap-0.5 xl:py-0">
+            <NavItem
+              href={WEB_CITIZEN_SEARCH_ACCESS.href}
+              label={WEB_CITIZEN_SEARCH_ACCESS.label}
+              icon={WEB_CITIZEN_SEARCH_ACCESS.icon}
+              active={isWebNavActive(pathname, WEB_CITIZEN_SEARCH_ACCESS)}
+              size="secondary"
+            />
             <CitizenYunicityMenu variant="sidebar" />
             {showCreateHub ? (
               <div className="flex w-full justify-center xl:hidden">
@@ -207,7 +223,7 @@ export function WebSidebar() {
             <div className="flex w-full justify-center xl:hidden">
               <CitizenAccountMenu variant="sidebar" />
             </div>
-          </nav>
+          </div>
         </div>
 
         <div className="web-sidebar-footer hidden flex-col items-center gap-0.5 border-t border-neutral-200/80 px-1 py-4 xl:flex xl:items-stretch xl:px-0">

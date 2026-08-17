@@ -69,7 +69,7 @@ export function RegisterScreen() {
   if (successPath) {
     const isCitizen = isCitizenRegisterAccountType(wizard.draft.accountType);
     return (
-      <>
+      <main>
         <div className="web-desktop-auth-only min-h-dvh bg-[#F4F5F7]">
           <div className="mx-auto flex min-h-dvh max-w-lg items-center px-4 py-12">
             <div className="w-full rounded-2xl border border-emerald-200 bg-white p-8 text-center shadow-sm">
@@ -109,7 +109,7 @@ export function RegisterScreen() {
             </Link>
           </div>
         </div>
-      </>
+      </main>
     );
   }
 
@@ -117,7 +117,7 @@ export function RegisterScreen() {
   const isLastStep = wizard.step === "finish";
 
   return (
-    <>
+    <main>
       <div className="web-desktop-auth-only min-h-dvh bg-[#F4F5F7]">
         <div className="mx-auto w-full max-w-6xl px-4 py-8 lg:px-6 lg:py-12">
           <header className="mb-6 flex items-start gap-3">
@@ -231,6 +231,6 @@ export function RegisterScreen() {
           onSubmit={() => void handleSubmit()}
         />
       </div>
-    </>
+    </main>
   );
 }

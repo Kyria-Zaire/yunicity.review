@@ -1,4 +1,5 @@
 import { API_URL, bearer, expect, test } from "../fixtures";
+import { COLD_START_TEST_TIMEOUT } from "../cold-start";
 
 /**
  * Responsive matrix (C3-F0-T3-R1). One worker iterates 3 representative widths per
@@ -48,6 +49,11 @@ test.describe("Responsive detail surfaces (R5 — event / tribe / profile)", () 
     authedPage,
     sharedUser,
   }) => {
+    // 3 surfaces × 3 largeurs = 9 navigations, dont plusieurs premières compilations de
+    // route. Ce test mesurait déjà 57 s pour un budget de 60 s ; on lui donne un plafond
+    // explicite (C3.1-T2) plutôt que de le laisser flaker. Aucune assertion n'est relâchée.
+    test.setTimeout(COLD_START_TEST_TIMEOUT);
+
     const eventsRes = await authedPage.request.get(`${API_URL}/api/v1/events?city=Reims`, {
       headers: bearer(sharedUser),
     });

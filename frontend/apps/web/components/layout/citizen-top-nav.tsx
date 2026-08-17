@@ -1,15 +1,18 @@
 "use client";
 
+import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
 import { CitizenAccountMenu } from "@/components/layout/citizen-account-menu";
 import { CitizenYunicityMenu } from "@/components/layout/citizen-yunicity-menu";
 import { YunicityLogo } from "@/components/brand";
 import {
+  WEB_CITIZEN_SEARCH_ACCESS,
   WEB_CITIZEN_TOP_NAV_CENTER,
   WEB_CITIZEN_TOP_NAV_UTILITY,
   isWebNavActive,
   type WebNavItem,
 } from "@/lib/layout/web-layout-config";
 import { useCitizenChrome } from "@/hooks/use-citizen-chrome";
+import { Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -73,6 +76,20 @@ export function CitizenTopNav() {
         </nav>
 
         <div className="relative z-10 flex shrink-0 items-center gap-2 xl:gap-3">
+          {/* Explorer Reims — fonction stratégique hors destinations (T3 remplacera ce lien
+              par l'overlay). Nom accessible explicite, jamais une icône seule muette. */}
+          <Link
+            href={WEB_CITIZEN_SEARCH_ACCESS.href}
+            aria-label={WEB_CITIZEN_SEARCH_ACCESS.label}
+            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-neutral-200 px-3 py-2 text-sm font-medium text-neutral-600 transition-colors hover:border-neutral-300 hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 motion-reduce:transition-none"
+          >
+            <Search className="h-4 w-4 shrink-0 text-yunicity-primary" aria-hidden />
+            <span className="whitespace-nowrap">{WEB_CITIZEN_SEARCH_ACCESS.label}</span>
+          </Link>
+
+          {/* CTA Créer — toujours visible pour un citoyen connecté (null sinon : aucun CTA mort). */}
+          <CreateHubTriggerButton variant="nav" />
+
           <CitizenYunicityMenu variant="top-nav" />
 
           <nav

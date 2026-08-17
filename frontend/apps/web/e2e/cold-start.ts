@@ -19,11 +19,11 @@ import { expect, type Page } from "@playwright/test";
 export const COLD_START_TIMEOUT = 60_000;
 
 /**
- * Budget du test lui-même. Le timeout global du projet est de 60 s : une seule attente
- * d'état de 60 s le dépasserait. À poser via `test.setTimeout(...)` dans les specs
- * réellement exposées à la première compilation.
+ * Budget fini du test lui-même. Le timeout global du projet est de 60 s : une seule attente
+ * d'état de 60 s le dépasserait. À poser via `test.setTimeout(...)` dans les specs réellement
+ * exposées à la première compilation, sans dépasser le plafond R1 de 120 s.
  */
-export const COLD_START_TEST_TIMEOUT = 150_000;
+export const COLD_START_TEST_TIMEOUT = 120_000;
 
 /**
  * Navigue puis vérifie que l'on est bien arrivé sur la route demandée — sans attendre

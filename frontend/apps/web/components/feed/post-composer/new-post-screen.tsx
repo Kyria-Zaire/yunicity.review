@@ -79,7 +79,7 @@ export function NewPostScreen() {
     <div className="feed-new-mobile-shell web-shell-page min-h-dvh bg-[#F4F5F7]">
       <div className="web-three-col places-shell-grid">
         <WebSidebar />
-        <div className="web-main-column min-w-0">
+        <main className="web-main-column min-w-0">
           <div className="web-desktop-feed-new-only hidden sm:block">
             <CitizenTopNav />
           </div>
@@ -99,7 +99,7 @@ export function NewPostScreen() {
             error={error}
             onPublish={() => void publish()}
           />
-        </div>
+        </main>
       </div>
 
       <input

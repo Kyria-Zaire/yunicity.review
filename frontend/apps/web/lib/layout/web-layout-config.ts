@@ -44,19 +44,38 @@ const WEB_CITIZEN_ACCOUNT_MENU_HREFS = new Set(
   WEB_CITIZEN_ACCOUNT_MENU.map((item) => item.href),
 );
 
-/** Navigation principale — ordre feed-first (WEB-HOME-01). */
-export const WEB_CITIZEN_NAV_PRIMARY: WebNavItem[] = [
+/**
+ * SOURCE CANONIQUE UNIQUE des destinations principales (C3.1-T2, Navbar V3).
+ *
+ * Exactement QUATRE destinations. Toute autre entrée du chrome (Explorer Reims, Créer,
+ * Menu Yunicity, notifications, compte) est une fonction stratégique, JAMAIS un onglet.
+ * Stories reste un module du Fil et n'apparaît donc pas ici.
+ *
+ * Toutes les constantes de navigation ci-dessous en DÉRIVENT : aucune liste parallèle ne
+ * peut plus diverger. Ordre = ordre d'affichage à tous les paliers (390 / 900 / 1366).
+ */
+export const WEB_CITIZEN_DESTINATIONS: readonly WebNavItem[] = [
   { href: "/feed", label: "Fil local", icon: "feed", match: "prefix", tier: "primary" },
   { href: "/videos", label: "Vidéos", icon: "videos", match: "prefix", tier: "primary" },
   { href: "/map", label: "Carte", icon: "map", match: "prefix", tier: "primary" },
-  { href: "/search", label: "Recherche", icon: "search", match: "prefix", tier: "primary" },
   { href: "/sortir", label: "Sortir", icon: "sortir", match: "prefix", tier: "primary" },
-  { href: "/neighborhoods", label: "Quartiers", icon: "neighborhoods", match: "prefix", tier: "primary" },
-  { href: "/tribes", label: "Tribus", icon: "tribes", match: "prefix", tier: "primary" },
-  { href: "/passport", label: "Passport", icon: "passport", match: "prefix", tier: "primary" },
-  { href: "/notifications", label: "Notifications", icon: "notifications", match: "prefix", tier: "primary" },
-  { href: "/profile/me", label: "Profil", icon: "profile", match: "prefix", tier: "primary" },
-];
+] as const;
+
+/**
+ * Accès Recherche — fonction stratégique HORS destinations (Navbar V3).
+ * T2 conserve l'accès fonctionnel vers `/search` ; T3 le remplacera par l'overlay
+ * « Explorer Reims ». La route, ses shells, son API et ses tests restent inchangés.
+ */
+export const WEB_CITIZEN_SEARCH_ACCESS: WebNavItem = {
+  href: "/search",
+  label: "Explorer Reims",
+  icon: "search",
+  match: "prefix",
+  tier: "secondary",
+};
+
+/** @deprecated Dérivé de `WEB_CITIZEN_DESTINATIONS` — ne plus enrichir. */
+export const WEB_CITIZEN_NAV_PRIMARY: WebNavItem[] = [...WEB_CITIZEN_DESTINATIONS];
 
 /** Entrées occasionnelles — footer sidebar, pas la barre mobile compacte. */
 export const WEB_CITIZEN_NAV_SECONDARY: WebNavItem[] = [
@@ -71,23 +90,11 @@ export const WEB_CITIZEN_NAV_SECONDARY: WebNavItem[] = [
   { href: "/settings", label: "Paramètres", icon: "settings", match: "prefix", tier: "secondary" },
 ];
 
-/** 5 onglets stratégiques — sidebar + top nav centre (desktop / tablette). */
-export const WEB_CITIZEN_SIDEBAR_STRATEGIC: WebNavItem[] = [
-  { href: "/feed", label: "Fil local", icon: "feed", match: "prefix", tier: "primary" },
-  { href: "/videos", label: "Vidéos", icon: "videos", match: "prefix", tier: "primary" },
-  { href: "/map", label: "Carte", icon: "map", match: "prefix", tier: "primary" },
-  { href: "/sortir", label: "Sortir", icon: "sortir", match: "prefix", tier: "primary" },
-  { href: "/search", label: "Recherche", icon: "search", match: "prefix", tier: "primary" },
-];
+/** Rail medium + top nav desktop — dérivé de la source canonique. */
+export const WEB_CITIZEN_SIDEBAR_STRATEGIC: WebNavItem[] = [...WEB_CITIZEN_DESTINATIONS];
 
-/** Bottom nav mobile — onglets stratégiques (MOBILE-REFONDE-01). Menu Yunicity = FAB flottant. */
-export const WEB_CITIZEN_MOBILE_BOTTOM_NAV: WebNavItem[] = [
-  { href: "/feed", label: "Fil local", icon: "feed", match: "prefix", tier: "primary" },
-  { href: "/videos", label: "Vidéos", icon: "videos", match: "prefix", tier: "primary" },
-  { href: "/map", label: "Carte", icon: "map", match: "prefix", tier: "primary" },
-  { href: "/sortir", label: "Sortir", icon: "sortir", match: "prefix", tier: "primary" },
-  { href: "/search", label: "Recherche", icon: "search", match: "prefix", tier: "primary" },
-];
+/** Bottom nav mobile — dérivée de la source canonique (Créer et Menu ne sont pas des onglets). */
+export const WEB_CITIZEN_MOBILE_BOTTOM_NAV: WebNavItem[] = [...WEB_CITIZEN_DESTINATIONS];
 
 /** @deprecated Menu Yunicity retiré de la bottom nav — alias legacy. */
 export const WEB_CITIZEN_MOBILE_BOTTOM_NAV_BEFORE_YUNICITY = WEB_CITIZEN_MOBILE_BOTTOM_NAV;
@@ -95,8 +102,11 @@ export const WEB_CITIZEN_MOBILE_BOTTOM_NAV_BEFORE_YUNICITY = WEB_CITIZEN_MOBILE_
 /** @deprecated Menu Yunicity = FAB flottant. */
 export const WEB_CITIZEN_MOBILE_BOTTOM_NAV_AFTER_YUNICITY: WebNavItem[] = [];
 
-/** Libellé court du bouton Menu Yunicity (variant bottom-nav legacy). */
-export const WEB_CITIZEN_MOBILE_BOTTOM_NAV_YUNICITY_TAB_LABEL = "Menu";
+/** Libellé visible compact du bouton Menu Yunicity (mobile et medium). */
+export const YUNICITY_MENU_SHORT_LABEL = "Menu";
+
+/** @deprecated Utiliser YUNICITY_MENU_SHORT_LABEL. */
+export const WEB_CITIZEN_MOBILE_BOTTOM_NAV_YUNICITY_TAB_LABEL = YUNICITY_MENU_SHORT_LABEL;
 
 /** Menu Yunicity (grille) — exploration et contribution. */
 export const WEB_CITIZEN_YUNICITY_MENU: WebNavItem[] = [
