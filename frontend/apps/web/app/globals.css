@@ -407,10 +407,6 @@ body {
     grid-template-columns: unset !important;
   }
 
-  .neighborhoods-mobile-shell .web-mobile-chrome-only {
-    display: none !important;
-  }
-
   .neighborhoods-mobile-shell .citizen-top-nav {
     display: none !important;
   }
@@ -435,6 +431,55 @@ body {
   .neighborhoods-mobile-shell .web-three-col {
     padding-left: 0;
     padding-right: 0;
+  }
+}
+
+.web-mobile-discussions-only {
+  display: block;
+}
+
+.web-desktop-discussions-only {
+  display: none;
+}
+
+.discussions-mobile-shell .web-three-col {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+@media (max-width: 639.98px) {
+  .discussions-mobile-shell .web-sidebar-aside {
+    display: none !important;
+  }
+
+  .discussions-mobile-shell .web-three-col {
+    display: block !important;
+    grid-template-columns: unset !important;
+  }
+
+  .discussions-mobile-shell .citizen-top-nav {
+    display: none !important;
+  }
+}
+
+@media (min-width: 640px) {
+  .web-mobile-discussions-only {
+    display: none !important;
+  }
+
+  .web-desktop-discussions-only {
+    display: block;
+  }
+
+  .discussions-mobile-shell .web-three-col {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .neighborhoods-mobile-shell .web-mobile-strategic-bottom-nav {
+    display: none !important;
   }
 }
 
@@ -477,10 +522,6 @@ body {
   .places-mobile-shell .web-three-col {
     display: block !important;
     grid-template-columns: unset !important;
-  }
-
-  .places-mobile-shell .web-mobile-chrome-only {
-    display: none !important;
   }
 
   .places-mobile-shell .citizen-top-nav {
@@ -847,10 +888,6 @@ body {
   .tribes-mobile-shell .web-three-col {
     display: block !important;
     grid-template-columns: unset !important;
-  }
-
-  .tribes-mobile-shell .web-mobile-chrome-only {
-    display: none !important;
   }
 
   .tribes-mobile-shell .citizen-top-nav {

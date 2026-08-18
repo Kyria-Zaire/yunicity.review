@@ -61,7 +61,7 @@ function LoginScreenInner() {
   };
 
   return (
-    <>
+    <main>
       <div className="web-desktop-auth-only min-h-dvh bg-[#F4F5F7]">
         <div className="mx-auto w-full max-w-6xl px-4 py-8 lg:px-6 lg:py-12">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_16rem]">
@@ -93,6 +93,6 @@ function LoginScreenInner() {
       <div className="web-mobile-auth-only">
         <LoginMobileView {...formProps} />
       </div>
-    </>
+    </main>
   );
 }

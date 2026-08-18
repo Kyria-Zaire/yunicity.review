@@ -17,7 +17,7 @@ export function FeedAppShell({
     <div className="web-shell-page feed-mobile-shell min-h-dvh bg-[#F4F5F7]">
       <div className="web-three-col places-shell-grid">
         <WebSidebar />
-        <div className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
+        <main className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
           <div className="web-desktop-feed-only">
             <CitizenTopNav />
           </div>
@@ -29,7 +29,7 @@ export function FeedAppShell({
               </aside>
             ) : null}
           </div>
-        </div>
+        </main>
       </div>
       <WebMobileStrategicBottomNav />
     </div>

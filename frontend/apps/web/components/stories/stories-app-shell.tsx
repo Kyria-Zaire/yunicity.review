@@ -27,7 +27,7 @@ export function StoriesAppShell({
 
       <div className="web-three-col places-shell-grid">
         <WebSidebar />
-        <div className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
+        <main className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
           {variant === "portal" ? <CitizenTopNav /> : null}
           <div
             className={
@@ -43,7 +43,7 @@ export function StoriesAppShell({
               </aside>
             ) : null}
           </div>
-        </div>
+        </main>
       </div>
 
       {variant === "portal" ? <WebMobileFooter /> : null}

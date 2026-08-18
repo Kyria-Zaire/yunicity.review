@@ -2,6 +2,7 @@ import { cleanup } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 
 import { activeScrollLockCount, resetScrollLockForTests } from "./src/primitives/overlay/overlay-behavior";
+import { POPOVER_ROOT_ATTRIBUTE } from "./src/primitives/popover/popover";
 import {
   OVERLAY_ROOT_ATTRIBUTE,
   overlayStackSize,
@@ -42,6 +43,10 @@ afterEach(() => {
   if (orphanRoots.length > 0) {
     leaks.push(`${orphanRoots.length} racine(s) de portail orpheline(s)`);
   }
+  const orphanPopovers = document.querySelectorAll(`[${POPOVER_ROOT_ATTRIBUTE}]`);
+  if (orphanPopovers.length > 0) {
+    leaks.push(`${orphanPopovers.length} racine(s) Popover orpheline(s)`);
+  }
   const stillHidden = document.querySelectorAll("[inert], [aria-hidden='true']");
   if (stillHidden.length > 0) {
     leaks.push(`${stillHidden.length} élément(s) encore inert/aria-hidden`);
@@ -52,6 +57,7 @@ afterEach(() => {
   resetScrollLockForTests();
   document.body.style.overflow = "";
   orphanRoots.forEach((node) => node.remove());
+  orphanPopovers.forEach((node) => node.remove());
   stillHidden.forEach((node) => {
     node.removeAttribute("inert");
     node.removeAttribute("aria-hidden");

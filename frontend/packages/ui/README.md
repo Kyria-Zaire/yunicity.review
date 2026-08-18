@@ -44,7 +44,7 @@ la couche sémantique est **additive**.
 
 ```ts
 import { Button, ButtonLink, Card, CardHeader, CardContent, CardFooter,
-         Sheet, Drawer, Skeleton, LoadingState, EmptyState, ErrorState,
+         Sheet, Drawer, Dialog, Popover, Skeleton, LoadingState, EmptyState, ErrorState,
          OfflineState } from "@yunicity/ui/primitives";
 ```
 
@@ -143,6 +143,34 @@ transition.
 
 `dismissible={false}` neutralise Escape et le clic overlay — **le bouton Close reste actif**
 (un overlay sans sortie explicite est un piège).
+
+### Dialog vs Popover
+
+| | `Dialog` | `Popover` |
+|---|---|---|
+| Modal | oui (`aria-modal`) | non |
+| Backdrop | oui | non |
+| Scroll lock | oui | non |
+| `inert` arrière-plan | oui | non |
+| Focus trap | oui | non — fermeture par raison |
+| Usage | Explorer, Hub Créer | Menu Yunicity desktop |
+
+```tsx
+<Popover
+  placement="bottom-start"
+  trigger={(props) => <Button {...props}>Menu Yunicity</Button>}
+>
+  {(controls) => (
+    <button type="button" onClick={() => controls.close("navigation")}>
+      Quartiers
+    </button>
+  )}
+</Popover>
+```
+
+Politique de focus à la fermeture : `escape` et `programmatic` (si focus encore dans le panneau)
+restaurent le déclencheur ; `outside-pointer`, `focus-exit`, `navigation` et `superseded` ne
+restaurent pas.
 
 ### États système
 

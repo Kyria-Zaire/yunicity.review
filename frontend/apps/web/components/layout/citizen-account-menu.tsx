@@ -209,6 +209,7 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
           aria-haspopup="menu"
           aria-expanded={open}
           aria-controls={menuId}
+          data-yunicity-header-control={isTopNav ? "account" : undefined}
           className={
             isBottomNav
               ? `flex min-h-[3.25rem] w-full flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1 text-yunicity-primary transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${

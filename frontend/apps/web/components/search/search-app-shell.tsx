@@ -20,12 +20,12 @@ export function SearchAppShell({ children }: SearchAppShellProps) {
       <div className="web-three-col search-shell-grid">
         <WebSidebar />
 
-        <div className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
+        <main className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
           <div className="web-desktop-search-only">
             <CitizenTopNav />
           </div>
           <div className={CITIZEN_MOBILE_BOTTOM_NAV_PADDING}>{children}</div>
-        </div>
+        </main>
       </div>
 
       <WebMobileFooter />

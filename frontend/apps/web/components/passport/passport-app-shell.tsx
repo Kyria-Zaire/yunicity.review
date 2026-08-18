@@ -25,14 +25,14 @@ export function PassportAppShell({ children }: PassportAppShellProps) {
       <div className="web-three-col passport-shell-grid">
         <WebSidebar />
 
-        <div className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
+        <main className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
           <div className="web-desktop-passport-only">
             <CitizenTopNav />
           </div>
           <div className={`mx-auto w-full max-w-[1400px] xl:max-w-none xl:px-0 ${CITIZEN_MOBILE_BOTTOM_NAV_PADDING}`}>
             {children}
           </div>
-        </div>
+        </main>
       </div>
 
       <WebMobileFooter />

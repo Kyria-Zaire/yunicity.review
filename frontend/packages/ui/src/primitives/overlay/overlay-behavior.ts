@@ -11,7 +11,7 @@
 export const FOCUSABLE_SELECTOR =
   'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
-export type OverlaySide = "left" | "right" | "bottom";
+export type OverlaySide = "left" | "right" | "bottom" | "center";
 
 /** Raison de fermeture — sert à appliquer la politique `dismissible`. */
 export type OverlayCloseReason = "close-button" | "escape" | "overlay-click";
@@ -54,19 +54,35 @@ export function resolveTabTrap({ focusableCount, activeIndex, shiftKey }: TabTra
   return { preventDefault: false, focusIndex: null };
 }
 
-/** Transformée de fermeture selon le côté — l'ouverture est toujours `translate(0)`. */
+/** Transformée de fermeture selon le côté — l'ouverture est `enteredTransform(side)`. */
 export function closedTransform(side: OverlaySide): string {
   if (side === "left") return "translateX(-100%)";
   if (side === "right") return "translateX(100%)";
+  if (side === "center") return "translateY(0.5rem) scale(0.96)";
   return "translateY(100%)";
+}
+
+export function enteredTransform(side: OverlaySide): string {
+  return side === "center" ? "translateY(0) scale(1)" : "translate(0, 0)";
 }
 
 export function panelPositionClass(side: OverlaySide): string {
   if (side === "left") return "inset-y-0 left-0 h-full w-[min(400px,88vw)] rounded-r-yunicity-xl";
   if (side === "right") return "inset-y-0 right-0 h-full w-[min(400px,88vw)] rounded-l-yunicity-xl";
+  if (side === "center") {
+    return "relative w-full max-w-[min(32rem,92vw)] max-h-[min(85dvh,100%)] rounded-yunicity-2xl";
+  }
   // Safe-area iOS : aucun token n'exprime `env()`, valeur fonctionnelle assumée en classe
   // (et non en style inline) pour rester vérifiable et générée par Tailwind.
-  return "inset-x-0 bottom-0 max-h-[85dvh] w-full rounded-t-yunicity-2xl pb-[max(1rem,env(safe-area-inset-bottom))]";
+  return "inset-x-0 bottom-0 flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-yunicity-2xl pb-[max(1rem,env(safe-area-inset-bottom))]";
+}
+
+/** Conteneur racine du portail — centre le Dialog sans translate(-50%, -50%). */
+export function overlayContainerClass(side: OverlaySide): string {
+  if (side === "center") {
+    return "flex items-center justify-center p-4";
+  }
+  return "";
 }
 
 /* ------------------------------- verrou scroll ------------------------------ */

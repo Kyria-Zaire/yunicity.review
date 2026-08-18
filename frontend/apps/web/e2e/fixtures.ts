@@ -1,4 +1,6 @@
 /* eslint-disable react-hooks/rules-of-hooks -- Playwright's fixture `use()` callback is not a React hook. */
+import { mkdirSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   type APIRequestContext,
   type BrowserContext,
@@ -8,6 +10,14 @@ import {
   expect,
 } from "@playwright/test";
 
+import {
+  attachAuthTelemetry,
+  readAuthTelemetry,
+  recordAuthRequest,
+  resetAuthTelemetry,
+  type AuthTelemetry,
+} from "./auth-telemetry";
+
 /**
  * E2E fixtures (C3-F0-T3). Authenticated browser state is produced by the REAL QA
  * API (register + complete profile) — never a hand-signed token. The app bootstraps
@@ -16,6 +26,9 @@ import {
  *
  * IMPORTANT: the API rate-limits registration to 5/IP/hour. All tests share one IP,
  * so we register a SINGLE user per worker and reuse its storageState everywhere.
+ *
+ * C3.1-T3-R1: at most one API login per seeded actor per worker. Browser contexts
+ * stay live for the worker lifetime so refresh-token rotation remains valid.
  */
 export const API_URL = process.env.E2E_API_URL ?? "http://localhost:8010";
 
@@ -31,6 +44,8 @@ export function bearer(user: QaUser): { Authorization: string } {
   return { Authorization: `Bearer ${user.accessToken}` };
 }
 
+export { readAuthTelemetry, resetAuthTelemetry, type AuthTelemetry };
+
 // Seeded, loginnable QA actors (C3-F0-T3-R4). Emails are @example.com (accepted by EmailStr)
 // and the password is the deterministic QA-only seed password. citizen_a owns the public
 // tribe and holds unread notifications; citizen_b owns the private tribe.
@@ -43,6 +58,7 @@ async function loginActor(email: string): Promise<QaUser> {
   const res = await api.post(`${API_URL}/api/v1/auth/login`, {
     data: { email, password: QA_PASSWORD },
   });
+  recordAuthRequest("/auth/login");
   expect(res.status(), await res.text()).toBe(200);
   const json = (await res.json()) as { access_token: string; user?: { id: string } };
   const storageState = await api.storageState();
@@ -64,6 +80,7 @@ async function registerAndComplete(): Promise<QaUser> {
   const register = await api.post(`${API_URL}/api/v1/auth/register`, {
     data: { email, password, full_name: "E2E User", city: "Reims" },
   });
+  recordAuthRequest("/auth/register");
   expect(register.status(), await register.text()).toBe(201);
   const json = (await register.json()) as { access_token: string; user: { id: string } };
   const complete = await api.post(`${API_URL}/api/v1/profile/complete`, {
@@ -76,6 +93,15 @@ async function registerAndComplete(): Promise<QaUser> {
   return { email, password, userId: json.user.id, accessToken: json.access_token, storageState };
 }
 
+async function createLiveAuthedContext(
+  browser: { newContext: (options?: { storageState?: QaUser["storageState"] }) => Promise<BrowserContext> },
+  storageState: QaUser["storageState"],
+): Promise<BrowserContext> {
+  const context = await browser.newContext({ storageState });
+  attachAuthTelemetry(context);
+  return context;
+}
+
 type WorkerFixtures = {
   sharedUser: QaUser;
   authedContext: BrowserContext;
@@ -83,6 +109,7 @@ type WorkerFixtures = {
   citizenB: QaUser;
   citizenAContext: BrowserContext;
   citizenBContext: BrowserContext;
+  authTelemetryDump: void;
 };
 
 type TestFixtures = {
@@ -93,6 +120,18 @@ type TestFixtures = {
 };
 
 export const test = base.extend<TestFixtures, WorkerFixtures>({
+  authTelemetryDump: [
+    async ({}, use) => {
+      await use();
+      const telemetry = readAuthTelemetry();
+      const outDir = resolve(process.cwd(), "test-results");
+      mkdirSync(outDir, { recursive: true });
+      writeFileSync(resolve(outDir, "auth-telemetry.json"), `${JSON.stringify(telemetry, null, 2)}\n`);
+      // eslint-disable-next-line no-console
+      console.log(`[e2e] auth telemetry login=${telemetry.login} register=${telemetry.register} refresh=${telemetry.refresh}`);
+    },
+    { scope: "worker", auto: true },
+  ],
   sharedUser: [
     async ({ browser: _browser }, use) => {
       const user = await registerAndComplete();
@@ -106,7 +145,7 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
   // (workers:1, fullyParallel:false) so no concurrent refresh.
   authedContext: [
     async ({ browser, sharedUser }, use) => {
-      const context = await browser.newContext({ storageState: sharedUser.storageState });
+      const context = await createLiveAuthedContext(browser, sharedUser.storageState);
       await use(context);
       await context.close();
     },
@@ -137,7 +176,7 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
   ],
   citizenAContext: [
     async ({ browser, citizenA }, use) => {
-      const context = await browser.newContext({ storageState: citizenA.storageState });
+      const context = await createLiveAuthedContext(browser, citizenA.storageState);
       await use(context);
       await context.close();
     },
@@ -145,7 +184,7 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
   ],
   citizenBContext: [
     async ({ browser, citizenB }, use) => {
-      const context = await browser.newContext({ storageState: citizenB.storageState });
+      const context = await createLiveAuthedContext(browser, citizenB.storageState);
       await use(context);
       await context.close();
     },

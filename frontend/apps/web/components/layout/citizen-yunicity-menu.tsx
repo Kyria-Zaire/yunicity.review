@@ -1,300 +1,420 @@
 "use client";
 
+import { CitizenYunicityMenuContent } from "@/components/layout/citizen-yunicity-menu-content";
 import { WebSidebarTooltip } from "@/components/layout/web-sidebar-tooltip";
+import { useNavigationSurfaces } from "@/hooks/use-navigation-surfaces";
 import {
-  computeCitizenFlyoutPosition,
-  type CitizenFlyoutPosition,
-} from "@/lib/layout/citizen-flyout-position";
-import {
-  WEB_CITIZEN_YUNICITY_MENU,
-  WEB_CITIZEN_MOBILE_BOTTOM_NAV_YUNICITY_TAB_LABEL,
   YUNICITY_MENU_LABEL,
-  isWebNavActive,
+  YUNICITY_MENU_SHORT_LABEL,
   isYunicityMenuActive,
 } from "@/lib/layout/web-layout-config";
-import { WebNavIcon } from "@/lib/layout/web-nav-icons";
-import { Z_INDEX } from "@/lib/layout/z-index";
-import { ChevronDown, ChevronRight, Grid3x3 } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import {
+  resolveYunicityMenuHostVariant,
+  resolveYunicityMenuPopoverPlacement,
+} from "@/lib/layout/yunicity-menu-host";
+import { useAuth } from "@/lib/auth/auth-provider";
+import type { NavigationSurfaceCloseReason } from "@/lib/layout/navigation-surfaces";
+import { Drawer, Popover, Sheet, type PopoverPlacement } from "@yunicity/ui/primitives";
+import { ChevronDown, Grid3x3 } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 
 type CitizenYunicityMenuProps = {
-  variant?: "sidebar" | "top-nav" | "fab" | "bottom-nav";
+  variant?: "sidebar" | "top-nav" | "mobile-header" | "fab" | "bottom-nav";
 };
 
-/**
- * Menu Yunicity — grille d'exploration (Quartiers, Tribus, Lieux, Proposer).
- */
-export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenuProps) {
-  const menuId = useId();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const compactTriggerRef = useRef<HTMLButtonElement>(null);
-  const expandedTriggerRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<CitizenFlyoutPosition | null>(null);
-  const pathname = usePathname();
-  const isTopNav = variant === "top-nav";
-  const isFab = variant === "fab";
-  const isBottomNav = variant === "bottom-nav";
-  const menuActive = isYunicityMenuActive(pathname);
+type TriggerTone = {
+  menuActive: boolean;
+  open: boolean;
+};
 
-  const close = useCallback(() => setOpen(false), []);
+function placementForVariant(variant: CitizenYunicityMenuProps["variant"]): PopoverPlacement {
+  return resolveYunicityMenuPopoverPlacement(variant ?? "sidebar");
+}
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+function triggerTone({ menuActive, open }: TriggerTone): boolean {
+  return menuActive || open;
+}
 
-  useEffect(() => {
-    close();
-  }, [pathname, close]);
+function CompactTrigger({
+  triggerRef,
+  menuActive,
+  open,
+  onToggle,
+  variant,
+  surfacesReady,
+}: {
+  triggerRef: React.Ref<HTMLButtonElement>;
+  menuActive: boolean;
+  open: boolean;
+  onToggle: () => void;
+  variant: "sidebar" | "top-nav" | "mobile-header" | "fab" | "bottom-nav";
+  surfacesReady: boolean;
+}) {
+  const tone = triggerTone({ menuActive, open });
+  const triggerProps = {
+    ref: triggerRef,
+    type: "button" as const,
+    onClick: onToggle,
+    "aria-label": YUNICITY_MENU_LABEL,
+    "aria-haspopup": "dialog" as const,
+    "aria-expanded": open,
+    "aria-busy": !surfacesReady,
+    disabled: !surfacesReady,
+  };
 
-  const updateMenuPosition = useCallback(() => {
-    const trigger = isFab || isBottomNav
-      ? compactTriggerRef.current
-      : isTopNav
-        ? compactTriggerRef.current
-        : window.matchMedia("(min-width: 1280px)").matches
-          ? expandedTriggerRef.current
-          : compactTriggerRef.current;
-    if (!trigger) return;
-    const flyoutVariant = isBottomNav
-      ? "bottom-nav"
-      : isFab
-        ? "fab"
-        : isTopNav
-          ? "top-nav"
-          : "sidebar";
-    setMenuPosition(computeCitizenFlyoutPosition(trigger, flyoutVariant));
-  }, [isBottomNav, isFab, isTopNav]);
-
-  useLayoutEffect(() => {
-    if (!open) {
-      setMenuPosition(null);
-      return;
-    }
-    updateMenuPosition();
-    window.addEventListener("resize", updateMenuPosition);
-    window.addEventListener("scroll", updateMenuPosition, true);
-    return () => {
-      window.removeEventListener("resize", updateMenuPosition);
-      window.removeEventListener("scroll", updateMenuPosition, true);
-    };
-  }, [open, updateMenuPosition]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    function handlePointerDown(event: MouseEvent) {
-      const target = event.target as Node;
-      if (containerRef.current?.contains(target) || menuRef.current?.contains(target)) {
-        return;
-      }
-      close();
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        close();
-      }
-    }
-
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [close, open]);
-
-  const menuPanel =
-    open && menuPosition ? (
-      <div
-        ref={menuRef}
-        id={menuId}
-        role="menu"
-        aria-label={YUNICITY_MENU_LABEL}
-        className="fixed w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-neutral-200/90 bg-white py-2 shadow-xl"
-        style={{
-          top: menuPosition.top,
-          left: menuPosition.left,
-          transform: menuPosition.transform,
-          zIndex: Z_INDEX.CHROME + 1,
-        }}
+  if (variant === "bottom-nav") {
+    return (
+      <button
+        {...triggerProps}
+        className={`flex min-h-[3.25rem] w-full flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1 text-yunicity-primary transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+          tone ? "bg-yunicity-primary-soft/50 opacity-100" : "opacity-90 hover:opacity-100"
+        }`}
       >
-        <p className="px-3 pb-1 pt-0.5 text-xs font-semibold uppercase tracking-wide text-neutral-400">
-          {YUNICITY_MENU_LABEL}
-        </p>
-        <ul className="py-1">
-          {WEB_CITIZEN_YUNICITY_MENU.map((item) => {
-            const active = isWebNavActive(pathname, item);
-            return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  role="menuitem"
-                  aria-current={active ? "page" : undefined}
-                  onClick={close}
-                  className={`flex items-center gap-3 px-3 py-2.5 transition hover:bg-neutral-50 ${
-                    active ? "bg-yunicity-primary-soft/60" : ""
-                  }`}
-                >
-                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-yunicity-primary-soft text-yunicity-primary">
-                    <WebNavIcon id={item.icon} className="h-[18px] w-[18px]" />
-                  </span>
-                  <span className="min-w-0 flex-1 text-sm font-semibold text-neutral-900">
-                    {item.label}
-                  </span>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-neutral-300" aria-hidden />
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    ) : null;
-
-  const triggerTone = menuActive || open;
-
-  if (isBottomNav) {
-    return (
-      <>
-        <div ref={containerRef} className="relative flex w-full justify-center">
-          <button
-            ref={compactTriggerRef}
-            type="button"
-            onClick={() => setOpen((value) => !value)}
-            aria-label={YUNICITY_MENU_LABEL}
-            aria-haspopup="menu"
-            aria-expanded={open}
-            aria-controls={menuId}
-            className={`flex min-h-[3.25rem] w-full flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1 text-yunicity-primary transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
-              triggerTone ? "bg-yunicity-primary-soft/50 opacity-100" : "opacity-90 hover:opacity-100"
-            }`}
-          >
-            <Grid3x3 className="h-[22px] w-[22px] shrink-0" aria-hidden />
-            <span className="max-w-full truncate text-[10px] font-semibold leading-tight">
-              {WEB_CITIZEN_MOBILE_BOTTOM_NAV_YUNICITY_TAB_LABEL}
-            </span>
-          </button>
-        </div>
-        {mounted && menuPanel ? createPortal(menuPanel, document.body) : null}
-      </>
+        <Grid3x3 className="h-[22px] w-[22px] shrink-0" aria-hidden />
+        <span className="max-w-full truncate text-[10px] font-semibold leading-tight">
+          {YUNICITY_MENU_SHORT_LABEL}
+        </span>
+      </button>
     );
   }
 
-  if (isFab) {
+  if (variant === "fab") {
     return (
-      <>
-        <div ref={containerRef} className="relative">
-          <button
-            ref={compactTriggerRef}
-            type="button"
-            onClick={() => setOpen((value) => !value)}
-            aria-label={YUNICITY_MENU_LABEL}
-            aria-haspopup="menu"
-            aria-expanded={open}
-            aria-controls={menuId}
-            className={`flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
-              triggerTone
-                ? "bg-yunicity-primary-hover text-white"
-                : "bg-yunicity-primary text-white hover:bg-yunicity-primary-hover"
-            }`}
-          >
-            <Grid3x3 className="h-7 w-7" aria-hidden />
-          </button>
-        </div>
-        {mounted && menuPanel ? createPortal(menuPanel, document.body) : null}
-      </>
+      <button
+        {...triggerProps}
+        className={`flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+          tone
+            ? "bg-yunicity-primary-hover text-white"
+            : "bg-yunicity-primary text-white hover:bg-yunicity-primary-hover"
+        }`}
+      >
+        <Grid3x3 className="h-7 w-7" aria-hidden />
+      </button>
     );
   }
 
-  if (isTopNav) {
+  if (variant === "top-nav" || variant === "mobile-header") {
     return (
-      <>
-        <div ref={containerRef} className="relative">
-          <button
-            ref={compactTriggerRef}
-            type="button"
-            onClick={() => setOpen((value) => !value)}
-            aria-label={YUNICITY_MENU_LABEL}
-            aria-haspopup="menu"
-            aria-expanded={open}
-            aria-controls={menuId}
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-2 text-sm font-medium transition hover:bg-yunicity-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
-              triggerTone ? "text-yunicity-primary" : "text-yunicity-primary hover:text-yunicity-primary-hover"
-            }`}
-          >
-            <Grid3x3 className="h-4 w-4 shrink-0" aria-hidden />
-            <span className="whitespace-nowrap">{YUNICITY_MENU_LABEL}</span>
-            <ChevronDown
-              className={`h-4 w-4 shrink-0 text-neutral-500 transition-transform ${
-                open ? "rotate-180" : ""
-              }`}
-              aria-hidden
-            />
-          </button>
-        </div>
-        {mounted && menuPanel ? createPortal(menuPanel, document.body) : null}
-      </>
+      <button
+        {...triggerProps}
+        data-yunicity-header-control={variant === "top-nav" ? "menu" : undefined}
+        className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-2 text-sm font-medium transition hover:bg-yunicity-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+          tone ? "text-yunicity-primary" : "text-yunicity-primary hover:text-yunicity-primary-hover"
+        }`}
+      >
+        <Grid3x3 className="h-4 w-4 shrink-0" aria-hidden />
+        <span className="whitespace-nowrap xl:hidden">{YUNICITY_MENU_SHORT_LABEL}</span>
+        <span className="hidden whitespace-nowrap xl:inline">{YUNICITY_MENU_LABEL}</span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
+          aria-hidden
+        />
+      </button>
     );
   }
 
   return (
-    <>
-      <div ref={containerRef} className="relative flex w-full justify-center xl:block">
-        <WebSidebarTooltip label={YUNICITY_MENU_LABEL}>
-          <button
-            ref={compactTriggerRef}
-            type="button"
-            onClick={() => setOpen((value) => !value)}
-            aria-label={YUNICITY_MENU_LABEL}
-            aria-haspopup="menu"
-            aria-expanded={open}
-            aria-controls={menuId}
-            className={`relative flex items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 xl:hidden ${
-              triggerTone
-                ? "bg-yunicity-primary-soft text-yunicity-primary"
-                : "text-yunicity-primary hover:bg-yunicity-primary-soft hover:text-yunicity-primary-hover"
-            }`}
-            style={{ width: "var(--web-sidebar-icon-hit)", height: "var(--web-sidebar-icon-hit)" }}
-          >
-            <Grid3x3 className="h-[26px] w-[26px]" aria-hidden />
-          </button>
-        </WebSidebarTooltip>
+    <WebSidebarTooltip label={YUNICITY_MENU_LABEL}>
+      <button
+        {...triggerProps}
+        className={`relative flex flex-col items-center justify-center gap-0.5 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 xl:hidden ${
+          tone
+            ? "bg-yunicity-primary-soft text-yunicity-primary"
+            : "text-yunicity-primary hover:bg-yunicity-primary-soft hover:text-yunicity-primary-hover"
+        }`}
+        style={{ width: "var(--web-sidebar-icon-hit)", height: "var(--web-sidebar-icon-hit)" }}
+      >
+        <Grid3x3 className="h-[26px] w-[26px]" aria-hidden />
+        <span className="max-w-full truncate text-[10px] font-semibold leading-tight">
+          {YUNICITY_MENU_SHORT_LABEL}
+        </span>
+      </button>
+    </WebSidebarTooltip>
+  );
+}
 
-        <button
-          ref={expandedTriggerRef}
-          type="button"
-          onClick={() => setOpen((value) => !value)}
-          aria-label={YUNICITY_MENU_LABEL}
-          aria-haspopup="menu"
-          aria-expanded={open}
-          aria-controls={menuId}
-          className={`hidden min-h-[2.75rem] w-full min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium leading-snug transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 xl:flex ${
-            triggerTone
-              ? "bg-yunicity-primary-soft text-yunicity-primary"
-              : "text-neutral-700 hover:bg-neutral-100"
-          }`}
-        >
-          <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center text-yunicity-primary">
-            <Grid3x3 className="h-[22px] w-[22px]" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1 truncate whitespace-nowrap text-left">
-            {YUNICITY_MENU_LABEL}
-          </span>
-          <ChevronDown
-            className={`h-4 w-4 shrink-0 text-neutral-500 transition-transform ${
-              open ? "rotate-180" : ""
-            }`}
-            aria-hidden
+function ExpandedSidebarTrigger({
+  triggerRef,
+  menuActive,
+  open,
+  onToggle,
+  surfacesReady,
+}: {
+  triggerRef: React.Ref<HTMLButtonElement>;
+  menuActive: boolean;
+  open: boolean;
+  onToggle: () => void;
+  surfacesReady: boolean;
+}) {
+  const tone = triggerTone({ menuActive, open });
+
+  return (
+    <button
+      ref={triggerRef}
+      type="button"
+      onClick={onToggle}
+      aria-label={YUNICITY_MENU_LABEL}
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      aria-busy={!surfacesReady}
+      disabled={!surfacesReady}
+      className={`hidden min-h-[2.75rem] w-full min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium leading-snug transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 xl:flex ${
+        tone ? "bg-yunicity-primary-soft text-yunicity-primary" : "text-neutral-700 hover:bg-neutral-100"
+      }`}
+    >
+      <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center text-yunicity-primary">
+        <Grid3x3 className="h-[22px] w-[22px]" aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1 truncate whitespace-nowrap text-left">{YUNICITY_MENU_LABEL}</span>
+      <ChevronDown
+        className={`h-4 w-4 shrink-0 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
+        aria-hidden
+      />
+    </button>
+  );
+}
+
+function MenuSurfaceContent({
+  isAuthenticated,
+  onNavigate,
+  onLogout,
+}: {
+  isAuthenticated: boolean;
+  onNavigate: (href: string) => void;
+  onLogout: () => void;
+}) {
+  return (
+    <div className="max-h-[min(80dvh,32rem)] overflow-y-auto">
+      <CitizenYunicityMenuContent
+        isAuthenticated={isAuthenticated}
+        onNavigate={onNavigate}
+        onLogout={onLogout}
+      />
+    </div>
+  );
+}
+
+export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenuProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { isAuthenticated, logout } = useAuth();
+  const surfaces = useNavigationSurfaces();
+  const compactTriggerRef = useRef<HTMLButtonElement>(null);
+  const expandedTriggerRef = useRef<HTMLButtonElement>(null);
+
+  const isOpen = surfaces.isSurfaceOpen("menu");
+  const menuSurface = surfaces.menuSurface;
+  const surfacesReady = surfaces.surfacesInitialized;
+  const menuHostVariant = resolveYunicityMenuHostVariant(surfaces.viewportWidth);
+  const rendersMenuSurface = variant === menuHostVariant;
+  const menuActive = isYunicityMenuActive(pathname);
+  const restoreFocus = surfaces.shouldRestoreFocus;
+
+  const openMenu = useCallback(() => {
+    surfaces.openSurface("menu");
+  }, [surfaces]);
+
+  const closeMenu = useCallback(
+    (reason: NavigationSurfaceCloseReason = "programmatic") => {
+      surfaces.closeSurface("menu", reason);
+    },
+    [surfaces],
+  );
+
+  const toggleMenu = useCallback(() => {
+    if (isOpen) {
+      closeMenu("programmatic");
+      return;
+    }
+    openMenu();
+  }, [closeMenu, isOpen, openMenu]);
+
+  const pathnameRef = useRef(pathname);
+  useEffect(() => {
+    if (pathnameRef.current === pathname) return;
+    pathnameRef.current = pathname;
+    closeMenu("navigation");
+  }, [closeMenu, pathname]);
+
+  const handleNavigate = useCallback(
+    (href: string) => {
+      router.push(href);
+      closeMenu("navigation");
+    },
+    [closeMenu, router],
+  );
+
+  const handleLogout = useCallback(async () => {
+    closeMenu("navigation");
+    await logout();
+    router.push("/login");
+  }, [closeMenu, logout, router]);
+
+  const content = (
+    <MenuSurfaceContent
+      isAuthenticated={isAuthenticated}
+      onNavigate={handleNavigate}
+      onLogout={() => {
+        void handleLogout();
+      }}
+    />
+  );
+
+  const renderModalTrigger = (targetVariant: CitizenYunicityMenuProps["variant"]): ReactNode => {
+    if (variant === "sidebar" && targetVariant === "sidebar") {
+      return (
+        <div className="relative flex w-full justify-center xl:block">
+          <CompactTrigger
+            triggerRef={compactTriggerRef}
+            menuActive={menuActive}
+            open={isOpen}
+            onToggle={toggleMenu}
+            variant="sidebar"
+            surfacesReady={surfacesReady}
           />
-        </button>
-      </div>
-      {mounted && menuPanel ? createPortal(menuPanel, document.body) : null}
-    </>
+          <ExpandedSidebarTrigger
+            triggerRef={expandedTriggerRef}
+            menuActive={menuActive}
+            open={isOpen}
+            onToggle={toggleMenu}
+            surfacesReady={surfacesReady}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <CompactTrigger
+        triggerRef={compactTriggerRef}
+        menuActive={menuActive}
+        open={isOpen}
+        onToggle={toggleMenu}
+        variant={targetVariant ?? "sidebar"}
+        surfacesReady={surfacesReady}
+      />
+    );
+  };
+
+  if (!rendersMenuSurface) {
+    return renderModalTrigger(variant);
+  }
+
+  if (!menuSurface) {
+    return renderModalTrigger(variant);
+  }
+
+  if (menuSurface === "drawer") {
+    return (
+      <>
+        {renderModalTrigger(variant)}
+        <Drawer
+          open={isOpen}
+          onOpenChange={(next) => {
+            if (!next) closeMenu("escape");
+          }}
+          title={YUNICITY_MENU_LABEL}
+          restoreFocus={restoreFocus}
+        >
+          {content}
+        </Drawer>
+      </>
+    );
+  }
+
+  if (menuSurface === "sheet") {
+    return (
+      <>
+        {renderModalTrigger(variant)}
+        <Sheet
+          open={isOpen}
+          onOpenChange={(next) => {
+            if (!next) closeMenu("escape");
+          }}
+          title={YUNICITY_MENU_LABEL}
+          side="right"
+          restoreFocus={restoreFocus}
+        >
+          {content}
+        </Sheet>
+      </>
+    );
+  }
+
+  if (menuSurface === "popover" && variant === "sidebar") {
+    return (
+      <Popover
+        open={isOpen}
+        onOpenChange={(next, reason) => {
+          if (next) openMenu();
+          else closeMenu(reason ?? "programmatic");
+        }}
+        placement={placementForVariant("sidebar")}
+        trigger={(props) => (
+          <button
+            {...props}
+            type="button"
+            aria-label={YUNICITY_MENU_LABEL}
+            data-yunicity-header-control="menu"
+            className={`hidden min-h-[2.75rem] w-full min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium leading-snug transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 xl:flex ${
+              triggerTone({ menuActive, open: isOpen })
+                ? "bg-yunicity-primary-soft text-yunicity-primary"
+                : "text-neutral-700 hover:bg-neutral-100"
+            }`}
+          >
+            <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center text-yunicity-primary">
+              <Grid3x3 className="h-[22px] w-[22px]" aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1 truncate whitespace-nowrap text-left">{YUNICITY_MENU_LABEL}</span>
+            <ChevronDown
+              className={`h-4 w-4 shrink-0 text-neutral-500 transition-transform ${
+                isOpen ? "rotate-180" : ""
+              }`}
+              aria-hidden
+            />
+          </button>
+        )}
+        className="w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-neutral-200/90 bg-white shadow-xl"
+      >
+        {content}
+      </Popover>
+    );
+  }
+
+  return (
+    <Popover
+      open={isOpen}
+      onOpenChange={(next, reason) => {
+        if (next) openMenu();
+        else closeMenu(reason ?? "programmatic");
+      }}
+      placement={placementForVariant(variant)}
+      trigger={(props) => {
+        const tone = triggerTone({ menuActive, open: isOpen });
+
+        return (
+          <button
+            {...props}
+            type="button"
+            aria-label={YUNICITY_MENU_LABEL}
+            data-yunicity-header-control={variant === "top-nav" ? "menu" : undefined}
+            className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-2 text-sm font-medium transition hover:bg-yunicity-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
+              tone ? "text-yunicity-primary" : "text-yunicity-primary hover:text-yunicity-primary-hover"
+            }`}
+          >
+            <Grid3x3 className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="whitespace-nowrap xl:hidden">{YUNICITY_MENU_SHORT_LABEL}</span>
+            <span className="hidden whitespace-nowrap xl:inline">{YUNICITY_MENU_LABEL}</span>
+            <ChevronDown
+              className={`h-4 w-4 shrink-0 text-neutral-500 transition-transform ${isOpen ? "rotate-180" : ""}`}
+              aria-hidden
+            />
+          </button>
+        );
+      }}
+      className="w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-neutral-200/90 bg-white shadow-xl"
+    >
+      {content}
+    </Popover>
   );
 }

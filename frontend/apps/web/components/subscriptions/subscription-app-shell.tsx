@@ -17,7 +17,7 @@ export function SubscriptionAppShell({
       <WebMobileHeader />
       <div className="web-three-col places-shell-grid">
         <WebSidebar />
-        <div className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
+        <main className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
           <CitizenTopNav />
           <div className="flex gap-6 pb-16 lg:pb-20">
             {children}
@@ -27,7 +27,7 @@ export function SubscriptionAppShell({
               </aside>
             ) : null}
           </div>
-        </div>
+        </main>
       </div>
       <WebMobileFooter />
     </div>

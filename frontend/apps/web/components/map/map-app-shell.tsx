@@ -22,7 +22,7 @@ export function MapAppShell({
       <div className="web-three-col places-shell-grid">
         <WebSidebar />
 
-        <div className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
+        <main className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
           <div className="web-desktop-map-only">
             <CitizenTopNav />
           </div>
@@ -39,7 +39,7 @@ export function MapAppShell({
               </aside>
             ) : null}
           </div>
-        </div>
+        </main>
       </div>
 
       <WebMobileFooter />

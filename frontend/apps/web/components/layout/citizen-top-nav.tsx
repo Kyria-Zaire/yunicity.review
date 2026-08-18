@@ -1,5 +1,7 @@
 "use client";
 
+import { ExplorerTriggerButton } from "@/components/explorer";
+import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
 import { CitizenAccountMenu } from "@/components/layout/citizen-account-menu";
 import { CitizenYunicityMenu } from "@/components/layout/citizen-yunicity-menu";
 import { YunicityLogo } from "@/components/brand";
@@ -9,6 +11,8 @@ import {
   isWebNavActive,
   type WebNavItem,
 } from "@/lib/layout/web-layout-config";
+import { destinationControlId } from "@/lib/layout/desktop-header-geometry";
+import { WebNavIcon } from "@/lib/layout/web-nav-icons";
 import { useCitizenChrome } from "@/hooks/use-citizen-chrome";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -27,7 +31,8 @@ function TopNavLink({
     <Link
       href={item.href}
       aria-current={active ? "page" : undefined}
-      className={`relative shrink-0 whitespace-nowrap px-2 py-2 text-sm font-medium transition-colors xl:px-2.5 ${
+      data-yunicity-header-control={destinationControlId(item.href)}
+      className={`relative shrink-0 whitespace-nowrap px-1.5 py-2 text-sm font-medium transition-colors xl:px-2 ${
         active ? "text-yunicity-primary" : "text-yunicity-primary hover:text-yunicity-primary-hover"
       }`}
     >
@@ -49,6 +54,50 @@ function TopNavLink({
   );
 }
 
+function NotificationsTopNavLink({
+  item,
+  pathname,
+  badge,
+}: {
+  item: WebNavItem;
+  pathname: string;
+  badge?: number;
+}) {
+  const active = isWebNavActive(pathname, item);
+
+  return (
+    <Link
+      href={item.href}
+      aria-current={active ? "page" : undefined}
+      aria-label={item.label}
+      data-yunicity-header-control="notifications"
+      className={`relative inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full px-2 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
+        active ? "text-yunicity-primary" : "text-yunicity-primary hover:bg-yunicity-primary-soft hover:text-yunicity-primary-hover"
+      }`}
+      title={item.label}
+    >
+      <WebNavIcon id={item.icon} className="h-5 w-5 shrink-0" />
+      <span
+        data-yunicity-header-label="notifications"
+        className="hidden whitespace-nowrap 2xl:inline 2xl:pl-1.5"
+      >
+        {item.label}
+      </span>
+      {badge && badge > 0 ? (
+        <span className="absolute right-1 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#FF2D78] px-1 text-[10px] font-bold text-white">
+          {badge > 9 ? "9+" : badge}
+        </span>
+      ) : null}
+      {active ? (
+        <span
+          className="absolute inset-x-2 -bottom-[1.125rem] hidden h-0.5 rounded-full bg-yunicity-primary 2xl:block"
+          aria-hidden
+        />
+      ) : null}
+    </Link>
+  );
+}
+
 /** Top nav desktop (xl+) — remplace la sidebar compacte sur feed, carte, etc. */
 export function CitizenTopNav() {
   const pathname = usePathname();
@@ -56,31 +105,38 @@ export function CitizenTopNav() {
 
   return (
     <header className="citizen-top-nav sticky top-0 z-40 hidden border-b border-neutral-200/90 bg-white/95 backdrop-blur-md">
-      <div className="relative mx-auto flex h-[4.25rem] max-w-[1400px] items-center justify-between px-6">
-        <div className="relative z-10 shrink-0">
+      <div className="mx-auto grid h-[4.25rem] max-w-[1400px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 xl:gap-3 xl:px-6">
+        <div
+          className="inline-flex min-h-11 shrink-0 items-center"
+          data-yunicity-header-control="logo"
+        >
           <YunicityLogo href="/feed" size="sm" showWordmark priority />
         </div>
 
         <nav
-          className="pointer-events-none absolute inset-x-6 top-1/2 flex -translate-y-1/2 justify-center"
+          className="min-w-0 justify-self-center overflow-hidden"
           aria-label="Navigation principale"
         >
-          <div className="pointer-events-auto flex max-w-full items-center gap-0.5 overflow-x-auto [scrollbar-width:none] xl:gap-1.5 [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-w-0 items-center justify-center gap-0.5 xl:gap-1">
             {WEB_CITIZEN_TOP_NAV_CENTER.map((item) => (
               <TopNavLink key={item.href} item={item} pathname={pathname} />
             ))}
           </div>
         </nav>
 
-        <div className="relative z-10 flex shrink-0 items-center gap-2 xl:gap-3">
+        <div className="flex min-w-0 shrink-0 items-center justify-end gap-1.5 xl:gap-2">
+          <ExplorerTriggerButton variant="desktop-text" />
+
+          <CreateHubTriggerButton variant="nav" />
+
           <CitizenYunicityMenu variant="top-nav" />
 
           <nav
-            className="hidden items-center gap-0.5 border-r border-neutral-200 pr-2 lg:flex xl:gap-1 xl:pr-3"
+            className="flex items-center border-r border-neutral-200 pr-1.5 xl:pr-2"
             aria-label="Notifications"
           >
             {WEB_CITIZEN_TOP_NAV_UTILITY.map((item) => (
-              <TopNavLink
+              <NotificationsTopNavLink
                 key={item.href}
                 item={item}
                 pathname={pathname}

@@ -13,12 +13,14 @@ export function DiscussionsAppShell({
   rightRail?: ReactNode;
 }) {
   return (
-    <div className="web-shell-page min-h-dvh bg-[#F4F5F7]">
+    <div className="web-shell-page discussions-mobile-shell min-h-dvh bg-[#F4F5F7]">
       <WebMobileHeader />
       <div className="web-three-col places-shell-grid">
         <WebSidebar />
-        <div className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
-          <CitizenTopNav />
+        <main className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
+          <div className="web-desktop-discussions-only">
+            <CitizenTopNav />
+          </div>
           <div className="flex gap-6 pb-16 lg:pb-20">
             {children}
             {rightRail ? (
@@ -27,7 +29,7 @@ export function DiscussionsAppShell({
               </aside>
             ) : null}
           </div>
-        </div>
+        </main>
       </div>
       <WebMobileFooter />
     </div>

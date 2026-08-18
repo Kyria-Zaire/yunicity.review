@@ -42,8 +42,9 @@ export function useSearch(
   },
 ) {
   const api = useYunicityApi();
-  const [query, setQuery] = useState(options?.initialQuery ?? "");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const initialQuery = options?.initialQuery?.trim() ?? "";
+  const [query, setQuery] = useState(initialQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [typeFilter, setTypeFilter] = useState<SearchTypeFilter>(
     options?.initialTypeFilter ?? "all",
   );

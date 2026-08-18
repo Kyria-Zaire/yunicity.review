@@ -1,20 +1,30 @@
 "use client";
 
+import { ExplorerTriggerButton } from "@/components/explorer";
 import { CitizenAccountMenu } from "@/components/layout/citizen-account-menu";
+import { CitizenYunicityMenu } from "@/components/layout/citizen-yunicity-menu";
 import { useNotificationUnread } from "@/hooks/use-citizen-chrome";
-import { WEB_CITIZEN_NOTIFICATIONS_NAV } from "@/lib/layout/web-layout-config";
+import {
+  WEB_CITIZEN_NOTIFICATIONS_NAV,
+} from "@/lib/layout/web-layout-config";
 import { Bell } from "lucide-react";
 import Link from "next/link";
 
 /**
- * Actions header mobile — cloche notifications puis menu compte (avatar).
- * Utilisé dans les barres hero mobile (fil, carte, etc.).
+ * Actions header mobile (C3.1-T2, Navbar V3) — Explorer Reims, Menu Yunicity, notifications,
+ * compte. Point unique des fonctions stratégiques mobiles : toutes les barres hero mobiles
+ * (fil, carte, etc.) le consomment, donc Explorer et Menu sont visibles partout à 390 px
+ * sans être des destinations.
  */
 export function CitizenMobileHeaderActions() {
   const unread = useNotificationUnread();
 
   return (
     <div className="flex shrink-0 items-center gap-0.5">
+      <ExplorerTriggerButton variant="compact-mobile" />
+
+      <CitizenYunicityMenu variant="mobile-header" />
+
       <Link
         href={WEB_CITIZEN_NOTIFICATIONS_NAV.href}
         aria-label={WEB_CITIZEN_NOTIFICATIONS_NAV.label}

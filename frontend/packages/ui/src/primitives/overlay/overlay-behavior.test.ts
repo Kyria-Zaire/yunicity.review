@@ -5,6 +5,7 @@ import {
   activeScrollLockCount,
   canCloseOverlay,
   closedTransform,
+  enteredTransform,
   panelPositionClass,
   resolveTabTrap,
 } from "./overlay-behavior";
@@ -78,17 +79,35 @@ describe("resolveTabTrap", () => {
   });
 });
 
-describe("closedTransform / panelPositionClass", () => {
+describe("closedTransform / enteredTransform / panelPositionClass", () => {
   it("sort par le bon bord selon le côté", () => {
     expect(closedTransform("left")).toBe("translateX(-100%)");
     expect(closedTransform("right")).toBe("translateX(100%)");
     expect(closedTransform("bottom")).toBe("translateY(100%)");
   });
 
+  it("anime le Dialog centré avec scale et translateY", () => {
+    expect(closedTransform("center")).toBe("translateY(0.5rem) scale(0.96)");
+    expect(enteredTransform("center")).toBe("translateY(0) scale(1)");
+  });
+
   it("ancre le panneau du bon côté", () => {
     expect(panelPositionClass("left")).toContain("left-0");
     expect(panelPositionClass("right")).toContain("right-0");
     expect(panelPositionClass("bottom")).toContain("bottom-0");
+    expect(panelPositionClass("bottom")).toContain("overflow-hidden");
+    expect(panelPositionClass("bottom")).toContain("max-h-[85dvh]");
+  });
+
+  it("positionne le Dialog centré en relative dans un conteneur flex", () => {
+    expect(panelPositionClass("center")).toContain("relative");
+    expect(panelPositionClass("center")).not.toContain("translate");
+  });
+
+  it("utilise translate(0) pour les panneaux latéraux ouverts", () => {
+    expect(enteredTransform("left")).toBe("translate(0, 0)");
+    expect(enteredTransform("right")).toBe("translate(0, 0)");
+    expect(enteredTransform("bottom")).toBe("translate(0, 0)");
   });
 });
 

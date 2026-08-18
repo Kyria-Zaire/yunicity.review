@@ -16,7 +16,7 @@ export function VideosAppShell({ children }: { children: ReactNode }) {
       <div className="web-three-col places-shell-grid">
         <WebSidebar />
 
-        <div className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
+        <main className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
           <div className="web-desktop-videos-only">
             <CitizenTopNav />
           </div>
@@ -25,7 +25,7 @@ export function VideosAppShell({ children }: { children: ReactNode }) {
           >
             {children}
           </div>
-        </div>
+        </main>
       </div>
 
       <WebMobileFooter />
