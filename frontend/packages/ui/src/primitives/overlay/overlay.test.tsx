@@ -1,11 +1,12 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { Drawer } from "./drawer";
 import { OVERLAY_ROOT_ATTRIBUTE } from "./overlay-stack";
 import { Sheet } from "./sheet";
+import { Dialog } from "./dialog";
 
 function backdrop(): HTMLElement {
   const element = document.querySelector<HTMLElement>("[data-yunicity-overlay-backdrop]");
@@ -18,6 +19,28 @@ function PanelContent() {
     <>
       <button type="button">Premier</button>
       <button type="button">Second</button>
+    </>
+  );
+}
+
+/** Dialog contrôlé par un parent qui APPLIQUE réellement la transition. */
+function ControlledDialog({ onOpenChange }: { onOpenChange?: (open: boolean) => void }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)}>
+        Ouvrir
+      </button>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          onOpenChange?.(next);
+        }}
+        title="Explorer"
+      >
+        <PanelContent />
+      </Dialog>
     </>
   );
 }
@@ -546,6 +569,202 @@ describe("Sheet / Drawer — variantes", () => {
       </Drawer>,
     );
 
+    expect(backdrop().className).toContain("motion-reduce:transition-none");
+  });
+});
+
+describe("Dialog — primitive centrée", () => {
+  it("expose le marqueur data-yunicity-overlay=center", () => {
+    render(
+      <Dialog open title="Explorer">
+        <PanelContent />
+      </Dialog>,
+    );
+
+    const root = screen.getByRole("dialog").closest("[data-yunicity-overlay]");
+    expect(root?.getAttribute("data-yunicity-overlay")).toBe("center");
+  });
+
+  it("positionne le panneau en relative dans un conteneur flex", () => {
+    render(
+      <Dialog open title="Explorer">
+        <PanelContent />
+      </Dialog>,
+    );
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.className).toContain("relative");
+    const root = dialog.closest("[data-yunicity-overlay]");
+    expect(root?.className).toContain("flex");
+    expect(root?.className).toContain("items-center");
+  });
+
+  it("expose role=dialog et aria-modal", () => {
+    render(
+      <Dialog open title="Explorer">
+        <PanelContent />
+      </Dialog>,
+    );
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.getAttribute("aria-modal")).toBe("true");
+  });
+
+  it("relie correctement titre et description", () => {
+    render(
+      <Dialog open title="Explorer" description="Rechercher dans Reims.">
+        <PanelContent />
+      </Dialog>,
+    );
+
+    const dialog = screen.getByRole("dialog");
+    const labelId = dialog.getAttribute("aria-labelledby");
+    const descriptionId = dialog.getAttribute("aria-describedby");
+
+    expect(document.getElementById(labelId ?? "")?.textContent).toBe("Explorer");
+    expect(document.getElementById(descriptionId ?? "")?.textContent).toBe("Rechercher dans Reims.");
+  });
+
+  it("focalise initialFocusRef quand connecté", async () => {
+    function WithExplicitFocus() {
+      const inputRef = useRef<HTMLInputElement>(null);
+      return (
+        <Dialog open title="Explorer" initialFocusRef={inputRef}>
+          <input ref={inputRef} type="search" aria-label="Recherche" />
+          <button type="button">Premier</button>
+        </Dialog>
+      );
+    }
+
+    render(<WithExplicitFocus />);
+
+    const input = screen.getByRole("searchbox", { name: "Recherche" });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(input);
+    });
+  });
+
+  it("retombe sur le premier élément focalisable sans initialFocusRef", async () => {
+    render(
+      <Dialog open title="Explorer" closeLabel="Fermer l'explorateur">
+        <PanelContent />
+      </Dialog>,
+    );
+
+    const dialog = screen.getByRole("dialog");
+    const closeButton = screen.getByRole("button", { name: "Fermer l'explorateur" });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(closeButton);
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    });
+  });
+
+  it("restitue le focus au déclencheur à la fermeture par défaut", async () => {
+    const user = userEvent.setup();
+    render(
+      <Dialog title="Explorer" trigger={(props) => <button {...props}>Ouvrir</button>}>
+        <PanelContent />
+      </Dialog>,
+    );
+
+    const trigger = screen.getByRole("button", { name: "Ouvrir" });
+    await user.click(trigger);
+    await waitFor(() => expect(screen.getByRole("dialog").contains(document.activeElement)).toBe(true));
+
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Ouvrir" }));
+    });
+  });
+
+  it("ne restitue pas le focus quand restoreFocus=false", async () => {
+    const user = userEvent.setup();
+    function RestorableDialog() {
+      const [open, setOpen] = useState(true);
+      return (
+        <>
+          <button type="button">Hors dialog</button>
+          <Dialog open={open} restoreFocus={false} onOpenChange={setOpen} title="Explorer">
+            <PanelContent />
+          </Dialog>
+        </>
+      );
+    }
+
+    render(<RestorableDialog />);
+
+    const outside = screen.getByRole("button", { name: "Hors dialog", hidden: true });
+    outside.focus();
+    await waitFor(() => expect(screen.getByRole("dialog").contains(document.activeElement)).toBe(true));
+
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(document.activeElement).not.toBe(outside);
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+  });
+
+  it("ferme au clic backdrop quand dismissible", async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    render(<ControlledDialog onOpenChange={onOpenChange} />);
+
+    await user.click(backdrop());
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("boucle Tab et Shift+Tab dans le Dialog", async () => {
+    const user = userEvent.setup();
+    render(
+      <Dialog open title="Explorer" closeLabel="Fermer l'explorateur">
+        <PanelContent />
+      </Dialog>,
+    );
+
+    const dialog = screen.getByRole("dialog");
+    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
+
+    const focusables = Array.from(dialog.querySelectorAll<HTMLElement>("button"));
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+
+    last?.focus();
+    await user.tab();
+    expect(document.activeElement).toBe(first);
+
+    first?.focus();
+    await user.tab({ shift: true });
+    expect(document.activeElement).toBe(last);
+  });
+
+  it("verrouille le scroll et neutralise l'arrière-plan", async () => {
+    const { container } = render(
+      <>
+        <button type="button">Arrière-plan</button>
+        <Dialog open title="Explorer">
+          <PanelContent />
+        </Dialog>
+      </>,
+    );
+
+    await screen.findByRole("dialog");
+    expect(document.body.style.overflow).toBe("hidden");
+    expect(container.getAttribute("inert")).toBe("");
+    expect(container.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("respecte prefers-reduced-motion", () => {
+    render(
+      <Dialog open title="Explorer">
+        <PanelContent />
+      </Dialog>,
+    );
+
+    expect(screen.getByRole("dialog").className).toContain("motion-reduce:transition-none");
     expect(backdrop().className).toContain("motion-reduce:transition-none");
   });
 });

@@ -1,13 +1,13 @@
 "use client";
 
+import { ExplorerTriggerButton } from "@/components/explorer";
 import { CitizenAccountMenu } from "@/components/layout/citizen-account-menu";
 import { CitizenYunicityMenu } from "@/components/layout/citizen-yunicity-menu";
 import { useNotificationUnread } from "@/hooks/use-citizen-chrome";
 import {
   WEB_CITIZEN_NOTIFICATIONS_NAV,
-  WEB_CITIZEN_SEARCH_ACCESS,
 } from "@/lib/layout/web-layout-config";
-import { Bell, Search } from "lucide-react";
+import { Bell } from "lucide-react";
 import Link from "next/link";
 
 /**
@@ -21,15 +21,9 @@ export function CitizenMobileHeaderActions() {
 
   return (
     <div className="flex shrink-0 items-center gap-0.5">
-      <Link
-        href={WEB_CITIZEN_SEARCH_ACCESS.href}
-        aria-label={WEB_CITIZEN_SEARCH_ACCESS.label}
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-yunicity-primary transition-colors hover:bg-yunicity-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 motion-reduce:transition-none"
-      >
-        <Search className="h-[22px] w-[22px]" strokeWidth={1.75} aria-hidden />
-      </Link>
+      <ExplorerTriggerButton variant="compact-mobile" />
 
-      <CitizenYunicityMenu variant="top-nav" />
+      <CitizenYunicityMenu variant="mobile-header" />
 
       <Link
         href={WEB_CITIZEN_NOTIFICATIONS_NAV.href}

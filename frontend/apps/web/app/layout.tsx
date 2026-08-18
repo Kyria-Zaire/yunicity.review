@@ -1,4 +1,6 @@
 import { CreateHubProvider } from "@/components/create-hub";
+import { ExplorerProvider } from "@/components/explorer";
+import { NavigationOverlayCoordinatorProvider } from "@/components/navigation/navigation-overlay-coordinator";
 import { AuthProvider } from "@/lib/auth/auth-provider";
 import { SITE_DEFAULT_METADATA } from "@/lib/seo/metadata";
 import { getDefaultOgImageUrl, getSiteUrl } from "@/lib/seo/site";
@@ -45,7 +47,11 @@ export default function RootLayout({
     <html lang="fr">
       <body className="min-h-screen antialiased">
         <AuthProvider>
-          <CreateHubProvider>{children}</CreateHubProvider>
+          <NavigationOverlayCoordinatorProvider>
+            <ExplorerProvider>
+              <CreateHubProvider>{children}</CreateHubProvider>
+            </ExplorerProvider>
+          </NavigationOverlayCoordinatorProvider>
         </AuthProvider>
       </body>
     </html>

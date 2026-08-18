@@ -3,6 +3,8 @@
  * WEB-HOME-01 : navigation primaire feed-first + entrées secondaires.
  */
 
+import { buildYunicityMenuGroups } from "./yunicity-menu-contract";
+
 export type WebNavMatch = "prefix" | "exact";
 
 export type WebNavIconId =
@@ -179,7 +181,21 @@ export function isWebNavActive(pathname: string, item: WebNavItem): boolean {
 }
 
 export function isYunicityMenuActive(pathname: string): boolean {
-  return WEB_CITIZEN_YUNICITY_MENU.some((item) => isWebNavActive(pathname, item));
+  const hrefs = new Set(
+    [true, false].flatMap((isAuthenticated) =>
+      buildYunicityMenuGroups({ isAuthenticated })
+        .flatMap((group) => group.items)
+        .map((item) => item.href)
+        .filter((href): href is string => Boolean(href)),
+    ),
+  );
+
+  for (const href of hrefs) {
+    if (isWebNavActive(pathname, { href, label: "", icon: "feed", match: "prefix" })) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export function isCitizenAccountMenuActive(pathname: string): boolean {

@@ -2,8 +2,8 @@
 
 import { CREATE_HUB_FAB_LABEL } from "@/components/create-hub/create-hub-labels";
 import { useCreateHubOptional } from "@/components/create-hub/create-hub-provider";
-import { useAuth } from "@/lib/auth/auth-provider";
 import { useCreateHubVisibility } from "@/hooks/use-create-hub-visibility";
+import { useNavigationSurfacesOptional } from "@/hooks/use-navigation-surfaces";
 import { Plus } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -14,8 +14,7 @@ type CreateHubTriggerButtonProps = {
 };
 
 /**
- * Bouton d'ouverture du Create Hub pour la navigation desktop / sidebar.
- * No-op silencieux si le provider est absent (pages auth).
+ * Bouton d'ouverture du Create Hub — visible connecté et visiteur hors routes masquées.
  */
 export function CreateHubTriggerButton({
   variant = "nav",
@@ -23,40 +22,41 @@ export function CreateHubTriggerButton({
   children,
 }: CreateHubTriggerButtonProps) {
   const createHub = useCreateHubOptional();
-  const { isAuthenticated, isLoading } = useAuth();
+  const surfaces = useNavigationSurfacesOptional();
   const visible = useCreateHubVisibility();
+  const surfacesReady = surfaces?.surfacesInitialized ?? false;
 
-  if (!createHub || !isAuthenticated || isLoading || !visible) {
+  if (!createHub || !visible) {
     return null;
   }
 
   const { openCreateHub, isOpen } = createHub;
+  const triggerProps = {
+    type: "button" as const,
+    onClick: openCreateHub,
+    "aria-label": CREATE_HUB_FAB_LABEL,
+    "aria-haspopup": "dialog" as const,
+    "aria-expanded": isOpen,
+    "aria-busy": !surfacesReady,
+    disabled: !surfacesReady,
+  };
 
   if (variant === "sidebar-icon") {
     return (
       <button
-        type="button"
-        onClick={openCreateHub}
-        aria-label={CREATE_HUB_FAB_LABEL}
-        aria-haspopup="dialog"
-        aria-expanded={isOpen}
-        className={`mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-yunicity-primary text-white shadow-sm transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${className}`}
+        {...triggerProps}
+        className={`mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-yunicity-primary text-white shadow-sm transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
       >
         <Plus className="h-5 w-5" strokeWidth={2.25} aria-hidden />
       </button>
     );
   }
 
-  // CTA central de la bottom-nav mobile (C3.1-T2) — cible tactile 48px, ≥ 44px requis.
   if (variant === "bottom-nav") {
     return (
       <button
-        type="button"
-        onClick={openCreateHub}
-        aria-label={CREATE_HUB_FAB_LABEL}
-        aria-haspopup="dialog"
-        aria-expanded={isOpen}
-        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-yunicity-primary text-white shadow-md transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 motion-reduce:transition-none ${className}`}
+        {...triggerProps}
+        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-yunicity-primary text-white shadow-md transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
       >
         <Plus className="h-6 w-6" strokeWidth={2.25} aria-hidden />
       </button>
@@ -66,11 +66,8 @@ export function CreateHubTriggerButton({
   if (variant === "sidebar-expanded") {
     return (
       <button
-        type="button"
-        onClick={openCreateHub}
-        aria-haspopup="dialog"
-        aria-expanded={isOpen}
-        className={`hidden w-full rounded-full bg-neutral-900 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800 xl:block ${className}`}
+        {...triggerProps}
+        className={`hidden w-full rounded-full bg-neutral-900 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-neutral-800 xl:block disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
       >
         {children ?? CREATE_HUB_FAB_LABEL}
       </button>
@@ -79,11 +76,9 @@ export function CreateHubTriggerButton({
 
   return (
     <button
-      type="button"
-      onClick={openCreateHub}
-      aria-haspopup="dialog"
-      aria-expanded={isOpen}
-      className={`inline-flex shrink-0 items-center justify-center rounded-full bg-yunicity-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${className}`}
+      {...triggerProps}
+      data-yunicity-header-control="create"
+      className={`inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-yunicity-primary px-3 py-2 text-sm font-semibold text-white transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 xl:px-4 ${className}`}
     >
       {children ?? CREATE_HUB_FAB_LABEL}
     </button>

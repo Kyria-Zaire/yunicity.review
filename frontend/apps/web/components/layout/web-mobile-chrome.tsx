@@ -1,11 +1,9 @@
 "use client";
 
+import { ExplorerTriggerButton } from "@/components/explorer";
 import { YunicityLogo } from "@/components/brand";
 import { CitizenYunicityMenu } from "@/components/layout/citizen-yunicity-menu";
-import { WEB_CITIZEN_SEARCH_ACCESS } from "@/lib/layout/web-layout-config";
 import { useAuth } from "@/lib/auth/auth-provider";
-import { Search } from "lucide-react";
-import Link from "next/link";
 
 /**
  * Header mobile (< md) — Navbar V3 (C3.1-T2).
@@ -24,16 +22,9 @@ export function WebMobileHeader() {
         <YunicityLogo href="/feed" size="sm" showWordmark priority />
 
         <div className="ml-auto flex items-center gap-1">
-          <Link
-            href={WEB_CITIZEN_SEARCH_ACCESS.href}
-            aria-label={WEB_CITIZEN_SEARCH_ACCESS.label}
-            className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full px-3 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2"
-          >
-            <Search className="h-5 w-5 shrink-0 text-yunicity-primary" aria-hidden />
-            <span className="hidden sm:inline">{WEB_CITIZEN_SEARCH_ACCESS.label}</span>
-          </Link>
+          <ExplorerTriggerButton variant="compact-mobile" className="min-w-11 px-3" />
 
-          <CitizenYunicityMenu variant="top-nav" />
+          <CitizenYunicityMenu variant="mobile-header" />
         </div>
       </div>
     </header>

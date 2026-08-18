@@ -9,7 +9,7 @@
  * n'est monté qu'après `useEffect`, donc le HTML serveur et le premier rendu client sont
  * identiques (pas de mismatch d'hydratation).
  */
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 
 import { yunicitySemantic } from "../../semantic-tokens";
@@ -18,7 +18,9 @@ import {
   acquireScrollLock,
   canCloseOverlay,
   closedTransform,
+  enteredTransform,
   FOCUSABLE_SELECTOR,
+  overlayContainerClass,
   panelPositionClass,
   resolveTabTrap,
   type OverlayCloseReason,
@@ -47,6 +49,9 @@ export type OverlayPanelProps = {
   closeLabel?: string;
   /** `false` : Escape et clic sur l'overlay ne ferment plus. Le bouton Close reste actif. */
   dismissible?: boolean;
+  /** Défaut `true`. Passer `false` lors d'un remplacement de surface (`superseded`). */
+  restoreFocus?: boolean;
+  initialFocusRef?: RefObject<HTMLElement | null>;
   zIndex?: number;
   className?: string;
   children: ReactNode;
@@ -62,6 +67,8 @@ export function OverlayPanel({
   description,
   closeLabel = "Fermer",
   dismissible = true,
+  restoreFocus = true,
+  initialFocusRef,
   zIndex = yunicitySemantic.z.modal,
   className,
   children,
@@ -90,6 +97,10 @@ export function OverlayPanel({
   onOpenChangeRef.current = onOpenChange;
   const dismissibleRef = useRef(dismissible);
   dismissibleRef.current = dismissible;
+  const restoreFocusRef = useRef(restoreFocus);
+  restoreFocusRef.current = restoreFocus;
+  const initialFocusRefMirror = useRef(initialFocusRef);
+  initialFocusRefMirror.current = initialFocusRef;
 
   // Racine de portail dédiée et MARQUÉE : elle identifie les overlays parmi les enfants de
   // `body`, pour qu'un overlay n'aille jamais rendre un autre overlay inerte (imbrication).
@@ -137,7 +148,10 @@ export function OverlayPanel({
       setEntered(true);
       const panel = panelRef.current;
       const focusables = panel?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
-      (focusables && focusables.length > 0 ? focusables[0] : panel)?.focus();
+      const explicitTarget = initialFocusRefMirror.current?.current;
+      const fallbackTarget = focusables && focusables.length > 0 ? focusables[0] : panel;
+      const target = explicitTarget?.isConnected ? explicitTarget : fallbackTarget;
+      target?.focus();
     });
 
     function onKeyDown(event: KeyboardEvent) {
@@ -177,7 +191,7 @@ export function OverlayPanel({
       // le focus ne peut pas atterrir dans un `inert`.
       leaveStack();
       setEntered(false);
-      if (wasTopmost && previouslyFocused?.isConnected) previouslyFocused.focus();
+      if (wasTopmost && restoreFocusRef.current && previouslyFocused?.isConnected) previouslyFocused.focus();
     };
   }, [open, requestClose]);
 
@@ -196,7 +210,11 @@ export function OverlayPanel({
     <>
       {triggerNode}
       {createPortal(
-        <div className="fixed inset-0" style={{ zIndex }} data-yunicity-overlay={side}>
+        <div
+          className={cx("fixed inset-0", overlayContainerClass(side))}
+          style={{ zIndex }}
+          data-yunicity-overlay={side}
+        >
           {/* Overlay : rend l'arrière-plan non cliquable. Non focalisable — la sortie clavier
               passe par Escape et par le bouton Close, tous deux dans le piège de focus. */}
           <div
@@ -215,12 +233,13 @@ export function OverlayPanel({
             aria-describedby={description ? descriptionId : undefined}
             tabIndex={-1}
             className={cx(
-              "absolute flex flex-col bg-yunicity-canvas shadow-yunicity-lg outline-none",
+              side === "center" ? "relative" : "absolute",
+              "flex flex-col bg-yunicity-canvas shadow-yunicity-lg outline-none",
               "transition-transform duration-yunicity-base ease-yunicity-standard motion-reduce:transition-none",
               panelPositionClass(side),
               className,
             )}
-            style={{ transform: entered ? "translate(0, 0)" : closedTransform(side) }}
+            style={{ transform: entered ? enteredTransform(side) : closedTransform(side) }}
           >
             <div className="flex items-start justify-between gap-3 border-b border-yunicity-divider px-4 py-3">
               <div className="min-w-0">
@@ -244,7 +263,15 @@ export function OverlayPanel({
                 </svg>
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
+            <div
+              className={cx(
+                "min-h-0 flex-1 overflow-y-auto p-4",
+                side === "bottom" && "max-h-[calc(85dvh-4.75rem)]",
+              )}
+              data-yunicity-overlay-scroll=""
+            >
+              {children}
+            </div>
           </div>
         </div>,
         container,

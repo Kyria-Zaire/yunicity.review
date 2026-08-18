@@ -1,5 +1,6 @@
 "use client";
 
+import { ExplorerTriggerButton } from "@/components/explorer";
 import { YunicityLogo } from "@/components/brand";
 import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
 import { CitizenAccountMenu } from "@/components/layout/citizen-account-menu";
@@ -190,13 +191,18 @@ export function WebSidebar() {
             contenir que les quatre destinations (Navbar V3).
           */}
           <div className="flex flex-col items-center gap-4 py-2 xl:items-stretch xl:gap-0.5 xl:py-0">
-            <NavItem
-              href={WEB_CITIZEN_SEARCH_ACCESS.href}
-              label={WEB_CITIZEN_SEARCH_ACCESS.label}
-              icon={WEB_CITIZEN_SEARCH_ACCESS.icon}
-              active={isWebNavActive(pathname, WEB_CITIZEN_SEARCH_ACCESS)}
-              size="secondary"
-            />
+            <WebSidebarTooltip label={WEB_CITIZEN_SEARCH_ACCESS.label}>
+              <span
+                className="flex items-center justify-center"
+                style={{
+                  width: "var(--web-sidebar-icon-hit)",
+                  height: "var(--web-sidebar-icon-hit)",
+                }}
+              >
+                <ExplorerTriggerButton variant="medium-rail" />
+              </span>
+            </WebSidebarTooltip>
+            <ExplorerTriggerButton variant="sidebar-expanded" />
             <CitizenYunicityMenu variant="sidebar" />
             {showCreateHub ? (
               <div className="flex w-full justify-center xl:hidden">

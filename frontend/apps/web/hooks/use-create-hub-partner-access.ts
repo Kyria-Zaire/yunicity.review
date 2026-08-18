@@ -1,49 +1,46 @@
 "use client";
 
-import { useAuth } from "@/lib/auth/auth-provider";
+import { useEffect, useRef, useState } from "react";
+
 import { filterPartnerPortalOrganizations } from "@yunicity/utils";
-import { useEffect, useState } from "react";
+
+import { useAuth } from "@/lib/auth/auth-provider";
+import type { PartnerAccessStatus } from "@/lib/create-hub/create-hub-actions";
 
 /**
- * Indique si l'utilisateur peut voir « Animer un lieu » dans le Create Hub.
- * Lecture légère de listMyOrganizations — pas de PartnerPortalProvider requis.
+ * Résout l'accès partenaire Create Hub — fail-closed, sans flash optimiste.
  */
-export function useCreateHubPartnerAccess(): { showPartnerAction: boolean; isLoading: boolean } {
+export function useCreateHubPartnerAccess(): { status: PartnerAccessStatus } {
   const { isAuthenticated, yunicityApi } = useAuth();
-  const [showPartnerAction, setShowPartnerAction] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<PartnerAccessStatus>("idle");
+  const generationRef = useRef(0);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      setShowPartnerAction(false);
-      setIsLoading(false);
+      generationRef.current += 1;
+      setStatus("idle");
       return;
     }
 
-    let cancelled = false;
-    setIsLoading(true);
+    const generation = generationRef.current + 1;
+    generationRef.current = generation;
+    setStatus("loading");
 
     void yunicityApi
       .listMyOrganizations()
       .then((response) => {
-        if (cancelled) return;
-        setShowPartnerAction(filterPartnerPortalOrganizations(response.items).length > 0);
+        if (generationRef.current !== generation) return;
+        setStatus(filterPartnerPortalOrganizations(response.items).length > 0 ? "allowed" : "denied");
       })
       .catch(() => {
-        if (!cancelled) {
-          setShowPartnerAction(false);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+        if (generationRef.current !== generation) return;
+        setStatus("denied");
       });
 
     return () => {
-      cancelled = true;
+      generationRef.current += 1;
     };
   }, [isAuthenticated, yunicityApi]);
 
-  return { showPartnerAction, isLoading };
+  return { status };
 }

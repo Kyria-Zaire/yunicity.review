@@ -107,8 +107,9 @@ test.describe("Navbar V3 — chrome citoyen", () => {
       await expect(nav.getByRole("link", { name: SEARCH_LABEL })).toHaveCount(0);
 
       // 3. Accès Recherche fonctionnel HORS des destinations.
-      const searchAccess = page.getByRole("link", { name: SEARCH_LABEL }).first();
+      const searchAccess = page.getByRole("button", { name: SEARCH_LABEL }).first();
       await expect(searchAccess, `accès Explorer absent en ${viewport.name}`).toBeVisible();
+      await expect(searchAccess).toBeEnabled({ timeout: COLD_START_TIMEOUT });
 
       // 4. CTA Créer et Menu Yunicity visibles.
       await expect(
@@ -205,13 +206,16 @@ test.describe("Navbar V3 — chrome citoyen", () => {
     console.log(`LANDMARKS :: ${report.join(" | ")}`);
   });
 
-  test("l'accès Explorer Reims mène réellement à la recherche (1366)", async ({
+  test("l'accès Explorer Reims ouvre l'overlay sans quitter la page courante (1366)", async ({
     citizenAPage: page,
   }) => {
     await page.setViewportSize({ width: 1366, height: 900 });
     await gotoCold(page, "/feed", /\/feed/);
 
-    await page.getByRole("link", { name: SEARCH_LABEL }).first().click();
-    await expect(page).toHaveURL(/\/search/, { timeout: COLD_START_TIMEOUT });
+    await page.getByRole("button", { name: SEARCH_LABEL }).first().click();
+    await expect(page.getByRole("dialog", { name: SEARCH_LABEL })).toBeVisible({
+      timeout: COLD_START_TIMEOUT,
+    });
+    await expect(page).toHaveURL(/\/feed/);
   });
 });

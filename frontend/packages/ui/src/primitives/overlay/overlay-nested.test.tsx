@@ -4,6 +4,7 @@ import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { Drawer } from "./drawer";
+import { Dialog } from "./dialog";
 import { OVERLAY_ROOT_ATTRIBUTE, overlayStackSize } from "./overlay-stack";
 import { Sheet } from "./sheet";
 
@@ -275,5 +276,68 @@ describe("Overlays imbriqués — topmost seul actif", () => {
     expect(document.body.style.overflow).toBe("");
     expect(overlayStackSize()).toBe(0);
     expect(document.querySelectorAll(`[${OVERLAY_ROOT_ATTRIBUTE}]`).length).toBe(0);
+  });
+});
+
+describe("Dialog au-dessus de Sheet — pile modale", () => {
+  function SheetWithDialog({ dialogOpen }: { dialogOpen: boolean }) {
+    return (
+      <div>
+        <button type="button">Déclencheur applicatif</button>
+        <Sheet open title="Panneau A">
+          <button type="button">Action A</button>
+        </Sheet>
+        <Dialog open={dialogOpen} title="Explorer">
+          <button type="button">Action Dialog</button>
+        </Dialog>
+      </div>
+    );
+  }
+
+  it("Dialog devient topmost et Sheet devient inerte", async () => {
+    render(<SheetWithDialog dialogOpen />);
+
+    await waitFor(() => expect(overlayStackSize()).toBe(2));
+
+    const roots = overlayRoots();
+    expect(roots.length).toBe(2);
+    expect(isNeutralized(roots[0] as HTMLElement)).toBe(true);
+    expect(isNeutralized(roots[1] as HTMLElement)).toBe(false);
+    expect(screen.getAllByRole("dialog").length).toBe(1);
+    expect(screen.getByRole("dialog", { name: "Explorer" })).not.toBeNull();
+  });
+
+  it("ne vole pas le focus quand Sheet se ferme sous Dialog", async () => {
+    const user = userEvent.setup();
+    function Nested({ sheetOpen, dialogOpen }: { sheetOpen: boolean; dialogOpen: boolean }) {
+      const [dialogIsOpen, setDialogOpen] = useState(dialogOpen);
+      return (
+        <div>
+          <button type="button">Déclencheur applicatif</button>
+          <Sheet open={sheetOpen} title="Panneau A">
+            <button type="button">Action A</button>
+          </Sheet>
+          <Dialog open={dialogIsOpen} onOpenChange={setDialogOpen} title="Explorer">
+            <button type="button">Action Dialog</button>
+          </Dialog>
+        </div>
+      );
+    }
+
+    const { rerender } = render(<Nested sheetOpen dialogOpen />);
+    await waitFor(() =>
+      expect(screen.getByRole("dialog", { name: "Explorer" }).contains(document.activeElement)).toBe(true),
+    );
+
+    const focusedInDialog = document.activeElement;
+
+    rerender(<Nested sheetOpen={false} dialogOpen />);
+
+    expect(overlayStackSize()).toBe(1);
+    expect(document.activeElement).toBe(focusedInDialog);
+    expect(screen.getByRole("dialog", { name: "Explorer" })).not.toBeNull();
+
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 });

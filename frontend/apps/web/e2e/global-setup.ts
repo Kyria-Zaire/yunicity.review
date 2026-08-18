@@ -1,5 +1,7 @@
 import type { FullConfig } from "@playwright/test";
 
+import { resetAuthTelemetry } from "./auth-telemetry";
+
 /**
  * Fail-closed harness gate (C3-F0-T3): before any browser test, prove the QA API is
  * up and local. Refuses any non-local target so a stray env can never point the suite
@@ -7,6 +9,7 @@ import type { FullConfig } from "@playwright/test";
  * (docker compose exec ... app.qa.launcher) prior to invoking Playwright.
  */
 async function globalSetup(_config: FullConfig): Promise<void> {
+  resetAuthTelemetry();
   const apiUrl = process.env.E2E_API_URL ?? "http://localhost:8010";
   const host = new URL(apiUrl).hostname;
   if (host !== "localhost" && host !== "127.0.0.1") {

@@ -28,9 +28,11 @@ import { SearchExplorerSidebar } from "@/components/search/search-explorer-sideb
 import { SearchGroupSection } from "@/components/search/search-group-section";
 import { SearchTopBar } from "@/components/search/search-top-bar";
 import { SearchTypeTabs } from "@/components/search/search-type-tabs";
+import { SearchCityError } from "@/components/search/search-city-error";
+import { SearchCityRequired } from "@/components/search/search-city-required";
+import { useExplorerCityState } from "@/hooks/use-explorer-city-state";
 import { useSearch } from "@/hooks/use-search";
 import { useSearchExplorerContext } from "@/hooks/use-search-explorer-context";
-import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { GeoProvider, useGeo } from "@/providers/geo-provider";
 
@@ -225,36 +227,81 @@ function SearchScreenInner({ urlQuery, urlCity, urlTab }: { urlQuery: string; ur
   );
 }
 
+function SearchScreenCityGate({
+  urlQuery,
+  urlCity,
+  urlTab,
+}: {
+  urlQuery: string;
+  urlCity: string;
+  urlTab: string;
+}) {
+  const { isAuthenticated } = useAuth();
+  const cityState = useExplorerCityState({ urlCity, enabled: isAuthenticated });
+
+  if (!isAuthenticated) {
+    return (
+      <SearchAppShell>
+        <div className="mx-auto w-full max-w-[1400px] px-3 py-8 sm:px-4">
+          <header className="border-b border-neutral-100 pb-5">
+            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-[1.75rem]">
+              {SEARCH_PAGE_TITLE}
+            </h1>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-neutral-600">
+              {SEARCH_PAGE_SUBTITLE}
+            </p>
+          </header>
+        </div>
+      </SearchAppShell>
+    );
+  }
+
+  if (cityState.status === "loading") {
+    return (
+      <SearchAppShell>
+        <div className="mx-auto w-full max-w-[1400px] px-3 py-8 sm:px-4">
+          <p className="text-sm text-neutral-500" role="status">
+            Chargement de votre ville…
+          </p>
+        </div>
+      </SearchAppShell>
+    );
+  }
+
+  if (cityState.status === "missing") {
+    return (
+      <SearchAppShell>
+        <div className="mx-auto w-full max-w-xl px-3 py-8 sm:px-4">
+          <SearchCityRequired />
+        </div>
+      </SearchAppShell>
+    );
+  }
+
+  if (cityState.status === "error") {
+    return (
+      <SearchAppShell>
+        <div className="mx-auto w-full max-w-xl px-3 py-8 sm:px-4">
+          <SearchCityError onRetry={cityState.retry} />
+        </div>
+      </SearchAppShell>
+    );
+  }
+
+  const resolvedCity = urlCity.trim() || cityState.city;
+
+  return (
+    <GeoProvider defaultCity={resolvedCity}>
+      <SearchScreenInner urlQuery={urlQuery} urlCity={urlCity || cityState.city} urlTab={urlTab} />
+    </GeoProvider>
+  );
+}
+
 export function SearchScreen() {
-  const api = useYunicityApi();
-  const { user } = useAuth();
   const searchParams = useSearchParams();
   const urlQuery = searchParams.get("q") ?? "";
   const urlCity = searchParams.get("city") ?? "";
   const urlTab = searchParams.get("tab") ?? "";
 
-  const [defaultCity, setDefaultCity] = useState(urlCity.trim() || user?.city?.trim() || "Reims");
-
-  useEffect(() => {
-    if (urlCity.trim()) {
-      setDefaultCity(urlCity.trim());
-      return;
-    }
-    void api
-      .getProfileMe()
-      .then((profile) => {
-        if (profile.city?.trim()) {
-          setDefaultCity(profile.city.trim());
-        }
-      })
-      .catch(() => {
-        /* session expirée : ville par défaut conservée */
-      });
-  }, [api, urlCity]);
-
-  return (
-    <GeoProvider defaultCity={defaultCity}>
-      <SearchScreenInner urlQuery={urlQuery} urlCity={urlCity} urlTab={urlTab} />
-    </GeoProvider>
-  );
+  return <SearchScreenCityGate urlQuery={urlQuery} urlCity={urlCity} urlTab={urlTab} />;
 }

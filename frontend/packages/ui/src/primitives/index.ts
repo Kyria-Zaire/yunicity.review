@@ -27,6 +27,15 @@ export { Card, CardContent, CardFooter, CardHeader, type CardProps, type CardVar
 
 export { Sheet, type SheetProps } from "./overlay/sheet";
 export { Drawer, type DrawerProps } from "./overlay/drawer";
+export { Dialog, type DialogProps } from "./overlay/dialog";
+export {
+  Popover,
+  type PopoverCloseReason,
+  type PopoverContentControls,
+  type PopoverPlacement,
+  type PopoverProps,
+  type PopoverTriggerProps,
+} from "./popover/popover";
 export type { OverlayTriggerProps } from "./overlay/overlay-panel";
 
 export { Skeleton, type SkeletonProps } from "./states/skeleton";
