@@ -61,7 +61,7 @@ export function FeedViewTabs({
         type="button"
         onClick={onToggleFilter}
         aria-expanded={filterOpen}
-        className={`mb-2 inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+        className={`feed-legacy-filter mb-2 inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition ${
           filterOpen
             ? "border-yunicity-primary bg-[#EEF0FF] text-yunicity-primary"
             : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300"

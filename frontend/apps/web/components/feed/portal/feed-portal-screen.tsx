@@ -28,6 +28,7 @@ import { FeedLeftRail } from "@/components/feed/portal/feed-left-rail";
 import { FeedRightRail } from "@/components/feed/portal/feed-right-rail";
 import { FeedSavedEventsPanel } from "@/components/feed/portal/feed-saved-events-panel";
 import { FeedStoriesRail } from "@/components/feed/portal/feed-stories-rail";
+import { FeedMediumHeader } from "@/components/feed/portal/feed-medium-header";
 import { FeedViewTabs } from "@/components/feed/portal/feed-view-tabs";
 import {
   FeedMobileComposer,
@@ -326,6 +327,14 @@ export function FeedPortalScreen() {
       />
 
       <div className="min-w-0 flex-1">
+        {/* C3-FEED-M3 : header de contenu propre a la bande medium. Il ne se
+            rend qu'entre 640 et 1279.98px (classe `.feed-medium-header`), et
+            reste sticky en haut de la colonne. */}
+        <FeedMediumHeader
+          city={city}
+          filterOpen={filterOpen}
+          onToggleFilter={() => setFilterOpen((v) => !v)}
+        />
         <div className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm">
           <div className="border-b border-neutral-100 px-4 py-5 sm:px-6">
             <FeedStoriesRail items={stories} seeAllHref="/stories" />

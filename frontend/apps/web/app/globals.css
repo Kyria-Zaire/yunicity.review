@@ -151,6 +151,45 @@ body {
   }
 }
 
+/* ——— C3-FEED-M3 : header de contenu du Feed moyen (640 → 1279.98) ———
+   Masque par defaut, borne EN HAUT a 1279.98px : le desktop >= 1280 conserve son
+   propre header. Sticky en haut de la colonne de contenu, fond opaque pour
+   preserver la lecture, et z-index volontairement BAS afin que les overlays
+   Explorer / Menu / Create le recouvrent (pile R1E inchangee). */
+.feed-medium-header {
+  display: none;
+}
+
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .feed-medium-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    /* Padding INTERNE (le texte ne touche pas le bord) — ce n'est pas une
+       gouttiere : les BORDS du header restent alignes sur la zone principale. */
+    padding: 0.625rem 0.75rem;
+    /* C3-FEED-M3.1 : barre de contenu, pas carte flottante. Mesure M3 : bords
+       deja alignes (ecart 0 aux 5 viewports), mais `border: 1px` sur quatre
+       cotes + `border-radius: 1rem` donnaient l'effet de petite carte
+       independante. Seule subsiste une separation BASSE, sur toute la largeur. */
+    border: 0;
+    border-bottom: 1px solid rgb(229 229 229 / 0.9);
+    border-radius: 0;
+    background: #ffffff;
+  }
+
+  /* Un seul controle Filtrer dans le Feed medium : l'ancien emplacement, au
+     milieu du fil, cede la place a celui du header. Mobile et desktop
+     conservent le leur. */
+  .feed-legacy-filter {
+    display: none !important;
+  }
+}
+
 /* ——— C3-FEED-M2 : rail du Feed moyen (640 → 1279.98) ———
    Toutes les regles sont bornees EN HAUT a 1279.98px et scopees a
    `.citizen-medium-shell`, portee par tout shell qui MONTE explicitement le rail
@@ -173,6 +212,13 @@ body {
 
   .citizen-medium-shell .web-three-col {
     grid-template-columns: var(--citizen-medium-rail-width) minmax(0, 1fr);
+    /* C3-FEED-M3.2 : la zone Feed medium commence a la frontiere PHYSIQUE du
+       rail et finit au bord droit reel de l'application. Mesure RED : la
+       gouttiere (24px) et les paddings (16px) du shell rétrécissaient la zone,
+       et une assertion fondee sur `.web-main-column` etait donc circulaire. */
+    column-gap: 0;
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .citizen-medium-shell .citizen-medium-rail {
