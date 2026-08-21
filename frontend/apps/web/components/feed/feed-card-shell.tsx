@@ -38,7 +38,7 @@ export function FeedCardShell({
     : `rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-md ${VARIANT_CLASS[variant]}`;
 
   return (
-    <article className={`overflow-hidden ${frameClass}`}>
+    <article data-feed-medium-surface="primary" className={`overflow-hidden ${frameClass}`}>
       <div className={paddingClass}>{children}</div>
       {footer ? (
         <footer className={`border-t border-neutral-100/90 ${footerPaddingClass}`}>{footer}</footer>

@@ -29,6 +29,24 @@ function visible(page: Page, selector: string) {
   return page.locator(selector).filter({ visible: true });
 }
 
+/**
+ * Les blocs locaux de fin de fil sont montes paresseusement : ils n'existent pas
+ * tant que le bas n'a pas ete atteint. On amene donc la page en bas puis on
+ * revient en haut AVANT de compter les surfaces — condition reelle sur l'etat du
+ * DOM, ni pause ni retry.
+ */
+async function mountAllSurfaces(page: Page): Promise<void> {
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expect
+    .poll(async () =>
+      page.evaluate(
+        () => document.querySelectorAll('[data-feed-medium-surface="primary"]').length,
+      ),
+    )
+    .toBeGreaterThanOrEqual(10);
+  await page.evaluate(() => window.scrollTo(0, 0));
+}
+
 async function gotoFeed(page: Page, size?: { width: number; height: number }): Promise<void> {
   // `test.use({ viewport })` est inopérant : le contexte authentifié est
   // worker-scoped (budget de session R1M), la page hérite donc du viewport du
@@ -301,6 +319,163 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
       return node.contains(top) || top === node ? "header" : "overlay";
     });
     expect(hit, "le header reste cliquable sous l'overlay").toBe("overlay");
+  });
+
+  // ── Identité persistante des surfaces primaires (C3-FEED-M3.3B) ────────────
+  // Le contrat repose sur un MARQUEUR explicite, pas sur la profondeur du DOM :
+  // retirer `data-feed-medium-surface="primary"` d'une famille ferait échouer
+  // ici le comptage global ET l'assertion de cette famille.
+  const PRIMARY = '[data-feed-medium-surface="primary"]';
+
+  /** Familles identifiées par leur contrat accessible, jamais par leur rang. */
+  const PRIMARY_FAMILIES: ReadonlyArray<{ nom: string; motif: RegExp }> = [
+    { nom: "Stories + onglets", motif: /votre story/i },
+    { nom: "Compositeur", motif: /quoi de neuf/i },
+    { nom: "Vidéos près de chez vous", motif: /vidéos près de chez vous/i },
+    { nom: "Privilège local", motif: /privilège local/i },
+    { nom: "Dans vos tribus", motif: /dans vos tribus/i },
+    { nom: "À ne pas manquer", motif: /à ne pas manquer/i },
+    { nom: "En ce moment à", motif: /en ce moment à/i },
+  ];
+
+  test("768 — la baseline rend exactement dix surfaces primaires marquées", async ({
+    authedPage,
+  }) => {
+    await gotoFeed(authedPage, { width: 768, height: 1024 });
+    await mountAllSurfaces(authedPage);
+
+    const releve = await authedPage.evaluate((selector) => {
+      const colonne = document.querySelector(".feed-medium-column")!;
+      const marquees = [...colonne.querySelectorAll(selector)].filter(
+        (el) => el.getBoundingClientRect().width > 0,
+      );
+      return {
+        total: marquees.length,
+        publications: marquees.filter((el) => el.tagName === "ARTICLE").length,
+        textes: marquees.map((el) => (el.textContent ?? "").trim().slice(0, 60)),
+      };
+    }, PRIMARY);
+
+    expect(releve.total, `surfaces marquées : ${releve.textes.join(" | ")}`).toBe(10);
+    expect(releve.publications, "publications citoyennes marquées").toBe(3);
+
+    for (const famille of PRIMARY_FAMILIES) {
+      const trouvees = releve.textes.filter((t) => famille.motif.test(t)).length;
+      expect(trouvees, `famille « ${famille.nom} » non marquée exactement une fois`).toBe(1);
+    }
+  });
+
+  test("768 — le marqueur n'est jamais porté par un contrôle ou un média", async ({
+    authedPage,
+  }) => {
+    await gotoFeed(authedPage, { width: 768, height: 1024 });
+
+    await mountAllSurfaces(authedPage);
+    const interdits = await authedPage.evaluate((selector) => {
+      const compte = (css: string) => document.querySelectorAll(css).length;
+      return {
+        controles: compte(`button${selector}, a${selector}`),
+        medias: compte(`img${selector}, video${selector}, picture${selector}`),
+        rail: compte(`.citizen-medium-rail ${selector}`),
+        header: compte(`.feed-medium-header${selector}, .feed-medium-header ${selector}`),
+        colonne: compte(`.feed-medium-column${selector}`),
+        overlay: compte(`[data-yunicity-overlay] ${selector}`),
+        // La carte vidéo INTERNE est arrondie et doit le rester : elle ne porte
+        // jamais le marqueur primaire.
+        carteInterne: compte(`${selector} li ${selector}`),
+      };
+    }, PRIMARY);
+
+    expect(interdits.controles, "marqueur sur un bouton ou un lien").toBe(0);
+    expect(interdits.medias, "marqueur sur une image ou une vidéo").toBe(0);
+    expect(interdits.rail, "marqueur dans le rail").toBe(0);
+    expect(interdits.header, "marqueur sur ou dans le header").toBe(0);
+    expect(interdits.colonne, "marqueur sur la colonne elle-même").toBe(0);
+    expect(interdits.overlay, "marqueur dans un overlay").toBe(0);
+    expect(interdits.carteInterne, "marqueur sur une carte interne").toBe(0);
+  });
+
+  test("768 — les surfaces marquées sont plates et sur les axes autoritaires", async ({
+    authedPage,
+  }) => {
+    await gotoFeed(authedPage, { width: 768, height: 1024 });
+
+    await mountAllSurfaces(authedPage);
+    const m = await authedPage.evaluate((selector) => {
+      const colonne = document.querySelector(".feed-medium-column")!;
+      const rail = document.querySelector(".citizen-medium-rail")!.getBoundingClientRect();
+      const shell = document.querySelector(".web-shell-page")!.getBoundingClientRect();
+      const surfaces = [...colonne.querySelectorAll(selector)].filter(
+        (el) => el.getBoundingClientRect().width > 0,
+      );
+      return {
+        rayons: surfaces.map((el) => parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0),
+        ombres: surfaces.map((el) => getComputedStyle(el).boxShadow),
+        gauches: surfaces.map((el) => el.getBoundingClientRect().left - rail.right),
+        droites: surfaces.map((el) => shell.right - el.getBoundingClientRect().right),
+        largeurs: surfaces.map((el) => Math.round(el.getBoundingClientRect().width)),
+        overflow:
+          document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+      };
+    }, PRIMARY);
+
+    expect(Math.max(...m.rayons), "rayon extérieur de carte").toBeLessThanOrEqual(2);
+    expect(m.ombres.every((o) => o === "none"), "ombre extérieure de carte flottante").toBe(true);
+    expect(Math.max(...m.gauches.map(Math.abs)), "bord gauche hors axe").toBeLessThanOrEqual(1);
+    expect(Math.max(...m.droites.map(Math.abs)), "bord droit hors axe").toBeLessThanOrEqual(1);
+    expect(new Set(m.largeurs).size, `largeurs hétérogènes : ${m.largeurs.join("/")}`).toBe(1);
+    expect(Math.min(...m.gauches), "surface passant sous le rail").toBeGreaterThanOrEqual(-1);
+    expect(m.overflow, "débordement horizontal").toBe(true);
+    // Hauteurs et positions verticales dépendent légitimement du contenu :
+    // elles ne sont volontairement pas figées ici.
+  });
+
+  test("768 — l'état filtré alternatif porte lui aussi le marqueur", async ({ authedPage }) => {
+    await gotoFeed(authedPage, { width: 768, height: 1024 });
+    await mountAllSurfaces(authedPage);
+    const filtre = authedPage.locator("[data-feed-medium-header-filter]");
+
+    const compteVisible = async () =>
+      authedPage.evaluate((selector) => {
+        const colonne = document.querySelector(".feed-medium-column")!;
+        return [...colonne.querySelectorAll(selector)].filter(
+          (el) => el.getBoundingClientRect().width > 0,
+        ).length;
+      }, PRIMARY);
+
+    expect(await compteVisible(), "baseline hors filtre").toBe(10);
+
+    await filtre.click();
+    await expect(filtre).toHaveAttribute("aria-expanded", "true");
+
+    const pendant = await authedPage.evaluate((selector) => {
+      const colonne = document.querySelector(".feed-medium-column")!;
+      const rail = document.querySelector(".citizen-medium-rail")!.getBoundingClientRect();
+      const shell = document.querySelector(".web-shell-page")!.getBoundingClientRect();
+      // Aucun marqueur fantôme : seules les surfaces réellement rendues comptent.
+      const visibles = [...colonne.querySelectorAll(selector)].filter(
+        (el) => el.getBoundingClientRect().width > 0,
+      );
+      return {
+        visibles: visibles.length,
+        plates: visibles.every((el) => {
+          const cs = getComputedStyle(el);
+          return (parseFloat(cs.borderTopLeftRadius) || 0) <= 2 && cs.boxShadow === "none";
+        }),
+        axes: visibles.every((el) => {
+          const r = el.getBoundingClientRect();
+          return Math.abs(r.left - rail.right) <= 1 && Math.abs(r.right - shell.right) <= 1;
+        }),
+      };
+    }, PRIMARY);
+
+    expect(pendant.visibles, "aucune surface marquée en état filtré").toBeGreaterThan(0);
+    expect(pendant.plates, "surface filtrée non plate").toBe(true);
+    expect(pendant.axes, "surface filtrée hors axes").toBe(true);
+
+    await filtre.click();
+    await expect(filtre).toHaveAttribute("aria-expanded", "false");
+    expect(await compteVisible(), "le fil n'est pas revenu à son état initial").toBe(10);
   });
 
   // ── Frontières ─────────────────────────────────────────────────────────────

@@ -190,6 +190,26 @@ body {
   }
 }
 
+/* ——— C3-FEED-M3.3 : surfaces principales plates (640 → 1279.98) ———
+   Les grandes surfaces du fil (stories/onglets, compositeur, section video,
+   publications, blocs locaux) portaient `rounded-2xl` + `shadow-sm` : mesure a
+   768px, 10 surfaces a `border-radius: 16px` avec ombre, ce qui recreait un
+   effet de carte flottante en rupture avec les axes bord a bord de M3.2.
+
+   Portee (C3-FEED-M3.3A) : un MARQUEUR EXPLICITE porte par le wrapper visuel
+   exterieur de chaque grande surface, plus le scope shell + colonne + bande
+   medium. Les chaines structurelles precedentes dependaient de la profondeur du
+   DOM et auraient pu casser silencieusement a la restructuration M4. Les cartes
+   internes, miniatures, avatars, boutons et pilules ne portent pas le marqueur
+   et gardent donc leurs formes.
+   Les bordures sont conservees : ce sont elles qui separent les surfaces. */
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .citizen-medium-shell .feed-medium-column [data-feed-medium-surface="primary"] {
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
 /* ——— C3-FEED-M2 : rail du Feed moyen (640 → 1279.98) ———
    Toutes les regles sont bornees EN HAUT a 1279.98px et scopees a
    `.citizen-medium-shell`, portee par tout shell qui MONTE explicitement le rail

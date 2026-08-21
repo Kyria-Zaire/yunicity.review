@@ -237,7 +237,10 @@ export function FeedPortalScreen() {
 
       {!isLoading && !error && leftNav !== "saved" && displayedPosts.length === 0 ? (
         filterOpen && items.length > 0 ? (
-          <div className={`rounded-2xl border border-dashed border-yunicity-border bg-white p-8 text-center shadow-sm ${FEED_MOBILE_CONTENT_PADDING_CLASS}`}>
+          <div
+            data-feed-medium-surface="primary"
+            className={`rounded-2xl border border-dashed border-yunicity-border bg-white p-8 text-center shadow-sm ${FEED_MOBILE_CONTENT_PADDING_CLASS}`}
+          >
             <p className="text-base font-semibold text-neutral-900">
               Aucune publication ne correspond à vos centres d&apos;intérêt
             </p>
@@ -326,7 +329,10 @@ export function FeedPortalScreen() {
         interests={interests}
       />
 
-      <div className="min-w-0 flex-1">
+      {/* `feed-medium-column` : identite stable de la colonne de contenu Feed.
+          C3-FEED-M3.3 s'y appuie pour aplatir les GRANDES surfaces sans jamais
+          pouvoir atteindre les cartes internes, plus profondes. */}
+      <div className="feed-medium-column min-w-0 flex-1">
         {/* C3-FEED-M3 : header de contenu propre a la bande medium. Il ne se
             rend qu'entre 640 et 1279.98px (classe `.feed-medium-header`), et
             reste sticky en haut de la colonne. */}
@@ -335,7 +341,10 @@ export function FeedPortalScreen() {
           filterOpen={filterOpen}
           onToggleFilter={() => setFilterOpen((v) => !v)}
         />
-        <div className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm">
+        <div
+          data-feed-medium-surface="primary"
+          className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm"
+        >
           <div className="border-b border-neutral-100 px-4 py-5 sm:px-6">
             <FeedStoriesRail items={stories} seeAllHref="/stories" />
           </div>
@@ -372,7 +381,10 @@ export function FeedPortalScreen() {
         </div>
 
         <div id="feed-composer" ref={composerRef} className="mt-5 scroll-mt-28">
-          <div className="rounded-2xl border border-neutral-200/90 bg-white px-4 shadow-sm sm:px-5">
+          <div
+            data-feed-medium-surface="primary"
+            className="rounded-2xl border border-neutral-200/90 bg-white px-4 shadow-sm sm:px-5"
+          >
             <FeedComposer city={city} onSubmit={handleCreate} />
           </div>
         </div>
@@ -402,7 +414,10 @@ export function FeedPortalScreen() {
 
         {!isLoading && !error && leftNav !== "saved" && displayedPosts.length === 0 ? (
           filterOpen && items.length > 0 ? (
-            <div className="mt-5 rounded-2xl border border-dashed border-yunicity-border bg-white p-8 text-center shadow-sm">
+            <div
+              data-feed-medium-surface="primary"
+              className="mt-5 rounded-2xl border border-dashed border-yunicity-border bg-white p-8 text-center shadow-sm"
+            >
               <p className="text-base font-semibold text-neutral-900">
                 Aucune publication ne correspond à vos centres d&apos;intérêt
               </p>

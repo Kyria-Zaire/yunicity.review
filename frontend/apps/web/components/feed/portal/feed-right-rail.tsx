@@ -61,7 +61,10 @@ function SectionCard({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm">
+    <section
+      data-feed-medium-surface="primary"
+      className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm"
+    >
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-bold text-neutral-900">{title}</h2>
         <Link href={ctaHref} className="text-xs font-semibold text-yunicity-primary hover:underline">
@@ -88,7 +91,10 @@ export function FeedRightRail({
   return (
     <div className="space-y-4">
       {highlightOffer ? (
-        <section className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm">
+        <section
+          data-feed-medium-surface="primary"
+          className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm"
+        >
           <h2 className="text-sm font-bold text-neutral-900">{HOME_PRIVILEGE_TITLE}</h2>
           <div className="mt-3 flex gap-3">
             {highlightOffer.partner.logo_url ? (

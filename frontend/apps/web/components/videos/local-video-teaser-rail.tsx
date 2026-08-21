@@ -72,6 +72,7 @@ export function LocalVideoTeaserRail({
 
   return (
     <section
+      data-feed-medium-surface="primary"
       className="rounded-2xl border border-neutral-200/90 bg-[#FAFBFC] p-4 shadow-sm sm:p-5"
       aria-label={title}
     >
