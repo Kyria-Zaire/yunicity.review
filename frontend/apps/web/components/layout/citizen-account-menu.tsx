@@ -24,7 +24,7 @@ type CitizenAccountMenuProps = {
 };
 
 /**
- * Menu compte — Profil, Paramètres, Passport (+ déconnexion).
+ * Menu compte — identité, Profil, Paramètres, déconnexion (Passport vit dans Menu Yunicity).
  * Inspiré du menu profil Facebook (chevron bas).
  */
 export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuProps) {
@@ -210,13 +210,14 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
           aria-expanded={open}
           aria-controls={menuId}
           data-yunicity-header-control={isTopNav ? "account" : undefined}
+          data-yunicity-mobile-header-control={isMobileHeader ? "account" : undefined}
           className={
             isBottomNav
               ? `flex min-h-[3.25rem] w-full flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1 text-yunicity-primary transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
                   accountMenuActive ? "opacity-100" : "opacity-90 hover:opacity-100"
                 }`
               : isCompactHeader
-              ? "inline-flex items-center gap-0.5 rounded-full py-1 pl-1 pr-1.5 transition hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2"
+              ? "inline-flex min-h-11 min-w-11 items-center justify-center gap-0.5 rounded-full py-1 pl-1 pr-1.5 transition hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2"
               : `flex w-[var(--web-sidebar-icon-hit)] flex-col items-center justify-center gap-0.5 rounded-full py-1 transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 xl:w-full xl:flex-row xl:justify-start xl:gap-2 xl:rounded-xl xl:p-2 ${
                   accountMenuActive ? "bg-neutral-100 xl:bg-neutral-50" : ""
                 }`

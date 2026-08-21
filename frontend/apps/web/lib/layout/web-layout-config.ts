@@ -39,12 +39,7 @@ export type WebNavItem = {
 export const WEB_CITIZEN_ACCOUNT_MENU: WebNavItem[] = [
   { href: "/profile/me", label: "Profil", icon: "profile", match: "prefix" },
   { href: "/settings", label: "Paramètres", icon: "settings", match: "prefix" },
-  { href: "/passport", label: "Passport", icon: "passport", match: "prefix" },
 ];
-
-const WEB_CITIZEN_ACCOUNT_MENU_HREFS = new Set(
-  WEB_CITIZEN_ACCOUNT_MENU.map((item) => item.href),
-);
 
 /**
  * SOURCE CANONIQUE UNIQUE des destinations principales (C3.1-T2, Navbar V3).

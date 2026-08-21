@@ -5,8 +5,10 @@ Disposable, hermetic-by-configuration QA stack for future mutational/E2E tests.
 
 ## Guarantees
 
-- Dedicated Postgres/PostGIS (`yunicity_qa`) + Redis, distinct host ports, **no
-  persistent volume** (`tmpfs` data → disposable).
+- Dedicated Postgres/PostGIS (`yunicity_qa`) + Redis, distinct host ports.
+  Postgres/Redis data stay on **tmpfs**. Story/post media lives in the named
+  volume `yunicity-qa-story-media` (QA-only, wiped by `down -v` or
+  `python -m app.qa.launcher reset`). Never shared with `yunicity_dev`.
 - The **only** destructible database is `yunicity_qa`, reached through
   `TEST_DATABASE_URL` — there is **no fallback** to `DATABASE_URL`.
 - Every destructive/seed op passes the fail-closed guard (`app/qa/guard.py`),
@@ -32,6 +34,37 @@ is **refused**.
 | postgres | 5455 | 5434 |
 | redis | 6399 | 6379 |
 | backend | 8010 | 8000 |
+
+## Commandes canoniques (C3.1-R1G)
+
+Deux bases, deux propriétaires — ne jamais les confondre :
+
+| Base | Propriétaire | Préparée par |
+|------|--------------|--------------|
+| `yunicity_qa` | Playwright + revue manuelle | `sh scripts/qa-playwright-baseline.sh` |
+| `yunicity_test_<unique>` | suite pytest backend | créée/supprimée par le runner |
+
+### Baseline Playwright
+
+```bash
+sh scripts/qa-playwright-baseline.sh                  # guard, reset, migrate, seed, verify, rate-limits
+sh scripts/qa-playwright-baseline.sh --with-playwright
+```
+
+La mutation de `yunicity_qa` est **toujours** dans la commande opérateur.
+`e2e/global-setup.ts` ne mute rien : il **vérifie** que la baseline est amorcée
+(lecture publique de la tribu de seed) et refuse de démarrer sinon.
+
+### Suite backend
+
+```bash
+docker compose -p yunicity-qa -f docker-compose.qa.yml exec -T backend-qa   python -m scripts.run_backend_tests            # suite complète
+```
+
+Le runner crée une base jetable `yunicity_test_<unique>`, y exécute pytest sur un
+Redis logique distinct (`/1`), puis la supprime. **`pytest` nu est refusé**
+(`DBNAME_NOT_DISPOSABLE_TEST:yunicity_qa`) : c'est le garde `evaluate_pytest_database_target`
+qui protège la baseline de revue — un run pytest la détruisait auparavant.
 
 ## Lifecycle
 

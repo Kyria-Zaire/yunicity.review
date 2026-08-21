@@ -15,6 +15,8 @@ export const COMPOSER_MEDIA_TOO_LARGE = "Image trop lourde — 20 Mo maximum.";
 export const COMPOSER_MEDIA_UPLOAD_FAILED = "Échec de l’envoi de l’image. Réessayez.";
 export const COMPOSER_MEDIA_ADD_LABEL = "Ajouter une image";
 export const COMPOSER_MEDIA_REMOVE_LABEL = "Retirer l’image";
+export const COMPOSER_MEDIA_REMOVE_PHOTO_LABEL = "Retirer la photo";
+export const COMPOSER_MEDIA_REPLACE_PHOTO_LABEL = "Remplacer la photo";
 export const COMPOSER_MEDIA_UPLOADING_LABEL = "Envoi de l’image…";
 
 export type ComposerMediaValidation = { ok: true } | { ok: false; error: string };

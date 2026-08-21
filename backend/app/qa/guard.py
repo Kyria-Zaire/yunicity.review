@@ -28,6 +28,10 @@ from sqlalchemy.exc import ArgumentError
 
 QA_DB_NAME = "yunicity_qa"
 
+# Prefixe reserve aux bases de tests backend JETABLES (C3.1-R1G). `yunicity_qa`
+# appartient a Playwright et a la revue manuelle : pytest ne doit jamais la viser.
+PYTEST_DB_NAME_PREFIX = "yunicity_test_"
+
 QA_MODE_ENV = "YUNICITY_QA_MODE"
 QA_TOKEN_ENV = "YUNICITY_QA_RUN_TOKEN"
 TEST_DB_ENV = "TEST_DATABASE_URL"
@@ -128,31 +132,22 @@ def _reject_active_external_providers(env: Mapping[str, str]) -> None:
             raise QaGuardError(f"EXTERNAL_KEY_PRESENT:{key}")
 
 
-def evaluate_qa_database_target(env: Mapping[str, str]) -> QaTarget:
-    """Validate the destructive **database target** only (marker + TEST_DATABASE_URL triplet).
-
-    This is what per-test destructive fixtures need: it guarantees the only reachable
-    destructive database is ``yunicity_qa`` on an authorized host/port. It intentionally
-    does NOT enforce external-provider hermeticity — a test may set mocked provider env
-    (e.g. an R2 key) without that making a DB drop against ``yunicity_qa`` any less safe.
-
-    Pure: takes an explicit env mapping, opens no network/DB connection.
-    """
-    # 1. Explicit QA run marker (generated/transmitted by the launcher or QA compose).
+def _require_run_marker(env: Mapping[str, str]) -> None:
+    """Marqueur de run explicite (genere par le launcher ou la compose QA)."""
     if env.get(QA_MODE_ENV, "").strip() != "1":
         raise QaGuardError("QA_MODE_ABSENT")
     if not env.get(QA_TOKEN_ENV, "").strip():
         raise QaGuardError("QA_RUN_TOKEN_ABSENT")
 
-    # 2. Sole authority: TEST_DATABASE_URL. No fallback to DATABASE_URL.
+
+def _parse_target(env: Mapping[str, str]) -> tuple[str, int, str]:
+    """Autorite unique : TEST_DATABASE_URL. Aucun repli sur DATABASE_URL."""
     raw_url = env.get(TEST_DB_ENV, "").strip()
     if not raw_url:
         raise QaGuardError("TEST_DATABASE_URL_ABSENT")
 
-    # 3. No managed-platform env alongside a destructive op.
     _reject_if_railway_env(env)
 
-    # 4. Parse with a reliable parser.
     try:
         url = make_url(raw_url)
     except ArgumentError as exc:
@@ -166,26 +161,65 @@ def evaluate_qa_database_target(env: Mapping[str, str]) -> QaTarget:
         raise QaGuardError("HOST_MISSING")
     if port is None:
         raise QaGuardError("PORT_MISSING")
+    return host, port, dbname
 
-    # 5. Database name must be exactly yunicity_qa.
+
+def _reject_unsafe_location(host: str, port: int) -> None:
+    """Port de dev, hotes manages/distants, puis allowlist finale hote+port."""
+    if port == _DEV_DB_PORT:
+        raise QaGuardError("DEV_PORT_5434")
+    for substring in _FORBIDDEN_HOST_SUBSTRINGS:
+        if substring in host:
+            raise QaGuardError(f"HOST_FORBIDDEN:{substring}")
+    if (host, port) not in _ALLOWED_HOST_PORTS:
+        raise QaGuardError(f"HOST_PORT_NOT_ALLOWED:{host}:{port}")
+
+
+def evaluate_pytest_database_target(env: Mapping[str, str]) -> QaTarget:
+    """Valide la base JETABLE des tests backend (C3.1-R1G).
+
+    Frere de :func:`evaluate_qa_database_target`, et non un assouplissement : les
+    memes exigences de marqueur, d'hote et de port s'appliquent, mais le nom doit
+    porter le prefixe reserve ``yunicity_test_`` suivi d'un suffixe non vide.
+    ``yunicity_qa`` est refuse explicitement — c'est tout l'objet du decouplage :
+    la suite pytest ne doit plus detruire la baseline de revue.
+
+    Pur : lit un mapping d'environnement, n'ouvre ni socket ni connexion.
+    """
+    _require_run_marker(env)
+    host, port, dbname = _parse_target(env)
+
+    if dbname in _FORBIDDEN_DB_NAMES:
+        raise QaGuardError(f"DBNAME_FORBIDDEN:{dbname}")
+    has_prefix = dbname.startswith(PYTEST_DB_NAME_PREFIX)
+    suffix = dbname[len(PYTEST_DB_NAME_PREFIX) :] if has_prefix else ""
+    if dbname == QA_DB_NAME or not suffix:
+        raise QaGuardError(f"DBNAME_NOT_DISPOSABLE_TEST:{dbname or '<empty>'}")
+
+    _reject_unsafe_location(host, port)
+    return QaTarget(host=host, port=port, dbname=dbname)
+
+
+def evaluate_qa_database_target(env: Mapping[str, str]) -> QaTarget:
+    """Validate the destructive **database target** only (marker + TEST_DATABASE_URL triplet).
+
+    This is what per-test destructive fixtures need: it guarantees the only reachable
+    destructive database is ``yunicity_qa`` on an authorized host/port. It intentionally
+    does NOT enforce external-provider hermeticity — a test may set mocked provider env
+    (e.g. an R2 key) without that making a DB drop against ``yunicity_qa`` any less safe.
+
+    Pure: takes an explicit env mapping, opens no network/DB connection.
+    """
+    _require_run_marker(env)
+    host, port, dbname = _parse_target(env)
+
+    # Database name must be exactly yunicity_qa.
     if dbname in _FORBIDDEN_DB_NAMES:
         raise QaGuardError(f"DBNAME_FORBIDDEN:{dbname}")
     if dbname != QA_DB_NAME:
         raise QaGuardError(f"DBNAME_NOT_QA:{dbname or '<empty>'}")
 
-    # 6. Reject dev port explicitly (clearer than the allowlist miss).
-    if port == _DEV_DB_PORT:
-        raise QaGuardError("DEV_PORT_5434")
-
-    # 7. Reject managed/remote hosts explicitly.
-    for substring in _FORBIDDEN_HOST_SUBSTRINGS:
-        if substring in host:
-            raise QaGuardError(f"HOST_FORBIDDEN:{substring}")
-
-    # 8. Final allowlist — host+port pair must be one of the sanctioned triplets.
-    if (host, port) not in _ALLOWED_HOST_PORTS:
-        raise QaGuardError(f"HOST_PORT_NOT_ALLOWED:{host}:{port}")
-
+    _reject_unsafe_location(host, port)
     return QaTarget(host=host, port=port, dbname=dbname)
 
 
@@ -199,6 +233,11 @@ def evaluate_qa_guard(env: Mapping[str, str]) -> QaTarget:
     target = evaluate_qa_database_target(env)
     _reject_active_external_providers(env)
     return target
+
+
+def ensure_pytest_database_target() -> QaTarget:
+    """Garde de la base jetable des tests backend, lisant l'environnement du process."""
+    return evaluate_pytest_database_target(os.environ)
 
 
 def ensure_qa_database_target() -> QaTarget:

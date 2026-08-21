@@ -12,6 +12,7 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Dialog, Drawer } from "@yunicity/ui/primitives";
+import { NAVIGATION_MODAL_Z_INDEX } from "@/lib/layout/navigation-overlay-layers";
 
 import { ExplorerPanel } from "@/components/explorer/explorer-panel";
 import { useExplorerCityState } from "@/hooks/use-explorer-city-state";
@@ -132,6 +133,7 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
           title="Explorer Reims"
           initialFocusRef={inputRef}
           restoreFocus={restoreFocus}
+          zIndex={NAVIGATION_MODAL_Z_INDEX}
         >
           {panel}
         </Drawer>

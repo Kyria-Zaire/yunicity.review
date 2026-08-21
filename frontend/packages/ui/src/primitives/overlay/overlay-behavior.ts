@@ -85,6 +85,46 @@ export function overlayContainerClass(side: OverlaySide): string {
   return "";
 }
 
+/* ----------------------------- readiness d'entrée --------------------------- */
+
+/**
+ * Phase d'entrée exposée au DOM (C3.1-R1E).
+ *
+ * `entering` tant que le panneau translate encore : sa géométrie n'est PAS celle de
+ * l'état ouvert. Mesurer ou cliquer pendant cette phase donne un résultat dépendant
+ * de la frame d'animation. `entered` = position finale atteinte.
+ *
+ * Purement informatif : aucun comportement (focus, Escape, inertie, fermeture) n'en
+ * dépend. Un consommateur qui l'ignore obtient exactement le comportement antérieur.
+ */
+export type OverlayPhase = "entering" | "entered";
+
+export function overlayPhase(settled: boolean): OverlayPhase {
+  return settled ? "entered" : "entering";
+}
+
+/**
+ * Durée de transition la plus longue déclarée, en millisecondes.
+ *
+ * `transition-duration` peut lister plusieurs valeurs ("0.2s, 0.3s"). Une valeur
+ * absente, nulle ou illisible vaut 0 : sans transition, `transitionend` ne sera
+ * jamais émis et la readiness doit être acquise immédiatement plutôt que bloquée
+ * (cas `prefers-reduced-motion`, et jsdom qui ne calcule aucun style Tailwind).
+ */
+export function longestTransitionMs(durations: string): number {
+  return durations
+    .split(",")
+    .reduce((longest, raw) => Math.max(longest, parseDurationMs(raw.trim())), 0);
+}
+
+function parseDurationMs(value: string): number {
+  const match = /^(-?[\d.]+)(ms|s)$/.exec(value);
+  if (!match) return 0;
+  const amount = Number.parseFloat(match[1] as string);
+  if (!Number.isFinite(amount) || amount <= 0) return 0;
+  return match[2] === "s" ? amount * 1000 : amount;
+}
+
 /* ------------------------------- verrou scroll ------------------------------ */
 
 /** Contrat minimal satisfait par `HTMLElement` — et par un double de test. */

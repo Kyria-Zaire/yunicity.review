@@ -46,6 +46,7 @@ from app.core.passport_constants import (
     PassportTierCode,
 )
 from app.core.security import hash_password
+from app.core.social_notification_constants import SocialNotificationType
 from app.core.tribe_constants import TribeCategory, TribeMemberRole, TribeVisibility
 from app.db.seeds.passport_tiers import seed_passport_tiers
 from app.db.seeds.reims_neighborhoods import seed_reims_neighborhoods
@@ -467,9 +468,24 @@ async def seed_qa_fixtures(
 
     # --- Notifications (rendering only — business generation is T3) ----------
     created_notifs = 0
+    # Les types viennent du CONTRAT PUBLIC, jamais d'un littéral (C3.1-R1H.1) :
+    # `user_notifications.type` est un VARCHAR(64) sans contrainte, donc une valeur
+    # hors contrat s'écrit en silence et ne casse qu'à la LECTURE de l'inbox — ce qui
+    # renvoyait 500 sur chaque page authentifiée. Passer par l'énumération transforme
+    # une faute de frappe en erreur d'import.
+    # Les deux types choisis sont cohérents avec ce que la baseline sème par ailleurs :
+    # un passeport pour le citoyen A, et deux événements locaux.
     notifs_spec = (
-        (_uid("notif-1"), "system", "Bienvenue sur Yunicity QA"),
-        (_uid("notif-2"), "system", "Un événement approche près de chez vous"),
+        (
+            _uid("notif-1"),
+            SocialNotificationType.PASSPORT_LEVEL_UNLOCKED.value,
+            "Votre Passport Yunicity a franchi un nouveau niveau",
+        ),
+        (
+            _uid("notif-2"),
+            SocialNotificationType.LOCAL_EVENT_PUBLISHED.value,
+            "Un événement approche près de chez vous",
+        ),
     )
     for uid_, ntype, message in notifs_spec:
         created_notifs += await _get_or_add(

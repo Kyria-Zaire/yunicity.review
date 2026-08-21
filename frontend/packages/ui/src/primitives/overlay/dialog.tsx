@@ -24,6 +24,7 @@ export type DialogProps = {
   initialFocusRef?: RefObject<HTMLElement | null>;
   zIndex?: number;
   className?: string;
+  chrome?: "default" | "bare";
   children: ReactNode;
 };
 

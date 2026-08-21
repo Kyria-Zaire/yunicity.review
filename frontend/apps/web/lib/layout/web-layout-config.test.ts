@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  WEB_CITIZEN_ACCOUNT_MENU,
   WEB_CITIZEN_DESTINATIONS,
   WEB_CITIZEN_MOBILE_BOTTOM_NAV,
   WEB_CITIZEN_NAV_PRIMARY,
   WEB_CITIZEN_SEARCH_ACCESS,
   WEB_CITIZEN_SIDEBAR_STRATEGIC,
   WEB_CITIZEN_TOP_NAV_CENTER,
+  WEB_CITIZEN_TOP_NAV_UTILITY,
   isWebNavActive,
 } from "./web-layout-config";
 
@@ -78,6 +80,21 @@ describe("Accès Recherche — fonction stratégique, pas une destination", () =
 
   it("est libellé « Explorer Reims » (vocabulaire Navbar V3)", () => {
     expect(WEB_CITIZEN_SEARCH_ACCESS.label).toBe("Explorer Reims");
+  });
+});
+
+describe("Menu Profil — C3.1-R1", () => {
+  it("conserve Profil et Paramètres, sans Passport", () => {
+    const labels = WEB_CITIZEN_ACCOUNT_MENU.map((item) => item.label);
+    expect(labels).toEqual(["Profil", "Paramètres"]);
+    expect(WEB_CITIZEN_ACCOUNT_MENU.map((item) => item.href)).toEqual(["/profile/me", "/settings"]);
+    for (const forbidden of ["Passport", "Notifications", "Discussions"] as const) {
+      expect(labels).not.toContain(forbidden);
+    }
+  });
+
+  it("ne retire pas les Notifications du header desktop", () => {
+    expect(WEB_CITIZEN_TOP_NAV_UTILITY.map((item) => item.href)).toEqual(["/notifications"]);
   });
 });
 

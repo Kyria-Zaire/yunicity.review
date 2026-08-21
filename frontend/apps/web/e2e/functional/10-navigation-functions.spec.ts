@@ -233,7 +233,12 @@ test.describe("C3.1-T3 — fonctions de navigation", () => {
       const nav = menuNavigation(page);
       await expect(nav.getByRole("link", { name: "Quartiers" }).first()).toBeVisible();
       await expect(nav.getByRole("link", { name: "Discussions" })).toBeVisible();
-      await expect(nav.getByRole("button", { name: "Se déconnecter" })).toBeVisible();
+      await expect(nav.getByRole("link", { name: "Passport" })).toBeVisible();
+      await expect(nav.getByRole("link", { name: "Notifications" })).toBeVisible();
+      await expect(nav.getByRole("link", { name: "Profil" })).toHaveCount(0);
+      await expect(nav.getByRole("link", { name: "Paramètres" })).toHaveCount(0);
+      await expect(nav.getByRole("button", { name: "Se déconnecter" })).toHaveCount(0);
+      await expect(nav.getByText("Compte")).toHaveCount(0);
       await expect(nav.getByText("Offres et partenaires")).toHaveCount(0);
 
       if (viewport.menuOverlay === "popover") {
@@ -440,7 +445,7 @@ test.describe("C3.1-T3 — fonctions de navigation", () => {
     expect(Math.abs(afterResize!.panel.right - afterResize!.trigger.right)).toBeLessThanOrEqual(2);
   });
 
-  test("390 — Menu connecté : Compte accessible par défilement interne", async ({
+  test("390 — Menu connecté : Passport et Notifications sans groupe Compte", async ({
     citizenAPage: page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -457,18 +462,13 @@ test.describe("C3.1-T3 — fonctions de navigation", () => {
     const nav = menuNavigation(page);
     const pageScrollBefore = await page.evaluate(() => window.scrollY);
 
-    const scroller = page.locator("[data-yunicity-overlay-scroll]").first();
-    await expect(scroller).toBeVisible();
-    await scroller.evaluate((element) => {
-      element.scrollTop = element.scrollHeight;
-    });
-    await nav.getByRole("button", { name: "Se déconnecter" }).evaluate((element) => {
-      element.scrollIntoView({ block: "nearest" });
-    });
-
-    await expect(nav.getByRole("link", { name: "Profil" })).toBeInViewport();
-    await expect(nav.getByRole("link", { name: "Paramètres" })).toBeInViewport();
-    await expect(nav.getByRole("button", { name: "Se déconnecter" })).toBeInViewport();
+    await expect(nav.getByRole("link", { name: "Passport" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Notifications" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Discussions" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Profil" })).toHaveCount(0);
+    await expect(nav.getByRole("link", { name: "Paramètres" })).toHaveCount(0);
+    await expect(nav.getByRole("button", { name: "Se déconnecter" })).toHaveCount(0);
+    await expect(nav.getByText("Compte")).toHaveCount(0);
     expect(await page.evaluate(() => window.scrollY)).toBe(pageScrollBefore);
     expect(await page.evaluate(() => document.body.style.overflow)).toBe("hidden");
   });

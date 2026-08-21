@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
+from collections.abc import Generator, Iterator
 from io import BytesIO
 from unittest.mock import MagicMock, patch
 
@@ -26,12 +26,22 @@ STORY_MEDIA_BUCKET = "yunicity-media-test"
 
 
 @pytest.fixture(autouse=True)
-def story_media_r2_env(monkeypatch: pytest.MonkeyPatch) -> None:
+def story_media_r2_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    """Ces tests portent sur le backend R2 : ils l'exigent EXPLICITEMENT.
+
+    Sans cela, ils héritaient de la configuration du conteneur — la stack QA force
+    ``STORY_MEDIA_STORAGE_BACKEND=filesystem`` — et recevaient une URL relative
+    ``/api/v1/story-media/...`` au lieu de l'URL CDN attendue. Le nettoyage du cache
+    au teardown empêche la configuration R2 de fuir vers les tests suivants.
+    """
+    monkeypatch.setenv("STORY_MEDIA_STORAGE_BACKEND", "r2")
     monkeypatch.setenv("LOCAL_VIDEO_R2_ENDPOINT", "https://example.r2.cloudflarestorage.com")
     monkeypatch.setenv("LOCAL_VIDEO_R2_BUCKET", STORY_MEDIA_BUCKET)
     monkeypatch.setenv("LOCAL_VIDEO_R2_ACCESS_KEY_ID", "test-access-key")
     monkeypatch.setenv("LOCAL_VIDEO_R2_SECRET_ACCESS_KEY", "test-secret-key")
     monkeypatch.setenv("LOCAL_VIDEO_CDN_BASE_URL", STORY_MEDIA_CDN_BASE)
+    get_settings.cache_clear()
+    yield
     get_settings.cache_clear()
 
 

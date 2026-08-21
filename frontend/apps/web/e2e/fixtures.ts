@@ -30,7 +30,13 @@ import {
  * C3.1-T3-R1: at most one API login per seeded actor per worker. Browser contexts
  * stay live for the worker lifetime so refresh-token rotation remains valid.
  */
-export const API_URL = process.env.E2E_API_URL ?? "http://localhost:8010";
+// C3.1-R1M : hote IPv4 explicite. `localhost` resout `::1` EN PREMIER (mesure
+// node dns.lookup), or depuis le durcissement loopback QA les services ne sont
+// lies qu'en IPv4. WebKit n'a alors emis AUCUNE requete /api/v1/* : la page
+// restait bloquee 60 s sur « Chargement de la session… », chaque echec faisait
+// recreer le worker par Playwright, donc un login de plus — 6 logins pour un
+// budget produit de 5. Le 429 etait la CONSEQUENCE des echecs, pas leur cause.
+export const API_URL = process.env.E2E_API_URL ?? "http://127.0.0.1:8010";
 
 export type QaUser = {
   email: string;

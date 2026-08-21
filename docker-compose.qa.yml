@@ -2,7 +2,9 @@
 #
 # ⚠️  QA ONLY — disposable, hermetic-by-configuration stack.
 #     Distinct from the dev stack (docker-compose.yml): distinct project name,
-#     distinct container names, distinct host ports, NO persistent volumes.
+#     distinct container names, distinct host ports.
+#     Postgres/Redis stay tmpfs. Story/post media uses named volume
+#     yunicity-qa-story-media (wiped by `down -v` or launcher reset).
 #
 # Always drive it with an explicit project name AND this file:
 #   docker compose -p yunicity-qa -f docker-compose.qa.yml <cmd>
@@ -24,7 +26,7 @@ services:
       POSTGRES_USER: yunicity_qa
       POSTGRES_PASSWORD: yunicity_qa_password
     ports:
-      - "5455:5432"
+      - "127.0.0.1:5455:5432"
     # No named volume: data lives only in the container layer -> disposable.
     volumes:
       - ./infra/docker/postgres/init:/docker-entrypoint-initdb.d:ro
@@ -42,7 +44,7 @@ services:
     image: redis:7-alpine
     container_name: yunicity-redis-qa
     ports:
-      - "6399:6379"
+      - "127.0.0.1:6399:6379"
     tmpfs:
       - /data
     healthcheck:
@@ -52,6 +54,37 @@ services:
       retries: 10
     restart: "no"
 
+  # C3.1-R1F — initialisation du volume media QA.
+  #
+  # Docker cree le point de montage d'un volume nomme en root:root quand le chemin
+  # n'existe pas dans l'image : l'utilisateur applicatif (`app`) ne peut alors pas y
+  # ecrire, ce qui imposait auparavant `user: "0:0"` sur le backend.
+  #
+  # Ce composant court s'execute UNE fois, en root, uniquement pour creer le
+  # repertoire cible et lui donner l'UID/GID lus SUR L'IMAGE elle-meme (aucun UID
+  # magique, donc aucune derive silencieuse si l'image change), puis il sort. Le
+  # backend ne demarre qu'apres sa reussite et reste strictement non-root.
+  # L'image et le runtime de production ne sont pas modifies.
+  story-media-init-qa:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: yunicity-story-media-init-qa
+    user: "0:0"
+    entrypoint: ["sh", "-c"]
+    # Liste a UN element : `sh -c <script>`. Un scalaire replie serait decoupe en
+    # arguments par Compose et le script serait tronque silencieusement.
+    command:
+      - |
+        set -e
+        mkdir -p /var/yunicity-qa/story-media
+        chown "$$(id -u app):$$(id -g app)" /var/yunicity-qa/story-media
+        chmod 750 /var/yunicity-qa/story-media
+        ls -ldn /var/yunicity-qa/story-media
+    volumes:
+      - yunicity-qa-story-media:/var/yunicity-qa/story-media
+    restart: "no"
+
   backend-qa:
     build:
       context: ./backend
@@ -59,7 +92,7 @@ services:
     container_name: yunicity-backend-qa
     command: uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8000 --reload
     ports:
-      - "8010:8000"
+      - "127.0.0.1:8010:8000"
     # NOTE: no env_file — inline QA config only, so no real provider key can leak in.
     environment:
       APP_NAME: Yunicity QA API
@@ -79,17 +112,25 @@ services:
       LOCAL_VIDEO_STORAGE_BACKEND: filesystem
       MEDIA_UPLOAD_DIR: /tmp/yunicity-uploads
       MEDIA_PUBLIC_BASE_URL: http://localhost:8010
+      STORY_MEDIA_STORAGE_BACKEND: filesystem
+      STORY_MEDIA_UPLOAD_DIR: /var/yunicity-qa/story-media
       # QA run marker — lets the destructive-test policy (pytest_sessionstart / guard)
       # validate this container as an authorized QA target (C3-F0-T1-R1).
       YUNICITY_QA_MODE: "1"
       YUNICITY_QA_RUN_TOKEN: qa-compose-run-token
     volumes:
       - ./backend:/app
+      - yunicity-qa-story-media:/var/yunicity-qa/story-media
+      # C3.1-R1F/R1G — le test de contrat non-root lit ce fichier. Montage LECTURE
+      # SEULE : le test reste statique et ne depend d'aucun daemon Docker.
+      - ./docker-compose.qa.yml:/docker-compose.qa.yml:ro
     depends_on:
       postgres-qa:
         condition: service_healthy
       redis-qa:
         condition: service_healthy
+      story-media-init-qa:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/v1/health"]
       interval: 10s
@@ -97,3 +138,6 @@ services:
       retries: 5
       start_period: 40s
     restart: "no"
+
+volumes:
+  yunicity-qa-story-media:

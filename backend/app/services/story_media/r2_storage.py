@@ -6,6 +6,7 @@ import boto3  # type: ignore[import-untyped]
 from app.core.config import Settings
 from app.core.errors import AppError
 from app.core.story_media_policy import validate_story_media_storage_config
+from app.services.story_media.filesystem_storage import StoryMediaFilesystemStorage
 from botocore.client import Config  # type: ignore[import-untyped]
 
 
@@ -51,5 +52,10 @@ class StoryMediaR2Storage:
         )
 
 
-def build_story_media_storage(settings: Settings) -> StoryMediaR2Storage:
+def build_story_media_storage(
+    settings: Settings,
+) -> StoryMediaR2Storage | StoryMediaFilesystemStorage:
+    validate_story_media_storage_config(settings)
+    if settings.story_media_storage_backend == "filesystem":
+        return StoryMediaFilesystemStorage(settings)
     return StoryMediaR2Storage(settings)

@@ -6,8 +6,14 @@ import { defineConfig, devices } from "@playwright/test";
  * Fail-closed: both the web app and the API must be local. Any non-local target
  * (a production/Railway URL) aborts before a single test runs.
  */
-const QA_WEB_URL = process.env.E2E_WEB_URL ?? "http://localhost:3002";
-const QA_API_URL = process.env.E2E_API_URL ?? "http://localhost:8010";
+// C3.1-R1M : hote IPv4 explicite. `localhost` resout `::1` EN PREMIER (mesure
+// node dns.lookup), or depuis le durcissement loopback QA les services ne sont
+// lies qu'en IPv4. WebKit n'a alors emis AUCUNE requete /api/v1/* : la page
+// restait bloquee 60 s sur « Chargement de la session… », chaque echec faisait
+// recreer le worker par Playwright, donc un login de plus — 6 logins pour un
+// budget produit de 5. Le 429 etait la CONSEQUENCE des echecs, pas leur cause.
+const QA_WEB_URL = process.env.E2E_WEB_URL ?? "http://127.0.0.1:3002";
+const QA_API_URL = process.env.E2E_API_URL ?? "http://127.0.0.1:8010";
 
 const targets: ReadonlyArray<readonly [string, string]> = [
   ["E2E_WEB_URL", QA_WEB_URL],
@@ -57,14 +63,22 @@ export default defineConfig({
       use: { ...CHROME, viewport: { width: 1366, height: 900 } },
     },
   ],
+  // C3.1-R1 WebKit : config séparée `playwright.webkit-r1.config.ts`
+  // (`pnpm exec playwright test --config=playwright.webkit-r1.config.ts`).
+  // Ne pas ajouter un projet WebKit ici : `playwright test` resterait Chromium-only.
+  // C3.1-R1I — Playwright ne doit JAMAIS démarrer `next dev` : toute preuve porte
+  // sur le serveur production-like monté par `sh scripts/qa-web-server.sh`. Si ce
+  // serveur n'écoute pas, cette commande échoue en le disant, au lieu de fabriquer
+  // silencieusement un serveur de développement.
   webServer: {
-    command: "pnpm dev",
+    command: "node scripts/e2e-require-server.mjs",
     cwd: __dirname,
     url: QA_WEB_URL,
     reuseExistingServer: true,
     timeout: 240_000,
     env: {
-      NEXT_PUBLIC_API_URL: QA_API_URL,
+      NEXT_PUBLIC_API_URL: "",
+      API_PROXY_TARGET: "http://127.0.0.1:8010",
       NEXT_PUBLIC_WEB_APP_URL: QA_WEB_URL,
     },
   },

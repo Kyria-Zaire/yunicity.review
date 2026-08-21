@@ -20,7 +20,9 @@ import {
   closedTransform,
   enteredTransform,
   FOCUSABLE_SELECTOR,
+  longestTransitionMs,
   overlayContainerClass,
+  overlayPhase,
   panelPositionClass,
   resolveTabTrap,
   type OverlayCloseReason,
@@ -54,6 +56,14 @@ export type OverlayPanelProps = {
   initialFocusRef?: RefObject<HTMLElement | null>;
   zIndex?: number;
   className?: string;
+  /**
+   * Habillage du panneau. `default` : en-tete titre + corps rembourre.
+   * `bare` (C3.1-R1L.1) : plein viewport, sans carte ni rembourrage, pour une
+   * surface dont le CONTENU est le sujet — une visionneuse d'image. Le contrat
+   * d'accessibilite reste identique : role, nom accessible (titre rendu en
+   * `sr-only`), piege a focus, Escape, bouton de fermeture, verrou de scroll.
+   */
+  chrome?: "default" | "bare";
   children: ReactNode;
 };
 
@@ -71,8 +81,10 @@ export function OverlayPanel({
   initialFocusRef,
   zIndex = yunicitySemantic.z.modal,
   className,
+  chrome = "default",
   children,
 }: OverlayPanelProps) {
+  const bare = chrome === "bare";
   const panelId = useId();
   const titleId = `${panelId}-title`;
   const descriptionId = `${panelId}-description`;
@@ -87,7 +99,14 @@ export function OverlayPanel({
   // dans la pile avec sa racine.
   const containerRef = useRef<HTMLElement | null>(null);
   const [entered, setEntered] = useState(false);
+  // `entered` déclenche la transition ; `settled` marque sa FIN. Les deux diffèrent :
+  // pendant la translation, la géométrie du panneau n'est pas celle de l'état ouvert.
+  // Exposée au DOM, cette phase donne aux consommateurs (et aux tests) une readiness
+  // explicite au lieu d'une attente arbitraire. Purement informative : aucun
+  // comportement de l'overlay n'en dépend.
+  const [settled, setSettled] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const settleTargetRef = useRef<HTMLElement | null>(null);
 
   // Refs miroir : le gestionnaire clavier est attaché une fois par ouverture et doit lire
   // les valeurs courantes sans se ré-attacher (ni provoquer de double émission).
@@ -144,6 +163,12 @@ export function OverlayPanel({
     // Entrée dans la pile : cet overlay devient le sommet, tout le reste (application ET
     // overlays sous-jacents) passe inerte.
     const leaveStack = overlayRoot ? registerOverlay(overlayRoot) : () => undefined;
+    function onTransitionEnd(event: TransitionEvent) {
+      if (event.propertyName !== "transform") return;
+      if (event.target !== panelRef.current) return;
+      setSettled(true);
+    }
+
     const frame = window.requestAnimationFrame(() => {
       setEntered(true);
       const panel = panelRef.current;
@@ -152,6 +177,19 @@ export function OverlayPanel({
       const fallbackTarget = focusables && focusables.length > 0 ? focusables[0] : panel;
       const target = explicitTarget?.isConnected ? explicitTarget : fallbackTarget;
       target?.focus();
+
+      // Sans transition déclarée (`prefers-reduced-motion`, environnement sans CSS),
+      // `transitionend` ne sera jamais émis : la position finale est déjà atteinte.
+      if (!panel) {
+        setSettled(true);
+        return;
+      }
+      if (longestTransitionMs(window.getComputedStyle(panel).transitionDuration) <= 0) {
+        setSettled(true);
+        return;
+      }
+      settleTargetRef.current = panel;
+      panel.addEventListener("transitionend", onTransitionEnd);
     });
 
     function onKeyDown(event: KeyboardEvent) {
@@ -182,6 +220,9 @@ export function OverlayPanel({
     return () => {
       document.removeEventListener("keydown", onKeyDown, true);
       window.cancelAnimationFrame(frame);
+      settleTargetRef.current?.removeEventListener("transitionend", onTransitionEnd);
+      settleTargetRef.current = null;
+      setSettled(false);
       releaseScrollLock();
       // Le focus n'est restitué QUE si cet overlay était au sommet. Sinon (fermeture dans le
       // désordre : un overlay sous-jacent se ferme alors qu'un autre est encore ouvert), on
@@ -214,6 +255,7 @@ export function OverlayPanel({
           className={cx("fixed inset-0", overlayContainerClass(side))}
           style={{ zIndex }}
           data-yunicity-overlay={side}
+          data-yunicity-overlay-state={overlayPhase(settled)}
         >
           {/* Overlay : rend l'arrière-plan non cliquable. Non focalisable — la sortie clavier
               passe par Escape et par le bouton Close, tous deux dans le piège de focus. */}
@@ -233,15 +275,41 @@ export function OverlayPanel({
             aria-describedby={description ? descriptionId : undefined}
             tabIndex={-1}
             className={cx(
-              side === "center" ? "relative" : "absolute",
-              "flex flex-col bg-yunicity-canvas shadow-yunicity-lg outline-none",
+              // `bare` sort du flux : enfant flex, le panneau etait RETRECI par le
+              // padding du conteneur (mesure : 358 px pour un viewport de 390).
+              bare ? "absolute inset-0" : side === "center" ? "relative" : "absolute",
+              "flex flex-col outline-none",
+              bare ? "max-w-none" : "bg-yunicity-canvas shadow-yunicity-lg",
               "transition-transform duration-yunicity-base ease-yunicity-standard motion-reduce:transition-none",
-              panelPositionClass(side),
+              bare ? undefined : panelPositionClass(side),
               className,
             )}
             style={{ transform: entered ? enteredTransform(side) : closedTransform(side) }}
           >
-            <div className="flex items-start justify-between gap-3 border-b border-yunicity-divider px-4 py-3">
+            {bare ? (
+              <>
+                {/* Nom accessible conserve : `aria-labelledby` pointe toujours ici. */}
+                <h2 id={titleId} className="sr-only">
+                  {title}
+                </h2>
+                {description ? (
+                  <p id={descriptionId} className="sr-only">
+                    {description}
+                  </p>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => requestClose("close-button")}
+                  aria-label={closeLabel}
+                  className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex min-h-yunicity-touch min-w-yunicity-touch items-center justify-center rounded-yunicity-pill bg-black/60 text-white transition-colors duration-yunicity-fast motion-reduce:transition-none hover:bg-black/75 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                >
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" aria-hidden="true" focusable="false">
+                    <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </>
+            ) : (
+              <div className="flex items-start justify-between gap-3 border-b border-yunicity-divider px-4 py-3">
               <div className="min-w-0">
                 <h2 id={titleId} className="text-base font-bold text-yunicity-ink">
                   {title}
@@ -262,10 +330,11 @@ export function OverlayPanel({
                   <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 </svg>
               </button>
-            </div>
+              </div>
+            )}
             <div
               className={cx(
-                "min-h-0 flex-1 overflow-y-auto p-4",
+                bare ? "min-h-0 flex-1 overflow-hidden" : "min-h-0 flex-1 overflow-y-auto p-4",
                 side === "bottom" && "max-h-[calc(85dvh-4.75rem)]",
               )}
               data-yunicity-overlay-scroll=""

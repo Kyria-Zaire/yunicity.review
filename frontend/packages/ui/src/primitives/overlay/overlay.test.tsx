@@ -83,6 +83,44 @@ describe("Overlay — structure et sémantique", () => {
     expect(root?.parentElement).toBe(document.body);
   });
 
+  it("expose la phase d'entree sur le conteneur d'overlay (C3.1-R1E)", async () => {
+    render(
+      <Sheet open title="Filtres">
+        <PanelContent />
+      </Sheet>,
+    );
+
+    const dialog = await screen.findByRole("dialog");
+    const overlayContainer = dialog.closest("[data-yunicity-overlay]");
+    expect(overlayContainer).not.toBeNull();
+
+    // Sans transition declaree (jsdom ne calcule aucun style Tailwind), la position
+    // finale est atteinte immediatement : la readiness ne doit pas rester bloquee.
+    await waitFor(() => {
+      expect(overlayContainer?.getAttribute("data-yunicity-overlay-state")).toBe("entered");
+    });
+  });
+
+  it("ne laisse aucune phase residuelle apres fermeture (C3.1-R1E)", async () => {
+    const { rerender } = render(
+      <Sheet open title="Filtres">
+        <PanelContent />
+      </Sheet>,
+    );
+    await screen.findByRole("dialog");
+
+    rerender(
+      <Sheet open={false} title="Filtres">
+        <PanelContent />
+      </Sheet>,
+    );
+
+    await waitFor(() => {
+      expect(document.querySelector("[data-yunicity-overlay-state]")).toBeNull();
+    });
+  });
+
+
   it("expose role=dialog et aria-modal", () => {
     render(
       <Sheet open title="Filtres">

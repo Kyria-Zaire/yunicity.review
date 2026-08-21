@@ -33,9 +33,9 @@ import {
   FeedMobileComposer,
   FeedMobileHeader,
   FeedMobileStoriesRail,
-  FeedMobileViewPills,
 } from "@/components/feed/mobile";
 import { LocalVideoTeaserSection } from "@/components/videos/local-video-teaser-section";
+import { FEED_MOBILE_CONTENT_PADDING_CLASS } from "@/lib/layout/feed-mobile-full-bleed";
 import { useFeed } from "@/hooks/use-feed";
 import { useFeedPortalContext } from "@/hooks/use-feed-portal-context";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
@@ -204,25 +204,39 @@ export function FeedPortalScreen() {
   const feedStates = (
     <>
       {viewHint ? (
-        <p className="text-xs leading-relaxed text-neutral-500">{viewHint}</p>
-      ) : null}
-
-      {reportMessage ? (
-        <p className="rounded-xl bg-yunicity-primary-soft px-4 py-3 text-sm text-yunicity-primary">
-          {reportMessage}
+        <p className={`text-xs leading-relaxed text-neutral-500 ${FEED_MOBILE_CONTENT_PADDING_CLASS}`}>
+          {viewHint}
         </p>
       ) : null}
 
-      {isLoading ? <FeedLoadingState /> : null}
-      {!isLoading && error ? <FeedErrorState onRetry={() => void refresh()} /> : null}
+      {reportMessage ? (
+        <div className={FEED_MOBILE_CONTENT_PADDING_CLASS}>
+          <p className="rounded-xl bg-yunicity-primary-soft px-4 py-3 text-sm text-yunicity-primary">
+            {reportMessage}
+          </p>
+        </div>
+      ) : null}
+
+      {isLoading ? (
+        <div className={FEED_MOBILE_CONTENT_PADDING_CLASS}>
+          <FeedLoadingState />
+        </div>
+      ) : null}
+      {!isLoading && error ? (
+        <div className={FEED_MOBILE_CONTENT_PADDING_CLASS}>
+          <FeedErrorState onRetry={() => void refresh()} />
+        </div>
+      ) : null}
 
       {!isLoading && !error && leftNav === "saved" ? (
-        <FeedSavedEventsPanel events={portal.savedEvents} city={city} />
+        <div className={FEED_MOBILE_CONTENT_PADDING_CLASS}>
+          <FeedSavedEventsPanel events={portal.savedEvents} city={city} />
+        </div>
       ) : null}
 
       {!isLoading && !error && leftNav !== "saved" && displayedPosts.length === 0 ? (
         filterOpen && items.length > 0 ? (
-          <div className="rounded-2xl border border-dashed border-yunicity-border bg-white p-8 text-center shadow-sm">
+          <div className={`rounded-2xl border border-dashed border-yunicity-border bg-white p-8 text-center shadow-sm ${FEED_MOBILE_CONTENT_PADDING_CLASS}`}>
             <p className="text-base font-semibold text-neutral-900">
               Aucune publication ne correspond à vos centres d&apos;intérêt
             </p>
@@ -238,12 +252,16 @@ export function FeedPortalScreen() {
             </button>
           </div>
         ) : (
-          <FeedEmptyState city={city} highlights={highlights} />
+          <div className={FEED_MOBILE_CONTENT_PADDING_CLASS}>
+            <FeedEmptyState city={city} highlights={highlights} />
+          </div>
         )
       ) : null}
 
+      {/* C3.1-R1D : liste bord à bord — aucun retrait latéral, séparation par
+          l'espacement discret sur le fond gris du shell. */}
       {!isLoading && !error && leftNav !== "saved" && displayedPosts.length > 0 ? (
-        <ul className="space-y-4" aria-label="Publications du fil local">
+        <ul className="space-y-2" aria-label="Publications du fil local">
           {displayedPosts.map((post) => (
             <li key={post.id}>
               <FeedCard
@@ -258,7 +276,7 @@ export function FeedPortalScreen() {
       ) : null}
 
       {nextCursor && !isLoading && !error && leftNav !== "saved" ? (
-        <div className="flex justify-center pb-2">
+        <div className={`flex justify-center pb-2 ${FEED_MOBILE_CONTENT_PADDING_CLASS}`}>
           <button
             type="button"
             disabled={isLoadingMore}
@@ -274,28 +292,28 @@ export function FeedPortalScreen() {
 
   return (
     <FeedAppShell rightRail={rightRail}>
-      <div className="web-mobile-feed-only min-w-0 flex-1 space-y-4 px-4 pt-1">
+      <div className="web-mobile-feed-only min-w-0 flex-1 space-y-4 pt-1">
         <FeedMobileHeader />
-        <FeedMobileComposer city={city} onSubmit={handleCreate} />
-        <FeedMobileStoriesRail
-          profile={portal.profile}
-          storyRings={portal.storyRings}
-          storyShortcuts={stories}
-        />
-        <FeedMobileViewPills
-          activeView={activeView}
-          onViewChange={(view) => {
-            setLeftNav(null);
-            setActiveView(view);
-          }}
-          filterOpen={filterOpen}
-          onToggleFilter={() => setFilterOpen((v) => !v)}
-        />
-        {filterOpen ? (
-          <p className="rounded-xl bg-white px-3 py-2.5 text-xs text-neutral-500 ring-1 ring-neutral-200/90">
-            {filterHint}
-          </p>
-        ) : null}
+        <div className={`space-y-4 ${FEED_MOBILE_CONTENT_PADDING_CLASS}`}>
+          <FeedMobileComposer city={city} onSubmit={handleCreate} />
+          <FeedMobileStoriesRail
+            profile={portal.profile}
+            storyRings={portal.storyRings}
+            storyShortcuts={stories}
+          />
+          {/* C3.1-R1L : la rangee de pills « Pour vous / Abonnements / Pres de moi »
+              etait un heritage de l'ecran actuel, absente de la maquette mobile
+              canonique. « Abonnements » et « Pres de moi » etaient de surcroit des
+              LIENS vers /subscriptions et /map, sans aucun contrat de fil derriere
+              (GET /feed n'accepte que cursor+limit). Rangee retiree du mobile ;
+              elle n'est PAS remplacee par les onglets medium/desktop. La navigation
+              contextuelle mobile viendra avec la reconstruction visuelle. */}
+          {filterOpen ? (
+            <p className="rounded-xl bg-white px-3 py-2.5 text-xs text-neutral-500 ring-1 ring-neutral-200/90">
+              {filterHint}
+            </p>
+          ) : null}
+        </div>
         {feedStates}
       </div>
 

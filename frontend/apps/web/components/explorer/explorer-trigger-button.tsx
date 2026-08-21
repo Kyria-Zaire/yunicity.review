@@ -40,6 +40,7 @@ export function ExplorerTriggerButton({ variant, className = "" }: ExplorerTrigg
       <button
         {...triggerProps}
         className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-yunicity-primary transition-colors hover:bg-yunicity-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+        data-yunicity-mobile-header-control="explorer"
       >
         <Search className="h-[22px] w-[22px]" strokeWidth={1.75} aria-hidden />
       </button>

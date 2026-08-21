@@ -132,7 +132,12 @@ export function FeedAuthorHeader({
           {identityBlock}
         </div>
       )}
-      {onReport ? <FeedPostOptionsMenu onReport={onReport} /> : null}
+      {onReport ? (
+        <FeedPostOptionsMenu
+          onReport={onReport}
+          authorUserId={post.author.type === "citizen" ? post.author.id : null}
+        />
+      ) : null}
     </header>
   );
 }

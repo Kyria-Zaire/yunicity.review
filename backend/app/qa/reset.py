@@ -8,6 +8,7 @@ import path can reach the destructive statements without passing it first.
 from __future__ import annotations
 
 import logging
+import shutil
 
 import asyncpg
 
@@ -35,4 +36,38 @@ async def reset_qa_schema() -> QaTarget:
     finally:
         await connection.close()
     logger.warning("qa_reset_done", extra={"target": target.confirmation()})
+    _wipe_story_media_volume()
     return target
+
+
+def _wipe_story_media_volume() -> None:
+    """Drop filesystem story/post media living in the isolated QA volume."""
+    from app.core.config import get_settings
+    from app.core.story_media_policy import (
+        allowed_story_media_roots,
+        resolve_story_media_upload_dir,
+    )
+
+    get_settings.cache_clear()
+    settings = get_settings()
+    if settings.story_media_storage_backend != "filesystem":
+        return
+    try:
+        root = resolve_story_media_upload_dir(settings.story_media_upload_dir)
+    except Exception:
+        logger.warning("qa_story_media_wipe_skipped")
+        return
+    if not any(
+        root == allowed.resolve() or root.is_relative_to(allowed.resolve())
+        for allowed in allowed_story_media_roots()
+    ):
+        logger.warning("qa_story_media_wipe_refused", extra={"path": str(root)})
+        return
+    if not root.exists():
+        return
+    for child in root.iterdir():
+        if child.is_dir() and not child.is_symlink():
+            shutil.rmtree(child)
+        else:
+            child.unlink(missing_ok=True)
+    logger.warning("qa_story_media_wiped", extra={"path": str(root)})
