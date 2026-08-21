@@ -4,7 +4,7 @@ import { useExplorerOptional } from "@/components/explorer/explorer-provider";
 import { useNavigationSurfacesOptional } from "@/hooks/use-navigation-surfaces";
 import { WEB_CITIZEN_SEARCH_ACCESS } from "@/lib/layout/web-layout-config";
 import { Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 
 type ExplorerTriggerButtonProps = {
   variant: "compact-mobile" | "medium-rail" | "desktop-text" | "sidebar-expanded";
@@ -27,7 +27,7 @@ export function ExplorerTriggerButton({ variant, className = "" }: ExplorerTrigg
   const label = WEB_CITIZEN_SEARCH_ACCESS.label;
   const triggerProps = {
     type: "button" as const,
-    onClick: openExplorer,
+    onClick: (event: MouseEvent<HTMLButtonElement>) => openExplorer(event.currentTarget),
     "aria-label": label,
     "aria-haspopup": "dialog" as const,
     "aria-expanded": isOpen,

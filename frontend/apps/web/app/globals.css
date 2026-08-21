@@ -10,6 +10,9 @@
   /* WEB-HOME-01C — shell 1440px, colonnes explicites */
   --web-shell-max: 90rem;
   --web-sidebar-width-compact: 5.5rem; /* 88px */
+  /* C3-FEED-M2.1 : rail compact conforme a la maquette. 208px etait excessif
+     (16% du viewport a 1279). clamp -> ~88px a 640, ~102px a 1024, plafond 112px. */
+  --citizen-medium-rail-width: clamp(5.5rem, 10vw, 7rem);
   --web-sidebar-width-full: 16.25rem; /* 260px */
   --web-context-rail-width: 21.25rem; /* 340px */
   --web-context-rail-width-md: 20rem; /* 320px */
@@ -145,6 +148,67 @@ body {
   .feed-mobile-shell .web-three-col {
     padding-left: 1rem;
     padding-right: 1rem;
+  }
+}
+
+/* ——— C3-FEED-M2 : rail du Feed moyen (640 → 1279.98) ———
+   Toutes les regles sont bornees EN HAUT a 1279.98px et scopees a
+   `.citizen-medium-shell`, portee par tout shell qui MONTE explicitement le rail
+   citoyen medium : le desktop >= 1280 et les
+   autres familles de routes ne peuvent pas les recevoir. Le rail medium est
+   masque par defaut, il n'apparait que dans la bande. */
+.citizen-medium-rail-only {
+  display: none;
+}
+
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .citizen-medium-shell .citizen-medium-rail-only {
+    display: flex;
+  }
+
+  /* Le rail desktop compacte (88px, sans libelles ni pied) cede la place. */
+  .citizen-medium-shell .web-sidebar-aside {
+    display: none !important;
+  }
+
+  .citizen-medium-shell .web-three-col {
+    grid-template-columns: var(--citizen-medium-rail-width) minmax(0, 1fr);
+  }
+
+  .citizen-medium-shell .citizen-medium-rail {
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    align-self: start;
+    width: 100%;
+    min-width: 0;
+    /* C3-FEED-M2.2 : `.web-three-col` porte `padding-top: 1rem`, le rail demarre
+       donc 16px plus bas. Avec `height: 100dvh` son bas tombait a 100dvh + 16px
+       et le groupe inferieur sortait du viewport (mesure : bas a 916px pour un
+       viewport de 900). La hauteur est donc bornee sur l'offset reel. */
+    height: calc(100dvh - 1rem);
+    max-height: calc(100dvh - 1rem);
+    /* Aucun scroll interne : la navigation tient dans la hauteur. */
+    overflow: hidden;
+    background: #ffffff;
+    border-right: 1px solid rgb(229 229 229 / 0.8);
+  }
+
+  /* Grammaire visuelle du déclencheur Menu Yunicity dans le rail (complément
+     M2.3) : icône `Grid3x3` NOIRE sur pastille circulaire gris clair. Le
+     composant partagé `CitizenYunicityMenu` n'est pas modifié — seul son rendu
+     DANS ce rail est habillé, les autres surfaces gardent leur tonalité. */
+  /* Le declencheur est enveloppe par `WebSidebarTooltip` : selecteur descendant. */
+  .citizen-medium-shell .citizen-medium-rail [data-rail-label="Menu"] button {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    background: #F1F1F3;
+    color: #111827;
+  }
+
+  .citizen-medium-shell .citizen-medium-rail [data-rail-label="Menu"] button:hover {
+    background: #E6E6EA;
+    color: #111827;
   }
 }
 

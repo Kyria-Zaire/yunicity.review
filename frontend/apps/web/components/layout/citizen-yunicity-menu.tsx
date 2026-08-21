@@ -311,6 +311,7 @@ export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenu
       <>
         {renderModalTrigger(variant)}
         <Drawer
+          returnFocusRef={compactTriggerRef}
           open={isOpen}
           onOpenChange={(next) => {
             if (!next) closeMenu("escape");
@@ -330,6 +331,7 @@ export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenu
       <>
         {renderModalTrigger(variant)}
         <Sheet
+          returnFocusRef={compactTriggerRef}
           open={isOpen}
           onOpenChange={(next) => {
             if (!next) closeMenu("escape");

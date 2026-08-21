@@ -1,5 +1,6 @@
 "use client";
 
+import { CitizenMediumRail } from "@/components/layout/citizen-medium-rail";
 import { CitizenTopNav } from "@/components/layout/citizen-top-nav";
 import { WebSidebar } from "@/components/layout/web-sidebar";
 import { WebMobileStrategicBottomNav } from "@/components/layout/web-mobile-strategic-bottom-nav";
@@ -14,9 +15,18 @@ export function FeedAppShell({
   rightRail?: ReactNode;
 }) {
   return (
-    <div className="web-shell-page feed-mobile-shell min-h-dvh bg-[#F4F5F7]">
+    <div className="web-shell-page feed-mobile-shell citizen-medium-shell min-h-dvh bg-[#F4F5F7]">
       <div className="web-three-col places-shell-grid">
+        {/* C3-FEED-M2 : trois shells explicites pour le Feed.
+            < 640      -> shell mobile gele (les deux rails sont masques) ;
+            640-1279.98 -> `FeedMediumRail`, le rail desktop est masque ;
+            >= 1280    -> `WebSidebar` desktop inchange, le rail medium masque.
+            La bascule est portee par des classes bornees et SCOPEES a
+            `.citizen-medium-shell` : seul un shell qui MONTE explicitement le rail
+            citoyen porte cette classe, aucune autre famille de routes n'est
+            touchee (C3-FEED-M2.4). */}
         <WebSidebar />
+        <CitizenMediumRail activeDestination="feed" />
         <main className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
           <div className="web-desktop-feed-only">
             <CitizenTopNav />
