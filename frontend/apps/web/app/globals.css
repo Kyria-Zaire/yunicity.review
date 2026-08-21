@@ -13,6 +13,15 @@
   /* C3-FEED-M2.1 : rail compact conforme a la maquette. 208px etait excessif
      (16% du viewport a 1279). clamp -> ~88px a 640, ~102px a 1024, plafond 112px. */
   --citizen-medium-rail-width: clamp(5.5rem, 10vw, 7rem);
+  /* C3-FEED-M4 : rythme vertical du Feed medium, source UNIQUE.
+     Mesure RED : 3 a 4 valeurs concurrentes selon le viewport (16/20/24/32),
+     issues de `mt-5` portes par les enfants, de `space-y-5 lg:space-y-6` sur
+     la liste et de `space-y-4` sur les blocs locaux. 20px est la valeur
+     dominante mesuree entre grandes regions ; les rythmes INTERNES gardent
+     leur propre token, distinct. */
+  --feed-medium-region-gap: 20px;
+  --feed-medium-stream-gap: 20px;
+  --feed-medium-context-gap: 16px;
   --web-sidebar-width-full: 16.25rem; /* 260px */
   --web-context-rail-width: 21.25rem; /* 340px */
   --web-context-rail-width-md: 20rem; /* 320px */
@@ -187,6 +196,50 @@ body {
      conservent le leur. */
   .feed-legacy-filter {
     display: none !important;
+  }
+}
+
+/* ——— C3-FEED-M4 : grille editoriale du Feed medium (640 → 1279.98) ———
+   Une seule voie principale apres le rail : la maquette medium ne comporte
+   aucun aside droit permanent, et les sous-grilles internes (Stories, videos,
+   blocs locaux) appartiennent a M5–M9. La grille est l'unique proprietaire du
+   placement vertical des cinq regions ; les marges portees par les enfants sont
+   neutralisees pour qu'aucun espacement ne s'additionne. */
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .citizen-medium-shell .feed-medium-editorial-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: none;
+    row-gap: var(--feed-medium-region-gap);
+  }
+
+  .citizen-medium-shell .feed-medium-editorial-grid > [data-feed-medium-region] {
+    grid-column: 1 / -1;
+    min-width: 0;
+    /* Source unique : aucun `margin` d'enfant ne s'ajoute au `row-gap`. */
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  /* Rythme INTERNE du fil — distinct du gap inter-regions, source unique. */
+  .citizen-medium-shell [data-feed-medium-region="stream"] ul[aria-label] {
+    display: grid;
+    row-gap: var(--feed-medium-stream-gap);
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="stream"] ul[aria-label] > li {
+    margin-top: 0;
+  }
+
+  /* Rythme INTERNE des blocs locaux — distinct lui aussi. */
+  .citizen-medium-shell [data-feed-medium-region="context"] > div {
+    display: grid;
+    row-gap: var(--feed-medium-context-gap);
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="context"] > div > * {
+    margin-top: 0;
   }
 }
 

@@ -332,7 +332,7 @@ export function FeedPortalScreen() {
       {/* `feed-medium-column` : identite stable de la colonne de contenu Feed.
           C3-FEED-M3.3 s'y appuie pour aplatir les GRANDES surfaces sans jamais
           pouvoir atteindre les cartes internes, plus profondes. */}
-      <div className="feed-medium-column min-w-0 flex-1">
+      <div className="feed-medium-column feed-medium-editorial-grid min-w-0 flex-1">
         {/* C3-FEED-M3 : header de contenu propre a la bande medium. Il ne se
             rend qu'entre 640 et 1279.98px (classe `.feed-medium-header`), et
             reste sticky en haut de la colonne. */}
@@ -342,6 +342,7 @@ export function FeedPortalScreen() {
           onToggleFilter={() => setFilterOpen((v) => !v)}
         />
         <div
+          data-feed-medium-region="stories"
           data-feed-medium-surface="primary"
           className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm"
         >
@@ -380,7 +381,12 @@ export function FeedPortalScreen() {
           ) : null}
         </div>
 
-        <div id="feed-composer" ref={composerRef} className="mt-5 scroll-mt-28">
+        <div
+          id="feed-composer"
+          ref={composerRef}
+          data-feed-medium-region="composer"
+          className="mt-5 scroll-mt-28"
+        >
           <div
             data-feed-medium-surface="primary"
             className="rounded-2xl border border-neutral-200/90 bg-white px-4 shadow-sm sm:px-5"
@@ -390,10 +396,16 @@ export function FeedPortalScreen() {
         </div>
 
         {!leftNav ? (
-          <div className="mt-5">
+          <div data-feed-medium-region="discovery" className="mt-5">
             <LocalVideoTeaserSection city={city} filter={{ kind: "city" }} layout="scroll" />
           </div>
         ) : null}
+
+        {/* C3-FEED-M4 : region « stream » — le fil ET ses etats alternatifs
+            (chargement, erreur, filtre sans resultat, vide) occupent UNE seule
+            case de la grille. Le contenu change, la region non : « context »
+            reste donc toujours apres, sans double stream ni saut horizontal. */}
+        <div data-feed-medium-region="stream">
 
         {viewHint ? (
           <p className="mt-4 text-xs leading-relaxed text-neutral-500">{viewHint}</p>
@@ -460,7 +472,11 @@ export function FeedPortalScreen() {
           </div>
         ) : null}
 
-        <div className="mt-8 2xl:hidden">{rightRail}</div>
+        </div>
+
+        <div data-feed-medium-region="context" className="mt-8 2xl:hidden">
+          {rightRail}
+        </div>
       </div>
       </div>
     </FeedAppShell>
