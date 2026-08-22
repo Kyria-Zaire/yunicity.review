@@ -91,10 +91,12 @@ echo "build utilisé : $(cat "$WEB_DIR/.next-build/BUILD_ID")"
 )
 
 # 4. Façade same-origin.
+#    `E2E_PROXY_HOST` n'est volontairement PAS defini : le harnais retombe sur
+#    127.0.0.1 (C3-QA-SEC-01). Une revue LAN doit surcharger explicitement cette
+#    variable, jamais dependre d'un defaut.
 (
   cd "$WEB_DIR"
   E2E_PROXY_PORT="$PROXY_PORT" \
-  E2E_PROXY_HOST="0.0.0.0" \
   E2E_WEB_TARGET="http://127.0.0.1:$NEXT_PORT" \
   E2E_API_TARGET="http://127.0.0.1:8010" \
   nohup node scripts/e2e-reverse-proxy.mjs > "$PROXY_LOG" 2>&1 &
@@ -124,7 +126,7 @@ wait_http "http://localhost:$PROXY_PORT/api/v1/health" 200
 record_port_owner "$NEXT_PORT" "next-start"
 record_port_owner "$PROXY_PORT" "reverse-proxy"
 
-echo "serveur production-like prêt sur 0.0.0.0:$PROXY_PORT"
+echo "serveur production-like prêt sur ${E2E_PROXY_HOST:-127.0.0.1}:$PROXY_PORT"
 echo "  pids  : next=$(cat "$PID_DIR/next-start.pid" 2>/dev/null) facade=$(cat "$PID_DIR/reverse-proxy.pid" 2>/dev/null)"
 echo "  mode  : $(curl -s --max-time 5 "http://localhost:$PROXY_PORT/__e2e/server-info")"
 echo "  logs  : $NEXT_LOG · $PROXY_LOG"
