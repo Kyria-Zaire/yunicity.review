@@ -53,13 +53,29 @@ function pastilleAttendue(width: number): { min: number; max: number } {
 
 const ITEM_MIN = 112;
 const ITEM_MAX = 160;
-/** Tolérance d'équilibre du rail : écart gauche/droite toléré. */
-const EQUILIBRE_MAX = 16;
+/** Distance maximale entre l'axe du titre et la pastille la plus proche. */
+const ECART_AXE_MAX = 40;
+/** Rythme inter-régions imposé par la grille éditoriale M4. */
+const GAP_REGION_PX = 20;
 /** Cible tactile WCAG 2.5.5. */
 const CIBLE_MIN = 44;
 
+/** Token `--feed-medium-story-gap` par palier (640–767 / 768–1023 / 1024–1279). */
+function gapAttendu(width: number): number {
+  if (width < 768) return 16;
+  if (width < 1024) return 20;
+  return 24;
+}
+
 type Snapshot = {
-  titre: { present: boolean; texte: string; visible: boolean; bas: number };
+  titre: {
+    present: boolean;
+    texte: string;
+    visible: boolean;
+    bas: number;
+    gauche: number;
+    droite: number;
+  };
   rail: {
     present: boolean;
     nombre: number;
@@ -69,6 +85,10 @@ type Snapshot = {
     contenuDroite: number;
     scrollLeft: number;
     debordeEnInterne: boolean;
+    centreUtile: number;
+    listeLargeur: number;
+    listeFlexWrap: string;
+    listeJustify: string;
   };
   items: Array<{
     kind: string;
@@ -79,8 +99,12 @@ type Snapshot = {
     balise: string;
     circle: { largeur: number; hauteur: number; rayon: number } | null;
   }>;
-  premier: { gauche: number } | null;
-  dernier: { droite: number } | null;
+  premier: { gauche: number; pastilleGauche: number } | null;
+  dernier: { droite: number; pastilleDroite: number } | null;
+  /** Suite visuelle : raccourcis produits + relais « voir tout » (3 contrôles en baseline). */
+  elements: { nombre: number; largeurs: number[]; gaps: number[]; residuelDroite: number };
+  regionPlate: { rayon: number; ombre: string };
+  gapVersComposer: number | null;
   cta: {
     present: boolean;
     largeur: number;
@@ -105,6 +129,10 @@ async function gotoFeed(page: Page, size: { width: number; height: number }): Pr
   await page.setViewportSize(size);
   await page.goto("/feed");
   await expect(page.locator("article").filter({ visible: true }).first()).toBeVisible();
+  // Baseline QA canonique (citizen A) : « Votre story » + un raccourci produit
+  // (ex. QA Tribu Publique) avant mesure de composition.
+  await expect(page.locator(ITEM)).toHaveCount(2);
+  await expect(page.locator(CTA)).toBeVisible();
 }
 
 async function mesurer(page: Page): Promise<Snapshot> {
@@ -154,6 +182,11 @@ async function mesurer(page: Page): Promise<Snapshot> {
       const premierRect = rect(itemEls[0] ?? null);
       const dernierEl = ctaEl ?? (itemEls[itemEls.length - 1] ?? null);
       const dernierRect = rect(dernierEl);
+      const ul = railEl?.querySelector("ul") ?? null;
+      const suite = ctaEl ? [...itemEls, ctaEl] : itemEls;
+      const suiteRects = suite.map((el) => el.getBoundingClientRect());
+      const gaps = suiteRects.slice(1).map((r, i) => r.left - suiteRects[i]!.right);
+      const composer = document.querySelector('[data-feed-medium-region="composer"]');
 
       const ctaRect = rect(ctaEl);
       const ctaCs = ctaEl ? getComputedStyle(ctaEl) : null;
@@ -173,6 +206,8 @@ async function mesurer(page: Page): Promise<Snapshot> {
           texte: (titreEl?.textContent ?? "").replace(/\s+/g, " ").trim(),
           visible: Boolean(titreEl && (rect(titreEl)?.height ?? 0) > 0),
           bas: rect(titreEl)?.bottom ?? 0,
+          gauche: rect(titreEl)?.left ?? 0,
+          droite: rect(titreEl)?.right ?? 0,
         },
         rail: {
           present: Boolean(railEl),
@@ -183,10 +218,38 @@ async function mesurer(page: Page): Promise<Snapshot> {
           contenuDroite,
           scrollLeft: railEl?.scrollLeft ?? 0,
           debordeEnInterne: railEl ? railEl.scrollWidth > railEl.clientWidth + 1 : false,
+          centreUtile: (contenuGauche + contenuDroite) / 2,
+          listeLargeur: rect(ul)?.width ?? 0,
+          listeFlexWrap: ul ? getComputedStyle(ul as HTMLElement).flexWrap : "",
+          listeJustify: ul ? getComputedStyle(ul as HTMLElement).justifyContent : "",
         },
         items,
-        premier: premierRect ? { gauche: premierRect.left } : null,
-        dernier: dernierRect ? { droite: dernierRect.right } : null,
+        premier: premierRect
+          ? {
+              gauche: premierRect.left,
+              pastilleGauche: rect(itemEls[0]?.querySelector(sel.circle) ?? null)?.left ?? 0,
+            }
+          : null,
+        dernier: dernierRect
+          ? {
+              droite: dernierRect.right,
+              pastilleDroite: rect(dernierEl?.querySelector(sel.circle) ?? null)?.right ?? 0,
+            }
+          : null,
+        elements: {
+          nombre: suite.length,
+          largeurs: suiteRects.map((r) => r.width),
+          gaps,
+          residuelDroite: contenuDroite - (suiteRects[suiteRects.length - 1]?.right ?? 0),
+        },
+        regionPlate: {
+          rayon: parseFloat(getComputedStyle(region as HTMLElement).borderTopLeftRadius) || 0,
+          ombre: getComputedStyle(region as HTMLElement).boxShadow,
+        },
+        gapVersComposer:
+          composer && region
+            ? composer.getBoundingClientRect().top - region.getBoundingClientRect().bottom
+            : null,
         cta: {
           present: Boolean(ctaEl),
           largeur: ctaRect?.width ?? 0,
@@ -223,9 +286,9 @@ async function mesurer(page: Page): Promise<Snapshot> {
 
 test.describe("C3-FEED-M5 — région Stories du Feed medium", () => {
   for (const vp of MEDIUM) {
-    test(`${vp.label} — titre, rail unique et items dimensionnés`, async ({ authedPage }) => {
-      await gotoFeed(authedPage, vp);
-      const m = await mesurer(authedPage);
+    test(`${vp.label} — titre, rail unique et items dimensionnés`, async ({ citizenAPage }) => {
+      await gotoFeed(citizenAPage, vp);
+      const m = await mesurer(citizenAPage);
 
       expect(m.titre.present, "titre de région Stories absent").toBe(true);
       expect(m.titre.texte, "libellé du titre non conforme").toBe(TITRE_ATTENDU);
@@ -275,32 +338,93 @@ test.describe("C3-FEED-M5 — région Stories du Feed medium", () => {
       ).toBe(true);
     });
 
-    test(`${vp.label} — rail équilibré, « voir tout » circulaire, aucun débordement de page`, async ({
-      authedPage,
+    test(`${vp.label} — rail groupé à gauche, gaps cohérents, « voir tout » circulaire`, async ({
+      citizenAPage,
     }) => {
-      await gotoFeed(authedPage, vp);
-      const m = await mesurer(authedPage);
+      await gotoFeed(citizenAPage, vp);
+      const m = await mesurer(citizenAPage);
 
       expect(m.rail.scrollLeft, "le rail est déjà défilé au chargement").toBe(0);
+
+      // ── Groupe cohésif à gauche (C3-FEED-M5.2-R1) ─────────────────────────
+      // Le contrat M5.2 `space-between` + `min-width: 100 %` est REFUSÉ : il
+      // distribuait artificiellement l'espace interne entre les trois contrôles
+      // visibles. Remplacé par : alignement bord utile gauche, gaps stables au
+      // token M5, espace résiduel uniquement après le CTA, largeur naturelle.
       const gauche = (m.premier?.gauche ?? 0) - m.rail.contenuGauche;
-      const droite = m.rail.contenuDroite - (m.dernier?.droite ?? 0);
+      const largeurUtile = m.rail.contenuDroite - m.rail.contenuGauche;
+      const gapToken = gapAttendu(vp.width);
+      const largeurNaturelle =
+        m.elements.largeurs.reduce((acc, w) => acc + w, 0) +
+        m.elements.gaps.reduce((acc, g) => acc + g, 0);
+
       if (m.rail.debordeEnInterne) {
-        // Groupe plus long que le rail : il n'y a plus d'espace libre à répartir.
-        // Le seul contrat qui subsiste est qu'aucun item ne soit hors d'atteinte
-        // au chargement — le défilement interne prend le relais.
+        // Groupe plus long que le rail : le débordement natif prend le relais.
         expect(
           Math.abs(gauche),
           `groupe long décalé de ${Math.round(gauche)} px au chargement`,
         ).toBeLessThanOrEqual(1);
       } else {
+        // 1. Premier item sur le bord utile gauche.
         expect(
-          Math.abs(gauche - droite),
-          `rail déséquilibré : ${Math.round(gauche)} px à gauche, ${Math.round(droite)} px à droite`,
-        ).toBeLessThanOrEqual(EQUILIBRE_MAX);
-        expect(gauche, "premier item hors de la zone de contenu du rail").toBeGreaterThanOrEqual(
-          -1,
+          Math.abs(gauche),
+          `premier élément à ${Math.round(gauche)} px du bord utile gauche`,
+        ).toBeLessThanOrEqual(1);
+
+        // 2. Pastille « Votre story » proche de l'axe du titre.
+        expect(
+          (m.premier?.pastilleGauche ?? 0) - m.titre.gauche,
+          "pastille « Votre story » trop éloignée de l'axe du titre",
+        ).toBeLessThanOrEqual(ECART_AXE_MAX);
+
+        // 3. Baseline : 2 raccourcis produits + relais = 3 contrôles visuels.
+        expect(
+          m.elements.nombre,
+          "nombre de contrôles visuels (raccourcis + relais)",
+        ).toBe(3);
+
+        // 4. Gaps consécutifs égaux au token du breakpoint.
+        for (const [i, gap] of m.elements.gaps.entries()) {
+          expect(
+            Math.abs(gap - gapToken),
+            `gap ${i + 1} mesuré à ${Math.round(gap * 10) / 10} px (attendu ${gapToken})`,
+          ).toBeLessThanOrEqual(1);
+        }
+
+        // 5. Aucune largeur artificielle de 100 % sur la liste courte.
+        expect(
+          m.rail.listeLargeur / largeurUtile,
+          `liste occupant ${Math.round((100 * m.rail.listeLargeur) / largeurUtile)} % de la largeur utile`,
+        ).toBeLessThan(0.99);
+
+        // 6. Espace résiduel uniquement après le CTA (pas avant le groupe).
+        expect(gauche, "espace résiduel avant le premier item").toBeLessThanOrEqual(1);
+        expect(
+          m.elements.residuelDroite,
+          "aucun espace résiduel après le CTA",
+        ).toBeGreaterThan(gapToken);
+
+        // 7. Largeur naturelle = somme items + somme gaps.
+        expect(
+          Math.abs(m.rail.listeLargeur - largeurNaturelle),
+          `largeur liste ${Math.round(m.rail.listeLargeur)} ≠ naturelle ${Math.round(largeurNaturelle)}`,
+        ).toBeLessThanOrEqual(2);
+
+        // Distribution flex-start, pas space-between.
+        expect(m.rail.listeJustify, "justify-content distribue l'espace interne").not.toBe(
+          "space-between",
         );
       }
+
+      expect(m.rail.listeFlexWrap, "le rail est autorisé à passer à la ligne").toBe("nowrap");
+
+      // ── Surface et rythme conservés ───────────────────────────────────────
+      expect(m.regionPlate.rayon, "la surface Stories n'est plus plate").toBeLessThanOrEqual(2);
+      expect(m.regionPlate.ombre, "ombre réintroduite sur la surface Stories").toBe("none");
+      expect(
+        Math.round(m.gapVersComposer ?? -1),
+        "rythme Stories → Composer modifié",
+      ).toBe(GAP_REGION_PX);
 
       expect(m.cta.present, "contrôle « voir toutes les stories » absent").toBe(true);
       expect(m.cta.href, "le contrôle « voir tout » ne pointe pas vers le relais existant").toBe(
@@ -344,10 +468,10 @@ test.describe("C3-FEED-M5 — région Stories du Feed medium", () => {
     });
   }
 
-  test("768 — les onglets restent dans la même région, inchangés", async ({ authedPage }) => {
-    await gotoFeed(authedPage, { width: 768, height: 1024 });
+  test("768 — les onglets restent dans la même région, inchangés", async ({ citizenAPage }) => {
+    await gotoFeed(citizenAPage, { width: 768, height: 1024 });
 
-    const onglets = await authedPage.evaluate((sel) => {
+    const onglets = await citizenAPage.evaluate((sel) => {
       const region = document.querySelector(sel.region)!;
       const liste = region.querySelector('[role="tablist"]');
       const rail = region.querySelector(sel.rail);
@@ -373,10 +497,10 @@ test.describe("C3-FEED-M5 — région Stories du Feed medium", () => {
   });
 
   test("768 — données Story réelles : aucun remplissage, aucun contrôle inerte", async ({
-    authedPage,
+    citizenAPage,
   }) => {
-    await gotoFeed(authedPage, { width: 768, height: 1024 });
-    const m = await mesurer(authedPage);
+    await gotoFeed(citizenAPage, { width: 768, height: 1024 });
+    const m = await mesurer(citizenAPage);
 
     const libelles = m.items.map((i) => i.libelle);
     expect(new Set(libelles).size, `items dupliqués pour remplir : ${libelles.join(" | ")}`).toBe(
@@ -403,14 +527,14 @@ test.describe("C3-FEED-M5 — région Stories du Feed medium", () => {
   });
 
   test("bascule 639 / 640 — la composition medium n'existe pas sous la bande", async ({
-    authedPage,
+    citizenAPage,
   }) => {
-    await gotoFeed(authedPage, { width: 640, height: 900 });
-    const dedans = await mesurer(authedPage);
+    await gotoFeed(citizenAPage, { width: 640, height: 900 });
+    const dedans = await mesurer(citizenAPage);
     expect(dedans.titre.visible, "composition medium absente à 640").toBe(true);
 
-    await authedPage.setViewportSize({ width: 639, height: 900 });
-    const dehors = await authedPage.evaluate(
+    await citizenAPage.setViewportSize({ width: 639, height: 900 });
+    const dehors = await citizenAPage.evaluate(
       (sel) => {
         const t = document.querySelector(sel.title);
         const r = document.querySelector(sel.rail);
@@ -426,16 +550,16 @@ test.describe("C3-FEED-M5 — région Stories du Feed medium", () => {
   });
 
   test("bascule 1279 / 1280 — la composition medium ne fuit pas sur le desktop", async ({
-    authedPage,
+    citizenAPage,
   }) => {
-    await gotoFeed(authedPage, { width: 1279, height: 900 });
-    const dedans = await mesurer(authedPage);
+    await gotoFeed(citizenAPage, { width: 1279, height: 900 });
+    const dedans = await mesurer(citizenAPage);
     expect(dedans.titre.visible, "composition medium absente à 1279").toBe(true);
     const bande = pastilleAttendue(1279);
     expect(Math.round(dedans.items[0]?.circle?.largeur ?? 0)).toBeGreaterThanOrEqual(bande.min);
 
-    await authedPage.setViewportSize({ width: 1280, height: 900 });
-    const desktop = await authedPage.evaluate(
+    await citizenAPage.setViewportSize({ width: 1280, height: 900 });
+    const desktop = await citizenAPage.evaluate(
       (sel) => {
         const t = document.querySelector(sel.title);
         const premier = document.querySelector(`${sel.item} ${sel.circle}`);
@@ -451,14 +575,14 @@ test.describe("C3-FEED-M5 — région Stories du Feed medium", () => {
     expect(desktop.diametre, "pastille desktop modifiée par la composition medium").toBe(72);
   });
 
-  test("768 — isolation de route : /stories garde son rail partagé", async ({ authedPage }) => {
-    await authedPage.setViewportSize({ width: 768, height: 1024 });
-    await authedPage.goto("/stories");
+  test("768 — isolation de route : /stories garde son rail partagé", async ({ citizenAPage }) => {
+    await citizenAPage.setViewportSize({ width: 768, height: 1024 });
+    await citizenAPage.goto("/stories");
     // `main` est déjà visible pendant l'état « Chargement... » de StoriesScreen :
     // attendre le rail LUI-MEME, sinon la mesure porte sur un écran transitoire.
-    await expect(authedPage.locator(ITEM).first()).toBeVisible();
+    await expect(citizenAPage.locator(ITEM).first()).toBeVisible();
 
-    const isolation = await authedPage.evaluate(
+    const isolation = await citizenAPage.evaluate(
       (sel) => ({
         region: document.querySelectorAll(sel.region).length,
         titre: document.querySelectorAll(sel.title).length,

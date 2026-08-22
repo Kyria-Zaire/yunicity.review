@@ -80,6 +80,25 @@ const GABARIT = `
   </div>
 </div>`;
 
+/**
+ * Insere le gabarit reel de la region avant le chargement du bundle. Le HTML est
+ * une constante du test — aucune entree externe n'y transite.
+ */
+async function monter(page: import("@playwright/test").Page): Promise<void> {
+  await page.evaluate(
+    ({ gabarit, racine }) => {
+      // Neutralise le reste de la page pour que la mesure de débordement
+      // horizontal porte sur la seule région Stories.
+      for (const enfant of [...document.body.children]) {
+        (enfant as HTMLElement).style.display = "none";
+      }
+      document.body.insertAdjacentHTML("beforeend", gabarit);
+      if (!document.getElementById(racine)) throw new Error("racine de montage absente");
+    },
+    { gabarit: GABARIT, racine: RACINE },
+  );
+}
+
 test.describe("C3-FEED-M5.1 — rail Stories long (débordement)", () => {
   test("640 — sept raccourcis : une seule ligne, débordement interne, extrémités atteignables", async ({
     page,
@@ -98,18 +117,7 @@ test.describe("C3-FEED-M5.1 — rail Stories long (débordement)", () => {
     // Page publique de l'application : la feuille de style est celle du build.
     await page.goto("/login");
 
-    await page.evaluate(
-      ({ gabarit, racine }) => {
-        // Neutralise le reste de la page pour que la mesure de débordement
-        // horizontal porte sur la seule région Stories.
-        for (const enfant of [...document.body.children]) {
-          (enfant as HTMLElement).style.display = "none";
-        }
-        document.body.insertAdjacentHTML("beforeend", gabarit);
-        if (!document.getElementById(racine)) throw new Error("racine de montage absente");
-      },
-      { gabarit: GABARIT, racine: RACINE },
-    );
+    await monter(page);
 
     await page.addScriptTag({ content: await bundleRail() });
 
@@ -255,16 +263,7 @@ test.describe("C3-FEED-M5.1 — rail Stories long (débordement)", () => {
   test("640 — focus et ordre clavier preserves sur un rail long", async ({ page }) => {
     await page.setViewportSize({ width: 640, height: 900 });
     await page.goto("/login");
-    await page.evaluate(
-      ({ gabarit, racine }) => {
-        for (const enfant of [...document.body.children]) {
-          (enfant as HTMLElement).style.display = "none";
-        }
-        document.body.insertAdjacentHTML("beforeend", gabarit);
-        if (!document.getElementById(racine)) throw new Error("racine de montage absente");
-      },
-      { gabarit: GABARIT, racine: RACINE },
-    );
+    await monter(page);
     await page.addScriptTag({ content: await bundleRail() });
     await expect.poll(async () => page.locator(ITEM).count()).toBe(7);
 
