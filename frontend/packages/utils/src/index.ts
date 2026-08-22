@@ -3818,6 +3818,7 @@ export {
   COMPOSER_MEDIA_TOO_LARGE,
   COMPOSER_MEDIA_UPLOAD_FAILED,
   COMPOSER_MEDIA_UPLOADING_LABEL,
+  COMPOSER_TEXT_REQUIRED_HINT,
   validateComposerMediaFile,
   type ComposerMediaValidation,
 } from "./composer-media";

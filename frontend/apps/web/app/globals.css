@@ -263,6 +263,137 @@ body {
   }
 }
 
+/* --- C3-FEED-M6 : composition du compositeur medium (640 -> 1279.98) ---
+   `FeedComposer` est PARTAGE : Feed desktop >= 1280 et mur de tribu le rendent
+   aussi. Toute la composition medium passe donc par des attributs INERTES et
+   ces regles bornees en haut a 1279.98px, scopees a la region `composer` du
+   shell citoyen. Hors bande, rien ne change.
+
+   Mesure RED (bande medium) : surface 161,38 px au repos pour deux lignes de
+   contenu ; trois actions de 36x36 px SANS libelle visible ; bouton Publier de
+   36 px de haut, seul a l'extremite droite d'une barre vide a 62 % (640) et
+   83 % (1279). Cibles tactiles toutes sous les 44 px WCAG 2.5.5.
+
+   Choix de structure : la ligne 1 reste [avatar | saisie] et Publier reste en
+   FIN de barre d'actions. Remonter Publier sur la ligne 1 aurait impose soit de
+   reordonner le DOM partage (desktop + mur de tribu), soit de dissocier ordre
+   DOM et ordre visuel — l'un et l'autre interdits. Le vide qui isolait Publier
+   est comble par les libelles d'action, pas par un deplacement. */
+
+/* Libelle d'action : present dans le DOM partout, visible seulement en medium. */
+.feed-medium-composer-label {
+  display: none;
+}
+
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer {
+    /* 161,38 -> cible 104-136 : le rythme vient du padding et des interlignes,
+       jamais d'un ecrasement des cibles ou du texte. */
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer-row {
+    /* `center` alignait joliment au repos mais faisait FLOTTER l'avatar a
+       mi-hauteur des qu'un apercu photo etendait la colonne de saisie (constate
+       sur la capture 768 photo). L'ancrage haut vaut dans les deux etats. */
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  /* L'avatar de 56 px pilotait a lui seul la hauteur de la ligne 1 (mesure : 144
+     px au total). Aligne sur la hauteur des pilules d'action, il donne un rythme
+     unique et fait tomber la surface dans la fourchette visee, sans reduire
+     aucune cible tactile ni ecraser le texte. */
+  .citizen-medium-shell [data-feed-medium-region="composer"] [data-feed-composer-avatar] {
+    padding-top: 0;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="composer"] [data-feed-composer-avatar] > * {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  /* La saisie occupe l'espace disponible ; sa hauteur minimale reste au-dessus
+     de la cible tactile et le texte n'est jamais ecrase. */
+  .citizen-medium-shell [data-feed-medium-region="composer"] [data-feed-composer-input] {
+    min-height: 2.75rem;
+    font-size: 1.0625rem;
+    line-height: 1.45;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer-bar {
+    margin-top: 0.5rem;
+    /* Les actions se lisent, elles ne se devinent plus : le retrait mobile qui
+       alignait la barre sous l'avatar n'a plus lieu d'etre. */
+    padding-left: 0;
+    gap: 0.75rem;
+  }
+
+  /* Action : pastille -> pilule icone + libelle, cible WCAG 2.5.5. */
+  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer-action {
+    width: auto;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    gap: 0.4375rem;
+    padding-inline: 0.75rem;
+    border-radius: 9999px;
+    background-color: #f4f5ff;
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="composer"]
+    .feed-composer-action:hover {
+    background-color: #e9ebff;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-medium-composer-label {
+    display: inline;
+    white-space: nowrap;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer-submit {
+    min-height: 2.75rem;
+    padding-inline: 1.25rem;
+  }
+
+  /* Regle texte obligatoire : enoncee a voix haute pour tous, RENDUE VISIBLE
+     quand une photo attend son texte. Le bouton desactive cesse d'etre muet. */
+  .citizen-medium-shell
+    [data-feed-medium-region="composer"]
+    [data-feed-composer-hint][data-hint-active="true"] {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0.625rem 0 0;
+    overflow: visible;
+    clip: auto;
+    clip-path: none;
+    white-space: normal;
+    display: block;
+    font-size: 0.8125rem;
+    color: #8a5a00;
+  }
+
+  /* Apercu photo : pleine largeur utile interne, jamais une carte concurrente. */
+  .citizen-medium-shell [data-feed-medium-region="composer"] [data-feed-composer-preview] {
+    display: block;
+    width: 100%;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="composer"] [data-feed-composer-preview] img {
+    width: 100%;
+    max-height: 15rem;
+    object-fit: cover;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer-error {
+    padding-left: 0;
+  }
+}
+
 /* --- C3-FEED-M5 : composition de la region Stories (640 -> 1279.98) ---
    `FeedStoriesRail` est PARTAGE : le Feed desktop >= 1280 et la page /stories le
    rendent aussi. Toute la composition medium passe donc par des attributs
