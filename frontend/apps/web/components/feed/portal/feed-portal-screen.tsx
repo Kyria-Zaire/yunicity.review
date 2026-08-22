@@ -4,6 +4,7 @@ import type { FeedReportReason } from "@yunicity/types";
 import type { FeedPortalView } from "@yunicity/utils";
 import {
   FEED_LOAD_MORE_LABEL,
+  FEED_MEDIUM_STORIES_TITLE,
   FEED_PORTAL_FOR_YOU_HINT,
   FEED_PORTAL_POPULAR_HINT,
   PROFILE_INTERESTS,
@@ -347,6 +348,16 @@ export function FeedPortalScreen() {
           className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm"
         >
           <div className="border-b border-neutral-100 px-4 py-5 sm:px-6">
+            {/* C3-FEED-M5 : la region Stories n'avait aucun titre. Il n'est rendu
+                QUE dans la bande medium (`.feed-medium-stories-title`) : le
+                desktop >= 1280 et la page /stories partagent ce meme rail et
+                conservent leur propre en-tete. */}
+            <h2
+              data-feed-medium-stories-title=""
+              className="feed-medium-stories-title text-sm font-bold text-neutral-900"
+            >
+              {FEED_MEDIUM_STORIES_TITLE}
+            </h2>
             <FeedStoriesRail items={stories} seeAllHref="/stories" />
           </div>
           <div className="px-4 sm:px-6">

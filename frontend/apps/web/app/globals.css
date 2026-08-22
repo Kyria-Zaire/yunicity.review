@@ -263,6 +263,120 @@ body {
   }
 }
 
+/* --- C3-FEED-M5 : composition de la region Stories (640 -> 1279.98) ---
+   `FeedStoriesRail` est PARTAGE : le Feed desktop >= 1280 et la page /stories le
+   rendent aussi. Toute la composition medium passe donc par des attributs
+   INERTES poses sur ce rail partage + ces regles bornees en haut a 1279.98px et
+   scopees a la region `stories` du shell citoyen. Hors de cette bande, aucune
+   de ces regles ne s'applique : le rail garde son item de 88 px et sa pastille
+   de 72 px.
+
+   Mesure avant M5 (bande medium, zone de contenu 592 -> 1231 px) : groupe colle
+   a gauche, item 88 px, pastille 72 px, relais « voir tout » rendu en carte
+   rectangulaire bleutee. Le vide a droite atteignait plusieurs centaines de px.
+
+   Paliers de dimension imposes (CTO) : pastille 72-76 a 640, 76-84 a 768/834,
+   80-88 a 1024/1279 ; item 112-160 partout. Une seule source par palier. */
+
+/* Masque PAR DEFAUT, comme `.feed-medium-header` : le titre n'existe que dans la
+   bande medium. Le desktop >= 1280 et le mobile gardent leur propre en-tete. */
+.feed-medium-stories-title {
+  display: none;
+}
+
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .citizen-medium-shell [data-feed-medium-region="stories"] {
+    --feed-medium-story-item: 116px;
+    --feed-medium-story-circle: 74px;
+    --feed-medium-story-gap: 16px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .citizen-medium-shell [data-feed-medium-region="stories"] {
+    --feed-medium-story-item: 128px;
+    --feed-medium-story-circle: 80px;
+    --feed-medium-story-gap: 20px;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  .citizen-medium-shell [data-feed-medium-region="stories"] {
+    --feed-medium-story-item: 140px;
+    --feed-medium-story-circle: 84px;
+    --feed-medium-story-gap: 24px;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .citizen-medium-shell .feed-medium-stories-title {
+    display: block;
+    margin-bottom: 0.875rem;
+  }
+
+  /* Equilibre du rail. `width: max-content` + marges auto : quand le groupe est
+     plus court que le rail il est CENTRE (ecart gauche/droite nul) ; quand il
+     est plus long, les marges auto retombent a 0 et le defilement interne reste
+     accessible des le premier item. `justify-content: center` aurait rendu le
+     debut du groupe inatteignable dans un conteneur `overflow-x: auto`. */
+  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-medium-stories-rail] > ul {
+    width: max-content;
+    margin-inline: auto;
+    gap: var(--feed-medium-story-gap);
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-medium-stories-item] {
+    width: var(--feed-medium-story-item);
+  }
+
+  /* Les libellés sont bornés a 5.5rem par le rail partage : sans cela ils
+     tronqueraient au milieu d'un item devenu plus large. Le badge « + » est
+     imbrique plus profond et n'est donc pas atteint. */
+  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-medium-stories-item] > span {
+    max-width: 100%;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-medium-stories-circle] {
+    width: var(--feed-medium-story-circle);
+    height: var(--feed-medium-story-circle);
+  }
+
+  /* Relais « voir toutes les stories » : meme grammaire circulaire que les
+     Stories, jamais une carte concurrente. Sa DESTINATION est inchangee. */
+  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-medium-stories-cta] {
+    width: var(--feed-medium-story-item);
+    justify-content: flex-start;
+    gap: 0.625rem;
+    padding: 0;
+    border-radius: 0;
+    background-color: transparent;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="stories"]
+    [data-feed-medium-stories-cta]:hover
+    [data-feed-medium-stories-circle] {
+    background-color: #e4e7ff;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="stories"]
+    [data-feed-medium-stories-cta]
+    [data-feed-medium-stories-circle] {
+    background-color: #eef0ff;
+    box-shadow: none;
+    transition: background-color 150ms ease;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="stories"]
+    [data-feed-medium-stories-cta]
+    svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+}
+
 /* ——— C3-FEED-M2 : rail du Feed moyen (640 → 1279.98) ———
    Toutes les regles sont bornees EN HAUT a 1279.98px et scopees a
    `.citizen-medium-shell`, portee par tout shell qui MONTE explicitement le rail
