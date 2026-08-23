@@ -565,63 +565,7 @@ body {
   display: none;
 }
 
-@media (min-width: 640px) and (max-width: 1279.98px) {
-  .citizen-medium-shell .citizen-medium-rail-only {
-    display: flex;
-  }
 
-  /* Le rail desktop compacte (88px, sans libelles ni pied) cede la place. */
-  .citizen-medium-shell .web-sidebar-aside {
-    display: none !important;
-  }
-
-  .citizen-medium-shell .web-three-col {
-    grid-template-columns: var(--citizen-medium-rail-width) minmax(0, 1fr);
-    /* C3-FEED-M3.2 : la zone Feed medium commence a la frontiere PHYSIQUE du
-       rail et finit au bord droit reel de l'application. Mesure RED : la
-       gouttiere (24px) et les paddings (16px) du shell rétrécissaient la zone,
-       et une assertion fondee sur `.web-main-column` etait donc circulaire. */
-    column-gap: 0;
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  .citizen-medium-shell .citizen-medium-rail {
-    flex-direction: column;
-    position: sticky;
-    top: 0;
-    align-self: start;
-    width: 100%;
-    min-width: 0;
-    /* C3-FEED-M2.2 : `.web-three-col` porte `padding-top: 1rem`, le rail demarre
-       donc 16px plus bas. Avec `height: 100dvh` son bas tombait a 100dvh + 16px
-       et le groupe inferieur sortait du viewport (mesure : bas a 916px pour un
-       viewport de 900). La hauteur est donc bornee sur l'offset reel. */
-    height: calc(100dvh - 1rem);
-    max-height: calc(100dvh - 1rem);
-    /* Aucun scroll interne : la navigation tient dans la hauteur. */
-    overflow: hidden;
-    background: #ffffff;
-    border-right: 1px solid rgb(229 229 229 / 0.8);
-  }
-
-  /* Grammaire visuelle du déclencheur Menu Yunicity dans le rail (complément
-     M2.3) : icône `Grid3x3` NOIRE sur pastille circulaire gris clair. Le
-     composant partagé `CitizenYunicityMenu` n'est pas modifié — seul son rendu
-     DANS ce rail est habillé, les autres surfaces gardent leur tonalité. */
-  /* Le declencheur est enveloppe par `WebSidebarTooltip` : selecteur descendant. */
-  .citizen-medium-shell .citizen-medium-rail [data-rail-label="Menu"] button {
-    min-width: 2.75rem;
-    min-height: 2.75rem;
-    background: #F1F1F3;
-    color: #111827;
-  }
-
-  .citizen-medium-shell .citizen-medium-rail [data-rail-label="Menu"] button:hover {
-    background: #E6E6EA;
-    color: #111827;
-  }
-}
 
 /* C3.1-R1D — sous 640px le fil est bord à bord : le shell ne réinjecte plus de
    gouttière latérale entre 480 et 639.98px (elle s'ajoutait au padding de la
@@ -1720,3 +1664,97 @@ body {
   }
 }
 
+
+/* ==========================================================================
+   C3-CITIZEN-MEDIUM-SHELL-R1A — contrat global du rail citoyen medium.
+
+   PLACE EN FIN DE FEUILLE VOLONTAIREMENT. Chaque shell de feature declare ses
+   propres paddings de grille (`.videos-mobile-shell .web-three-col`,
+   `.map-mobile-shell ...`, `.sortir-mobile-shell ...`) a la MEME specificite
+   (0,2,0) que la regle globale. Mesure : le rail demarrait a 16 px du bord sur
+   /videos alors que le shell demarre a 0, parce que la regle de feature venait
+   plus loin dans le fichier. Le contrat global est autoritaire : il doit donc
+   etre lu en dernier, sans surenchere de specificite.
+   ========================================================================== */
+/* --- C3-CITIZEN-MEDIUM-SHELL-R1A : bascule globale du rail citoyen ---
+   La bande medium ne depend plus de `.citizen-medium-shell` (classe portee par
+   le seul shell Feed) mais de la PRESENCE REELLE du rail dans la grille.
+   `WebSidebar` en est le proprietaire unique et ne le rend que si la route est
+   eligible : la sidebar historique ne cede donc la place que la ou un rail
+   citoyen existe vraiment. Route non eligible -> comportement historique.
+   `:has()` est borne a `.web-three-col` et a la bande medium. */
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  [data-citizen-medium-rail].citizen-medium-rail-only {
+    display: flex;
+  }
+
+  /* Le rail desktop compacte (88px, sans libelles ni pied) cede la place. */
+  .web-three-col:has(> [data-citizen-medium-rail]) > .web-sidebar-aside {
+    display: none !important;
+  }
+
+  .web-three-col:has(> [data-citizen-medium-rail]) {
+    grid-template-columns: var(--citizen-medium-rail-width) minmax(0, 1fr);
+    /* C3-FEED-M3.2 : la zone Feed medium commence a la frontiere PHYSIQUE du
+       rail et finit au bord droit reel de l'application. Mesure RED : la
+       gouttiere (24px) et les paddings (16px) du shell rétrécissaient la zone,
+       et une assertion fondee sur `.web-main-column` etait donc circulaire. */
+    column-gap: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  [data-citizen-medium-rail].citizen-medium-rail {
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    align-self: start;
+    width: 100%;
+    min-width: 0;
+    /* C3-FEED-M2.2 : `.web-three-col` porte `padding-top: 1rem`, le rail demarre
+       donc 16px plus bas. Avec `height: 100dvh` son bas tombait a 100dvh + 16px
+       et le groupe inferieur sortait du viewport (mesure : bas a 916px pour un
+       viewport de 900). La hauteur est donc bornee sur l'offset reel. */
+    height: calc(100dvh - 1rem);
+    max-height: calc(100dvh - 1rem);
+    /* Aucun scroll interne : la navigation tient dans la hauteur. */
+    overflow: hidden;
+    background: #ffffff;
+    border-right: 1px solid rgb(229 229 229 / 0.8);
+  }
+
+  /* Grammaire visuelle du déclencheur Menu Yunicity dans le rail (complément
+     M2.3) : icône `Grid3x3` NOIRE sur pastille circulaire gris clair. Le
+     composant partagé `CitizenYunicityMenu` n'est pas modifié — seul son rendu
+     DANS ce rail est habillé, les autres surfaces gardent leur tonalité. */
+  /* Le declencheur est enveloppe par `WebSidebarTooltip` : selecteur descendant. */
+  [data-citizen-medium-rail].citizen-medium-rail [data-rail-label="Menu"] button {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    background: #F1F1F3;
+    color: #111827;
+  }
+
+  [data-citizen-medium-rail].citizen-medium-rail [data-rail-label="Menu"] button:hover {
+    background: #E6E6EA;
+    color: #111827;
+  }
+
+  /* --- C3-CITIZEN-MEDIUM-SHELL-R1F : canvas creation-flow plein format ---
+     Parcours `/feed/new`, `/stories/new`, `/videos/new` : pas de rail citoyen,
+     pas de fallback sidebar compacte. Le marqueur est rendu par WebSidebar. */
+  .web-three-col:has(> [data-citizen-medium-creation-flow]) > .web-sidebar-aside {
+    display: none !important;
+  }
+
+  .web-three-col:has(> [data-citizen-medium-creation-flow]) {
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  [data-citizen-medium-creation-flow] {
+    display: none;
+  }
+}

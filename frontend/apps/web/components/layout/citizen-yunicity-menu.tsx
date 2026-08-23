@@ -21,7 +21,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 
 type CitizenYunicityMenuProps = {
-  variant?: "sidebar" | "top-nav" | "mobile-header" | "fab" | "bottom-nav";
+  variant?: "sidebar" | "medium-rail" | "top-nav" | "mobile-header" | "fab" | "bottom-nav";
+  /**
+   * Fait GLOBAL, jamais déduit de `variant` : le rail citoyen medium est-il
+   * rendu sur cette route ? Seul `WebSidebar` le sait, et le transmet.
+   */
+  mediumRailPresent?: boolean;
 };
 
 type TriggerTone = {
@@ -49,7 +54,7 @@ function CompactTrigger({
   menuActive: boolean;
   open: boolean;
   onToggle: () => void;
-  variant: "sidebar" | "top-nav" | "mobile-header" | "fab" | "bottom-nav";
+  variant: "sidebar" | "medium-rail" | "top-nav" | "mobile-header" | "fab" | "bottom-nav";
   surfacesReady: boolean;
 }) {
   const tone = triggerTone({ menuActive, open });
@@ -197,7 +202,10 @@ function MenuSurfaceContent({
   );
 }
 
-export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenuProps) {
+export function CitizenYunicityMenu({
+  variant = "sidebar",
+  mediumRailPresent = true,
+}: CitizenYunicityMenuProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated, logout } = useAuth();
@@ -208,7 +216,9 @@ export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenu
   const isOpen = surfaces.isSurfaceOpen("menu");
   const menuSurface = surfaces.menuSurface;
   const surfacesReady = surfaces.surfacesInitialized;
-  const menuHostVariant = resolveYunicityMenuHostVariant(surfaces.viewportWidth);
+  const menuHostVariant = resolveYunicityMenuHostVariant(surfaces.viewportWidth, {
+    mediumRailPresent,
+  });
   const rendersMenuSurface = variant === menuHostVariant;
   const menuActive = isYunicityMenuActive(pathname);
   const restoreFocus = surfaces.shouldRestoreFocus;

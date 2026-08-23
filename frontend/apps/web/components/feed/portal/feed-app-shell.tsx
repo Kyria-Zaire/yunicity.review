@@ -1,6 +1,5 @@
 "use client";
 
-import { CitizenMediumRail } from "@/components/layout/citizen-medium-rail";
 import { CitizenTopNav } from "@/components/layout/citizen-top-nav";
 import { WebSidebar } from "@/components/layout/web-sidebar";
 import { WebMobileStrategicBottomNav } from "@/components/layout/web-mobile-strategic-bottom-nav";
@@ -25,8 +24,11 @@ export function FeedAppShell({
             `.citizen-medium-shell` : seul un shell qui MONTE explicitement le rail
             citoyen porte cette classe, aucune autre famille de routes n'est
             touchee (C3-FEED-M2.4). */}
+        {/* C3-CITIZEN-MEDIUM-SHELL-R1A : le rail citoyen n'est plus monté ici.
+            `WebSidebar` en est le propriétaire unique et le rend lui-même
+            lorsque la route est éligible. La classe `.citizen-medium-shell`
+            reste : elle scope encore les styles Feed medium M3 à M7. */}
         <WebSidebar />
-        <CitizenMediumRail activeDestination="feed" />
         <main className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
           <div className="web-desktop-feed-only">
             <CitizenTopNav />

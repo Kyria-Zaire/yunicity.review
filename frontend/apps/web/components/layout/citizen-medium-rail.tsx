@@ -71,7 +71,11 @@ export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps)
   const unreadCount = Number(useNotificationUnread());
 
   return (
-    <aside className="citizen-medium-rail citizen-medium-rail-only" aria-label="Navigation Yunicity">
+    <aside
+      data-citizen-medium-rail=""
+      className="citizen-medium-rail citizen-medium-rail-only"
+      aria-label="Navigation Yunicity"
+    >
       <div className="flex justify-center px-2 pt-4">
         <Link href="/feed" aria-label="Yunicity" className="inline-flex items-center">
           <YunicityLogo />
@@ -91,6 +95,7 @@ export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps)
               key={item.href}
               href={item.href}
               data-rail-label={item.label}
+              data-citizen-medium-rail-control={item.id}
               aria-current={active ? "page" : undefined}
               className={`w-full ${NAV_ITEM_BASE} ${active ? NAV_ITEM_ACTIVE : NAV_ITEM_IDLE}`}
             >
@@ -103,19 +108,32 @@ export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps)
         {/* Actions de découverte : déclencheurs existants, aucun second overlay.
             Leur nom accessible vient du composant (« Explorer Reims », « Menu
             Yunicity ») ; le libellé visuel compact est donc `aria-hidden`. */}
-        <div data-rail-label="Rechercher" className="flex flex-col items-center gap-1 rounded-xl py-1.5">
+        <div
+          data-rail-label="Rechercher"
+          data-citizen-medium-rail-control="search"
+          className="flex flex-col items-center gap-1 rounded-xl py-1.5"
+        >
           <ExplorerTriggerButton variant="medium-rail" />
           <span aria-hidden className={ACTION_LABEL}>
             Rechercher
           </span>
         </div>
 
-        <div data-rail-label="Menu" className="flex flex-col items-center gap-1 rounded-xl py-1.5">
+        <div
+          data-rail-label="Menu"
+          data-citizen-medium-rail-control="menu"
+          className="flex flex-col items-center gap-1 rounded-xl py-1.5"
+        >
           {/* Le variant `sidebar` rend DÉJÀ l'icône Grid3x3 et le libellé « Menu »
               dans un bouton rond de 52 px : ajouter un second libellé ici serait
               un doublon. Seule la grammaire visuelle (icône noire sur pastille
               grise) est appliquée, en CSS depuis le rail. */}
-          <CitizenYunicityMenu variant="sidebar" />
+          {/* C3-CITIZEN-MEDIUM-SHELL-R1B : variante DISTINCTE de la sidebar
+              historique. Les deux instances ne se disputent plus l'hôte de la
+              surface Menu, quel que soit l'ordre du DOM. */}
+          {/* Apparence CONSTANTE. Le rail n'est rendu que lorsqu'il existe :
+              il affirme donc le fait global sans le calculer. */}
+          <CitizenYunicityMenu variant="medium-rail" mediumRailPresent />
         </div>
       </nav>
 
@@ -129,8 +147,19 @@ export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps)
         {/* Cercle bleu + `+` blanc : `variant="sidebar-icon"` porte déjà ce rendu,
             son contrat d'ouverture est donc conservé tel quel. La cible passe de
             40 à 44 px (WCAG 2.5.5) sans toucher au composant partagé. */}
-        <div className="flex flex-col items-center gap-1">
-          <CreateHubTriggerButton variant="sidebar-icon" className="!h-11 !w-11" />
+        <div
+          data-rail-label="Créer"
+          data-citizen-medium-rail-control="create"
+          className="flex flex-col items-center gap-1"
+        >
+          {/* C3-CITIZEN-MEDIUM-SHELL-R1E : le rail DECLARE sa surface. Sur
+              `/videos`, elle seule expose « Créer » — mobile et desktop y
+              restent geles sur leur comportement historique. */}
+          <CreateHubTriggerButton
+            variant="sidebar-icon"
+            visibilitySurface="citizen-medium-rail"
+            className="!h-11 !w-11"
+          />
           <span aria-hidden className={ACTION_LABEL}>
             Créer
           </span>
@@ -138,6 +167,8 @@ export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps)
 
         <Link
           href={WEB_CITIZEN_NOTIFICATIONS_NAV.href}
+          data-rail-label={WEB_CITIZEN_NOTIFICATIONS_NAV.label}
+          data-citizen-medium-rail-control="notifications"
           className={`w-full ${NAV_ITEM_BASE} ${NAV_ITEM_IDLE}`}
         >
           <span className="relative inline-flex">
@@ -151,7 +182,11 @@ export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps)
           <span className="w-full text-center">{WEB_CITIZEN_NOTIFICATIONS_NAV.label}</span>
         </Link>
 
-        <div data-citizen-medium-rail-account="">
+        <div
+          data-citizen-medium-rail-account=""
+          data-rail-label="Profil"
+          data-citizen-medium-rail-control="profile"
+        >
           <CitizenAccountMenu variant="sidebar" />
         </div>
       </div>

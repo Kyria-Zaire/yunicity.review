@@ -362,16 +362,41 @@ test.describe("C3-FEED-M2 — shell et rail medium", () => {
     ).toBe(true);
   });
 
-  // ── Isolation des autres routes ────────────────────────────────────────────
+  // ── Adoption globale du rail (C3-CITIZEN-MEDIUM-SHELL-R1A) ─────────────────
+  // Ces routes n'héritaient PAS du rail : il appartenait au seul `FeedAppShell`.
+  // Décision CTO : le rail devient la navigation medium commune à toutes les
+  // pages citoyennes, `WebSidebar` en étant le propriétaire unique. Les
+  // anciennes assertions d'absence sont donc remplacées par le contrat global,
+  // sans affaiblir les garanties du rail lui-même : le contrat détaillé
+  // (destination active, sidebar concurrente, exclusions) vit dans la spec 29.
   for (const route of ["/search", "/map", "/passport", "/subscriptions", "/tribes"]) {
-    test(`768 — ${route} n'hérite pas du rail Feed medium`, async ({ authedPage }) => {
+    test(`768 — ${route} reçoit le rail citoyen global, une seule fois`, async ({ authedPage }) => {
       await authedPage.setViewportSize({ width: 768, height: 1024 });
       await authedPage.goto(route);
       await authedPage.waitForLoadState("domcontentloaded");
       await expect(
         visible(authedPage, RAIL),
-        `${route} : le rail Feed medium a fuité hors de la famille Feed`,
-      ).toHaveCount(0);
+        `${route} : le rail citoyen global est absent ou dupliqué`,
+      ).toHaveCount(1);
+    });
+  }
+
+  // Ce qui reste PROPRE au Feed ne doit pas devenir global pour autant.
+  for (const route of ["/search", "/map", "/tribes"]) {
+    test(`768 — ${route} n'hérite d'aucune structure Feed medium`, async ({ authedPage }) => {
+      await authedPage.setViewportSize({ width: 768, height: 1024 });
+      await authedPage.goto(route);
+      await authedPage.waitForLoadState("domcontentloaded");
+      const fuite = await authedPage.evaluate(() => ({
+        header: document.querySelectorAll(".feed-medium-header").length,
+        regions: document.querySelectorAll("[data-feed-medium-region]").length,
+        grille: document.querySelectorAll(".feed-medium-editorial-grid").length,
+        stream: document.querySelectorAll("[data-feed-stream-list]").length,
+      }));
+      expect(fuite.header, "header Feed medium fuité").toBe(0);
+      expect(fuite.regions, "régions Feed medium fuitées").toBe(0);
+      expect(fuite.grille, "grille éditoriale Feed fuitée").toBe(0);
+      expect(fuite.stream, "stream Feed fuité").toBe(0);
     });
   }
 });
