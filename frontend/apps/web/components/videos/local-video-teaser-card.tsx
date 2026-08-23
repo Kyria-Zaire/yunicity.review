@@ -24,7 +24,10 @@ export function LocalVideoTeaserCard({ item }: LocalVideoTeaserCardProps) {
       href={href}
       className="group flex gap-3 rounded-2xl border border-neutral-200/90 bg-white p-3 shadow-sm transition hover:border-yunicity-primary/30 hover:shadow-md"
     >
-      <div className="relative h-[7.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-xl bg-neutral-200">
+      <div
+        data-feed-video-media=""
+        className="relative h-[7.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-xl bg-neutral-200"
+      >
         {/* Thumbnail only — no video element (C2-S5 perf rule). */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

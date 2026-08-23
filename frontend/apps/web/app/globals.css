@@ -263,6 +263,38 @@ body {
   }
 }
 
+/* --- C3-FEED-M7-R2 : la video vit DANS le flux de publications (640 -> 1279.98)
+   Direction CTO : plus de section autonome « Videos pres de chez vous » dans la
+   bande medium. La video locale devient un enfant de la MEME liste que les
+   publications texte et image.
+
+   Mesures RED successives : item plafonne a 288 px et vignette portrait
+   72 x 120 (M7 initial) ; puis panneau de metadonnees lateral (M7 deux
+   colonnes, refuse) ; dans les deux cas la video restait une section a part,
+   avec son propre titre et son propre espace de region.
+
+   Aucune double requete : `listLocalVideos` est appele UNE fois dans
+   `feed-portal-screen`, sa donnee alimente les deux representations. Le masquage
+   se fait par `display: none`, qui retire l'element de l'arbre d'accessibilite
+   ET de l'ordre de tabulation -- aucun lien cache focalisable. */
+
+/* La publication video n'existe que dans la bande medium. */
+.feed-medium-stream-video {
+  display: none;
+}
+
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  /* Section autonome supprimee : ni titre, ni wrapper, ni espace de region,
+     ni hauteur fantome. La grille M4 ne lui alloue plus rien. */
+  .citizen-medium-shell .feed-desktop-video-section {
+    display: none;
+  }
+
+  .feed-medium-stream-video {
+    display: block;
+  }
+}
+
 /* --- C3-FEED-M6 : composition du compositeur medium (640 -> 1279.98) ---
    `FeedComposer` est PARTAGE : Feed desktop >= 1280 et mur de tribu le rendent
    aussi. Toute la composition medium passe donc par des attributs INERTES et

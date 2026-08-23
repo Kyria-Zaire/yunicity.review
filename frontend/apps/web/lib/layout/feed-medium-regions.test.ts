@@ -8,11 +8,10 @@ import {
 } from "@/lib/layout/feed-medium-regions";
 
 describe("régions éditoriales du Feed medium", () => {
-  it("expose exactement cinq régions, dans l'ordre éditorial", () => {
+  it("expose exactement quatre régions, dans l'ordre éditorial", () => {
     expect([...FEED_MEDIUM_REGIONS]).toEqual([
       "stories",
       "composer",
-      "discovery",
       "stream",
       "context",
     ]);
@@ -34,21 +33,21 @@ describe("régions éditoriales du Feed medium", () => {
 
   it("ordonne les régions de manière stricte et croissante", () => {
     const rangs = FEED_MEDIUM_REGIONS.map((r) => feedMediumRegionOrder(r));
-    expect(rangs).toEqual([0, 1, 2, 3, 4]);
+    expect(rangs).toEqual([0, 1, 2, 3]);
   });
 
   it("valide la séquence attendue et rejette toute autre", () => {
     expect(isFeedMediumRegionSequenceValid([...FEED_MEDIUM_REGIONS])).toBe(true);
     expect(
-      isFeedMediumRegionSequenceValid(["composer", "stories", "discovery", "stream", "context"]),
+      isFeedMediumRegionSequenceValid(["composer", "stories", "stream", "context"]),
       "ordre inversé accepté à tort",
     ).toBe(false);
     expect(
-      isFeedMediumRegionSequenceValid(["stories", "composer", "discovery", "stream"]),
+      isFeedMediumRegionSequenceValid(["stories", "composer", "stream"]),
       "région manquante acceptée à tort",
     ).toBe(false);
     expect(
-      isFeedMediumRegionSequenceValid(["stories", "stories", "discovery", "stream", "context"]),
+      isFeedMediumRegionSequenceValid(["stories", "stories", "stream", "context"]),
       "doublon accepté à tort",
     ).toBe(false);
   });

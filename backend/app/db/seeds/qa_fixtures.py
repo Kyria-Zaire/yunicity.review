@@ -117,20 +117,58 @@ async def _resolve_basic_tier_id(session: AsyncSession) -> uuid.UUID:
     return tier_id
 
 
+#: Prefixe public du montage `StaticFiles` de `app.main` (`/media`).
+QA_MEDIA_PUBLIC_PREFIX = "/media/qa"
+
+
+def _png_16_9(width: int = 320, height: int = 180) -> bytes:
+    """Build a DECODABLE placeholder image, 16:9, with the stdlib only.
+
+    C3-FEED-M7 : the previous placeholder carried only SOI+EOI (four bytes) and
+    no frame. It was served with a 200 and `image/jpeg`, yet no browser can
+    decode it, so the Feed rendered a broken image icon. A fixture must produce
+    an asset the product can actually display; PNG is generated here because the
+    stdlib ships a deflate encoder and no JPEG one. No dependency, no external
+    asset, no FFmpeg.
+    """
+    import struct
+    import zlib
+
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        body = kind + data
+        return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body))
+
+    header = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    row = bytes([0]) + bytes((90, 110, 255)) * width
+    return (
+        bytes([137, 80, 78, 71, 13, 10, 26, 10])
+        + chunk(b"IHDR", header)
+        + chunk(b"IDAT", zlib.compress(row * height, 9))
+        + chunk(b"IEND", b"")
+    )
+
+
 def _write_placeholder_video() -> tuple[str, str]:
     """Write a tiny placeholder media file under the temp media dir (no external upload).
 
     Returns (media_url, thumbnail_url). Best-effort: on failure we still return URLs so
-    the DB row is created (playback is a T3 concern)."""
+    the DB row is created (playback is a T3 concern).
+
+    C3-FEED-M7 : the URLs used to omit the `/media` segment while the files were
+    written under `media_upload_dir` -- exactly what `app.mount("/media",
+    StaticFiles(...))` serves. Both the thumbnail and the video answered 404.
+    The public prefix now names the mount point, so the fixture can no longer
+    describe a route that does not exist.
+    """
     settings = get_settings()
     base_url = settings.local_video_public_base_url
-    media_url = f"{base_url}/qa/qa-sample-video.mp4"
-    thumbnail_url = f"{base_url}/qa/qa-sample-video.jpg"
+    media_url = f"{base_url}{QA_MEDIA_PUBLIC_PREFIX}/qa-sample-video.mp4"
+    thumbnail_url = f"{base_url}{QA_MEDIA_PUBLIC_PREFIX}/qa-sample-video.png"
     try:
         media_dir = Path(settings.media_upload_dir) / "qa"
         media_dir.mkdir(parents=True, exist_ok=True)
-        (media_dir / "qa-sample-video.mp4").write_bytes(b"\x00\x00\x00\x18ftypmp42")
-        (media_dir / "qa-sample-video.jpg").write_bytes(b"\xff\xd8\xff\xd9")
+        (media_dir / "qa-sample-video.mp4").write_bytes(bytes([0, 0, 0, 24]) + b"ftypmp42")
+        (media_dir / "qa-sample-video.png").write_bytes(_png_16_9())
     except OSError as exc:  # pragma: no cover - filesystem edge
         logger.warning("qa_video_placeholder_skip", extra={"error": str(exc)})
     return media_url, thumbnail_url

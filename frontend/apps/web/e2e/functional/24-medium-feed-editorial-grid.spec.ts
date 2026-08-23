@@ -386,4 +386,51 @@ test.describe("C3-FEED-M4 — grille éditoriale du Feed medium", () => {
       await expect(visible(authedPage, REGION), `${route} : région Feed rendue`).toHaveCount(0);
     });
   }
+
+  test("768 — contrat R2 : quatre régions visibles, la vidéo vit dans le stream", async ({
+    authedPage,
+  }) => {
+    await gotoFeed(authedPage, { width: 768, height: 1024 });
+    await mountContext(authedPage);
+
+    const m = await authedPage.evaluate((regionSel) => {
+      const visible = (el: Element) => el.getBoundingClientRect().width > 0;
+      const regions = [...document.querySelectorAll(regionSel)].filter(visible);
+      const boites = regions.map((el) => el.getBoundingClientRect());
+      const stream = document.querySelector('[data-feed-medium-region="stream"]')!;
+      const liste = stream.querySelector("[data-feed-stream-list]");
+      return {
+        noms: regions.map((el) => el.getAttribute("data-feed-medium-region")),
+        gaps: boites.slice(1).map((b, i) => Math.round(b.top - boites[i]!.bottom)),
+        // Ordre DOM == ordre visuel : chaque région commence après la précédente.
+        ordreCoherent: boites.every((b, i) => i === 0 || b.top >= boites[i - 1]!.top - 1),
+        // La vidéo est bien un contenu contractuel du stream.
+        videoDansStream: stream.querySelectorAll('[data-feed-stream-item="local-video"]').length,
+        postsDansStream: stream.querySelectorAll('[data-feed-stream-item="post"]').length,
+        listeUnique: liste !== null && document.querySelectorAll("[data-feed-stream-list]").length,
+        // Le wrapper desktop masqué ne revendique aucune identité de région.
+        discoveryResiduel: document.querySelectorAll('[data-feed-medium-region="discovery"]').length,
+        wrapperDesktopVisible: [...document.querySelectorAll("[data-feed-desktop-video-section]")]
+          .filter(visible).length,
+      };
+    }, REGION);
+
+    expect(m.noms, "régions medium visibles").toEqual([
+      "stories",
+      "composer",
+      "stream",
+      "context",
+    ]);
+    expect(m.gaps.length, "nombre d'écarts inter-régions").toBe(3);
+    expect(m.gaps, "les trois écarts inter-régions ne valent pas 20 px").toEqual([20, 20, 20]);
+    expect(m.ordreCoherent, "ordre visuel différent de l'ordre DOM").toBe(true);
+    expect(m.videoDansStream, "publication vidéo absente ou dupliquée dans le stream").toBe(1);
+    expect(m.postsDansStream, "publications du stream").toBe(3);
+    expect(m.listeUnique, "conteneur de stream absent ou dupliqué").toBe(1);
+    expect(
+      m.discoveryResiduel,
+      "un élément revendique encore l'identité de région `discovery`",
+    ).toBe(0);
+    expect(m.wrapperDesktopVisible, "section vidéo desktop visible en medium").toBe(0);
+  });
 });

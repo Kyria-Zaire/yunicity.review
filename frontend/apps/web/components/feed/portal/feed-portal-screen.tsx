@@ -29,6 +29,7 @@ import { FeedLeftRail } from "@/components/feed/portal/feed-left-rail";
 import { FeedRightRail } from "@/components/feed/portal/feed-right-rail";
 import { FeedSavedEventsPanel } from "@/components/feed/portal/feed-saved-events-panel";
 import { FeedStoriesRail } from "@/components/feed/portal/feed-stories-rail";
+import { FeedVideoStreamItem } from "@/components/feed/portal/feed-video-stream-item";
 import { FeedMediumHeader } from "@/components/feed/portal/feed-medium-header";
 import { FeedViewTabs } from "@/components/feed/portal/feed-view-tabs";
 import {
@@ -36,7 +37,10 @@ import {
   FeedMobileHeader,
   FeedMobileStoriesRail,
 } from "@/components/feed/mobile";
-import { LocalVideoTeaserSection } from "@/components/videos/local-video-teaser-section";
+import { LocalVideoTeaserRail } from "@/components/videos/local-video-teaser-rail";
+import { useLocalVideoTeasers } from "@/hooks/use-local-video-teasers";
+import { buildFeedStream, type FeedStreamItem } from "@/lib/feed/feed-stream";
+import { LOCAL_VIDEO_TEASER_SECTION_FEED } from "@yunicity/utils";
 import { FEED_MOBILE_CONTENT_PADDING_CLASS } from "@/lib/layout/feed-mobile-full-bleed";
 import { useFeed } from "@/hooks/use-feed";
 import { useFeedPortalContext } from "@/hooks/use-feed-portal-context";
@@ -90,6 +94,11 @@ export function FeedPortalScreen() {
       (PROFILE_INTERESTS as readonly string[]).includes(i),
     );
   }, [portal.profile?.interests]);
+
+  // C3-FEED-M7-R2 : UN SEUL appel a `listLocalVideos`. La donnee alimente a la
+  // fois la publication video du flux medium et la section historique desktop.
+  const videoTeasers = useLocalVideoTeasers({ city, filter: { kind: "city" } });
+  const streamVideo = videoTeasers.items[0] ?? null;
 
   const stories = useMemo(
     () =>
@@ -149,6 +158,14 @@ export function FeedPortalScreen() {
       userId: user?.id ?? null,
     });
   }, [activeView, filterOpen, interests, items, leftNav, user?.id]);
+
+  /* C3-FEED-M7-R2 : la video locale rejoint la MEME liste que les publications.
+     Fonction pure sur la liste complete -> une seule insertion, jamais une par
+     page apres « charger plus ». */
+  const mediumStream = useMemo(
+    () => buildFeedStream(displayedPosts, streamVideo, activeView),
+    [displayedPosts, streamVideo, activeView],
+  );
 
   const viewHint =
     activeView === "for_you" && !leftNav && filterOpen
@@ -407,8 +424,18 @@ export function FeedPortalScreen() {
         </div>
 
         {!leftNav ? (
-          <div data-feed-medium-region="discovery" className="mt-5">
-            <LocalVideoTeaserSection city={city} filter={{ kind: "city" }} layout="scroll" />
+          <div data-feed-desktop-video-section="" className="feed-desktop-video-section mt-5">
+            {/* Section historique : conservee telle quelle pour le desktop
+                >= 1280 et le mobile. Elle consomme la donnee DEJA chargee — la
+                region entiere est masquee dans la bande medium, ou la video
+                vit desormais dans le flux. */}
+            {videoTeasers.isLoading || videoTeasers.isEmpty ? null : (
+              <LocalVideoTeaserRail
+                items={videoTeasers.items}
+                title={LOCAL_VIDEO_TEASER_SECTION_FEED}
+                layout="scroll"
+              />
+            )}
           </div>
         ) : null}
 
@@ -461,12 +488,30 @@ export function FeedPortalScreen() {
         ) : null}
 
         {!isLoading && !error && leftNav !== "saved" && displayedPosts.length > 0 ? (
-          <ul className="mt-5 space-y-5 lg:space-y-6" aria-label="Publications du fil local">
-            {displayedPosts.map((post) => (
-              <li key={post.id}>
-                <FeedCard post={post} onToggleLike={toggleLike} onReport={handleReport} />
-              </li>
-            ))}
+          <ul
+            data-feed-stream-list=""
+            className="mt-5 space-y-5 lg:space-y-6"
+            aria-label="Publications du fil local"
+          >
+            {mediumStream.map((entree: FeedStreamItem) =>
+              entree.kind === "post" ? (
+                <li key={entree.key} data-feed-stream-item="post">
+                  <FeedCard
+                    post={entree.post}
+                    onToggleLike={toggleLike}
+                    onReport={handleReport}
+                  />
+                </li>
+              ) : (
+                <li
+                  key={entree.key}
+                  data-feed-stream-item="local-video"
+                  className="feed-medium-stream-video"
+                >
+                  <FeedVideoStreamItem video={entree.video} />
+                </li>
+              ),
+            )}
           </ul>
         ) : null}
 

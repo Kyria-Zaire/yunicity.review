@@ -126,7 +126,9 @@ async function mesurer(page: Page) {
       const ir = input.getBoundingClientRect();
       const br = submit.getBoundingClientRect();
       const stories = document.querySelector('[data-feed-medium-region="stories"]');
-      const discovery = document.querySelector('[data-feed-medium-region="discovery"]');
+      // C3-FEED-M7-R2 : la region `discovery` a quitte la bande medium ; la
+      // voisine basse du compositeur est desormais `stream`.
+      const suivante = document.querySelector('[data-feed-medium-region="stream"]');
       const rr = region.getBoundingClientRect();
 
       return {
@@ -190,7 +192,7 @@ async function mesurer(page: Page) {
           return true;
         })(),
         gapStories: stories ? round(rr.top - stories.getBoundingClientRect().bottom) : null,
-        gapDiscovery: discovery ? round(discovery.getBoundingClientRect().top - rr.bottom) : null,
+        gapSuivante: suivante ? round(suivante.getBoundingClientRect().top - rr.bottom) : null,
         debordementPage:
           document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
         hauteurComposer: round(composer.getBoundingClientRect().height),
@@ -228,7 +230,7 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
 
       // 5. Rythme M4.
       expect(Math.round(m.gapStories ?? -1), "rythme Stories → Composer").toBe(GAP_REGION_PX);
-      expect(Math.round(m.gapDiscovery ?? -1), "rythme Composer → Discovery").toBe(GAP_REGION_PX);
+      expect(Math.round(m.gapSuivante ?? -1), "rythme Composer → Stream").toBe(GAP_REGION_PX);
 
       // 6. État au repos compact.
       expect(

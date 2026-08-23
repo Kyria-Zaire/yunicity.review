@@ -37,10 +37,16 @@ function visible(page: Page, selector: string) {
  */
 async function mountAllSurfaces(page: Page): Promise<void> {
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  // C3-FEED-M7-R2 : compter les surfaces du DOCUMENT laisserait passer la
+  // section video desktop, presente mais `display: none` dans toute la bande
+  // medium. On attend les surfaces REELLEMENT RENDUES — condition plus stricte.
   await expect
     .poll(async () =>
       page.evaluate(
-        () => document.querySelectorAll('[data-feed-medium-surface="primary"]').length,
+        () =>
+          [...document.querySelectorAll('[data-feed-medium-surface="primary"]')].filter(
+            (el) => el.getBoundingClientRect().width > 0,
+          ).length,
       ),
     )
     .toBeGreaterThanOrEqual(10);
@@ -331,7 +337,6 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
   const PRIMARY_FAMILIES: ReadonlyArray<{ nom: string; motif: RegExp }> = [
     { nom: "Stories + onglets", motif: /votre story/i },
     { nom: "Compositeur", motif: /quoi de neuf/i },
-    { nom: "Vidéos près de chez vous", motif: /vidéos près de chez vous/i },
     { nom: "Privilège local", motif: /privilège local/i },
     { nom: "Dans vos tribus", motif: /dans vos tribus/i },
     { nom: "À ne pas manquer", motif: /à ne pas manquer/i },
@@ -352,12 +357,22 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
       return {
         total: marquees.length,
         publications: marquees.filter((el) => el.tagName === "ARTICLE").length,
+        // C3-FEED-M7-R2 : la publication vidéo est identifiée par son MARQUEUR,
+        // pas par son texte — les libellés sont tronqués à 60 caractères et
+        // l'identité ne doit dépendre ni du seed ni d'une position.
+        videos: marquees.filter((el) => el.querySelector("[data-feed-video-stream-item]") !== null)
+          .length,
         textes: marquees.map((el) => (el.textContent ?? "").trim().slice(0, 60)),
       };
     }, PRIMARY);
 
     expect(releve.total, `surfaces marquées : ${releve.textes.join(" | ")}`).toBe(10);
     expect(releve.publications, "publications citoyennes marquées").toBe(3);
+    // C3-FEED-M7-R2 : la surface « Vidéos près de chez vous » a quitté la bande
+    // medium ; la publication vidéo du flux la remplace au même rang. Le total
+    // reste donc 10 : 1 stories + 1 composeur + 3 publications + 1 vidéo +
+    // 4 blocs locaux.
+    expect(releve.videos, "publication vidéo du flux marquée exactement une fois").toBe(1);
 
     for (const famille of PRIMARY_FAMILIES) {
       const trouvees = releve.textes.filter((t) => famille.motif.test(t)).length;
