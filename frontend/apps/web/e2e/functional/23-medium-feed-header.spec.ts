@@ -281,13 +281,19 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
     await expect(filter).toHaveAttribute("aria-expanded", "false");
 
     await filter.click();
-    await expect(filter, "le filtre Feed ne s'est pas activé").toHaveAttribute(
+    await expect(filter, "le panneau filtre ne s'est pas ouvert").toHaveAttribute(
       "aria-expanded",
       "true",
     );
+    await expect(filter).toHaveAttribute("aria-pressed", "true");
+    await expect(authedPage.locator("[data-feed-medium-filter-panel]")).toBeVisible();
 
-    await filter.click();
+    await authedPage.keyboard.press("Escape");
     await expect(filter).toHaveAttribute("aria-expanded", "false");
+    await expect(filter, "Escape ne doit pas désactiver le filtre").toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   // ── Sticky et empilement ───────────────────────────────────────────────────
@@ -485,6 +491,11 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
 
     await filtre.click();
     await expect(filtre).toHaveAttribute("aria-expanded", "true");
+    await expect(filtre).toHaveAttribute("aria-pressed", "true");
+    // Fermer le panneau pour mesurer le fil (overlay modal inert).
+    await authedPage.keyboard.press("Escape");
+    await expect(filtre).toHaveAttribute("aria-expanded", "false");
+    await expect(filtre).toHaveAttribute("aria-pressed", "true");
 
     const pendant = await authedPage.evaluate((selector) => {
       const colonne = document.querySelector(".feed-medium-column")!;
@@ -522,7 +533,10 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
     expect(pendant.axes, "surface filtrée hors axes").toBe(true);
 
     await filtre.click();
+    await expect(filtre).toHaveAttribute("aria-expanded", "true");
+    await authedPage.locator("[data-feed-medium-filter-reset]").click();
     await expect(filtre).toHaveAttribute("aria-expanded", "false");
+    await expect(filtre).toHaveAttribute("aria-pressed", "false");
     expect(await compteVisible(), "le fil n'est pas revenu à son état initial").toBe(10);
   });
 

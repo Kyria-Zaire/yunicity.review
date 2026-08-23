@@ -31,6 +31,7 @@ import { FeedSavedEventsPanel } from "@/components/feed/portal/feed-saved-events
 import { FeedStoriesRail } from "@/components/feed/portal/feed-stories-rail";
 import { FeedVideoStreamItem } from "@/components/feed/portal/feed-video-stream-item";
 import { FeedMediumHeader } from "@/components/feed/portal/feed-medium-header";
+import { FeedMediumFilterSheet } from "@/components/feed/portal/feed-medium-filter-sheet";
 import { FeedViewTabs } from "@/components/feed/portal/feed-view-tabs";
 import {
   FeedMobileComposer,
@@ -42,6 +43,10 @@ import { useLocalVideoTeasers } from "@/hooks/use-local-video-teasers";
 import { buildFeedStream, type FeedStreamItem } from "@/lib/feed/feed-stream";
 import { LOCAL_VIDEO_TEASER_SECTION_FEED } from "@yunicity/utils";
 import { FEED_MOBILE_CONTENT_PADDING_CLASS } from "@/lib/layout/feed-mobile-full-bleed";
+import {
+  isFeedMediumInterestFilterActive,
+  resetFeedMediumFilterActivation,
+} from "@/lib/layout/feed-medium-filter-contract";
 import { useFeed } from "@/hooks/use-feed";
 import { useFeedPortalContext } from "@/hooks/use-feed-portal-context";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
@@ -67,8 +72,12 @@ export function FeedPortalScreen() {
 
   const [activeView, setActiveView] = useState<FeedPortalView>("for_you");
   const [leftNav, setLeftNav] = useState<FeedLeftNav>(null);
-  const [filterOpen, setFilterOpen] = useState(false);
+  /** Activation du filtre centres d'intérêt (application immédiate historique). */
+  const [interestFilterActive, setInterestFilterActive] = useState(false);
+  /** Surface Sheet medium uniquement (640–1279). */
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [reportMessage, setReportMessage] = useState<string | null>(null);
+  const filterTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const {
     loadInitial,
@@ -152,12 +161,18 @@ export function FeedPortalScreen() {
     }
     if (leftNav === "saved") return [];
     const interestFilter =
-      activeView === "for_you" && filterOpen && interests.length > 0 ? interests : [];
+      activeView === "for_you" &&
+      isFeedMediumInterestFilterActive({
+        activated: interestFilterActive,
+        interests,
+      })
+        ? interests
+        : [];
     return filterFeedPostsByView(items, activeView, {
       interests: interestFilter,
       userId: user?.id ?? null,
     });
-  }, [activeView, filterOpen, interests, items, leftNav, user?.id]);
+  }, [activeView, interestFilterActive, interests, items, leftNav, user?.id]);
 
   /* C3-FEED-M7-R2 : la video locale rejoint la MEME liste que les publications.
      Fonction pure sur la liste complete -> une seule insertion, jamais une par
@@ -168,11 +183,44 @@ export function FeedPortalScreen() {
   );
 
   const viewHint =
-    activeView === "for_you" && !leftNav && filterOpen
+    activeView === "for_you" &&
+    !leftNav &&
+    isFeedMediumInterestFilterActive({ activated: interestFilterActive, interests })
       ? FEED_PORTAL_FOR_YOU_HINT
       : activeView === "popular" && !leftNav
         ? FEED_PORTAL_POPULAR_HINT
         : null;
+
+  const filterHint =
+    isFeedMediumInterestFilterActive({ activated: interestFilterActive, interests }) ? (
+      <>
+        Filtre actif selon vos centres d&apos;intérêt : {interests.slice(0, 4).join(", ")}
+        {interests.length > 4 ? "…" : ""}
+      </>
+    ) : interestFilterActive && interests.length === 0 ? (
+      <>
+        Ajoutez vos centres d&apos;intérêt dans les{" "}
+        <Link href="/settings" className="font-semibold text-yunicity-primary hover:underline">
+          paramètres
+        </Link>{" "}
+        pour activer le filtrage.
+      </>
+    ) : null;
+
+  function openMediumFilter(trigger: HTMLButtonElement) {
+    filterTriggerRef.current = trigger;
+    if (filterPanelOpen) {
+      setFilterPanelOpen(false);
+      return;
+    }
+    setInterestFilterActive(true);
+    setFilterPanelOpen(true);
+  }
+
+  function resetInterestFilter() {
+    setInterestFilterActive(resetFeedMediumFilterActivation());
+    setFilterPanelOpen(false);
+  }
 
   const rightRail = (
     <FeedRightRail
@@ -203,22 +251,6 @@ export function FeedPortalScreen() {
     }
     setLeftNav(nav);
   }
-
-  const filterHint =
-    filterOpen && interests.length > 0 ? (
-      <>
-        Filtre actif selon vos centres d&apos;intérêt : {interests.slice(0, 4).join(", ")}
-        {interests.length > 4 ? "…" : ""}
-      </>
-    ) : (
-      <>
-        Ajoutez vos centres d&apos;intérêt dans les{" "}
-        <Link href="/settings" className="font-semibold text-yunicity-primary hover:underline">
-          paramètres
-        </Link>{" "}
-        pour activer le filtrage.
-      </>
-    );
 
   const feedStates = (
     <>
@@ -254,7 +286,7 @@ export function FeedPortalScreen() {
       ) : null}
 
       {!isLoading && !error && leftNav !== "saved" && displayedPosts.length === 0 ? (
-        filterOpen && items.length > 0 ? (
+        interestFilterActive && items.length > 0 ? (
           <div
             data-feed-medium-surface="primary"
             className={`rounded-2xl border border-dashed border-yunicity-border bg-white p-8 text-center shadow-sm ${FEED_MOBILE_CONTENT_PADDING_CLASS}`}
@@ -267,7 +299,7 @@ export function FeedPortalScreen() {
             </p>
             <button
               type="button"
-              onClick={() => setFilterOpen(false)}
+              onClick={() => setInterestFilterActive(false)}
               className="mt-4 rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
             >
               Désactiver le filtre
@@ -330,7 +362,7 @@ export function FeedPortalScreen() {
               (GET /feed n'accepte que cursor+limit). Rangee retiree du mobile ;
               elle n'est PAS remplacee par les onglets medium/desktop. La navigation
               contextuelle mobile viendra avec la reconstruction visuelle. */}
-          {filterOpen ? (
+          {interestFilterActive ? (
             <p className="rounded-xl bg-white px-3 py-2.5 text-xs text-neutral-500 ring-1 ring-neutral-200/90">
               {filterHint}
             </p>
@@ -356,8 +388,21 @@ export function FeedPortalScreen() {
             reste sticky en haut de la colonne. */}
         <FeedMediumHeader
           city={city}
-          filterOpen={filterOpen}
-          onToggleFilter={() => setFilterOpen((v) => !v)}
+          filterPanelOpen={filterPanelOpen}
+          filterActive={isFeedMediumInterestFilterActive({
+            activated: interestFilterActive,
+            interests,
+          })}
+          onOpenFilter={openMediumFilter}
+          filterButtonRef={filterTriggerRef}
+        />
+        <FeedMediumFilterSheet
+          open={filterPanelOpen}
+          onOpenChange={setFilterPanelOpen}
+          activated={interestFilterActive}
+          interests={interests}
+          onReset={resetInterestFilter}
+          returnFocusRef={filterTriggerRef}
         />
         <div
           data-feed-medium-region="stories"
@@ -383,28 +428,15 @@ export function FeedPortalScreen() {
               onViewChange={(view) => {
                 setLeftNav(null);
                 setActiveView(view);
+                setFilterPanelOpen(false);
               }}
-              filterOpen={filterOpen}
-              onToggleFilter={() => setFilterOpen((v) => !v)}
+              filterOpen={interestFilterActive}
+              onToggleFilter={() => setInterestFilterActive((v) => !v)}
             />
           </div>
-          {filterOpen ? (
-            <p className="border-b border-neutral-100 px-4 py-3 text-xs text-neutral-500 sm:px-6">
-              {interests.length > 0 ? (
-                <>
-                  Filtre actif selon vos centres d&apos;intérêt :{" "}
-                  {interests.slice(0, 4).join(", ")}
-                  {interests.length > 4 ? "…" : ""}
-                </>
-              ) : (
-                <>
-                  Ajoutez vos centres d&apos;intérêt dans les{" "}
-                  <Link href="/settings" className="font-semibold text-yunicity-primary hover:underline">
-                    paramètres
-                  </Link>{" "}
-                  pour activer le filtrage.
-                </>
-              )}
+          {interestFilterActive && filterHint ? (
+            <p className="feed-legacy-filter-banner border-b border-neutral-100 px-4 py-3 text-xs text-neutral-500 sm:px-6">
+              {filterHint}
             </p>
           ) : null}
         </div>
@@ -463,7 +495,7 @@ export function FeedPortalScreen() {
         ) : null}
 
         {!isLoading && !error && leftNav !== "saved" && displayedPosts.length === 0 ? (
-          filterOpen && items.length > 0 ? (
+          interestFilterActive && items.length > 0 ? (
             <div
               data-feed-medium-surface="primary"
               className="mt-5 rounded-2xl border border-dashed border-yunicity-border bg-white p-8 text-center shadow-sm"
@@ -476,7 +508,7 @@ export function FeedPortalScreen() {
               </p>
               <button
                 type="button"
-                onClick={() => setFilterOpen(false)}
+                onClick={() => setInterestFilterActive(false)}
                 className="mt-4 rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
               >
                 Désactiver le filtre

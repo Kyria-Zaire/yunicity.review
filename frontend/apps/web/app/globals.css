@@ -199,6 +199,12 @@ body {
   .feed-legacy-filter {
     display: none !important;
   }
+
+  /* C3-FEED-M10 : le bandeau statut sous les onglets est desktop-only ;
+     medium utilise la Sheet dédiée. */
+  .feed-legacy-filter-banner {
+    display: none !important;
+  }
 }
 
 /* ——— C3-FEED-M4 : grille editoriale du Feed medium (640 → 1279.98) ———

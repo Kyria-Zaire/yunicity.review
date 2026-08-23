@@ -1,44 +1,32 @@
 "use client";
 
 import { SlidersHorizontal, Search, MapPin } from "lucide-react";
-import type { MouseEvent } from "react";
+import type { MouseEvent, Ref } from "react";
 
 import { useExplorerOptional } from "@/components/explorer/explorer-provider";
 import { FEED_PORTAL_FILTER } from "@yunicity/utils";
 
 /**
- * Header de contenu du Feed moyen — 640 → 1279,98 px (C3-FEED-M3).
+ * Header de contenu du Feed moyen — 640 → 1279,98 px (C3-FEED-M3 / M10).
  *
- * ── Pourquoi un composant Feed et non citoyen ────────────────────────────────
- * Contrairement au rail (extrait en M2.4), ce header porte le contrôle de
- * FILTRE, qui appartient au Feed : il n'est donc pas généralisé aux autres
- * familles de pages.
- *
- * ── Ville : information, jamais faux sélecteur ───────────────────────────────
- * L'audit des contrats n'a trouvé AUCUN contrat de sélection de ville côté Feed
- * (`portal.city || user?.city || "Reims"` est une lecture, pas un choix). La
- * ville est donc rendue en information non interactive : ni chevron, ni bouton,
- * ni action fictive. Le jour où un contrat de changement de ville existera, ce
- * point deviendra interactif — pas avant.
- *
- * ── Recherche ────────────────────────────────────────────────────────────────
- * La pilule appelle `openExplorer(event.currentTarget)` : c'est l'Explorer
- * autoritaire, et le déclencheur se désigne lui-même comme cible de retour du
- * focus via le contrat `returnFocusRef` verrouillé en C3-FEED-M2.3A/B — ce qui
- * rend la restitution correcte sur Chromium comme sur WebKit.
- *
- * La présence de « Rechercher » à la fois dans le rail et ici est intentionnelle
- * et validée : raccourci global dans le rail, surface contextuelle dans le
- * header.
+ * ── Filtrer (M10) ────────────────────────────────────────────────────────────
+ * Le déclencheur ouvre la surface Sheet unique. `aria-expanded` reflète
+ * l'ouverture du panneau ; l'état ACTIF du filtre (centres d'intérêt) est
+ * annoncé séparément (texte + `aria-pressed` / `data-active`) pour ne pas
+ * confondre ouverture et application.
  */
 export function FeedMediumHeader({
   city,
-  filterOpen,
-  onToggleFilter,
+  filterPanelOpen,
+  filterActive,
+  onOpenFilter,
+  filterButtonRef,
 }: {
   city: string;
-  filterOpen: boolean;
-  onToggleFilter: () => void;
+  filterPanelOpen: boolean;
+  filterActive: boolean;
+  onOpenFilter: (trigger: HTMLButtonElement) => void;
+  filterButtonRef?: Ref<HTMLButtonElement>;
 }) {
   const explorer = useExplorerOptional();
 
@@ -51,8 +39,6 @@ export function FeedMediumHeader({
         Yunicity
       </span>
 
-      {/* Information de contexte : aucune action n'est proposée car aucune
-          n'existe. `role="status"` la rend lisible sans promettre un contrôle. */}
       <span
         data-feed-medium-header-city=""
         className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-neutral-700"
@@ -78,17 +64,24 @@ export function FeedMediumHeader({
 
       <button
         type="button"
+        ref={filterButtonRef}
         data-feed-medium-header-filter=""
-        onClick={onToggleFilter}
-        aria-expanded={filterOpen}
-        className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-medium transition ${
-          filterOpen
-            ? "border-yunicity-primary bg-[#EEF0FF] text-yunicity-primary"
-            : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300"
+        data-feed-medium-filter-active={filterActive ? "" : undefined}
+        onClick={(event: MouseEvent<HTMLButtonElement>) => onOpenFilter(event.currentTarget)}
+        aria-expanded={filterPanelOpen}
+        aria-haspopup="dialog"
+        aria-pressed={filterActive}
+        className={`inline-flex min-h-11 min-w-11 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
+          filterActive
+            ? "border-yunicity-primary bg-[#EEF0FF] text-yunicity-primary ring-1 ring-yunicity-primary/40"
+            : filterPanelOpen
+              ? "border-neutral-400 bg-neutral-50 text-neutral-800"
+              : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300"
         }`}
       >
         <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden />
         <span className="whitespace-nowrap">{FEED_PORTAL_FILTER}</span>
+        {filterActive ? <span className="sr-only"> — filtre actif</span> : null}
       </button>
     </div>
   );

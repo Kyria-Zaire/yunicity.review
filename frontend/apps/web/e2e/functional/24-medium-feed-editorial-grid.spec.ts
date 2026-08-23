@@ -318,6 +318,7 @@ test.describe("C3-FEED-M4 — grille éditoriale du Feed medium", () => {
 
     await filtre.click();
     await expect(filtre).toHaveAttribute("aria-expanded", "true");
+    await authedPage.keyboard.press("Escape");
 
     const pendant = await lire();
     expect(pendant.streams, "double région stream en état filtré").toBe(1);
@@ -326,7 +327,8 @@ test.describe("C3-FEED-M4 — grille éditoriale du Feed medium", () => {
     expect(pendant.streamWidth, "largeur du stream modifiée").toBe(avant.streamWidth);
 
     await filtre.click();
-    await expect(filtre, "le filtre ne se désactive plus").toHaveAttribute("aria-expanded", "false");
+    await authedPage.locator("[data-feed-medium-filter-reset]").click();
+    await expect(filtre, "le filtre ne se réinitialise plus").toHaveAttribute("aria-expanded", "false");
     expect((await lire()).noms).toEqual([...FEED_MEDIUM_REGIONS]);
   });
 

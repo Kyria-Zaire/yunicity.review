@@ -556,10 +556,11 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
 
     await expect(authedPage.locator(ITEM_VIDEO)).toHaveCount(1);
     await authedPage.locator("[data-feed-medium-header-filter]").click();
+    await expect(authedPage.locator("[data-feed-medium-filter-panel]")).toBeVisible();
     expect(await authedPage.locator(ITEM_VIDEO).count()).toBeLessThanOrEqual(1);
     expect(await authedPage.locator(LISTE).count()).toBeLessThanOrEqual(1);
 
-    await authedPage.locator("[data-feed-medium-header-filter]").click();
+    await authedPage.locator("[data-feed-medium-filter-reset]").click();
     await expect(authedPage.locator(ITEM_VIDEO)).toHaveCount(1);
     expect(await authedPage.locator(LISTE).count()).toBe(1);
   });
