@@ -116,16 +116,22 @@ describe("R1B — hote medium distinct et election globale", () => {
   });
 
   it("aucun ternaire d'eligibilite ne subsiste sur la prop `variant`", () => {
-    // R1C : l'apparence ne depend plus de la route. Seul le FAIT global transite.
+    // R1C / FINAL-GATE-01 : l'apparence ne depend plus de la route. Seul le FAIT
+    // global transite — dérivé de `presentation === "rail"`, jamais de
+    // `medium.eligible` (contrat produit actuel).
     for (const rel of [
       "../../components/layout/web-sidebar.tsx",
       "../../components/layout/citizen-medium-rail.tsx",
     ]) {
       expect(lire(rel)).not.toMatch(/variant=\{[^}]*\?/);
     }
-    expect(lire("../../components/layout/web-sidebar.tsx")).toMatch(
-      /mediumRailPresent=\{medium\.eligible\}/,
+    const sidebar = lire("../../components/layout/web-sidebar.tsx");
+    expect(sidebar).toMatch(
+      /const railActive\s*=\s*medium\.presentation\s*===\s*["']rail["']/,
     );
+    expect(sidebar).toMatch(/mediumRailPresent=\{railActive\}/);
+    expect(sidebar).not.toMatch(/mediumRailPresent=\{medium\.eligible\}/);
+    expect(sidebar).not.toMatch(/medium\.eligible/);
   });
 
   it("le fait global n'est jamais infere depuis la variante de l'instance", () => {
