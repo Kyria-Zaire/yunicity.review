@@ -135,15 +135,22 @@ test.describe("Passport", () => {
     expect(body.status ?? "").toMatch(/active|onboarding|pending|/);
   });
 
-  test("page /passport rend l'état (ou reste sur le loader — révélé)", async ({ authedPage }) => {
+  test("page /passport rend l'etat (le loader de session ne reste pas bloque)", async ({
+    authedPage,
+  }) => {
     await authedPage.goto("/passport");
     await expect(authedPage).not.toHaveURL(/\/login/);
-    // Reveal: either the passport content renders, or it is stuck on the session loader.
-    const stuck = await authedPage
-      .getByText(/Chargement de la session/i)
-      .first()
-      .isVisible()
-      .catch(() => false);
-    expect(stuck, "if true → passport page stuck on session loader (product finding)").toBe(false);
+
+    // Un loader de session VISIBLE pendant le bootstrap est le comportement
+    // normal, pas un defaut. Mesure C3.1-R1K sur serveur production-like :
+    // `goto` rend la main a 581 ms, le loader disparait a 750 ms, et les huit
+    // appels API du parcours repondent 200. L'ancienne version lisait l'etat
+    // instantanement apres `goto` et qualifiait donc de "bloque" un loader
+    // simplement en cours -- elle echouait sur une course, pas sur un fait.
+    //
+    // Le defaut reellement cherche est un loader qui NE DISPARAIT PAS : on
+    // l'assertionne, puis on exige que le contenu soit effectivement rendu.
+    await expect(authedPage.getByText(/Chargement de la session/i).first()).toBeHidden();
+    await expect(authedPage.getByRole("heading", { name: /passport/i }).first()).toBeVisible();
   });
 });

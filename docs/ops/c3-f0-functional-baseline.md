@@ -25,8 +25,9 @@ Chaîne linéaire, aucun merge, aucun amend. HEAD = `a4515d1`.
 ## 3. Architecture QA (jetable, hermétique par configuration)
 
 - Postgres/PostGIS `yunicity_qa` (port hôte **5455**) + Redis QA (port hôte **6399**) + backend QA
-  (port **8010**) — via `docker-compose.qa.yml`, projet `yunicity-qa`, **sans volume persistant**
-  (`tmpfs` → jetable).
+  (port **8010**) — via `docker-compose.qa.yml`, projet `yunicity-qa`. Postgres/Redis en **tmpfs**.
+  Médias posts/stories : volume nommé `yunicity-qa-story-media` (jetable via `down -v` ou
+  `python -m app.qa.launcher reset`). Jamais partagé avec `yunicity_dev`. Aucune clé R2.
 - Garde anti-production **fail-closed** (`backend/app/qa/guard.py`) invoquée *dans* chaque fonction
   destructive (reset/seed), pas seulement dans le launcher.
 - Services externes neutralisés par configuration (email `console`, push off, storage `filesystem`,

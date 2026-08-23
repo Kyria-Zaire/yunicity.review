@@ -77,11 +77,15 @@ export function buildPageMetadata(input: PageMetadataInput): Metadata {
   };
 }
 
-export function buildNoIndexMetadata(title: string, description?: string): Metadata {
+export function buildNoIndexMetadata(
+  title: string,
+  description?: string,
+  path = "/",
+): Metadata {
   return buildPageMetadata({
     title,
     description: description ?? SITE_DEFAULT_METADATA.defaultDescription,
-    path: "/",
+    path,
     noIndex: true,
     absoluteTitle: true,
   });

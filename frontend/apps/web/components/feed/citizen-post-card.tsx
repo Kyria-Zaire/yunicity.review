@@ -54,7 +54,7 @@ export function CitizenPostCard({
       ) : null}
       {post.media_url ? (
         layout === "mobile" ? (
-          <FeedMobileMedia mediaUrl={post.media_url} />
+          <FeedMobileMedia mediaUrl={post.media_url} label={post.body ?? undefined} />
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img

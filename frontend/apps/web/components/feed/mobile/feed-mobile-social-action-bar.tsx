@@ -69,6 +69,10 @@ export function FeedMobileSocialActionBar({
 
   const isEvent = post.type === "event" && post.event != null;
   const eventInterested = post.event?.interested_by_me ?? false;
+  // C3.1-R1L : hors evenement, aucun contrat de sauvegarde de publication
+  // n'existe (ni modele, ni route ; seul `GET /events/me/saved` existe, pour les
+  // EVENEMENTS). L'icone marque-page etait donc rendue en <span> decoratif,
+  // visible et inerte. Un controle qui ne fait rien ment : on ne le rend plus.
   const showBookmark = isEvent && onToggleEventInterest;
 
   async function handleShare() {
@@ -150,14 +154,7 @@ export function FeedMobileSocialActionBar({
           >
             <IconBookmark />
           </button>
-        ) : (
-          <span
-            className="ml-auto inline-flex min-h-9 min-w-9 items-center justify-center text-neutral-400"
-            aria-hidden
-          >
-            <IconBookmark />
-          </span>
-        )}
+        ) : null}
       </div>
       {shareHint ? <p className="text-xs text-neutral-500">{shareHint}</p> : null}
     </div>

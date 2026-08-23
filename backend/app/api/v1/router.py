@@ -44,6 +44,7 @@ from app.api.v1 import (
     scan,
     search,
     stories,
+    story_media,
     subscriptions,
     transit,
     tribe_invitations,
@@ -91,6 +92,7 @@ api_router.include_router(users.router)
 api_router.include_router(feed.router)
 api_router.include_router(discussions.router)
 api_router.include_router(stories.router)
+api_router.include_router(story_media.router)
 api_router.include_router(local_videos.router)
 api_router.include_router(posts.router)
 api_router.include_router(comments.router)

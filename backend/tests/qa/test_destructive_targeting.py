@@ -1,8 +1,13 @@
-"""Destructive-target policy tests (C3-F0-T1-R1).
+"""Destructive-target policy tests (C3-F0-T1-R1, contrat durci en C3.1-R1G).
 
 Prove the shared resolver used by every destructive fixture is fail-closed and
 never falls back to ``DATABASE_URL``. Pure decision tests: the resolver opens no
 connection, so no forbidden target is ever contacted.
+
+C3.1-R1G : la cible autorisee est desormais une base JETABLE ``yunicity_test_*``.
+``yunicity_qa`` — baseline de Playwright et de la revue manuelle — est refusee.
+Aucun scenario n'a ete retire : celui qui autorisait ``yunicity_qa`` verifie
+maintenant son refus, et l'autorisation porte sur la base jetable.
 """
 
 from __future__ import annotations
@@ -13,7 +18,8 @@ from app.qa.guard import QaGuardError
 from tests import conftest_auth, conftest_migration
 from tests.qa_support import configure_destructive_qa_db, resolve_destructive_qa_url
 
-_QA_URL = "postgresql+asyncpg://u:p@postgres-qa:5432/yunicity_qa"
+_TEST_URL = "postgresql+asyncpg://u:p@postgres-qa:5432/yunicity_test_r1g"
+_QA_BASELINE_URL = "postgresql+asyncpg://u:p@postgres-qa:5432/yunicity_qa"
 
 # External env that could make the guard refuse; scrubbed so the valid case is deterministic.
 _SCRUB = (
@@ -32,7 +38,7 @@ _SCRUB = (
 )
 
 
-def _valid_qa_env(monkeypatch: pytest.MonkeyPatch, *, url: str = _QA_URL) -> None:
+def _valid_qa_env(monkeypatch: pytest.MonkeyPatch, *, url: str = _TEST_URL) -> None:
     for key in _SCRUB:
         monkeypatch.delenv(key, raising=False)
     monkeypatch.setenv("YUNICITY_QA_MODE", "1")
@@ -76,7 +82,7 @@ def test_test_url_test_refuses(monkeypatch: pytest.MonkeyPatch) -> None:
 # 5. Remote target → refuse without network.
 def test_remote_target_refuses(monkeypatch: pytest.MonkeyPatch) -> None:
     _valid_qa_env(
-        monkeypatch, url="postgresql+asyncpg://u:p@db.remote.example.com:5455/yunicity_qa"
+        monkeypatch, url="postgresql+asyncpg://u:p@db.remote.example.com:5455/yunicity_test_r1g"
     )
     with pytest.raises(QaGuardError, match="HOST_PORT_NOT_ALLOWED"):
         resolve_destructive_qa_url()
@@ -90,19 +96,26 @@ def test_missing_qa_marker_refuses(monkeypatch: pytest.MonkeyPatch) -> None:
         resolve_destructive_qa_url()
 
 
-# 7. Valid yunicity_qa → authorized.
-def test_valid_qa_target_authorized(monkeypatch: pytest.MonkeyPatch) -> None:
+# 7. Base jetable valide → autorisee.
+def test_valid_disposable_target_authorized(monkeypatch: pytest.MonkeyPatch) -> None:
     _valid_qa_env(monkeypatch)
-    assert resolve_destructive_qa_url() == _QA_URL
+    assert resolve_destructive_qa_url() == _TEST_URL
+
+
+# 7bis. C3.1-R1G — la baseline Playwright n'est plus une cible destructive de pytest.
+def test_playwright_qa_baseline_refused(monkeypatch: pytest.MonkeyPatch) -> None:
+    _valid_qa_env(monkeypatch, url=_QA_BASELINE_URL)
+    with pytest.raises(QaGuardError, match="DBNAME_NOT_DISPOSABLE_TEST:yunicity_qa"):
+        resolve_destructive_qa_url()
 
 
 def test_configure_sets_database_url_only_after_guard(monkeypatch: pytest.MonkeyPatch) -> None:
     _valid_qa_env(monkeypatch)
     url = configure_destructive_qa_db(monkeypatch)
-    assert url == _QA_URL
+    assert url == _TEST_URL
     import os
 
-    assert os.environ["DATABASE_URL"] == _QA_URL
+    assert os.environ["DATABASE_URL"] == _TEST_URL
 
 
 def test_configure_does_not_set_database_url_when_refused(monkeypatch: pytest.MonkeyPatch) -> None:

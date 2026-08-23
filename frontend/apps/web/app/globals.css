@@ -148,12 +148,10 @@ body {
   }
 }
 
-@media (min-width: 480px) and (max-width: 639.98px) {
-  .feed-mobile-shell .web-three-col {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-}
+/* C3.1-R1D — sous 640px le fil est bord à bord : le shell ne réinjecte plus de
+   gouttière latérale entre 480 et 639.98px (elle s'ajoutait au padding de la
+   colonne mobile et produisait un retrait de 32px à 639px). Le padding du
+   contenu non bord à bord est porté par la colonne elle-même. ≥ 640px inchangé. */
 
 .web-mobile-videos-only {
   display: block;

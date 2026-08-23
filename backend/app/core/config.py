@@ -10,6 +10,7 @@ AppEnv = Literal["dev", "recette", "preprod", "prod"]
 CookieSameSite = Literal["lax", "strict", "none"]
 EmailProvider = Literal["none", "resend", "console"]
 
+MAX_ROTATION_REPLAY_WINDOW_SECONDS = 30
 _DEV_JWT_PLACEHOLDER = "dev-only-insecure-jwt-secret-change-in-env-32chars"
 _WEAK_JWT_SECRETS = frozenset(
     {
@@ -62,6 +63,9 @@ class Settings(BaseSettings):
     refresh_cookie_secure: bool = Field(default=False, alias="REFRESH_COOKIE_SECURE")
     refresh_cookie_samesite: CookieSameSite = Field(default="lax", alias="REFRESH_COOKIE_SAMESITE")
     refresh_token_pepper: str = Field(default="", alias="REFRESH_TOKEN_PEPPER")
+    refresh_rotation_replay_window_seconds: int = Field(
+        default=5, alias="REFRESH_ROTATION_REPLAY_WINDOW_SECONDS"
+    )
     web_frontend_url: str = Field(default="http://localhost:3000", alias="WEB_FRONTEND_URL")
     password_reset_expire_hours: int = Field(default=1, alias="PASSWORD_RESET_EXPIRE_HOURS")
 
@@ -114,6 +118,14 @@ class Settings(BaseSettings):
         default="filesystem",
         alias="LOCAL_VIDEO_STORAGE_BACKEND",
     )
+    story_media_storage_backend: Literal["r2", "filesystem"] = Field(
+        default="r2",
+        alias="STORY_MEDIA_STORAGE_BACKEND",
+    )
+    story_media_upload_dir: str | None = Field(
+        default=None,
+        alias="STORY_MEDIA_UPLOAD_DIR",
+    )
     local_video_max_bytes: int = Field(default=52_428_800, alias="LOCAL_VIDEO_MAX_BYTES")
     local_video_max_duration_seconds: int = Field(
         default=60,
@@ -160,6 +172,24 @@ class Settings(BaseSettings):
         default=None,
         alias="YUNICITY_BOOTSTRAP_SUPER_ADMIN_EMAIL",
     )
+
+    @field_validator("refresh_rotation_replay_window_seconds")
+    @classmethod
+    def _bound_rotation_replay_window(cls, value: int) -> int:
+        """Borne la tolerance au rejeu d'une rotation (C3.1-R1K).
+
+        0 desactive la tolerance et restaure le comportement strict a usage
+        unique. La borne haute existe pour qu'une erreur de configuration ne
+        puisse pas transformer la fenetre en session de secours durable :
+        au-dela de quelques secondes, un token consomme redeviendrait une
+        cible utile pour un attaquant.
+        """
+        if not 0 <= value <= MAX_ROTATION_REPLAY_WINDOW_SECONDS:
+            raise ValueError(
+                "REFRESH_ROTATION_REPLAY_WINDOW_SECONDS doit etre compris entre 0 et "
+                f"{MAX_ROTATION_REPLAY_WINDOW_SECONDS} secondes (recu : {value})."
+            )
+        return value
 
     @field_validator("cors_origins", mode="before")
     @classmethod

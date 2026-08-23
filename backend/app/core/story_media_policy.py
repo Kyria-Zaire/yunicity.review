@@ -1,13 +1,84 @@
-"""Story media storage policy — R2 required (PILOT-FIX-03)."""
+"""Story/post media storage policy — R2 in cloud, filesystem only when explicit (C3.1-R1D)."""
 
 from __future__ import annotations
+
+import os
+import tempfile
+from pathlib import Path
 
 from app.core.config import Settings
 from app.core.errors import AppError
 
+_CLOUD_ENVS = frozenset({"recette", "preprod", "prod"})
+_QA_ROOTS = (Path("/var/yunicity-qa"), Path("/tmp/yunicity-qa"))
+
+
+def is_managed_cloud_runtime() -> bool:
+    """Railway/production hosts must never use local disk, even if APP_ENV=dev."""
+    return any(key.upper().startswith("RAILWAY") for key in os.environ)
+
+
+def _is_relative_to(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def allowed_story_media_roots() -> tuple[Path, ...]:
+    roots = list(_QA_ROOTS)
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        roots.append(Path(tempfile.gettempdir()))
+    return tuple(roots)
+
+
+def resolve_story_media_upload_dir(raw: str | None) -> Path:
+    if raw is None or not str(raw).strip():
+        raise AppError(
+            status_code=500,
+            code="STORY_MEDIA_FILESYSTEM_MISCONFIGURED",
+            detail="STORY_MEDIA_UPLOAD_DIR est requis pour le backend filesystem.",
+        )
+    candidate = Path(str(raw).strip())
+    if not candidate.is_absolute() or ".." in candidate.parts:
+        raise AppError(
+            status_code=500,
+            code="STORY_MEDIA_FILESYSTEM_MISCONFIGURED",
+            detail="STORY_MEDIA_UPLOAD_DIR doit être un chemin absolu contrôlé.",
+        )
+    resolved = candidate.resolve()
+    if not any(_is_relative_to(resolved, root) for root in allowed_story_media_roots()):
+        raise AppError(
+            status_code=500,
+            code="STORY_MEDIA_FILESYSTEM_MISCONFIGURED",
+            detail="STORY_MEDIA_UPLOAD_DIR n'est pas dans un répertoire autorisé.",
+        )
+    return resolved
+
 
 def validate_story_media_storage_config(settings: Settings) -> list[str]:
-    """Return non-fatal warnings; raise AppError when story uploads cannot run."""
+    """Return non-fatal warnings; raise AppError when uploads cannot run."""
+    backend = settings.story_media_storage_backend
+    if backend == "filesystem":
+        if is_managed_cloud_runtime() or settings.app_env in _CLOUD_ENVS:
+            raise AppError(
+                status_code=500,
+                code="STORY_MEDIA_FILESYSTEM_FORBIDDEN",
+                detail=(
+                    "STORY_MEDIA_STORAGE_BACKEND=filesystem interdit hors DEV/QA local. "
+                    "Utiliser r2."
+                ),
+            )
+        if settings.app_env != "dev":
+            raise AppError(
+                status_code=500,
+                code="STORY_MEDIA_FILESYSTEM_FORBIDDEN",
+                detail="STORY_MEDIA_STORAGE_BACKEND=filesystem interdit dans cet environnement.",
+            )
+        resolve_story_media_upload_dir(settings.story_media_upload_dir)
+        return []
+
     warnings: list[str] = []
     missing: list[str] = []
     if not settings.local_video_r2_endpoint:
@@ -20,7 +91,7 @@ def validate_story_media_storage_config(settings: Settings) -> list[str]:
         missing.append("LOCAL_VIDEO_R2_SECRET_ACCESS_KEY")
 
     if missing:
-        if settings.app_env in {"recette", "preprod", "prod"}:
+        if settings.app_env in _CLOUD_ENVS:
             raise AppError(
                 status_code=500,
                 code="STORY_MEDIA_R2_MISCONFIGURED",
@@ -35,7 +106,7 @@ def validate_story_media_storage_config(settings: Settings) -> list[str]:
         return warnings
 
     cdn = (settings.local_video_cdn_base_url or "").strip()
-    if settings.app_env in {"recette", "preprod", "prod"} and not cdn:
+    if settings.app_env in _CLOUD_ENVS and not cdn:
         raise AppError(
             status_code=500,
             code="STORY_MEDIA_CDN_MISCONFIGURED",

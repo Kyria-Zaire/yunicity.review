@@ -13,7 +13,7 @@ from app.core.config import get_settings  # noqa: E402
 from app.db.session import dispose_db  # noqa: E402
 from app.integrations.redis import close_redis  # noqa: E402
 from app.main import create_app  # noqa: E402
-from app.qa.guard import ensure_qa_database_target  # noqa: E402
+from app.qa.guard import ensure_pytest_database_target  # noqa: E402
 from fastapi import FastAPI  # noqa: E402
 from httpx import ASGITransport, AsyncClient  # noqa: E402
 
@@ -21,7 +21,9 @@ from httpx import ASGITransport, AsyncClient  # noqa: E402
 def pytest_sessionstart(session: pytest.Session) -> None:
     """Fail-closed destructive-DB policy (C3-F0-T1-R1), enforced once before any test.
 
-    The only destructive target is ``yunicity_qa`` reached via ``TEST_DATABASE_URL``:
+    C3.1-R1G : la seule cible destructive est une base JETABLE ``yunicity_test_*``
+    atteinte via ``TEST_DATABASE_URL``. ``yunicity_qa`` est refusee — elle appartient
+    a Playwright et a la revue manuelle :
     - ``TEST_DATABASE_URL`` set → validate through the QA guard (raises on any forbidden
       target or missing QA marker) and pin ``DATABASE_URL`` to it, so no fixture can reach
       a non-QA database.
@@ -38,7 +40,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
                 "TEST_DATABASE_URL. Point TEST_DATABASE_URL at the yunicity_qa target."
             )
         return
-    ensure_qa_database_target()
+    ensure_pytest_database_target()
     os.environ["DATABASE_URL"] = test_url
 
 

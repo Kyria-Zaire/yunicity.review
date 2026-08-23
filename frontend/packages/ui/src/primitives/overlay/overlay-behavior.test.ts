@@ -6,6 +6,8 @@ import {
   canCloseOverlay,
   closedTransform,
   enteredTransform,
+  longestTransitionMs,
+  overlayPhase,
   panelPositionClass,
   resolveTabTrap,
 } from "./overlay-behavior";
@@ -139,5 +141,38 @@ describe("acquireScrollLock", () => {
     const release = acquireScrollLock(null);
     expect(() => release()).not.toThrow();
     expect(activeScrollLockCount()).toBe(0);
+  });
+});
+
+describe("longestTransitionMs (C3.1-R1E)", () => {
+  it("retourne 0 quand aucune transition n'est declaree", () => {
+    expect(longestTransitionMs("")).toBe(0);
+    expect(longestTransitionMs("0s")).toBe(0);
+    expect(longestTransitionMs("0ms")).toBe(0);
+  });
+
+  it("convertit secondes et millisecondes", () => {
+    expect(longestTransitionMs("200ms")).toBe(200);
+    expect(longestTransitionMs("0.25s")).toBe(250);
+  });
+
+  it("retient la plus longue duree d'une liste", () => {
+    expect(longestTransitionMs("0.2s, 0.3s")).toBe(300);
+    expect(longestTransitionMs("300ms, 0.1s")).toBe(300);
+  });
+
+  it("ignore les valeurs illisibles plutot que de bloquer la readiness", () => {
+    expect(longestTransitionMs("auto")).toBe(0);
+    expect(longestTransitionMs("0.2s, nope")).toBe(200);
+  });
+});
+
+describe("overlayPhase (C3.1-R1E)", () => {
+  it("annonce entering tant que la transition d'entree n'est pas terminee", () => {
+    expect(overlayPhase(false)).toBe("entering");
+  });
+
+  it("annonce entered une fois la transition terminee", () => {
+    expect(overlayPhase(true)).toBe("entered");
   });
 });

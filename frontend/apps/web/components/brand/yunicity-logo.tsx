@@ -43,7 +43,7 @@ export function YunicityLogo({
       />
       {showWordmark ? (
         <span
-          className={`truncate text-xl font-bold tracking-tight text-neutral-900 ${wordmarkClassName}`}
+          className={`whitespace-nowrap text-xl font-bold tracking-tight text-neutral-900 ${wordmarkClassName}`}
         >
           {YUNICITY_WORDMARK}
         </span>
@@ -53,7 +53,11 @@ export function YunicityLogo({
 
   if (href) {
     return (
-      <Link href={href} aria-label={`${YUNICITY_WORDMARK} — accueil`} className="inline-flex">
+      <Link
+        href={href}
+        aria-label={`${YUNICITY_WORDMARK} — accueil`}
+        className="inline-flex min-w-0 max-w-full"
+      >
         {content}
       </Link>
     );

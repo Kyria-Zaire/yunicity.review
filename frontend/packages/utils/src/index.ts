@@ -1,4 +1,4 @@
-export { getApiBaseUrl, getExpoApiBaseUrl, getWebApiBaseUrl } from "./api-base-url";
+export { getApiBaseUrl, getExpoApiBaseUrl, getWebApiBaseUrl, resolveWebApiBaseUrl } from "./api-base-url";
 export {
   YUNICITY_LOGO_SIZES,
   YUNICITY_MASCOT_ALT,
@@ -3812,6 +3812,8 @@ export {
   COMPOSER_MEDIA_INVALID_TYPE,
   COMPOSER_MEDIA_MAX_BYTES,
   COMPOSER_MEDIA_REMOVE_LABEL,
+  COMPOSER_MEDIA_REMOVE_PHOTO_LABEL,
+  COMPOSER_MEDIA_REPLACE_PHOTO_LABEL,
   COMPOSER_MEDIA_TOO_LARGE,
   COMPOSER_MEDIA_UPLOAD_FAILED,
   COMPOSER_MEDIA_UPLOADING_LABEL,

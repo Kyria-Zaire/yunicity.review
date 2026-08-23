@@ -14,17 +14,24 @@ const EXCLUDED_LABELS = [
 
 describe("yunicity-menu-contract", () => {
   it("expose les entrées connectées attendues", () => {
-    expect(flattenYunicityMenuLabels(buildYunicityMenuGroups({ isAuthenticated: true }))).toEqual([
+    const groups = buildYunicityMenuGroups({ isAuthenticated: true });
+    expect(groups.map((group) => group.id)).toEqual(["discover", "my-space", "exchange"]);
+    expect(groups.some((group) => group.id === "account" || group.title === "Compte")).toBe(false);
+    expect(flattenYunicityMenuLabels(groups)).toEqual([
       "Quartiers",
       "Tribus",
       "Lieux",
       "Passport",
       "Notifications",
       "Discussions",
-      "Profil",
-      "Paramètres",
-      "Se déconnecter",
     ]);
+  });
+
+  it("n'expose ni Profil, ni Paramètres, ni Déconnexion au Menu connecté", () => {
+    const labels = flattenYunicityMenuLabels(buildYunicityMenuGroups({ isAuthenticated: true }));
+    expect(labels).not.toContain("Profil");
+    expect(labels).not.toContain("Paramètres");
+    expect(labels).not.toContain("Se déconnecter");
   });
 
   it("expose les entrées visiteur attendues", () => {

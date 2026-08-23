@@ -7,7 +7,7 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
-from app.core.feed_constants import ReportStatus
+from app.core.feed_constants import PostAuthorType, ReportStatus
 from app.models.report import Report
 from app.models.user import User
 from app.repositories.post_repository import PostRepository
@@ -34,6 +34,15 @@ class ReportService:
                 status_code=404,
                 code="POST_NOT_FOUND",
                 detail="Publication introuvable.",
+            )
+        if post.author_type == PostAuthorType.CITIZEN.value and post.author_id == user.id:
+            # C3.1-R1L : signaler sa propre publication n'a aucun sens produit et
+            # polluait la file de moderation. L'UI ne l'offre plus, mais l'API doit
+            # refuser elle-meme : masquer un bouton n'est pas une regle.
+            raise AppError(
+                status_code=400,
+                code="CANNOT_REPORT_OWN_POST",
+                detail="Vous ne pouvez pas signaler votre propre publication.",
             )
         await TribeAuthorizationService(self._session).require_can_interact_with_post(post, user)
         existing = await self._reports.get_pending_by_user_and_post(

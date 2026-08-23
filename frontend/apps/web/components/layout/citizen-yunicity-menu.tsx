@@ -14,6 +14,7 @@ import {
 } from "@/lib/layout/yunicity-menu-host";
 import { useAuth } from "@/lib/auth/auth-provider";
 import type { NavigationSurfaceCloseReason } from "@/lib/layout/navigation-surfaces";
+import { NAVIGATION_MODAL_Z_INDEX } from "@/lib/layout/navigation-overlay-layers";
 import { Drawer, Popover, Sheet, type PopoverPlacement } from "@yunicity/ui/primitives";
 import { ChevronDown, Grid3x3 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -99,6 +100,7 @@ function CompactTrigger({
       <button
         {...triggerProps}
         data-yunicity-header-control={variant === "top-nav" ? "menu" : undefined}
+        data-yunicity-mobile-header-control={variant === "mobile-header" ? "menu" : undefined}
         className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-2 text-sm font-medium transition hover:bg-yunicity-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
           tone ? "text-yunicity-primary" : "text-yunicity-primary hover:text-yunicity-primary-hover"
         }`}
@@ -315,6 +317,7 @@ export function CitizenYunicityMenu({ variant = "sidebar" }: CitizenYunicityMenu
           }}
           title={YUNICITY_MENU_LABEL}
           restoreFocus={restoreFocus}
+          zIndex={NAVIGATION_MODAL_Z_INDEX}
         >
           {content}
         </Drawer>

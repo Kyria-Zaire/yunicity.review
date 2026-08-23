@@ -93,37 +93,6 @@ const AUTHENTICATED_GROUPS: readonly YunicityMenuGroup[] = [
       },
     ],
   },
-  {
-    id: "account",
-    title: "Compte",
-    items: [
-      {
-        id: "profile",
-        label: "Profil",
-        icon: "profile",
-        kind: "link",
-        href: "/profile/me",
-        access: "authenticated",
-        match: "prefix",
-      },
-      {
-        id: "settings",
-        label: "Paramètres",
-        icon: "settings",
-        kind: "link",
-        href: "/settings",
-        access: "authenticated",
-        match: "prefix",
-      },
-      {
-        id: "logout",
-        label: "Se déconnecter",
-        icon: "settings",
-        kind: "logout",
-        access: "authenticated",
-      },
-    ],
-  },
 ];
 
 const VISITOR_GROUPS: readonly YunicityMenuGroup[] = [

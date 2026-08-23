@@ -31,6 +31,7 @@ from app.schemas.passport import PassportActivateRequest
 from app.schemas.user import UserPublic
 from app.services.passport_service import PassportService
 from app.services.profile_service import ProfileService
+from app.services.refresh_rotation_grace import RefreshRotationGrace
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,7 @@ class AuthService:
         self._users = UserRepository(session)
         self._rbac = RbacRepository(session)
         self._refresh_tokens = RefreshTokenRepository(session)
+        self._rotation_grace = RefreshRotationGrace(self._settings)
 
     async def register(self, payload: RegisterRequest) -> AuthSessionBundle:
         email = normalize_email(str(payload.email))
@@ -144,6 +146,26 @@ class AuthService:
         self, raw_refresh_token: str
     ) -> tuple[RefreshTokenResponse, IssuedRefreshToken | None]:
         token_hash = hash_refresh_token(raw_refresh_token, self._settings.refresh_token_pepper)
+
+        # Une reponse de rotation perdue en route (navigation qui annule la
+        # requete, onglet ferme, reseau mobile) laissait le client rejouer un
+        # token deja consomme, donc deconnecte. Un rejeu recent rend desormais
+        # le successeur DEJA emis - voir `refresh_rotation_grace`.
+        replayed = await self._rotation_grace.claim_rotation(token_hash)
+        if replayed is not None:
+            return await self._replay_rotation(token_hash, replayed)
+
+        try:
+            return await self._rotate_session(token_hash)
+        except Exception:
+            # Une rotation qui n'aboutit pas libere la prise : un client
+            # legitime doit pouvoir retenter immediatement.
+            await self._rotation_grace.discard(token_hash)
+            raise
+
+    async def _rotate_session(
+        self, token_hash: str
+    ) -> tuple[RefreshTokenResponse, IssuedRefreshToken | None]:
         stored = await self._refresh_tokens.get_by_hash(token_hash)
         if stored is None:
             raise AppError(
@@ -153,6 +175,7 @@ class AuthService:
             )
 
         if stored.replaced_by_token_id is not None or stored.revoked_at is not None:
+            await self._rotation_grace.discard(token_hash)
             await self._refresh_tokens.revoke_family(stored.family_id)
             await self._session.commit()
             raise AppError(
@@ -189,6 +212,7 @@ class AuthService:
         )
         await self._refresh_tokens.mark_rotated(stored, new_stored.id)
         await self._session.commit()
+        await self._rotation_grace.publish_successor(token_hash, new_raw)
 
         access = create_access_token(user.id, self._settings)
         max_age = int((expires_at - now).total_seconds())
@@ -198,10 +222,51 @@ class AuthService:
         )
         return response, IssuedRefreshToken(raw_token=new_raw, max_age_seconds=max_age)
 
+    async def _replay_rotation(
+        self, token_hash: str, successor_raw: str
+    ) -> tuple[RefreshTokenResponse, IssuedRefreshToken | None]:
+        """Rejoue une rotation recente : meme successeur, aucun nouvel etat.
+
+        Aucune ecriture ici. Le successeur est relu en base et refuse s'il a ete
+        revoque ou s'il a expire : un logout, un changement de mot de passe ou
+        une revocation globale neutralisent donc la fenetre immediatement, sans
+        attendre l'expiration de la donnee temporaire.
+        """
+        successor_hash = hash_refresh_token(successor_raw, self._settings.refresh_token_pepper)
+        successor = await self._refresh_tokens.get_by_hash(successor_hash)
+        now = datetime.now(UTC)
+        if successor is None or successor.revoked_at is not None or successor.expires_at <= now:
+            await self._rotation_grace.discard(token_hash)
+            raise AppError(
+                status_code=401,
+                code="INVALID_REFRESH_TOKEN",
+                detail="Session invalide ou expiree.",
+            )
+
+        user = await self._users.get_by_id(successor.user_id)
+        if user is None:
+            raise AppError(
+                status_code=401,
+                code="INVALID_REFRESH_TOKEN",
+                detail="Session invalide ou expiree.",
+            )
+        self._ensure_active(user)
+
+        # Le jeton d'acces est reemis (le client n'a jamais recu le precedent),
+        # mais l'expiration ABSOLUE du refresh reste celle de la rotation initiale.
+        access = create_access_token(user.id, self._settings)
+        max_age = int((successor.expires_at - now).total_seconds())
+        response = RefreshTokenResponse(
+            access_token=access,
+            expires_in=self._settings.access_token_ttl_seconds,
+        )
+        return response, IssuedRefreshToken(raw_token=successor_raw, max_age_seconds=max_age)
+
     async def logout(self, raw_refresh_token: str | None) -> None:
         if not raw_refresh_token:
             return
         token_hash = hash_refresh_token(raw_refresh_token, self._settings.refresh_token_pepper)
+        await self._rotation_grace.discard(token_hash)
         stored = await self._refresh_tokens.get_by_hash(token_hash)
         if stored is not None:
             await self._refresh_tokens.revoke(stored)

@@ -5,14 +5,35 @@ import { FEED_REPORT_LABEL, FEED_REPORT_REASON_LABELS } from "@yunicity/utils";
 import { MoreVertical } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { useAuth } from "@/lib/auth/auth-provider";
+
 const REASONS: FeedReportReason[] = ["spam", "inappropriate", "other"];
 
-/** Menu options publication (signalement) — icône kebab maquette mobile. */
+/**
+ * Menu options publication — icône kebab maquette mobile.
+ *
+ * C3.1-R1L : ce menu proposait Spam / Contenu inapproprié / Autre sur TOUTE
+ * publication, y compris celle de l'utilisateur connecté. Signaler sa propre
+ * publication n'a aucun sens produit, et le backend ne l'interdisait pas non
+ * plus (garde ajoutée dans `report_service`). L'appartenance est tranchée sur
+ * l'identité serveur : pour un auteur citoyen, `FeedAuthor.id` EST le
+ * `user_id`. Le rendu client n'est pas la frontière de sécurité — c'est l'API
+ * qui refuse — mais il ne doit plus proposer une action impossible.
+ *
+ * Aucune action n'étant aujourd'hui câblée pour le propriétaire, le menu n'est
+ * pas rendu du tout sur sa propre publication : un kebab vide serait un second
+ * contrôle mort. `PATCH` et `DELETE /posts/{id}` existent et restent
+ * disponibles pour une extension Modifier/Supprimer.
+ */
 export function FeedPostOptionsMenu({
   onReport,
+  authorUserId,
 }: {
   onReport: (reason: FeedReportReason) => Promise<void>;
+  /** `user_id` de l'auteur quand c'est un citoyen, `null` pour une organisation. */
+  authorUserId?: string | null;
 }) {
+  const { user } = useAuth();
   const menuId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -36,6 +57,11 @@ export function FeedPostOptionsMenu({
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  const viewerIsAuthor = Boolean(authorUserId && user?.id && authorUserId === user.id);
+  if (viewerIsAuthor) {
+    return null;
   }
 
   return (

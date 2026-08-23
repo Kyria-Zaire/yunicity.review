@@ -23,6 +23,8 @@ export default function robots(): MetadataRoute.Robots {
         "/subscriptions",
         "/tribes",
         "/map",
+        "/dev",
+        "/dev/",
       ],
     },
     sitemap: `${getSiteUrl()}/sitemap.xml`,

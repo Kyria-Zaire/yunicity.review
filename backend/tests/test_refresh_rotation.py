@@ -33,8 +33,21 @@ async def test_refresh_rotates_token(
 
 @pytest.mark.asyncio
 async def test_reused_refresh_token_rejected(
-    auth_client: AsyncClient, register_payload: dict[str, str]
+    auth_client: AsyncClient,
+    register_payload: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Un vrai rejeu reste refuse, et la famille reste revoquee.
+
+    Contrat mis a jour en C3.1-R1K : un rejeu IMMEDIAT du meme token est desormais
+    tolere quelques secondes, car il correspond a une reponse de rotation perdue en
+    route (navigation qui annule la requete en vol), pas a une attaque. Ce test porte
+    donc sur un rejeu HORS fenetre, obtenu par horloge injectee : la garantie de
+    securite verifiee est la meme, sa borne est explicite. La tolerance elle-meme est
+    verrouillee dans tests/test_refresh_rotation_replay_window.py.
+    """
+    from datetime import UTC, datetime, timedelta
+
     from app.core.config import get_settings
 
     await auth_client.post("/api/v1/auth/register", json=register_payload)
@@ -45,6 +58,10 @@ async def test_reused_refresh_token_rejected(
     first_refresh = await auth_client.post("/api/v1/auth/refresh")
     assert first_refresh.status_code == 200
 
+    monkeypatch.setattr(
+        "app.services.refresh_rotation_grace.utcnow",
+        lambda: datetime.now(UTC) + timedelta(seconds=3600),
+    )
     auth_client.cookies.set(settings.refresh_cookie_name, old_cookie)
     reuse = await auth_client.post("/api/v1/auth/refresh")
     assert reuse.status_code == 401

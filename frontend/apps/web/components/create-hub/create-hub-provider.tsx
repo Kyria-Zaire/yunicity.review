@@ -11,6 +11,7 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Dialog } from "@yunicity/ui/primitives";
+import { NAVIGATION_MODAL_Z_INDEX } from "@/lib/layout/navigation-overlay-layers";
 
 import {
   CreateHubDialogContent,
@@ -95,6 +96,7 @@ export function CreateHubProvider({ children }: { children: ReactNode }) {
           }}
           title={CREATE_HUB_DIALOG_TITLE}
           restoreFocus={restoreFocus}
+          zIndex={NAVIGATION_MODAL_Z_INDEX}
         >
           <CreateHubDialogContent
             isAuthenticated={isAuthenticated}
