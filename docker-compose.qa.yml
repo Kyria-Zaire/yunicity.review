@@ -124,6 +124,11 @@ services:
       # C3.1-R1F/R1G — le test de contrat non-root lit ce fichier. Montage LECTURE
       # SEULE : le test reste statique et ne depend d'aucun daemon Docker.
       - ./docker-compose.qa.yml:/docker-compose.qa.yml:ro
+      # C3-FEED-MOBILE-STACK-01 — meme motif : le contrat qui interdit un `pytest`
+      # nu dans ce conteneur doit rester verifiable ICI. Docker CI se declenche sur
+      # le workflow, Backend CI seulement sur `backend/**` : sans ce montage, une
+      # modification du seul workflow echapperait au test.
+      - ./.github/workflows/docker-ci.yml:/docker-ci.yml:ro
     depends_on:
       postgres-qa:
         condition: service_healthy

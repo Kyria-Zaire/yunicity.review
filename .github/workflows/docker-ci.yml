@@ -31,7 +31,7 @@ concurrency:
 
 jobs:
   compose-stack:
-    name: compose · health · pytest (yunicity_qa)
+    name: compose · health · pytest (disposable db)
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -85,10 +85,17 @@ jobs:
           echo "$body" | grep -q '"database":"ok"'
           echo "$body" | grep -q '"redis":"ok"'
 
-      # backend-qa already carries TEST_DATABASE_URL (yunicity_qa), the QA run marker,
-      # JWT/pepper and neutralized providers inline — no ambiguous env injected here.
-      - name: Pytest on yunicity_qa
-        run: $COMPOSE exec -T backend-qa pytest
+      # backend-qa carries TEST_DATABASE_URL (yunicity_qa) because the QA API must
+      # SERVE that baseline — it is Playwright's and manual review's data. Since
+      # C3.1-R1G the pytest suite must NOT destroy it: the guard refuses
+      # yunicity_qa and requires a disposable yunicity_test_<suffix>.
+      #
+      # scripts/run_backend_tests creates that database on the same postgres-qa
+      # server, overrides TEST_DATABASE_URL for the child process only, runs the
+      # suite on a dedicated Redis logical db, then drops it. The container env,
+      # the compose file and the guard all stay untouched.
+      - name: Pytest on a disposable database
+        run: $COMPOSE exec -T backend-qa python -m scripts.run_backend_tests
 
       - name: Tear down
         if: always()
