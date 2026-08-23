@@ -74,16 +74,22 @@ function AuthorIdentity({
   if (layout === "mobile") {
     return (
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[15px] font-bold text-neutral-900">{authorHandle(post)}</p>
-        <p className="mt-0.5 text-xs text-neutral-500">{mobileMetaLine(post)}</p>
+        <p data-feed-publication-identity="" className="truncate text-[15px] font-bold text-neutral-900">
+          {authorHandle(post)}
+        </p>
+        <p data-feed-publication-meta="" className="mt-0.5 text-xs text-neutral-500">
+          {mobileMetaLine(post)}
+        </p>
       </div>
     );
   }
 
   return (
     <div className="min-w-0 flex-1">
-      <p className="truncate text-sm font-semibold text-neutral-900">{post.author.display_name}</p>
-      <p className="text-xs text-neutral-500">
+      <p data-feed-publication-identity="" className="truncate text-sm font-semibold text-neutral-900">
+        {post.author.display_name}
+      </p>
+      <p data-feed-publication-meta="" className="text-xs text-neutral-500">
         {formatFeedRelativeTime(post.created_at)}
         {post.neighborhood_summary?.display_name
           ? ` · ${post.neighborhood_summary.display_name}`
@@ -113,7 +119,10 @@ export function FeedAuthorHeader({
   );
 
   return (
-    <header className={`flex items-start gap-3 ${layout === "default" ? "items-center" : ""}`}>
+    <header
+      data-feed-publication-header=""
+      className={`flex items-start gap-3 ${layout === "default" ? "items-center" : ""}`}
+    >
       {profileHref ? (
         <Link
           href={profileHref}

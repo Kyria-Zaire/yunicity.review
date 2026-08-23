@@ -295,6 +295,141 @@ body {
   }
 }
 
+/* --- C3-FEED-M8 : cartes publication unifiées (640 -> 1279.98) ---
+   Mesures RED : padding post 20-24 px vs vidéo 16-20 px ; header post centré
+   verticalement ; actions à 36 px ; écarts header/corps hétérogènes entre texte
+   et vidéo. Source unique de rythme sur la région stream, marqueurs explicites
+   sur chaque partie (header, identité, meta, corps, média, actions).
+
+   Portée : publications texte/image ET vidéo locale dans le même parent
+   `[data-feed-stream-list]`. Mobile < 640 et desktop >= 1280 inchangés. */
+
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .citizen-medium-shell [data-feed-medium-region="stream"] {
+    --feed-medium-publication-measure: 42rem;
+    --feed-medium-card-padding-inline: 16px;
+    --feed-medium-card-padding-block: 12px;
+    --feed-medium-card-gap-avatar: 12px;
+    --feed-medium-card-gap-header-body: 12px;
+    --feed-medium-card-gap-body-media: 12px;
+    --feed-medium-card-action-min: 44px;
+  }
+
+  /* C3-FEED-M8.1 : cadre éditorial interne — surface pleine largeur, contenu
+     limité à la mesure de lecture (inspiration fil X). Axe gauche conservé,
+     résiduel uniquement à droite, jamais de centrage flottant. */
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-editorial] {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--feed-medium-publication-measure);
+    margin-inline: 0;
+  }
+
+  /* Surfaces publication : plate, séparation par bordure uniquement. */
+  .citizen-medium-shell [data-feed-medium-region="stream"] [data-feed-medium-surface="primary"] {
+    border-radius: 2px;
+  }
+
+  /* Rythme interne commun — publications texte/image. */
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-stream-item="post"]
+    [data-feed-publication-content] {
+    padding: var(--feed-medium-card-padding-block) var(--feed-medium-card-padding-inline);
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-stream-item="post"]
+    [data-feed-publication-actions] {
+    padding: 0.625rem var(--feed-medium-card-padding-inline);
+  }
+
+  /* Rythme interne commun — vidéo locale (même axe, même padding que post). */
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-stream-item="local-video"]
+    [data-feed-publication-editorial] {
+    padding: var(--feed-medium-card-padding-block) var(--feed-medium-card-padding-inline);
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-stream-item="local-video"]
+    [data-feed-video-stream-item] {
+    padding: 0;
+  }
+
+  /* Header : avatar ancré en haut, menu … en haut à droite. */
+  .citizen-medium-shell [data-feed-medium-region="stream"] [data-feed-publication-header] {
+    align-items: flex-start;
+    gap: var(--feed-medium-card-gap-avatar);
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-header]
+    > a,
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-header]
+    > div:first-of-type {
+    align-items: flex-start;
+  }
+
+  /* Corps : axe gauche commun, pas de min-height fantôme. */
+  .citizen-medium-shell [data-feed-medium-region="stream"] [data-feed-publication-body] {
+    margin-top: var(--feed-medium-card-gap-header-body);
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-stream-item="post"]
+    [data-feed-publication-body]:first-child {
+    margin-top: 0;
+  }
+
+  /* Média image : largeur utile, ratio honnête, rayon interne autorisé. */
+  .citizen-medium-shell [data-feed-medium-region="stream"] [data-feed-publication-media] {
+    display: block;
+    width: 100%;
+    max-height: none;
+    margin-top: var(--feed-medium-card-gap-body-media);
+    border-radius: 8px;
+    object-fit: cover;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-stream-item="post"]
+    [data-feed-publication-header]
+    + [data-feed-publication-media] {
+    margin-top: var(--feed-medium-card-gap-header-body);
+  }
+
+  /* Actions FeedPost : cibles >= 44 px, barre stable. */
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-actions]
+    [role="toolbar"]
+    a,
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-actions]
+    [role="toolbar"]
+    button,
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-actions]
+    [data-feed-publication-report] {
+    min-height: var(--feed-medium-card-action-min);
+    min-width: var(--feed-medium-card-action-min);
+    justify-content: center;
+  }
+}
+
 /* --- C3-FEED-M6 : composition du compositeur medium (640 -> 1279.98) ---
    `FeedComposer` est PARTAGE : Feed desktop >= 1280 et mur de tribu le rendent
    aussi. Toute la composition medium passe donc par des attributs INERTES et

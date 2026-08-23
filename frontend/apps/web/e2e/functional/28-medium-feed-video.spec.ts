@@ -42,10 +42,11 @@ const AUTEUR = "[data-feed-video-stream-author]";
 const CONTEXTE = "[data-feed-video-stream-context]";
 const TITRE = "[data-feed-video-stream-headline]";
 const CTA = "[data-feed-video-stream-cta]";
+const EDITORIAL = "[data-feed-publication-editorial]";
 
 const CIBLE_MIN = 44;
 const RATIO_16_9 = 16 / 9;
-/** Le média occupe la largeur interne utile de la publication. */
+/** Le média occupe la largeur interne utile du cadre éditorial (M8.1). */
 const PART_MEDIA_MIN = 0.99;
 /** Aucun contrat social de publication n'est branché pour `local_videos`. */
 const CONTROLES_SOCIAUX_INTERDITS = [
@@ -130,14 +131,15 @@ async function mesurer(page: Page) {
         media: {
           largeur: round(mr.width),
           ratio: mr.height > 0 ? round(mr.width / mr.height) : 0,
-          // Largeur INTERNE utile : la boite de contenu du lien, padding exclu.
+          // Largeur interne utile du cadre éditorial (surface pleine largeur, contenu borné).
           part: (() => {
-            const cse = getComputedStyle(entree);
+            const cadre = entree.querySelector(sel.editorial) ?? entree;
+            const cse = getComputedStyle(cadre as HTMLElement);
             const interne =
-              entree.getBoundingClientRect().width -
+              cadre.getBoundingClientRect().width -
               parseFloat(cse.paddingLeft || "0") -
               parseFloat(cse.paddingRight || "0");
-            return round(mr.width / interne);
+            return interne > 0 ? round(mr.width / interne) : 0;
           })(),
           objectFit: getComputedStyle(thumb).objectFit,
         },
@@ -186,6 +188,7 @@ async function mesurer(page: Page) {
       titre: TITRE,
       cta: CTA,
       duree: DUREE,
+      editorial: EDITORIAL,
     },
   );
 }

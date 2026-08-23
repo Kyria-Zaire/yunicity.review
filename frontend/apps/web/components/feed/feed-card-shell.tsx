@@ -39,10 +39,19 @@ export function FeedCardShell({
 
   return (
     <article data-feed-medium-surface="primary" className={`overflow-hidden ${frameClass}`}>
-      <div className={paddingClass}>{children}</div>
-      {footer ? (
-        <footer className={`border-t border-neutral-100/90 ${footerPaddingClass}`}>{footer}</footer>
-      ) : null}
+      <div data-feed-publication-editorial="">
+        <div data-feed-publication-content="" className={paddingClass}>
+          {children}
+        </div>
+        {footer ? (
+          <footer
+            data-feed-publication-actions=""
+            className={`border-t border-neutral-100/90 ${footerPaddingClass}`}
+          >
+            {footer}
+          </footer>
+        ) : null}
+      </div>
       {expanded ? (
         <section className={`border-t border-neutral-100 ${expandedPaddingClass}`}>{expanded}</section>
       ) : null}

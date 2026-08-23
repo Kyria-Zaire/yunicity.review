@@ -48,18 +48,28 @@ export function FeedVideoStreamItem({ video }: { video: LocalVideoFeedItem }) {
     <Link
       href={buildLocalVideoTeaserHref(video.id)}
       data-feed-video-stream-item=""
-      className="group block p-4 transition hover:bg-neutral-50/60 sm:p-5"
+      className="group block transition hover:bg-neutral-50/60"
     >
-      <div data-feed-video-stream-header="" className="flex items-center gap-3">
+      <div data-feed-publication-editorial="">
+      <div
+        data-feed-video-stream-header=""
+        data-feed-publication-header=""
+        className="flex items-start gap-3"
+      >
         <ProfileAvatar name={auteur} size="sm" />
         <div className="min-w-0">
           <p
             data-feed-video-stream-author=""
+            data-feed-publication-identity=""
             className="truncate text-sm font-bold text-neutral-900"
           >
             {auteur}
           </p>
-          <p data-feed-video-stream-context="" className="truncate text-xs text-neutral-500">
+          <p
+            data-feed-video-stream-context=""
+            data-feed-publication-meta=""
+            className="truncate text-xs text-neutral-500"
+          >
             {video.neighborhood_name} · {formatLocalVideoTypeLabel(video.video_type)}
           </p>
         </div>
@@ -67,6 +77,7 @@ export function FeedVideoStreamItem({ video }: { video: LocalVideoFeedItem }) {
 
       <p
         data-feed-video-stream-headline=""
+        data-feed-publication-body=""
         className="mt-3 text-[15px] font-semibold leading-snug text-neutral-900"
       >
         {titre}
@@ -97,10 +108,12 @@ export function FeedVideoStreamItem({ video }: { video: LocalVideoFeedItem }) {
 
       <p
         data-feed-video-stream-cta=""
+        data-feed-publication-cta=""
         className="mt-3 text-sm font-semibold text-yunicity-primary group-hover:underline"
       >
         {LOCAL_VIDEO_TEASER_CTA}
       </p>
+      </div>
     </Link>
     </div>
   );

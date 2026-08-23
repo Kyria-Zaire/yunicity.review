@@ -34,8 +34,9 @@ export function ReportAction({
     <div className="relative">
       <button
         type="button"
+        data-feed-publication-report=""
         onClick={() => setOpen((value) => !value)}
-        className="text-xs text-neutral-500 underline-offset-2 hover:text-neutral-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
+        className="inline-flex min-h-[36px] min-w-[36px] items-center justify-center text-xs text-neutral-500 underline-offset-2 hover:text-neutral-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
       >
         {FEED_REPORT_LABEL}
       </button>

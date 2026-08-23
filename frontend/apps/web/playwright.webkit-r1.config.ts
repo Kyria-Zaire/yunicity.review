@@ -53,7 +53,7 @@ export default defineConfig({
     {
       name: "webkit-r1-mobile",
       testMatch:
-        /functional\/(13-mobile-safari-closure|17-feed-composer-photo-mobile|18-feed-composer-photo-portrait|19-mobile-feed-full-bleed|20-modal-overlay-bottom-nav|21-mobile-feed-functional|22-medium-feed-shell-rail|23-medium-feed-header|24-medium-feed-editorial-grid|25-medium-feed-stories|26-medium-feed-stories-long-rail|27-medium-feed-composer|28-medium-feed-video|29-citizen-medium-shell)\.spec\.ts$/,
+        /functional\/(13-mobile-safari-closure|17-feed-composer-photo-mobile|18-feed-composer-photo-portrait|19-mobile-feed-full-bleed|20-modal-overlay-bottom-nav|21-mobile-feed-functional|22-medium-feed-shell-rail|23-medium-feed-header|24-medium-feed-editorial-grid|25-medium-feed-stories|26-medium-feed-stories-long-rail|27-medium-feed-composer|28-medium-feed-video|29-citizen-medium-shell|30-medium-feed-publication-cards)\.spec\.ts$/,
       use: {
         ...devices["iPhone 14"],
         browserName: "webkit",
