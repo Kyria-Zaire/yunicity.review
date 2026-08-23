@@ -17,8 +17,76 @@ import {
  * verrouillent l'insertion unique, la position stable, les vues ou aucune
  * insertion n'est legitime, et la purete de la fonction.
  */
-const post = (id: string): FeedPost => ({ id }) as unknown as FeedPost;
-const video = (id = "v1"): LocalVideoFeedItem => ({ id }) as unknown as LocalVideoFeedItem;
+/*
+ * Fabriques REELLEMENT typees : aucune assertion, aucun `as unknown as`. Le
+ * compilateur verifie donc la forme complete, et l'ajout d'un champ requis dans
+ * `FeedPost` ou `LocalVideoFeedItem` casse ici plutot que de passer en silence.
+ * Seul `id` varie — c'est la seule donnee que `buildFeedStream` lit.
+ */
+const post = (id: string): FeedPost => ({
+  id,
+  type: "post",
+  author: {
+    type: "citizen",
+    id: `author-${id}`,
+    display_name: "Citoyenne QA",
+    username: "citoyenne-qa",
+    logo_url: null,
+  },
+  city: "Reims",
+  title: null,
+  body: "Publication de test",
+  media_url: null,
+  location: null,
+  like_count: 0,
+  comment_count: 0,
+  liked_by_me: false,
+  offer: null,
+  event: null,
+  creator_content: null,
+  neighborhood_summary: null,
+  created_at: "2026-01-01T10:00:00Z",
+  updated_at: "2026-01-01T10:00:00Z",
+});
+
+const video = (id = "v1"): LocalVideoFeedItem => ({
+  id,
+  author_user_id: `author-${id}`,
+  author: {
+    id: `author-${id}`,
+    username: "videaste-qa",
+    full_name: "Videaste QA",
+    avatar_url: null,
+  },
+  city: "Reims",
+  neighborhood_id: "neighborhood-qa",
+  neighborhood_name: "Centre-ville",
+  neighborhood_slug: "centre-ville",
+  video_type: "moment",
+  title: "Moment local",
+  description: null,
+  cultural_place_id: null,
+  cultural_place_slug: null,
+  cultural_place_name: null,
+  local_event_id: null,
+  tribe_id: null,
+  organization_id: null,
+  media_url: "/media/qa/qa-sample-video.mp4",
+  thumbnail_url: "/media/qa/qa-sample-video.png",
+  duration_seconds: 42,
+  mime_type: "video/mp4",
+  latitude: null,
+  longitude: null,
+  status: "published",
+  published_at: "2026-01-01T10:00:00Z",
+  created_at: "2026-01-01T10:00:00Z",
+  distance_meters: null,
+  walk_minutes: null,
+  like_count: 0,
+  comment_count: 0,
+  view_count: 0,
+  liked_by_me: false,
+});
 
 describe("buildFeedStream", () => {
   it("insere UNE seule video, apres la premiere publication", () => {
