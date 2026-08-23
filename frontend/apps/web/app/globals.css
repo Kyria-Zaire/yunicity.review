@@ -22,6 +22,8 @@
   --feed-medium-region-gap: 20px;
   --feed-medium-stream-gap: 20px;
   --feed-medium-context-gap: 16px;
+  /* C3-FEED-M9 : padding interne commun des tuiles context (mesure RED = 16 px). */
+  --feed-medium-context-padding: 16px;
   --web-sidebar-width-full: 16.25rem; /* 260px */
   --web-context-rail-width: 21.25rem; /* 340px */
   --web-context-rail-width-md: 20rem; /* 320px */
@@ -232,14 +234,81 @@ body {
     margin-top: 0;
   }
 
-  /* Rythme INTERNE des blocs locaux — distinct lui aussi. */
+  /* Rythme INTERNE des blocs locaux — distinct lui aussi.
+     C3-FEED-M9 : mosaïque éditoriale (1 / 2 / 12 colonnes selon palier). */
   .citizen-medium-shell [data-feed-medium-region="context"] > div {
     display: grid;
-    row-gap: var(--feed-medium-context-gap);
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--feed-medium-context-gap);
+    width: 100%;
+    min-width: 0;
   }
 
   .citizen-medium-shell [data-feed-medium-region="context"] > div > * {
-    margin-top: 0;
+    margin: 0;
+    min-width: 0;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="context"]
+    [data-feed-medium-context-tile] {
+    margin: 0;
+    min-width: 0;
+    padding: var(--feed-medium-context-padding);
+  }
+
+  /* CTA dédiés des en-têtes de tuile : cible tactile minimale. */
+  .citizen-medium-shell
+    [data-feed-medium-region="context"]
+    [data-feed-medium-context-tile]
+    > div:first-child
+    > a,
+  .citizen-medium-shell
+    [data-feed-medium-region="context"]
+    [data-feed-medium-context-tile="privilege"]
+    > a {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* C3-FEED-M9 — 768 → 1023,98 : deux colonnes équilibrées. */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .citizen-medium-shell [data-feed-medium-region="context"] > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* C3-FEED-M9 — 1024 → 1279,98 : mosaïque 12 colonnes 7/5 puis 5/7. */
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  .citizen-medium-shell [data-feed-medium-region="context"] > div {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="context"]
+    [data-feed-medium-context-tile="privilege"] {
+    grid-column: span 7;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="context"]
+    [data-feed-medium-context-tile="tribes"] {
+    grid-column: span 5;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="context"]
+    [data-feed-medium-context-tile="must-see"] {
+    grid-column: span 5;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="context"]
+    [data-feed-medium-context-tile="local-now"] {
+    grid-column: span 7;
   }
 }
 

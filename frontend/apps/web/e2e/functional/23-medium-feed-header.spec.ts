@@ -436,10 +436,33 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
 
     expect(Math.max(...m.rayons), "rayon extérieur de carte").toBeLessThanOrEqual(2);
     expect(m.ombres.every((o) => o === "none"), "ombre extérieure de carte flottante").toBe(true);
-    expect(Math.max(...m.gauches.map(Math.abs)), "bord gauche hors axe").toBeLessThanOrEqual(1);
-    expect(Math.max(...m.droites.map(Math.abs)), "bord droit hors axe").toBeLessThanOrEqual(1);
-    expect(new Set(m.largeurs).size, `largeurs hétérogènes : ${m.largeurs.join("/")}`).toBe(1);
-    expect(Math.min(...m.gauches), "surface passant sous le rail").toBeGreaterThanOrEqual(-1);
+    // C3-FEED-M9 : seules les surfaces hors mosaïque context restent pleine largeur.
+    const axes = await authedPage.evaluate((selector) => {
+      const colonne = document.querySelector(".feed-medium-column")!;
+      const rail = document.querySelector(".citizen-medium-rail")!.getBoundingClientRect();
+      const shell = document.querySelector(".web-shell-page")!.getBoundingClientRect();
+      const ctx = colonne.querySelector('[data-feed-medium-region="context"]')!;
+      const ctxBox = ctx.getBoundingClientRect();
+      const hors = [...colonne.querySelectorAll(selector)]
+        .filter((el) => !el.closest('[data-feed-medium-region="context"]'))
+        .filter((el) => el.getBoundingClientRect().width > 0);
+      return {
+        ctxL: Math.abs(ctxBox.left - rail.right),
+        ctxR: Math.abs(shell.right - ctxBox.right),
+        horsLargeurs: hors.map((el) => Math.round(el.getBoundingClientRect().width)),
+        horsGauches: hors.map((el) => el.getBoundingClientRect().left - rail.right),
+        horsDroites: hors.map((el) => shell.right - el.getBoundingClientRect().right),
+      };
+    }, PRIMARY);
+    expect(axes.ctxL, "région context hors axe gauche").toBeLessThanOrEqual(1);
+    expect(axes.ctxR, "région context hors axe droit").toBeLessThanOrEqual(1);
+    expect(new Set(axes.horsLargeurs).size, "largeurs hors-context hétérogènes").toBe(1);
+    expect(Math.max(...axes.horsGauches.map(Math.abs)), "bord gauche hors axe").toBeLessThanOrEqual(
+      1,
+    );
+    expect(Math.max(...axes.horsDroites.map(Math.abs)), "bord droit hors axe").toBeLessThanOrEqual(
+      1,
+    );
     expect(m.overflow, "débordement horizontal").toBe(true);
     // Hauteurs et positions verticales dépendent légitimement du contenu :
     // elles ne sont volontairement pas figées ici.
@@ -471,16 +494,26 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
       const visibles = [...colonne.querySelectorAll(selector)].filter(
         (el) => el.getBoundingClientRect().width > 0,
       );
+      const horsContext = visibles.filter(
+        (el) => !el.closest('[data-feed-medium-region="context"]'),
+      );
+      const ctx = colonne.querySelector('[data-feed-medium-region="context"]');
+      const ctxBox = ctx?.getBoundingClientRect();
       return {
         visibles: visibles.length,
         plates: visibles.every((el) => {
           const cs = getComputedStyle(el);
           return (parseFloat(cs.borderTopLeftRadius) || 0) <= 2 && cs.boxShadow === "none";
         }),
-        axes: visibles.every((el) => {
-          const r = el.getBoundingClientRect();
-          return Math.abs(r.left - rail.right) <= 1 && Math.abs(r.right - shell.right) <= 1;
-        }),
+        // C3-FEED-M9 : axes rail→shell pour hors-context + région context entière.
+        axes:
+          horsContext.every((el) => {
+            const r = el.getBoundingClientRect();
+            return Math.abs(r.left - rail.right) <= 1 && Math.abs(r.right - shell.right) <= 1;
+          }) &&
+          (!ctxBox ||
+            (Math.abs(ctxBox.left - rail.right) <= 1 &&
+              Math.abs(shell.right - ctxBox.right) <= 1)),
       };
     }, PRIMARY);
 

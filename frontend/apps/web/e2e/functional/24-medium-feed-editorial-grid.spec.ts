@@ -183,8 +183,43 @@ test.describe("C3-FEED-M4 — grille éditoriale du Feed medium", () => {
       expect(m.n, "surfaces primaires de la baseline").toBe(10);
       expect(Math.max(...m.rayons), "rayon réintroduit par la grille").toBeLessThanOrEqual(2);
       expect(m.ombres.every((o) => o === "none"), "ombre réintroduite par la grille").toBe(true);
-      expect(new Set(m.largeurs).size, `largeurs hétérogènes : ${m.largeurs.join("/")}`).toBe(1);
-      expect(m.axes, "surface hors axes après mise en grille").toBe(true);
+      // C3-FEED-M9 : la région context reste edge-to-edge ; les tuiles context
+      // occupent leurs cellules (largeurs hétérogènes volontaires ≥ 768).
+      const mContext = await authedPage.evaluate(() => {
+        const ctx = document.querySelector('[data-feed-medium-region="context"]')!;
+        const rail = document.querySelector(".citizen-medium-rail")!.getBoundingClientRect();
+        const shell = document.querySelector(".web-shell-page")!.getBoundingClientRect();
+        const r = ctx.getBoundingClientRect();
+        const tiles = [
+          ...ctx.querySelectorAll("[data-feed-medium-context-tile]"),
+        ].map((el) => Math.round(el.getBoundingClientRect().width));
+        const horsContext = [
+          ...document.querySelectorAll(
+            '.feed-medium-editorial-grid [data-feed-medium-surface="primary"]',
+          ),
+        ]
+          .filter((el) => !el.closest('[data-feed-medium-region="context"]'))
+          .filter((el) => el.getBoundingClientRect().width > 0)
+          .map((el) => Math.round(el.getBoundingClientRect().width));
+        return {
+          axisL: Math.abs(r.left - rail.right),
+          axisR: Math.abs(shell.right - r.right),
+          tiles,
+          horsContext,
+        };
+      });
+      expect(mContext.axisL, "région context hors axe gauche").toBeLessThanOrEqual(1);
+      expect(mContext.axisR, "région context hors axe droit").toBeLessThanOrEqual(1);
+      expect(mContext.tiles.length, "tuiles context").toBe(4);
+      expect(new Set(mContext.horsContext).size, "largeurs hors-context hétérogènes").toBe(1);
+      if (vp.width < 768) {
+        expect(new Set(mContext.tiles).size, "tuiles mono-colonne hétérogènes").toBe(1);
+      } else if (vp.width < 1024) {
+        // Deux colonnes 1fr : largeurs de tuile égales, deux axes horizontaux.
+        expect(new Set(mContext.tiles).size, "tuiles bi-colonne déséquilibrées").toBe(1);
+      } else {
+        expect(new Set(mContext.tiles).size, "mosaïque 7/5 sans variation").toBeGreaterThan(1);
+      }
     });
   }
 
