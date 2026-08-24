@@ -88,7 +88,6 @@ CLAUDE.local.md
 
 # Cursor session artifacts (curl cookies, debug dumps, temp exports)
 .cursor-*
-backend/.cursor-*
 
 # Local tool output dumps (lint/typecheck/build/pytest logs)
 lint_*.txt
