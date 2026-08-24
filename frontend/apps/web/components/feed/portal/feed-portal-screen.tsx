@@ -534,7 +534,7 @@ export function FeedPortalScreen() {
                     onReport={handleReport}
                   />
                 </li>
-              ) : (
+              ) : entree.kind === "local-video" ? (
                 <li
                   key={entree.key}
                   data-feed-stream-item="local-video"
@@ -542,7 +542,12 @@ export function FeedPortalScreen() {
                 >
                   <FeedVideoStreamItem video={entree.video} />
                 </li>
-              ),
+              ) : /* C3-FEED-UNIFIED-CONTEXT-STREAM-R1 : le contrat porte
+                     desormais `context-module`, mais ce consommateur ne declare
+                     aucune famille disponible — la branche est donc INATTEIGNABLE
+                     aujourd'hui. Elle existe pour que le narrowing tienne ; R2 y
+                     posera le rendu. Aucun changement visuel dans R1. */
+              null,
             )}
           </ul>
         ) : null}

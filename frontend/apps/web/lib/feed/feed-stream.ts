@@ -1,6 +1,11 @@
 import type { FeedPost, LocalVideoFeedItem } from "@yunicity/types";
 import type { FeedPortalView } from "@yunicity/utils";
 
+import {
+  type FeedContextModuleFamily,
+  resolveFeedContextPlacements,
+} from "@/lib/feed/feed-context-stream";
+
 /**
  * Contrat d'assemblage du flux Feed (C3-FEED-M7-R2.1).
  *
@@ -30,7 +35,22 @@ export const FEED_STREAM_VIDEO_INDEX = 1;
 
 export type FeedStreamItem =
   | { kind: "post"; key: string; post: FeedPost }
-  | { kind: "local-video"; key: string; video: LocalVideoFeedItem };
+  | { kind: "local-video"; key: string; video: LocalVideoFeedItem }
+  | { kind: "context-module"; key: string; family: FeedContextModuleFamily };
+
+/**
+ * Familles reellement disponibles a cet instant. Absente ou vide, AUCUN module
+ * n'est insere : le consommateur historique garde donc exactement son rendu
+ * tant qu'il ne declare rien.
+ */
+export type BuildFeedStreamOptions = {
+  availableContextFamilies?: readonly FeedContextModuleFamily[];
+};
+
+/** Un contenu REEL : publication ou video locale. Un module n'en est jamais un. */
+function estContenuReel(item: FeedStreamItem): boolean {
+  return item.kind !== "context-module";
+}
 
 /**
  * Construit la séquence du flux.
@@ -43,6 +63,7 @@ export function buildFeedStream(
   posts: readonly FeedPost[],
   video: LocalVideoFeedItem | null,
   view: FeedPortalView,
+  options: BuildFeedStreamOptions = {},
 ): FeedStreamItem[] {
   const flux: FeedStreamItem[] = posts.map((post) => ({
     kind: "post",
@@ -50,14 +71,61 @@ export function buildFeedStream(
     post,
   }));
 
-  if (!video || view !== "for_you") return flux;
+  if (view !== "for_you") return flux;
 
-  const index = Math.min(FEED_STREAM_VIDEO_INDEX, flux.length);
-  flux.splice(index, 0, { kind: "local-video", key: `local-video-${video.id}`, video });
-  return flux;
+  if (video) {
+    const index = Math.min(FEED_STREAM_VIDEO_INDEX, flux.length);
+    flux.splice(index, 0, { kind: "local-video", key: `local-video-${video.id}`, video });
+  }
+
+  return insererModulesContextuels(flux, options.availableContextFamilies ?? []);
+}
+
+/**
+ * Intercale les modules aux positions dues.
+ *
+ * Le comptage porte sur les contenus REELS deja emis : un module ne se compte
+ * pas lui-meme, sinon chaque insertion decalerait la suivante. Les positions
+ * etant absolues et strictement croissantes, rejouer la fonction sur une liste
+ * allongee laisse les modules deja poses exactement ou ils etaient.
+ */
+function insererModulesContextuels(
+  flux: readonly FeedStreamItem[],
+  available: readonly FeedContextModuleFamily[],
+): FeedStreamItem[] {
+  const placements = resolveFeedContextPlacements(available);
+  if (placements.length === 0) return [...flux];
+
+  const sortie: FeedStreamItem[] = [];
+  let contenusReels = 0;
+  let prochain = 0;
+
+  for (const item of flux) {
+    sortie.push(item);
+    if (estContenuReel(item)) contenusReels += 1;
+
+    const placement = placements[prochain];
+    // Un seul module par position : deux  ne peuvent pas se
+    // suivre, meme si la liste des placements grandissait un jour.
+    if (placement && placement.afterRealContentCount === contenusReels) {
+      sortie.push({
+        kind: "context-module",
+        key: `context-${placement.family}`,
+        family: placement.family,
+      });
+      prochain += 1;
+    }
+  }
+
+  return sortie;
 }
 
 /** Nombre d'entrées vidéo du flux — sert à prouver l'absence de doublon. */
 export function countStreamVideos(flux: readonly FeedStreamItem[]): number {
   return flux.filter((item) => item.kind === "local-video").length;
+}
+
+/** Nombre de modules contextuels — sert à prouver l'unicité par famille. */
+export function countStreamModules(flux: readonly FeedStreamItem[]): number {
+  return flux.filter((item) => item.kind === "context-module").length;
 }
