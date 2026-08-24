@@ -22,6 +22,7 @@ export type DialogProps = {
   /** Défaut `true`. Passer `false` lors d'un remplacement de surface (`superseded`). */
   restoreFocus?: boolean;
   initialFocusRef?: RefObject<HTMLElement | null>;
+  returnFocusRef?: RefObject<HTMLElement | null>;
   zIndex?: number;
   className?: string;
   chrome?: "default" | "bare";

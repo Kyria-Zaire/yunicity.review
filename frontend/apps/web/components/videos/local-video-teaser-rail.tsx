@@ -53,7 +53,11 @@ export function LocalVideoTeaserRail({
       >
         <ul className={listClass}>
           {items.map((item) => (
-            <li key={item.id} className={layout === "scroll" ? "w-[min(100%,18rem)] shrink-0" : undefined}>
+            <li
+              key={item.id}
+              data-feed-video-item=""
+              className={layout === "scroll" ? "w-[min(100%,18rem)] shrink-0" : undefined}
+            >
               <LocalVideoTeaserCard item={item} />
             </li>
           ))}
@@ -72,6 +76,7 @@ export function LocalVideoTeaserRail({
 
   return (
     <section
+      data-feed-medium-surface="primary"
       className="rounded-2xl border border-neutral-200/90 bg-[#FAFBFC] p-4 shadow-sm sm:p-5"
       aria-label={title}
     >

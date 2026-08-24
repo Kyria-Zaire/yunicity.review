@@ -38,11 +38,20 @@ export function FeedCardShell({
     : `rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-md ${VARIANT_CLASS[variant]}`;
 
   return (
-    <article className={`overflow-hidden ${frameClass}`}>
-      <div className={paddingClass}>{children}</div>
-      {footer ? (
-        <footer className={`border-t border-neutral-100/90 ${footerPaddingClass}`}>{footer}</footer>
-      ) : null}
+    <article data-feed-medium-surface="primary" className={`overflow-hidden ${frameClass}`}>
+      <div data-feed-publication-editorial="">
+        <div data-feed-publication-content="" className={paddingClass}>
+          {children}
+        </div>
+        {footer ? (
+          <footer
+            data-feed-publication-actions=""
+            className={`border-t border-neutral-100/90 ${footerPaddingClass}`}
+          >
+            {footer}
+          </footer>
+        ) : null}
+      </div>
       {expanded ? (
         <section className={`border-t border-neutral-100 ${expandedPaddingClass}`}>{expanded}</section>
       ) : null}

@@ -9,7 +9,10 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["lib/**/*.test.ts"],
+    // `scripts/` : outillage de harnais E2E en ESM pur (le proxy QA tourne sous
+    // node sans transpilation TS). Son contrat de bind est du code de securite :
+    // il doit etre couvert par le runner, pas seulement relu.
+    include: ["lib/**/*.test.ts", "scripts/**/*.test.mjs"],
   },
   resolve: {
     alias: {

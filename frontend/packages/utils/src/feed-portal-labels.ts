@@ -5,6 +5,8 @@ export const FEED_PORTAL_STORY_PUBLISH = "Publier";
 export const FEED_PORTAL_STORY_YOURS = "Votre story";
 export const FEED_PORTAL_STORY_PUBLISH_HINT = "Partagez un moment";
 export const FEED_PORTAL_STORIES_SEE_ALL = "Voir toutes les stories";
+/** Titre de la region Stories, bande medium uniquement (C3-FEED-M5). */
+export const FEED_MEDIUM_STORIES_TITLE = "Moments près de vous";
 export const FEED_PORTAL_LEFT_HOME = "Accueil";
 
 export const FEED_PORTAL_TAB_FOR_YOU = "Pour vous";

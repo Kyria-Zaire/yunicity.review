@@ -10,6 +10,20 @@
   /* WEB-HOME-01C — shell 1440px, colonnes explicites */
   --web-shell-max: 90rem;
   --web-sidebar-width-compact: 5.5rem; /* 88px */
+  /* C3-FEED-M2.1 : rail compact conforme a la maquette. 208px etait excessif
+     (16% du viewport a 1279). clamp -> ~88px a 640, ~102px a 1024, plafond 112px. */
+  --citizen-medium-rail-width: clamp(5.5rem, 10vw, 7rem);
+  /* C3-FEED-M4 : rythme vertical du Feed medium, source UNIQUE.
+     Mesure RED : 3 a 4 valeurs concurrentes selon le viewport (16/20/24/32),
+     issues de `mt-5` portes par les enfants, de `space-y-5 lg:space-y-6` sur
+     la liste et de `space-y-4` sur les blocs locaux. 20px est la valeur
+     dominante mesuree entre grandes regions ; les rythmes INTERNES gardent
+     leur propre token, distinct. */
+  --feed-medium-region-gap: 20px;
+  --feed-medium-stream-gap: 20px;
+  --feed-medium-context-gap: 16px;
+  /* C3-FEED-M9 : padding interne commun des tuiles context (mesure RED = 16 px). */
+  --feed-medium-context-padding: 16px;
   --web-sidebar-width-full: 16.25rem; /* 260px */
   --web-context-rail-width: 21.25rem; /* 340px */
   --web-context-rail-width-md: 20rem; /* 320px */
@@ -147,6 +161,621 @@ body {
     padding-right: 1rem;
   }
 }
+
+/* ——— C3-FEED-M3 : header de contenu du Feed moyen (640 → 1279.98) ———
+   Masque par defaut, borne EN HAUT a 1279.98px : le desktop >= 1280 conserve son
+   propre header. Sticky en haut de la colonne de contenu, fond opaque pour
+   preserver la lecture, et z-index volontairement BAS afin que les overlays
+   Explorer / Menu / Create le recouvrent (pile R1E inchangee). */
+.feed-medium-header {
+  display: none;
+}
+
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .feed-medium-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    /* Padding INTERNE (le texte ne touche pas le bord) — ce n'est pas une
+       gouttiere : les BORDS du header restent alignes sur la zone principale. */
+    padding: 0.625rem 0.75rem;
+    /* C3-FEED-M3.1 : barre de contenu, pas carte flottante. Mesure M3 : bords
+       deja alignes (ecart 0 aux 5 viewports), mais `border: 1px` sur quatre
+       cotes + `border-radius: 1rem` donnaient l'effet de petite carte
+       independante. Seule subsiste une separation BASSE, sur toute la largeur. */
+    border: 0;
+    border-bottom: 1px solid rgb(229 229 229 / 0.9);
+    border-radius: 0;
+    background: #ffffff;
+  }
+
+  /* Un seul controle Filtrer dans le Feed medium : l'ancien emplacement, au
+     milieu du fil, cede la place a celui du header. Mobile et desktop
+     conservent le leur. */
+  .feed-legacy-filter {
+    display: none !important;
+  }
+
+  /* C3-FEED-M10 : le bandeau statut sous les onglets est desktop-only ;
+     medium utilise la Sheet dédiée. */
+  .feed-legacy-filter-banner {
+    display: none !important;
+  }
+}
+
+/* ——— C3-FEED-M4 : grille editoriale du Feed medium (640 → 1279.98) ———
+   Une seule voie principale apres le rail : la maquette medium ne comporte
+   aucun aside droit permanent, et les sous-grilles internes (Stories, videos,
+   blocs locaux) appartiennent a M5–M9. La grille est l'unique proprietaire du
+   placement vertical des cinq regions ; les marges portees par les enfants sont
+   neutralisees pour qu'aucun espacement ne s'additionne. */
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .citizen-medium-shell .feed-medium-editorial-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: none;
+    row-gap: var(--feed-medium-region-gap);
+  }
+
+  .citizen-medium-shell .feed-medium-editorial-grid > [data-feed-medium-region] {
+    grid-column: 1 / -1;
+    min-width: 0;
+    /* Source unique : aucun `margin` d'enfant ne s'ajoute au `row-gap`. */
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  /* Rythme INTERNE du fil — distinct du gap inter-regions, source unique. */
+  .citizen-medium-shell [data-feed-medium-region="stream"] ul[aria-label] {
+    display: grid;
+    row-gap: var(--feed-medium-stream-gap);
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="stream"] ul[aria-label] > li {
+    margin-top: 0;
+  }
+
+  /* Rythme INTERNE des blocs locaux — distinct lui aussi.
+     C3-FEED-M9 : mosaïque éditoriale (1 / 2 / 12 colonnes selon palier). */
+  .citizen-medium-shell [data-feed-medium-region="context"] > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--feed-medium-context-gap);
+    width: 100%;
+    min-width: 0;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="context"] > div > * {
+    margin: 0;
+    min-width: 0;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="context"]
+    [data-feed-medium-context-tile] {
+    margin: 0;
+    min-width: 0;
+    padding: var(--feed-medium-context-padding);
+  }
+
+  /* CTA dédiés des en-têtes de tuile : cible tactile minimale. */
+  .citizen-medium-shell
+    [data-feed-medium-region="context"]
+    [data-feed-medium-context-tile]
+    > div:first-child
+    > a,
+  .citizen-medium-shell
+    [data-feed-medium-region="context"]
+    [data-feed-medium-context-tile="privilege"]
+    > a {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* C3-FEED-M9 — 768 → 1023,98 : deux colonnes équilibrées. */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .citizen-medium-shell [data-feed-medium-region="context"] > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* C3-FEED-M9 — 1024 → 1279,98 : mosaïque 12 colonnes 7/5 puis 5/7. */
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  .citizen-medium-shell [data-feed-medium-region="context"] > div {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="context"]
+    [data-feed-medium-context-tile="privilege"] {
+    grid-column: span 7;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="context"]
+    [data-feed-medium-context-tile="tribes"] {
+    grid-column: span 5;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="context"]
+    [data-feed-medium-context-tile="must-see"] {
+    grid-column: span 5;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="context"]
+    [data-feed-medium-context-tile="local-now"] {
+    grid-column: span 7;
+  }
+}
+
+/* ——— C3-FEED-M3.3 : surfaces principales plates (640 → 1279.98) ———
+   Les grandes surfaces du fil (stories/onglets, compositeur, section video,
+   publications, blocs locaux) portaient `rounded-2xl` + `shadow-sm` : mesure a
+   768px, 10 surfaces a `border-radius: 16px` avec ombre, ce qui recreait un
+   effet de carte flottante en rupture avec les axes bord a bord de M3.2.
+
+   Portee (C3-FEED-M3.3A) : un MARQUEUR EXPLICITE porte par le wrapper visuel
+   exterieur de chaque grande surface, plus le scope shell + colonne + bande
+   medium. Les chaines structurelles precedentes dependaient de la profondeur du
+   DOM et auraient pu casser silencieusement a la restructuration M4. Les cartes
+   internes, miniatures, avatars, boutons et pilules ne portent pas le marqueur
+   et gardent donc leurs formes.
+   Les bordures sont conservees : ce sont elles qui separent les surfaces. */
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .citizen-medium-shell .feed-medium-column [data-feed-medium-surface="primary"] {
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+/* --- C3-FEED-M7-R2 : la video vit DANS le flux de publications (640 -> 1279.98)
+   Direction CTO : plus de section autonome « Videos pres de chez vous » dans la
+   bande medium. La video locale devient un enfant de la MEME liste que les
+   publications texte et image.
+
+   Mesures RED successives : item plafonne a 288 px et vignette portrait
+   72 x 120 (M7 initial) ; puis panneau de metadonnees lateral (M7 deux
+   colonnes, refuse) ; dans les deux cas la video restait une section a part,
+   avec son propre titre et son propre espace de region.
+
+   Aucune double requete : `listLocalVideos` est appele UNE fois dans
+   `feed-portal-screen`, sa donnee alimente les deux representations. Le masquage
+   se fait par `display: none`, qui retire l'element de l'arbre d'accessibilite
+   ET de l'ordre de tabulation -- aucun lien cache focalisable. */
+
+/* La publication video n'existe que dans la bande medium. */
+.feed-medium-stream-video {
+  display: none;
+}
+
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  /* Section autonome supprimee : ni titre, ni wrapper, ni espace de region,
+     ni hauteur fantome. La grille M4 ne lui alloue plus rien. */
+  .citizen-medium-shell .feed-desktop-video-section {
+    display: none;
+  }
+
+  .feed-medium-stream-video {
+    display: block;
+  }
+}
+
+/* --- C3-FEED-M8 : cartes publication unifiées (640 -> 1279.98) ---
+   Mesures RED : padding post 20-24 px vs vidéo 16-20 px ; header post centré
+   verticalement ; actions à 36 px ; écarts header/corps hétérogènes entre texte
+   et vidéo. Source unique de rythme sur la région stream, marqueurs explicites
+   sur chaque partie (header, identité, meta, corps, média, actions).
+
+   Portée : publications texte/image ET vidéo locale dans le même parent
+   `[data-feed-stream-list]`. Mobile < 640 et desktop >= 1280 inchangés. */
+
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .citizen-medium-shell [data-feed-medium-region="stream"] {
+    --feed-medium-publication-measure: 42rem;
+    --feed-medium-card-padding-inline: 16px;
+    --feed-medium-card-padding-block: 12px;
+    --feed-medium-card-gap-avatar: 12px;
+    --feed-medium-card-gap-header-body: 12px;
+    --feed-medium-card-gap-body-media: 12px;
+    --feed-medium-card-action-min: 44px;
+  }
+
+  /* C3-FEED-M8.1 : cadre éditorial interne — surface pleine largeur, contenu
+     limité à la mesure de lecture (inspiration fil X). Axe gauche conservé,
+     résiduel uniquement à droite, jamais de centrage flottant. */
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-editorial] {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--feed-medium-publication-measure);
+    margin-inline: 0;
+  }
+
+  /* Surfaces publication : plate, séparation par bordure uniquement. */
+  .citizen-medium-shell [data-feed-medium-region="stream"] [data-feed-medium-surface="primary"] {
+    border-radius: 2px;
+  }
+
+  /* Rythme interne commun — publications texte/image. */
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-stream-item="post"]
+    [data-feed-publication-content] {
+    padding: var(--feed-medium-card-padding-block) var(--feed-medium-card-padding-inline);
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-stream-item="post"]
+    [data-feed-publication-actions] {
+    padding: 0.625rem var(--feed-medium-card-padding-inline);
+  }
+
+  /* Rythme interne commun — vidéo locale (même axe, même padding que post). */
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-stream-item="local-video"]
+    [data-feed-publication-editorial] {
+    padding: var(--feed-medium-card-padding-block) var(--feed-medium-card-padding-inline);
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-stream-item="local-video"]
+    [data-feed-video-stream-item] {
+    padding: 0;
+  }
+
+  /* Header : avatar ancré en haut, menu … en haut à droite. */
+  .citizen-medium-shell [data-feed-medium-region="stream"] [data-feed-publication-header] {
+    align-items: flex-start;
+    gap: var(--feed-medium-card-gap-avatar);
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-header]
+    > a,
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-header]
+    > div:first-of-type {
+    align-items: flex-start;
+  }
+
+  /* Corps : axe gauche commun, pas de min-height fantôme. */
+  .citizen-medium-shell [data-feed-medium-region="stream"] [data-feed-publication-body] {
+    margin-top: var(--feed-medium-card-gap-header-body);
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-stream-item="post"]
+    [data-feed-publication-body]:first-child {
+    margin-top: 0;
+  }
+
+  /* Média image : largeur utile, ratio honnête, rayon interne autorisé. */
+  .citizen-medium-shell [data-feed-medium-region="stream"] [data-feed-publication-media] {
+    display: block;
+    width: 100%;
+    max-height: none;
+    margin-top: var(--feed-medium-card-gap-body-media);
+    border-radius: 8px;
+    object-fit: cover;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-stream-item="post"]
+    [data-feed-publication-header]
+    + [data-feed-publication-media] {
+    margin-top: var(--feed-medium-card-gap-header-body);
+  }
+
+  /* Actions FeedPost : cibles >= 44 px, barre stable. */
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-actions]
+    [role="toolbar"]
+    a,
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-actions]
+    [role="toolbar"]
+    button,
+  .citizen-medium-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-actions]
+    [data-feed-publication-report] {
+    min-height: var(--feed-medium-card-action-min);
+    min-width: var(--feed-medium-card-action-min);
+    justify-content: center;
+  }
+}
+
+/* --- C3-FEED-M6 : composition du compositeur medium (640 -> 1279.98) ---
+   `FeedComposer` est PARTAGE : Feed desktop >= 1280 et mur de tribu le rendent
+   aussi. Toute la composition medium passe donc par des attributs INERTES et
+   ces regles bornees en haut a 1279.98px, scopees a la region `composer` du
+   shell citoyen. Hors bande, rien ne change.
+
+   Mesure RED (bande medium) : surface 161,38 px au repos pour deux lignes de
+   contenu ; trois actions de 36x36 px SANS libelle visible ; bouton Publier de
+   36 px de haut, seul a l'extremite droite d'une barre vide a 62 % (640) et
+   83 % (1279). Cibles tactiles toutes sous les 44 px WCAG 2.5.5.
+
+   Choix de structure : la ligne 1 reste [avatar | saisie] et Publier reste en
+   FIN de barre d'actions. Remonter Publier sur la ligne 1 aurait impose soit de
+   reordonner le DOM partage (desktop + mur de tribu), soit de dissocier ordre
+   DOM et ordre visuel — l'un et l'autre interdits. Le vide qui isolait Publier
+   est comble par les libelles d'action, pas par un deplacement. */
+
+/* Libelle d'action : present dans le DOM partout, visible seulement en medium. */
+.feed-medium-composer-label {
+  display: none;
+}
+
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer {
+    /* 161,38 -> cible 104-136 : le rythme vient du padding et des interlignes,
+       jamais d'un ecrasement des cibles ou du texte. */
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer-row {
+    /* `center` alignait joliment au repos mais faisait FLOTTER l'avatar a
+       mi-hauteur des qu'un apercu photo etendait la colonne de saisie (constate
+       sur la capture 768 photo). L'ancrage haut vaut dans les deux etats. */
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  /* L'avatar de 56 px pilotait a lui seul la hauteur de la ligne 1 (mesure : 144
+     px au total). Aligne sur la hauteur des pilules d'action, il donne un rythme
+     unique et fait tomber la surface dans la fourchette visee, sans reduire
+     aucune cible tactile ni ecraser le texte. */
+  .citizen-medium-shell [data-feed-medium-region="composer"] [data-feed-composer-avatar] {
+    padding-top: 0;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="composer"] [data-feed-composer-avatar] > * {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  /* La saisie occupe l'espace disponible ; sa hauteur minimale reste au-dessus
+     de la cible tactile et le texte n'est jamais ecrase. */
+  .citizen-medium-shell [data-feed-medium-region="composer"] [data-feed-composer-input] {
+    min-height: 2.75rem;
+    font-size: 1.0625rem;
+    line-height: 1.45;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer-bar {
+    margin-top: 0.5rem;
+    /* Les actions se lisent, elles ne se devinent plus : le retrait mobile qui
+       alignait la barre sous l'avatar n'a plus lieu d'etre. */
+    padding-left: 0;
+    gap: 0.75rem;
+  }
+
+  /* Action : pastille -> pilule icone + libelle, cible WCAG 2.5.5. */
+  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer-action {
+    width: auto;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    gap: 0.4375rem;
+    padding-inline: 0.75rem;
+    border-radius: 9999px;
+    background-color: #f4f5ff;
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="composer"]
+    .feed-composer-action:hover {
+    background-color: #e9ebff;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-medium-composer-label {
+    display: inline;
+    white-space: nowrap;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer-submit {
+    min-height: 2.75rem;
+    padding-inline: 1.25rem;
+  }
+
+  /* Regle texte obligatoire : enoncee a voix haute pour tous, RENDUE VISIBLE
+     quand une photo attend son texte. Le bouton desactive cesse d'etre muet. */
+  .citizen-medium-shell
+    [data-feed-medium-region="composer"]
+    [data-feed-composer-hint][data-hint-active="true"] {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0.625rem 0 0;
+    overflow: visible;
+    clip: auto;
+    clip-path: none;
+    white-space: normal;
+    display: block;
+    font-size: 0.8125rem;
+    color: #8a5a00;
+  }
+
+  /* Apercu photo : pleine largeur utile interne, jamais une carte concurrente. */
+  .citizen-medium-shell [data-feed-medium-region="composer"] [data-feed-composer-preview] {
+    display: block;
+    width: 100%;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="composer"] [data-feed-composer-preview] img {
+    width: 100%;
+    max-height: 15rem;
+    object-fit: cover;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer-error {
+    padding-left: 0;
+  }
+}
+
+/* --- C3-FEED-M5 : composition de la region Stories (640 -> 1279.98) ---
+   `FeedStoriesRail` est PARTAGE : le Feed desktop >= 1280 et la page /stories le
+   rendent aussi. Toute la composition medium passe donc par des attributs
+   INERTES poses sur ce rail partage + ces regles bornees en haut a 1279.98px et
+   scopees a la region `stories` du shell citoyen. Hors de cette bande, aucune
+   de ces regles ne s'applique : le rail garde son item de 88 px et sa pastille
+   de 72 px.
+
+   Mesure avant M5 (bande medium, zone de contenu 592 -> 1231 px) : groupe colle
+   a gauche, item 88 px, pastille 72 px, relais « voir tout » rendu en carte
+   rectangulaire bleutee. Le vide a droite atteignait plusieurs centaines de px.
+
+   Paliers de dimension imposes (CTO) : pastille 72-76 a 640, 76-84 a 768/834,
+   80-88 a 1024/1279 ; item 112-160 partout. Une seule source par palier. */
+
+/* Masque PAR DEFAUT, comme `.feed-medium-header` : le titre n'existe que dans la
+   bande medium. Le desktop >= 1280 et le mobile gardent leur propre en-tete. */
+.feed-medium-stories-title {
+  display: none;
+}
+
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .citizen-medium-shell [data-feed-medium-region="stories"] {
+    --feed-medium-story-item: 116px;
+    --feed-medium-story-circle: 74px;
+    --feed-medium-story-gap: 16px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .citizen-medium-shell [data-feed-medium-region="stories"] {
+    --feed-medium-story-item: 128px;
+    --feed-medium-story-circle: 80px;
+    --feed-medium-story-gap: 20px;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  .citizen-medium-shell [data-feed-medium-region="stories"] {
+    --feed-medium-story-item: 140px;
+    --feed-medium-story-circle: 84px;
+    --feed-medium-story-gap: 24px;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .citizen-medium-shell .feed-medium-stories-title {
+    display: block;
+    margin-bottom: 0.875rem;
+  }
+
+  /* Groupe cohesif a gauche (C3-FEED-M5.2-R1). M5.2 `space-between` + `min-width:
+     100 %` fermait le vide a gauche mais distribuait artificiellement l'espace
+     INTERNE entre « Votre story », le raccourci local et « Voir toutes les
+     stories » — a 1279 px les trois controles ne formaient plus un groupe.
+
+     Regle retenue : items regroupes a gauche avec `--feed-medium-story-gap` stable,
+     largeur naturelle (`max-content`), espace residuel uniquement APRES le CTA.
+     Rail long : `max-content` depasse le conteneur, le defilement interne prend le
+     relais sans etirer ni comprimer les items. */
+  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-medium-stories-rail] > ul {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    width: max-content;
+    min-width: max-content;
+    margin-inline: 0;
+    justify-content: flex-start;
+    gap: var(--feed-medium-story-gap);
+    list-style: none;
+    padding: 0;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-medium-stories-rail] > ul > li {
+    list-style: none;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-medium-stories-item] {
+    width: var(--feed-medium-story-item);
+  }
+
+  /* Les libellés sont bornés a 5.5rem par le rail partage : sans cela ils
+     tronqueraient au milieu d'un item devenu plus large. Le badge « + » est
+     imbrique plus profond et n'est donc pas atteint. */
+  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-medium-stories-item] > span {
+    max-width: 100%;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-medium-stories-circle] {
+    width: var(--feed-medium-story-circle);
+    height: var(--feed-medium-story-circle);
+  }
+
+  /* Relais « voir toutes les stories » : meme grammaire circulaire que les
+     Stories, jamais une carte concurrente. Sa DESTINATION est inchangee. */
+  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-medium-stories-cta] {
+    width: var(--feed-medium-story-item);
+    justify-content: flex-start;
+    gap: 0.625rem;
+    padding: 0;
+    border-radius: 0;
+    background-color: transparent;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="stories"]
+    [data-feed-medium-stories-cta]:hover
+    [data-feed-medium-stories-circle] {
+    background-color: #e4e7ff;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="stories"]
+    [data-feed-medium-stories-cta]
+    [data-feed-medium-stories-circle] {
+    background-color: #eef0ff;
+    box-shadow: none;
+    transition: background-color 150ms ease;
+  }
+
+  .citizen-medium-shell
+    [data-feed-medium-region="stories"]
+    [data-feed-medium-stories-cta]
+    svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+}
+
+/* ——— C3-FEED-M2 : rail du Feed moyen (640 → 1279.98) ———
+   Toutes les regles sont bornees EN HAUT a 1279.98px et scopees a
+   `.citizen-medium-shell`, portee par tout shell qui MONTE explicitement le rail
+   citoyen medium : le desktop >= 1280 et les
+   autres familles de routes ne peuvent pas les recevoir. Le rail medium est
+   masque par defaut, il n'apparait que dans la bande. */
+.citizen-medium-rail-only {
+  display: none;
+}
+
+
 
 /* C3.1-R1D — sous 640px le fil est bord à bord : le shell ne réinjecte plus de
    gouttière latérale entre 480 et 639.98px (elle s'ajoutait au padding de la
@@ -1245,3 +1874,97 @@ body {
   }
 }
 
+
+/* ==========================================================================
+   C3-CITIZEN-MEDIUM-SHELL-R1A — contrat global du rail citoyen medium.
+
+   PLACE EN FIN DE FEUILLE VOLONTAIREMENT. Chaque shell de feature declare ses
+   propres paddings de grille (`.videos-mobile-shell .web-three-col`,
+   `.map-mobile-shell ...`, `.sortir-mobile-shell ...`) a la MEME specificite
+   (0,2,0) que la regle globale. Mesure : le rail demarrait a 16 px du bord sur
+   /videos alors que le shell demarre a 0, parce que la regle de feature venait
+   plus loin dans le fichier. Le contrat global est autoritaire : il doit donc
+   etre lu en dernier, sans surenchere de specificite.
+   ========================================================================== */
+/* --- C3-CITIZEN-MEDIUM-SHELL-R1A : bascule globale du rail citoyen ---
+   La bande medium ne depend plus de `.citizen-medium-shell` (classe portee par
+   le seul shell Feed) mais de la PRESENCE REELLE du rail dans la grille.
+   `WebSidebar` en est le proprietaire unique et ne le rend que si la route est
+   eligible : la sidebar historique ne cede donc la place que la ou un rail
+   citoyen existe vraiment. Route non eligible -> comportement historique.
+   `:has()` est borne a `.web-three-col` et a la bande medium. */
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  [data-citizen-medium-rail].citizen-medium-rail-only {
+    display: flex;
+  }
+
+  /* Le rail desktop compacte (88px, sans libelles ni pied) cede la place. */
+  .web-three-col:has(> [data-citizen-medium-rail]) > .web-sidebar-aside {
+    display: none !important;
+  }
+
+  .web-three-col:has(> [data-citizen-medium-rail]) {
+    grid-template-columns: var(--citizen-medium-rail-width) minmax(0, 1fr);
+    /* C3-FEED-M3.2 : la zone Feed medium commence a la frontiere PHYSIQUE du
+       rail et finit au bord droit reel de l'application. Mesure RED : la
+       gouttiere (24px) et les paddings (16px) du shell rétrécissaient la zone,
+       et une assertion fondee sur `.web-main-column` etait donc circulaire. */
+    column-gap: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  [data-citizen-medium-rail].citizen-medium-rail {
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    align-self: start;
+    width: 100%;
+    min-width: 0;
+    /* C3-FEED-M2.2 : `.web-three-col` porte `padding-top: 1rem`, le rail demarre
+       donc 16px plus bas. Avec `height: 100dvh` son bas tombait a 100dvh + 16px
+       et le groupe inferieur sortait du viewport (mesure : bas a 916px pour un
+       viewport de 900). La hauteur est donc bornee sur l'offset reel. */
+    height: calc(100dvh - 1rem);
+    max-height: calc(100dvh - 1rem);
+    /* Aucun scroll interne : la navigation tient dans la hauteur. */
+    overflow: hidden;
+    background: #ffffff;
+    border-right: 1px solid rgb(229 229 229 / 0.8);
+  }
+
+  /* Grammaire visuelle du déclencheur Menu Yunicity dans le rail (complément
+     M2.3) : icône `Grid3x3` NOIRE sur pastille circulaire gris clair. Le
+     composant partagé `CitizenYunicityMenu` n'est pas modifié — seul son rendu
+     DANS ce rail est habillé, les autres surfaces gardent leur tonalité. */
+  /* Le declencheur est enveloppe par `WebSidebarTooltip` : selecteur descendant. */
+  [data-citizen-medium-rail].citizen-medium-rail [data-rail-label="Menu"] button {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    background: #F1F1F3;
+    color: #111827;
+  }
+
+  [data-citizen-medium-rail].citizen-medium-rail [data-rail-label="Menu"] button:hover {
+    background: #E6E6EA;
+    color: #111827;
+  }
+
+  /* --- C3-CITIZEN-MEDIUM-SHELL-R1F : canvas creation-flow plein format ---
+     Parcours `/feed/new`, `/stories/new`, `/videos/new` : pas de rail citoyen,
+     pas de fallback sidebar compacte. Le marqueur est rendu par WebSidebar. */
+  .web-three-col:has(> [data-citizen-medium-creation-flow]) > .web-sidebar-aside {
+    display: none !important;
+  }
+
+  .web-three-col:has(> [data-citizen-medium-creation-flow]) {
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  [data-citizen-medium-creation-flow] {
+    display: none;
+  }
+}

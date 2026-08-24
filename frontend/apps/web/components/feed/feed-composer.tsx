@@ -9,6 +9,7 @@ import {
   COMPOSER_MEDIA_ADD_LABEL,
   COMPOSER_MEDIA_REMOVE_LABEL,
   COMPOSER_MEDIA_UPLOADING_LABEL,
+  COMPOSER_TEXT_REQUIRED_HINT,
   homeComposerPlaceholder,
 } from "@yunicity/utils";
 import Link from "next/link";
@@ -16,29 +17,59 @@ import { useEffect, useState, type ReactNode } from "react";
 
 function ComposerIconButton({
   label,
+  mediumLabel,
+  action,
   onClick,
   children,
   href,
 }: {
   label: string;
+  /**
+   * Libellé VISIBLE dans la seule bande medium (C3-FEED-M6). Il décrit le
+   * contrat RÉEL du contrôle, jamais l'intention d'une maquette : « Quartiers »
+   * et « Sortir » NAVIGUENT vers une page, ils n'attachent rien à la
+   * publication. Les nommer « Lieu » et « Événement » aurait menti.
+   */
+  mediumLabel: string;
+  action: string;
   children: ReactNode;
   onClick?: () => void;
   href?: string;
 }) {
   const className =
-    "flex h-9 w-9 items-center justify-center rounded-full text-yunicity-primary transition-colors hover:bg-yunicity-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary/40";
+    "feed-composer-action flex h-9 w-9 items-center justify-center rounded-full text-yunicity-primary transition-colors hover:bg-yunicity-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary/40";
+
+  const contenu = (
+    <>
+      {children}
+      <span className="feed-medium-composer-label">{mediumLabel}</span>
+    </>
+  );
 
   if (href) {
     return (
-      <Link href={href} aria-label={label} title={label} className={className}>
-        {children}
+      <Link
+        href={href}
+        aria-label={label}
+        title={label}
+        data-feed-composer-action={action}
+        className={className}
+      >
+        {contenu}
       </Link>
     );
   }
 
   return (
-    <button type="button" onClick={onClick} aria-label={label} title={label} className={className}>
-      {children}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      data-feed-composer-action={action}
+      className={className}
+    >
+      {contenu}
     </button>
   );
 }
@@ -101,6 +132,12 @@ export function FeedComposer({
 
   const authorLabel = displayName ?? user?.email?.split("@")[0] ?? "Vous";
   const canPublish = Boolean(body.trim()) && !isSubmitting && !uploading;
+  /**
+   * Le backend impose `PostCreateRequest.body` avec `min_length=1` : une photo
+   * seule part en 422. Le bouton était déjà désactivé, mais SANS explication —
+   * l'utilisateur voyait un bouton mort sans savoir pourquoi.
+   */
+  const photoSansTexte = Boolean(mediaUrl) && !body.trim();
 
   useEffect(() => {
     void api
@@ -133,20 +170,23 @@ export function FeedComposer({
 
   return (
     <section
-      className="scroll-mt-24 border-y border-neutral-200/70 py-4 sm:py-5"
+      data-feed-composer=""
+      className="feed-composer scroll-mt-24 border-y border-neutral-200/70 py-4 sm:py-5"
       aria-label="Publier sur le fil local"
     >
-      <div className="flex gap-3 sm:gap-4">
-        <div className="shrink-0 pt-0.5">
+      <div className="feed-composer-row flex gap-3 sm:gap-4">
+        <div data-feed-composer-avatar="" className="shrink-0 pt-0.5">
           <ProfileAvatar name={authorLabel} size="md" />
         </div>
 
-        <div className="min-w-0 flex-1">
+        <div className="feed-composer-field min-w-0 flex-1">
           <label className="sr-only" htmlFor="feed-composer-body">
             {resolvedPlaceholder}
           </label>
           <textarea
             id="feed-composer-body"
+            data-feed-composer-input=""
+            aria-describedby="feed-composer-rule"
             value={body}
             onChange={(event) => setBody(event.target.value)}
             placeholder={resolvedPlaceholder}
@@ -165,7 +205,7 @@ export function FeedComposer({
           {uploading ? (
             <p className="mt-3 text-sm text-neutral-500">{COMPOSER_MEDIA_UPLOADING_LABEL}</p>
           ) : mediaUrl ? (
-            <div className="relative mt-3 inline-block">
+            <div data-feed-composer-preview="" className="relative mt-3 inline-block">
               {/* eslint-disable-next-line @next/next/no-img-element -- aperçu média R2, hors next/image */}
               <img
                 src={mediaUrl}
@@ -175,6 +215,7 @@ export function FeedComposer({
               <button
                 type="button"
                 onClick={clearMedia}
+                data-feed-composer-media-remove=""
                 className="absolute right-2 top-2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-black/75"
               >
                 {COMPOSER_MEDIA_REMOVE_LABEL}
@@ -184,15 +225,33 @@ export function FeedComposer({
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-3 pl-11 sm:mt-4 sm:pl-[3.75rem]">
-        <div className="flex min-w-0 flex-wrap items-center gap-0.5 sm:gap-1">
-          <ComposerIconButton label={COMPOSER_MEDIA_ADD_LABEL} onClick={openPicker}>
+      <div className="feed-composer-bar mt-3 flex items-center justify-between gap-3 pl-11 sm:mt-4 sm:pl-[3.75rem]">
+        <div
+          data-feed-composer-actions=""
+          className="flex min-w-0 flex-wrap items-center gap-0.5 sm:gap-1"
+        >
+          <ComposerIconButton
+            label={COMPOSER_MEDIA_ADD_LABEL}
+            mediumLabel="Photo"
+            action="photo"
+            onClick={openPicker}
+          >
             <IconImage />
           </ComposerIconButton>
-          <ComposerIconButton label="Explorer les quartiers" href="/neighborhoods">
+          <ComposerIconButton
+            label="Explorer les quartiers"
+            mediumLabel="Quartiers"
+            action="neighborhoods"
+            href="/neighborhoods"
+          >
             <IconMapPin />
           </ComposerIconButton>
-          <ComposerIconButton label="Voir les moments locaux" href="/sortir">
+          <ComposerIconButton
+            label="Voir les moments locaux"
+            mediumLabel="Sortir"
+            action="sortir"
+            href="/sortir"
+          >
             <IconCalendar />
           </ComposerIconButton>
         </div>
@@ -201,7 +260,9 @@ export function FeedComposer({
           type="button"
           disabled={!canPublish}
           onClick={() => void handleSubmit()}
-          className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 sm:px-5 sm:py-2 ${
+          data-feed-composer-submit=""
+          aria-describedby="feed-composer-rule"
+          className={`feed-composer-submit shrink-0 rounded-full px-4 py-1.5 text-sm font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 sm:px-5 sm:py-2 ${
             canPublish
               ? "bg-yunicity-primary text-white hover:bg-yunicity-primary-hover"
               : "cursor-not-allowed bg-yunicity-primary/40 text-white/90"
@@ -211,8 +272,24 @@ export function FeedComposer({
         </button>
       </div>
 
+      {/* Énoncé de la règle backend `body min_length=1`. Toujours dans le DOM
+          pour les technologies d'assistance (`aria-describedby`), rendu VISIBLE
+          dans la bande medium quand une photo attend son texte. */}
+      <p
+        id="feed-composer-rule"
+        data-feed-composer-hint=""
+        data-hint-active={photoSansTexte ? "true" : "false"}
+        className="feed-composer-rule sr-only"
+      >
+        {COMPOSER_TEXT_REQUIRED_HINT}
+      </p>
+
       {error || mediaError ? (
-        <p className="mt-3 pl-11 text-sm text-red-600 sm:pl-[3.75rem]" role="alert">
+        <p
+          data-feed-composer-error=""
+          className="feed-composer-error mt-3 pl-11 text-sm text-red-600 sm:pl-[3.75rem]"
+          role="alert"
+        >
           {error ?? mediaError}
         </p>
       ) : null}

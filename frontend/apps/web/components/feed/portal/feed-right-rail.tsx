@@ -53,15 +53,22 @@ function SectionCard({
   title,
   ctaHref,
   ctaLabel,
+  tile,
   children,
 }: {
   title: string;
   ctaHref: string;
   ctaLabel: string;
+  /** Identité stable de tuile medium (C3-FEED-M9) — hors desktop rail. */
+  tile: "tribes" | "must-see" | "local-now";
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm">
+    <section
+      data-feed-medium-surface="primary"
+      data-feed-medium-context-tile={tile}
+      className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm"
+    >
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-bold text-neutral-900">{title}</h2>
         <Link href={ctaHref} className="text-xs font-semibold text-yunicity-primary hover:underline">
@@ -88,7 +95,11 @@ export function FeedRightRail({
   return (
     <div className="space-y-4">
       {highlightOffer ? (
-        <section className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm">
+        <section
+          data-feed-medium-surface="primary"
+          data-feed-medium-context-tile="privilege"
+          className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm"
+        >
           <h2 className="text-sm font-bold text-neutral-900">{HOME_PRIVILEGE_TITLE}</h2>
           <div className="mt-3 flex gap-3">
             {highlightOffer.partner.logo_url ? (
@@ -120,8 +131,12 @@ export function FeedRightRail({
         </section>
       ) : null}
 
-      <SectionCard title={FEED_PORTAL_TRIBES_TITLE} ctaHref="/tribes" ctaLabel={FEED_PORTAL_TRIBES_CTA}>
-        {tribes.length === 0 ? (
+      <SectionCard
+        tile="tribes"
+        title={FEED_PORTAL_TRIBES_TITLE}
+        ctaHref="/tribes"
+        ctaLabel={FEED_PORTAL_TRIBES_CTA}
+      >        {tribes.length === 0 ? (
           <p className="text-sm text-neutral-500">{FEED_PORTAL_TRIBES_EMPTY}</p>
         ) : (
           <ul className="space-y-3">
@@ -154,6 +169,7 @@ export function FeedRightRail({
       </SectionCard>
 
       <SectionCard
+        tile="must-see"
         title={FEED_PORTAL_HIGHLIGHTS_TITLE}
         ctaHref="/sortir"
         ctaLabel={FEED_PORTAL_HIGHLIGHTS_CTA}
@@ -206,7 +222,7 @@ export function FeedRightRail({
         )}
       </SectionCard>
 
-      <SectionCard title={trendsTitle} ctaHref="/map" ctaLabel={FEED_PORTAL_TRENDS_CTA}>
+      <SectionCard tile="local-now" title={trendsTitle} ctaHref="/map" ctaLabel={FEED_PORTAL_TRENDS_CTA}>
         {trends.length === 0 ? (
           <p className="text-sm text-neutral-500">{FEED_PORTAL_TRENDS_EMPTY}</p>
         ) : (

@@ -18,6 +18,9 @@ export const COMPOSER_MEDIA_REMOVE_LABEL = "Retirer l’image";
 export const COMPOSER_MEDIA_REMOVE_PHOTO_LABEL = "Retirer la photo";
 export const COMPOSER_MEDIA_REPLACE_PHOTO_LABEL = "Remplacer la photo";
 export const COMPOSER_MEDIA_UPLOADING_LABEL = "Envoi de l’image…";
+/** Regle backend `PostCreateRequest.body min_length=1` (C3-FEED-M6). */
+export const COMPOSER_TEXT_REQUIRED_HINT =
+  "Ajoutez un texte pour publier : une photo seule ne suffit pas.";
 
 export type ComposerMediaValidation = { ok: true } | { ok: false; error: string };
 

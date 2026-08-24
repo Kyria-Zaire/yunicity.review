@@ -54,6 +54,19 @@ export type OverlayPanelProps = {
   /** Défaut `true`. Passer `false` lors d'un remplacement de surface (`superseded`). */
   restoreFocus?: boolean;
   initialFocusRef?: RefObject<HTMLElement | null>;
+  /**
+   * Cible EXPLICITE de retour du focus a la fermeture (C3-FEED-M2.3A).
+   *
+   * Par defaut la surface memorise `document.activeElement` a l'ouverture. Or
+   * WebKit/Safari ne donne pas le focus a un `<button>` au clic : l'element
+   * memorise est alors `body`, et le focus n'est jamais rendu au declencheur.
+   * Chromium, lui, focalise le bouton au clic — d'ou un contrat vert sur un
+   * moteur et rouge sur l'autre.
+   *
+   * Optionnel et additif : sans cette prop, le comportement est INCHANGE pour
+   * toutes les surfaces existantes.
+   */
+  returnFocusRef?: RefObject<HTMLElement | null>;
   zIndex?: number;
   className?: string;
   /**
@@ -79,6 +92,7 @@ export function OverlayPanel({
   dismissible = true,
   restoreFocus = true,
   initialFocusRef,
+  returnFocusRef,
   zIndex = yunicitySemantic.z.modal,
   className,
   chrome = "default",
@@ -118,6 +132,8 @@ export function OverlayPanel({
   dismissibleRef.current = dismissible;
   const restoreFocusRef = useRef(restoreFocus);
   restoreFocusRef.current = restoreFocus;
+  const returnFocusTargetRef = useRef(returnFocusRef);
+  returnFocusTargetRef.current = returnFocusRef;
   const initialFocusRefMirror = useRef(initialFocusRef);
   initialFocusRefMirror.current = initialFocusRef;
 
@@ -232,7 +248,16 @@ export function OverlayPanel({
       // le focus ne peut pas atterrir dans un `inert`.
       leaveStack();
       setEntered(false);
-      if (wasTopmost && restoreFocusRef.current && previouslyFocused?.isConnected) previouslyFocused.focus();
+      if (wasTopmost && restoreFocusRef.current) {
+        // Cible explicite prioritaire quand elle est fournie ET toujours dans le
+        // document ; sinon, comportement historique inchange.
+        const explicit = returnFocusTargetRef.current?.current ?? null;
+        if (explicit?.isConnected) {
+          explicit.focus({ preventScroll: true });
+        } else if (previouslyFocused?.isConnected) {
+          previouslyFocused.focus();
+        }
+      }
     };
   }, [open, requestClose]);
 

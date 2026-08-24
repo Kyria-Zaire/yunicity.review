@@ -45,6 +45,7 @@ export function CitizenPostCard({
       <FeedAuthorHeader post={post} layout={layout} onReport={onReport} />
       {post.body ? (
         <p
+          data-feed-publication-body=""
           className={`whitespace-pre-wrap leading-relaxed text-neutral-800 ${
             layout === "mobile" ? "mt-3 text-[15px]" : "mt-4 text-[15px]"
           }`}
@@ -58,6 +59,7 @@ export function CitizenPostCard({
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img
+            data-feed-publication-media=""
             src={post.media_url}
             alt=""
             loading="lazy"

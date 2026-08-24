@@ -22,9 +22,10 @@
  * Aucune dépendance : `node:http` uniquement. Aucun code produit n'est touché.
  */
 import { createServer, request as httpRequest } from "node:http";
+import { resolveProxyHost } from "./e2e-proxy-host.mjs";
 
 const PORT = Number(process.env.E2E_PROXY_PORT ?? 3002);
-const HOST = process.env.E2E_PROXY_HOST ?? "0.0.0.0";
+const HOST = resolveProxyHost(process.env);
 const WEB_TARGET = process.env.E2E_WEB_TARGET ?? "http://127.0.0.1:3003";
 const API_TARGET = process.env.E2E_API_TARGET ?? "http://127.0.0.1:8010";
 

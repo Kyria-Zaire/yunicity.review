@@ -51,13 +51,21 @@ function StoryAvatar({ item, index }: { item: FeedStoryShortcut; index: number }
     return (
       <Link
         href={item.href}
+        data-feed-medium-stories-item=""
+        data-story-kind="publish"
         className={`group flex ${ITEM_WIDTH} shrink-0 flex-col items-center gap-2.5`}
       >
         <div className="relative">
-          <div className={`rounded-full ${AVATAR_SIZE} ${ringClass}`}>
+          <div
+            data-feed-medium-stories-circle=""
+            className={`rounded-full ${AVATAR_SIZE} ${ringClass}`}
+          >
             <div className="h-full w-full rounded-full bg-white p-[3px]">{inner}</div>
           </div>
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-yunicity-primary text-base font-bold leading-none text-white shadow-sm">
+          <span
+            data-feed-medium-stories-badge=""
+            className="absolute -bottom-0.5 -right-0.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-yunicity-primary text-base font-bold leading-none text-white shadow-sm"
+          >
             +
           </span>
         </div>
@@ -70,8 +78,16 @@ function StoryAvatar({ item, index }: { item: FeedStoryShortcut; index: number }
 
   if (item.kind === "mine") {
     return (
-      <Link href={item.href} className={`flex ${ITEM_WIDTH} shrink-0 flex-col items-center gap-1`}>
-        <div className={`rounded-full ${AVATAR_SIZE} ${ringClass}`}>
+      <Link
+        href={item.href}
+        data-feed-medium-stories-item=""
+        data-story-kind="mine"
+        className={`flex ${ITEM_WIDTH} shrink-0 flex-col items-center gap-1`}
+      >
+        <div
+          data-feed-medium-stories-circle=""
+          className={`rounded-full ${AVATAR_SIZE} ${ringClass}`}
+        >
           <div className="h-full w-full rounded-full bg-white p-[3px]">{inner}</div>
         </div>
         <span className="max-w-[5.5rem] truncate text-center text-xs font-bold text-neutral-900">
@@ -85,8 +101,16 @@ function StoryAvatar({ item, index }: { item: FeedStoryShortcut; index: number }
   }
 
   return (
-    <Link href={item.href} className={`flex ${ITEM_WIDTH} shrink-0 flex-col items-center gap-1`}>
-      <div className={`rounded-full ${AVATAR_SIZE} ${ringClass}`}>
+    <Link
+      href={item.href}
+      data-feed-medium-stories-item=""
+      data-story-kind={item.kind}
+      className={`flex ${ITEM_WIDTH} shrink-0 flex-col items-center gap-1`}
+    >
+      <div
+        data-feed-medium-stories-circle=""
+        className={`rounded-full ${AVATAR_SIZE} ${ringClass}`}
+      >
         <div className="h-full w-full rounded-full bg-white p-[3px]">{inner}</div>
       </div>
       <span className="max-w-[5.5rem] truncate text-center text-xs font-bold text-neutral-900">
@@ -103,9 +127,14 @@ function StoriesSeeAllCard({ href }: { href: string }) {
   return (
     <Link
       href={href}
+      data-feed-medium-stories-cta=""
+      aria-label={FEED_PORTAL_STORIES_SEE_ALL}
       className={`flex ${ITEM_WIDTH} shrink-0 flex-col items-center justify-center gap-2 rounded-2xl bg-[#EEF0FF] px-2 py-3 transition hover:bg-[#E4E7FF]`}
     >
-      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-yunicity-primary shadow-sm">
+      <span
+        data-feed-medium-stories-circle=""
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-yunicity-primary shadow-sm"
+      >
         <ChevronRight className="h-5 w-5" aria-hidden />
       </span>
       <span className="text-center text-[11px] font-semibold leading-snug text-yunicity-primary">
@@ -119,7 +148,11 @@ export function FeedStoriesRail({ items, seeAllHref = "/sortir" }: FeedStoriesRa
   if (items.length === 0) return null;
 
   return (
-    <nav aria-label="À la une locale" className="-mx-1 overflow-x-auto px-1 pb-1 scrollbar-thin">
+    <nav
+      data-feed-medium-stories-rail=""
+      aria-label="À la une locale"
+      className="-mx-1 overflow-x-auto px-1 pb-1 scrollbar-thin"
+    >
       <ul className="flex min-w-max items-start gap-5 sm:gap-6 md:gap-7">
         {items.map((item, index) => (
           <li key={item.id}>

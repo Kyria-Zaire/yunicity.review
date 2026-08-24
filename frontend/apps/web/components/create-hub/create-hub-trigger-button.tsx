@@ -3,12 +3,20 @@
 import { CREATE_HUB_FAB_LABEL } from "@/components/create-hub/create-hub-labels";
 import { useCreateHubOptional } from "@/components/create-hub/create-hub-provider";
 import { useCreateHubVisibility } from "@/hooks/use-create-hub-visibility";
+import type { CreateHubSurface } from "@/lib/create-hub/create-hub-routes";
 import { useNavigationSurfacesOptional } from "@/hooks/use-navigation-surfaces";
 import { Plus } from "lucide-react";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 
 type CreateHubTriggerButtonProps = {
   variant?: "nav" | "sidebar-icon" | "sidebar-expanded" | "bottom-nav";
+  /**
+   * Surface de montage, pour la politique de visibilite par route
+   * (C3-CITIZEN-MEDIUM-SHELL-R1E). `variant` decrit l'APPARENCE et ne peut pas
+   * en tenir lieu : `sidebar-icon` sert aussi bien au rail medium qu'ailleurs.
+   * Par defaut `"default"` — tous les consommateurs historiques inchanges.
+   */
+  visibilitySurface?: CreateHubSurface;
   className?: string;
   children?: ReactNode;
 };
@@ -18,12 +26,13 @@ type CreateHubTriggerButtonProps = {
  */
 export function CreateHubTriggerButton({
   variant = "nav",
+  visibilitySurface = "default",
   className = "",
   children,
 }: CreateHubTriggerButtonProps) {
   const createHub = useCreateHubOptional();
   const surfaces = useNavigationSurfacesOptional();
-  const visible = useCreateHubVisibility();
+  const visible = useCreateHubVisibility(visibilitySurface);
   const surfacesReady = surfaces?.surfacesInitialized ?? false;
 
   if (!createHub || !visible) {
@@ -33,7 +42,9 @@ export function CreateHubTriggerButton({
   const { openCreateHub, isOpen } = createHub;
   const triggerProps = {
     type: "button" as const,
-    onClick: openCreateHub,
+    // `currentTarget` designe TOUJOURS le declencheur reellement cliqué —
+    // le hub en compte plusieurs pour un seul dialogue.
+    onClick: (event: MouseEvent<HTMLButtonElement>) => openCreateHub(event.currentTarget),
     "aria-label": CREATE_HUB_FAB_LABEL,
     "aria-haspopup": "dialog" as const,
     "aria-expanded": isOpen,

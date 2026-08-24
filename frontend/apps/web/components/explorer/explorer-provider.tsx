@@ -23,7 +23,8 @@ import type { NavigationSurfaceCloseReason } from "@/lib/layout/navigation-surfa
 
 type ExplorerContextValue = {
   isOpen: boolean;
-  openExplorer: () => void;
+  /** Le declencheur peut se designer comme cible de retour du focus (C3-FEED-M2.3A). */
+  openExplorer: (trigger?: HTMLElement | null) => void;
   closeExplorer: (reason?: NavigationSurfaceCloseReason) => void;
 };
 
@@ -42,7 +43,9 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
   const surface = surfaces.explorerSurface;
   const cityState = useExplorerCityState({ enabled: isAuthenticated });
 
-  const openExplorer = useCallback(() => {
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const openExplorer = useCallback((trigger?: HTMLElement | null) => {
+    if (trigger) returnFocusRef.current = trigger;
     surfaces.openSurface("explorer");
   }, [surfaces]);
 
@@ -126,6 +129,7 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
       {children}
       {surface === "drawer" ? (
         <Drawer
+          returnFocusRef={returnFocusRef}
           open={isOpen}
           onOpenChange={(next) => {
             if (!next) closeExplorer("escape");
@@ -139,6 +143,7 @@ export function ExplorerProvider({ children }: { children: ReactNode }) {
         </Drawer>
       ) : surface === "dialog" ? (
         <Dialog
+          returnFocusRef={returnFocusRef}
           open={isOpen}
           onOpenChange={(next) => {
             if (!next) closeExplorer("escape");

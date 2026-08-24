@@ -18,6 +18,8 @@ import {
 import { WebNavIcon } from "@/lib/layout/web-nav-icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { CitizenMediumRail } from "@/components/layout/citizen-medium-rail";
+import { resolveCitizenMediumRoute } from "@/lib/layout/citizen-medium-shell-contract";
 
 /** Cible tactile 52px — icône seule, style barre X en mode compact. */
 function NavIconButton({
@@ -149,8 +151,24 @@ export function WebSidebar() {
   const unreadNotifications = useNotificationUnread();
   const showCreateHub = useCreateHubVisibility();
   const notificationsActive = isWebNavActive(pathname, WEB_CITIZEN_NOTIFICATIONS_NAV);
+  /**
+   * C3-CITIZEN-MEDIUM-SHELL-R1A — propriétaire UNIQUE du rail citoyen medium.
+   *
+   * Le dépôt n'a ni route group Next ni layout citoyen commun : huit shells
+   * indépendants montent chacun `WebSidebar` au même emplacement de grille.
+   * C'est donc le seul point de convergence réel. Monter le rail ici supprime
+   * tout montage par feature, sans déplacer aucune page.
+   *
+   * `WebSidebar` étant aussi monté par les familles organisation et partenaire,
+   * l'éligibilité vient d'un résolveur EXPLICITE et fail-safe — jamais de la
+   * simple présence du composant. Le rail, lui, reste pathname-agnostique.
+   */
+  const medium = resolveCitizenMediumRoute(pathname);
+  const railActive = medium.presentation === "rail";
+  const creationFlow = medium.presentation === "creation-flow";
 
   return (
+    <>
     <aside className="web-sidebar-aside" aria-label="Navigation Yunicity">
       <div className="web-sidebar-column">
         <div className="flex shrink-0 flex-col items-center pb-1 pt-3 xl:mb-5 xl:items-stretch xl:pb-0 xl:pt-0">
@@ -203,7 +221,12 @@ export function WebSidebar() {
               </span>
             </WebSidebarTooltip>
             <ExplorerTriggerButton variant="sidebar-expanded" />
-            <CitizenYunicityMenu variant="sidebar" />
+            {/* C3-CITIZEN-MEDIUM-SHELL-R1C : l'apparence de la sidebar est
+                CONSTANTE. Seul le fait global transite — le rail est-il rendu ?
+                — et c'est le résolveur qui en déduit l'hôte de la bande medium.
+                Faire varier `variant` changeait le rendu de la sidebar sur les
+                routes exclues, y compris au palier desktop. */}
+            <CitizenYunicityMenu variant="sidebar" mediumRailPresent={railActive} />
             {showCreateHub ? (
               <div className="flex w-full justify-center xl:hidden">
                 <WebSidebarTooltip label="Créer">
@@ -254,5 +277,24 @@ export function WebSidebar() {
         </div>
       </div>
     </aside>
+    {/* Le rail est rendu APRES l'aside, comme le faisait `FeedAppShell`.
+        `CitizenYunicityMenu` elit un seul hote de surface par variante
+        (`rendersMenuSurface = variant === menuHostVariant`) : les deux
+        declencheurs partagent `variant="sidebar"`, et inverser l'ordre faisait
+        de l'aside MASQUE l'hote du menu — le focus ne revenait plus au
+        declencheur visible du rail. En bande medium l'aside est `display: none`,
+        donc il ne cree aucun item de grille : le rail occupe bien la premiere
+        colonne malgre sa position dans le DOM. */}
+    {railActive ? <CitizenMediumRail activeDestination={medium.activeDestination} /> : null}
+    {/*
+      C3-CITIZEN-MEDIUM-SHELL-R1F — marqueur structurel creation-flow.
+      Propriétaire unique : WebSidebar. Aucune page de création ne le porte.
+      Le CSS medium (`640–1279,98`) reconnaît ce marqueur pour masquer la
+      sidebar historique compacte et libérer une colonne unique.
+    */}
+    {creationFlow ? (
+      <span data-citizen-medium-creation-flow="" hidden aria-hidden="true" />
+    ) : null}
+    </>
   );
 }
