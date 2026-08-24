@@ -81,6 +81,9 @@ docker-compose.override.yml
 
 # Agents (local)
 .claude/settings.local.json
+# Allowlist de permissions + `additionalDirectories` ancres dans un profil
+# machine : jamais partageable, jamais committee.
+.claude/settings.json
 CLAUDE.local.md
 
 # Cursor session artifacts (curl cookies, debug dumps, temp exports)
