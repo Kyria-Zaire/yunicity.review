@@ -1,14 +1,21 @@
 "use client";
 
-import type { FeedComment, FeedPost, FeedReportReason } from "@yunicity/types";
-import { useCallback, useEffect, useState } from "react";
+import type {
+  CommentCreatePayload,
+  CommentListResponse,
+  EventInterestToggleResponse,
+  FeedComment,
+  FeedListParams,
+  FeedPost,
+  FeedReportReason,
+} from "@yunicity/types";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { CitizenPostCard } from "@/components/feed/citizen-post-card";
 import { CommentComposer } from "@/components/feed/comment-composer";
 import { CommentList } from "@/components/feed/comment-list";
 import { FeedCardShell } from "@/components/feed/feed-card-shell";
-import { FeedSocialActionBar } from "@/components/feed/feed-social-action-bar";
-import { FeedMobileSocialActionBar } from "@/components/feed/mobile/feed-mobile-social-action-bar";
+import { FeedPublicationSocialActions } from "@/components/feed/feed-publication-actions";
 import { EventFeedCard } from "@/components/events/event-feed-card";
 import { OfferFeedCard } from "@/components/feed/offer-feed-card";
 import { OrganizationPostCard } from "@/components/feed/organization-post-card";
@@ -27,40 +34,99 @@ function feedCardVariant(
 
 function FeedCardBody({
   post,
-  layout = "default",
+  currentUserId,
   onReport,
 }: {
   post: FeedPost;
-  layout?: "default" | "mobile";
+  currentUserId: string | null;
   onReport?: (reason: FeedReportReason) => Promise<void>;
 }) {
   if (post.type === "offer") {
-    return <OfferFeedCard post={post} layout={layout} onReport={onReport} />;
+    return <OfferFeedCard post={post} currentUserId={currentUserId} onReport={onReport} />;
   }
   if (post.type === "event") {
-    return <EventFeedCard post={post} layout={layout} onReport={onReport} />;
+    return <EventFeedCard post={post} currentUserId={currentUserId} onReport={onReport} />;
   }
   if (post.type === "partner_creator" || post.author.type === "organization") {
-    return <OrganizationPostCard post={post} layout={layout} onReport={onReport} />;
+    return <OrganizationPostCard post={post} currentUserId={currentUserId} onReport={onReport} />;
   }
-  return <CitizenPostCard post={post} layout={layout} onReport={onReport} />;
+  return <CitizenPostCard post={post} currentUserId={currentUserId} onReport={onReport} />;
 }
 
-export function FeedCard({
+/**
+ * Dépendances applicatives de la carte (C3-FEED-UNIFIED-PUBLICATION-CARD-R2A-TER).
+ *
+ * ── Pourquoi ce contrat ──────────────────────────────────────────────────────
+ * `FeedCard` appelait `useYunicityApi()` et `useAuth()` dans son corps : il
+ * n'était donc montable que sous les providers de l'application. Le harnais E2E
+ * crée une racine React SÉPARÉE, hors de l'arbre de contexte — les cinq familles
+ * de publication (dont événement, offre et vidéo, absentes de la baseline QA)
+ * n'étaient donc prouvables nulle part.
+ *
+ * Le contrat ci-dessous est le PLUS PETIT utile : quatre méthodes et un
+ * identifiant, relevés par lecture du corps de la carte. Injecter les providers
+ * entiers aurait fait dépendre la vue de surfaces qu'elle n'utilise pas.
+ */
+export type FeedCardDependencies = {
+  listComments: (postId: string, params: FeedListParams) => Promise<CommentListResponse>;
+  createComment: (postId: string, payload: CommentCreatePayload) => Promise<FeedComment>;
+  deleteComment: (commentId: string) => Promise<void>;
+  toggleEventInterest: (eventId: string) => Promise<EventInterestToggleResponse>;
+  /** Identité du lecteur — sert uniquement à autoriser la suppression d'un commentaire. */
+  currentUserId: string | null;
+};
+
+/**
+ * Conteneur applicatif — SEUL point qui touche aux providers.
+ *
+ * Il traduit `useYunicityApi()` et `useAuth()` en `FeedCardDependencies`, puis
+ * rend la vue. Son API publique n'a pas bougé : Feed, Discussions et le mur de
+ * Tribu montent toujours `<FeedCard …/>` sans rien changer.
+ */
+export function FeedCard(props: {
+  post: FeedPost;
+  onToggleLike: (post: FeedPost) => Promise<void>;
+  onReport: (postId: string, reason: FeedReportReason) => Promise<void>;
+  openCommentsByDefault?: boolean;
+}) {
+  const api = useYunicityApi();
+  const { user } = useAuth();
+
+  const dependencies: FeedCardDependencies = useMemo(
+    () => ({
+      listComments: (postId, params) => api.listFeedComments(postId, params),
+      createComment: (postId, payload) => api.createFeedComment(postId, payload),
+      deleteComment: (commentId) => api.deleteFeedComment(commentId),
+      toggleEventInterest: (eventId) => api.toggleEventInterest(eventId),
+      currentUserId: user?.id ?? null,
+    }),
+    [api, user?.id],
+  );
+
+  return <FeedCardWithDependencies {...props} dependencies={dependencies} />;
+}
+
+/**
+ * Vue fonctionnelle — n'appelle NI `useAuth` NI `useYunicityApi`.
+ *
+ * Réservée au conteneur ci-dessus, aux tests unitaires et au harnais E2E. Les
+ * consommateurs produit ne la montent jamais directement. Elle utilise
+ * exactement les mêmes composants et le même CSS que la carte de production :
+ * ce qui est prouvé sur elle est vrai du produit.
+ */
+export function FeedCardWithDependencies({
   post: initialPost,
   onToggleLike,
   onReport,
   openCommentsByDefault = false,
-  layout = "default",
+  dependencies,
 }: {
   post: FeedPost;
   onToggleLike: (post: FeedPost) => Promise<void>;
   onReport: (postId: string, reason: FeedReportReason) => Promise<void>;
   openCommentsByDefault?: boolean;
-  layout?: "default" | "mobile";
+  dependencies: FeedCardDependencies;
 }) {
-  const api = useYunicityApi();
-  const { user } = useAuth();
   const [post, setPost] = useState(initialPost);
 
   useEffect(() => {
@@ -74,12 +140,12 @@ export function FeedCard({
   const loadComments = useCallback(async () => {
     setCommentsLoading(true);
     try {
-      const response = await api.listFeedComments(post.id, { limit: 50 });
+      const response = await dependencies.listComments(post.id, { limit: 50 });
       setComments(response.items);
     } finally {
       setCommentsLoading(false);
     }
-  }, [api, post.id]);
+  }, [dependencies, post.id]);
 
   useEffect(() => {
     if (!openCommentsByDefault) return;
@@ -96,13 +162,13 @@ export function FeedCard({
   }
 
   async function addComment(body: string) {
-    const created = await api.createFeedComment(post.id, { body });
+    const created = await dependencies.createComment(post.id, { body });
     setComments((prev) => [...prev, created]);
     setPost((prev) => ({ ...prev, comment_count: prev.comment_count + 1 }));
   }
 
   async function removeComment(commentId: string) {
-    await api.deleteFeedComment(commentId);
+    await dependencies.deleteComment(commentId);
     await loadComments();
     setPost((prev) => ({ ...prev, comment_count: Math.max(0, prev.comment_count - 1) }));
   }
@@ -112,7 +178,7 @@ export function FeedCard({
     if (!eventId) {
       return;
     }
-    const result = await api.toggleEventInterest(eventId);
+    const result = await dependencies.toggleEventInterest(eventId);
     setPost((prev) => {
       if (!prev.event) {
         return prev;
@@ -124,8 +190,13 @@ export function FeedCard({
     });
   }
 
-  const mobileFooter = (
-    <FeedMobileSocialActionBar
+  /*
+   * C3-FEED-UNIFIED-PUBLICATION-CARD-R2A : une seule barre sociale. `Signaler`
+   * n'y figure plus — il vit dans le menu `…` de l'en-tete, seul chemin de
+   * signalement, identique sur les trois bandes.
+   */
+  const footer = (
+    <FeedPublicationSocialActions
       post={post}
       commentsOpen={commentsOpen}
       onToggleLike={() => void onToggleLike(post)}
@@ -133,27 +204,13 @@ export function FeedCard({
       onToggleEventInterest={
         post.type === "event" && post.event ? () => toggleEventInterest() : undefined
       }
-    />
-  );
-
-  const desktopFooter = (
-    <FeedSocialActionBar
-      post={post}
-      commentsOpen={commentsOpen}
-      onToggleLike={() => void onToggleLike(post)}
-      onToggleComments={() => void toggleComments()}
-      onToggleEventInterest={
-        post.type === "event" && post.event ? () => toggleEventInterest() : undefined
-      }
-      onReport={(reason) => onReport(post.id, reason)}
     />
   );
 
   return (
     <FeedCardShell
       variant={feedCardVariant(post)}
-      layout={layout}
-      footer={layout === "mobile" ? mobileFooter : desktopFooter}
+      footer={footer}
       expanded={
         commentsOpen ? (
           <>
@@ -162,7 +219,7 @@ export function FeedCard({
             ) : (
               <CommentList
                 comments={comments}
-                currentUserId={user?.id}
+                currentUserId={dependencies.currentUserId ?? undefined}
                 onDelete={removeComment}
               />
             )}
@@ -173,7 +230,7 @@ export function FeedCard({
     >
       <FeedCardBody
         post={post}
-        layout={layout}
+        currentUserId={dependencies.currentUserId}
         onReport={(reason) => onReport(post.id, reason)}
       />
     </FeedCardShell>

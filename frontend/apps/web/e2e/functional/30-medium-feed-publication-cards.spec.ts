@@ -91,7 +91,6 @@ async function mesurerCartes(page: Page) {
       const posts = [...liste.querySelectorAll(sel.itemPost)].filter(visible);
       const videoSlot = liste.querySelector(sel.itemVideo) as HTMLElement;
       const videoSurface = videoSlot.querySelector(sel.surface)!;
-      const postSurfaces = posts.map((li) => li.querySelector(sel.surface)!);
       const firstPost = posts[0]!;
       const article = firstPost.querySelector("article")!;
       const header = article.querySelector(sel.header)!;
@@ -99,8 +98,6 @@ async function mesurerCartes(page: Page) {
       const actions = article.querySelector(sel.actions)!;
       const toolbar = actions.querySelector('[role="toolbar"]')!;
       const boutons = [...toolbar.querySelectorAll("a, button")] as HTMLElement[];
-      const csPost = getComputedStyle(article);
-      const csVideo = getComputedStyle(videoSurface);
       const region = document.querySelector('[data-feed-medium-region="stream"]')!;
       const regionStyle = getComputedStyle(region);
 
@@ -161,10 +158,50 @@ async function mesurerCartes(page: Page) {
             block: parseFloat(cs.paddingTop),
           };
         })(),
+        /*
+         * R2A-BIS-R2 : chaque cible porte desormais sa ZONE et sa BRANCHE. Sans
+         * cela, un `0` ne dit pas si le helper a atteint la branche mobile
+         * effondree, ou si un controle d'une autre zone fonctionnelle (menu de
+         * l'en-tete, CTA contextuelle) s'est glisse dans la barre sociale.
+         */
         ciblesActions: boutons.map((b) => ({
           w: round(b.getBoundingClientRect().width),
           h: round(b.getBoundingClientRect().height),
           label: b.getAttribute("aria-label") ?? "",
+          zone: b.closest("[data-feed-publication-social]")
+            ? "social-toolbar"
+            : b.closest("[data-feed-publication-header]")
+              ? "publication-header"
+              : b.closest("[data-feed-publication-contextual-cta]")
+                ? "contextual-cta"
+                : "hors-zone",
+          branche: b.closest(".web-mobile-feed-only")
+            ? "mobile"
+            : b.closest(".web-feed-desktop-contents")
+              ? "desktop/medium"
+              : "?",
+          /*
+           * Visibilite EFFECTIVE de la liste ancetre. Une largeur > 0 ne suffit
+           * pas : un ancetre `display:none` laisse ses descendants annoncer leur
+           * propre `display`, et un element sans boite de rendu n'a aucun
+           * `getClientRects()`. On exige donc les trois, plus une chaine
+           * d'ancetres exempte d'etat masquant.
+           */
+          listeAncetreVisible: (() => {
+            const ul = b.closest("ul");
+            if (!ul) return false;
+            const r = ul.getBoundingClientRect();
+            if (r.width <= 0 || r.height <= 0) return false;
+            if (ul.getClientRects().length === 0) return false;
+            let p: Element | null = ul;
+            while (p && p !== document.body) {
+              const cs = getComputedStyle(p);
+              if (cs.display === "none" || cs.visibility === "hidden") return false;
+              if (p.hasAttribute("hidden") || p.hasAttribute("inert")) return false;
+              p = p.parentElement;
+            }
+            return true;
+          })(),
         })),
         tokens: {
           paddingInline: regionStyle.getPropertyValue("--feed-medium-card-padding-inline").trim(),
@@ -209,9 +246,30 @@ async function mesurerCadreEditorial(page: Page) {
       const media = document
         .querySelector("[data-feed-video-stream-media]")!
         .getBoundingClientRect();
-      const report = document
-        .querySelector("[data-feed-publication-report]")
-        ?.getBoundingClientRect();
+      /*
+       * C3-FEED-R2A-SPEC30-OVERFLOW-MIGRATION.
+       *
+       * On mesurait `[data-feed-publication-report]`, supprime par R2A :
+       * `querySelector` renvoyait `undefined`, et le `?? 0` en aval rendait
+       * l'assertion de cadre VRAIE PAR CONSTRUCTION. Un test qui ne peut plus
+       * echouer est pire qu'un test absent.
+       *
+       * On vise desormais le declencheur du menu, dans l'EN-TETE DU MEME
+       * article — jamais un `querySelector` global qui pourrait viser la carte
+       * voisine ou la branche mobile effondree. Aucune valeur sentinelle : si le
+       * controle manque, `overflow` reste `null` et l'assertion echoue.
+       */
+      const overflowEl = postSurface.querySelector(
+        "[data-feed-publication-header] [data-feed-publication-overflow]",
+      ) as HTMLElement | null;
+      const overflowRect = overflowEl?.getBoundingClientRect() ?? null;
+      const overflowCentre =
+        overflowRect && overflowRect.width > 0 && overflowRect.height > 0
+          ? document.elementFromPoint(
+              overflowRect.left + overflowRect.width / 2,
+              overflowRect.top + overflowRect.height / 2,
+            )
+          : null;
       const actions = document.querySelector("[data-feed-publication-actions]");
       const actionsBox = actions?.getBoundingClientRect();
       const viewportH = window.innerHeight;
@@ -239,7 +297,24 @@ async function mesurerCadreEditorial(page: Page) {
         viewportShare: round(vr.height / viewportH),
         residualPostRight: round(sr.right - pr.right),
         residualVideoRight: round(vr.right - vrr.right),
-        reportRight: report ? round(report.right) : null,
+        overflow: overflowEl && overflowRect
+          ? {
+              nombreDansEntete: postSurface.querySelectorAll(
+                "[data-feed-publication-header] [data-feed-publication-overflow]",
+              ).length,
+              left: round(overflowRect.left),
+              right: round(overflowRect.right),
+              w: round(overflowRect.width),
+              h: round(overflowRect.height),
+              fini: Number.isFinite(overflowRect.left) && Number.isFinite(overflowRect.right),
+              nom: overflowEl.getAttribute("aria-label") ?? "",
+              hitTestable: Boolean(
+                overflowCentre &&
+                  (overflowCentre === overflowEl || overflowEl.contains(overflowCentre)),
+              ),
+            }
+          : null,
+        editorialLeft: round(pr.left),
         editorialRight: round(pr.right),
         actionsRight: actionsBox ? round(actionsBox.right) : null,
         measurePx,
@@ -388,7 +463,23 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
       expect(m.mediaWidth, "média vidéo monopolise la surface").toBeLessThan(800);
       expect(Math.abs(m.mediaRatio - 16 / 9)).toBeLessThanOrEqual(0.05);
       expect(m.viewportShare, "carte vidéo monopolise le viewport").toBeLessThan(0.65);
-      expect(m.reportRight ?? 0, "Signaler hors cadre éditorial").toBeLessThanOrEqual(
+      /*
+       * Fail-closed : l'absence du controle fait ECHOUER, elle ne satisfait
+       * jamais l'assertion. Le contrat porte sur la GEOMETRIE (le menu reste
+       * dans le cadre editorial) et sur son atteignabilite — pas sur sa taille,
+       * qui appartient a l'en-tete et non a la barre sociale.
+       */
+      expect(m.overflow, "menu « Plus d'actions » absent de l'en-tête").not.toBeNull();
+      expect(m.overflow!.nombreDansEntete, "menu dupliqué dans l'en-tête").toBe(1);
+      expect(m.overflow!.fini, "rectangle du menu non fini").toBe(true);
+      expect(m.overflow!.w, "menu de largeur nulle").toBeGreaterThan(0);
+      expect(m.overflow!.h, "menu de hauteur nulle").toBeGreaterThan(0);
+      expect(m.overflow!.nom, "nom accessible du menu").toBe("Plus d'actions");
+      expect(m.overflow!.hitTestable, "menu non atteignable au clic").toBe(true);
+      expect(m.overflow!.left, "menu hors cadre éditorial à gauche").toBeGreaterThanOrEqual(
+        m.editorialLeft - 1,
+      );
+      expect(m.overflow!.right, "menu hors cadre éditorial à droite").toBeLessThanOrEqual(
         m.editorialRight + 1,
       );
       expect(m.actionsRight ?? 0, "actions hors cadre éditorial").toBeLessThanOrEqual(
@@ -405,29 +496,91 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
     expect(labels.some((l) => l.includes("réagir")), "Réagir absent").toBe(true);
     expect(labels.some((l) => l.includes("discuter")), "Discuter absent").toBe(true);
     expect(labels.some((l) => l.includes("partager")), "Partager absent").toBe(true);
+    /*
+     * C3-FEED-UNIFIED-PUBLICATION-CARD-R2A : `Signaler` n'est plus un bouton
+     * autonome de la barre — il est l'unique contenu du menu « Plus d'actions »,
+     * identique sur les trois bandes. Le verrou est DEPLACE, pas relache : on
+     * exige toujours un chemin de signalement visible, et on interdit en plus
+     * qu'un second bouton reapparaisse dans le pied.
+     */
+    // Le portail rend encore DEUX listes (dette R2B) : seule la visible fait foi.
     await expect(
-      authedPage.locator("[data-feed-publication-report]").first(),
+      authedPage.locator("[data-feed-publication-overflow]").filter({ visible: true }).first(),
     ).toBeVisible();
+    await expect(authedPage.locator("[data-feed-publication-report]")).toHaveCount(0);
+
+    /*
+     * AUCUN FILTRE (R2A-BIS-R2, amendement CTO).
+     *
+     * `ciblesActions` est construit depuis l'UNIQUE `[data-feed-stream-list]`,
+     * qui appartient a la branche desktop/medium. Une cible mobile, une cible
+     * d'une autre zone fonctionnelle ou une liste ancetre invisible n'ont donc
+     * aucune raison d'y figurer : leur presence EST la regression. Les ecarter
+     * par un `filter` reviendrait a masquer exactement ce que ce test traque.
+     */
+    const diagnostic = (c: (typeof m.ciblesActions)[number]) =>
+      `cible ${c.label || "(sans nom)"} · zone ${c.zone} · branche ${c.branche} · ${c.w}x${c.h} · listeVisible=${c.listeAncetreVisible}`;
+
+    expect(
+      m.ciblesActions.length,
+      `barre sociale vide. Relevé : ${m.ciblesActions.map(diagnostic).join(" | ") || "(aucune)"}`,
+    ).toBeGreaterThan(0);
 
     for (const cible of m.ciblesActions) {
-      expect(cible.h, `cible ${cible.label} trop courte`).toBeGreaterThanOrEqual(
+      expect(cible.zone, diagnostic(cible)).toBe("social-toolbar");
+      expect(cible.branche, diagnostic(cible)).toBe("desktop/medium");
+      expect(cible.listeAncetreVisible, diagnostic(cible)).toBe(true);
+      expect(cible.h, diagnostic(cible)).toBeGreaterThanOrEqual(
         FEED_MEDIUM_PUBLICATION_ACTION_MIN_PX - 1,
       );
-      expect(cible.w, `cible ${cible.label} trop étroite`).toBeGreaterThanOrEqual(
+      expect(cible.w, diagnostic(cible)).toBeGreaterThanOrEqual(
         FEED_MEDIUM_PUBLICATION_ACTION_MIN_PX - 1,
       );
     }
 
-    const signaler = await authedPage.evaluate(() => {
-      const btn = document.querySelector(
-        "[data-feed-publication-report]",
-      ) as HTMLElement | null;
+    /*
+     * C3-FEED-UNIFIED-PUBLICATION-CARD-R2A : ce bloc mesurait `Signaler` comme
+     * une cible de la BARRE SOCIALE. Il n'y est plus — il est le declencheur du
+     * menu de l'EN-TETE. Lui appliquer le contrat 44 px de la barre reviendrait
+     * a agrandir un controle pour satisfaire une assertion heritee d'un autre
+     * emplacement fonctionnel. On verifie donc ce qui compte reellement pour
+     * lui : present, nomme, et atteignable au clic.
+     */
+    const overflow = await authedPage.evaluate(() => {
+      const boutons = [
+        ...document.querySelectorAll("[data-feed-publication-overflow]"),
+      ] as HTMLElement[];
+      const visibles = boutons.filter((b) => {
+        const r = b.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      });
+      const btn = visibles[0];
       if (!btn) return null;
       const r = btn.getBoundingClientRect();
-      return { w: r.width, h: r.height };
+      const cible = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      // Chaque publication porte son propre menu : on compte PAR ARTICLE, jamais
+      // sur le document — trois publications visibles donnent trois menus.
+      const parArticle = [...document.querySelectorAll("article")]
+        .filter((a) => a.getBoundingClientRect().width > 0)
+        .map((a) => a.querySelectorAll("[data-feed-publication-overflow]").length);
+      return {
+        maxParArticle: Math.max(0, ...parArticle),
+        articlesVisibles: parArticle.length,
+        nombreVisible: visibles.length,
+        nom: btn.getAttribute("aria-label") ?? "",
+        zoneEntete: Boolean(btn.closest("[data-feed-publication-header]")),
+        hitTestable: Boolean(cible && (cible === btn || btn.contains(cible))),
+      };
     });
-    expect(signaler?.h ?? 0).toBeGreaterThanOrEqual(FEED_MEDIUM_PUBLICATION_ACTION_MIN_PX - 1);
-    expect(signaler?.w ?? 0).toBeGreaterThanOrEqual(FEED_MEDIUM_PUBLICATION_ACTION_MIN_PX - 1);
+    expect(overflow, "aucun menu « Plus d'actions » visible").not.toBeNull();
+    expect(overflow!.maxParArticle, "menu « Plus d'actions » dupliqué dans une carte").toBe(1);
+    expect(
+      overflow!.nombreVisible,
+      "un menu visible par publication visible",
+    ).toBe(overflow!.articlesVisibles);
+    expect(overflow!.nom).toBe("Plus d'actions");
+    expect(overflow!.zoneEntete, "le menu doit vivre dans l'en-tête").toBe(true);
+    expect(overflow!.hitTestable, "menu « Plus d'actions » non cliquable").toBe(true);
 
     await authedPage.getByRole("button", { name: /réagir/i }).first().click();
     const discuter = authedPage.getByRole("button", { name: /discuter/i }).first();
@@ -448,10 +601,62 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
   test("768 — média vidéo 16:9 décodable et destination autoritaire", async ({ authedPage }) => {
     await gotoFeed(authedPage, { width: 768, height: 1024 });
 
+    const thumb = authedPage.locator("[data-feed-video-stream-thumb]");
+    await expect(thumb).toHaveCount(1);
+    await thumb.scrollIntoViewIfNeeded();
+    await expect(thumb).toBeVisible();
+
+    const readThumbState = async () =>
+      authedPage.evaluate(() => {
+        const candidate = document.querySelector("[data-feed-video-stream-thumb]");
+        if (!(candidate instanceof HTMLImageElement)) {
+          return {
+            kind: candidate ? candidate.constructor.name : "missing",
+            src: "",
+            currentSrc: "",
+            complete: false,
+            naturalWidth: -1,
+            naturalHeight: -1,
+            ready: false,
+          };
+        }
+        const src = candidate.getAttribute("src") || "";
+        const currentSrc = candidate.currentSrc;
+        const ready =
+          src.length > 0 &&
+          currentSrc.length > 0 &&
+          candidate.complete &&
+          candidate.naturalWidth > 0 &&
+          candidate.naturalHeight > 0;
+        return {
+          kind: "HTMLImageElement",
+          src,
+          currentSrc,
+          complete: candidate.complete,
+          naturalWidth: candidate.naturalWidth,
+          naturalHeight: candidate.naturalHeight,
+          ready,
+        };
+      });
+
+    await expect
+      .poll(readThumbState, {
+        message: "miniature vidéo non décodée avant mesure",
+        timeout: 10_000,
+      })
+      .toMatchObject({
+        kind: "HTMLImageElement",
+        complete: true,
+        naturalWidth: 320,
+        naturalHeight: 180,
+        ready: true,
+      });
+
     const media = await authedPage.evaluate((entreeSel) => {
-      const thumb = document.querySelector(
-        "[data-feed-video-stream-thumb]",
-      ) as HTMLImageElement;
+      const thumb = document.querySelector("[data-feed-video-stream-thumb]");
+      if (!(thumb instanceof HTMLImageElement)) {
+        throw new Error("miniature vidéo absente ou non image");
+      }
       const entree = document.querySelector(entreeSel) as HTMLAnchorElement;
       const box = document
         .querySelector("[data-feed-video-stream-media]")!
@@ -509,9 +714,10 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
       .poll(async () =>
         authedPage.evaluate((sel) => {
           const img = document.querySelector(
-            `[data-yn-image-harness] ${sel.media}`,
-          ) as HTMLImageElement | null;
-          return img ? img.complete && img.naturalWidth > 0 : false;
+            `[data-yn-image-harness] ${sel.media} img`,
+          );
+          if (!(img instanceof HTMLImageElement)) return false;
+          return img.complete && img.naturalWidth > 0;
         }, { media: "[data-feed-publication-media]" }),
       )
       .toBe(true);

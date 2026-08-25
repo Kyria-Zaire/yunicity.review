@@ -19,7 +19,7 @@ function authorHandle(post: FeedPost): string {
   return slug ? `@${slug}` : author.display_name;
 }
 
-function mobileMetaLine(post: FeedPost): string {
+function metaLine(post: FeedPost): string {
   const neighborhood = post.neighborhood_summary?.display_name?.trim();
   const city = post.city?.trim();
   const time = formatFeedRelativeTime(post.created_at);
@@ -64,38 +64,34 @@ function AuthorAvatar({ post }: { post: FeedPost }) {
   );
 }
 
-function AuthorIdentity({
-  post,
-  layout,
-}: {
-  post: FeedPost;
-  layout: "default" | "mobile";
-}) {
-  if (layout === "mobile") {
-    return (
-      <div className="min-w-0 flex-1">
-        <p data-feed-publication-identity="" className="truncate text-[15px] font-bold text-neutral-900">
-          {authorHandle(post)}
-        </p>
-        <p data-feed-publication-meta="" className="mt-0.5 text-xs text-neutral-500">
-          {mobileMetaLine(post)}
-        </p>
-      </div>
-    );
-  }
-
+/**
+ * Identite de l'auteur — arbre UNIQUE (C3-FEED-UNIFIED-PUBLICATION-CARD-R2A).
+ *
+ * Deux `return` selon `layout` produisaient deux structures et deux identites
+ * differentes : le nom affiche en desktop, le handle en mobile. Les deux sont
+ * desormais rendus une seule fois ; le CSS decide lequel est mis en avant et si
+ * le handle est visible, jamais lequel EXISTE.
+ */
+function AuthorIdentity({ post }: { post: FeedPost }) {
   return (
     <div className="min-w-0 flex-1">
-      <p data-feed-publication-identity="" className="truncate text-sm font-semibold text-neutral-900">
+      <p
+        data-feed-publication-identity=""
+        className="feed-publication-identity truncate font-semibold text-neutral-900"
+      >
         {post.author.display_name}
       </p>
-      <p data-feed-publication-meta="" className="text-xs text-neutral-500">
-        {formatFeedRelativeTime(post.created_at)}
-        {post.neighborhood_summary?.display_name
-          ? ` · ${post.neighborhood_summary.display_name}`
-          : post.city
-            ? ` · ${post.city}`
-            : ""}
+      <p
+        data-feed-publication-handle=""
+        className="feed-publication-handle truncate text-xs text-neutral-500"
+      >
+        {authorHandle(post)}
+      </p>
+      <p
+        data-feed-publication-meta=""
+        className="feed-publication-meta truncate text-xs text-neutral-500"
+      >
+        {metaLine(post)}
       </p>
     </div>
   );
@@ -103,40 +99,36 @@ function AuthorIdentity({
 
 export function FeedAuthorHeader({
   post,
-  layout = "default",
+  currentUserId,
   onReport,
 }: {
   post: FeedPost;
-  layout?: "default" | "mobile";
+  currentUserId: string | null;
   onReport?: (reason: FeedReportReason) => Promise<void>;
 }) {
   const profileHref = buildFeedAuthorProfileHref(post.author);
   const identityBlock = (
     <>
       <AuthorAvatar post={post} />
-      <AuthorIdentity post={post} layout={layout} />
+      <AuthorIdentity post={post} />
     </>
   );
 
   return (
     <header
       data-feed-publication-header=""
-      className={`flex items-start gap-3 ${layout === "default" ? "items-center" : ""}`}
+      className="feed-publication-header flex items-start gap-3"
     >
       {profileHref ? (
         <Link
           href={profileHref}
-          className={`flex min-w-0 flex-1 items-start gap-3 rounded-xl transition hover:bg-neutral-50/80 ${
-            layout === "default" ? "items-center" : ""
-          }`}
+          className="feed-publication-identity-link flex min-w-0 flex-1 items-start gap-3 rounded-xl transition hover:bg-neutral-50/80"
         >
           {identityBlock}
         </Link>
       ) : (
         <div
-          className={`flex min-w-0 flex-1 items-start gap-3 ${
-            layout === "default" ? "items-center" : ""
-          }`}
+          className="feed-publication-identity-link flex min-w-0 flex-1 items-start gap-3"
         >
           {identityBlock}
         </div>
@@ -144,6 +136,7 @@ export function FeedAuthorHeader({
       {onReport ? (
         <FeedPostOptionsMenu
           onReport={onReport}
+          currentUserId={currentUserId}
           authorUserId={post.author.type === "citizen" ? post.author.id : null}
         />
       ) : null}

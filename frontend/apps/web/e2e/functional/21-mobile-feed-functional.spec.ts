@@ -139,12 +139,22 @@ test.describe("C3.1-R1L — Feed mobile fonctionnel", () => {
       }) => {
         await gotoFeed(authedPage);
 
+        /*
+         * C3-FEED-R2A-SPEC21-OVERFLOW-MIGRATION.
+         *
+         * On cherchait un bouton nomme « Signaler ». R2A l'a renomme
+         * « Plus d'actions » : l'assertion passait donc a zero parce que le NOM
+         * avait change, pas parce que le signalement etait interdit — vraie par
+         * construction. On vise desormais le DECLENCHEUR, dans l'article de la
+         * publication concernee, jamais par recherche globale.
+         */
         const own = cardWithMarker(authedPage, OWN_MARKER);
         await expect(own).toBeVisible();
         await expect(
-          own.getByRole("button", { name: /signaler/i }),
+          own.locator("[data-feed-publication-overflow]"),
           "menu de signalement offert sur sa propre publication",
         ).toHaveCount(0);
+        await expect(own.locator('[role="menu"]')).toHaveCount(0);
       });
 
       test(`${viewport.label} — signalement toujours offert sur la publication d'un tiers`, async ({
@@ -170,10 +180,31 @@ test.describe("C3.1-R1L — Feed mobile fonctionnel", () => {
         await gotoFeed(authedPage);
         const card = cardWithMarker(authedPage, (foreign?.body ?? "").trim().slice(0, 24));
         await expect(card).toBeVisible();
+
+        /*
+         * Le chemin de signalement passe par le menu de debordement de l'EN-TETE
+         * de CET article. On l'ouvre reellement et on verifie que les trois
+         * motifs historiques y sont — sans en cliquer aucun, donc sans emettre
+         * la moindre requete de signalement.
+         */
+        const declencheur = card.locator(
+          "[data-feed-publication-header] [data-feed-publication-overflow]",
+        );
         await expect(
-          card.getByRole("button", { name: /signaler/i }),
+          declencheur,
           "le signalement doit rester possible sur la publication d'un tiers",
         ).toHaveCount(1);
+        await expect(declencheur).toHaveAttribute("aria-label", "Plus d'actions");
+        await expect(declencheur).toHaveAttribute("aria-expanded", "false");
+
+        await declencheur.click();
+        await expect(declencheur).toHaveAttribute("aria-expanded", "true");
+        const menu = card.locator('[role="menu"]');
+        await expect(menu, "menu de signalement absent ou duplique").toHaveCount(1);
+        await expect(
+          menu.locator('[role="menuitem"]'),
+          "les trois motifs historiques doivent rester offerts",
+        ).toHaveCount(3);
       });
 
       // ── Rouge 4 : visionneuse média ────────────────────────────────────────

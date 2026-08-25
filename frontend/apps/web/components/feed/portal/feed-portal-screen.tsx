@@ -318,12 +318,7 @@ export function FeedPortalScreen() {
         <ul className="space-y-2" aria-label="Publications du fil local">
           {displayedPosts.map((post) => (
             <li key={post.id}>
-              <FeedCard
-                post={post}
-                layout="mobile"
-                onToggleLike={toggleLike}
-                onReport={handleReport}
-              />
+              <FeedCard post={post} onToggleLike={toggleLike} onReport={handleReport} />
             </li>
           ))}
         </ul>

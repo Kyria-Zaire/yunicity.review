@@ -494,11 +494,12 @@ body {
     [data-feed-medium-region="stream"]
     [data-feed-publication-actions]
     [role="toolbar"]
-    button,
-  .citizen-medium-shell
-    [data-feed-medium-region="stream"]
-    [data-feed-publication-actions]
-    [data-feed-publication-report] {
+    button {
+    /* C3-FEED-R2A-SPEC30-OVERFLOW-MIGRATION : la branche
+       `[data-feed-publication-report]` est retiree — ce bouton autonome n'existe
+       plus depuis R2A. Elle n'est PAS remplacee par `[data-feed-publication-overflow]` :
+       le declencheur du menu vit dans l'en-tete, hors de la barre sociale, et ne
+       doit pas heriter du contrat 44 px de celle-ci. */
     min-height: var(--feed-medium-card-action-min);
     min-width: var(--feed-medium-card-action-min);
     justify-content: center;
@@ -1966,5 +1967,102 @@ body {
 
   [data-citizen-medium-creation-flow] {
     display: none;
+  }
+}
+
+/* ——— C3-FEED-UNIFIED-PUBLICATION-CARD-R2A ———————————————————————————————
+   Un seul arbre de publication pour les trois bandes. Le JSX ne bifurque plus :
+   tout ce qui suit n'ajuste que la DENSITÉ et la mise en avant. Aucune règle
+   ci-dessous ne masque un contrôle ni une identité — seulement des libellés
+   visuels dont le nom accessible reste porté par `aria-label`.
+
+   Base = desktop/medium. Le mobile (< 640) revient au bord à bord C3.1-R1D. */
+
+/* Le handle n'est mis en avant qu'en mobile : en desktop l'identité est le nom
+   affiché, et le handle ferait doublon sur deux lignes. */
+.feed-publication-handle {
+  display: none;
+}
+
+@media (max-width: 639.98px) {
+  /* Bord à bord : ni rayon, ni bordure verticale, ni ombre. La séparation entre
+     publications est portée par l'espacement de la liste (C3.1-R1D). */
+  .feed-publication-frame {
+    border-radius: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+    box-shadow: none;
+  }
+
+  .feed-publication-padding {
+    padding: 1rem;
+  }
+
+  .feed-publication-footer-padding {
+    padding: 0.5rem 1rem;
+  }
+
+  .feed-publication-expanded-padding {
+    padding: 0.75rem 1rem 1rem;
+  }
+
+  /* Le média échappe au padding de la carte et perd son cadre : bord à bord
+     mobile (C3.1-R1D). La forme desktop — `rounded-xl` + bordure — reste la
+     BASE, comme pour le reste de la carte. */
+  .feed-publication-media {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    border-radius: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+  }
+
+  /* L'image suit le cadre : bord a bord mobile, donc aucun rayon. */
+  .feed-publication-media-img {
+    border-radius: 0;
+  }
+
+  /* Densité mobile : icônes seules, le nom accessible reste complet. */
+  .feed-action-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  .feed-publication-cta .feed-action-label {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+
+  /* Hiérarchie mobile : le handle passe devant, le nom affiché reste lisible. */
+  .feed-publication-handle {
+    display: block;
+  }
+
+  .feed-publication-identity {
+    font-size: 0.9375rem;
+  }
+
+  /* Sur-titre partenaire : absent de la maquette mobile, jamais focalisable. */
+  .feed-publication-kicker {
+    display: none;
+  }
+}
+
+@media (min-width: 640px) {
+  .feed-publication-media img {
+    max-height: 20rem;
   }
 }

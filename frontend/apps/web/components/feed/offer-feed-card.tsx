@@ -7,11 +7,11 @@ import { FeedAuthorHeader } from "@/components/feed/feed-author-header";
 
 export function OfferFeedCard({
   post,
-  layout = "default",
+  currentUserId,
   onReport,
 }: {
   post: FeedPost;
-  layout?: "default" | "mobile";
+  currentUserId: string | null;
   onReport?: (reason: FeedReportReason) => Promise<void>;
 }) {
   const offerType = post.offer?.offer_type;
@@ -20,15 +20,10 @@ export function OfferFeedCard({
       ? PARTNER_OFFER_TYPE_LABELS[offerType as keyof typeof PARTNER_OFFER_TYPE_LABELS]
       : "Avantage";
   const expiry = formatOfferValidUntil(post.offer?.valid_until);
-  const isMobile = layout === "mobile";
 
   return (
     <div
-      className={
-        isMobile
-          ? "space-y-3"
-          : "-m-5 -mt-5 mb-0 rounded-t-2xl border-b border-neutral-100 bg-neutral-50/40 p-5 sm:-m-6 sm:-mt-6 sm:p-6"
-      }
+      className="feed-publication-offer -m-5 -mt-5 mb-0 rounded-t-2xl border-b border-neutral-100 bg-neutral-50/40 p-5 sm:-m-6 sm:-mt-6 sm:p-6"
     >
       <div className="flex flex-wrap items-center gap-2">
         <FlashOfferBadge offer={post.offer} />
@@ -40,26 +35,23 @@ export function OfferFeedCard({
           <span className="text-xs text-neutral-500">{expiry}</span>
         ) : null}
       </div>
-      <FeedAuthorHeader post={post} layout={layout} onReport={onReport} />
+      <FeedAuthorHeader post={post} currentUserId={currentUserId} onReport={onReport} />
       {post.title ? (
-        <h3 className={`font-semibold text-neutral-900 ${isMobile ? "text-[15px]" : "mt-3 text-base"}`}>
+        <h3 className="mt-3 text-base font-semibold text-neutral-900">
           {post.title}
         </h3>
       ) : null}
       {post.body ? (
         <p
-          className={`leading-relaxed text-neutral-700 ${
-            isMobile ? "text-sm" : "mt-2 text-sm"
-          }`}
+          className="mt-2 text-sm leading-relaxed text-neutral-700"
         >
           {post.body}
         </p>
       ) : null}
+      {/* Unique destination historique — jamais via FeedPublicationContextualCta. */}
       <Link
         href="/passport"
-        className={`inline-flex w-full items-center justify-center rounded-full border border-yunicity-primary font-semibold text-yunicity-primary transition hover:bg-yunicity-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary ${
-          isMobile ? "mt-1 py-2.5 text-sm" : "mt-4 px-4 py-2 text-sm"
-        }`}
+        className="mt-4 inline-flex w-full items-center justify-center rounded-full border border-yunicity-primary px-4 py-2 text-sm font-semibold text-yunicity-primary transition hover:bg-yunicity-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
       >
         Voir dans mon Passport
       </Link>

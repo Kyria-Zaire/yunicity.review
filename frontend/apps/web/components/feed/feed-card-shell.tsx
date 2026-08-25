@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 
-import { FEED_MOBILE_CARD_PADDING_CLASS } from "@/lib/layout/feed-mobile-full-bleed";
 
 export type FeedCardVariant = "default" | "event" | "offer" | "organization" | "partner_creator";
 
@@ -18,24 +17,22 @@ export function FeedCardShell({
   footer,
   expanded,
   variant = "default",
-  layout = "default",
 }: {
   children: ReactNode;
   footer: ReactNode | null;
   expanded?: ReactNode;
   variant?: FeedCardVariant;
-  layout?: "default" | "mobile";
 }) {
-  const isMobile = layout === "mobile";
-  const paddingClass = isMobile ? FEED_MOBILE_CARD_PADDING_CLASS : "p-5 sm:p-6";
-  const footerPaddingClass = isMobile ? "px-4 py-2" : "px-4 py-2.5 sm:px-5 sm:py-3";
-  const expandedPaddingClass = isMobile ? "px-4 pb-4 pt-3" : "px-5 pb-5 pt-4 sm:px-6";
-  // Mobile (C3.1-R1D) : la publication touche les bords du viewport — ni rayon,
-  // ni bordure verticale, ni ombre. La séparation entre publications est portée
-  // par l'espacement de la liste, sur le fond gris du shell.
-  const frameClass = isMobile
-    ? "border-0 bg-white"
-    : `rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-md ${VARIANT_CLASS[variant]}`;
+  /*
+   * C3-FEED-UNIFIED-PUBLICATION-CARD-R2A : plus de prop `layout`. Les classes
+   * ci-dessous decrivent la forme DESKTOP/MEDIUM ; `.feed-publication-frame`
+   * ramene le bord a bord mobile (C3.1-R1D : ni rayon, ni bordure verticale,
+   * ni ombre) sous 640, en CSS et non en JSX.
+   */
+  const paddingClass = "feed-publication-padding p-5 sm:p-6";
+  const footerPaddingClass = "feed-publication-footer-padding px-4 py-2.5 sm:px-5 sm:py-3";
+  const expandedPaddingClass = "feed-publication-expanded-padding px-5 pb-5 pt-4 sm:px-6";
+  const frameClass = `feed-publication-frame rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-md ${VARIANT_CLASS[variant]}`;
 
   return (
     <article data-feed-medium-surface="primary" className={`overflow-hidden ${frameClass}`}>
