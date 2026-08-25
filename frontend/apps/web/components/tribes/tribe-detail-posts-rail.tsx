@@ -7,7 +7,8 @@ import {
   TRIBE_DETAIL_PORTAL_POSTS_EMPTY,
   TRIBE_DETAIL_PORTAL_POSTS_TITLE,
 } from "@yunicity/utils";
-import Link from "next/link";
+
+const TRIBE_DETAIL_POSTS_MEMBERS_ONLY = "Rejoignez la tribu pour découvrir ses publications.";
 
 type TribeDetailPostsRailProps = {
   posts: TribeDetailPostCard[];
@@ -15,20 +16,22 @@ type TribeDetailPostsRailProps = {
 };
 
 export function TribeDetailPostsRail({ posts, canSeePosts }: TribeDetailPostsRailProps) {
-  if (!canSeePosts) return null;
-
   return (
     <section id="tribe-posts" className="scroll-mt-28 space-y-4">
       <div className="flex items-end justify-between gap-3">
         <h2 className="text-lg font-bold text-neutral-900">{TRIBE_DETAIL_PORTAL_POSTS_TITLE}</h2>
-        {posts.length > 0 ? (
+        {canSeePosts && posts.length > 0 ? (
           <a href="#tribe-posts" className="text-sm font-semibold text-yunicity-primary hover:underline">
             {TRIBE_DETAIL_PORTAL_POSTS_CTA} →
           </a>
         ) : null}
       </div>
 
-      {posts.length === 0 ? (
+      {!canSeePosts ? (
+        <p className="rounded-2xl border border-neutral-200/90 bg-white px-4 py-6 text-sm text-neutral-600">
+          {TRIBE_DETAIL_POSTS_MEMBERS_ONLY}
+        </p>
+      ) : posts.length === 0 ? (
         <p className="rounded-2xl border border-neutral-200/90 bg-white px-4 py-6 text-sm text-neutral-600">
           {TRIBE_DETAIL_PORTAL_POSTS_EMPTY}
         </p>
