@@ -6,7 +6,7 @@ const here = fileURLToPath(new URL(".", import.meta.url));
 const portal = readFileSync(`${here}../../components/feed/portal/feed-portal-screen.tsx`, "utf-8");
 const streamList = readFileSync(`${here}../../components/feed/portal/feed-stream-list.tsx`, "utf-8");
 const hook = readFileSync(`${here}../../hooks/use-feed.ts`, "utf-8");
-const shell = readFileSync(`${here}../../components/feed/portal/feed-app-shell.tsx`, "utf-8");
+const shell = readFileSync(`${here}../../components/shell/citizen-authenticated-shell.tsx`, "utf-8");
 const legacyRail = `${here}../../components/feed/portal/feed-right-rail.tsx`;
 
 function occurrences(source: string, token: string): number {

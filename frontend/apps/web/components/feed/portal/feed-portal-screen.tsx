@@ -22,7 +22,7 @@ import { FeedComposer } from "@/components/feed/feed-composer";
 import { FeedEmptyState } from "@/components/feed/feed-empty-state";
 import { FeedErrorState } from "@/components/feed/feed-error-state";
 import { FeedLoadingState } from "@/components/feed/feed-loading-state";
-import { FeedAppShell } from "@/components/feed/portal/feed-app-shell";
+import { CitizenAuthenticatedShell } from "@/components/shell/citizen-authenticated-shell";
 import { FeedLeftRail } from "@/components/feed/portal/feed-left-rail";
 import { FeedMediumFilterSheet } from "@/components/feed/portal/feed-medium-filter-sheet";
 import { FeedMediumHeader } from "@/components/feed/portal/feed-medium-header";
@@ -273,7 +273,7 @@ export function FeedPortalScreen() {
   }
 
   return (
-    <FeedAppShell>
+    <CitizenAuthenticatedShell>
       <>
         <div className="web-feed-desktop-contents">
           <FeedLeftRail
@@ -418,6 +418,6 @@ export function FeedPortalScreen() {
           </div>
         </div>
       </>
-    </FeedAppShell>
+    </CitizenAuthenticatedShell>
   );
 }
