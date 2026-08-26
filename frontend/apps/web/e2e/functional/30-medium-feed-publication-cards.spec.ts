@@ -31,6 +31,7 @@ const MEDIUM = [
 const LISTE = "[data-feed-stream-list]";
 const ITEM_POST = '[data-feed-stream-item="post"]';
 const ITEM_VIDEO = '[data-feed-stream-item="local-video"]';
+const ITEM_CONTEXT = '[data-feed-stream-item="context-module"]';
 const SURFACE = '[data-feed-medium-surface="primary"]';
 const ENTREE_VIDEO = "[data-feed-video-stream-item]";
 const EDITORIAL = "[data-feed-publication-editorial]";
@@ -52,6 +53,13 @@ const CONTROLES_SOCIAUX_INTERDITS = [
 ];
 
 const RACINE_HARNAIS = "yn-publication-image-root";
+const EXPECTED_STREAM_ORDER = [
+  "post",
+  "local-video",
+  "post",
+  "post",
+  "context-module",
+] as const;
 
 let bundleImageCache: string | null = null;
 
@@ -80,12 +88,61 @@ async function gotoFeed(page: Page, size: { width: number; height: number }): Pr
   await expect(page.locator(ENTREE_VIDEO).filter({ visible: true })).toHaveCount(1);
 }
 
+async function expectMustSeeContext(page: Page) {
+  const stream = page.locator(`ul${LISTE}`);
+  const contextModule = stream.locator(`:scope > ${ITEM_CONTEXT}`);
+
+  await expect(stream, "stream unique absent avant l'attente du module contextuel").toHaveCount(1);
+  await expect(
+    contextModule,
+    "module contextuel must-see absent ou duplique apres resolution du contexte",
+  ).toHaveCount(1, { timeout: 15_000 });
+  await expect(contextModule, "famille contextuelle inattendue").toHaveAttribute(
+    "data-feed-context-module",
+    "must-see",
+    { timeout: 15_000 },
+  );
+
+  return contextModule;
+}
+
 async function mesurerCartes(page: Page) {
   return page.evaluate(
     (sel) => {
       const round = (n: number) => Math.round(n * 100) / 100;
       const visible = (el: Element) => el.getBoundingClientRect().width > 0;
-      const liste = document.querySelector(sel.liste)!;
+      const generatesVisibleBox = (el: Element | null) => {
+        if (!el) return false;
+        const rect = el.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0 || el.getClientRects().length === 0) {
+          return false;
+        }
+        let current: Element | null = el;
+        while (current) {
+          const style = getComputedStyle(current);
+          if (
+            style.display === "none" ||
+            style.visibility === "hidden" ||
+            style.visibility === "collapse" ||
+            style.getPropertyValue("content-visibility") === "hidden" ||
+            current.hasAttribute("hidden") ||
+            current.hasAttribute("inert")
+          ) {
+            return false;
+          }
+          if (current === document.body) break;
+          current = current.parentElement;
+        }
+        return true;
+      };
+      const listes = document.querySelectorAll(sel.liste);
+      if (listes.length !== 1) {
+        throw new Error(`stream attendu une fois, recu ${listes.length}`);
+      }
+      const liste = listes.item(0);
+      if (!(liste instanceof HTMLUListElement)) {
+        throw new Error("le stream unique n'est pas une liste ul");
+      }
       const rail = document.querySelector(".citizen-medium-rail")!.getBoundingClientRect();
       const shell = document.querySelector(".web-shell-page")!.getBoundingClientRect();
       const posts = [...liste.querySelectorAll(sel.itemPost)].filter(visible);
@@ -96,10 +153,49 @@ async function mesurerCartes(page: Page) {
       const header = article.querySelector(sel.header)!;
       const body = article.querySelector(sel.body);
       const actions = article.querySelector(sel.actions)!;
-      const toolbar = actions.querySelector('[role="toolbar"]')!;
+      const socialToolbars = [
+        ...actions.querySelectorAll('[data-feed-publication-social][role="toolbar"]'),
+      ];
+      const toolbar = socialToolbars[0]!;
       const boutons = [...toolbar.querySelectorAll("a, button")] as HTMLElement[];
       const region = document.querySelector('[data-feed-medium-region="stream"]')!;
       const regionStyle = getComputedStyle(region);
+      const postIds = posts.map((post) => post.getAttribute("data-feed-post-id") ?? "");
+      const streamItems = [...liste.children].map((item, index, items) => ({
+        index,
+        kind: item.getAttribute("data-feed-stream-item"),
+        family: item.getAttribute("data-feed-context-module"),
+        parent: item.parentElement === liste ? "feed-stream-list" : item.parentElement?.tagName ?? null,
+        totalItems: items.length,
+      }));
+      const contextItem = liste.querySelector(sel.itemContext);
+      const contextSection = contextItem?.querySelector(":scope > section") ?? null;
+      const contextRect = contextItem?.getBoundingClientRect() ?? null;
+      const contextCta = contextItem
+        ? [...contextItem.querySelectorAll("a")].find(
+            (link) => link.textContent?.trim() === "Voir tout",
+          ) ?? null
+        : null;
+      const contextAncestorsVisible = (() => {
+        if (!contextItem) return false;
+        let current: Element | null = contextItem;
+        while (current) {
+          const style = getComputedStyle(current);
+          if (
+            style.display === "none" ||
+            style.visibility === "hidden" ||
+            style.visibility === "collapse" ||
+            style.getPropertyValue("content-visibility") === "hidden" ||
+            current.hasAttribute("hidden") ||
+            current.hasAttribute("inert")
+          ) {
+            return false;
+          }
+          if (current === document.body) break;
+          current = current.parentElement;
+        }
+        return true;
+      })();
 
       const mesureSurface = (el: Element) => {
         const r = el.getBoundingClientRect();
@@ -118,7 +214,24 @@ async function mesurerCartes(page: Page) {
       const surfaces = [mesureSurface(article), mesureSurface(videoSurface)];
 
       return {
-        sequence: [...liste.children].map((el) => el.getAttribute("data-feed-stream-item")),
+        sequence: streamItems.map((item) => item.kind),
+        streamItems,
+        contextModule: contextItem
+          ? {
+              index: [...liste.children].indexOf(contextItem),
+              family: contextItem.getAttribute("data-feed-context-module"),
+              parentIsStream: contextItem.parentElement === liste,
+              sections: contextItem.querySelectorAll(":scope > section").length,
+              sectionIdentity: contextSection?.classList.contains("feed-context-stream-module") ?? false,
+              heading: contextSection?.querySelector("h2")?.textContent?.trim() ?? null,
+              ctaLabel: contextCta?.textContent?.trim() ?? null,
+              ctaHref: contextCta?.getAttribute("href") ?? null,
+              width: contextRect?.width ?? null,
+              height: contextRect?.height ?? null,
+              clientRects: contextItem.getClientRects().length,
+              ancestorsVisible: contextAncestorsVisible,
+            }
+          : null,
         listParent: videoSlot.parentElement === liste,
         largeurs: surfaces.map((s) => s.width),
         axes: surfaces.map((s) => ({ gauche: s.gauche, droite: s.droite })),
@@ -159,50 +272,83 @@ async function mesurerCartes(page: Page) {
           };
         })(),
         /*
-         * R2A-BIS-R2 : chaque cible porte desormais sa ZONE et sa BRANCHE. Sans
-         * cela, un `0` ne dit pas si le helper a atteint la branche mobile
-         * effondree, ou si un controle d'une autre zone fonctionnelle (menu de
-         * l'en-tete, CTA contextuelle) s'est glisse dans la barre sociale.
+         * R2B : les actions sociales appartiennent a un stream React unique. La
+         * branche n'est plus deduite d'anciens wrappers CSS, mais de la chaine DOM
+         * exacte du produit, afin qu'une copie cachee ou un mauvais parent echoue.
          */
-        ciblesActions: boutons.map((b) => ({
-          w: round(b.getBoundingClientRect().width),
-          h: round(b.getBoundingClientRect().height),
-          label: b.getAttribute("aria-label") ?? "",
-          zone: b.closest("[data-feed-publication-social]")
-            ? "social-toolbar"
-            : b.closest("[data-feed-publication-header]")
-              ? "publication-header"
-              : b.closest("[data-feed-publication-contextual-cta]")
-                ? "contextual-cta"
-                : "hors-zone",
-          branche: b.closest(".web-mobile-feed-only")
-            ? "mobile"
-            : b.closest(".web-feed-desktop-contents")
-              ? "desktop/medium"
-              : "?",
-          /*
-           * Visibilite EFFECTIVE de la liste ancetre. Une largeur > 0 ne suffit
-           * pas : un ancetre `display:none` laisse ses descendants annoncer leur
-           * propre `display`, et un element sans boite de rendu n'a aucun
-           * `getClientRects()`. On exige donc les trois, plus une chaine
-           * d'ancetres exempte d'etat masquant.
-           */
-          listeAncetreVisible: (() => {
-            const ul = b.closest("ul");
-            if (!ul) return false;
-            const r = ul.getBoundingClientRect();
-            if (r.width <= 0 || r.height <= 0) return false;
-            if (ul.getClientRects().length === 0) return false;
-            let p: Element | null = ul;
-            while (p && p !== document.body) {
-              const cs = getComputedStyle(p);
-              if (cs.display === "none" || cs.visibility === "hidden") return false;
-              if (p.hasAttribute("hidden") || p.hasAttribute("inert")) return false;
-              p = p.parentElement;
-            }
-            return true;
-          })(),
+        socialToolbarCount: socialToolbars.length,
+        postIds,
+        postIdInstances: postIds.map((id) => ({
+          id,
+          count: id ? liste.querySelectorAll(`${sel.itemPost}[data-feed-post-id="${id}"]`).length : 0,
         })),
+        streamCount: listes.length,
+        ciblesActions: boutons.map((b) => {
+          const r = b.getBoundingClientRect();
+          const socialToolbar = b.parentElement;
+          const actionsFooter = socialToolbar?.closest(sel.actions) ?? null;
+          const primaryArticle = actionsFooter?.closest(sel.surface) ?? null;
+          const postItem = primaryArticle?.closest(sel.itemPost) ?? null;
+          const stream = postItem?.parentElement ?? null;
+          const postId = postItem instanceof HTMLElement ? postItem.getAttribute("data-feed-post-id") ?? "" : "";
+          const structuralFailures: string[] = [];
+
+          if (
+            !(
+              socialToolbar instanceof HTMLDivElement &&
+              socialToolbar.matches('[data-feed-publication-social][role="toolbar"]')
+            )
+          ) {
+            structuralFailures.push("missing-toolbar");
+          }
+          if (!(actionsFooter instanceof HTMLElement && actionsFooter.matches(sel.actions))) {
+            structuralFailures.push("missing-actions-footer");
+          } else if (!actionsFooter.contains(socialToolbar)) {
+            structuralFailures.push("footer-does-not-contain-toolbar");
+          }
+          if (!(primaryArticle instanceof HTMLElement && primaryArticle.matches(sel.surface))) {
+            structuralFailures.push("missing-primary-article");
+          } else if (!primaryArticle.contains(actionsFooter)) {
+            structuralFailures.push("article-does-not-contain-footer");
+          }
+          if (!(postItem instanceof HTMLLIElement && postItem.matches(sel.itemPost))) {
+            structuralFailures.push("missing-post-item");
+          } else if (!postItem.contains(primaryArticle)) {
+            structuralFailures.push("post-does-not-contain-article");
+          }
+          if (stream !== liste) {
+            structuralFailures.push("post-not-direct-child-of-stream");
+          }
+          if (listes.length !== 1) {
+            structuralFailures.push("stream-not-unique");
+          }
+          if (postId.length === 0) {
+            structuralFailures.push("missing-post-id");
+          }
+          for (const node of [liste, postItem, primaryArticle, actionsFooter, socialToolbar]) {
+            if (!generatesVisibleBox(node)) {
+              structuralFailures.push("hidden-ancestor");
+              break;
+            }
+          }
+
+          return {
+            w: round(r.width),
+            h: round(r.height),
+            label: b.getAttribute("aria-label") ?? "",
+            zone: b.closest("[data-feed-publication-social]")
+              ? "social-toolbar"
+              : b.closest("[data-feed-publication-header]")
+                ? "publication-header"
+                : b.closest("[data-feed-publication-contextual-cta]")
+                  ? "contextual-cta"
+                  : "hors-zone",
+            branche: structuralFailures.length === 0 ? "unified-stream" : structuralFailures.join("|"),
+            postId,
+            structuralFailures,
+            listeAncetreVisible: generatesVisibleBox(liste),
+          };
+        }),
         tokens: {
           paddingInline: regionStyle.getPropertyValue("--feed-medium-card-padding-inline").trim(),
           actionMin: regionStyle.getPropertyValue("--feed-medium-card-action-min").trim(),
@@ -217,6 +363,7 @@ async function mesurerCartes(page: Page) {
       liste: LISTE,
       itemPost: ITEM_POST,
       itemVideo: ITEM_VIDEO,
+      itemContext: ITEM_CONTEXT,
       surface: SURFACE,
       entreeVideo: ENTREE_VIDEO,
       header: PARTS.header,
@@ -339,10 +486,39 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
   for (const vp of MEDIUM) {
     test(`${vp.label} — même parent, largeurs et surfaces plates`, async ({ authedPage }) => {
       await gotoFeed(authedPage, vp);
+      await expectMustSeeContext(authedPage);
       const m = await mesurerCartes(authedPage);
 
       expect(m.listParent, "vidéo hors du parent stream").toBe(true);
-      expect(m.sequence, "ordre du flux").toEqual(["post", "local-video", "post", "post"]);
+      expect(m.sequence, `ordre du flux : ${JSON.stringify(m.streamItems)}`).toEqual([
+        ...EXPECTED_STREAM_ORDER,
+      ]);
+      expect(m.streamItems, "diagnostic exhaustif des enfants directs du stream").toEqual(
+        EXPECTED_STREAM_ORDER.map((kind, index) => ({
+          index,
+          kind,
+          family: kind === "context-module" ? "must-see" : null,
+          parent: "feed-stream-list",
+          totalItems: EXPECTED_STREAM_ORDER.length,
+        })),
+      );
+      expect(m.contextModule, "contrat du module contextuel absent").toEqual({
+        index: 4,
+        family: "must-see",
+        parentIsStream: true,
+        sections: 1,
+        sectionIdentity: true,
+        heading: "À ne pas manquer",
+        ctaLabel: "Voir tout",
+        ctaHref: "/sortir",
+        width: expect.any(Number),
+        height: expect.any(Number),
+        clientRects: expect.any(Number),
+        ancestorsVisible: true,
+      });
+      expect(m.contextModule?.width, "largeur du module contextuel").toBeGreaterThan(0);
+      expect(m.contextModule?.height, "hauteur du module contextuel").toBeGreaterThan(0);
+      expect(m.contextModule?.clientRects, "rectangles du module contextuel").toBeGreaterThan(0);
       expect(
         Math.abs(m.largeurs[0]! - m.largeurs[1]!),
         `texte ${m.largeurs[0]} px vs vidéo ${m.largeurs[1]} px`,
@@ -503,24 +679,33 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
      * exige toujours un chemin de signalement visible, et on interdit en plus
      * qu'un second bouton reapparaisse dans le pied.
      */
-    // Le portail rend encore DEUX listes (dette R2B) : seule la visible fait foi.
+    // Le portail rend une liste unique : le menu visible appartient à cette liste.
     await expect(
       authedPage.locator("[data-feed-publication-overflow]").filter({ visible: true }).first(),
     ).toBeVisible();
     await expect(authedPage.locator("[data-feed-publication-report]")).toHaveCount(0);
 
     /*
-     * AUCUN FILTRE (R2A-BIS-R2, amendement CTO).
+     * AUCUN FILTRE.
      *
-     * `ciblesActions` est construit depuis l'UNIQUE `[data-feed-stream-list]`,
-     * qui appartient a la branche desktop/medium. Une cible mobile, une cible
-     * d'une autre zone fonctionnelle ou une liste ancetre invisible n'ont donc
-     * aucune raison d'y figurer : leur presence EST la regression. Les ecarter
-     * par un `filter` reviendrait a masquer exactement ce que ce test traque.
+     * `ciblesActions` est construit depuis l'UNIQUE `[data-feed-stream-list]`.
+     * Chaque cible doit prouver la chaine stream > post > article > actions >
+     * toolbar sociale. Une cible hors zone, hors stream ou cachee EST la
+     * regression ; l'ecarter masquerait exactement ce que ce test traque.
      */
     const diagnostic = (c: (typeof m.ciblesActions)[number]) =>
-      `cible ${c.label || "(sans nom)"} · zone ${c.zone} · branche ${c.branche} · ${c.w}x${c.h} · listeVisible=${c.listeAncetreVisible}`;
+      `cible ${c.label || "(sans nom)"} · zone ${c.zone} · branche ${c.branche} · post ${c.postId || "(absent)"} · ${c.w}x${c.h} · listeVisible=${c.listeAncetreVisible}`;
 
+    expect(m.streamCount, "nombre de streams").toBe(1);
+    expect(m.postIds.length, `post ids releves : ${m.postIds.join(",")}`).toBe(3);
+    expect(new Set(m.postIds).size, `post ids dupliques : ${m.postIds.join(",")}`).toBe(
+      m.postIds.length,
+    );
+    for (const post of m.postIdInstances) {
+      expect(post.id.length, "post id absent").toBeGreaterThan(0);
+      expect(post.count, `instances du post ${post.id}`).toBe(1);
+    }
+    expect(m.socialToolbarCount, "toolbars sociales dans l'article mesure").toBe(1);
     expect(
       m.ciblesActions.length,
       `barre sociale vide. Relevé : ${m.ciblesActions.map(diagnostic).join(" | ") || "(aucune)"}`,
@@ -528,7 +713,9 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
 
     for (const cible of m.ciblesActions) {
       expect(cible.zone, diagnostic(cible)).toBe("social-toolbar");
-      expect(cible.branche, diagnostic(cible)).toBe("desktop/medium");
+      expect(cible.branche, diagnostic(cible)).toBe("unified-stream");
+      expect(cible.structuralFailures, diagnostic(cible)).toEqual([]);
+      expect(cible.postId.length, diagnostic(cible)).toBeGreaterThan(0);
       expect(cible.listeAncetreVisible, diagnostic(cible)).toBe(true);
       expect(cible.h, diagnostic(cible)).toBeGreaterThanOrEqual(
         FEED_MEDIUM_PUBLICATION_ACTION_MIN_PX - 1,
@@ -749,12 +936,34 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
 
     for (const onglet of ["Récent", "Populaire"]) {
       await authedPage.getByRole("tab", { name: onglet }).click();
-      await expect(authedPage.locator(ITEM_VIDEO)).toHaveCount(0);
+      const stream = authedPage.locator(`ul${LISTE}`);
+      await expect(stream).toHaveCount(1);
+      await expect(stream.locator(`:scope > ${ITEM_VIDEO}`)).toHaveCount(0);
+      await expect(stream.locator(`:scope > ${ITEM_CONTEXT}`)).toHaveCount(0);
     }
 
     await authedPage.getByRole("tab", { name: "Pour vous" }).click();
-    await expect(authedPage.locator(ITEM_VIDEO)).toHaveCount(1);
-    await expect(authedPage.locator(LISTE).locator("> *")).toHaveCount(4);
+    await expectMustSeeContext(authedPage);
+    const returnedStream = authedPage.locator(`ul${LISTE}`);
+    await expect(returnedStream.locator(`:scope > ${ITEM_VIDEO}`)).toHaveCount(1);
+    await expect(returnedStream.locator(`:scope > ${ITEM_CONTEXT}`)).toHaveCount(1);
+    await expect(returnedStream.locator(":scope > *")).toHaveCount(EXPECTED_STREAM_ORDER.length);
+    const returnedItems = await returnedStream.locator(":scope > *").evaluateAll((items) =>
+      items.map((item, index) => ({
+        index,
+        kind: item.getAttribute("data-feed-stream-item"),
+        family: item.getAttribute("data-feed-context-module"),
+        parentIsStream: item.parentElement?.hasAttribute("data-feed-stream-list") === true,
+      })),
+    );
+    expect(returnedItems, `ordre au retour Pour vous : ${JSON.stringify(returnedItems)}`).toEqual(
+      EXPECTED_STREAM_ORDER.map((kind, index) => ({
+        index,
+        kind,
+        family: kind === "context-module" ? "must-see" : null,
+        parentIsStream: true,
+      })),
+    );
   });
 
   test("768 — filtre actif : pas de double stream ni vidéo dupliquée", async ({ authedPage }) => {
@@ -763,6 +972,7 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
     await expect(authedPage.locator(ITEM_VIDEO)).toHaveCount(1);
     await authedPage.locator("[data-feed-medium-header-filter]").click();
     await expect(authedPage.locator("[data-feed-medium-filter-panel]")).toBeVisible();
+    // Bornes transitoires : elles prouvent seulement l'absence de duplication pendant le filtre.
     expect(await authedPage.locator(ITEM_VIDEO).count()).toBeLessThanOrEqual(1);
     expect(await authedPage.locator(LISTE).count()).toBeLessThanOrEqual(1);
 
@@ -802,8 +1012,8 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
           (document.querySelector(".feed-medium-column")?.getBoundingClientRect().width ?? 0) > 0,
       };
     });
-    expect(mobile.streamList, "liste medium visible à 639").toBe(0);
-    expect(mobile.colonneMedium).toBe(false);
+    expect(mobile.streamList, "stream partage absent à 639").toBe(1);
+    expect(mobile.colonneMedium).toBe(true);
   });
 
   test("bascule 1279 / 1280 — la vidéo medium cède place au desktop historique", async ({
@@ -817,13 +1027,12 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
       const visible = (el: Element) => el.getBoundingClientRect().width > 0;
       return {
         slotVisible: [...document.querySelectorAll(sel.itemVideo)].filter(visible).length,
-        sectionVisible: [...document.querySelectorAll("[data-feed-desktop-video-section]")]
-          .filter(visible).length,
+        streamLists: document.querySelectorAll("[data-feed-stream-list]").length,
       };
     }, { itemVideo: ITEM_VIDEO });
 
-    expect(desktop.slotVisible, "publication vidéo medium fuitée sur le desktop").toBe(0);
-    expect(desktop.sectionVisible, "section desktop historique absente à 1280").toBe(1);
+    expect(desktop.slotVisible, "publication vidéo absente à 1280").toBe(1);
+    expect(desktop.streamLists, "stream dupliqué à 1280").toBe(1);
   });
 
   for (const route of [

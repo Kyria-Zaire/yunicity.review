@@ -24,7 +24,6 @@ const FILTER = "[data-feed-medium-header-filter]";
 const PANEL = "[data-feed-medium-filter-panel]";
 const RESET = "[data-feed-medium-filter-reset]";
 const LIST = "[data-feed-stream-list]";
-const PRIMARY = '[data-feed-medium-surface="primary"]';
 
 async function gotoFeed(page: Page, size: { width: number; height: number }) {
   await page.setViewportSize(size);
@@ -37,21 +36,6 @@ async function openFilter(page: Page) {
   await btn.click();
   await expect(btn).toHaveAttribute("aria-expanded", "true");
   await expect(page.locator(PANEL)).toBeVisible();
-}
-
-async function mountContext(page: Page) {
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  await expect
-    .poll(async () =>
-      page.evaluate(
-        () =>
-          document.querySelectorAll(
-            '[data-feed-medium-region="context"] [data-feed-medium-surface="primary"]',
-          ).length,
-      ),
-    )
-    .toBe(4);
-  await page.evaluate(() => window.scrollTo(0, 0));
 }
 
 test.describe("C3-FEED-M10 — filtre Feed medium", () => {
@@ -136,29 +120,204 @@ test.describe("C3-FEED-M10 — filtre Feed medium", () => {
     await authedPage.getByRole("tab", { name: /récent/i }).click();
     await expect(authedPage.locator(LIST)).toHaveCount(1);
     await expect(authedPage.locator(`${LIST} [data-feed-stream-item="local-video"]`)).toHaveCount(0);
+    await expect(authedPage.locator(`${LIST} [data-feed-stream-item="context-module"]`)).toHaveCount(0);
     await authedPage.getByRole("tab", { name: /pour vous/i }).click();
     await expect(authedPage.locator(`${LIST} [data-feed-stream-item="local-video"]`)).toHaveCount(1);
   });
 
-  test("768 — dix surfaces primaires et context après stream", async ({ authedPage }) => {
+  test("768 — filtre et onglets préservent le flux enrichi unique", async ({ authedPage }) => {
     await gotoFeed(authedPage, { width: 768, height: 1024 });
-    await mountContext(authedPage);
+
+    const streamList = authedPage.locator(LIST);
+
+    // Await pour vous stream: should have video + context asynchronously
+    await expect(
+      streamList.locator('[data-feed-stream-item="local-video"]'),
+      "attendu: vidéo locale dans le stream",
+    ).toHaveCount(1, { timeout: 15_000 });
+
+    await expect(
+      streamList.locator(
+        ':scope > li[data-feed-stream-item="context-module"][data-feed-context-module="must-see"]',
+      ),
+      "attendu: module must-see atteignable",
+    ).toHaveCount(1, { timeout: 15_000 });
+
+    await expect(
+      streamList.locator(":scope > li"),
+      "attendu: exactement 5 items (post, local-video, post, post, context-module)",
+    ).toHaveCount(5, { timeout: 15_000 });
+
+    // Verify exact order and structure
+    const initialKinds = await streamList.locator(":scope > li").evaluateAll((items) =>
+      items.map((el) => ({
+        kind: el.getAttribute("data-feed-stream-item"),
+        family: el.getAttribute("data-feed-context-module"),
+      })),
+    );
+
+    expect(initialKinds).toEqual([
+      { kind: "post", family: null },
+      { kind: "local-video", family: null },
+      { kind: "post", family: null },
+      { kind: "post", family: null },
+      { kind: "context-module", family: "must-see" },
+    ]);
+
+    // Verify post ID uniqueness at baseline
+    const initialPostIds = await streamList
+      .locator(":scope > li[data-feed-stream-item='post']")
+      .evaluateAll((posts) => {
+        const ids: string[] = [];
+        for (const post of posts) {
+          const id = post.getAttribute("data-feed-post-id");
+          if (typeof id !== "string") {
+            throw new Error("post missing data-feed-post-id attribute");
+          }
+          const trimmed = id.trim();
+          if (trimmed.length === 0) {
+            throw new Error(`post has empty data-feed-post-id: "${id}"`);
+          }
+          ids.push(id);
+        }
+        if (ids.length !== 3) {
+          throw new Error(`expected exactly 3 posts, found ${ids.length}: [${ids.join(", ")}]`);
+        }
+        const uniqueIds = new Set(ids);
+        if (uniqueIds.size !== ids.length) {
+          const duplicates = ids.filter((id, i) => ids.indexOf(id) !== i);
+          throw new Error(
+            `duplicate post IDs detected (expected all unique): ${duplicates.join(", ")}`,
+          );
+        }
+        return ids;
+      });
+    expect(initialPostIds).toHaveLength(3);
+
+    // Verify context module structure and visibility
+    const contextModule = streamList.locator(
+      ':scope > li[data-feed-stream-item="context-module"][data-feed-context-module="must-see"]',
+    );
+    const section = contextModule.locator(":scope > section").first();
+    await expect(section, "contexte: une section").toHaveCount(1);
+
+    const contextState = await contextModule.evaluate((el) => {
+      const section = el.querySelector(":scope > section");
+      if (!section) return { valid: false, reason: "pas de section" };
+
+      const heading = section.querySelector("h2");
+      const headingText = heading?.textContent?.trim() ?? "";
+
+      const ctaLink = section.querySelector('a[href="/sortir"]');
+      const ctaText = ctaLink?.textContent?.trim() ?? "";
+
+      const rect = section.getBoundingClientRect();
+
+      const isVisible = (node: Element | null) => {
+        if (!node || !(node instanceof HTMLElement)) return false;
+        const style = getComputedStyle(node);
+        if (style.display === "none" || style.visibility === "hidden") return false;
+        if (node.hasAttribute("hidden") || node.hasAttribute("inert")) return false;
+        return rect.width > 0 && rect.height > 0;
+      };
+
+      return {
+        valid: true,
+        headingText,
+        hasHeading: headingText.length > 0,
+        hasCtaLink: ctaText.length > 0,
+        ctaHref: ctaLink instanceof HTMLAnchorElement ? ctaLink.getAttribute("href") : null,
+        sectionVisible: isVisible(section),
+        sectionWidth: rect.width,
+        sectionHeight: rect.height,
+      };
+    });
+
+    expect(contextState.valid).toBe(true);
+    expect(contextState.headingText).toContain("À ne pas manquer");
+    expect(contextState.hasCtaLink).toBe(true);
+    expect(contextState.ctaHref).toBe("/sortir");
+    expect(contextState.sectionVisible).toBe(true);
+    expect(contextState.sectionWidth).toBeGreaterThan(0);
+    expect(contextState.sectionHeight).toBeGreaterThan(0);
+
+    // Filter activation: open, reset, verify stream unchanged
     await openFilter(authedPage);
+    await expect(authedPage.locator(PANEL)).toBeVisible();
     await authedPage.locator(RESET).click();
     await expect(authedPage.locator(PANEL)).toHaveCount(0);
 
-    const m = await authedPage.evaluate((primarySel) => {
-      const grid = document.querySelector(".feed-medium-editorial-grid")!;
-      const surfaces = [...grid.querySelectorAll(primarySel)].filter(
-        (el) => el.getBoundingClientRect().width > 0,
-      );
-      const regions = [...grid.querySelectorAll("[data-feed-medium-region]")].map((el) =>
-        el.getAttribute("data-feed-medium-region"),
-      );
-      return { n: surfaces.length, regions };
-    }, PRIMARY);
-    expect(m.n).toBe(10);
-    expect(m.regions.indexOf("context")).toBeGreaterThan(m.regions.indexOf("stream"));
+    const afterReset = await streamList.locator(":scope > li").evaluateAll((items) =>
+      items.map((el) => ({
+        kind: el.getAttribute("data-feed-stream-item"),
+        family: el.getAttribute("data-feed-context-module"),
+      })),
+    );
+    expect(afterReset).toEqual(initialKinds);
+
+    // Récent: no video, no context-module
+    await authedPage.getByRole("tab", { name: /récent/i }).click();
+    await expect(streamList).toHaveCount(1);
+    await expect(streamList.locator('[data-feed-stream-item="local-video"]')).toHaveCount(0);
+    await expect(streamList.locator('[data-feed-stream-item="context-module"]')).toHaveCount(0);
+
+    // Populaire: no video, no context-module
+    await authedPage.getByRole("tab", { name: /populaire/i }).click();
+    await expect(streamList).toHaveCount(1);
+    await expect(streamList.locator('[data-feed-stream-item="local-video"]')).toHaveCount(0);
+    await expect(streamList.locator('[data-feed-stream-item="context-module"]')).toHaveCount(0);
+
+    // Return to Pour vous: full restoration
+    await authedPage.getByRole("tab", { name: /pour vous/i }).click();
+    await expect(streamList.locator('[data-feed-stream-item="local-video"]')).toHaveCount(1, {
+      timeout: 15_000,
+    });
+    await expect(
+      streamList.locator(
+        ':scope > li[data-feed-stream-item="context-module"][data-feed-context-module="must-see"]',
+      ),
+    ).toHaveCount(1, { timeout: 15_000 });
+
+    const restored = await streamList.locator(":scope > li").evaluateAll((items) =>
+      items.map((el) => ({
+        kind: el.getAttribute("data-feed-stream-item"),
+        family: el.getAttribute("data-feed-context-module"),
+      })),
+    );
+    expect(restored).toEqual(initialKinds);
+
+    // Verify post ID restoration after tab transitions
+    const restoredPostIds = await streamList
+      .locator(":scope > li[data-feed-stream-item='post']")
+      .evaluateAll((posts) => {
+        const ids: string[] = [];
+        for (const post of posts) {
+          const id = post.getAttribute("data-feed-post-id");
+          if (typeof id !== "string") {
+            throw new Error("post missing data-feed-post-id attribute after restoration");
+          }
+          const trimmed = id.trim();
+          if (trimmed.length === 0) {
+            throw new Error(`post has empty data-feed-post-id after restoration: "${id}"`);
+          }
+          ids.push(id);
+        }
+        if (ids.length !== 3) {
+          throw new Error(
+            `expected exactly 3 posts after restoration, found ${ids.length}: [${ids.join(", ")}]`,
+          );
+        }
+        const uniqueIds = new Set(ids);
+        if (uniqueIds.size !== ids.length) {
+          const duplicates = ids.filter((id, i) => ids.indexOf(id) !== i);
+          throw new Error(
+            `duplicate post IDs detected after restoration (expected all unique): ${duplicates.join(", ")}`,
+          );
+        }
+        return ids;
+      });
+    expect(restoredPostIds).toHaveLength(3);
+    expect(restoredPostIds).toEqual(initialPostIds);
   });
 
   test("bascule 639 / 640 — mobile intact puis filtre medium", async ({ authedPage }) => {
