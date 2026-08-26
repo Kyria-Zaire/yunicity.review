@@ -105,7 +105,7 @@ export function CitizenTopNav() {
 
   return (
     <header className="citizen-top-nav sticky top-0 z-40 hidden border-b border-neutral-200/90 bg-white/95 backdrop-blur-md">
-      <div className="mx-auto grid h-[4.25rem] max-w-[1400px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 xl:gap-3 xl:px-6">
+      <div className="citizen-top-nav-inner mx-auto grid h-[4.25rem] max-w-[1400px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 xl:gap-3 xl:px-6">
         <div
           className="inline-flex min-h-11 shrink-0 items-center"
           data-yunicity-header-control="logo"

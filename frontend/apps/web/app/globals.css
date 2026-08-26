@@ -200,6 +200,123 @@ body {
   }
 }
 
+/* ——— D1.1 DESKTOP (>=1280px) : groupe interne [FeedLeftRail | Feed] ———
+   Mesure R3 (1280px) : le rail Desktop visible n'est PAS `.web-sidebar-aside`.
+   A ce breakpoint `.places-shell-grid` — porte par le shell — impose
+   `grid-template-columns: minmax(0,1fr)` et `display:none` sur cet aside
+   (regles declarees plus bas dans ce fichier, donc gagnantes a specificite
+   egale). Le rail reel est `FeedLeftRail` (`aside.w-56` = 224px, `xl:block`),
+   remonte dans `.feed-app-shell-content` par `display:contents`.
+
+   Le groupe geometrique est donc INTERNE au `<main>` :
+       224px (rail) + 24px (gap) + 760px (Feed) = 1008px
+   Contraindre `.feed-app-shell-content` a 760px revenait a plafonner
+   rail + Feed ensemble : le Feed tombait a 512px (mesure R3). La contrainte
+   760px appartient au Feed seul. */
+@media (min-width: 1280px) {
+  /* ——— R7 : CitizenTopNav = chrome global, largeur independante du corps Feed ———
+     La nav est desormais soeur de `.web-three-col` (hors du plafond 1072px).
+     Elle sort donc du selecteur `.places-shell-grid .citizen-top-nav` qui portait
+     son `display` : on le redonne ici, dans le scope Feed uniquement. */
+  .citizen-feed-shell .citizen-top-nav {
+    display: block;
+  }
+
+  .citizen-feed-shell .citizen-top-nav-inner {
+    width: 100%;
+    max-width: var(--web-shell-max);
+    margin-left: auto;
+    margin-right: auto;
+    min-width: 0;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  /* Conteneur centre uniquement — aucune grille de rail ici. */
+  .citizen-feed-shell .web-three-col {
+    max-width: calc(14rem + 1.5rem + 760px + 4rem); /* groupe 1008px + padding 2x2rem */
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .citizen-feed-shell .web-main-column {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Groupe reel : rail + gap + Feed, centre dans la colonne principale. */
+  .citizen-feed-shell .feed-app-shell-content {
+    width: fit-content;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+
+  /* La contrainte de largeur appartient au Feed seul. */
+  .citizen-feed-shell .feed-medium-column {
+    display: grid;
+    grid-template-columns: 1fr;
+    row-gap: 1.5rem;
+    flex: 0 1 760px;
+    width: 760px;
+    max-width: 760px;
+    min-width: 0;
+  }
+
+  /* Surfaces desktop — blanches, bordure fine, radius 12px. */
+  .citizen-feed-shell [data-feed-medium-surface="primary"] {
+    background-color: #ffffff;
+    border: 1px solid rgb(229 229 229 / 0.9);
+    border-radius: 0.75rem;
+    box-shadow: none;
+  }
+
+  /* Rythme vertical : le `row-gap` de 24px est la SEULE source d'espacement
+     entre blocs editoriaux. Les marges historiques des enfants s'y ajoutaient
+     (mesure R3 : 40 / 44 / 40px) et sont neutralisees ici. */
+  .citizen-feed-shell .feed-desktop-greeting {
+    margin-bottom: 0;
+  }
+
+  .citizen-feed-shell [data-feed-medium-region="composer"] {
+    margin-top: 0;
+  }
+
+  .citizen-feed-shell .feed-stream-list {
+    margin-top: 0;
+  }
+
+  .citizen-feed-shell .feed-desktop-greeting-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--yunicity-text-primary);
+  }
+
+  .citizen-feed-shell .feed-desktop-greeting-subtitle {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--yunicity-text-secondary, #666);
+    margin-top: 0.25rem;
+  }
+
+  /* Stories : carte compacte (mesure R3 : 212px, cible 140–210px).
+     Seuls les paddings internes sont reduits — aucune hauteur fixe. */
+  .citizen-feed-shell [data-feed-medium-region="stories"] .feed-medium-stories-title {
+    font-size: 0.875rem;
+  }
+
+  .citizen-feed-shell [data-feed-medium-region="stories"] .border-b {
+    padding-top: 1rem;
+    padding-bottom: 0.75rem;
+  }
+}
+
 /* ——— C3-FEED-M3 : header de contenu du Feed moyen (640 → 1279.98) ———
    Masque par defaut, borne EN HAUT a 1279.98px : le desktop >= 1280 conserve son
    propre header. Sticky en haut de la colonne de contenu, fond opaque pour

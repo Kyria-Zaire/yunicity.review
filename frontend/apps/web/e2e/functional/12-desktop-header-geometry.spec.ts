@@ -307,4 +307,117 @@ test.describe("Desktop header geometry — anti-collision R6", () => {
 
     await assertHeaderGeometry(page, 1366);
   });
+
+  /**
+   * C3-D1.1-R7.1 — non-regression du decouplage de CitizenTopNav.
+   *
+   * D1.1 plafonne le corps Feed a 1072px. Tant que la top nav vivait dans la
+   * colonne principale, elle heritait de ce plafond : des 1536px la variante
+   * Tailwind `2xl` ajoute le badge Ctrl K et le libelle Notifications, la piste
+   * centrale `minmax(0,1fr)` etait ecrasee et `overflow:hidden` ROGNAIT les
+   * destinations (mesure R6A : chevauchement visible a 1536 et 1920).
+   *
+   * Le rognage est invisible pour les assertions de collision existantes : un
+   * enfant tronque conserve son rect. Ce test mesure donc explicitement le
+   * debordement interne de la nav, le retour a la ligne et le confinement dans
+   * le wrapper — et couvre 1920px, absent des paliers d'acceptation.
+   */
+  for (const width of [1536, 1920] as const) {
+    test(`top nav decouplee du corps Feed — ${width}px sans rognage`, async ({
+      citizenAPage: page,
+    }) => {
+      await gotoFeedDesktop(page, width);
+      await expectTopNavVisibility(page, width);
+      await assertHeaderGeometry(page, width);
+
+      await expect(page.locator(".citizen-top-nav")).toHaveCount(1);
+      await expect(page.locator(".citizen-top-nav-inner")).toHaveCount(1);
+
+      const nav = await page.evaluate((controlIds) => {
+        const rectOf = (node: Element | null) => {
+          if (!node) return null;
+          const r = node.getBoundingClientRect();
+          return {
+            left: Math.round(r.left),
+            right: Math.round(r.right),
+            top: Math.round(r.top),
+            bottom: Math.round(r.bottom),
+            width: Math.round(r.width),
+            height: Math.round(r.height),
+          };
+        };
+        const header = document.querySelector(".citizen-top-nav");
+        const inner = document.querySelector(".citizen-top-nav-inner");
+        const primary = header?.querySelector('nav[aria-label="Navigation principale"]') ?? null;
+        const explorer = header?.querySelector('[data-yunicity-header-control="explorer"]') ?? null;
+
+        return {
+          inner: rectOf(inner),
+          primaryScrollWidth: primary ? (primary as HTMLElement).scrollWidth : -1,
+          primaryClientWidth: primary ? (primary as HTMLElement).clientWidth : -1,
+          innerScrollWidth: inner ? (inner as HTMLElement).scrollWidth : -1,
+          innerClientWidth: inner ? (inner as HTMLElement).clientWidth : -1,
+          controls: (controlIds as readonly string[]).map((id) => ({
+            id,
+            rect: rectOf(header?.querySelector(`[data-yunicity-header-control="${id}"]`) ?? null),
+          })),
+          explorerRect: rectOf(explorer),
+          ctrlKRect: rectOf(explorer?.querySelector("kbd") ?? null),
+          groupWrapper: rectOf(document.querySelector(".citizen-feed-shell .feed-app-shell-content")),
+        };
+      }, DESKTOP_HEADER_CONTROL_IDS);
+
+      const ctx = `${width}px ${JSON.stringify(nav)}`;
+
+      // La nav ne doit rien rogner horizontalement.
+      expect(nav.primaryScrollWidth, `navigation principale rognee — ${ctx}`).toBeLessThanOrEqual(
+        nav.primaryClientWidth,
+      );
+      expect(nav.innerScrollWidth, `wrapper nav rogne — ${ctx}`).toBeLessThanOrEqual(
+        nav.innerClientWidth,
+      );
+
+      // Chaque controle est entierement contenu dans le wrapper nav.
+      for (const control of nav.controls) {
+        expect(control.rect, `controle ${control.id} absent — ${ctx}`).not.toBeNull();
+        expect(control.rect!.left, `${control.id} deborde a gauche du wrapper — ${ctx}`).toBeGreaterThanOrEqual(
+          nav.inner!.left,
+        );
+        expect(control.rect!.right, `${control.id} deborde a droite du wrapper — ${ctx}`).toBeLessThanOrEqual(
+          nav.inner!.right,
+        );
+      }
+
+      // Aucun retour a la ligne : les quatre destinations partagent une ligne.
+      const destinationTops = new Set(
+        nav.controls
+          .filter((control) => control.id.startsWith("destination-"))
+          .map((control) => control.rect!.top),
+      );
+      expect(destinationTops.size, `retour a la ligne dans la navigation — ${ctx}`).toBe(1);
+
+      // Le badge Ctrl K (visible des 1536) reste contenu dans Explorer.
+      expect(nav.ctrlKRect, `badge Ctrl K absent — ${ctx}`).not.toBeNull();
+      expect(nav.ctrlKRect!.left, `Ctrl K deborde — ${ctx}`).toBeGreaterThanOrEqual(nav.explorerRect!.left);
+      expect(nav.ctrlKRect!.right, `Ctrl K deborde — ${ctx}`).toBeLessThanOrEqual(nav.explorerRect!.right);
+
+      // La nav dispose d'une largeur propre, superieure au corps Feed.
+      expect(nav.inner!.width, `nav plafonnee au corps Feed — ${ctx}`).toBeGreaterThan(
+        nav.groupWrapper!.width,
+      );
+
+      // Fumee corps Feed : le decouplage n'a pas deplace le contenu.
+      await expect(page.locator(".feed-app-shell-content aside")).toHaveCount(1);
+      await expect(page.locator(".citizen-feed-shell .feed-medium-column")).toBeVisible();
+      await expect(page.locator("[data-feed-stream-list]")).toHaveCount(1);
+      await expect(
+        page.locator(".web-context-rail-aside, .feed-right-rail, [data-feed-right-rail]"),
+      ).toHaveCount(0);
+
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow, `overflow horizontal — ${ctx}`).toBeLessThanOrEqual(1);
+    });
+  }
 });

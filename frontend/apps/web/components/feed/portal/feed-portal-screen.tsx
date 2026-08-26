@@ -272,8 +272,11 @@ export function FeedPortalScreen() {
     setLeftNav(nav);
   }
 
+  const userFirstName = user?.full_name?.split(" ")[0] || "Voyageur";
+  const realCity = portal?.city || user?.city;
+
   return (
-    <CitizenAuthenticatedShell>
+    <CitizenAuthenticatedShell variant="citizen-feed-shell">
       <>
         <div className="web-feed-desktop-contents">
           <FeedLeftRail
@@ -285,6 +288,15 @@ export function FeedPortalScreen() {
         </div>
 
         <div className="feed-medium-column feed-medium-editorial-grid min-w-0 flex-1">
+          <div className="feed-desktop-greeting hidden xl:block">
+            <h1 className="feed-desktop-greeting-title">Bonjour {userFirstName}</h1>
+            {realCity ? (
+              <p className="feed-desktop-greeting-subtitle">Bienvenue sur le fil de {realCity}</p>
+            ) : (
+              <p className="feed-desktop-greeting-subtitle">Bienvenue sur Yunicity</p>
+            )}
+          </div>
+
           <div className="web-mobile-feed-only min-w-0 pt-1">
             <FeedMobileHeader />
             <div className={`mt-4 space-y-4 ${FEED_MOBILE_CONTENT_PADDING_CLASS}`}>
