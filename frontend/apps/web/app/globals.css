@@ -21,9 +21,6 @@
      leur propre token, distinct. */
   --feed-medium-region-gap: 20px;
   --feed-medium-stream-gap: 20px;
-  --feed-medium-context-gap: 16px;
-  /* C3-FEED-M9 : padding interne commun des tuiles context (mesure RED = 16 px). */
-  --feed-medium-context-padding: 16px;
   --web-sidebar-width-full: 16.25rem; /* 260px */
   --web-context-rail-width: 21.25rem; /* 340px */
   --web-context-rail-width-md: 20rem; /* 320px */
@@ -83,12 +80,49 @@ body {
    It cannot reuse .web-desktop-feed-only (which is display:block ≥640 and would
    override the Tailwind `contents` utility, collapsing the desktop feed layout). */
 .web-feed-desktop-contents {
-  display: none;
+  display: contents;
 }
 
 .web-main-column {
   min-width: 0;
   width: 100%;
+}
+
+.feed-stream-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.feed-stream-pagination {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+[data-feed-stream-sentinel] {
+  height: 1px;
+  width: 100%;
+}
+
+@media (max-width: 639.98px) {
+  .feed-stream-region {
+    margin-top: 1rem;
+  }
+
+  .feed-stream-hint,
+  .feed-stream-notice,
+  .feed-stream-region > [data-feed-medium-surface="primary"],
+  .feed-stream-region > [data-feed-empty-state],
+  .feed-stream-region > [data-feed-loading-state],
+  .feed-stream-region > [data-feed-error-state] {
+    margin-inline: 1rem;
+  }
+
+  .feed-stream-pagination {
+    padding-inline: 1rem;
+  }
 }
 
 /* ——— Small desktop+ : grille 2 colonnes [sidebar compact | centre] ——— */
@@ -133,6 +167,10 @@ body {
 
 /* MOBILE-REFONDE-01 — fil local : layout mobile + bottom nav jusqu'à 639px */
 @media (max-width: 639.98px) {
+  .feed-mobile-shell .feed-app-shell-content {
+    display: block;
+  }
+
   .feed-mobile-shell .web-sidebar-aside {
     display: none !important;
   }
@@ -242,82 +280,11 @@ body {
 
   /* Rythme INTERNE des blocs locaux — distinct lui aussi.
      C3-FEED-M9 : mosaïque éditoriale (1 / 2 / 12 colonnes selon palier). */
-  .citizen-medium-shell [data-feed-medium-region="context"] > div {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--feed-medium-context-gap);
-    width: 100%;
-    min-width: 0;
-  }
-
-  .citizen-medium-shell [data-feed-medium-region="context"] > div > * {
-    margin: 0;
-    min-width: 0;
-  }
-
-  .citizen-medium-shell
-    [data-feed-medium-region="context"]
-    [data-feed-medium-context-tile] {
-    margin: 0;
-    min-width: 0;
-    padding: var(--feed-medium-context-padding);
-  }
-
   /* CTA dédiés des en-têtes de tuile : cible tactile minimale. */
-  .citizen-medium-shell
-    [data-feed-medium-region="context"]
-    [data-feed-medium-context-tile]
-    > div:first-child
-    > a,
-  .citizen-medium-shell
-    [data-feed-medium-region="context"]
-    [data-feed-medium-context-tile="privilege"]
-    > a {
-    min-height: 44px;
-    min-width: 44px;
-    display: inline-flex;
-    align-items: center;
-  }
 }
 
 /* C3-FEED-M9 — 768 → 1023,98 : deux colonnes équilibrées. */
-@media (min-width: 768px) and (max-width: 1023.98px) {
-  .citizen-medium-shell [data-feed-medium-region="context"] > div {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 /* C3-FEED-M9 — 1024 → 1279,98 : mosaïque 12 colonnes 7/5 puis 5/7. */
-@media (min-width: 1024px) and (max-width: 1279.98px) {
-  .citizen-medium-shell [data-feed-medium-region="context"] > div {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-  }
-
-  .citizen-medium-shell
-    [data-feed-medium-region="context"]
-    [data-feed-medium-context-tile="privilege"] {
-    grid-column: span 7;
-  }
-
-  .citizen-medium-shell
-    [data-feed-medium-region="context"]
-    [data-feed-medium-context-tile="tribes"] {
-    grid-column: span 5;
-  }
-
-  .citizen-medium-shell
-    [data-feed-medium-region="context"]
-    [data-feed-medium-context-tile="must-see"] {
-    grid-column: span 5;
-  }
-
-  .citizen-medium-shell
-    [data-feed-medium-region="context"]
-    [data-feed-medium-context-tile="local-now"] {
-    grid-column: span 7;
-  }
-}
-
 /* ——— C3-FEED-M3.3 : surfaces principales plates (640 → 1279.98) ———
    Les grandes surfaces du fil (stories/onglets, compositeur, section video,
    publications, blocs locaux) portaient `rounded-2xl` + `shadow-sm` : mesure a
@@ -354,22 +321,6 @@ body {
    ET de l'ordre de tabulation -- aucun lien cache focalisable. */
 
 /* La publication video n'existe que dans la bande medium. */
-.feed-medium-stream-video {
-  display: none;
-}
-
-@media (min-width: 640px) and (max-width: 1279.98px) {
-  /* Section autonome supprimee : ni titre, ni wrapper, ni espace de region,
-     ni hauteur fantome. La grille M4 ne lui alloue plus rien. */
-  .citizen-medium-shell .feed-desktop-video-section {
-    display: none;
-  }
-
-  .feed-medium-stream-video {
-    display: block;
-  }
-}
-
 /* --- C3-FEED-M8 : cartes publication unifiées (640 -> 1279.98) ---
    Mesures RED : padding post 20-24 px vs vidéo 16-20 px ; header post centré
    verticalement ; actions à 36 px ; écarts header/corps hétérogènes entre texte

@@ -13,7 +13,6 @@ describe("régions éditoriales du Feed medium", () => {
       "stories",
       "composer",
       "stream",
-      "context",
     ]);
   });
 
@@ -33,21 +32,21 @@ describe("régions éditoriales du Feed medium", () => {
 
   it("ordonne les régions de manière stricte et croissante", () => {
     const rangs = FEED_MEDIUM_REGIONS.map((r) => feedMediumRegionOrder(r));
-    expect(rangs).toEqual([0, 1, 2, 3]);
+    expect(rangs).toEqual([0, 1, 2]);
   });
 
   it("valide la séquence attendue et rejette toute autre", () => {
     expect(isFeedMediumRegionSequenceValid([...FEED_MEDIUM_REGIONS])).toBe(true);
     expect(
-      isFeedMediumRegionSequenceValid(["composer", "stories", "stream", "context"]),
+      isFeedMediumRegionSequenceValid(["composer", "stories", "stream"]),
       "ordre inversé accepté à tort",
     ).toBe(false);
     expect(
-      isFeedMediumRegionSequenceValid(["stories", "composer", "stream"]),
+      isFeedMediumRegionSequenceValid(["stories", "composer"]),
       "région manquante acceptée à tort",
     ).toBe(false);
     expect(
-      isFeedMediumRegionSequenceValid(["stories", "stories", "stream", "context"]),
+      isFeedMediumRegionSequenceValid(["stories", "stories", "stream"]),
       "doublon accepté à tort",
     ).toBe(false);
   });

@@ -323,6 +323,21 @@ describe("buildFeedStream — modules contextuels", () => {
     expect(r30.slice(0, r20.length)).toEqual(r20);
   });
 
+  it("append 20 vers 40 : les modules deja poses gardent leur position", () => {
+    const pageOne = buildFeedStream(posts(20), video(), "for_you", avec(TOUTES));
+    const pageTwo = buildFeedStream(posts(40), video(), "for_you", avec(TOUTES));
+    const firstFamilies = pageOne
+      .filter((item) => item.kind === "context-module")
+      .map((item) => item.key);
+    const secondFamilies = pageTwo
+      .filter((item) => item.kind === "context-module")
+      .map((item) => item.key);
+
+    expect(rangsContextuels(pageOne)).toEqual([4, 10, 17]);
+    expect(rangsContextuels(pageTwo)).toEqual([4, 10, 17, 24]);
+    expect(secondFamilies.slice(0, firstFamilies.length)).toEqual(firstFamilies);
+  });
+
   it("reevaluation idempotente", () => {
     const a = buildFeedStream(posts(30), video(), "for_you", avec(TOUTES));
     const b = buildFeedStream(posts(30), video(), "for_you", avec(TOUTES));

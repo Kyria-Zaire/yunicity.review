@@ -6,13 +6,7 @@ import { WebMobileStrategicBottomNav } from "@/components/layout/web-mobile-stra
 import { CITIZEN_MOBILE_BOTTOM_NAV_PADDING } from "@/lib/layout/feed-mobile-refonte";
 import type { ReactNode } from "react";
 
-export function FeedAppShell({
-  children,
-  rightRail,
-}: {
-  children: ReactNode;
-  rightRail?: ReactNode;
-}) {
+export function FeedAppShell({ children }: { children: ReactNode }) {
   return (
     <div className="web-shell-page feed-mobile-shell citizen-medium-shell min-h-dvh bg-[#F4F5F7]">
       <div className="web-three-col places-shell-grid">
@@ -33,13 +27,8 @@ export function FeedAppShell({
           <div className="web-desktop-feed-only">
             <CitizenTopNav />
           </div>
-          <div className={`flex gap-6 pb-16 lg:pb-20 ${CITIZEN_MOBILE_BOTTOM_NAV_PADDING}`}>
+          <div className={`feed-app-shell-content flex gap-6 pb-16 lg:pb-20 ${CITIZEN_MOBILE_BOTTOM_NAV_PADDING}`}>
             {children}
-            {rightRail ? (
-              <aside className="hidden w-72 shrink-0 2xl:block">
-                <div className="sticky top-24 space-y-4">{rightRail}</div>
-              </aside>
-            ) : null}
           </div>
         </main>
       </div>

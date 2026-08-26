@@ -89,8 +89,15 @@ describe("couture FeedCard / FeedCardWithDependencies", () => {
   });
 
   it("6 — les consommateurs produit montent FeedCard, jamais la vue", () => {
+    const portail = lire("../../components/feed/portal/feed-portal-screen.tsx");
+    const listeDuFlux = lire("../../components/feed/portal/feed-stream-list.tsx");
+
+    expect(portail).not.toMatch(/<FeedCardWithDependencies/);
+    expect(portail).toMatch(/<FeedStreamList\b/);
+    expect(listeDuFlux).not.toMatch(/<FeedCardWithDependencies/);
+    expect(listeDuFlux).toMatch(/<FeedCard\b/);
+
     for (const chemin of [
-      "../../components/feed/portal/feed-portal-screen.tsx",
       "../../components/discussions/discussions-thread-card.tsx",
       "../../components/tribes/tribe-wall-section.tsx",
     ]) {
