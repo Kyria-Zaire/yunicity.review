@@ -407,12 +407,133 @@ test.describe("Desktop header geometry — anti-collision R6", () => {
       );
 
       // Fumee corps Feed : le decouplage n'a pas deplace le contenu.
-      await expect(page.locator(".feed-app-shell-content aside")).toHaveCount(1);
+      //
+      // R2F — `.feed-app-shell-content aside` compte desormais DEUX rails depuis
+      // D1.2 (FeedLeftRail + rail droit >=1536px). L'ancienne assertion `count=1`
+      // etait devenue perimee : on distingue les deux par leur ancrage reel.
+      await expect(
+        page.locator(".feed-app-shell-content .web-feed-desktop-contents > aside"),
+        "rail gauche unique",
+      ).toHaveCount(1);
       await expect(page.locator(".citizen-feed-shell .feed-medium-column")).toBeVisible();
       await expect(page.locator("[data-feed-stream-list]")).toHaveCount(1);
-      await expect(
-        page.locator(".web-context-rail-aside, .feed-right-rail, [data-feed-right-rail]"),
-      ).toHaveCount(0);
+
+      // Le rail contextuel HISTORIQUE reste interdit ; le rail droit D1.2, lui,
+      // est attendu visible a ces largeurs et porte son propre landmark.
+      await expect(page.locator(".web-context-rail-aside")).toHaveCount(0);
+      const rightRail = page.locator(".feed-app-shell-content [data-feed-right-rail]");
+      await expect(rightRail, "rail droit D1.2 unique").toHaveCount(1);
+      await expect(rightRail).toBeVisible();
+      await expect(rightRail).toHaveAttribute("aria-label", "Informations contextuelles");
+
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow, `overflow horizontal — ${ctx}`).toBeLessThanOrEqual(1);
+    });
+  }
+
+  /**
+   * C3-D1.2-R2E — le badge de notifications est ancre a la cloche.
+   *
+   * Positionne en absolu sur le controle entier, il suivait son bord droit :
+   * des `2xl` (1536px) le libellé « Notifications » devient `inline`, elargit le
+   * controle, et le badge se retrouvait au-dessus de la fin du libellé.
+   * Les assertions de collision existantes ne le voyaient pas : elles mesurent
+   * les controles `data-yunicity-header-control`, jamais un enfant absolu.
+   */
+  for (const width of [1280, 1440, 1536, 1920] as const) {
+    test(`badge notifications ancre a la cloche — ${width}px`, async ({ citizenAPage: page }) => {
+      await gotoFeedDesktop(page, width);
+      await expectTopNavVisibility(page, width);
+      await assertHeaderGeometry(page, width);
+
+      const measured = await page.evaluate(() => {
+        const rectOf = (node: Element | null) => {
+          if (!node) return null;
+          const r = node.getBoundingClientRect();
+          return {
+            left: Math.round(r.left),
+            right: Math.round(r.right),
+            top: Math.round(r.top),
+            bottom: Math.round(r.bottom),
+            width: Math.round(r.width),
+            height: Math.round(r.height),
+          };
+        };
+        const header = document.querySelector(".citizen-top-nav");
+        const control = header?.querySelector('[data-yunicity-header-control="notifications"]') ?? null;
+        const label = control?.querySelector("[data-notification-label]") ?? null;
+        const labelVisible = label ? getComputedStyle(label).display !== "none" : false;
+        const badge = control?.querySelector("[data-notification-badge]") ?? null;
+
+        return {
+          control: rectOf(control),
+          iconWrap: rectOf(control?.querySelector("[data-notification-icon-wrap]") ?? null),
+          badge: rectOf(badge),
+          badgeText: (badge?.textContent ?? "").trim(),
+          label: rectOf(label),
+          labelVisible,
+          avatar: rectOf(header?.querySelector('[data-yunicity-header-control="account"]') ?? null),
+          badgeCount: document.querySelectorAll("[data-notification-badge]").length,
+          iconWrapCount: document.querySelectorAll("[data-notification-icon-wrap]").length,
+        };
+      });
+
+      const ctx = `${width}px ${JSON.stringify(measured)}`;
+
+      expect(measured.control, `controle notifications absent — ${ctx}`).not.toBeNull();
+      expect(measured.iconWrapCount, `un seul wrapper cloche — ${ctx}`).toBe(1);
+      expect(measured.iconWrap, `wrapper cloche absent — ${ctx}`).not.toBeNull();
+
+      // Le libellé suit le comportement existant : masque < 1536, visible >= 1536.
+      expect(measured.labelVisible, `visibilite du libellé — ${ctx}`).toBe(width >= 1536);
+
+      if (measured.badgeCount === 0) {
+        // Compteur nul : rien a prouver, le badge n'existe pas.
+        return;
+      }
+
+      const badge = measured.badge!;
+      const iconWrap = measured.iconWrap!;
+      const control = measured.control!;
+
+      expect(badge.width, `badge sans surface — ${ctx}`).toBeGreaterThan(0);
+      expect(measured.badgeText.length, `badge sans texte — ${ctx}`).toBeGreaterThan(0);
+
+      // Contenu par le controle : jamais rogne hors de sa boite.
+      expect(badge.left, `badge deborde a gauche du controle — ${ctx}`).toBeGreaterThanOrEqual(control.left);
+      expect(badge.right, `badge deborde a droite du controle — ${ctx}`).toBeLessThanOrEqual(control.right);
+      expect(badge.top, `badge deborde en haut du controle — ${ctx}`).toBeGreaterThanOrEqual(control.top);
+      expect(badge.bottom, `badge deborde en bas du controle — ${ctx}`).toBeLessThanOrEqual(control.bottom);
+
+      // Ancrage geometrique a la cloche : coin haut-droit du wrapper.
+      expect(
+        Math.abs(badge.right - iconWrap.right),
+        `badge non ancre horizontalement a la cloche — ${ctx}`,
+      ).toBeLessThanOrEqual(10);
+      expect(
+        Math.abs(badge.top - iconWrap.top),
+        `badge non ancre verticalement a la cloche — ${ctx}`,
+      ).toBeLessThanOrEqual(10);
+
+      // Aucun recouvrement du libellé, avec un ecart visuel positif.
+      if (measured.labelVisible) {
+        const label = measured.label!;
+        const horizontalOverlap = Math.min(badge.right, label.right) - Math.max(badge.left, label.left);
+        const verticalOverlap = Math.min(badge.bottom, label.bottom) - Math.max(badge.top, label.top);
+        const intersects = horizontalOverlap > 0 && verticalOverlap > 0;
+        expect(intersects, `badge recouvre le libellé — ${ctx}`).toBe(false);
+        expect(label.left - badge.right, `ecart badge/libellé — ${ctx}`).toBeGreaterThanOrEqual(4);
+      }
+
+      // Aucun recouvrement de l'avatar.
+      if (measured.avatar) {
+        const avatar = measured.avatar;
+        const h = Math.min(badge.right, avatar.right) - Math.max(badge.left, avatar.left);
+        const v = Math.min(badge.bottom, avatar.bottom) - Math.max(badge.top, avatar.top);
+        expect(h > 0 && v > 0, `badge recouvre l'avatar — ${ctx}`).toBe(false);
+      }
 
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

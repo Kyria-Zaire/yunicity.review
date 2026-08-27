@@ -27,6 +27,7 @@ import { FeedLeftRail } from "@/components/feed/portal/feed-left-rail";
 import { FeedMediumFilterSheet } from "@/components/feed/portal/feed-medium-filter-sheet";
 import { FeedMediumHeader } from "@/components/feed/portal/feed-medium-header";
 import { FeedSavedEventsPanel } from "@/components/feed/portal/feed-saved-events-panel";
+import { FeedDesktopRightRail } from "@/components/feed/portal/feed-desktop-right-rail";
 import { FeedStoriesRail } from "@/components/feed/portal/feed-stories-rail";
 import { FeedStreamList } from "@/components/feed/portal/feed-stream-list";
 import { FeedViewTabs } from "@/components/feed/portal/feed-view-tabs";
@@ -45,6 +46,10 @@ import {
   feedEnrichmentForScope,
   resolveFeedEnrichmentSnapshot,
 } from "@/lib/feed/feed-enrichment-snapshot";
+import {
+  selectMemberTribes,
+  selectTonightEvents,
+} from "@/lib/feed/feed-right-rail-modules";
 import { buildFeedStream } from "@/lib/feed/feed-stream";
 import { FEED_MOBILE_CONTENT_PADDING_CLASS } from "@/lib/layout/feed-mobile-full-bleed";
 import {
@@ -275,6 +280,10 @@ export function FeedPortalScreen() {
   const userFirstName = user?.full_name?.split(" ")[0] || "Voyageur";
   const realCity = portal?.city || user?.city;
 
+  // D1.2 — rail droit : derive de `portal`, deja fetche. Aucune requete nouvelle.
+  const tonightEvents = useMemo(() => selectTonightEvents(portal.events), [portal.events]);
+  const memberTribes = useMemo(() => selectMemberTribes(portal.tribes), [portal.tribes]);
+
   return (
     <CitizenAuthenticatedShell variant="citizen-feed-shell">
       <>
@@ -429,6 +438,12 @@ export function FeedPortalScreen() {
             ) : null}
           </div>
         </div>
+
+        <FeedDesktopRightRail
+          tonightEvents={tonightEvents}
+          memberTribes={memberTribes}
+          city={city}
+        />
       </>
     </CitizenAuthenticatedShell>
   );

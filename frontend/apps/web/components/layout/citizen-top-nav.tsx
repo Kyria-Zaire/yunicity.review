@@ -76,18 +76,34 @@ function NotificationsTopNavLink({
       }`}
       title={item.label}
     >
-      <WebNavIcon id={item.icon} className="h-5 w-5 shrink-0" />
+      {/* R2E — le badge est ancre a la CLOCHE, jamais au controle entier.
+          Positionne sur le Link, il suivait son bord droit : des `2xl` le
+          libellé devient `inline`, elargit le Link, et le badge se retrouvait
+          au-dessus de la fin de « Notifications » (mesure R2D, 1536 et 1920). */}
+      <span
+        data-notification-icon-wrap=""
+        className="relative inline-flex shrink-0"
+      >
+        <WebNavIcon id={item.icon} className="h-5 w-5 shrink-0" />
+        {badge && badge > 0 ? (
+          <span
+            data-notification-badge=""
+            className="absolute -right-1 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#FF2D78] px-1 text-[10px] font-bold text-white"
+          >
+            {badge > 9 ? "9+" : badge}
+          </span>
+        ) : null}
+      </span>
+      {/* R2F — l'ecart avec la cloche est une MARGE, pas un padding : la boite du
+          libellé etait jointive au wrapper, donc tout badge debordant du wrapper
+          la recouvrait (mesure R2E : 4px a 1536 et 1920). */}
       <span
         data-yunicity-header-label="notifications"
-        className="hidden whitespace-nowrap 2xl:inline 2xl:pl-1.5"
+        data-notification-label=""
+        className="hidden whitespace-nowrap 2xl:ml-2 2xl:inline"
       >
         {item.label}
       </span>
-      {badge && badge > 0 ? (
-        <span className="absolute right-1 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#FF2D78] px-1 text-[10px] font-bold text-white">
-          {badge > 9 ? "9+" : badge}
-        </span>
-      ) : null}
       {active ? (
         <span
           className="absolute inset-x-2 -bottom-[1.125rem] hidden h-0.5 rounded-full bg-yunicity-primary 2xl:block"

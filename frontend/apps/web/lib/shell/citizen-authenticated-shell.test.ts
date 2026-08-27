@@ -66,9 +66,12 @@ describe("D1.1 — Desktop visual shell (>=1280px)", () => {
     expect(portalScreen).not.toMatch(/Bienvenue sur le fil de "Reims"/);
   });
 
-  it("contains no right rail or contextual async content", () => {
+  it("contains no historic async context rail", () => {
+    // D1.1 interdisait tout rail droit. D1.2 en introduit un, mais a cout zero
+    // et borne a >=1536px : ce qui survit de l'intention D1.1, c'est le refus du
+    // rail contextuel historique (`WebContextRail`, fetches propres).
     expect(portalScreen).not.toContain("web-context-rail");
-    expect(portalScreen).not.toContain("feed-right-rail");
+    expect(portalScreen).not.toContain("WebContextRail");
   });
 
   it("preserves FeedLeftRail navigation unchanged", () => {
@@ -83,8 +86,11 @@ describe("D1.1 — Desktop visual shell (>=1280px)", () => {
   });
 
   it("does not fetch new data or introduce new endpoints", () => {
+    // Cible les APPELS, pas la sous-chaine "fetch" : celle-ci matchait des
+    // commentaires et aurait rougi sans defaut reel.
     expect(portalScreen).not.toContain("useDesktopGreeting");
-    expect(portalScreen).not.toContain("fetch");
+    expect(portalScreen).not.toContain("fetch(");
+    expect(portalScreen).not.toMatch(/\/api\/v1/);
   });
 
   it("ensures citizen-feed-shell scoping isolates D1.1 styles from other routes", () => {
@@ -146,8 +152,21 @@ describe("D1.1-R3 — CSS desktop geometry guards (textual, not geometric proof)
     expect(desktopLayer).toMatch(/@media\s*\(\s*min-width:\s*1280px\s*\)/);
     const before = globalsCSS.slice(0, globalsCSS.indexOf("/* ——— D1.1 DESKTOP"));
     expect(before).not.toContain(".citizen-feed-shell");
-    const after = globalsCSS.slice(globalsCSS.indexOf("/* ——— D1.1 DESKTOP") + desktopLayer.length);
-    expect(after).not.toContain(".citizen-feed-shell");
+  });
+
+  it("keeps every .citizen-feed-shell rule inside a >=1280px media layer", () => {
+    // D1.2 ajoute une couche >=1536px : le scope reste borne en bas a 1280px.
+    const layers = [...globalsCSS.matchAll(/@media\s*\(\s*min-width:\s*(\d+)px\s*\)\s*\{/g)];
+    let index = globalsCSS.indexOf(".citizen-feed-shell");
+    while (index !== -1) {
+      const enclosing = layers.filter((layer) => (layer.index ?? 0) < index).pop();
+      expect(enclosing, `.citizen-feed-shell hors media query (offset ${index})`).toBeTruthy();
+      expect(
+        Number(enclosing?.[1]),
+        `.citizen-feed-shell sous 1280px (offset ${index})`,
+      ).toBeGreaterThanOrEqual(1280);
+      index = globalsCSS.indexOf(".citizen-feed-shell", index + 1);
+    }
   });
 
   it("never rebuilds the Feed rail from WebSidebar via grid-template-columns", () => {
@@ -292,5 +311,139 @@ describe("D1.1-R7 — top nav decoupling guards (textual, not overlap proof)", (
     expect(container).toMatch(/max-width:\s*calc\(/);
     expect(container).toContain("760px");
     expect(ruleFor(".citizen-feed-shell .feed-medium-column")).toMatch(/max-width:\s*760px/);
+  });
+});
+
+/**
+ * D1.2-R2 — rail droit Desktop a cout zero.
+ *
+ * LIMITE ASSUMEE : assertions TEXTUELLES. Elles ne prouvent aucune geometrie
+ * navigateur — ni les 1352px du groupe, ni le centrage, ni l'absence de
+ * chevauchement. Leur role est de verrouiller le contrat de montage, l'absence
+ * de requete et le bornage a 1536px. La preuve reste la campagne de captures.
+ */
+describe("D1.2-R2 — zero-cost right rail (textual, not geometric proof)", () => {
+  const globalsCSS = readFileSync(`${here}../../app/globals.css`, "utf-8");
+  // Nom distinct de `feed-right-rail.tsx` : ce chemin sert de sentinelle au
+  // garde-fou R2B (rail contextuel duplique, supprime). Il doit rester absent.
+  const rightRail = readFileSync(
+    `${here}../../components/feed/portal/feed-desktop-right-rail.tsx`,
+    "utf-8",
+  );
+  const tonight = readFileSync(
+    `${here}../../components/feed/portal/feed-tonight-events.tsx`,
+    "utf-8",
+  );
+  const memberTribes = readFileSync(
+    `${here}../../components/feed/portal/feed-member-tribes.tsx`,
+    "utf-8",
+  );
+  const modules = readFileSync(`${here}../feed/feed-right-rail-modules.ts`, "utf-8");
+
+  const layer1536 = (() => {
+    const start = globalsCSS.indexOf("/* ——— D1.2 DESKTOP LARGE");
+    expect(start, "couche D1.2 absente").toBeGreaterThan(-1);
+    const open = globalsCSS.indexOf("{", globalsCSS.indexOf("@media", start));
+    let depth = 0;
+    for (let i = open; i < globalsCSS.length; i += 1) {
+      if (globalsCSS[i] === "{") depth += 1;
+      else if (globalsCSS[i] === "}") {
+        depth -= 1;
+        if (depth === 0) return globalsCSS.slice(start, i + 1);
+      }
+    }
+    throw new Error("D1.2 layer: unbalanced braces");
+  })();
+
+  it("mounts the right rail as the third child, after the Feed column", () => {
+    const railAt = portalScreen.indexOf("<FeedDesktopRightRail");
+    const columnAt = portalScreen.indexOf("feed-medium-column");
+    const leftRailAt = portalScreen.indexOf("<FeedLeftRail");
+    expect(railAt).toBeGreaterThan(-1);
+    expect(leftRailAt, "rail gauche avant le Feed").toBeLessThan(columnAt);
+    expect(railAt, "rail droit apres le Feed").toBeGreaterThan(columnAt);
+  });
+
+  it("renders no aside at all when no module has real content", () => {
+    expect(rightRail).toContain("hasRightRailContent");
+    expect(rightRail).toMatch(/if\s*\(!hasRightRailContent\([\s\S]*?\)\)\s*return null/);
+  });
+
+  it("derives both modules from the already-mounted portal context", () => {
+    expect(portalScreen).toContain("selectTonightEvents(portal.events)");
+    expect(portalScreen).toContain("selectMemberTribes(portal.tribes)");
+  });
+
+  it("introduces no fetch, hook or endpoint of its own", () => {
+    for (const source of [rightRail, tonight, memberTribes, modules]) {
+      expect(source).not.toContain("useYunicityApi");
+      expect(source).not.toContain("useEffect");
+      expect(source).not.toContain("fetch(");
+      expect(source).not.toMatch(/\/api\/v1/);
+    }
+  });
+
+  it("uses no breakpoint JavaScript — visibility belongs to CSS", () => {
+    for (const source of [rightRail, tonight, memberTribes, modules]) {
+      expect(source).not.toMatch(/matchMedia|innerWidth|useIsDesktop/);
+    }
+    expect(globalsCSS).toMatch(/\.feed-right-rail\s*\{\s*display:\s*none/);
+  });
+
+  it("reveals the right rail only from 1536px, at 320px wide", () => {
+    expect(layer1536).toMatch(/@media\s*\(\s*min-width:\s*1536px\s*\)/);
+    expect(layer1536).toMatch(/\.citizen-feed-shell\s+\.feed-right-rail[\s\S]*?display:\s*block/);
+    expect(layer1536).toMatch(/flex:\s*0\s+0\s+var\(--web-context-rail-width-md\)/);
+    expect(globalsCSS).toContain("--web-context-rail-width-md: 20rem");
+  });
+
+  it("widens the container to the 1352px group only at 1536px", () => {
+    expect(layer1536).toMatch(
+      /\.citizen-feed-shell\s+\.web-three-col[\s\S]*?max-width:\s*calc\([\s\S]*?--web-context-rail-width-md/,
+    );
+    // Le conteneur D1.1 (1072px) reste la valeur par defaut entre 1280 et 1535.
+    expect(layer1536).not.toMatch(/grid-template-columns/);
+  });
+
+  it("keeps the right rail sticky and self-sized", () => {
+    expect(layer1536).toMatch(/position:\s*sticky/);
+    expect(layer1536).toMatch(/height:\s*fit-content/);
+  });
+
+  it("shows only legal links whose routes exist", () => {
+    expect(rightRail).toContain("/legal/confidentialite");
+    expect(rightRail).toContain("/legal/conditions-generales");
+    expect(rightRail).not.toMatch(/À propos|\/about|\/aide|\/help/);
+    expect(rightRail).toContain("getFullYear()");
+  });
+
+  it("links every module to a real route", () => {
+    expect(tonight).toContain("/events/${event.id}");
+    expect(tonight).toContain('href="/sortir"');
+    expect(memberTribes).toContain("/tribes/${tribe.slug}");
+    expect(memberTribes).toContain('href="/tribes"');
+  });
+
+  it("invents no tribe activity and no default counters", () => {
+    expect(memberTribes).not.toMatch(/il y a|activité récente|actif il y a/i);
+    expect(memberTribes).toContain("active_member_count");
+    // Le compteur d'interet ne s'affiche que s'il est reellement fourni.
+    expect(tonight).toContain('typeof event.interest_count === "number"');
+  });
+
+  it("exposes the contextual landmark once, after the Feed", () => {
+    expect(rightRail).toContain('aria-label="Informations contextuelles"');
+    expect((rightRail.match(/<aside/g) || []).length).toBe(1);
+  });
+
+  it("keeps a single FeedStreamList and one right rail mount", () => {
+    expect((portalScreen.match(/<FeedStreamList/g) || []).length).toBe(1);
+    expect((portalScreen.match(/<FeedDesktopRightRail/g) || []).length).toBe(1);
+  });
+
+  it("leaves the R2B sentinel path free", () => {
+    // R2B garde l'absence de `feed-right-rail.tsx` comme preuve que le rail
+    // contextuel duplique n'est pas revenu. D1.2 ne doit pas reoccuper ce nom.
+    expect(existsSync(`${here}../../components/feed/portal/feed-right-rail.tsx`)).toBe(false);
   });
 });

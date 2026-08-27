@@ -317,6 +317,40 @@ body {
   }
 }
 
+/* ——— D1.2 : rail droit Desktop, masque par defaut ———
+   La visibilite par breakpoint est portee UNIQUEMENT par la CSS : le composant
+   est monte des qu'il a du contenu reel, jamais conditionne par du JavaScript
+   de breakpoint. Sous 1536px il ne genere aucune boite, donc aucune largeur
+   n'est reservee et le groupe reste a 1008px (contrat D1.1). */
+.feed-right-rail {
+  display: none;
+}
+
+/* ——— D1.2 DESKTOP LARGE (>=1536px) : groupe [rail | Feed | rail droit] ———
+   224 + 24 + 760 + 24 + 320 = 1352px, + 2x32px de padding = 1416px.
+   `.feed-app-shell-content` est deja `display:flex; width:fit-content;
+   margin-inline:auto` : il suffit que le troisieme enfant genere une boite pour
+   que le groupe passe de 1008 a 1352px, toujours centre. Aucune piste Grid
+   artificielle, aucun breakpoint JavaScript. */
+@media (min-width: 1536px) {
+  .citizen-feed-shell .web-three-col {
+    max-width: calc(
+      14rem + 1.5rem + 760px + 1.5rem + var(--web-context-rail-width-md) + 4rem
+    );
+  }
+
+  .citizen-feed-shell .feed-right-rail {
+    display: block;
+    flex: 0 0 var(--web-context-rail-width-md);
+    width: var(--web-context-rail-width-md);
+    min-width: 0;
+    /* Meme offset que le rail gauche (`sticky top-24`), sous CitizenTopNav. */
+    position: sticky;
+    top: 6rem;
+    height: fit-content;
+  }
+}
+
 /* ——— C3-FEED-M3 : header de contenu du Feed moyen (640 → 1279.98) ———
    Masque par defaut, borne EN HAUT a 1279.98px : le desktop >= 1280 conserve son
    propre header. Sticky en haut de la colonne de contenu, fond opaque pour
