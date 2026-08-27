@@ -39,8 +39,14 @@ from sqlalchemy.engine import make_url
 
 #: Serveur portant la base jetable — le meme conteneur Postgres local que la QA,
 #: mais une base DISTINCTE. Aucune donnee de `yunicity_qa` n'est lue ni ecrite.
-_DEFAULT_HOST = "postgres-qa"
-_DEFAULT_PORT = 5432
+#:
+#: Surchargeables (C3-BASELINE-R2) pour l'execution DEPUIS L'HOTE : les noms
+#: `postgres-qa` / `redis-qa` n'existent que dans le reseau Docker et ne resolvent
+#: pas sur la machine. Les defauts restent les valeurs conteneur, donc Docker CI
+#: (`docker-ci.yml`) est inchange. La garde `evaluate_pytest_database_target` valide
+#: le couple hote/port quelle que soit l'origine de la valeur.
+_DEFAULT_HOST = os.environ.get("BACKEND_TEST_DB_HOST", "").strip() or "postgres-qa"
+_DEFAULT_PORT = int(os.environ.get("BACKEND_TEST_DB_PORT", "").strip() or "5432")
 _DEFAULT_USER = "yunicity_qa"
 _DEFAULT_PASSWORD = "yunicity_qa_password"
 
@@ -49,7 +55,23 @@ _MAINTENANCE_DB = "postgres"
 
 #: Redis logique distinct : la suite fait `flushdb`, ce qui viderait sinon les
 #: compteurs de la baseline QA (db 0).
-_TEST_REDIS_URL = "redis://redis-qa:6379/1"
+_TEST_REDIS_URL = os.environ.get("BACKEND_TEST_REDIS_URL", "").strip() or "redis://redis-qa:6379/1"
+
+
+def _reject_shared_redis_db(url: str) -> None:
+    """Refuse la db 0 : c'est la baseline QA, et la suite fait `flushdb`.
+
+    Fail-closed comme la garde base de donnees : la decision est prise avant toute
+    connexion. Une URL sans index explicite designe la db 0 chez Redis, elle est
+    donc refusee au meme titre qu'un `/0` ecrit en toutes lettres.
+    """
+    parsed = make_url(url)
+    index = (parsed.database or "").strip()
+    if index in ("", "0"):
+        raise SystemExit(
+            "REDIS_DB0_FORBIDDEN: la suite execute `flushdb`; viser la db 0 detruirait "
+            "les compteurs de la baseline QA. Utiliser un index >= 1."
+        )
 
 
 def _dsn(dbname: str) -> str:
@@ -120,6 +142,7 @@ def main(argv: list[str]) -> int:
     env.pop("STORY_MEDIA_UPLOAD_DIR", None)
 
     # Decision AVANT toute connexion : fail-closed, sans I/O.
+    _reject_shared_redis_db(_TEST_REDIS_URL)
     target = evaluate_pytest_database_target(env)
     parsed = make_url(env[TEST_DB_ENV])
     print(f"backend tests -> host={target.host} port={target.port} db={target.dbname}")
