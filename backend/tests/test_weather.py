@@ -175,9 +175,11 @@ async def test_weather_dev_stub_is_marked_as_development_stub(
 
     result = await service.get_current(WeatherCurrentQuery(city="Reims", lat=None, lon=None))
 
+    # Le stub ne peut jamais se faire passer pour le provider : `WeatherSource` n'a
+    # que deux membres, donc cette egalite les discrimine a elle seule. Une
+    # inegalite supplementaire contre "provider" serait non recouvrante — mypy la
+    # refuse sous `strict`, et elle ne couvrirait aucune branche de plus.
     assert result.source == "development_stub"
-    # Le stub ne peut jamais se faire passer pour le provider.
-    assert result.source != "provider"
     # Il ne porte aucun champ optionnel provider.
     assert result.temperature_min is None
     assert result.temperature_max is None
