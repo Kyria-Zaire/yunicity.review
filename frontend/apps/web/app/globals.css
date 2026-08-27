@@ -326,6 +326,16 @@ body {
   display: none;
 }
 
+/* ——— D1.2-R3A : slots des modules Desktop complet (meteo, Passport) ———
+   Masques par defaut. Un slot `display:none` n'intersecte jamais : l'activation
+   par `IntersectionObserver` ne se declenche pas, le composant portant le hook
+   n'est pas monte, et AUCUNE requete ne part sous 1536px. La CSS reste la seule
+   source de verite du responsive — aucun breakpoint JavaScript. */
+.feed-weather-slot,
+.feed-passport-slot {
+  display: none;
+}
+
 /* ——— D1.2 DESKTOP LARGE (>=1536px) : groupe [rail | Feed | rail droit] ———
    224 + 24 + 760 + 24 + 320 = 1352px, + 2x32px de padding = 1416px.
    `.feed-app-shell-content` est deja `display:flex; width:fit-content;
@@ -337,6 +347,13 @@ body {
     max-width: calc(
       14rem + 1.5rem + 760px + 1.5rem + var(--web-context-rail-width-md) + 4rem
     );
+  }
+
+  /* Les slots deviennent visibles : l'IntersectionObserver peut alors activer
+     les modules, qui declenchent leur unique requete chacun. */
+  .citizen-feed-shell .feed-weather-slot,
+  .citizen-feed-shell .feed-passport-slot {
+    display: block;
   }
 
   .citizen-feed-shell .feed-right-rail {

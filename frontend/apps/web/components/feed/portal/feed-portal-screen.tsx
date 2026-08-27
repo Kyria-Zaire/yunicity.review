@@ -293,6 +293,7 @@ export function FeedPortalScreen() {
             leftNav={leftNav}
             onNavSelect={handleLeftNavSelect}
             interests={interests}
+            city={city}
           />
         </div>
 

@@ -4,6 +4,7 @@ import type { LocalEvent, Tribe } from "@yunicity/types";
 import Link from "next/link";
 
 import { FeedMemberTribes } from "@/components/feed/portal/feed-member-tribes";
+import { FeedPassportCard } from "@/components/feed/portal/feed-passport-card";
 import { FeedTonightEvents } from "@/components/feed/portal/feed-tonight-events";
 import { hasRightRailContent } from "@/lib/feed/feed-right-rail-modules";
 
@@ -38,6 +39,9 @@ export function FeedDesktopRightRail({
     >
       <div className="space-y-4">
         <FeedTonightEvents events={tonightEvents} city={city} />
+        {/* D1.2-R3A — Passport reel, active par visibilite. Son slot ne
+            reserve aucune place tant qu'il n'a pas de contenu. */}
+        <FeedPassportCard />
         <FeedMemberTribes tribes={memberTribes} />
 
         <footer className="px-1 text-xs text-neutral-500">

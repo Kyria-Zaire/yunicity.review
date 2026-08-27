@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { FeedWeatherCard } from "@/components/feed/portal/feed-weather-card";
+
 type FeedLeftNavId =
   | FeedPortalView
   | "home"
@@ -44,6 +46,8 @@ type FeedLeftRailProps = {
   leftNav: FeedLeftNavId;
   onNavSelect: (nav: FeedLeftNavId) => void;
   interests: string[];
+  /** Ville reelle du contexte portail, pour la meteo Desktop (D1.2-R3A). */
+  city: string;
 };
 
 const NAV_ITEMS: Array<{
@@ -73,6 +77,7 @@ export function FeedLeftRail({
   leftNav,
   onNavSelect,
   interests,
+  city,
 }: FeedLeftRailProps) {
   return (
     <aside className="hidden w-56 shrink-0 xl:block">
@@ -147,6 +152,11 @@ export function FeedLeftRail({
             {FEED_PORTAL_INTERESTS_SEE_ALL}
           </Link>
         </section>
+
+        {/* D1.2-R3A — meteo Desktop complet (>=1536px). Le slot est masque par
+            CSS en dessous : il n'intersecte donc jamais et aucune requete ne
+            part. Aucun breakpoint JavaScript. */}
+        <FeedWeatherCard city={city} />
       </div>
     </aside>
   );

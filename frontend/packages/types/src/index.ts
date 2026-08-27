@@ -627,6 +627,7 @@ export type {
 
 export type {
   WeatherCurrent,
+  WeatherSource,
 } from "./weather";
 
 export type EnvironmentName = "dev" | "recette" | "preprod" | "prod";
