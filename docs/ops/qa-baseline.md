@@ -116,6 +116,101 @@ docker compose -p yunicity-qa -f docker-compose.qa.yml exec -T \
   backend-qa pytest tests/qa/test_qa_fixtures_idempotent.py -q
 ```
 
+## Exécuter la suite backend — deux modes distincts (C3-BASELINE-R2)
+
+Les deux modes ci-dessous ne prouvent **pas** la même chose. Confondre l'un pour
+l'autre a déjà produit deux diagnostics erronés : voir « Les 19 faux rouges ».
+
+### A. Mode CI actuel — unitaire seulement
+
+`.github/workflows/backend-ci.yml` exécute `ruff check .`, `mypy app tests` puis
+`pytest`, **sans bloc `services:` ni `env:`** : ni Postgres ni Redis ne sont
+provisionnés. Sans `TEST_DATABASE_URL` **ni** `DATABASE_URL`, `pytest_sessionstart`
+(`backend/tests/conftest.py`) retourne immédiatement et les fixtures DB se skippent
+une par une.
+
+```bash
+cd backend && pytest -q          # ≈ 423 passed / 915 skipped
+```
+
+> **Ce mode n'est pas une preuve d'intégration.** Les deux tiers de la suite sont
+> skippés. Aucune régression d'intégration n'est détectée avant merge sur `main` —
+> R4A/R4B a révélé trois HTTP 500 (`MissingGreenlet`) qu'aucun gate n'aurait attrapés.
+> Combler cet écart est l'objet du ticket R3.
+
+### B. Mode hôte — intégration complète
+
+**Prérequis** : la pile QA tourne (`docker compose -p yunicity-qa -f docker-compose.qa.yml up -d`),
+postgres publié sur `127.0.0.1:5455` et redis sur `127.0.0.1:6399`.
+
+```bash
+sh scripts/qa-backend-pytest-host.sh                          # suite complète
+sh scripts/qa-backend-pytest-host.sh tests/test_weather.py    # un fichier
+sh scripts/qa-backend-pytest-host.sh -k interest_count -q     # sélection
+sh scripts/qa-backend-pytest-host.sh tests/test_feed.py::test_x
+```
+
+Tout argument est transmis à pytest ; le code de sortie de pytest est propagé.
+
+Le wrapper ne réimplémente rien : il pose les endpoints joignables depuis l'hôte et
+les valeurs test-only, puis délègue à `backend/scripts/run_backend_tests.py` — le
+runner canonique déjà utilisé par `docker-ci.yml`. Ce runner, à chaque exécution :
+
+- crée une base jetable `yunicity_test_<uuid>` et active PostGIS ;
+- applique les migrations via les fixtures de la suite ;
+- **la supprime** en fin de run, succès comme échec ;
+- vide **uniquement** la db Redis dédiée (index ≥ 1).
+
+Il n'y a donc **aucune étape manuelle** de création de base, de migration ou de
+nettoyage : tout est dans le cycle de vie du runner.
+
+Pour fixer le nom de la base (diagnostic, inspection post-mortem) :
+
+```bash
+BACKEND_TEST_DB_NAME=yunicity_test_investigation sh scripts/qa-backend-pytest-host.sh -q
+```
+
+#### Interdits, appliqués fail-closed avant toute connexion
+
+| Cible | Refus |
+|---|---|
+| `yunicity_qa` | `DBNAME_NOT_DISPOSABLE_TEST` — c'est la baseline Playwright et la revue manuelle |
+| `yunicity_dev`, `yunicity_prod`, `postgres`… | `DBNAME_FORBIDDEN` |
+| nom sans préfixe `yunicity_test_` | `DBNAME_NOT_DISPOSABLE_TEST` |
+| port dev 5434 | `DEV_PORT_5434` |
+| hôte managé/distant, variable Railway | `HOST_FORBIDDEN` / `HOST_PORT_NOT_ALLOWED` |
+| **Redis db 0** | `REDIS_DB0_FORBIDDEN` — la suite fait `flushdb` |
+
+#### Reconstruction de la baseline QA
+
+`sh scripts/qa-playwright-baseline.sh` est **indépendant** de pytest et ne doit
+jamais être enchaîné automatiquement. Postgres et Redis QA sont sur **tmpfs** : la
+baseline n'est à reconstruire que si le conteneur a été redémarré ou après
+`down -v`. Une exécution de la suite backend ne la touche pas.
+
+### Les 19 faux rouges — ce qu'ils étaient, et ce qu'ils n'étaient pas
+
+Avant ce wrapper, la seule procédure documentée exécutait pytest **dans** le
+conteneur `backend-qa`, qui porte l'environnement inline de `docker-compose.qa.yml`.
+Une invocation lancée depuis l'hôte n'héritait de rien.
+
+Mesure C3-BASELINE-R0, deux campagnes complètes (49 min chacune, résultats
+identiques au node ID près) : **19 failed, 1295 passed, 24 skipped**.
+
+| Variable absente | Échecs | Mécanisme |
+|---|---|---|
+| `REDIS_URL` | **18** | `Settings(APP_ENV="prod")` lève `REDIS_URL is required in prod` (11) · `assert settings.redis_url` (5) · file de jobs vidéo (2) |
+| `REFRESH_TOKEN_PEPPER` | **1** | `REFRESH_TOKEN_PEPPER must be set for this environment` |
+
+Contre-preuve par paliers : 19 échecs → **1** en ajoutant `REDIS_URL` → **0** en
+ajoutant `REFRESH_TOKEN_PEPPER`.
+
+**Aucun de ces 19 échecs n'était un défaut produit, un test périmé ou un défaut de
+fixture.** Les cinq rouges de `refresh_rotation_replay_window` méritent une mention :
+quatre étaient des cascades du même manque, `app/services/refresh_rotation_grace.py`
+se désactivant sans Redis — dégradation **fail-closed** documentée et voulue (le
+serveur révoque davantage, il n'accepte pas davantage). Aucune faille de rejeu.
+
 ## Fixtures (deterministic, dates relative to a single `reference_now`)
 
 2 citizens (+profiles, interests persisted for A) · public & private tribe (+owners) ·

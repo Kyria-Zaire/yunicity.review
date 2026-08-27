@@ -3,7 +3,8 @@ import { MapPin } from "lucide-react";
 import Link from "next/link";
 
 import { FeedAuthorHeader } from "@/components/feed/feed-author-header";
-import { FeedMobileMedia } from "@/components/feed/mobile/feed-mobile-media";
+import { FeedPublicationContextualCta } from "@/components/feed/feed-publication-actions";
+import { FeedPublicationMedia } from "@/components/feed/feed-publication-media";
 
 function FeedTerritoryTags({ post }: { post: FeedPost }) {
   const hasNeighborhood = Boolean(post.neighborhood_summary);
@@ -12,7 +13,7 @@ function FeedTerritoryTags({ post }: { post: FeedPost }) {
   if (!hasNeighborhood && !cityTag) return null;
 
   return (
-    <div className="mt-3 flex flex-wrap gap-2">
+    <div data-feed-territory-tags="" className="feed-publication-tags mt-3 flex flex-wrap gap-2">
       {post.neighborhood_summary ? (
         <Link
           href={`/neighborhoods/${post.neighborhood_summary.slug}`}
@@ -33,42 +34,31 @@ function FeedTerritoryTags({ post }: { post: FeedPost }) {
 
 export function CitizenPostCard({
   post,
-  layout = "default",
+  currentUserId,
   onReport,
 }: {
   post: FeedPost;
-  layout?: "default" | "mobile";
+  currentUserId: string | null;
   onReport?: (reason: FeedReportReason) => Promise<void>;
 }) {
   return (
     <>
-      <FeedAuthorHeader post={post} layout={layout} onReport={onReport} />
+      <FeedAuthorHeader post={post} currentUserId={currentUserId} onReport={onReport} />
       {post.body ? (
         <p
           data-feed-publication-body=""
-          className={`whitespace-pre-wrap leading-relaxed text-neutral-800 ${
-            layout === "mobile" ? "mt-3 text-[15px]" : "mt-4 text-[15px]"
-          }`}
+          className="feed-publication-text mt-3 whitespace-pre-wrap text-[15px] leading-relaxed text-neutral-800"
         >
           {post.body}
         </p>
       ) : null}
+      {/* Tags rendus UNE fois : leur visibilite par bande appartient au CSS,
+          jamais au JSX (C3-FEED-UNIFIED-PUBLICATION-CARD-R2A). */}
+      <FeedTerritoryTags post={post} />
       {post.media_url ? (
-        layout === "mobile" ? (
-          <FeedMobileMedia mediaUrl={post.media_url} label={post.body ?? undefined} />
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            data-feed-publication-media=""
-            src={post.media_url}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            className="mt-4 max-h-80 w-full rounded-xl border border-yunicity-border object-cover"
-          />
-        )
+        <FeedPublicationMedia mediaUrl={post.media_url} label={post.body ?? undefined} />
       ) : null}
-      {layout === "mobile" ? <FeedTerritoryTags post={post} /> : null}
+      <FeedPublicationContextualCta post={post} />
     </>
   );
 }

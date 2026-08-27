@@ -2,10 +2,12 @@
 
 import type { FeedReportReason } from "@yunicity/types";
 import { FEED_REPORT_LABEL, FEED_REPORT_REASON_LABELS } from "@yunicity/utils";
+
+/** Nom accessible du menu de debordement — commun aux trois bandes. */
+const FEED_PUBLICATION_OVERFLOW_LABEL = "Plus d'actions";
 import { MoreVertical } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
-import { useAuth } from "@/lib/auth/auth-provider";
 
 const REASONS: FeedReportReason[] = ["spam", "inappropriate", "other"];
 
@@ -28,14 +30,21 @@ const REASONS: FeedReportReason[] = ["spam", "inappropriate", "other"];
 export function FeedPostOptionsMenu({
   onReport,
   authorUserId,
+  currentUserId,
 }: {
   onReport: (reason: FeedReportReason) => Promise<void>;
+  /**
+   * Identite du lecteur, INJECTEE (C3-FEED-UNIFIED-PUBLICATION-CARD-R2A-TER).
+   * Le menu appelait `useAuth()` pour ce seul champ, ce qui rendait toute la
+   * carte non montable hors providers.
+   */
+  currentUserId: string | null;
   /** `user_id` de l'auteur quand c'est un citoyen, `null` pour une organisation. */
   authorUserId?: string | null;
 }) {
-  const { user } = useAuth();
   const menuId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -49,6 +58,33 @@ export function FeedPostOptionsMenu({
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [open]);
 
+  /*
+   * Fermeture clavier (C3-FEED-UNIFIED-PUBLICATION-CARD-R2A-A11Y).
+   *
+   * Ce menu n'écoutait que `mousedown` : il était donc fermable à la souris et
+   * pas au clavier. La lacune était mineure tant qu'il doublait un bouton
+   * `Signaler` en barre ; depuis R2A il est l'UNIQUE chemin de signalement, sur
+   * les trois bandes — un piège clavier sur cette surface n'est plus tolérable.
+   *
+   * Le listener n'existe que pendant l'ouverture et se retire à la fermeture
+   * comme au démontage. `stopPropagation` empêche l'Escape de traverser vers
+   * une surface parente (visionneuse, drawer) qui se fermerait au passage.
+   */
+  useEffect(() => {
+    if (!open) return;
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+      // Le focus revient au déclencheur RÉEL, via sa ref — jamais par une
+      // recherche globale qui pourrait viser la carte voisine.
+      triggerRef.current?.focus();
+    }
+    document.addEventListener("keydown", handleKeyDown, true);
+    return () => document.removeEventListener("keydown", handleKeyDown, true);
+  }, [open]);
+
   async function submit(reason: FeedReportReason) {
     setIsSubmitting(true);
     try {
@@ -59,7 +95,7 @@ export function FeedPostOptionsMenu({
     }
   }
 
-  const viewerIsAuthor = Boolean(authorUserId && user?.id && authorUserId === user.id);
+  const viewerIsAuthor = Boolean(authorUserId && currentUserId && authorUserId === currentUserId);
   if (viewerIsAuthor) {
     return null;
   }
@@ -67,9 +103,14 @@ export function FeedPostOptionsMenu({
   return (
     <div ref={containerRef} className="relative shrink-0">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
-        aria-label={FEED_REPORT_LABEL}
+        // C3-FEED-UNIFIED-PUBLICATION-CARD-R2A : le declencheur devient le menu
+        // de debordement global. `Signaler` reste le titre de la section a
+        // l'interieur, et l'unique chemin de signalement sur tous les ecrans.
+        aria-label={FEED_PUBLICATION_OVERFLOW_LABEL}
+        data-feed-publication-overflow=""
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}

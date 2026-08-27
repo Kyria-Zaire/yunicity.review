@@ -98,6 +98,9 @@ class WeatherService:
             is_day=is_day,
             city=city,
             country="FR",
+            # C3-D1.2-R3A : marque la fabrication. Les consommateurs doivent
+            # refuser d'afficher ces valeurs comme une meteo reelle.
+            source="development_stub",
         )
 
     async def _fetch_openweather_current(self, query: WeatherCurrentQuery) -> dict[str, Any]:
@@ -182,6 +185,14 @@ class WeatherService:
             country = sys.get("country")
             country_str = str(country) if isinstance(country, str) else None
 
+            # Champs optionnels : repris du payload provider UNIQUEMENT s'ils y
+            # figurent reellement. Aucun calcul, aucune valeur par defaut.
+            def _optional_float(value: Any) -> float | None:
+                return float(value) if isinstance(value, (int, float)) else None
+
+            wind = data.get("wind")
+            wind_speed = _optional_float(wind.get("speed")) if isinstance(wind, dict) else None
+
             return WeatherCurrentOut(
                 temperature=temp,
                 feels_like=feels_like,
@@ -192,6 +203,10 @@ class WeatherService:
                 is_day=is_day,
                 city=city,
                 country=country_str,
+                source="provider",
+                temperature_min=_optional_float(main.get("temp_min")),
+                temperature_max=_optional_float(main.get("temp_max")),
+                wind_speed=wind_speed,
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise AppError(
@@ -203,4 +218,3 @@ class WeatherService:
 
 def clear_weather_cache_for_tests() -> None:
     _CACHE.clear()
-

@@ -31,6 +31,7 @@ const MEDIUM = [
 const LISTE = "[data-feed-stream-list]";
 const ITEM_POST = '[data-feed-stream-item="post"]';
 const ITEM_VIDEO = '[data-feed-stream-item="local-video"]';
+const ITEM_CONTEXT = '[data-feed-stream-item="context-module"]';
 const SURFACE = '[data-feed-medium-surface="primary"]';
 const ENTREE_VIDEO = "[data-feed-video-stream-item]";
 const EDITORIAL = "[data-feed-publication-editorial]";
@@ -52,6 +53,13 @@ const CONTROLES_SOCIAUX_INTERDITS = [
 ];
 
 const RACINE_HARNAIS = "yn-publication-image-root";
+const EXPECTED_STREAM_ORDER = [
+  "post",
+  "local-video",
+  "post",
+  "post",
+  "context-module",
+] as const;
 
 let bundleImageCache: string | null = null;
 
@@ -80,29 +88,114 @@ async function gotoFeed(page: Page, size: { width: number; height: number }): Pr
   await expect(page.locator(ENTREE_VIDEO).filter({ visible: true })).toHaveCount(1);
 }
 
+async function expectMustSeeContext(page: Page) {
+  const stream = page.locator(`ul${LISTE}`);
+  const contextModule = stream.locator(`:scope > ${ITEM_CONTEXT}`);
+
+  await expect(stream, "stream unique absent avant l'attente du module contextuel").toHaveCount(1);
+  await expect(
+    contextModule,
+    "module contextuel must-see absent ou duplique apres resolution du contexte",
+  ).toHaveCount(1, { timeout: 15_000 });
+  await expect(contextModule, "famille contextuelle inattendue").toHaveAttribute(
+    "data-feed-context-module",
+    "must-see",
+    { timeout: 15_000 },
+  );
+
+  return contextModule;
+}
+
 async function mesurerCartes(page: Page) {
   return page.evaluate(
     (sel) => {
       const round = (n: number) => Math.round(n * 100) / 100;
       const visible = (el: Element) => el.getBoundingClientRect().width > 0;
-      const liste = document.querySelector(sel.liste)!;
+      const generatesVisibleBox = (el: Element | null) => {
+        if (!el) return false;
+        const rect = el.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0 || el.getClientRects().length === 0) {
+          return false;
+        }
+        let current: Element | null = el;
+        while (current) {
+          const style = getComputedStyle(current);
+          if (
+            style.display === "none" ||
+            style.visibility === "hidden" ||
+            style.visibility === "collapse" ||
+            style.getPropertyValue("content-visibility") === "hidden" ||
+            current.hasAttribute("hidden") ||
+            current.hasAttribute("inert")
+          ) {
+            return false;
+          }
+          if (current === document.body) break;
+          current = current.parentElement;
+        }
+        return true;
+      };
+      const listes = document.querySelectorAll(sel.liste);
+      if (listes.length !== 1) {
+        throw new Error(`stream attendu une fois, recu ${listes.length}`);
+      }
+      const liste = listes.item(0);
+      if (!(liste instanceof HTMLUListElement)) {
+        throw new Error("le stream unique n'est pas une liste ul");
+      }
       const rail = document.querySelector(".citizen-medium-rail")!.getBoundingClientRect();
       const shell = document.querySelector(".web-shell-page")!.getBoundingClientRect();
       const posts = [...liste.querySelectorAll(sel.itemPost)].filter(visible);
       const videoSlot = liste.querySelector(sel.itemVideo) as HTMLElement;
       const videoSurface = videoSlot.querySelector(sel.surface)!;
-      const postSurfaces = posts.map((li) => li.querySelector(sel.surface)!);
       const firstPost = posts[0]!;
       const article = firstPost.querySelector("article")!;
       const header = article.querySelector(sel.header)!;
       const body = article.querySelector(sel.body);
       const actions = article.querySelector(sel.actions)!;
-      const toolbar = actions.querySelector('[role="toolbar"]')!;
+      const socialToolbars = [
+        ...actions.querySelectorAll('[data-feed-publication-social][role="toolbar"]'),
+      ];
+      const toolbar = socialToolbars[0]!;
       const boutons = [...toolbar.querySelectorAll("a, button")] as HTMLElement[];
-      const csPost = getComputedStyle(article);
-      const csVideo = getComputedStyle(videoSurface);
       const region = document.querySelector('[data-feed-medium-region="stream"]')!;
       const regionStyle = getComputedStyle(region);
+      const postIds = posts.map((post) => post.getAttribute("data-feed-post-id") ?? "");
+      const streamItems = [...liste.children].map((item, index, items) => ({
+        index,
+        kind: item.getAttribute("data-feed-stream-item"),
+        family: item.getAttribute("data-feed-context-module"),
+        parent: item.parentElement === liste ? "feed-stream-list" : item.parentElement?.tagName ?? null,
+        totalItems: items.length,
+      }));
+      const contextItem = liste.querySelector(sel.itemContext);
+      const contextSection = contextItem?.querySelector(":scope > section") ?? null;
+      const contextRect = contextItem?.getBoundingClientRect() ?? null;
+      const contextCta = contextItem
+        ? [...contextItem.querySelectorAll("a")].find(
+            (link) => link.textContent?.trim() === "Voir tout",
+          ) ?? null
+        : null;
+      const contextAncestorsVisible = (() => {
+        if (!contextItem) return false;
+        let current: Element | null = contextItem;
+        while (current) {
+          const style = getComputedStyle(current);
+          if (
+            style.display === "none" ||
+            style.visibility === "hidden" ||
+            style.visibility === "collapse" ||
+            style.getPropertyValue("content-visibility") === "hidden" ||
+            current.hasAttribute("hidden") ||
+            current.hasAttribute("inert")
+          ) {
+            return false;
+          }
+          if (current === document.body) break;
+          current = current.parentElement;
+        }
+        return true;
+      })();
 
       const mesureSurface = (el: Element) => {
         const r = el.getBoundingClientRect();
@@ -121,7 +214,24 @@ async function mesurerCartes(page: Page) {
       const surfaces = [mesureSurface(article), mesureSurface(videoSurface)];
 
       return {
-        sequence: [...liste.children].map((el) => el.getAttribute("data-feed-stream-item")),
+        sequence: streamItems.map((item) => item.kind),
+        streamItems,
+        contextModule: contextItem
+          ? {
+              index: [...liste.children].indexOf(contextItem),
+              family: contextItem.getAttribute("data-feed-context-module"),
+              parentIsStream: contextItem.parentElement === liste,
+              sections: contextItem.querySelectorAll(":scope > section").length,
+              sectionIdentity: contextSection?.classList.contains("feed-context-stream-module") ?? false,
+              heading: contextSection?.querySelector("h2")?.textContent?.trim() ?? null,
+              ctaLabel: contextCta?.textContent?.trim() ?? null,
+              ctaHref: contextCta?.getAttribute("href") ?? null,
+              width: contextRect?.width ?? null,
+              height: contextRect?.height ?? null,
+              clientRects: contextItem.getClientRects().length,
+              ancestorsVisible: contextAncestorsVisible,
+            }
+          : null,
         listParent: videoSlot.parentElement === liste,
         largeurs: surfaces.map((s) => s.width),
         axes: surfaces.map((s) => ({ gauche: s.gauche, droite: s.droite })),
@@ -161,11 +271,84 @@ async function mesurerCartes(page: Page) {
             block: parseFloat(cs.paddingTop),
           };
         })(),
-        ciblesActions: boutons.map((b) => ({
-          w: round(b.getBoundingClientRect().width),
-          h: round(b.getBoundingClientRect().height),
-          label: b.getAttribute("aria-label") ?? "",
+        /*
+         * R2B : les actions sociales appartiennent a un stream React unique. La
+         * branche n'est plus deduite d'anciens wrappers CSS, mais de la chaine DOM
+         * exacte du produit, afin qu'une copie cachee ou un mauvais parent echoue.
+         */
+        socialToolbarCount: socialToolbars.length,
+        postIds,
+        postIdInstances: postIds.map((id) => ({
+          id,
+          count: id ? liste.querySelectorAll(`${sel.itemPost}[data-feed-post-id="${id}"]`).length : 0,
         })),
+        streamCount: listes.length,
+        ciblesActions: boutons.map((b) => {
+          const r = b.getBoundingClientRect();
+          const socialToolbar = b.parentElement;
+          const actionsFooter = socialToolbar?.closest(sel.actions) ?? null;
+          const primaryArticle = actionsFooter?.closest(sel.surface) ?? null;
+          const postItem = primaryArticle?.closest(sel.itemPost) ?? null;
+          const stream = postItem?.parentElement ?? null;
+          const postId = postItem instanceof HTMLElement ? postItem.getAttribute("data-feed-post-id") ?? "" : "";
+          const structuralFailures: string[] = [];
+
+          if (
+            !(
+              socialToolbar instanceof HTMLDivElement &&
+              socialToolbar.matches('[data-feed-publication-social][role="toolbar"]')
+            )
+          ) {
+            structuralFailures.push("missing-toolbar");
+          }
+          if (!(actionsFooter instanceof HTMLElement && actionsFooter.matches(sel.actions))) {
+            structuralFailures.push("missing-actions-footer");
+          } else if (!actionsFooter.contains(socialToolbar)) {
+            structuralFailures.push("footer-does-not-contain-toolbar");
+          }
+          if (!(primaryArticle instanceof HTMLElement && primaryArticle.matches(sel.surface))) {
+            structuralFailures.push("missing-primary-article");
+          } else if (!primaryArticle.contains(actionsFooter)) {
+            structuralFailures.push("article-does-not-contain-footer");
+          }
+          if (!(postItem instanceof HTMLLIElement && postItem.matches(sel.itemPost))) {
+            structuralFailures.push("missing-post-item");
+          } else if (!postItem.contains(primaryArticle)) {
+            structuralFailures.push("post-does-not-contain-article");
+          }
+          if (stream !== liste) {
+            structuralFailures.push("post-not-direct-child-of-stream");
+          }
+          if (listes.length !== 1) {
+            structuralFailures.push("stream-not-unique");
+          }
+          if (postId.length === 0) {
+            structuralFailures.push("missing-post-id");
+          }
+          for (const node of [liste, postItem, primaryArticle, actionsFooter, socialToolbar]) {
+            if (!generatesVisibleBox(node)) {
+              structuralFailures.push("hidden-ancestor");
+              break;
+            }
+          }
+
+          return {
+            w: round(r.width),
+            h: round(r.height),
+            label: b.getAttribute("aria-label") ?? "",
+            zone: b.closest("[data-feed-publication-social]")
+              ? "social-toolbar"
+              : b.closest("[data-feed-publication-header]")
+                ? "publication-header"
+                : b.closest("[data-feed-publication-contextual-cta]")
+                  ? "contextual-cta"
+                  : "hors-zone",
+            branche: structuralFailures.length === 0 ? "unified-stream" : structuralFailures.join("|"),
+            postId,
+            structuralFailures,
+            listeAncetreVisible: generatesVisibleBox(liste),
+          };
+        }),
         tokens: {
           paddingInline: regionStyle.getPropertyValue("--feed-medium-card-padding-inline").trim(),
           actionMin: regionStyle.getPropertyValue("--feed-medium-card-action-min").trim(),
@@ -180,6 +363,7 @@ async function mesurerCartes(page: Page) {
       liste: LISTE,
       itemPost: ITEM_POST,
       itemVideo: ITEM_VIDEO,
+      itemContext: ITEM_CONTEXT,
       surface: SURFACE,
       entreeVideo: ENTREE_VIDEO,
       header: PARTS.header,
@@ -209,9 +393,30 @@ async function mesurerCadreEditorial(page: Page) {
       const media = document
         .querySelector("[data-feed-video-stream-media]")!
         .getBoundingClientRect();
-      const report = document
-        .querySelector("[data-feed-publication-report]")
-        ?.getBoundingClientRect();
+      /*
+       * C3-FEED-R2A-SPEC30-OVERFLOW-MIGRATION.
+       *
+       * On mesurait `[data-feed-publication-report]`, supprime par R2A :
+       * `querySelector` renvoyait `undefined`, et le `?? 0` en aval rendait
+       * l'assertion de cadre VRAIE PAR CONSTRUCTION. Un test qui ne peut plus
+       * echouer est pire qu'un test absent.
+       *
+       * On vise desormais le declencheur du menu, dans l'EN-TETE DU MEME
+       * article — jamais un `querySelector` global qui pourrait viser la carte
+       * voisine ou la branche mobile effondree. Aucune valeur sentinelle : si le
+       * controle manque, `overflow` reste `null` et l'assertion echoue.
+       */
+      const overflowEl = postSurface.querySelector(
+        "[data-feed-publication-header] [data-feed-publication-overflow]",
+      ) as HTMLElement | null;
+      const overflowRect = overflowEl?.getBoundingClientRect() ?? null;
+      const overflowCentre =
+        overflowRect && overflowRect.width > 0 && overflowRect.height > 0
+          ? document.elementFromPoint(
+              overflowRect.left + overflowRect.width / 2,
+              overflowRect.top + overflowRect.height / 2,
+            )
+          : null;
       const actions = document.querySelector("[data-feed-publication-actions]");
       const actionsBox = actions?.getBoundingClientRect();
       const viewportH = window.innerHeight;
@@ -239,7 +444,24 @@ async function mesurerCadreEditorial(page: Page) {
         viewportShare: round(vr.height / viewportH),
         residualPostRight: round(sr.right - pr.right),
         residualVideoRight: round(vr.right - vrr.right),
-        reportRight: report ? round(report.right) : null,
+        overflow: overflowEl && overflowRect
+          ? {
+              nombreDansEntete: postSurface.querySelectorAll(
+                "[data-feed-publication-header] [data-feed-publication-overflow]",
+              ).length,
+              left: round(overflowRect.left),
+              right: round(overflowRect.right),
+              w: round(overflowRect.width),
+              h: round(overflowRect.height),
+              fini: Number.isFinite(overflowRect.left) && Number.isFinite(overflowRect.right),
+              nom: overflowEl.getAttribute("aria-label") ?? "",
+              hitTestable: Boolean(
+                overflowCentre &&
+                  (overflowCentre === overflowEl || overflowEl.contains(overflowCentre)),
+              ),
+            }
+          : null,
+        editorialLeft: round(pr.left),
         editorialRight: round(pr.right),
         actionsRight: actionsBox ? round(actionsBox.right) : null,
         measurePx,
@@ -264,10 +486,39 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
   for (const vp of MEDIUM) {
     test(`${vp.label} — même parent, largeurs et surfaces plates`, async ({ authedPage }) => {
       await gotoFeed(authedPage, vp);
+      await expectMustSeeContext(authedPage);
       const m = await mesurerCartes(authedPage);
 
       expect(m.listParent, "vidéo hors du parent stream").toBe(true);
-      expect(m.sequence, "ordre du flux").toEqual(["post", "local-video", "post", "post"]);
+      expect(m.sequence, `ordre du flux : ${JSON.stringify(m.streamItems)}`).toEqual([
+        ...EXPECTED_STREAM_ORDER,
+      ]);
+      expect(m.streamItems, "diagnostic exhaustif des enfants directs du stream").toEqual(
+        EXPECTED_STREAM_ORDER.map((kind, index) => ({
+          index,
+          kind,
+          family: kind === "context-module" ? "must-see" : null,
+          parent: "feed-stream-list",
+          totalItems: EXPECTED_STREAM_ORDER.length,
+        })),
+      );
+      expect(m.contextModule, "contrat du module contextuel absent").toEqual({
+        index: 4,
+        family: "must-see",
+        parentIsStream: true,
+        sections: 1,
+        sectionIdentity: true,
+        heading: "À ne pas manquer",
+        ctaLabel: "Voir tout",
+        ctaHref: "/sortir",
+        width: expect.any(Number),
+        height: expect.any(Number),
+        clientRects: expect.any(Number),
+        ancestorsVisible: true,
+      });
+      expect(m.contextModule?.width, "largeur du module contextuel").toBeGreaterThan(0);
+      expect(m.contextModule?.height, "hauteur du module contextuel").toBeGreaterThan(0);
+      expect(m.contextModule?.clientRects, "rectangles du module contextuel").toBeGreaterThan(0);
       expect(
         Math.abs(m.largeurs[0]! - m.largeurs[1]!),
         `texte ${m.largeurs[0]} px vs vidéo ${m.largeurs[1]} px`,
@@ -388,7 +639,23 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
       expect(m.mediaWidth, "média vidéo monopolise la surface").toBeLessThan(800);
       expect(Math.abs(m.mediaRatio - 16 / 9)).toBeLessThanOrEqual(0.05);
       expect(m.viewportShare, "carte vidéo monopolise le viewport").toBeLessThan(0.65);
-      expect(m.reportRight ?? 0, "Signaler hors cadre éditorial").toBeLessThanOrEqual(
+      /*
+       * Fail-closed : l'absence du controle fait ECHOUER, elle ne satisfait
+       * jamais l'assertion. Le contrat porte sur la GEOMETRIE (le menu reste
+       * dans le cadre editorial) et sur son atteignabilite — pas sur sa taille,
+       * qui appartient a l'en-tete et non a la barre sociale.
+       */
+      expect(m.overflow, "menu « Plus d'actions » absent de l'en-tête").not.toBeNull();
+      expect(m.overflow!.nombreDansEntete, "menu dupliqué dans l'en-tête").toBe(1);
+      expect(m.overflow!.fini, "rectangle du menu non fini").toBe(true);
+      expect(m.overflow!.w, "menu de largeur nulle").toBeGreaterThan(0);
+      expect(m.overflow!.h, "menu de hauteur nulle").toBeGreaterThan(0);
+      expect(m.overflow!.nom, "nom accessible du menu").toBe("Plus d'actions");
+      expect(m.overflow!.hitTestable, "menu non atteignable au clic").toBe(true);
+      expect(m.overflow!.left, "menu hors cadre éditorial à gauche").toBeGreaterThanOrEqual(
+        m.editorialLeft - 1,
+      );
+      expect(m.overflow!.right, "menu hors cadre éditorial à droite").toBeLessThanOrEqual(
         m.editorialRight + 1,
       );
       expect(m.actionsRight ?? 0, "actions hors cadre éditorial").toBeLessThanOrEqual(
@@ -405,29 +672,102 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
     expect(labels.some((l) => l.includes("réagir")), "Réagir absent").toBe(true);
     expect(labels.some((l) => l.includes("discuter")), "Discuter absent").toBe(true);
     expect(labels.some((l) => l.includes("partager")), "Partager absent").toBe(true);
+    /*
+     * C3-FEED-UNIFIED-PUBLICATION-CARD-R2A : `Signaler` n'est plus un bouton
+     * autonome de la barre — il est l'unique contenu du menu « Plus d'actions »,
+     * identique sur les trois bandes. Le verrou est DEPLACE, pas relache : on
+     * exige toujours un chemin de signalement visible, et on interdit en plus
+     * qu'un second bouton reapparaisse dans le pied.
+     */
+    // Le portail rend une liste unique : le menu visible appartient à cette liste.
     await expect(
-      authedPage.locator("[data-feed-publication-report]").first(),
+      authedPage.locator("[data-feed-publication-overflow]").filter({ visible: true }).first(),
     ).toBeVisible();
+    await expect(authedPage.locator("[data-feed-publication-report]")).toHaveCount(0);
+
+    /*
+     * AUCUN FILTRE.
+     *
+     * `ciblesActions` est construit depuis l'UNIQUE `[data-feed-stream-list]`.
+     * Chaque cible doit prouver la chaine stream > post > article > actions >
+     * toolbar sociale. Une cible hors zone, hors stream ou cachee EST la
+     * regression ; l'ecarter masquerait exactement ce que ce test traque.
+     */
+    const diagnostic = (c: (typeof m.ciblesActions)[number]) =>
+      `cible ${c.label || "(sans nom)"} · zone ${c.zone} · branche ${c.branche} · post ${c.postId || "(absent)"} · ${c.w}x${c.h} · listeVisible=${c.listeAncetreVisible}`;
+
+    expect(m.streamCount, "nombre de streams").toBe(1);
+    expect(m.postIds.length, `post ids releves : ${m.postIds.join(",")}`).toBe(3);
+    expect(new Set(m.postIds).size, `post ids dupliques : ${m.postIds.join(",")}`).toBe(
+      m.postIds.length,
+    );
+    for (const post of m.postIdInstances) {
+      expect(post.id.length, "post id absent").toBeGreaterThan(0);
+      expect(post.count, `instances du post ${post.id}`).toBe(1);
+    }
+    expect(m.socialToolbarCount, "toolbars sociales dans l'article mesure").toBe(1);
+    expect(
+      m.ciblesActions.length,
+      `barre sociale vide. Relevé : ${m.ciblesActions.map(diagnostic).join(" | ") || "(aucune)"}`,
+    ).toBeGreaterThan(0);
 
     for (const cible of m.ciblesActions) {
-      expect(cible.h, `cible ${cible.label} trop courte`).toBeGreaterThanOrEqual(
+      expect(cible.zone, diagnostic(cible)).toBe("social-toolbar");
+      expect(cible.branche, diagnostic(cible)).toBe("unified-stream");
+      expect(cible.structuralFailures, diagnostic(cible)).toEqual([]);
+      expect(cible.postId.length, diagnostic(cible)).toBeGreaterThan(0);
+      expect(cible.listeAncetreVisible, diagnostic(cible)).toBe(true);
+      expect(cible.h, diagnostic(cible)).toBeGreaterThanOrEqual(
         FEED_MEDIUM_PUBLICATION_ACTION_MIN_PX - 1,
       );
-      expect(cible.w, `cible ${cible.label} trop étroite`).toBeGreaterThanOrEqual(
+      expect(cible.w, diagnostic(cible)).toBeGreaterThanOrEqual(
         FEED_MEDIUM_PUBLICATION_ACTION_MIN_PX - 1,
       );
     }
 
-    const signaler = await authedPage.evaluate(() => {
-      const btn = document.querySelector(
-        "[data-feed-publication-report]",
-      ) as HTMLElement | null;
+    /*
+     * C3-FEED-UNIFIED-PUBLICATION-CARD-R2A : ce bloc mesurait `Signaler` comme
+     * une cible de la BARRE SOCIALE. Il n'y est plus — il est le declencheur du
+     * menu de l'EN-TETE. Lui appliquer le contrat 44 px de la barre reviendrait
+     * a agrandir un controle pour satisfaire une assertion heritee d'un autre
+     * emplacement fonctionnel. On verifie donc ce qui compte reellement pour
+     * lui : present, nomme, et atteignable au clic.
+     */
+    const overflow = await authedPage.evaluate(() => {
+      const boutons = [
+        ...document.querySelectorAll("[data-feed-publication-overflow]"),
+      ] as HTMLElement[];
+      const visibles = boutons.filter((b) => {
+        const r = b.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      });
+      const btn = visibles[0];
       if (!btn) return null;
       const r = btn.getBoundingClientRect();
-      return { w: r.width, h: r.height };
+      const cible = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      // Chaque publication porte son propre menu : on compte PAR ARTICLE, jamais
+      // sur le document — trois publications visibles donnent trois menus.
+      const parArticle = [...document.querySelectorAll("article")]
+        .filter((a) => a.getBoundingClientRect().width > 0)
+        .map((a) => a.querySelectorAll("[data-feed-publication-overflow]").length);
+      return {
+        maxParArticle: Math.max(0, ...parArticle),
+        articlesVisibles: parArticle.length,
+        nombreVisible: visibles.length,
+        nom: btn.getAttribute("aria-label") ?? "",
+        zoneEntete: Boolean(btn.closest("[data-feed-publication-header]")),
+        hitTestable: Boolean(cible && (cible === btn || btn.contains(cible))),
+      };
     });
-    expect(signaler?.h ?? 0).toBeGreaterThanOrEqual(FEED_MEDIUM_PUBLICATION_ACTION_MIN_PX - 1);
-    expect(signaler?.w ?? 0).toBeGreaterThanOrEqual(FEED_MEDIUM_PUBLICATION_ACTION_MIN_PX - 1);
+    expect(overflow, "aucun menu « Plus d'actions » visible").not.toBeNull();
+    expect(overflow!.maxParArticle, "menu « Plus d'actions » dupliqué dans une carte").toBe(1);
+    expect(
+      overflow!.nombreVisible,
+      "un menu visible par publication visible",
+    ).toBe(overflow!.articlesVisibles);
+    expect(overflow!.nom).toBe("Plus d'actions");
+    expect(overflow!.zoneEntete, "le menu doit vivre dans l'en-tête").toBe(true);
+    expect(overflow!.hitTestable, "menu « Plus d'actions » non cliquable").toBe(true);
 
     await authedPage.getByRole("button", { name: /réagir/i }).first().click();
     const discuter = authedPage.getByRole("button", { name: /discuter/i }).first();
@@ -448,10 +788,62 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
   test("768 — média vidéo 16:9 décodable et destination autoritaire", async ({ authedPage }) => {
     await gotoFeed(authedPage, { width: 768, height: 1024 });
 
+    const thumb = authedPage.locator("[data-feed-video-stream-thumb]");
+    await expect(thumb).toHaveCount(1);
+    await thumb.scrollIntoViewIfNeeded();
+    await expect(thumb).toBeVisible();
+
+    const readThumbState = async () =>
+      authedPage.evaluate(() => {
+        const candidate = document.querySelector("[data-feed-video-stream-thumb]");
+        if (!(candidate instanceof HTMLImageElement)) {
+          return {
+            kind: candidate ? candidate.constructor.name : "missing",
+            src: "",
+            currentSrc: "",
+            complete: false,
+            naturalWidth: -1,
+            naturalHeight: -1,
+            ready: false,
+          };
+        }
+        const src = candidate.getAttribute("src") || "";
+        const currentSrc = candidate.currentSrc;
+        const ready =
+          src.length > 0 &&
+          currentSrc.length > 0 &&
+          candidate.complete &&
+          candidate.naturalWidth > 0 &&
+          candidate.naturalHeight > 0;
+        return {
+          kind: "HTMLImageElement",
+          src,
+          currentSrc,
+          complete: candidate.complete,
+          naturalWidth: candidate.naturalWidth,
+          naturalHeight: candidate.naturalHeight,
+          ready,
+        };
+      });
+
+    await expect
+      .poll(readThumbState, {
+        message: "miniature vidéo non décodée avant mesure",
+        timeout: 10_000,
+      })
+      .toMatchObject({
+        kind: "HTMLImageElement",
+        complete: true,
+        naturalWidth: 320,
+        naturalHeight: 180,
+        ready: true,
+      });
+
     const media = await authedPage.evaluate((entreeSel) => {
-      const thumb = document.querySelector(
-        "[data-feed-video-stream-thumb]",
-      ) as HTMLImageElement;
+      const thumb = document.querySelector("[data-feed-video-stream-thumb]");
+      if (!(thumb instanceof HTMLImageElement)) {
+        throw new Error("miniature vidéo absente ou non image");
+      }
       const entree = document.querySelector(entreeSel) as HTMLAnchorElement;
       const box = document
         .querySelector("[data-feed-video-stream-media]")!
@@ -509,9 +901,10 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
       .poll(async () =>
         authedPage.evaluate((sel) => {
           const img = document.querySelector(
-            `[data-yn-image-harness] ${sel.media}`,
-          ) as HTMLImageElement | null;
-          return img ? img.complete && img.naturalWidth > 0 : false;
+            `[data-yn-image-harness] ${sel.media} img`,
+          );
+          if (!(img instanceof HTMLImageElement)) return false;
+          return img.complete && img.naturalWidth > 0;
         }, { media: "[data-feed-publication-media]" }),
       )
       .toBe(true);
@@ -543,12 +936,34 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
 
     for (const onglet of ["Récent", "Populaire"]) {
       await authedPage.getByRole("tab", { name: onglet }).click();
-      await expect(authedPage.locator(ITEM_VIDEO)).toHaveCount(0);
+      const stream = authedPage.locator(`ul${LISTE}`);
+      await expect(stream).toHaveCount(1);
+      await expect(stream.locator(`:scope > ${ITEM_VIDEO}`)).toHaveCount(0);
+      await expect(stream.locator(`:scope > ${ITEM_CONTEXT}`)).toHaveCount(0);
     }
 
     await authedPage.getByRole("tab", { name: "Pour vous" }).click();
-    await expect(authedPage.locator(ITEM_VIDEO)).toHaveCount(1);
-    await expect(authedPage.locator(LISTE).locator("> *")).toHaveCount(4);
+    await expectMustSeeContext(authedPage);
+    const returnedStream = authedPage.locator(`ul${LISTE}`);
+    await expect(returnedStream.locator(`:scope > ${ITEM_VIDEO}`)).toHaveCount(1);
+    await expect(returnedStream.locator(`:scope > ${ITEM_CONTEXT}`)).toHaveCount(1);
+    await expect(returnedStream.locator(":scope > *")).toHaveCount(EXPECTED_STREAM_ORDER.length);
+    const returnedItems = await returnedStream.locator(":scope > *").evaluateAll((items) =>
+      items.map((item, index) => ({
+        index,
+        kind: item.getAttribute("data-feed-stream-item"),
+        family: item.getAttribute("data-feed-context-module"),
+        parentIsStream: item.parentElement?.hasAttribute("data-feed-stream-list") === true,
+      })),
+    );
+    expect(returnedItems, `ordre au retour Pour vous : ${JSON.stringify(returnedItems)}`).toEqual(
+      EXPECTED_STREAM_ORDER.map((kind, index) => ({
+        index,
+        kind,
+        family: kind === "context-module" ? "must-see" : null,
+        parentIsStream: true,
+      })),
+    );
   });
 
   test("768 — filtre actif : pas de double stream ni vidéo dupliquée", async ({ authedPage }) => {
@@ -557,6 +972,7 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
     await expect(authedPage.locator(ITEM_VIDEO)).toHaveCount(1);
     await authedPage.locator("[data-feed-medium-header-filter]").click();
     await expect(authedPage.locator("[data-feed-medium-filter-panel]")).toBeVisible();
+    // Bornes transitoires : elles prouvent seulement l'absence de duplication pendant le filtre.
     expect(await authedPage.locator(ITEM_VIDEO).count()).toBeLessThanOrEqual(1);
     expect(await authedPage.locator(LISTE).count()).toBeLessThanOrEqual(1);
 
@@ -596,8 +1012,8 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
           (document.querySelector(".feed-medium-column")?.getBoundingClientRect().width ?? 0) > 0,
       };
     });
-    expect(mobile.streamList, "liste medium visible à 639").toBe(0);
-    expect(mobile.colonneMedium).toBe(false);
+    expect(mobile.streamList, "stream partage absent à 639").toBe(1);
+    expect(mobile.colonneMedium).toBe(true);
   });
 
   test("bascule 1279 / 1280 — la vidéo medium cède place au desktop historique", async ({
@@ -611,13 +1027,12 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
       const visible = (el: Element) => el.getBoundingClientRect().width > 0;
       return {
         slotVisible: [...document.querySelectorAll(sel.itemVideo)].filter(visible).length,
-        sectionVisible: [...document.querySelectorAll("[data-feed-desktop-video-section]")]
-          .filter(visible).length,
+        streamLists: document.querySelectorAll("[data-feed-stream-list]").length,
       };
     }, { itemVideo: ITEM_VIDEO });
 
-    expect(desktop.slotVisible, "publication vidéo medium fuitée sur le desktop").toBe(0);
-    expect(desktop.sectionVisible, "section desktop historique absente à 1280").toBe(1);
+    expect(desktop.slotVisible, "publication vidéo absente à 1280").toBe(1);
+    expect(desktop.streamLists, "stream dupliqué à 1280").toBe(1);
   });
 
   for (const route of [
