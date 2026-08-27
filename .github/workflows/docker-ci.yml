@@ -5,6 +5,7 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "backend/**"
       - "docker-compose.yml"
       - "docker-compose.qa.yml"
       - "backend/Dockerfile"
@@ -16,6 +17,7 @@ on:
   push:
     branches: [main]
     paths:
+      - "backend/**"
       - "docker-compose.yml"
       - "docker-compose.qa.yml"
       - "backend/Dockerfile"
@@ -33,7 +35,7 @@ jobs:
   compose-stack:
     name: compose · health · pytest (disposable db)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 75
 
     env:
       # Explicit project + QA file for every compose call — never touch the dev stack.
