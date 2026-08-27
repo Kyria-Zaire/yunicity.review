@@ -78,12 +78,21 @@ class LocalEventService:
             now=now,
             organization_slug=organization_slug,
         )
+        event_ids = [e.id for e in rows]
         interested_ids: set[uuid.UUID] = set()
         if user and rows:
-            interested_ids = await self._events.interest_event_ids_for_user(
-                user.id, [e.id for e in rows]
+            interested_ids = await self._events.interest_event_ids_for_user(user.id, event_ids)
+        # Une seule requete agregee pour toute la page : `_to_response` retombait
+        # sinon sur son defaut `interest_count=0`, contredisant l'endpoint detail.
+        interest_counts = await self._events.interest_counts_for_events(event_ids)
+        items = [
+            self._to_response(
+                e,
+                interested_by_me=e.id in interested_ids,
+                interest_count=interest_counts.get(e.id, 0),
             )
-        items = [self._to_response(e, interested_by_me=e.id in interested_ids) for e in rows]
+            for e in rows
+        ]
         return LocalEventListResponse(
             items=items,
             total=len(items),
@@ -107,8 +116,16 @@ class LocalEventService:
     async def list_saved(self, user: User, *, limit: int = 50) -> LocalEventListResponse:
         limit = min(max(limit, 1), LOCAL_EVENT_LIST_PAGE_SIZE_MAX)
         rows = await self._events.list_saved_for_user(user.id, limit=limit)
+        interest_counts = await self._events.interest_counts_for_events([e.id for e in rows])
         return LocalEventListResponse(
-            items=[self._to_response(e, interested_by_me=True) for e in rows],
+            items=[
+                self._to_response(
+                    e,
+                    interested_by_me=True,
+                    interest_count=interest_counts.get(e.id, 0),
+                )
+                for e in rows
+            ],
             total=len(rows),
             page=1,
             page_size=limit,
@@ -132,8 +149,9 @@ class LocalEventService:
             offset=offset,
             now=now,
         )
+        interest_counts = await self._events.interest_counts_for_events([e.id for e in rows])
         return LocalEventListResponse(
-            items=[self._to_response(e) for e in rows],
+            items=[self._to_response(e, interest_count=interest_counts.get(e.id, 0)) for e in rows],
             total=total,
             page=1,
             page_size=limit,
@@ -202,7 +220,9 @@ class LocalEventService:
         await self._session.commit()
         refreshed = await self._events.get_by_id(created.id)
         assert refreshed is not None
-        return self._to_management_response(refreshed)
+        # Evenement cree a l'instant : aucun interet ne peut exister. Seul
+        # chemin ou 0 est une valeur metier et non un defaut subi.
+        return self._to_management_response(refreshed, interest_count=0)
 
     async def update_for_organization(
         self,
@@ -231,7 +251,10 @@ class LocalEventService:
         await self._events.update_fields(event, fields=updates)
         await self._session.commit()
         refreshed = await self._require_event(event_id)
-        return self._to_management_response(refreshed)
+        return self._to_management_response(
+            refreshed,
+            interest_count=await self._events.count_interests_for_event(event_id),
+        )
 
     async def submit_for_review(
         self, actor: User, event_id: uuid.UUID
@@ -256,7 +279,10 @@ class LocalEventService:
             event.moderated_at = datetime.now(UTC)
             await FeedEventSyncService(self._session).upsert_event_post(event, org)
         await self._session.commit()
-        return self._to_management_response(await self._require_event(event_id))
+        return self._to_management_response(
+            await self._require_event(event_id),
+            interest_count=await self._events.count_interests_for_event(event_id),
+        )
 
     async def list_my_events(
         self,
@@ -277,8 +303,12 @@ class LocalEventService:
         rows, total = await self._events.list_for_organization_ids(
             org_ids, page=page, page_size=page_size
         )
+        interest_counts = await self._events.interest_counts_for_events([e.id for e in rows])
         return LocalEventManagementListResponse(
-            items=[self._to_management_response(e) for e in rows],
+            items=[
+                self._to_management_response(e, interest_count=interest_counts.get(e.id, 0))
+                for e in rows
+            ],
             total=total,
             page=page,
             page_size=page_size,
@@ -310,7 +340,10 @@ class LocalEventService:
         await FeedEventSyncService(self._session).upsert_event_post(event, org)
         await self._session.commit()
         await self._notify_published(event)
-        return self._to_management_response(await self._require_event(event_id))
+        return self._to_management_response(
+            await self._require_event(event_id),
+            interest_count=await self._events.count_interests_for_event(event_id),
+        )
 
     async def reject_event(
         self,
@@ -338,7 +371,10 @@ class LocalEventService:
         )
         await FeedEventSyncService(self._session).deactivate_event_post(event.id)
         await self._session.commit()
-        return self._to_management_response(await self._require_event(event_id))
+        return self._to_management_response(
+            await self._require_event(event_id),
+            interest_count=await self._events.count_interests_for_event(event_id),
+        )
 
     async def get_events_admin_summary(self, *, city: str) -> LocalEventAdminSummaryResponse:
         counts = await self._events.fetch_admin_summary(city=city)
@@ -372,8 +408,12 @@ class LocalEventService:
             page=page,
             page_size=page_size,
         )
+        interest_counts = await self._events.interest_counts_for_events([e.id for e in rows])
         return LocalEventManagementListResponse(
-            items=[self._to_management_response(e) for e in rows],
+            items=[
+                self._to_management_response(e, interest_count=interest_counts.get(e.id, 0))
+                for e in rows
+            ],
             total=total,
             page=page,
             page_size=page_size,
@@ -423,8 +463,9 @@ class LocalEventService:
             offset=offset,
             now=now,
         )
+        interest_counts = await self._events.interest_counts_for_events([e.id for e in rows])
         return LocalEventListResponse(
-            items=[self._to_response(e) for e in rows],
+            items=[self._to_response(e, interest_count=interest_counts.get(e.id, 0)) for e in rows],
             total=total,
             page=1,
             page_size=limit,
@@ -550,9 +591,17 @@ class LocalEventService:
         self,
         event: LocalEvent,
         *,
+        interest_count: int,
         interested_by_me: bool = False,
-        interest_count: int = 0,
     ) -> LocalEventResponse:
+        """Serialise un evenement.
+
+        `interest_count` est OBLIGATOIRE (C3-D1.2-R4B) : son ancien defaut a 0
+        etait silencieusement retenu par la plupart des appelants, qui servaient
+        donc un compteur faux tout en paraissant corrects. Chaque appelant doit
+        desormais decider explicitement — 0 pour un evenement fraichement cree,
+        valeur reelle sinon.
+        """
         org = event.organization
         org_summary = None
         if org is not None:
@@ -603,8 +652,11 @@ class LocalEventService:
             created_at=event.created_at,
         )
 
-    def _to_management_response(self, event: LocalEvent) -> LocalEventManagementResponse:
-        base = self._to_response(event)
+    def _to_management_response(
+        self, event: LocalEvent, *, interest_count: int
+    ) -> LocalEventManagementResponse:
+        """Idem `_to_response` : le compteur est explicite, jamais implicite."""
+        base = self._to_response(event, interest_count=interest_count)
         return LocalEventManagementResponse(
             **base.model_dump(),
             rejection_reason=event.rejection_reason,
