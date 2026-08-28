@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { FeedPost, Tribe } from "@yunicity/types";
 
 import {
+  buildFeedDesktopMoments,
   buildFeedStoryShortcuts,
   buildFeedTribeActivityItems,
   filterFeedPostsByView,
@@ -53,6 +54,45 @@ describe("feed-portal", () => {
     const other = { ...BASE_POST, id: "p4", body: "Recette de tarte" };
     const filtered = filterFeedPostsByView([other, music], "for_you", { interests: ["music"] });
     expect(filtered.map((p) => p.id)).toEqual(["p1"]);
+  });
+
+  it("builds desktop moments from featured places with relative time", () => {
+    const now = new Date("2026-08-28T12:00:00.000Z");
+    const items = buildFeedDesktopMoments({
+      city: "Reims",
+      culturalPlaces: [
+        {
+          id: "p1",
+          slug: "marche-boulingrin",
+          name: "Marché Boulingrin",
+          short_description: "",
+          city: "Reims",
+          address: "",
+          category: "market",
+          latitude: 0,
+          longitude: 0,
+          image_alt: null,
+          source_name: "test",
+          image_credit: null,
+          neighborhood: null,
+          is_featured: true,
+          created_at: new Date(now.getTime() - 3_600_000).toISOString(),
+          image_url: null,
+          hero_image_url: "https://example.com/marche.jpg",
+          thumbnail_image_url: null,
+          gallery_images: [],
+          editorial_excerpt: null,
+          photo_credit: null,
+          image_source: null,
+        },
+      ],
+      localVideos: [],
+      now,
+      maxItems: 4,
+    });
+    expect(items).toHaveLength(1);
+    expect(items[0]?.name).toBe("Marché Boulingrin");
+    expect(items[0]?.timeLabel).toBe("Il y a 1 h");
   });
 
   it("builds story shortcuts with publish first", () => {

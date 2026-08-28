@@ -9,7 +9,7 @@ import { Plus } from "lucide-react";
 import type { MouseEvent, ReactNode } from "react";
 
 type CreateHubTriggerButtonProps = {
-  variant?: "nav" | "sidebar-icon" | "sidebar-expanded" | "bottom-nav";
+  variant?: "nav" | "sidebar-icon" | "sidebar-expanded" | "bottom-nav" | "feed-left-rail";
   /**
    * Surface de montage, pour la politique de visibilite par route
    * (C3-CITIZEN-MEDIUM-SHELL-R1E). `variant` decrit l'APPARENCE et ne peut pas
@@ -51,6 +51,20 @@ export function CreateHubTriggerButton({
     "aria-busy": !surfacesReady,
     disabled: !surfacesReady,
   };
+
+  if (variant === "feed-left-rail") {
+    return (
+      <button
+        {...triggerProps}
+        className={`flex w-full items-center justify-center gap-2 rounded-xl bg-yunicity-primary px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+      >
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
+          <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+        </span>
+        {children ?? CREATE_HUB_FAB_LABEL}
+      </button>
+    );
+  }
 
   if (variant === "sidebar-icon") {
     return (

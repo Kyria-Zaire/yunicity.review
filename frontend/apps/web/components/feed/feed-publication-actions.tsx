@@ -1,6 +1,6 @@
 "use client";
 
-import type { FeedPost } from "@yunicity/types";
+import type { FeedPost, LocalVideoFeedItem } from "@yunicity/types";
 import {
   FEED_ACTION_COMMENT,
   FEED_ACTION_EVENT_INTEREST,
@@ -349,6 +349,60 @@ export function FeedPublicationSocialActions({
             <IconBookmark filled={eventInterested} />
           </ActionControl>
         ) : null}
+      </div>
+
+      {shareHint ? <p className="text-xs text-neutral-500">{shareHint}</p> : null}
+    </div>
+  );
+}
+
+/** Actions sociales des publications vidéo du fil — même grammaire que les posts. */
+export function FeedVideoStreamSocialActions({
+  video,
+  commentsOpen,
+  onToggleLike,
+  onToggleComments,
+  onShare,
+  shareHint,
+}: {
+  video: LocalVideoFeedItem;
+  commentsOpen: boolean;
+  onToggleLike: () => void;
+  onToggleComments: () => void;
+  onShare: () => void;
+  shareHint?: string | null;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <div
+        data-feed-publication-social=""
+        className="-mx-1 flex flex-wrap items-center gap-0.5 sm:gap-1"
+        role="toolbar"
+        aria-label="Actions sur la publication vidéo"
+      >
+        <ActionControl
+          label={FEED_ACTION_REACT}
+          count={video.like_count}
+          active={video.liked_by_me}
+          onClick={onToggleLike}
+          action="react"
+        >
+          <IconHeart filled={video.liked_by_me} />
+        </ActionControl>
+
+        <ActionControl
+          label={FEED_ACTION_COMMENT}
+          count={video.comment_count}
+          active={commentsOpen}
+          onClick={onToggleComments}
+          action="comment"
+        >
+          <IconComment />
+        </ActionControl>
+
+        <ActionControl label={FEED_ACTION_SHARE} onClick={onShare} action="share">
+          <IconShare />
+        </ActionControl>
       </div>
 
       {shareHint ? <p className="text-xs text-neutral-500">{shareHint}</p> : null}

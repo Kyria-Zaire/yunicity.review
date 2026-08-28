@@ -1,8 +1,8 @@
-const DEFAULT_API_URL = "http://localhost:8000";
+const DEFAULT_SERVER_API_URL = "http://127.0.0.1:8010";
 
 export function getApiBaseUrl(
   envValue: string | undefined,
-  fallback: string = DEFAULT_API_URL,
+  fallback: string = DEFAULT_SERVER_API_URL,
 ): string {
   const trimmed = envValue?.trim();
   if (!trimmed) {
@@ -25,7 +25,7 @@ export function resolveWebApiBaseUrl(input: {
   if (input.runtime === "browser") {
     return "";
   }
-  return getApiBaseUrl(input.proxyTarget, DEFAULT_API_URL);
+  return getApiBaseUrl(input.proxyTarget, DEFAULT_SERVER_API_URL);
 }
 
 export function getWebApiBaseUrl(): string {

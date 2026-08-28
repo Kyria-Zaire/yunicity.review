@@ -1,5 +1,6 @@
 "use client";
 
+import { NotificationBellIcon } from "@/components/layout/notification-bell-icon";
 import { ExplorerTriggerButton } from "@/components/explorer";
 import { YunicityLogo } from "@/components/brand";
 import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
@@ -48,8 +49,15 @@ function NavIconButton({
         }`}
         style={{ width: "var(--web-sidebar-icon-hit)", height: "var(--web-sidebar-icon-hit)" }}
       >
-        <WebNavIcon id={icon} className="h-[26px] w-[26px]" />
-        {badge && badge > 0 ? (
+        {icon === "notifications" ? (
+          <NotificationBellIcon
+            unreadCount={badge ?? 0}
+            iconClassName={`h-[26px] w-[26px] ${active ? "text-yunicity-primary" : "text-neutral-900"}`}
+          />
+        ) : (
+          <WebNavIcon id={icon} className="h-[26px] w-[26px]" />
+        )}
+        {badge && badge > 0 && icon !== "notifications" ? (
           <span className="absolute right-1 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-yunicity-primary px-1 text-[10px] font-bold leading-none text-white">
             {badge > 9 ? "9+" : badge}
           </span>
@@ -101,8 +109,15 @@ function NavLinkExpanded({
       className={`${NAV_LINK_EXPANDED_LAYOUT} ${toneClass}`}
     >
       <span className="relative flex h-[22px] w-[22px] shrink-0 items-center justify-center">
-        <WebNavIcon id={icon} className={`h-[22px] w-[22px] ${iconClass}`} />
-        {badge && badge > 0 ? (
+        {icon === "notifications" ? (
+          <NotificationBellIcon
+            unreadCount={badge ?? 0}
+            iconClassName={`h-[22px] w-[22px] ${iconClass}`}
+          />
+        ) : (
+          <WebNavIcon id={icon} className={`h-[22px] w-[22px] ${iconClass}`} />
+        )}
+        {badge && badge > 0 && icon !== "notifications" ? (
           <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-yunicity-primary px-0.5 text-[10px] font-bold text-white ring-2 ring-white">
             {badge > 9 ? "9+" : badge}
           </span>

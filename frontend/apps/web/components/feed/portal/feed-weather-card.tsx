@@ -1,32 +1,39 @@
 "use client";
 
 import { getWeatherVisual } from "@/lib/weather-visual";
+import { resolveFeedCityHighlightImage } from "@/lib/feed/feed-city-highlight";
 import { useCurrentWeather } from "@/hooks/use-current-weather";
 import { useVisibleActivation } from "@/hooks/use-visible-activation";
+import { ArrowDown, ArrowUp, Wind } from "lucide-react";
+import Image from "next/image";
 
 /**
- * D1.2-R3A — meteo reelle du rail gauche Desktop (>=1536px).
- *
- * Deux garanties structurelles :
- *
- * 1. Le hook `useCurrentWeather` vit dans `WeatherCardContent`, monte UNIQUEMENT
- *    apres activation par visibilite. Le slot est `display:none` sous 1536px,
- *    n'intersecte donc jamais, et aucune requete ne part.
- *
- * 2. La provenance fait foi : `source === "development_stub"` designe la preview
- *    locale du backend, dont les degres sont FABRIQUES. On n'affiche alors
- *    aucune valeur — seulement un etat honnete « Météo indisponible ».
+ * D1.2-R3A — météo reelle du rail gauche Desktop (>=1536px).
  */
 
 const WEATHER_UNAVAILABLE = "Météo indisponible";
+
+function formatWeatherDate(now: Date): string {
+  return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(now);
+}
+
+function weatherCaption(condition: string): string | null {
+  const normalized = condition.trim().toLowerCase();
+  if (normalized.includes("ensoleill") || normalized.includes("clair")) {
+    return "Belle journée pour profiter de la ville ☀️";
+  }
+  if (normalized.includes("pluie") || normalized.includes("averse")) {
+    return "Bon moment pour les adresses couvertes ☔";
+  }
+  return null;
+}
 
 function WeatherShell({ children }: { children: React.ReactNode }) {
   return (
     <section
       data-feed-weather-card=""
-      className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm"
+      className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm"
     >
-      <h2 className="text-sm font-bold text-neutral-900">Météo</h2>
       {children}
     </section>
   );
@@ -35,33 +42,36 @@ function WeatherShell({ children }: { children: React.ReactNode }) {
 function WeatherUnavailable() {
   return (
     <WeatherShell>
-      <p data-feed-weather-state="unavailable" className="mt-2 text-sm text-neutral-500">
-        {WEATHER_UNAVAILABLE}
-      </p>
+      <div className="p-4">
+        <p data-feed-weather-state="unavailable" className="text-sm text-neutral-500">
+          {WEATHER_UNAVAILABLE}
+        </p>
+      </div>
     </WeatherShell>
   );
 }
 
 function WeatherCardContent({ city }: { city: string }) {
   const { weather, loading, error } = useCurrentWeather({ city });
+  const cityImage = resolveFeedCityHighlightImage(city);
+  const today = formatWeatherDate(new Date());
 
   if (loading) {
     return (
       <WeatherShell>
-        <div
-          data-feed-weather-state="loading"
-          aria-hidden="true"
-          className="mt-3 h-14 animate-pulse rounded-xl bg-neutral-100"
-        />
-        <span className="sr-only">Chargement de la météo</span>
+        <div className="p-4">
+          <div
+            data-feed-weather-state="loading"
+            aria-hidden="true"
+            className="h-40 animate-pulse rounded-xl bg-neutral-100"
+          />
+          <span className="sr-only">Chargement de la météo</span>
+        </div>
       </WeatherShell>
     );
   }
 
-  // Erreur reseau, 503 provider, ou reponse absente.
   if (error || !weather) return <WeatherUnavailable />;
-
-  // Preview locale du backend : ses degres ne sont pas une meteo reelle.
   if (weather.source !== "provider") return <WeatherUnavailable />;
 
   const { Icon } = getWeatherVisual({
@@ -77,34 +87,74 @@ function WeatherCardContent({ city }: { city: string }) {
   const max =
     typeof weather.temperature_max === "number" ? Math.round(weather.temperature_max) : null;
   const wind = typeof weather.wind_speed === "number" ? Math.round(weather.wind_speed * 3.6) : null;
+  const caption = weatherCaption(weather.condition);
 
   return (
     <WeatherShell>
-      <div data-feed-weather-state="provider" className="mt-2 flex items-center gap-3">
-        <Icon className="h-8 w-8 shrink-0 text-yunicity-primary" aria-hidden="true" />
-        <p className="text-2xl font-bold leading-none text-neutral-900">
-          {temperature}
-          <span aria-hidden="true"> °C</span>
-          <span className="sr-only"> degrés Celsius</span>
+      <div data-feed-weather-state="provider" className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Icon className="h-7 w-7 shrink-0 text-yunicity-primary" aria-hidden="true" />
+            <p className="text-3xl font-bold leading-none text-neutral-900">
+              {temperature}
+              <span aria-hidden="true">°</span>
+              <span className="sr-only"> degrés Celsius</span>
+            </p>
+          </div>
+          <p className="text-right text-sm capitalize text-neutral-600">{weather.condition}</p>
+        </div>
+
+        <p className="mt-3 text-sm font-semibold text-neutral-900">
+          {city} · {today}
         </p>
+        <p className="mt-0.5 text-xs text-neutral-500">
+          Ressenti {feelsLike}
+          <span aria-hidden="true">°</span>
+        </p>
+
+        <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-neutral-500">
+          {min !== null && max !== null ? (
+            <span className="inline-flex items-center gap-2">
+              <span className="inline-flex items-center gap-0.5 text-red-500">
+                <ArrowUp className="h-3.5 w-3.5" aria-hidden />
+                {max}°
+              </span>
+              <span className="inline-flex items-center gap-0.5 text-yunicity-primary">
+                <ArrowDown className="h-3.5 w-3.5" aria-hidden />
+                {min}°
+              </span>
+            </span>
+          ) : null}
+          {wind !== null ? (
+            <span className="inline-flex items-center gap-1">
+              <Wind className="h-3.5 w-3.5" aria-hidden />
+              {wind} km/h
+            </span>
+          ) : null}
+        </div>
       </div>
-      <p className="mt-2 text-sm capitalize text-neutral-700">{weather.condition}</p>
-      <p className="mt-1 text-xs text-neutral-500">
-        Ressenti {feelsLike}
-        <span aria-hidden="true"> °C</span>
-        <span className="sr-only"> degrés Celsius</span>
-      </p>
-      {min !== null && max !== null ? (
-        <p className="mt-1 text-xs text-neutral-500">
-          Min {min}
-          <span aria-hidden="true"> °C</span> · Max {max}
-          <span aria-hidden="true"> °C</span>
+
+      {cityImage ? (
+        <div className="relative mx-4 mb-4 overflow-hidden rounded-xl">
+          <Image
+            src={cityImage}
+            alt=""
+            width={400}
+            height={160}
+            sizes="(min-width: 1280px) 224px, 100vw"
+            className="h-28 w-full object-cover"
+          />
+          {caption ? (
+            <p className="bg-neutral-50 px-3 py-2.5 text-xs leading-relaxed text-neutral-600">
+              {caption}
+            </p>
+          ) : null}
+        </div>
+      ) : caption ? (
+        <p className="border-t border-neutral-100 px-4 py-3 text-xs leading-relaxed text-neutral-600">
+          {caption}
         </p>
       ) : null}
-      {wind !== null ? (
-        <p className="mt-1 text-xs text-neutral-500">Vent {wind} km/h</p>
-      ) : null}
-      <p className="mt-2 text-xs text-neutral-400">{weather.city}</p>
     </WeatherShell>
   );
 }

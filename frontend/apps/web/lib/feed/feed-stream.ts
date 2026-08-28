@@ -47,6 +47,20 @@ export type BuildFeedStreamOptions = {
   availableContextFamilies?: readonly FeedContextModuleFamily[];
 };
 
+/** Modules contextuels retirés du flux desktop (≥1280px). */
+export const FEED_DESKTOP_EXCLUDED_CONTEXT_FAMILIES: readonly FeedContextModuleFamily[] = [
+  "must-see",
+  "local-privilege",
+  "tribes",
+  "local-now",
+];
+
+export function filterFeedContextFamiliesForDesktop(
+  families: readonly FeedContextModuleFamily[],
+): FeedContextModuleFamily[] {
+  return families.filter((family) => !FEED_DESKTOP_EXCLUDED_CONTEXT_FAMILIES.includes(family));
+}
+
 /** Un contenu REEL : publication ou video locale. Un module n'en est jamais un. */
 function estContenuReel(item: FeedStreamItem): boolean {
   return item.kind !== "context-module";

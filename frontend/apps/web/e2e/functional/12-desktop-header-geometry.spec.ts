@@ -407,24 +407,17 @@ test.describe("Desktop header geometry — anti-collision R6", () => {
       );
 
       // Fumee corps Feed : le decouplage n'a pas deplace le contenu.
-      //
-      // R2F — `.feed-app-shell-content aside` compte desormais DEUX rails depuis
-      // D1.2 (FeedLeftRail + rail droit >=1536px). L'ancienne assertion `count=1`
-      // etait devenue perimee : on distingue les deux par leur ancrage reel.
-      await expect(
-        page.locator(".feed-app-shell-content .web-feed-desktop-contents > aside"),
-        "rail gauche unique",
-      ).toHaveCount(1);
-      await expect(page.locator(".citizen-feed-shell .feed-medium-column")).toBeVisible();
+      await expect(page.locator(".feed-desktop-layout")).toHaveCount(1);
+      await expect(page.locator(".feed-desktop-left-rail")).toHaveCount(1);
+      await expect(page.locator(".feed-desktop-right-rail")).toHaveCount(1);
       await expect(page.locator("[data-feed-stream-list]")).toHaveCount(1);
 
-      // Le rail contextuel HISTORIQUE reste interdit ; le rail droit D1.2, lui,
-      // est attendu visible a ces largeurs et porte son propre landmark.
+      // Le rail contextuel HISTORIQUE reste interdit.
       await expect(page.locator(".web-context-rail-aside")).toHaveCount(0);
-      const rightRail = page.locator(".feed-app-shell-content [data-feed-right-rail]");
-      await expect(rightRail, "rail droit D1.2 unique").toHaveCount(1);
+      const rightRail = page.locator(".feed-desktop-right-rail");
+      await expect(rightRail, "rail droit desktop unique").toHaveCount(1);
       await expect(rightRail).toBeVisible();
-      await expect(rightRail).toHaveAttribute("aria-label", "Informations contextuelles");
+      await expect(rightRail).toHaveAttribute("aria-label", "Contexte local");
 
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -499,7 +492,9 @@ test.describe("Desktop header geometry — anti-collision R6", () => {
       const control = measured.control!;
 
       expect(badge.width, `badge sans surface — ${ctx}`).toBeGreaterThan(0);
-      expect(measured.badgeText.length, `badge sans texte — ${ctx}`).toBeGreaterThan(0);
+      expect(badge.height, `badge sans hauteur — ${ctx}`).toBeGreaterThan(0);
+      expect(badge.width, `pastille trop large — ${ctx}`).toBeLessThanOrEqual(10);
+      expect(badge.height, `pastille trop haute — ${ctx}`).toBeLessThanOrEqual(10);
 
       // Contenu par le controle : jamais rogne hors de sa boite.
       expect(badge.left, `badge deborde a gauche du controle — ${ctx}`).toBeGreaterThanOrEqual(control.left);

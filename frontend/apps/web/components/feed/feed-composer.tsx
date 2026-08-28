@@ -15,13 +15,25 @@ import {
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 
-function ComposerIconButton({
+function IconStar({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+      <path
+        d="M12 3.5l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 16.4l-4.8 2.5.9-5.4-3.9-3.8 5.4-.8L12 3.5z"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ComposerTextButton({
   label,
   mediumLabel,
   action,
   onClick,
   children,
   href,
+  tone = "default",
 }: {
   label: string;
   /**
@@ -35,14 +47,24 @@ function ComposerIconButton({
   children: ReactNode;
   onClick?: () => void;
   href?: string;
+  tone?: "default" | "photo" | "event" | "recommend";
 }) {
-  const className =
-    "feed-composer-action flex h-9 w-9 items-center justify-center rounded-full text-yunicity-primary transition-colors hover:bg-yunicity-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary/40";
+  const toneClass =
+    tone === "photo"
+      ? "text-emerald-600"
+      : tone === "event"
+        ? "text-rose-500"
+        : tone === "recommend"
+          ? "text-amber-500"
+          : "text-yunicity-primary";
+
+  const className = `feed-composer-action flex h-9 items-center justify-center gap-1.5 rounded-full px-2.5 text-sm font-medium transition-colors hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary/40 xl:px-3 ${toneClass}`;
 
   const contenu = (
     <>
       {children}
       <span className="feed-medium-composer-label">{mediumLabel}</span>
+      <span className="feed-desktop-composer-label hidden xl:inline">{mediumLabel}</span>
     </>
   );
 
@@ -230,30 +252,55 @@ export function FeedComposer({
           data-feed-composer-actions=""
           className="flex min-w-0 flex-wrap items-center gap-0.5 sm:gap-1"
         >
-          <ComposerIconButton
+          <ComposerTextButton
             label={COMPOSER_MEDIA_ADD_LABEL}
             mediumLabel="Photo"
             action="photo"
+            tone="photo"
             onClick={openPicker}
           >
-            <IconImage />
-          </ComposerIconButton>
-          <ComposerIconButton
-            label="Explorer les quartiers"
-            mediumLabel="Quartiers"
-            action="neighborhoods"
-            href="/neighborhoods"
-          >
-            <IconMapPin />
-          </ComposerIconButton>
-          <ComposerIconButton
-            label="Voir les moments locaux"
-            mediumLabel="Sortir"
-            action="sortir"
-            href="/sortir"
-          >
-            <IconCalendar />
-          </ComposerIconButton>
+            <IconImage className="h-5 w-5" />
+          </ComposerTextButton>
+
+          <span className="feed-composer-legacy-actions contents">
+            <ComposerTextButton
+              label="Explorer les quartiers"
+              mediumLabel="Quartiers"
+              action="neighborhoods"
+              href="/neighborhoods"
+            >
+              <IconMapPin className="h-5 w-5" />
+            </ComposerTextButton>
+            <ComposerTextButton
+              label="Voir les moments locaux"
+              mediumLabel="Sortir"
+              action="sortir"
+              href="/sortir"
+            >
+              <IconCalendar className="h-5 w-5" />
+            </ComposerTextButton>
+          </span>
+
+          <span className="feed-composer-editorial-actions contents">
+            <ComposerTextButton
+              label="Créer ou découvrir un événement"
+              mediumLabel="Événement"
+              action="event"
+              tone="event"
+              href="/sortir"
+            >
+              <IconCalendar className="h-5 w-5" />
+            </ComposerTextButton>
+            <ComposerTextButton
+              label="Proposer une recommandation locale"
+              mediumLabel="Recommandation"
+              action="recommendation"
+              tone="recommend"
+              href="/organizations/request"
+            >
+              <IconStar className="h-5 w-5" />
+            </ComposerTextButton>
+          </span>
         </div>
 
         <button

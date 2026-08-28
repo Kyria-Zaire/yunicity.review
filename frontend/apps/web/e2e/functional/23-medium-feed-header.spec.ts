@@ -344,12 +344,10 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
     { nom: "Stories + onglets", motif: /votre story/i },
     { nom: "Compositeur", motif: /quoi de neuf/i },
     { nom: "Privilège local", motif: /privilège local/i },
-    { nom: "Dans vos tribus", motif: /dans vos tribus/i },
     { nom: "À ne pas manquer", motif: /à ne pas manquer/i },
-    { nom: "En ce moment à", motif: /en ce moment à/i },
   ];
 
-  test("768 — la baseline rend exactement dix surfaces primaires marquées", async ({
+  test("768 — la baseline rend exactement huit surfaces primaires marquées", async ({
     authedPage,
   }) => {
     await gotoFeed(authedPage, { width: 768, height: 1024 });
@@ -372,12 +370,12 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
       };
     }, PRIMARY);
 
-    expect(releve.total, `surfaces marquées : ${releve.textes.join(" | ")}`).toBe(10);
+    expect(releve.total, `surfaces marquées : ${releve.textes.join(" | ")}`).toBe(8);
     expect(releve.publications, "publications citoyennes marquées").toBe(3);
     // C3-FEED-M7-R2 : la surface « Vidéos près de chez vous » a quitté la bande
     // medium ; la publication vidéo du flux la remplace au même rang. Le total
-    // reste donc 10 : 1 stories + 1 composeur + 3 publications + 1 vidéo +
-    // 4 blocs locaux.
+    // reste donc 8 : 1 stories + 1 composeur + 3 publications + 1 vidéo +
+    // 2 blocs locaux.
     expect(releve.videos, "publication vidéo du flux marquée exactement une fois").toBe(1);
 
     for (const famille of PRIMARY_FAMILIES) {

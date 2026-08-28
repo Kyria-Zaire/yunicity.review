@@ -1,11 +1,10 @@
 "use client";
 
+import { NotificationBellLink } from "@/components/layout/notification-bell-link";
+
 import { YunicityLogo } from "@/components/brand";
 import { useNotificationUnread } from "@/hooks/use-citizen-chrome";
-import { WEB_CITIZEN_NOTIFICATIONS_NAV } from "@/lib/layout/web-layout-config";
 import { TRIBES_MOBILE_PAGE_TITLE } from "@yunicity/utils";
-import { Bell } from "lucide-react";
-import Link from "next/link";
 
 /** Header mobile Tribus (MOBILE-TRIBES-01). */
 export function TribesMobileHeader() {
@@ -18,18 +17,7 @@ export function TribesMobileHeader() {
         <h1 className="pointer-events-none absolute left-1/2 max-w-[45%] -translate-x-1/2 truncate text-base font-bold text-neutral-900">
           {TRIBES_MOBILE_PAGE_TITLE}
         </h1>
-        <Link
-          href={WEB_CITIZEN_NOTIFICATIONS_NAV.href}
-          aria-label={WEB_CITIZEN_NOTIFICATIONS_NAV.label}
-          className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-yunicity-primary transition-colors hover:bg-yunicity-primary-soft"
-        >
-          <Bell className="h-[22px] w-[22px]" strokeWidth={1.75} aria-hidden />
-          {unread > 0 ? (
-            <span className="absolute right-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#FF2D78] px-1 text-[10px] font-bold leading-none text-white">
-              {unread > 9 ? "9+" : unread}
-            </span>
-          ) : null}
-        </Link>
+        <NotificationBellLink unreadCount={unread} />
       </div>
     </header>
   );

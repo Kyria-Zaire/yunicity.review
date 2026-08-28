@@ -7,10 +7,9 @@ import {
   FEED_PORTAL_FOR_YOU_HINT,
   FEED_PORTAL_POPULAR_HINT,
   PROFILE_INTERESTS,
+  buildFeedDesktopMoments,
   buildFeedHighlightEvents,
   buildFeedStoryShortcuts,
-  buildFeedTrendItems,
-  buildFeedTribeActivityItems,
   filterFeedPostsByView,
   filterFeedPostsContributions,
   filterFeedPostsDiscussions,
@@ -18,24 +17,23 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { FeedDesktopScreen } from "@/components/feed/desktop/feed-desktop-screen";
 import { FeedComposer } from "@/components/feed/feed-composer";
 import { FeedEmptyState } from "@/components/feed/feed-empty-state";
 import { FeedErrorState } from "@/components/feed/feed-error-state";
 import { FeedLoadingState } from "@/components/feed/feed-loading-state";
-import { CitizenAuthenticatedShell } from "@/components/shell/citizen-authenticated-shell";
-import { FeedLeftRail } from "@/components/feed/portal/feed-left-rail";
-import { FeedMediumFilterSheet } from "@/components/feed/portal/feed-medium-filter-sheet";
-import { FeedMediumHeader } from "@/components/feed/portal/feed-medium-header";
-import { FeedSavedEventsPanel } from "@/components/feed/portal/feed-saved-events-panel";
-import { FeedDesktopRightRail } from "@/components/feed/portal/feed-desktop-right-rail";
-import { FeedStoriesRail } from "@/components/feed/portal/feed-stories-rail";
-import { FeedStreamList } from "@/components/feed/portal/feed-stream-list";
-import { FeedViewTabs } from "@/components/feed/portal/feed-view-tabs";
 import {
   FeedMobileComposer,
   FeedMobileHeader,
   FeedMobileStoriesRail,
 } from "@/components/feed/mobile";
+import { CitizenAuthenticatedShell } from "@/components/shell/citizen-authenticated-shell";
+import { FeedMediumFilterSheet } from "@/components/feed/portal/feed-medium-filter-sheet";
+import { FeedMediumHeader } from "@/components/feed/portal/feed-medium-header";
+import { FeedSavedEventsPanel } from "@/components/feed/portal/feed-saved-events-panel";
+import { FeedStoriesRail } from "@/components/feed/portal/feed-stories-rail";
+import { FeedStreamList } from "@/components/feed/portal/feed-stream-list";
+import { FeedViewTabs } from "@/components/feed/portal/feed-view-tabs";
 import { useFeed } from "@/hooks/use-feed";
 import { useFeedPortalContext } from "@/hooks/use-feed-portal-context";
 import { useLocalVideoTeasers } from "@/hooks/use-local-video-teasers";
@@ -47,10 +45,9 @@ import {
   resolveFeedEnrichmentSnapshot,
 } from "@/lib/feed/feed-enrichment-snapshot";
 import {
-  selectMemberTribes,
-  selectTonightEvents,
-} from "@/lib/feed/feed-right-rail-modules";
-import { buildFeedStream } from "@/lib/feed/feed-stream";
+  buildFeedStream,
+  filterFeedContextFamiliesForDesktop,
+} from "@/lib/feed/feed-stream";
 import { FEED_MOBILE_CONTENT_PADDING_CLASS } from "@/lib/layout/feed-mobile-full-bleed";
 import {
   isFeedMediumInterestFilterActive,
@@ -60,6 +57,10 @@ import {
 type FeedLeftNav =
   | FeedPortalView
   | "home"
+  | "for_you"
+  | "favorites"
+  | "my_events"
+  | "my_tribes"
   | "discussions"
   | "stories"
   | "contributions"
@@ -123,9 +124,14 @@ export function FeedPortalScreen() {
       }),
     [city, portal.culturalPlaces, portal.events, portal.profile, portal.storyRings, portal.tribes],
   );
-  const tribeActivity = useMemo(
-    () => buildFeedTribeActivityItems({ city, tribes: portal.tribes, events: portal.events }),
-    [city, portal.events, portal.tribes],
+  const desktopMoments = useMemo(
+    () =>
+      buildFeedDesktopMoments({
+        city,
+        culturalPlaces: portal.culturalPlaces,
+        localVideos: videoTeasers.items,
+      }),
+    [city, portal.culturalPlaces, videoTeasers.items],
   );
   const highlights = useMemo(
     () =>
@@ -135,17 +141,6 @@ export function FeedPortalScreen() {
         culturalPlaces: portal.culturalPlaces,
       }),
     [city, portal.culturalPlaces, portal.events],
-  );
-  const trends = useMemo(
-    () =>
-      buildFeedTrendItems({
-        city,
-        events: portal.events,
-        culturalPlaces: portal.culturalPlaces,
-        neighborhoods: portal.neighborhoods,
-        tribes: portal.tribes,
-      }),
-    [city, portal.culturalPlaces, portal.events, portal.neighborhoods, portal.tribes],
   );
 
   const displayedPosts = useMemo(() => {
@@ -169,10 +164,8 @@ export function FeedPortalScreen() {
     const families: FeedContextModuleFamily[] = [];
     if (highlights.length > 0) families.push("must-see");
     if (portal.highlightOffer) families.push("local-privilege");
-    if (tribeActivity.length > 0) families.push("tribes");
-    if (trends.length > 0) families.push("local-now");
     return families;
-  }, [highlights.length, portal.highlightOffer, trends.length, tribeActivity.length]);
+  }, [highlights.length, portal.highlightOffer]);
 
   const enrichmentCandidate = useMemo(
     () => ({
@@ -182,8 +175,8 @@ export function FeedPortalScreen() {
         families: candidateContextFamilies,
         highlights,
         highlightOffer: portal.highlightOffer,
-        tribes: tribeActivity,
-        trends,
+        tribes: [],
+        trends: [],
       },
     }),
     [
@@ -192,8 +185,6 @@ export function FeedPortalScreen() {
       city,
       highlights,
       portal.highlightOffer,
-      trends,
-      tribeActivity,
     ],
   );
   const [enrichmentSnapshot, setEnrichmentSnapshot] = useState<
@@ -215,6 +206,15 @@ export function FeedPortalScreen() {
     () =>
       buildFeedStream(displayedPosts, streamIsContextual ? renderedEnrichment?.video ?? null : null, activeView, {
         availableContextFamilies: streamIsContextual ? renderedEnrichment?.families ?? [] : [],
+      }),
+    [activeView, displayedPosts, renderedEnrichment, streamIsContextual],
+  );
+  const desktopStream = useMemo(
+    () =>
+      buildFeedStream(displayedPosts, streamIsContextual ? renderedEnrichment?.video ?? null : null, activeView, {
+        availableContextFamilies: streamIsContextual
+          ? filterFeedContextFamiliesForDesktop(renderedEnrichment?.families ?? [])
+          : [],
       }),
     [activeView, displayedPosts, renderedEnrichment, streamIsContextual],
   );
@@ -278,172 +278,189 @@ export function FeedPortalScreen() {
   }
 
   const userFirstName = user?.full_name?.split(" ")[0] || "Voyageur";
-  const realCity = portal?.city || user?.city;
-
-  // D1.2 — rail droit : derive de `portal`, deja fetche. Aucune requete nouvelle.
-  const tonightEvents = useMemo(() => selectTonightEvents(portal.events), [portal.events]);
-  const memberTribes = useMemo(() => selectMemberTribes(portal.tribes), [portal.tribes]);
+  const filterActive = isFeedMediumInterestFilterActive({
+    activated: interestFilterActive,
+    interests,
+  });
 
   return (
     <CitizenAuthenticatedShell variant="citizen-feed-shell">
       <>
-        <div className="web-feed-desktop-contents">
-          <FeedLeftRail
+        <div className="feed-desktop-view">
+          <FeedDesktopScreen
+            city={city}
+            userFirstName={userFirstName}
+            userAvatarUrl={portal.profile?.avatar_url ?? null}
             activeView={activeView}
             leftNav={leftNav}
-            onNavSelect={handleLeftNavSelect}
-            interests={interests}
-            city={city}
+            onViewChange={(view) => {
+              setLeftNav(null);
+              setActiveView(view);
+            }}
+            onLeftNavSelect={handleLeftNavSelect}
+            storyMoments={desktopMoments}
+            stream={desktopStream}
+            streamLoading={streamLoading}
+            streamError={error}
+            highlights={renderedEnrichment?.highlights ?? []}
+            highlightOffer={renderedEnrichment?.highlightOffer ?? null}
+            trends={[]}
+            portalEvents={portal.events}
+            savedEvents={portal.savedEvents}
+            onCreatePost={handleCreate}
+            onToggleLike={toggleLike}
+            onReport={handleReport}
+            onRefresh={() => void refresh()}
+            hasNextPage={hasNextPage}
+            isLoadingMore={isLoadingMore}
+            appendError={appendError}
+            onLoadMore={loadMore}
+            filterPanelOpen={filterPanelOpen}
+            filterActive={filterActive}
+            onOpenFilter={openMediumFilter}
+            filterHint={filterHint}
           />
         </div>
 
-        <div className="feed-medium-column feed-medium-editorial-grid min-w-0 flex-1">
-          <div className="feed-desktop-greeting hidden xl:block">
-            <h1 className="feed-desktop-greeting-title">Bonjour {userFirstName}</h1>
-            {realCity ? (
-              <p className="feed-desktop-greeting-subtitle">Bienvenue sur le fil de {realCity}</p>
-            ) : (
-              <p className="feed-desktop-greeting-subtitle">Bienvenue sur Yunicity</p>
-            )}
-          </div>
+        <div className="feed-medium-mobile-view">
+          <div className="feed-medium-column feed-medium-editorial-grid min-w-0 flex-1">
+            <div className="web-mobile-feed-only min-w-0 pt-1">
+              <FeedMobileHeader />
+              <div className={`mt-4 space-y-4 ${FEED_MOBILE_CONTENT_PADDING_CLASS}`}>
+                <FeedMobileComposer city={city} onSubmit={handleCreate} />
+                <FeedMobileStoriesRail
+                  profile={portal.profile}
+                  storyRings={portal.storyRings}
+                  storyShortcuts={stories}
+                />
+                {interestFilterActive ? (
+                  <p className="rounded-xl bg-white px-3 py-2.5 text-xs text-neutral-500 ring-1 ring-neutral-200/90">
+                    {filterHint}
+                  </p>
+                ) : null}
+              </div>
+            </div>
 
-          <div className="web-mobile-feed-only min-w-0 pt-1">
-            <FeedMobileHeader />
-            <div className={`mt-4 space-y-4 ${FEED_MOBILE_CONTENT_PADDING_CLASS}`}>
-              <FeedMobileComposer city={city} onSubmit={handleCreate} />
-              <FeedMobileStoriesRail
-                profile={portal.profile}
-                storyRings={portal.storyRings}
-                storyShortcuts={stories}
-              />
-              {interestFilterActive ? (
-                <p className="rounded-xl bg-white px-3 py-2.5 text-xs text-neutral-500 ring-1 ring-neutral-200/90">
+            <FeedMediumHeader
+              city={city}
+              filterPanelOpen={filterPanelOpen}
+              filterActive={filterActive}
+              onOpenFilter={openMediumFilter}
+              filterButtonRef={filterTriggerRef}
+            />
+
+            <div
+              data-feed-medium-region="stories"
+              data-feed-medium-surface="primary"
+              className="web-desktop-feed-only overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm"
+            >
+              <div className="border-b border-neutral-100 px-4 py-5 sm:px-6">
+                <h2
+                  data-feed-medium-stories-title=""
+                  className="feed-medium-stories-title text-sm font-bold text-neutral-900"
+                >
+                  {FEED_MEDIUM_STORIES_TITLE}
+                </h2>
+                <FeedStoriesRail items={stories} seeAllHref="/stories" />
+              </div>
+              <div className="px-4 sm:px-6 feed-view-tabs-shell">
+                <FeedViewTabs
+                  activeView={activeView}
+                  onViewChange={(view) => {
+                    setLeftNav(null);
+                    setActiveView(view);
+                    setFilterPanelOpen(false);
+                  }}
+                  filterOpen={interestFilterActive}
+                  onToggleFilter={() => setInterestFilterActive((value) => !value)}
+                />
+              </div>
+              {interestFilterActive && filterHint ? (
+                <p className="feed-legacy-filter-banner border-b border-neutral-100 px-4 py-3 text-xs text-neutral-500 sm:px-6">
                   {filterHint}
                 </p>
               ) : null}
             </div>
-          </div>
 
-          <FeedMediumHeader
-            city={city}
-            filterPanelOpen={filterPanelOpen}
-            filterActive={isFeedMediumInterestFilterActive({
-              activated: interestFilterActive,
-              interests,
-            })}
-            onOpenFilter={openMediumFilter}
-            filterButtonRef={filterTriggerRef}
-          />
-          <FeedMediumFilterSheet
-            open={filterPanelOpen}
-            onOpenChange={setFilterPanelOpen}
-            activated={interestFilterActive}
-            interests={interests}
-            onReset={resetInterestFilter}
-            returnFocusRef={filterTriggerRef}
-          />
-
-          <div
-            data-feed-medium-region="stories"
-            data-feed-medium-surface="primary"
-            className="web-desktop-feed-only overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm"
-          >
-            <div className="border-b border-neutral-100 px-4 py-5 sm:px-6">
-              <h2 data-feed-medium-stories-title="" className="feed-medium-stories-title text-sm font-bold text-neutral-900">
-                {FEED_MEDIUM_STORIES_TITLE}
-              </h2>
-              <FeedStoriesRail items={stories} seeAllHref="/stories" />
-            </div>
-            <div className="px-4 sm:px-6">
-              <FeedViewTabs
-                activeView={activeView}
-                onViewChange={(view) => {
-                  setLeftNav(null);
-                  setActiveView(view);
-                  setFilterPanelOpen(false);
-                }}
-                filterOpen={interestFilterActive}
-                onToggleFilter={() => setInterestFilterActive((value) => !value)}
-              />
-            </div>
-            {interestFilterActive && filterHint ? (
-              <p className="feed-legacy-filter-banner border-b border-neutral-100 px-4 py-3 text-xs text-neutral-500 sm:px-6">
-                {filterHint}
-              </p>
-            ) : null}
-          </div>
-
-          <div
-            id="feed-composer"
-            ref={composerRef}
-            data-feed-medium-region="composer"
-            className="web-desktop-feed-only mt-5 scroll-mt-28"
-          >
             <div
-              data-feed-medium-surface="primary"
-              className="rounded-2xl border border-neutral-200/90 bg-white px-4 shadow-sm sm:px-5"
+              id="feed-composer"
+              ref={composerRef}
+              data-feed-medium-region="composer"
+              className="web-desktop-feed-only mt-5 scroll-mt-28"
             >
-              <FeedComposer city={city} onSubmit={handleCreate} />
+              <div
+                data-feed-medium-surface="primary"
+                className="rounded-2xl border border-neutral-200/90 bg-white px-4 shadow-sm sm:px-5"
+              >
+                <FeedComposer city={city} onSubmit={handleCreate} />
+              </div>
             </div>
-          </div>
 
-          <div data-feed-medium-region="stream" className="feed-stream-region">
-            {viewHint ? <p className="feed-stream-hint text-xs leading-relaxed text-neutral-500">{viewHint}</p> : null}
-            {reportMessage ? (
-              <p className="feed-stream-notice rounded-xl bg-yunicity-primary-soft px-4 py-3 text-sm text-yunicity-primary">
-                {reportMessage}
-              </p>
-            ) : null}
-            {streamLoading ? <FeedLoadingState /> : null}
-            {!streamLoading && error ? <FeedErrorState onRetry={() => void refresh()} /> : null}
-            {!streamLoading && !error && leftNav === "saved" ? (
-              <FeedSavedEventsPanel events={portal.savedEvents} city={city} />
-            ) : null}
-            {!streamLoading && !error && leftNav !== "saved" && stream.length === 0 ? (
-              interestFilterActive && items.length > 0 ? (
-                <div
-                  data-feed-medium-surface="primary"
-                  className="rounded-2xl border border-dashed border-yunicity-border bg-white p-8 text-center shadow-sm"
-                >
-                  <p className="text-base font-semibold text-neutral-900">Aucune publication ne correspond à vos centres d&apos;intérêt</p>
-                  <p className="mx-auto mt-2 max-w-sm text-sm text-neutral-600">
-                    Désactivez le filtre ou ajustez vos préférences pour voir plus de contenu local.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setInterestFilterActive(false)}
-                    className="mt-4 rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+            <div data-feed-medium-region="stream" className="feed-stream-region">
+              {viewHint ? (
+                <p className="feed-stream-hint text-xs leading-relaxed text-neutral-500">{viewHint}</p>
+              ) : null}
+              {reportMessage ? (
+                <p className="feed-stream-notice rounded-xl bg-yunicity-primary-soft px-4 py-3 text-sm text-yunicity-primary">
+                  {reportMessage}
+                </p>
+              ) : null}
+              {streamLoading ? <FeedLoadingState /> : null}
+              {!streamLoading && error ? <FeedErrorState onRetry={() => void refresh()} /> : null}
+              {!streamLoading && !error && leftNav === "saved" ? (
+                <FeedSavedEventsPanel events={portal.savedEvents} city={city} />
+              ) : null}
+              {!streamLoading && !error && leftNav !== "saved" && stream.length === 0 ? (
+                interestFilterActive && items.length > 0 ? (
+                  <div
+                    data-feed-medium-surface="primary"
+                    className="rounded-2xl border border-dashed border-yunicity-border bg-white p-8 text-center shadow-sm"
                   >
-                    Désactiver le filtre
-                  </button>
-                </div>
-              ) : (
-                <FeedEmptyState city={city} highlights={renderedEnrichment?.highlights ?? []} />
-              )
-            ) : null}
-            {!streamLoading && !error && leftNav !== "saved" && stream.length > 0 ? (
-              <FeedStreamList
-                stream={stream}
-                city={city}
-                highlights={renderedEnrichment?.highlights ?? []}
-                highlightOffer={renderedEnrichment?.highlightOffer ?? null}
-                tribes={renderedEnrichment?.tribes ?? []}
-                trends={renderedEnrichment?.trends ?? []}
-                onToggleLike={toggleLike}
-                onReport={handleReport}
-                hasNextPage={hasNextPage}
-                isLoadingMore={isLoadingMore}
-                appendError={appendError}
-                onLoadMore={loadMore}
-              />
-            ) : null}
+                    <p className="text-base font-semibold text-neutral-900">
+                      Aucune publication ne correspond à vos centres d&apos;intérêt
+                    </p>
+                    <p className="mx-auto mt-2 max-w-sm text-sm text-neutral-600">
+                      Désactivez le filtre ou ajustez vos préférences pour voir plus de contenu local.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setInterestFilterActive(false)}
+                      className="mt-4 rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                    >
+                      Désactiver le filtre
+                    </button>
+                  </div>
+                ) : (
+                  <FeedEmptyState city={city} highlights={renderedEnrichment?.highlights ?? []} />
+                )
+              ) : null}
+              {!streamLoading && !error && leftNav !== "saved" && stream.length > 0 ? (
+                <FeedStreamList
+                  stream={stream}
+                  city={city}
+                  highlights={renderedEnrichment?.highlights ?? []}
+                  highlightOffer={renderedEnrichment?.highlightOffer ?? null}
+                  tribes={[]}
+                  trends={[]}
+                  onToggleLike={toggleLike}
+                  onReport={handleReport}
+                  hasNextPage={hasNextPage}
+                  isLoadingMore={isLoadingMore}
+                  appendError={appendError}
+                  onLoadMore={loadMore}
+                />
+              ) : null}
+            </div>
           </div>
         </div>
 
-        <FeedDesktopRightRail
-          tonightEvents={tonightEvents}
-          memberTribes={memberTribes}
-          city={city}
+        <FeedMediumFilterSheet
+          open={filterPanelOpen}
+          onOpenChange={setFilterPanelOpen}
+          activated={interestFilterActive}
+          interests={interests}
+          onReset={resetInterestFilter}
+          returnFocusRef={filterTriggerRef}
         />
       </>
     </CitizenAuthenticatedShell>

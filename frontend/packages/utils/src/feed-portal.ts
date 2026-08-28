@@ -2,6 +2,7 @@ import type {
   CulturalPlaceListItem,
   FeedPost,
   LocalEvent,
+  LocalVideoFeedItem,
   Neighborhood,
   ProfileMe,
   StoryRingItem,
@@ -13,6 +14,7 @@ import { resolveCulturalPlaceDisplayUrl } from "./cultural-place-display-image";
 import { resolveFeaturedCarouselEventImage, resolveEventHeroImage } from "./event-hero-image";
 import { eventCalendarDayKey, formatEventClockTime } from "./events-agenda";
 import { buildMapPlaceUrl } from "./explorer-links";
+import { buildLocalVideoTeaserHref } from "./local-video-teaser";
 import {
   FEED_PORTAL_EVENT_TODAY,
   FEED_PORTAL_EVENT_TOMORROW,
@@ -32,6 +34,15 @@ export type FeedStoryShortcut = {
   imageUrl: string | null;
   href: string;
   hasActivity: boolean;
+};
+
+/** Moment territorial affiché dans le rail desktop « Moments près de vous ». */
+export type FeedDesktopMoment = {
+  id: string;
+  name: string;
+  timeLabel: string;
+  imageUrl: string | null;
+  href: string;
 };
 
 export type FeedTribeActivityItem = {
@@ -219,6 +230,72 @@ export function buildFeedStoryShortcuts(input: {
   }
 
   return items.slice(0, maxItems);
+}
+
+export function buildFeedDesktopMoments(input: {
+  city: string;
+  culturalPlaces: CulturalPlaceListItem[];
+  localVideos?: LocalVideoFeedItem[];
+  maxItems?: number;
+  now?: Date;
+}): FeedDesktopMoment[] {
+  const maxItems = input.maxItems ?? 4;
+  const now = input.now ?? new Date();
+  const candidates: Array<FeedDesktopMoment & { sortAt: number }> = [];
+
+  for (const video of input.localVideos ?? []) {
+    const label = video.cultural_place_name?.trim() || video.neighborhood_name?.trim();
+    const instant = video.published_at ?? video.created_at;
+    const timeLabel = formatFeedRelativeTime(instant, now);
+    if (!label || !timeLabel) continue;
+
+    const sortAt = Date.parse(instant);
+    if (Number.isNaN(sortAt)) continue;
+
+    candidates.push({
+      id: `video-${video.id}`,
+      name: label,
+      timeLabel,
+      imageUrl: video.thumbnail_url || null,
+      href: video.cultural_place_slug
+        ? buildMapPlaceUrl(video.cultural_place_slug, { city: input.city })
+        : buildLocalVideoTeaserHref(video.id),
+      sortAt,
+    });
+  }
+
+  const featuredPlaces = [
+    ...input.culturalPlaces.filter((place) => place.is_featured),
+    ...input.culturalPlaces.filter((place) => !place.is_featured),
+  ];
+
+  for (const place of featuredPlaces) {
+    const instant = place.created_at;
+    const timeLabel = instant ? formatFeedRelativeTime(instant, now) : "";
+    const sortAt = instant ? Date.parse(instant) : 0;
+    if (!timeLabel || Number.isNaN(sortAt)) continue;
+
+    candidates.push({
+      id: `place-${place.id}`,
+      name: place.name,
+      timeLabel,
+      imageUrl: resolveCulturalPlaceDisplayUrl(place, "hero"),
+      href: buildMapPlaceUrl(place.slug, { city: input.city }),
+      sortAt,
+    });
+  }
+
+  const seen = new Set<string>();
+  return candidates
+    .sort((a, b) => b.sortAt - a.sortAt)
+    .filter((item) => {
+      const key = item.name.trim().toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, maxItems)
+    .map(({ sortAt: _sortAt, ...moment }) => moment);
 }
 
 export function buildFeedTribeActivityItems(input: {

@@ -1,5 +1,6 @@
 "use client";
 
+import { NotificationBellIcon, notificationAriaLabel } from "@/components/layout/notification-bell-icon";
 import { ExplorerTriggerButton } from "@/components/explorer";
 import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
 import { CitizenAccountMenu } from "@/components/layout/citizen-account-menu";
@@ -12,7 +13,6 @@ import {
   type WebNavItem,
 } from "@/lib/layout/web-layout-config";
 import { destinationControlId } from "@/lib/layout/desktop-header-geometry";
-import { WebNavIcon } from "@/lib/layout/web-nav-icons";
 import { useCitizenChrome } from "@/hooks/use-citizen-chrome";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -69,31 +69,18 @@ function NotificationsTopNavLink({
     <Link
       href={item.href}
       aria-current={active ? "page" : undefined}
-      aria-label={item.label}
+      aria-label={notificationAriaLabel(item.label, badge ?? 0)}
       data-yunicity-header-control="notifications"
-      className={`relative inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full px-2 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
-        active ? "text-yunicity-primary" : "text-yunicity-primary hover:bg-yunicity-primary-soft hover:text-yunicity-primary-hover"
+      className={`relative inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full px-2 py-2 text-sm font-medium text-neutral-900 transition-colors hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
+        active ? "text-yunicity-primary" : ""
       }`}
       title={item.label}
     >
-      {/* R2E — le badge est ancre a la CLOCHE, jamais au controle entier.
-          Positionne sur le Link, il suivait son bord droit : des `2xl` le
-          libellé devient `inline`, elargit le Link, et le badge se retrouvait
-          au-dessus de la fin de « Notifications » (mesure R2D, 1536 et 1920). */}
-      <span
-        data-notification-icon-wrap=""
-        className="relative inline-flex shrink-0"
-      >
-        <WebNavIcon id={item.icon} className="h-5 w-5 shrink-0" />
-        {badge && badge > 0 ? (
-          <span
-            data-notification-badge=""
-            className="absolute -right-1 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#FF2D78] px-1 text-[10px] font-bold text-white"
-          >
-            {badge > 9 ? "9+" : badge}
-          </span>
-        ) : null}
-      </span>
+      <NotificationBellIcon
+        unreadCount={badge ?? 0}
+        withTestMarkers
+        iconClassName={`h-5 w-5 shrink-0 ${active ? "text-yunicity-primary" : "text-neutral-900"}`}
+      />
       {/* R2F — l'ecart avec la cloche est une MARGE, pas un padding : la boite du
           libellé etait jointive au wrapper, donc tout badge debordant du wrapper
           la recouvrait (mesure R2E : 4px a 1536 et 1920). */}
@@ -120,8 +107,9 @@ export function CitizenTopNav() {
   const { unreadCount: unread } = useCitizenChrome();
 
   return (
-    <header className="citizen-top-nav sticky top-0 z-40 hidden border-b border-neutral-200/90 bg-white/95 backdrop-blur-md">
-      <div className="citizen-top-nav-inner mx-auto grid h-[4.25rem] max-w-[1400px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 xl:gap-3 xl:px-6">
+    <>
+      <header className="citizen-top-nav z-40 hidden border-b border-neutral-200/90 bg-white/95 backdrop-blur-md">
+        <div className="citizen-top-nav-inner mx-auto grid h-[4.25rem] max-w-[1400px] grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 xl:gap-3 xl:px-6">
         <div
           className="inline-flex min-h-11 shrink-0 items-center"
           data-yunicity-header-control="logo"
@@ -163,7 +151,9 @@ export function CitizenTopNav() {
 
           <CitizenAccountMenu variant="top-nav" />
         </div>
-      </div>
-    </header>
+        </div>
+      </header>
+      <div className="citizen-top-nav-spacer" aria-hidden="true" />
+    </>
   );
 }

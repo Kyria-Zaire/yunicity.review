@@ -135,35 +135,48 @@ test.describe("C3-FEED-R2B - colonne editoriale medium", () => {
     });
   }
 
-  test("1280x900 - le rail gauche desktop reste disponible", async ({ authedPage }) => {
+  test("1280x900 - le layout desktop 3 colonnes reste disponible", async ({ authedPage }) => {
     await gotoFeed(authedPage, { width: 1280, height: 900 });
-    const shell = authedPage.locator(".feed-app-shell-content");
-    const leftRail = shell.locator(":scope > .web-feed-desktop-contents > aside");
+    const layout = authedPage.locator(".feed-desktop-layout");
 
-    await expect(shell).toHaveCount(1);
-    await expect(leftRail).toHaveCount(1);
-    await expect(leftRail).toBeVisible();
+    await expect(layout).toHaveCount(1);
+    await expect(layout.locator(".feed-desktop-left-rail")).toHaveCount(1);
+    await expect(layout.locator(".feed-desktop-right-rail")).toHaveCount(1);
 
-    const desktopState = await shell.evaluate((shellElement) => {
-      const rail = shellElement.querySelector(":scope > .web-feed-desktop-contents > aside");
-      const feedColumn = shellElement.querySelector(":scope > .feed-medium-column");
-      if (!(rail instanceof HTMLElement) || !(feedColumn instanceof HTMLElement)) return null;
+    const desktopState = await layout.evaluate((layoutElement) => {
+      const leftRail = layoutElement.querySelector(":scope > .feed-desktop-left-rail");
+      const center = layoutElement.querySelector(":scope > .feed-desktop-center");
+      const rightRail = layoutElement.querySelector(":scope > .feed-desktop-right-rail");
+      if (
+        !(leftRail instanceof HTMLElement) ||
+        !(center instanceof HTMLElement) ||
+        !(rightRail instanceof HTMLElement)
+      ) {
+        return null;
+      }
 
-      const railRect = rail.getBoundingClientRect();
+      const leftRect = leftRail.getBoundingClientRect();
+      const rightRect = rightRail.getBoundingClientRect();
       return {
-        railHasPositiveRect: railRect.width > 0 && railRect.height > 0,
-        railBeforeFeed: Boolean(
-          rail.compareDocumentPosition(feedColumn) & Node.DOCUMENT_POSITION_FOLLOWING,
+        leftRailVisible: leftRect.width > 0 && leftRect.height > 0,
+        rightRailVisible: rightRect.width > 0 && rightRect.height > 0,
+        leftBeforeCenter: Boolean(
+          leftRail.compareDocumentPosition(center) & Node.DOCUMENT_POSITION_FOLLOWING,
         ),
-        streamLists: shellElement.querySelectorAll("[data-feed-stream-list]").length,
-        contextRails: shellElement.querySelectorAll(".web-context-rail-aside").length,
+        centerBeforeRight: Boolean(
+          center.compareDocumentPosition(rightRail) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ),
+        streamLists: layoutElement.querySelectorAll("[data-feed-stream-list]").length,
+        contextRails: document.querySelectorAll(".web-context-rail-aside").length,
       };
     });
 
     expect(desktopState, "structure desktop Feed absente").not.toBeNull();
     expect(desktopState).toEqual({
-      railHasPositiveRect: true,
-      railBeforeFeed: true,
+      leftRailVisible: true,
+      rightRailVisible: true,
+      leftBeforeCenter: true,
+      centerBeforeRight: true,
       streamLists: 1,
       contextRails: 0,
     });

@@ -14,8 +14,8 @@ const HOP_BY_HOP = new Set([
   "content-length",
 ]);
 
-/** Same-origin browser → Next. Ne pas relayer Origin/CORS vers le backend loopback. */
-const STRIP_REQUEST = new Set(["origin", "referer"]);
+/** Same-origin browser → Next. Ne pas relayer Origin/CORS/Expect vers le backend loopback. */
+const STRIP_REQUEST = new Set(["origin", "referer", "expect"]);
 const STRIP_RESPONSE = new Set(["access-control-allow-origin", "access-control-allow-credentials", "access-control-expose-headers"]);
 
 type RouteContext = {

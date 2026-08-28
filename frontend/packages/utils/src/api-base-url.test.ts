@@ -14,14 +14,37 @@ describe("api-base-url — C3.1 dual-origin", () => {
     expect(stale.hostname === "127.0.0.1" || stale.hostname === "localhost").toBe(false);
   });
 
-  it("préserve NEXT_PUBLIC_API_URL en production (SSR et navigateur)", () => {
+  it("navigateur avec variable absente → same-origin (chaîne vide)", () => {
     expect(
       resolveWebApiBaseUrl({
-        publicApiUrl: "https://api.example.com",
+        publicApiUrl: undefined,
         proxyTarget: "http://127.0.0.1:8010",
         runtime: "browser",
       }),
-    ).toBe("https://api.example.com");
+    ).toBe("");
+  });
+
+  it("navigateur avec variable explicitement vide → same-origin (chaîne vide)", () => {
+    expect(
+      resolveWebApiBaseUrl({
+        publicApiUrl: "   ",
+        proxyTarget: "http://127.0.0.1:8010",
+        runtime: "browser",
+      }),
+    ).toBe("");
+  });
+
+  it("navigateur avec URL explicite admin → URL conservée", () => {
+    expect(
+      resolveWebApiBaseUrl({
+        publicApiUrl: "http://localhost:8002/",
+        proxyTarget: "http://127.0.0.1:8010",
+        runtime: "browser",
+      }),
+    ).toBe("http://localhost:8002");
+  });
+
+  it("préserve NEXT_PUBLIC_API_URL côté serveur", () => {
     expect(
       resolveWebApiBaseUrl({
         publicApiUrl: "https://api.example.com/",
@@ -31,14 +54,15 @@ describe("api-base-url — C3.1 dual-origin", () => {
     ).toBe("https://api.example.com");
   });
 
-  it("navigateur local/QA sans URL publique → same-origin (chaîne vide)", () => {
-    expect(
-      resolveWebApiBaseUrl({
-        publicApiUrl: undefined,
-        proxyTarget: "http://127.0.0.1:8010",
-        runtime: "browser",
-      }),
-    ).toBe("");
+  it("navigateur local/QA explicitement vide ne retombe jamais sur localhost:8000", () => {
+    const browserBase = resolveWebApiBaseUrl({
+      publicApiUrl: "",
+      proxyTarget: undefined,
+      runtime: "browser",
+    });
+    expect(browserBase).toBe("");
+    expect(`${browserBase}/api/v1/auth/refresh`).toBe("/api/v1/auth/refresh");
+    expect(`${browserBase}/api/v1/auth/refresh`).not.toContain("/api/v1/api/v1");
   });
 
   it("SSR local/QA sans URL publique → cible serveur-only", () => {

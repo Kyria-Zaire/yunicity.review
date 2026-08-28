@@ -45,11 +45,11 @@ describe("R2B unified feed architecture", () => {
     expect(hook).toContain("hasNextPage: pagination.nextCursor !== null");
   });
 
-  it("keeps the medium desktop rail from creating an empty flex item", () => {
-    expect(portal).toMatch(/<div className="web-feed-desktop-contents">\s*<FeedLeftRail/);
-    expect(portal).not.toMatch(
-      /web-feed-desktop-contents[\s\S]*?web-desktop-feed-only[\s\S]*?<FeedLeftRail/,
-    );
+  it("keeps the desktop feed toggle without legacy portal rails", () => {
+    expect(portal).toContain('className="feed-desktop-view"');
+    expect(portal).toContain("<FeedDesktopScreen");
+    expect(portal).not.toContain("web-feed-desktop-contents");
+    expect(portal).not.toContain("<FeedLeftRail");
   });
 
   it("separates append failure from the initial feed error", () => {

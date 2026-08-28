@@ -23,6 +23,7 @@
   --feed-medium-stream-gap: 20px;
   --web-sidebar-width-full: 16.25rem; /* 260px */
   --web-context-rail-width: 21.25rem; /* 340px */
+  --citizen-top-nav-height: 4.25rem;
   --web-context-rail-width-md: 20rem; /* 320px */
   --web-center-min-width: 40rem; /* 640px — colonne centrale dominante (large) */
   --web-grid-gap: 1.5rem;
@@ -75,14 +76,6 @@ body {
   display: none;
 }
 
-/* Desktop feed layout wrapper: on ≥640px it must be `display: contents` so the
-   left rail and the main column become direct flex children of the shell row.
-   It cannot reuse .web-desktop-feed-only (which is display:block ≥640 and would
-   override the Tailwind `contents` utility, collapsing the desktop feed layout). */
-.web-feed-desktop-contents {
-  display: contents;
-}
-
 .web-main-column {
   min-width: 0;
   width: 100%;
@@ -92,6 +85,18 @@ body {
   display: grid;
   gap: 0.75rem;
   margin-top: 1rem;
+}
+
+.feed-composer-editorial-actions {
+  display: none;
+}
+
+.feed-composer-legacy-actions {
+  display: contents;
+}
+
+.feed-desktop-composer-label {
+  display: none;
 }
 
 .feed-stream-pagination {
@@ -190,8 +195,20 @@ body {
     display: block;
   }
 
-  .web-feed-desktop-contents {
+  .citizen-feed-shell .feed-composer-editorial-actions {
+    display: none;
+  }
+
+  .citizen-feed-shell .feed-composer-legacy-actions {
     display: contents;
+  }
+
+  .citizen-feed-shell .feed-medium-composer-label {
+    display: inline;
+  }
+
+  .citizen-feed-shell .feed-desktop-composer-label {
+    display: none;
   }
 
   .feed-mobile-shell .web-three-col {
@@ -200,24 +217,8 @@ body {
   }
 }
 
-/* ——— D1.1 DESKTOP (>=1280px) : groupe interne [FeedLeftRail | Feed] ———
-   Mesure R3 (1280px) : le rail Desktop visible n'est PAS `.web-sidebar-aside`.
-   A ce breakpoint `.places-shell-grid` — porte par le shell — impose
-   `grid-template-columns: minmax(0,1fr)` et `display:none` sur cet aside
-   (regles declarees plus bas dans ce fichier, donc gagnantes a specificite
-   egale). Le rail reel est `FeedLeftRail` (`aside.w-56` = 224px, `xl:block`),
-   remonte dans `.feed-app-shell-content` par `display:contents`.
-
-   Le groupe geometrique est donc INTERNE au `<main>` :
-       224px (rail) + 24px (gap) + 760px (Feed) = 1008px
-   Contraindre `.feed-app-shell-content` a 760px revenait a plafonner
-   rail + Feed ensemble : le Feed tombait a 512px (mesure R3). La contrainte
-   760px appartient au Feed seul. */
+/* ——— Feed shell : top nav desktop (>=1280px) ——— */
 @media (min-width: 1280px) {
-  /* ——— R7 : CitizenTopNav = chrome global, largeur independante du corps Feed ———
-     La nav est desormais soeur de `.web-three-col` (hors du plafond 1072px).
-     Elle sort donc du selecteur `.places-shell-grid .citizen-top-nav` qui portait
-     son `display` : on le redonne ici, dans le scope Feed uniquement. */
   .citizen-feed-shell .citizen-top-nav {
     display: block;
   }
@@ -232,139 +233,238 @@ body {
     padding-right: 2rem;
   }
 
-  /* Conteneur centre uniquement — aucune grille de rail ici. */
-  .citizen-feed-shell .web-three-col {
-    max-width: calc(14rem + 1.5rem + 760px + 4rem); /* groupe 1008px + padding 2x2rem */
-    margin-left: auto;
-    margin-right: auto;
-    padding-left: 2rem;
-    padding-right: 2rem;
-    padding-bottom: 2rem;
-  }
-
-  .citizen-feed-shell .web-main-column {
+  .citizen-top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     width: 100%;
-    min-width: 0;
+    z-index: 40;
   }
 
-  /* Groupe reel : rail + gap + Feed, centre dans la colonne principale. */
-  .citizen-feed-shell .feed-app-shell-content {
-    width: fit-content;
-    max-width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-    align-items: flex-start;
-    gap: 1.5rem;
+  .citizen-top-nav-spacer {
+    display: none;
+    height: var(--citizen-top-nav-height);
+    flex-shrink: 0;
   }
 
-  /* La contrainte de largeur appartient au Feed seul. */
-  .citizen-feed-shell .feed-medium-column {
-    display: grid;
-    grid-template-columns: 1fr;
-    row-gap: 1.5rem;
-    flex: 0 1 760px;
-    width: 760px;
-    max-width: 760px;
-    min-width: 0;
-  }
-
-  /* Surfaces desktop — blanches, bordure fine, radius 12px. */
-  .citizen-feed-shell [data-feed-medium-surface="primary"] {
-    background-color: #ffffff;
-    border: 1px solid rgb(229 229 229 / 0.9);
-    border-radius: 0.75rem;
-    box-shadow: none;
-  }
-
-  /* Rythme vertical : le `row-gap` de 24px est la SEULE source d'espacement
-     entre blocs editoriaux. Les marges historiques des enfants s'y ajoutaient
-     (mesure R3 : 40 / 44 / 40px) et sont neutralisees ici. */
-  .citizen-feed-shell .feed-desktop-greeting {
-    margin-bottom: 0;
-  }
-
-  .citizen-feed-shell [data-feed-medium-region="composer"] {
-    margin-top: 0;
-  }
-
-  .citizen-feed-shell .feed-stream-list {
-    margin-top: 0;
-  }
-
-  .citizen-feed-shell .feed-desktop-greeting-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    line-height: 1.4;
-    color: var(--yunicity-text-primary);
-  }
-
-  .citizen-feed-shell .feed-desktop-greeting-subtitle {
-    font-size: 0.875rem;
-    line-height: 1.5;
-    color: var(--yunicity-text-secondary, #666);
-    margin-top: 0.25rem;
-  }
-
-  /* Stories : carte compacte (mesure R3 : 212px, cible 140–210px).
-     Seuls les paddings internes sont reduits — aucune hauteur fixe. */
-  .citizen-feed-shell [data-feed-medium-region="stories"] .feed-medium-stories-title {
-    font-size: 0.875rem;
-  }
-
-  .citizen-feed-shell [data-feed-medium-region="stories"] .border-b {
-    padding-top: 1rem;
-    padding-bottom: 0.75rem;
+  .citizen-feed-shell .citizen-top-nav-spacer,
+  .places-shell-grid .citizen-top-nav-spacer,
+  .passport-shell-grid .citizen-top-nav-spacer,
+  .notifications-shell-grid .citizen-top-nav-spacer,
+  .search-shell-grid .citizen-top-nav-spacer {
+    display: block;
   }
 }
 
-/* ——— D1.2 : rail droit Desktop, masque par defaut ———
-   La visibilite par breakpoint est portee UNIQUEMENT par la CSS : le composant
-   est monte des qu'il a du contenu reel, jamais conditionne par du JavaScript
-   de breakpoint. Sous 1536px il ne genere aucune boite, donc aucune largeur
-   n'est reservee et le groupe reste a 1008px (contrat D1.1). */
-.feed-right-rail {
-  display: none;
-}
-
-/* ——— D1.2-R3A : slots des modules Desktop complet (meteo, Passport) ———
-   Masques par defaut. Un slot `display:none` n'intersecte jamais : l'activation
-   par `IntersectionObserver` ne se declenche pas, le composant portant le hook
-   n'est pas monte, et AUCUNE requete ne part sous 1536px. La CSS reste la seule
-   source de verite du responsive — aucun breakpoint JavaScript. */
+/* ——— D1.2-R3A : slot météo lazy — masqué hors rail desktop ——— */
 .feed-weather-slot,
 .feed-passport-slot {
   display: none;
 }
 
-/* ——— D1.2 DESKTOP LARGE (>=1536px) : groupe [rail | Feed | rail droit] ———
-   224 + 24 + 760 + 24 + 320 = 1352px, + 2x32px de padding = 1416px.
-   `.feed-app-shell-content` est deja `display:flex; width:fit-content;
-   margin-inline:auto` : il suffit que le troisieme enfant genere une boite pour
-   que le groupe passe de 1008 a 1352px, toujours centre. Aucune piste Grid
-   artificielle, aucun breakpoint JavaScript. */
-@media (min-width: 1536px) {
-  .citizen-feed-shell .web-three-col {
-    max-width: calc(
-      14rem + 1.5rem + 760px + 1.5rem + var(--web-context-rail-width-md) + 4rem
-    );
-  }
+/* ═══ R1 — Feed Desktop Final : 3-column from-scratch layout ═══════════════
+   Desktop ≥1280px → FeedDesktopScreen. Mobile/tablette <1280px → feed-medium-mobile-view.
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-  /* Les slots deviennent visibles : l'IntersectionObserver peut alors activer
-     les modules, qui declenchent leur unique requete chacun. */
-  .citizen-feed-shell .feed-weather-slot,
-  .citizen-feed-shell .feed-passport-slot {
-    display: block;
-  }
+.feed-desktop-view {
+  display: none;
+}
 
-  .citizen-feed-shell .feed-right-rail {
+.feed-medium-mobile-view {
+  display: contents;
+}
+
+@media (min-width: 1280px) {
+  .citizen-feed-shell .feed-desktop-view {
     display: block;
-    flex: 0 0 var(--web-context-rail-width-md);
-    width: var(--web-context-rail-width-md);
+    width: 100%;
     min-width: 0;
-    /* Meme offset que le rail gauche (`sticky top-24`), sous CitizenTopNav. */
-    position: sticky;
-    top: 6rem;
-    height: fit-content;
+  }
+
+  .citizen-feed-shell .feed-medium-mobile-view {
+    display: none;
+  }
+
+  .citizen-feed-shell {
+    background-color: var(--yunicity-surface, #f7f8fa);
+  }
+
+  .citizen-feed-shell .web-three-col {
+    max-width: none;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .citizen-feed-shell .feed-app-shell-content {
+    width: 100%;
+  }
+
+  .feed-desktop-left-rail .feed-weather-slot {
+    display: block;
+  }
+}
+
+.feed-desktop-layout {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 1.5rem 0 2rem;
+}
+
+.feed-desktop-surface {
+  border-radius: 1rem;
+  border: 1px solid rgb(229 229 229 / 0.9);
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.feed-desktop-composer textarea {
+  overflow: hidden;
+}
+
+.feed-desktop-composer [data-feed-desktop-composer-action] svg {
+  flex-shrink: 0;
+}
+
+.feed-desktop-stream-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feed-desktop-stream .feed-publication-frame {
+  border-color: rgb(229 229 229 / 0.9);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.feed-desktop-stream .feed-publication-event-editorial .feed-publication-media-img {
+  border-radius: 0;
+  max-height: 20rem;
+  width: 100%;
+  object-fit: cover;
+}
+
+.feed-desktop-stream .feed-publication-offer-editorial img {
+  border-radius: 0.75rem;
+  object-fit: cover;
+}
+
+.feed-desktop-stream .feed-publication-video-editorial [data-feed-video-stream-item] {
+  padding: 0;
+}
+
+.feed-desktop-stream .feed-publication-video-editorial [data-feed-video-stream-media] {
+  border-radius: 0;
+  max-height: 20rem;
+}
+
+.feed-desktop-stream .feed-publication-video-editorial [data-feed-video-stream-thumb] {
+  max-height: 20rem;
+  object-fit: cover;
+}
+
+.feed-desktop-stream .feed-context-stream-module {
+  border-radius: 1rem;
+  border-color: rgb(229 229 229 / 0.9);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.feed-desktop-stream .feed-context-stream-module h2 {
+  letter-spacing: -0.01em;
+}
+
+.feed-desktop-moments {
+  padding: 1.25rem;
+}
+
+.feed-desktop-left-rail,
+.feed-desktop-right-rail {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.feed-desktop-left-rail::-webkit-scrollbar,
+.feed-desktop-right-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.feed-desktop-left-rail {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 208px;
+  width: 208px;
+  position: sticky;
+  top: 6rem;
+  height: fit-content;
+  max-height: calc(100dvh - 7rem);
+  overflow-y: auto;
+  padding-bottom: 1rem;
+}
+
+.feed-desktop-center {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.feed-desktop-greeting-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: var(--yunicity-text-primary);
+}
+
+.feed-desktop-greeting-subtitle {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--yunicity-text-secondary, #666);
+  margin-top: 0.25rem;
+}
+
+.feed-desktop-right-rail {
+  flex: 0 0 284px;
+  width: 284px;
+  position: sticky;
+  top: 6rem;
+  height: fit-content;
+  max-height: calc(100dvh - 7rem);
+  overflow-y: auto;
+}
+
+@media (min-width: 1440px) {
+  .feed-desktop-moments {
+    padding: 1.5rem;
+  }
+
+  .citizen-feed-shell .web-three-col {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .feed-desktop-layout {
+    gap: 1.5rem;
+    max-width: 1352px;
+  }
+
+  .feed-desktop-left-rail {
+    flex: 0 0 224px;
+    width: 224px;
+  }
+
+  .feed-desktop-center {
+    max-width: 760px;
+  }
+
+  .feed-desktop-right-rail {
+    flex: 0 0 320px;
+    width: 320px;
   }
 }
 

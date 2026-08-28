@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { YunicityLogo } from "@/components/brand";
 import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
+import { NotificationBellIcon } from "@/components/layout/notification-bell-icon";
 import { ExplorerTriggerButton } from "@/components/explorer";
 import { CitizenAccountMenu } from "@/components/layout/citizen-account-menu";
 import { CitizenYunicityMenu } from "@/components/layout/citizen-yunicity-menu";
@@ -172,12 +173,7 @@ export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps)
           className={`w-full ${NAV_ITEM_BASE} ${NAV_ITEM_IDLE}`}
         >
           <span className="relative inline-flex">
-            <WebNavIcon id={WEB_CITIZEN_NOTIFICATIONS_NAV.icon} className="h-5 w-5 shrink-0" />
-            {unreadCount > 0 ? (
-              <span className="absolute -right-2 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-yunicity-primary px-1 text-[10px] font-semibold text-white">
-                {unreadCount}
-              </span>
-            ) : null}
+            <NotificationBellIcon unreadCount={unreadCount} />
           </span>
           <span className="w-full text-center">{WEB_CITIZEN_NOTIFICATIONS_NAV.label}</span>
         </Link>

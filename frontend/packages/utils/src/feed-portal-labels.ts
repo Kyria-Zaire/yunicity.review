@@ -9,6 +9,17 @@ export const FEED_PORTAL_STORIES_SEE_ALL = "Voir toutes les stories";
 export const FEED_MEDIUM_STORIES_TITLE = "Moments près de vous";
 export const FEED_PORTAL_LEFT_HOME = "Accueil";
 
+/** Rail gauche feed desktop refonte (≥1280px). */
+export const FEED_PORTAL_LEFT_FOR_YOU = "Pour vous";
+export const FEED_PORTAL_LEFT_AROUND_ME = "Autour de moi";
+export const FEED_PORTAL_LEFT_FAVORITES = "Mes favoris";
+export const FEED_PORTAL_LEFT_MY_EVENTS = "Mes événements";
+export const FEED_PORTAL_LEFT_MY_TRIBES = "Mes tribus";
+export const FEED_PORTAL_LEFT_CREATE = "Créer";
+
+export const FEED_PORTAL_PASSPORT_CONTINUE = "Continuer";
+export const FEED_EVENT_INTEREST_CTA = "Ça m'intéresse";
+
 export const FEED_PORTAL_TAB_FOR_YOU = "Pour vous";
 export const FEED_PORTAL_TAB_RECENT = "Récent";
 export const FEED_PORTAL_TAB_POPULAR = "Populaire";

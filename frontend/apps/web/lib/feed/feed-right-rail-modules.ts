@@ -93,6 +93,66 @@ export function selectTonightEvents(
 }
 
 /**
+ * Prochains événements en soirée (>= 18h locales) quand aucun « ce soir ».
+ * Utile en QA / hors fenêtre 18h–24h : le rail reste actionnable sans inventer de données.
+ */
+export function selectUpcomingEveningEvents(
+  events: readonly LocalEvent[],
+  now: Date = new Date(),
+  limit: number = TONIGHT_MAX_EVENTS,
+): LocalEvent[] {
+  if (limit <= 0) return [];
+  const nowMs = now.getTime();
+  const viewerZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  return events
+    .filter((event) => {
+      if (event.is_cancelled) return false;
+
+      const startMs = new Date(event.starts_at).getTime();
+      if (Number.isNaN(startMs) || startMs <= nowMs) return false;
+
+      const zone = event.timezone || viewerZone;
+      const start = zonedParts(event.starts_at, zone, viewerZone);
+      if (!start) return false;
+
+      return start.hour >= TONIGHT_START_HOUR && start.hour < TONIGHT_END_HOUR;
+    })
+    .slice()
+    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
+    .slice(0, limit);
+}
+
+export function selectFeedRightRailEveningEvents(
+  events: readonly LocalEvent[],
+  now: Date = new Date(),
+  limit: number = TONIGHT_MAX_EVENTS,
+): { events: LocalEvent[]; mode: "tonight" | "upcoming-evening" | "upcoming" } {
+  const tonight = selectTonightEvents(events, now, limit);
+  if (tonight.length > 0) {
+    return { events: tonight, mode: "tonight" };
+  }
+
+  const upcomingEvening = selectUpcomingEveningEvents(events, now, limit);
+  if (upcomingEvening.length > 0) {
+    return { events: upcomingEvening, mode: "upcoming-evening" };
+  }
+
+  const nowMs = now.getTime();
+  const upcoming = events
+    .filter((event) => {
+      if (event.is_cancelled) return false;
+      const startMs = new Date(event.starts_at).getTime();
+      return !Number.isNaN(startMs) && startMs > nowMs;
+    })
+    .slice()
+    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
+    .slice(0, limit);
+
+  return { events: upcoming, mode: "upcoming" };
+}
+
+/**
  * Tribus dont l'utilisateur est reellement membre.
  *
  * L'ordre de la source est preserve : aucune notion d'activite recente n'existe
@@ -112,12 +172,4 @@ export function tribeInitials(name: string): string {
   if (words.length === 0) return "?";
   const letters = words.slice(0, 2).map((word) => [...word][0] ?? "");
   return letters.join("").toUpperCase();
-}
-
-/** Le rail droit n'existe que si au moins un module possede du contenu reel. */
-export function hasRightRailContent(params: {
-  tonightEvents: readonly LocalEvent[];
-  memberTribes: readonly Tribe[];
-}): boolean {
-  return params.tonightEvents.length > 0 || params.memberTribes.length > 0;
 }
