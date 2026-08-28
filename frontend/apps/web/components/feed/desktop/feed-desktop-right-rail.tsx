@@ -6,7 +6,7 @@ import {
   HOME_PRIVILEGE_TITLE,
   PASSPORT_TIER_LABELS,
 } from "@yunicity/utils";
-import { BookMarked, CalendarDays, ChevronRight } from "lucide-react";
+import { BookMarked, ChevronRight, MapPin } from "lucide-react";
 import Link from "next/link";
 
 import { usePassportFeedRail } from "@/hooks/use-passport-feed-rail";
@@ -30,25 +30,6 @@ function formatEventTime(event: LocalEvent): string | null {
     }).format(instant);
   } catch {
     return new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(instant);
-  }
-}
-
-function formatEventDate(event: LocalEvent): string | null {
-  const instant = new Date(event.starts_at);
-  if (Number.isNaN(instant.getTime())) return null;
-  try {
-    return new Intl.DateTimeFormat("fr-FR", {
-      timeZone: event.timezone || undefined,
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    }).format(instant);
-  } catch {
-    return new Intl.DateTimeFormat("fr-FR", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    }).format(instant);
   }
 }
 
@@ -91,6 +72,61 @@ function PassportProgressRing({ progress, target }: { progress: number; target: 
   );
 }
 
+function formatEventInterestLabel(count: number): string {
+  return `${count} intéressé${count > 1 ? "s" : ""}`;
+}
+
+function EveningEventRow({ event, time }: { event: LocalEvent; time: string | null }) {
+  return (
+    <li data-feed-desktop-evening-event="">
+      <Link
+        href={`/events/${event.id}`}
+        className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-neutral-50"
+      >
+        <div className="flex w-11 shrink-0 items-center justify-center self-stretch border-r border-neutral-200 pr-3">
+          {time ? (
+            <span className="text-sm font-bold leading-none tabular-nums text-orange-500">{time}</span>
+          ) : (
+            <span className="text-xs font-semibold text-neutral-400">—</span>
+          )}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold leading-snug text-neutral-900 group-hover:text-yunicity-primary">
+            {event.title}
+          </p>
+          {event.location_name ? (
+            <p className="mt-0.5 truncate text-xs text-neutral-500">{event.location_name}</p>
+          ) : null}
+          {typeof event.interest_count === "number" ? (
+            <p className="mt-1 inline-flex max-w-full items-center gap-1 text-xs text-neutral-400">
+              <MapPin className="h-3 w-3 shrink-0" aria-hidden />
+              <span className="truncate">{formatEventInterestLabel(event.interest_count)}</span>
+            </p>
+          ) : null}
+        </div>
+
+        {event.cover_image_url ? (
+          // eslint-disable-next-line @next/next/no-img-element -- dynamic event cover
+          <img
+            src={event.cover_image_url}
+            alt=""
+            className="h-14 w-[4.5rem] shrink-0 rounded-lg object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div
+            className="flex h-14 w-[4.5rem] shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-xs font-semibold text-neutral-400"
+            aria-hidden
+          >
+            {event.title.slice(0, 1).toUpperCase()}
+          </div>
+        )}
+      </Link>
+    </li>
+  );
+}
+
 function TonightModule({ events, city }: { events: readonly LocalEvent[]; city: string }) {
   const { events: displayEvents, mode } = selectFeedRightRailEveningEvents(events);
 
@@ -102,8 +138,8 @@ function TonightModule({ events, city }: { events: readonly LocalEvent[]; city: 
         : `À venir à ${city}`;
 
   return (
-    <section className="feed-desktop-surface p-4">
-      <div className="mb-3 flex items-center justify-between">
+    <section className="feed-desktop-surface overflow-hidden" data-feed-desktop-tonight-module="">
+      <div className="flex items-center justify-between px-4 pb-3 pt-4">
         <h3 className="text-sm font-bold text-neutral-900">{title}</h3>
         <Link href="/sortir" className="text-xs font-medium text-yunicity-primary hover:underline">
           Tout voir
@@ -111,61 +147,17 @@ function TonightModule({ events, city }: { events: readonly LocalEvent[]; city: 
       </div>
 
       {displayEvents.length === 0 ? (
-        <p className="text-sm leading-relaxed text-neutral-500">
+        <p className="px-4 pb-4 text-sm leading-relaxed text-neutral-500">
           Aucun événement prévu pour le moment.{" "}
           <Link href="/sortir" className="font-medium text-yunicity-primary hover:underline">
             Explorer Sortir
           </Link>
         </p>
       ) : (
-        <ul className="space-y-3">
-          {displayEvents.map((event) => {
-            const time = formatEventTime(event);
-            const dateLabel = mode !== "tonight" ? formatEventDate(event) : null;
-
-            return (
-              <li key={event.id}>
-                <Link
-                  href={`/events/${event.id}`}
-                  className="group flex gap-3 rounded-lg p-1 transition-colors hover:bg-neutral-50"
-                >
-                  <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg bg-amber-50 px-1">
-                    {time ? (
-                      <span className="text-[11px] font-bold leading-none tabular-nums text-amber-700">
-                        {time}
-                      </span>
-                    ) : null}
-                    {dateLabel ? (
-                      <span className="mt-0.5 text-[9px] font-medium capitalize leading-none text-amber-600/80">
-                        {dateLabel}
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-neutral-900 group-hover:text-yunicity-primary">
-                      {event.title}
-                    </p>
-                    {event.location_name ? (
-                      <p className="truncate text-xs text-neutral-500">{event.location_name}</p>
-                    ) : null}
-                  </div>
-                  {event.cover_image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- dynamic event cover
-                    <img
-                      src={event.cover_image_url}
-                      alt=""
-                      className="h-10 w-10 shrink-0 rounded-lg object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-yunicity-primary-soft">
-                      <CalendarDays className="h-4 w-4 text-yunicity-primary" aria-hidden />
-                    </div>
-                  )}
-                </Link>
-              </li>
-            );
-          })}
+        <ul className="divide-y divide-neutral-100 border-t border-neutral-100">
+          {displayEvents.map((event) => (
+            <EveningEventRow key={event.id} event={event} time={formatEventTime(event)} />
+          ))}
         </ul>
       )}
     </section>
