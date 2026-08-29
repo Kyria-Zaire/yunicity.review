@@ -114,7 +114,13 @@ export function CitizenTopNav() {
           className="inline-flex min-h-11 shrink-0 items-center"
           data-yunicity-header-control="logo"
         >
-          <YunicityLogo href="/feed" size="sm" showWordmark priority />
+          <YunicityLogo
+            href="/feed"
+            size="sm"
+            showWordmark
+            priority
+            wordmarkClassName="text-yunicity-primary"
+          />
         </div>
 
         <nav

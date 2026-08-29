@@ -47,7 +47,7 @@ export type BuildFeedStreamOptions = {
   availableContextFamilies?: readonly FeedContextModuleFamily[];
 };
 
-/** Modules contextuels retirés du flux desktop (≥1280px). */
+/** Modules contextuels retirés du flux desktop (≥1024px). */
 export const FEED_DESKTOP_EXCLUDED_CONTEXT_FAMILIES: readonly FeedContextModuleFamily[] = [
   "must-see",
   "local-privilege",

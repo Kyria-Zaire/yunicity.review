@@ -41,7 +41,7 @@ export function computeCitizenFlyoutPosition(
     };
   }
 
-  const compactSidebar = window.matchMedia("(max-width: 1279.98px)").matches;
+  const compactSidebar = window.matchMedia("(max-width: 1023.98px)").matches;
 
   if (compactSidebar) {
     return {

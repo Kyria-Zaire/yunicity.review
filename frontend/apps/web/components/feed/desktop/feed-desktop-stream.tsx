@@ -54,7 +54,7 @@ export function FeedDesktopStream({
         {stream.map((item: FeedStreamItem) => {
           if (item.kind === "post") {
             return (
-              <li key={item.key} data-feed-stream-item="post">
+              <li key={item.key} data-feed-stream-item="post" data-feed-post-id={item.post.id}>
                 <FeedCard post={item.post} onToggleLike={onToggleLike} onReport={onReport} />
               </li>
             );

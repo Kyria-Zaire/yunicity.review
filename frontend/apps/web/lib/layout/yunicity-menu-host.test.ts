@@ -22,11 +22,11 @@ describe("resolveYunicityMenuHostVariant", () => {
   });
 
   it("conserve l'hôte medium Sheet juste sous le palier desktop", () => {
-    expect(resolveYunicityMenuHostVariant(1279)).toBe("medium-rail");
+    expect(resolveYunicityMenuHostVariant(1023)).toBe("medium-rail");
   });
 
-  it("monte Menu depuis le header dès 1280 pour ancrer le Popover au déclencheur visible", () => {
-    expect(resolveYunicityMenuHostVariant(1280)).toBe("top-nav");
+  it("monte Menu depuis le header dès 1024 pour ancrer le Popover au déclencheur visible", () => {
+    expect(resolveYunicityMenuHostVariant(1024)).toBe("top-nav");
   });
 
   it("monte Menu depuis le header à 1366", () => {
@@ -57,13 +57,13 @@ describe("R1B — hote medium distinct et election globale", () => {
     readFileSync(fileURLToPath(new URL(rel, import.meta.url)), "utf-8");
 
   it("rail present : l'hote medium est `medium-rail`", () => {
-    for (const w of [640, 768, 834, 1024, 1279]) {
+    for (const w of [640, 768, 834, 1023]) {
       expect(resolveYunicityMenuHostVariant(w, { mediumRailPresent: true })).toBe("medium-rail");
     }
   });
 
   it("rail absent (route exclue) : l'hote medium redevient `sidebar`", () => {
-    for (const w of [640, 768, 834, 1024, 1279]) {
+    for (const w of [640, 768, 834, 1023]) {
       expect(resolveYunicityMenuHostVariant(w, { mediumRailPresent: false })).toBe("sidebar");
     }
   });
@@ -76,13 +76,14 @@ describe("R1B — hote medium distinct et election globale", () => {
       expect(resolveYunicityMenuHostVariant(639, { mediumRailPresent: present })).toBe(
         "mobile-header",
       );
+      expect(resolveYunicityMenuHostVariant(1024, { mediumRailPresent: present })).toBe("top-nav");
       expect(resolveYunicityMenuHostVariant(1280, { mediumRailPresent: present })).toBe("top-nav");
       expect(resolveYunicityMenuHostVariant(1920, { mediumRailPresent: present })).toBe("top-nav");
     }
   });
 
   it("un seul hote par largeur ET par contexte", () => {
-    for (const w of [320, 639, 640, 768, 1279, 1280, 1920]) {
+    for (const w of [320, 639, 640, 768, 1023, 1024, 1280, 1920]) {
       for (const present of [true, false]) {
         const a = resolveYunicityMenuHostVariant(w, { mediumRailPresent: present });
         const b = resolveYunicityMenuHostVariant(w, { mediumRailPresent: present });
@@ -93,7 +94,7 @@ describe("R1B — hote medium distinct et election globale", () => {
 
   it("un seul hote par largeur, sur toute la plage", () => {
     const hotes = new Set(
-      [320, 639, 640, 768, 1279, 1280, 1920].map((w) => resolveYunicityMenuHostVariant(w)),
+      [320, 639, 640, 768, 1023, 1024, 1280, 1920].map((w) => resolveYunicityMenuHostVariant(w)),
     );
     expect([...hotes].sort()).toEqual(["medium-rail", "mobile-header", "top-nav"]);
   });

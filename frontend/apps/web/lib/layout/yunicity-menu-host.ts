@@ -13,8 +13,8 @@ export type YunicityMenuPopoverVariant = YunicityMenuHostVariant | "fab";
 /**
  * Une seule instance du chrome monte la surface Menu à la fois.
  * Mobile (≤639) : header mobile (`mobile-header`) — Drawer.
- * Medium (640–1279) : hôte medium — Sheet.
- * Desktop (≥1280) : header desktop (`top-nav`) — Popover ancré au déclencheur visible.
+ * Medium (640–1023) : hôte medium — Sheet.
+ * Desktop (≥1024) : header desktop (`top-nav`) — Popover ancré au déclencheur visible.
  *
  * ── C3-CITIZEN-MEDIUM-SHELL-R1B ──────────────────────────────────────────────
  * La bande medium hébergeait la surface sous la variante `sidebar`. Depuis que
@@ -26,7 +26,7 @@ export type YunicityMenuPopoverVariant = YunicityMenuHostVariant | "fab";
  * ── C3-CITIZEN-MEDIUM-SHELL-R1C : apparence ≠ élection ───────────────────────
  * R1B faisait varier la PROP `variant` selon l'éligibilité de la route, ce qui
  * changeait l'APPARENCE de la sidebar historique sur les routes exclues — y
- * compris à 1280 px, où elle perdait son déclencheur étendu. Les deux notions
+ * compris à 1024 px, où elle perdait son déclencheur étendu. Les deux notions
  * sont désormais séparées :
  *
  *   `variant`            → apparence, CONSTANTE par composant.

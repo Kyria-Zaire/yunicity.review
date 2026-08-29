@@ -9,12 +9,12 @@ import { scrollToStableBottom } from "../scroll";
 /**
  * C3.1-R1D — Mobile Feed Full-Bleed Closure.
  *
- * Contrat visuel < 640 px :
+ * Contrat visuel < 640 px (fil unifié medium/mobile) :
  *   A. séparateur sous le header mobile pleine largeur viewport
  *   B. onglets lisibles (>= 44 px, bordure inactive opaque et contrastée)
  *   C. aucun bouton Filtrer mobile (ni DOM chrome mobile, ni arbre d'accessibilité)
- *   D. publications bord à bord, angles droits, sans bordure verticale
- *   E. médias pleine largeur, rayon 0, contrat R1C (object-contain, pas de recadrage)
+ *   D. publications en carte éditoriale (gouttière latérale, coins arrondis, bordures)
+ *   E. médias contenus dans la carte, object-contain, pas de recadrage (R1C)
  *   F. actions atteignables au scroll maximal malgré la bottom-nav flottante
  *
  * Frontière : >= 640 px le comportement medium/desktop est inchangé (filtre conservé,
@@ -290,7 +290,7 @@ async function expectNoDocumentOverflow(page: Page, label: string): Promise<void
 }
 
 function mobileColumn(page: Page): Locator {
-  return page.locator("div.web-mobile-feed-only").first();
+  return page.locator(".feed-main-column").first();
 }
 
 function mobileHeader(page: Page): Locator {
@@ -385,50 +385,51 @@ async function assertNoMobileFilter(page: Page, label: string): Promise<void> {
   // absence est vérifiée par `assertTabsContract`.
 }
 
-async function assertCardFullBleed(
+async function assertCardEditorialFormat(
   card: Locator,
   viewportWidth: number,
   label: string,
 ): Promise<void> {
   await expect(card, `${label} : carte absente`).toBeVisible();
-  await expectSpansViewport(card, viewportWidth, `${label} carte`);
-  await expectSquareCorners(card, `${label} carte`);
-  await expectNoVerticalBorders(card, `${label} carte`);
+  const box = await boxOrFail(card, `${label} carte`);
+  expect(box.x, `${label} : carte collée au bord gauche`).toBeGreaterThan(EDGE_TOLERANCE_PX);
+  expect(
+    box.x + box.width,
+    `${label} : carte déborde à droite`,
+  ).toBeLessThanOrEqual(viewportWidth - EDGE_TOLERANCE_PX);
 
-  // Le contenu textuel reste paddé et lisible.
+  const radius = await computed(card, ["border-top-left-radius"]);
+  expect(px(radius["border-top-left-radius"]), `${label} : carte sans rayon`).toBeGreaterThan(0);
+
   const author = card.locator("header p").first();
   const authorBox = await boxOrFail(author, `${label} auteur`);
   expect(authorBox.x, `${label} : texte auteur collé au bord gauche`).toBeGreaterThanOrEqual(
-    MIN_CONTENT_PADDING_PX,
+    box.x + MIN_CONTENT_PADDING_PX - EDGE_TOLERANCE_PX,
   );
   expect(
     authorBox.x + authorBox.width,
     `${label} : texte auteur collé au bord droit`,
-  ).toBeLessThanOrEqual(viewportWidth - MIN_CONTENT_PADDING_PX);
+  ).toBeLessThanOrEqual(box.x + box.width - MIN_CONTENT_PADDING_PX + EDGE_TOLERANCE_PX);
 }
 
-async function assertMediaFullBleed(
-  card: Locator,
-  viewportWidth: number,
-  label: string,
-): Promise<void> {
+async function assertMediaEditorialFormat(card: Locator, label: string): Promise<void> {
   const media = postMedia(card);
   await expect(media, `${label} : média absent`).toBeVisible();
 
-  const frame = mediaFrame(media);
-  await expectSpansViewport(frame, viewportWidth, `${label} média`);
-  await expectSquareCorners(frame, `${label} cadre média`);
-  await expectSquareCorners(media, `${label} image média`);
-  await expectNoVerticalBorders(frame, `${label} cadre média`);
-
   const cardBox = await boxOrFail(card, `${label} carte`);
-  const frameBox = await boxOrFail(frame, `${label} cadre média`);
-  expect(
-    Math.abs(frameBox.width - cardBox.width),
-    `${label} : média (${frameBox.width.toFixed(1)}) désaligné de la publication (${cardBox.width.toFixed(1)})`,
-  ).toBeLessThanOrEqual(EDGE_TOLERANCE_PX);
+  const mediaBox = await boxOrFail(media, `${label} image média`);
+  expect(mediaBox.x, `${label} : média déborde à gauche`).toBeGreaterThanOrEqual(
+    cardBox.x - EDGE_TOLERANCE_PX,
+  );
+  expect(mediaBox.x + mediaBox.width, `${label} : média déborde à droite`).toBeLessThanOrEqual(
+    cardBox.x + cardBox.width + EDGE_TOLERANCE_PX,
+  );
 
-  // Contrat R1C conservé : object-contain, ratio naturel, aucun recadrage.
+  const mediaRadius = await computed(media, ["border-top-left-radius"]);
+  expect(px(mediaRadius["border-top-left-radius"]), `${label} : média sans rayon`).toBeGreaterThan(
+    0,
+  );
+
   const style = await computed(media, ["object-fit"]);
   expect(style["object-fit"], `${label} : object-fit`).toBe("contain");
 
@@ -439,7 +440,6 @@ async function assertMediaFullBleed(
   expect(natural.width, `${label} : image non chargée`).toBeGreaterThan(0);
   expect(natural.height, `${label} : image non chargée`).toBeGreaterThan(0);
 
-  const mediaBox = await boxOrFail(media, `${label} image média`);
   const naturalRatio = natural.width / natural.height;
   expect(
     mediaBox.height,
@@ -472,13 +472,13 @@ async function assertActionsReachable(card: Locator, label: string): Promise<voi
 
 // ── Matrice mobile < 640 px ──────────────────────────────────────────────────
 
-test.describe("C3.1-R1D — Feed mobile bord à bord", () => {
+test.describe("C3.1-R1D — Feed mobile éditorial unifié", () => {
   test.beforeEach(() => {
     test.setTimeout(COLD_START_TEST_TIMEOUT);
   });
 
   for (const viewport of MOBILE_VIEWPORTS) {
-    test(`${viewport.name} — séparateur, onglets, filtre absent, publication et média bord à bord (fil réel)`, async ({
+    test(`${viewport.name} — séparateur, onglets, filtre absent, publication éditoriale (fil réel)`, async ({
       citizenAPage: page,
     }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
@@ -509,8 +509,8 @@ test.describe("C3.1-R1D — Feed mobile bord à bord", () => {
       await expect(card, `${label} : publication créée absente du fil`).toBeVisible({
         timeout: COLD_START_TIMEOUT,
       });
-      await assertCardFullBleed(card, viewport.width, `${label} citoyen`);
-      await assertMediaFullBleed(card, viewport.width, `${label} citoyen`);
+      await assertCardEditorialFormat(card, viewport.width, `${label} citoyen`);
+      await assertMediaEditorialFormat(card, `${label} citoyen`);
 
       await expectNoDocumentOverflow(page, label);
     });
@@ -526,8 +526,8 @@ test.describe("C3.1-R1D — Feed mobile bord à bord", () => {
         const label = `${viewport.name} ${kind}`;
         const card = page.locator("article").filter({ hasText: marker }).filter({ visible: true });
         await expect(card, `${label} : carte absente`).toBeVisible({ timeout: COLD_START_TIMEOUT });
-        await assertCardFullBleed(card, viewport.width, label);
-        await assertMediaFullBleed(card, viewport.width, label);
+        await assertCardEditorialFormat(card, viewport.width, label);
+        await assertMediaEditorialFormat(card, label);
       }
 
       await expectNoDocumentOverflow(page, viewport.name);

@@ -1,10 +1,10 @@
 /**
- * C3-FEED-M3 — header du Feed moyen (640 → 1279,98 px).
+ * C3-FEED-M3 — header du Feed moyen (640 → 1023,98 px).
  *
  * La bande medium ne possède aucun header de contenu : `FeedMobileHeader` est
  * confiné à `.web-mobile-feed-only` (< 640), et au-dessus l'identité, la ville,
  * la recherche et le filtre ne sont regroupés nulle part — le contrôle
- * « Filtrer » vit dans `FeedViewTabs`, au milieu du fil.
+ * « Filtrer » vit dans `FeedMediumHeader`, en haut du fil medium.
  *
  * Cette spec verrouille le header medium ET ses deux frontières. Assertions en
  * rôles, visibilité et ratios : aucune égalité au pixel.
@@ -15,10 +15,10 @@ import { expect, test } from "../fixtures";
 
 const MEDIUM = [
   { label: "640x900", width: 640, height: 900 },
+  { label: "719x900", width: 719, height: 900 },
   { label: "768x1024", width: 768, height: 1024 },
   { label: "834x1112", width: 834, height: 1112 },
-  { label: "1024x900", width: 1024, height: 900 },
-  { label: "1279x900", width: 1279, height: 900 },
+  { label: "1023x900", width: 1023, height: 900 },
 ] as const;
 
 const HEADER = ".feed-medium-header";
@@ -49,7 +49,7 @@ async function mountAllSurfaces(page: Page): Promise<void> {
           ).length,
       ),
     )
-    .toBeGreaterThanOrEqual(10);
+    .toBeGreaterThanOrEqual(11);
   await page.evaluate(() => window.scrollTo(0, 0));
 }
 
@@ -166,18 +166,27 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
         };
         const rail = box(document.querySelector(".citizen-medium-rail"))!;
         const shell = box(document.querySelector(".web-shell-page"))!;
+        const column = document.querySelector(".citizen-feed-shell .feed-main-column");
+        const columnCs = column ? getComputedStyle(column) : null;
+        const padLeft = columnCs ? parseFloat(columnCs.paddingLeft) : 0;
+        const padRight = columnCs ? parseFloat(columnCs.paddingRight) : 0;
         const header = box(document.querySelector(".feed-medium-header"))!;
         const headerCs = getComputedStyle(document.querySelector(".feed-medium-header")!);
-        const surfaces = [...document.querySelectorAll("article")]
+        const identity = box(document.querySelector("[data-feed-medium-header-identity]"))!;
+        const surfaces = [...document.querySelectorAll('[data-feed-medium-surface="primary"]')]
           .filter((n) => n.getBoundingClientRect().width > 0)
           .map((n) => box(n)!);
         const footer = document.querySelector("[data-citizen-medium-rail-footer]")!;
         const footerBox = box(footer)!;
         return {
-          zoneLeft: rail.right,
-          zoneRight: shell.right,
-          zoneWidth: shell.right - rail.right,
+          zoneLeft: rail.right + padLeft,
+          zoneRight: shell.right - padRight,
+          zoneWidth: shell.right - rail.right - padLeft - padRight,
+          padLeft,
+          padRight,
           header,
+          identity,
+          headerPadLeft: parseFloat(headerCs.paddingLeft) || 0,
           headerBottomBorder: parseFloat(headerCs.borderBottomWidth) || 0,
           headerRadius: parseFloat(headerCs.borderTopLeftRadius) || 0,
           headerTopBorder: parseFloat(headerCs.borderTopWidth) || 0,
@@ -185,24 +194,32 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
           headerMaxWidth: headerCs.maxWidth,
           surfaces,
           rail,
+          shell,
           footerBox,
           overflow:
             document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
         };
       });
 
-      // Header : bords sur rail.right et shell.right.
+      // Header : séparateur bas full-bleed rail.right → shell.right ; contenu
+      // interne inchangé (rail + gouttière).
+      expect(m.padLeft, "gouttière gauche absente").toBeGreaterThanOrEqual(12);
+      expect(m.padRight, "gouttière droite absente").toBeGreaterThanOrEqual(12);
       expect(
-        Math.abs(m.header.left - m.zoneLeft),
-        `header.left ${m.header.left.toFixed(1)} vs rail.right ${m.zoneLeft.toFixed(1)}`,
+        Math.abs(m.header.left - m.rail.right),
+        `header.left ${m.header.left.toFixed(1)} vs rail.right ${m.rail.right.toFixed(1)}`,
       ).toBeLessThanOrEqual(1);
       expect(
-        Math.abs(m.header.right - m.zoneRight),
-        `header.right ${m.header.right.toFixed(1)} vs shell.right ${m.zoneRight.toFixed(1)}`,
+        Math.abs(m.header.right - m.shell.right),
+        `header.right ${m.header.right.toFixed(1)} vs shell.right ${m.shell.right.toFixed(1)}`,
       ).toBeLessThanOrEqual(1);
       expect(
-        m.header.width / m.zoneWidth,
-        `header a ${((m.header.width / m.zoneWidth) * 100).toFixed(2)} % de la zone reelle`,
+        Math.abs(m.identity.left - (m.header.left + m.headerPadLeft)),
+        `contenu header.left ${m.identity.left.toFixed(1)} vs padding header ${(m.header.left + m.headerPadLeft).toFixed(1)}`,
+      ).toBeLessThanOrEqual(1);
+      expect(
+        m.header.width / (m.shell.right - m.rail.right),
+        `header a ${((m.header.width / (m.shell.right - m.rail.right)) * 100).toFixed(2)} % de la bande rail→shell`,
       ).toBeGreaterThanOrEqual(0.998);
 
       // Barre de contenu, jamais carte flottante.
@@ -340,21 +357,28 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
   const PRIMARY = '[data-feed-medium-surface="primary"]';
 
   /** Familles identifiées par leur contrat accessible, jamais par leur rang. */
-  const PRIMARY_FAMILIES: ReadonlyArray<{ nom: string; motif: RegExp }> = [
-    { nom: "Stories + onglets", motif: /votre story/i },
+  const PRIMARY_FAMILIES: ReadonlyArray<{
+    nom: string;
+    motif: RegExp;
+    min?: number;
+    max?: number;
+  }> = [
+    { nom: "Stories + onglets", motif: /moments près de vous|publier/i },
     { nom: "Compositeur", motif: /quoi de neuf/i },
-    { nom: "Privilège local", motif: /privilège local/i },
-    { nom: "À ne pas manquer", motif: /à ne pas manquer/i },
+    { nom: "Ce soir", motif: /ce soir à/i, min: 0, max: 1 },
+    { nom: "Événement à la une", motif: /événement à la une/i },
+    { nom: "Privilège local", motif: /privilège local/i, min: 0, max: 1 },
+    { nom: "À ne pas manquer", motif: /à ne pas manquer/i, min: 0, max: 1 },
   ];
 
-  test("768 — la baseline rend exactement huit surfaces primaires marquées", async ({
+  test("768 — la baseline rend exactement neuf surfaces primaires marquées", async ({
     authedPage,
   }) => {
     await gotoFeed(authedPage, { width: 768, height: 1024 });
     await mountAllSurfaces(authedPage);
 
     const releve = await authedPage.evaluate((selector) => {
-      const colonne = document.querySelector(".feed-medium-column")!;
+      const colonne = document.querySelector(".feed-main-column")!;
       const marquees = [...colonne.querySelectorAll(selector)].filter(
         (el) => el.getBoundingClientRect().width > 0,
       );
@@ -370,17 +394,25 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
       };
     }, PRIMARY);
 
-    expect(releve.total, `surfaces marquées : ${releve.textes.join(" | ")}`).toBe(8);
-    expect(releve.publications, "publications citoyennes marquées").toBe(3);
-    // C3-FEED-M7-R2 : la surface « Vidéos près de chez vous » a quitté la bande
-    // medium ; la publication vidéo du flux la remplace au même rang. Le total
-    // reste donc 8 : 1 stories + 1 composeur + 3 publications + 1 vidéo +
-    // 2 blocs locaux.
+    expect(releve.total, `surfaces marquées : ${releve.textes.join(" | ")}`).toBeGreaterThanOrEqual(9);
+    // R2A : chaque publication du flux porte le marqueur ; après scroll complet le
+    // total dépasse l'ancien plafond éditorial de 9–10.
+    expect(releve.publications, "publications citoyennes marquées").toBeGreaterThanOrEqual(3);
+    // C3-FEED-M7-R2 : la publication vidéo du flux remplace l'ancienne section
+    // vidéo medium. Total 9 ou 10 selon qu'un bandeau « Ce soir » coexiste avec
+    // la carte à la une (plusieurs événements) ou que la carte seule suffit.
     expect(releve.videos, "publication vidéo du flux marquée exactement une fois").toBe(1);
 
     for (const famille of PRIMARY_FAMILIES) {
       const trouvees = releve.textes.filter((t) => famille.motif.test(t)).length;
-      expect(trouvees, `famille « ${famille.nom} » non marquée exactement une fois`).toBe(1);
+      const min = famille.min ?? 1;
+      const max = famille.max ?? 1;
+      expect(trouvees, `famille « ${famille.nom} » hors plage [${min}, ${max}]`).toBeGreaterThanOrEqual(
+        min,
+      );
+      expect(trouvees, `famille « ${famille.nom} » hors plage [${min}, ${max}]`).toBeLessThanOrEqual(
+        max,
+      );
     }
   });
 
@@ -397,7 +429,7 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
         medias: compte(`img${selector}, video${selector}, picture${selector}`),
         rail: compte(`.citizen-medium-rail ${selector}`),
         header: compte(`.feed-medium-header${selector}, .feed-medium-header ${selector}`),
-        colonne: compte(`.feed-medium-column${selector}`),
+        colonne: compte(`.feed-main-column${selector}`),
         overlay: compte(`[data-yunicity-overlay] ${selector}`),
         // La carte vidéo INTERNE est arrondie et doit le rester : elle ne porte
         // jamais le marqueur primaire.
@@ -421,7 +453,7 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
 
     await mountAllSurfaces(authedPage);
     const m = await authedPage.evaluate((selector) => {
-      const colonne = document.querySelector(".feed-medium-column")!;
+      const colonne = document.querySelector(".feed-main-column")!;
       const rail = document.querySelector(".citizen-medium-rail")!.getBoundingClientRect();
       const shell = document.querySelector(".web-shell-page")!.getBoundingClientRect();
       const surfaces = [...colonne.querySelectorAll(selector)].filter(
@@ -440,27 +472,26 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
 
     expect(Math.max(...m.rayons), "rayon extérieur de carte").toBeLessThanOrEqual(2);
     expect(m.ombres.every((o) => o === "none"), "ombre extérieure de carte flottante").toBe(true);
-    // C3-FEED-M9 : seules les surfaces hors mosaïque context restent pleine largeur.
+    // C3-FEED-M9 : les surfaces éditoriales hors flux restent pleine largeur zone → shell.
     const axes = await authedPage.evaluate((selector) => {
-      const colonne = document.querySelector(".feed-medium-column")!;
+      const colonne = document.querySelector(".feed-main-column")!;
+      const columnCs = getComputedStyle(colonne);
+      const padLeft = parseFloat(columnCs.paddingLeft) || 0;
+      const padRight = parseFloat(columnCs.paddingRight) || 0;
       const rail = document.querySelector(".citizen-medium-rail")!.getBoundingClientRect();
       const shell = document.querySelector(".web-shell-page")!.getBoundingClientRect();
-      const ctx = colonne.querySelector('[data-feed-medium-region="context"]')!;
-      const ctxBox = ctx.getBoundingClientRect();
+      const zoneLeft = rail.right + padLeft;
+      const zoneRight = shell.right - padRight;
       const hors = [...colonne.querySelectorAll(selector)]
-        .filter((el) => !el.closest('[data-feed-medium-region="context"]'))
-        .filter((el) => el.getBoundingClientRect().width > 0);
+        .filter((el) => el.getBoundingClientRect().width > 0)
+        .filter((el) => !el.closest('[data-feed-medium-region="stream"]'));
       return {
-        ctxL: Math.abs(ctxBox.left - rail.right),
-        ctxR: Math.abs(shell.right - ctxBox.right),
         horsLargeurs: hors.map((el) => Math.round(el.getBoundingClientRect().width)),
-        horsGauches: hors.map((el) => el.getBoundingClientRect().left - rail.right),
-        horsDroites: hors.map((el) => shell.right - el.getBoundingClientRect().right),
+        horsGauches: hors.map((el) => el.getBoundingClientRect().left - zoneLeft),
+        horsDroites: hors.map((el) => zoneRight - el.getBoundingClientRect().right),
       };
     }, PRIMARY);
-    expect(axes.ctxL, "région context hors axe gauche").toBeLessThanOrEqual(1);
-    expect(axes.ctxR, "région context hors axe droit").toBeLessThanOrEqual(1);
-    expect(new Set(axes.horsLargeurs).size, "largeurs hors-context hétérogènes").toBe(1);
+    expect(new Set(axes.horsLargeurs).size, "largeurs hétérogènes").toBe(1);
     expect(Math.max(...axes.horsGauches.map(Math.abs)), "bord gauche hors axe").toBeLessThanOrEqual(
       1,
     );
@@ -479,13 +510,13 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
 
     const compteVisible = async () =>
       authedPage.evaluate((selector) => {
-        const colonne = document.querySelector(".feed-medium-column")!;
+        const colonne = document.querySelector(".feed-main-column")!;
         return [...colonne.querySelectorAll(selector)].filter(
           (el) => el.getBoundingClientRect().width > 0,
         ).length;
       }, PRIMARY);
 
-    expect(await compteVisible(), "baseline hors filtre").toBe(10);
+    expect(await compteVisible(), "baseline hors filtre").toBeGreaterThanOrEqual(11);
 
     await filtre.click();
     await expect(filtre).toHaveAttribute("aria-expanded", "true");
@@ -496,33 +527,31 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
     await expect(filtre).toHaveAttribute("aria-pressed", "true");
 
     const pendant = await authedPage.evaluate((selector) => {
-      const colonne = document.querySelector(".feed-medium-column")!;
+      const colonne = document.querySelector(".feed-main-column")!;
+      const columnCs = getComputedStyle(colonne);
+      const padLeft = parseFloat(columnCs.paddingLeft) || 0;
+      const padRight = parseFloat(columnCs.paddingRight) || 0;
       const rail = document.querySelector(".citizen-medium-rail")!.getBoundingClientRect();
       const shell = document.querySelector(".web-shell-page")!.getBoundingClientRect();
+      const zoneLeft = rail.right + padLeft;
+      const zoneRight = shell.right - padRight;
       // Aucun marqueur fantôme : seules les surfaces réellement rendues comptent.
       const visibles = [...colonne.querySelectorAll(selector)].filter(
         (el) => el.getBoundingClientRect().width > 0,
       );
-      const horsContext = visibles.filter(
-        (el) => !el.closest('[data-feed-medium-region="context"]'),
-      );
-      const ctx = colonne.querySelector('[data-feed-medium-region="context"]');
-      const ctxBox = ctx?.getBoundingClientRect();
+      const editoriales = visibles.filter((el) => !el.closest('[data-feed-medium-region="stream"]'));
       return {
         visibles: visibles.length,
         plates: visibles.every((el) => {
           const cs = getComputedStyle(el);
           return (parseFloat(cs.borderTopLeftRadius) || 0) <= 2 && cs.boxShadow === "none";
         }),
-        // C3-FEED-M9 : axes rail→shell pour hors-context + région context entière.
-        axes:
-          horsContext.every((el) => {
-            const r = el.getBoundingClientRect();
-            return Math.abs(r.left - rail.right) <= 1 && Math.abs(r.right - shell.right) <= 1;
-          }) &&
-          (!ctxBox ||
-            (Math.abs(ctxBox.left - rail.right) <= 1 &&
-              Math.abs(shell.right - ctxBox.right) <= 1)),
+        axes: editoriales.every((el) => {
+          const r = el.getBoundingClientRect();
+          return (
+            Math.abs(r.left - zoneLeft) <= 1 && Math.abs(zoneRight - r.right) <= 1
+          );
+        }),
       };
     }, PRIMARY);
 
@@ -535,7 +564,9 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
     await authedPage.locator("[data-feed-medium-filter-reset]").click();
     await expect(filtre).toHaveAttribute("aria-expanded", "false");
     await expect(filtre).toHaveAttribute("aria-pressed", "false");
-    expect(await compteVisible(), "le fil n'est pas revenu à son état initial").toBe(10);
+    expect(await compteVisible(), "le fil n'est pas revenu à son état initial").toBeGreaterThanOrEqual(
+      11,
+    );
   });
 
   // ── Frontières ─────────────────────────────────────────────────────────────
@@ -551,17 +582,21 @@ test.describe("C3-FEED-M3 — header du Feed medium", () => {
     await expect(visible(authedPage, HEADER), "640 : header medium attendu").toHaveCount(1);
   });
 
-  test("frontière 1279/1280 — header medium puis desktop intact", async ({ authedPage }) => {
-    await gotoFeed(authedPage, { width: 1279, height: 900 });
-    await expect(visible(authedPage, HEADER), "1279 : header medium attendu").toHaveCount(1);
+  test("frontière 1023/1024 — header medium puis desktop intact", async ({ authedPage }) => {
+    await gotoFeed(authedPage, { width: 1023, height: 900 });
+    await expect(visible(authedPage, HEADER), "1023 : header medium attendu").toHaveCount(1);
 
-    await gotoFeed(authedPage, { width: 1280, height: 900 });
-    await expect(visible(authedPage, HEADER), "1280 : le header medium fuit").toHaveCount(0);
+    await gotoFeed(authedPage, { width: 1024, height: 900 });
+    await expect(visible(authedPage, HEADER), "1024 : le header medium fuit").toHaveCount(0);
+    await expect(
+      visible(authedPage, ".feed-shell-desktop-header"),
+      "1024 : header desktop attendu",
+    ).toHaveCount(1);
     expect(
       await authedPage.evaluate(
         () => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
       ),
-      "1280 : débordement introduit par le medium",
+      "1024 : débordement introduit par le medium",
     ).toBe(true);
   });
 

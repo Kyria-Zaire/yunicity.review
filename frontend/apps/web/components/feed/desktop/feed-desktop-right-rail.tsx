@@ -1,6 +1,13 @@
 "use client";
 
-import type { LocalEvent, PassportChallengeResponse, PassportTierCode, PartnerOfferPublic } from "@yunicity/types";
+import type {
+  LocalEvent,
+  PassportChallengeResponse,
+  PassportChallengesResponse,
+  PassportOverviewResponse,
+  PassportTierCode,
+  PartnerOfferPublic,
+} from "@yunicity/types";
 import {
   FEED_PORTAL_PASSPORT_CONTINUE,
   HOME_PRIVILEGE_TITLE,
@@ -9,29 +16,30 @@ import {
 import { BookMarked, ChevronRight, MapPin } from "lucide-react";
 import Link from "next/link";
 
-import { usePassportFeedRail } from "@/hooks/use-passport-feed-rail";
-import { useVisibleActivation } from "@/hooks/use-visible-activation";
+import {
+  formatFeedEventInterestLabel,
+  formatFeedEventTime,
+  resolveFeedEveningEventsTitle,
+} from "@/lib/feed/feed-evening-events";
 import { selectFeedRightRailEveningEvents } from "@/lib/feed/feed-right-rail-modules";
+
+/**
+ * Données Passport fournies par le contrôleur — la vue ne fetch pas.
+ * Un changement de largeur remonte/démonte la vue Desktop sans relancer d'appel.
+ */
+export type FeedDesktopPassportRailData = {
+  overview: PassportOverviewResponse | null;
+  challenges: PassportChallengesResponse | null;
+  loading: boolean;
+  error: boolean;
+};
 
 type FeedDesktopRightRailProps = {
   events: readonly LocalEvent[];
   city: string;
   highlightOffer: PartnerOfferPublic | null;
+  passport: FeedDesktopPassportRailData;
 };
-
-function formatEventTime(event: LocalEvent): string | null {
-  const instant = new Date(event.starts_at);
-  if (Number.isNaN(instant.getTime())) return null;
-  try {
-    return new Intl.DateTimeFormat("fr-FR", {
-      timeZone: event.timezone || undefined,
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(instant);
-  } catch {
-    return new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(instant);
-  }
-}
 
 function selectPrimaryChallenge(
   active: PassportChallengeResponse[] | undefined,
@@ -72,10 +80,6 @@ function PassportProgressRing({ progress, target }: { progress: number; target: 
   );
 }
 
-function formatEventInterestLabel(count: number): string {
-  return `${count} intéressé${count > 1 ? "s" : ""}`;
-}
-
 function EveningEventRow({ event, time }: { event: LocalEvent; time: string | null }) {
   return (
     <li data-feed-desktop-evening-event="">
@@ -101,7 +105,7 @@ function EveningEventRow({ event, time }: { event: LocalEvent; time: string | nu
           {typeof event.interest_count === "number" ? (
             <p className="mt-1 inline-flex max-w-full items-center gap-1 text-xs text-neutral-400">
               <MapPin className="h-3 w-3 shrink-0" aria-hidden />
-              <span className="truncate">{formatEventInterestLabel(event.interest_count)}</span>
+              <span className="truncate">{formatFeedEventInterestLabel(event.interest_count)}</span>
             </p>
           ) : null}
         </div>
@@ -130,12 +134,7 @@ function EveningEventRow({ event, time }: { event: LocalEvent; time: string | nu
 function TonightModule({ events, city }: { events: readonly LocalEvent[]; city: string }) {
   const { events: displayEvents, mode } = selectFeedRightRailEveningEvents(events);
 
-  const title =
-    mode === "tonight"
-      ? `Ce soir à ${city}`
-      : mode === "upcoming-evening"
-        ? `Prochaines soirées à ${city}`
-        : `À venir à ${city}`;
+  const title = resolveFeedEveningEventsTitle(city, mode);
 
   return (
     <section className="feed-desktop-surface overflow-hidden" data-feed-desktop-tonight-module="">
@@ -156,7 +155,7 @@ function TonightModule({ events, city }: { events: readonly LocalEvent[]; city: 
       ) : (
         <ul className="divide-y divide-neutral-100 border-t border-neutral-100">
           {displayEvents.map((event) => (
-            <EveningEventRow key={event.id} event={event} time={formatEventTime(event)} />
+            <EveningEventRow key={event.id} event={event} time={formatFeedEventTime(event)} />
           ))}
         </ul>
       )}
@@ -164,12 +163,9 @@ function TonightModule({ events, city }: { events: readonly LocalEvent[]; city: 
   );
 }
 
-function PassportModule() {
-  const { ref, activated } = useVisibleActivation<HTMLDivElement>();
-  const { overview, challenges, loading, error } = usePassportFeedRail();
-
+function PassportModule({ overview, challenges, loading, error }: FeedDesktopPassportRailData) {
   return (
-    <div ref={ref} className="feed-desktop-passport-slot">
+    <div className="feed-desktop-passport-slot">
       <section className="feed-desktop-surface p-4">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-bold text-neutral-900">Votre Passport local</h3>
@@ -177,7 +173,7 @@ function PassportModule() {
             Ouvrir
           </Link>
         </div>
-        {!activated || loading ? (
+        {loading ? (
           <div className="space-y-2" aria-hidden="true">
             <div className="h-16 animate-pulse rounded-xl bg-neutral-100" />
           </div>
@@ -195,7 +191,7 @@ function PassportLoadedContent({
   overview,
   challenges,
 }: {
-  overview: NonNullable<ReturnType<typeof usePassportFeedRail>["overview"]>;
+  overview: NonNullable<FeedDesktopPassportRailData["overview"]>;
   challenges: PassportChallengeResponse[] | undefined;
 }) {
   const { summary } = overview;
@@ -310,12 +306,18 @@ export function FeedDesktopRightRail({
   events,
   city,
   highlightOffer,
+  passport,
 }: FeedDesktopRightRailProps) {
   return (
     <aside className="feed-desktop-right-rail" aria-label="Contexte local">
       <div className="space-y-4">
         <TonightModule events={events} city={city} />
-        <PassportModule />
+        <PassportModule
+          overview={passport.overview}
+          challenges={passport.challenges}
+          loading={passport.loading}
+          error={passport.error}
+        />
         {highlightOffer ? <LocalPrivilegeModule offer={highlightOffer} /> : null}
         <RailFooter />
       </div>

@@ -28,14 +28,17 @@ import { expect, test } from "@playwright/test";
 
 /** Largeur de colonne mesurée sur le vrai `/feed` à 640 px (relevé C3-FEED-M5). */
 const COLONNE_640_PX = 552;
-/** Palier de pastille imposé sur 640–767 px. */
-const PASTILLE_640 = 74;
+/** Rectangle extérieur validé @640 (token `--feed-medium-story-circle` = 4.625rem). */
+const PASTILLE_OUTER_640 = 74;
+const PASTILLE_TOKEN_640 = "4.625rem";
+const ITEM_640 = 112;
+const ITEM_TOKEN_640 = "7rem";
 const RACINE = "yn-long-rail-root";
 
-const RAIL = "[data-feed-medium-stories-rail]";
-const ITEM = "[data-feed-medium-stories-item]";
-const CIRCLE = "[data-feed-medium-stories-circle]";
-const CTA = "[data-feed-medium-stories-cta]";
+const RAIL = ".feed-desktop-moments > div.flex";
+const ITEM = "[data-feed-desktop-moment]";
+const CIRCLE = "[data-feed-desktop-moment-ring]";
+const CTA = "[data-feed-desktop-moment-publish]";
 
 let bundleCache: string | null = null;
 
@@ -66,16 +69,9 @@ async function bundleRail(): Promise<string> {
 /** Reproduit la chaîne d'ancêtres RÉELLE de la région (cf. feed-portal-screen). */
 const GABARIT = `
 <div class="citizen-medium-shell" data-yn-long-rail-host="">
-  <div class="feed-medium-column feed-medium-editorial-grid" style="width:${COLONNE_640_PX}px">
-    <div
-      data-feed-medium-region="stories"
-      data-feed-medium-surface="primary"
-      class="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm"
-    >
-      <div class="border-b border-neutral-100 px-4 py-5 sm:px-6">
-        <h2 class="feed-medium-stories-title text-sm font-bold text-neutral-900">Moments</h2>
-        <div id="${RACINE}"></div>
-      </div>
+  <div class="feed-main-column" style="width:${COLONNE_640_PX}px">
+    <div data-feed-medium-region="stories" data-feed-medium-surface="primary">
+      <div id="${RACINE}"></div>
     </div>
   </div>
 </div>`;
@@ -129,42 +125,47 @@ test.describe("C3-FEED-M5.1 — rail Stories long (débordement)", () => {
     const m = await page.evaluate(
       (sel) => {
         const rail = document.querySelector(sel.rail) as HTMLElement;
-        const ul = rail.querySelector("ul") as HTMLElement;
         const items = [...rail.querySelectorAll(sel.item)] as HTMLElement[];
-        const cta = rail.querySelector(sel.cta) as HTMLElement;
         const cs = getComputedStyle(rail);
         const padL = parseFloat(cs.paddingLeft || "0");
         const padR = parseFloat(cs.paddingRight || "0");
+        const ring = items[0]!.querySelector(sel.circle)! as HTMLElement;
+        const ringCs = getComputedStyle(ring);
+        const outer = Math.round(ring.getBoundingClientRect().width);
+        const cssWidth = Math.round(parseFloat(ringCs.width));
+        const tokenHost = document.querySelector('[data-feed-medium-region="stories"]');
+        const tokenCircle = tokenHost
+          ? getComputedStyle(tokenHost).getPropertyValue("--feed-medium-story-circle").trim()
+          : "";
+        const tokenItem = tokenHost
+          ? getComputedStyle(tokenHost).getPropertyValue("--feed-medium-story-item").trim()
+          : "";
         return {
-          // Le CSS réel est-il appliqué ? Sinon la preuve ne vaut rien.
-          pastille: Math.round(
-            items[0]!.querySelector(sel.circle)!.getBoundingClientRect().width,
-          ),
+          pastilleOuter: outer,
+          pastilleCssWidth: cssWidth,
+          pastilleToken: tokenCircle,
+          itemToken: tokenItem,
           itemLargeur: Math.round(items[0]!.getBoundingClientRect().width),
           clientWidth: rail.clientWidth,
           scrollWidth: rail.scrollWidth,
           scrollLeft: rail.scrollLeft,
-          flexWrap: getComputedStyle(ul).flexWrap,
-          // Une seule ligne : tous les items partagent le même sommet.
+          flexWrap: cs.flexWrap,
           sommets: [...new Set(items.map((el) => Math.round(el.getBoundingClientRect().top)))],
-          hauteurUl: Math.round(ul.getBoundingClientRect().height),
-          // Les items n'ont pas tous la meme hauteur : « Votre story » porte UN
-          // libelle, une tribu/event/lieu en porte DEUX. C'est le comportement
-          // d'origine (`items-start`), inchange par M5.
+          hauteurRail: Math.round(rail.getBoundingClientRect().height),
           hauteurItemMax: Math.max(
             ...items.map((el) => Math.round(el.getBoundingClientRect().height)),
           ),
           ordre: items.map((el) => (el.getAttribute("href") ?? "").trim()),
           libelles: items.map((el) => (el.textContent ?? "").replace(/\s+/g, " ").trim()),
-          ctaEstDernier: ul.lastElementChild?.contains(cta) === true,
-          enfantsUl: ul.children.length,
+          publishEstPremier: items[0]?.hasAttribute("data-feed-desktop-moment-publish") === true,
+          totalItems: items.length,
           padL,
           padR,
           debordementPage:
             document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
         };
       },
-      { rail: RAIL, item: ITEM, circle: CIRCLE, cta: CTA },
+      { rail: RAIL, item: ITEM, circle: CIRCLE },
     );
 
     // Relevé joint au rapport de test : la géométrie exacte reste consultable
@@ -175,8 +176,13 @@ test.describe("C3-FEED-M5.1 — rail Stories long (débordement)", () => {
     });
 
     // — Le CSS réel s'applique bien (sinon tout le reste est creux) —
-    expect(m.pastille, "le CSS medium réel ne s'applique pas au montage isolé").toBe(PASTILLE_640);
-    expect(m.itemLargeur, "largeur d'item hors palier 640").toBe(116);
+    expect(m.pastilleOuter, "rectangle extérieur pastille FeedDesktopMoments").toBe(
+      PASTILLE_OUTER_640,
+    );
+    expect(m.pastilleCssWidth, "largeur CSS pastille FeedDesktopMoments").toBe(PASTILLE_OUTER_640);
+    expect(m.pastilleToken, "token medium pastille @640").toBe(PASTILLE_TOKEN_640);
+    expect(m.itemLargeur, "largeur d'item hors palier 640").toBe(ITEM_640);
+    expect(m.itemToken, "token medium item @640").toBe(ITEM_TOKEN_640);
 
     // — Débordement réel —
     expect(
@@ -189,8 +195,8 @@ test.describe("C3-FEED-M5.1 — rail Stories long (débordement)", () => {
     expect(m.flexWrap, "le rail est autorisé à passer à la ligne").toBe("nowrap");
     expect(m.sommets.length, `items répartis sur ${m.sommets.length} lignes`).toBe(1);
     expect(
-      m.hauteurUl - m.hauteurItemMax,
-      "la liste est plus haute que son item le plus haut : seconde ligne",
+      m.hauteurRail - m.hauteurItemMax,
+      "le rail est plus haut que son item le plus haut : seconde ligne",
     ).toBeLessThanOrEqual(2);
 
     // — Aucun débordement horizontal de la PAGE —
@@ -207,8 +213,8 @@ test.describe("C3-FEED-M5.1 — rail Stories long (débordement)", () => {
       "/p/1",
     ]);
     expect(new Set(m.libelles).size, `libellés dupliqués : ${m.libelles.join(" | ")}`).toBe(7);
-    expect(m.enfantsUl, "la liste ne contient pas exactement 7 items + le relais").toBe(8);
-    expect(m.ctaEstDernier, "le relais « voir tout » n'est plus en dernier").toBe(true);
+    expect(m.totalItems, "le rail ne contient pas exactement 7 items").toBe(7);
+    expect(m.publishEstPremier, "« Votre story » n'est plus en premier").toBe(true);
 
     // — Premier item entièrement atteignable, défilement à gauche —
     const gauche = await page.evaluate(
@@ -237,14 +243,14 @@ test.describe("C3-FEED-M5.1 — rail Stories long (débordement)", () => {
         rail.scrollLeft = rail.scrollWidth;
         const r = rail.getBoundingClientRect();
         const cs = getComputedStyle(rail);
-        const dernier = rail.querySelector(sel.cta)!.getBoundingClientRect();
+        const dernier = rail.querySelector(`${sel.item}:last-of-type`)!.getBoundingClientRect();
         return {
           scrollLeft: rail.scrollLeft,
           debut: dernier.left - (r.left + parseFloat(cs.paddingLeft || "0")),
           fin: r.right - parseFloat(cs.paddingRight || "0") - dernier.right,
         };
       },
-      { rail: RAIL, cta: CTA },
+      { rail: RAIL, item: ITEM },
     );
     expect(droite.scrollLeft, "le rail ne défile pas").toBeGreaterThan(0);
     expect(droite.fin, "dernier élément hors d'atteinte au scroll droit").toBeGreaterThanOrEqual(
@@ -271,7 +277,7 @@ test.describe("C3-FEED-M5.1 — rail Stories long (débordement)", () => {
     const structure = await page.evaluate(
       (sel) => {
         const rail = document.querySelector(sel.rail) as HTMLElement;
-        const cibles = [...rail.querySelectorAll(`${sel.item}, ${sel.cta}`)] as HTMLElement[];
+        const cibles = [...rail.querySelectorAll(sel.item)] as HTMLElement[];
         return {
           total: cibles.length,
           liens: cibles.filter((el) => el.tagName === "A" && el.hasAttribute("href")).length,
@@ -279,10 +285,10 @@ test.describe("C3-FEED-M5.1 — rail Stories long (débordement)", () => {
           ariaHidden: cibles.filter((el) => el.getAttribute("aria-hidden") === "true").length,
         };
       },
-      { rail: RAIL, item: ITEM, cta: CTA },
+      { rail: RAIL, item: ITEM },
     );
-    expect(structure.total, "cibles focalisables manquantes").toBe(8);
-    expect(structure.liens, "une cible n'est pas un lien reel").toBe(8);
+    expect(structure.total, "cibles focalisables manquantes").toBe(7);
+    expect(structure.liens, "une cible n'est pas un lien reel").toBe(7);
     expect(structure.tabindexExplicites, "un `tabindex` detourne l'ordre naturel").toBe(0);
     expect(structure.ariaHidden, "une cible focalisable est masquee aux technologies").toBe(0);
 
@@ -291,7 +297,7 @@ test.describe("C3-FEED-M5.1 — rail Stories long (débordement)", () => {
     const focalisation = await page.evaluate(
       (sel) => {
         const rail = document.querySelector(sel.rail) as HTMLElement;
-        const cibles = [...rail.querySelectorAll(`${sel.item}, ${sel.cta}`)] as HTMLElement[];
+        const cibles = [...rail.querySelectorAll(sel.item)] as HTMLElement[];
         rail.scrollLeft = 0;
         const obtenus: string[] = [];
         let scrollFinal = 0;
@@ -316,7 +322,7 @@ test.describe("C3-FEED-M5.1 — rail Stories long (débordement)", () => {
         dernierVisible = visible();
         return { obtenus, scrollFinal, autoDefilement, dernierVisible, defilable: rail.scrollWidth > rail.clientWidth };
       },
-      { rail: RAIL, item: ITEM, cta: CTA },
+      { rail: RAIL, item: ITEM },
     );
     expect(focalisation.obtenus, "ordre de focus different de l'ordre DOM").toEqual([
       "/stories/new",
@@ -326,7 +332,6 @@ test.describe("C3-FEED-M5.1 — rail Stories long (débordement)", () => {
       "/e/1",
       "/e/2",
       "/p/1",
-      "/stories",
     ]);
     expect(focalisation.defilable, "le rail long n'est plus defilable").toBe(true);
     expect(
@@ -364,7 +369,7 @@ test.describe("C3-FEED-M5.1 — rail Stories long (débordement)", () => {
 
     if (tabulationExposee) {
       const parcours: string[] = ["/stories/new"];
-      for (let i = 0; i < 7; i += 1) {
+      for (let i = 0; i < 6; i += 1) {
         await page.keyboard.press("Tab");
         parcours.push(
           await page.evaluate(
@@ -380,7 +385,6 @@ test.describe("C3-FEED-M5.1 — rail Stories long (débordement)", () => {
         "/e/1",
         "/e/2",
         "/p/1",
-        "/stories",
       ]);
     }
   });

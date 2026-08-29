@@ -66,7 +66,7 @@ export function EventFeedCard({
   }
 
   return (
-    <article data-feed-publication-event="" className="feed-publication-event-editorial -mx-5 -mt-5 sm:-mx-6 sm:-mt-6">
+    <div data-feed-publication-event="" className="feed-publication-event-editorial -mx-5 -mt-5 sm:-mx-6 sm:-mt-6">
       {post.media_url ? (
         <div className="feed-publication-event-media relative">
           <FeedPublicationMedia mediaUrl={post.media_url} label={post.title ?? undefined} />
@@ -129,6 +129,6 @@ export function EventFeedCard({
           </Link>
         </div>
       </div>
-    </article>
+    </div>
   );
 }

@@ -60,7 +60,10 @@ function StreamModule({
 
   return (
     <li data-feed-stream-item="context-module" data-feed-context-module={family}>
-      <section className={surfaceClass}>
+      <section
+        className={surfaceClass}
+        data-feed-medium-surface={layout === "default" ? "primary" : undefined}
+      >
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-sm font-bold text-neutral-900">{title}</h2>
           <Link

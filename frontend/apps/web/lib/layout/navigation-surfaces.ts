@@ -1,11 +1,11 @@
 /**
- * Contrats purs des surfaces stratégiques du chrome (C3.1-T3).
- * Seuils alignés sur le chrome T2 — aucun seuil d'acceptation (900/1366) ici.
+ * Contrats purs des surfaces stratégiques du chrome (C3.1-T3 / R4B).
+ * Seuils alignés sur le chrome Feed : Desktop ≥1024 — aucun seuil d'acceptation (900/1366) ici.
  */
 export const NAVIGATION_MOBILE_MAX_QUERY = "(max-width: 639.98px)";
-export const NAVIGATION_DESKTOP_MIN_QUERY = "(min-width: 1280px)";
+export const NAVIGATION_DESKTOP_MIN_QUERY = "(min-width: 1024px)";
 export const NAVIGATION_MOBILE_MAX_PX = 639.98;
-export const NAVIGATION_DESKTOP_MIN_PX = 1280;
+export const NAVIGATION_DESKTOP_MIN_PX = 1024;
 
 export type ExplorerSurface = "drawer" | "dialog";
 export type YunicityMenuSurface = "drawer" | "sheet" | "popover";

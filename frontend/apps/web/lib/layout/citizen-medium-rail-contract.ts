@@ -21,7 +21,7 @@ export const CITIZEN_MEDIUM_RAIL_DESTINATIONS: readonly (WebNavItem & {
 ] as const;
 
 /**
- * Identité stable de chacun des neuf contrôles du rail (C3-CITIZEN-MEDIUM-SHELL-R1D).
+ * Identité stable de chacun des huit contrôles du rail (C3-CITIZEN-MEDIUM-SHELL-R1D).
  *
  * Le composant pose ces identifiants en `data-citizen-medium-rail-control`, et
  * les preuves E2E les lisent d'ici. Motif : le défaut `/videos` — libellé
@@ -31,7 +31,6 @@ export const CITIZEN_MEDIUM_RAIL_DESTINATIONS: readonly (WebNavItem & {
  */
 export type CitizenMediumRailControlId =
   | CitizenMediumRailDestination
-  | "search"
   | "menu"
   | "create"
   | "notifications"
@@ -42,7 +41,6 @@ export const CITIZEN_MEDIUM_RAIL_CONTROLS: readonly {
   label: string;
 }[] = [
   ...CITIZEN_MEDIUM_RAIL_DESTINATIONS.map(({ id, label }) => ({ id, label })),
-  { id: "search", label: "Rechercher" },
   { id: "menu", label: "Menu" },
   { id: "create", label: "Créer" },
   { id: "notifications", label: WEB_CITIZEN_NOTIFICATIONS_NAV.label },
@@ -50,7 +48,7 @@ export const CITIZEN_MEDIUM_RAIL_CONTROLS: readonly {
 ];
 
 /**
- * Ordre visuel complet des neuf contrôles du rail, de haut en bas — DÉRIVÉ des
+ * Ordre visuel complet des huit contrôles du rail, de haut en bas — DÉRIVÉ des
  * identités ci-dessus. Recopier ces libellés créerait une seconde source qui
  * pourrait diverger en silence.
  */

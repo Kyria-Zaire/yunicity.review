@@ -149,6 +149,7 @@ export function FeedDesktopComposer({
             onChange={(e) => setText(e.target.value)}
             placeholder={`Quoi de neuf à ${city} ?`}
             rows={1}
+            maxLength={4000}
             className="min-h-[2.5rem] w-full resize-none border-0 bg-transparent py-1.5 text-[15px] leading-snug text-neutral-900 placeholder:text-neutral-500 focus:outline-none"
           />
 

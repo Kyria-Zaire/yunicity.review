@@ -3,16 +3,25 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
-const portalScreen = existsSync(`${here}../../components/feed/portal/feed-portal-screen.tsx`)
-  ? readFileSync(`${here}../../components/feed/portal/feed-portal-screen.tsx`, "utf-8")
-  : "";
+
+/** Code seul : un commentaire peut citer une API justement pour la proscrire. */
+const code = (source: string) =>
+  source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "")
+    .replace(/\s+/g, " ");
+const controller = readFileSync(
+  `${here}../../components/feed/portal/feed-data-controller.tsx`,
+  "utf-8",
+);
+const portalScreen = readFileSync(`${here}../../components/feed/portal/feed-portal-screen.tsx`, "utf-8");
 const citizenShell = readFileSync(`${here}../../components/shell/citizen-authenticated-shell.tsx`, "utf-8");
 const feedAppShell = `${here}../../components/feed/portal/feed-app-shell.tsx`;
 
 describe("D0.1 — CitizenAuthenticatedShell migration", () => {
   it("migrates Feed portal from FeedAppShell to CitizenAuthenticatedShell", () => {
-    expect(portalScreen).toContain("CitizenAuthenticatedShell");
-    expect(portalScreen).not.toContain("FeedAppShell");
+    expect(controller).toContain("CitizenAuthenticatedShell");
+    expect(controller).not.toContain("FeedAppShell");
   });
 
   it("removes the legacy FeedAppShell after migration", () => {
@@ -25,10 +34,12 @@ describe("D0.1 — CitizenAuthenticatedShell migration", () => {
     expect(mainCount).toBe(1);
   });
 
-  it("keeps CitizenTopNav, WebSidebar, and WebMobileStrategicBottomNav mounts", () => {
+  it("keeps CitizenTopNav and WebSidebar; mounts feed bottom nav on citizen-feed-shell", () => {
     expect(citizenShell).toContain("CitizenTopNav");
     expect(citizenShell).toContain("WebSidebar");
-    expect(citizenShell).toContain("WebMobileStrategicBottomNav");
+    expect(citizenShell).toContain('variant === "citizen-feed-shell"');
+    expect(citizenShell).toContain("<FeedMobileBottomNav");
+    expect(citizenShell).toContain("<WebMobileStrategicBottomNav");
   });
 
   it("does not introduce breakpoint JavaScript", () => {
@@ -46,8 +57,12 @@ describe("D0.1 — CitizenAuthenticatedShell migration", () => {
 });
 
 describe("R1 — Feed desktop final architecture", () => {
-  const desktopScreen = readFileSync(
-    `${here}../../components/feed/desktop/feed-desktop-screen.tsx`,
+  const responsiveShell = readFileSync(
+    `${here}../../components/feed/feed-responsive-shell.tsx`,
+    "utf-8",
+  );
+  const desktopHeader = readFileSync(
+    `${here}../../components/feed/feed-desktop-header.tsx`,
     "utf-8",
   );
   const leftRail = readFileSync(
@@ -60,57 +75,62 @@ describe("R1 — Feed desktop final architecture", () => {
   );
 
   it("passes citizen-feed-shell variant to CitizenAuthenticatedShell for explicit scoping", () => {
-    expect(portalScreen).toContain('variant="citizen-feed-shell"');
+    expect(controller).toContain('variant="citizen-feed-shell"');
   });
 
-  it("toggles FeedDesktopScreen against the medium/mobile path via CSS classes", () => {
-    expect(portalScreen).toContain('className="feed-desktop-view"');
-    expect(portalScreen).toContain("<FeedDesktopScreen");
-    expect(portalScreen).toContain('className="feed-medium-mobile-view"');
-    expect(portalScreen).not.toContain("web-feed-desktop-contents");
-    expect(portalScreen).not.toContain("<FeedLeftRail");
+  it("mounts exactly one feed column, whatever the width", () => {
+    // R4 : un seul arbre DOM. Les paliers ne sont plus des branches JSX.
+    expect(controller).not.toContain("useFeedViewportTier");
+    expect(code(controller)).not.toMatch(/matchMedia|innerWidth/);
+    expect((controller.match(/<FeedResponsiveShell\b/g) ?? []).length).toBe(1);
+    expect((responsiveShell.match(/<FeedEditorialMainColumn\b/g) ?? []).length).toBe(1);
+    expect(responsiveShell).not.toMatch(/FeedDesktopView|FeedMobileView|FeedMediumView/);
+    expect(controller).not.toContain("web-feed-desktop-contents");
+    expect(controller).not.toContain("<FeedLeftRail");
+    expect(portalScreen).toContain("FeedDataController");
   });
 
-  it("delegates the desktop greeting to FeedDesktopScreen", () => {
-    expect(desktopScreen).toContain("feed-desktop-greeting");
-    expect(desktopScreen).toContain("Bonjour {userFirstName}");
-    expect(portalScreen).toContain("userFirstName={userFirstName}");
-    expect(portalScreen).toContain("city={city}");
+  it("delegates the desktop greeting to FeedDesktopHeader", () => {
+    expect(desktopHeader).toContain("feed-desktop-greeting");
+    expect(desktopHeader).toContain("Bonjour {userFirstName}");
+    expect(controller).toContain("userFirstName={userFirstName}");
+    expect(controller).toContain("city={city}");
   });
 
   it("does not hardcode fallback city Reims in greeting", () => {
-    expect(portalScreen).toContain('portal.city || user?.city || "Reims"');
-    expect(desktopScreen).not.toMatch(/Bienvenue sur le fil de "Reims"/);
+    expect(controller).toContain('portal.city || user?.city || "Reims"');
+    expect(desktopHeader).not.toMatch(/Bienvenue sur le fil de "Reims"/);
   });
 
   it("contains no historic async context rail", () => {
-    expect(portalScreen).not.toContain("web-context-rail");
-    expect(portalScreen).not.toContain("WebContextRail");
-    expect(portalScreen).not.toContain("FeedContextRail");
+    expect(controller).not.toContain("web-context-rail");
+    expect(controller).not.toContain("WebContextRail");
+    expect(controller).not.toContain("FeedContextRail");
   });
 
-  it("keeps one FeedStreamList in the medium/mobile path only", () => {
-    const streamListCount = (portalScreen.match(/<FeedStreamList/g) || []).length;
-    expect(streamListCount).toBe(1);
+  it("routes stream rendering through the single main column only", () => {
+    expect((responsiveShell.match(/<FeedEditorialMainColumn\b/g) ?? []).length).toBe(1);
+    expect(controller).not.toMatch(/<FeedDesktopStream\b/);
+    expect(responsiveShell).not.toMatch(/<FeedDesktopStream\b/);
   });
 
-  it("does not fetch new data or introduce new endpoints in the portal screen", () => {
-    expect(portalScreen).not.toContain("useDesktopGreeting");
-    expect(portalScreen).not.toContain("fetch(");
-    expect(portalScreen).not.toMatch(/\/api\/v1/);
+  it("does not fetch new data or introduce new endpoints in the responsive controller", () => {
+    expect(controller).not.toContain("useDesktopGreeting");
+    expect(controller).not.toContain("fetch(");
+    expect(controller).not.toMatch(/\/api\/v1/);
   });
 
-  it("mounts the desktop rails inside FeedDesktopScreen", () => {
-    expect(desktopScreen).toContain("<FeedDesktopLeftRail");
-    expect(desktopScreen).toContain("<FeedDesktopRightRail");
-    expect(desktopScreen).toContain('className="feed-desktop-layout"');
+  it("mounts the desktop rails inside the responsive shell", () => {
+    expect(responsiveShell).toContain("<FeedDesktopLeftRail");
+    expect(responsiveShell).toContain("<FeedDesktopRightRail");
+    expect(responsiveShell).toContain('className="feed-shell feed-desktop-layout"');
     expect(leftRail).toContain('aria-label="Navigation du fil"');
     expect(rightRail).toContain('aria-label="Contexte local"');
   });
 
   it("derives right-rail data from the already-mounted portal context", () => {
-    expect(portalScreen).toContain("selectMemberTribes(portal.tribes)");
-    expect(portalScreen).toContain("portalEvents={portal.events}");
+    expect(rightRail).toContain("selectFeedRightRailEveningEvents(events)");
+    expect(controller).toContain("portalEvents={portal.events}");
   });
 });
 
@@ -118,7 +138,7 @@ describe("R1 — CSS desktop toggle guards (textual)", () => {
   const globalsCSS = readFileSync(`${here}../../app/globals.css`, "utf-8");
 
   const desktopLayer = (() => {
-    const start = globalsCSS.indexOf("/* ═══ R1 — Feed Desktop Final");
+    const start = globalsCSS.indexOf("/* ═══ C3-FEED-RESPONSIVE-SHELL-R4");
     expect(start).toBeGreaterThan(-1);
     const open = globalsCSS.indexOf("{", globalsCSS.indexOf("@media", start));
     let depth = 0;
@@ -132,14 +152,22 @@ describe("R1 — CSS desktop toggle guards (textual)", () => {
     throw new Error("R1 desktop layer: unbalanced braces");
   })();
 
-  it("scopes the desktop toggle to min-width 1280px", () => {
-    expect(desktopLayer).toMatch(/@media\s*\(\s*min-width:\s*1280px\s*\)/);
-    expect(globalsCSS).toMatch(/\.feed-desktop-view\s*\{\s*display:\s*none/);
-    expect(globalsCSS).toMatch(/\.feed-medium-mobile-view\s*\{\s*display:\s*contents/);
+  it("scopes the desktop shells to min-width 1024px", () => {
+    expect(globalsCSS).toMatch(/@media\s*\(\s*min-width:\s*1024px\s*\)/);
+    expect(globalsCSS).toMatch(/@media\s*\(\s*min-width:\s*640px\s*\)/);
+    // Les rails et l'en-tête Desktop sont masqués par défaut, révélés à 1024px.
+    expect(globalsCSS).toMatch(
+      /\.feed-shell-desktop-header,\s*\.feed-desktop-left-rail,\s*\.feed-desktop-right-rail\s*\{\s*display:\s*none/,
+    );
+    expect(desktopLayer).toContain(".feed-shell-desktop-header");
+    // Les classes de vue par palier ont disparu avec les vues elles-mêmes.
+    expect(globalsCSS).not.toContain(".feed-mobile-view");
+    expect(globalsCSS).not.toContain(".feed-medium-view");
+    expect(globalsCSS).not.toContain(".feed-desktop-view");
   });
 
   it("declares the new 3-column layout without the legacy right rail", () => {
-    expect(globalsCSS).toContain(".feed-desktop-layout");
+    expect(globalsCSS).toContain(".feed-shell");
     expect(globalsCSS).toContain(".feed-desktop-left-rail");
     expect(globalsCSS).toContain(".feed-desktop-right-rail");
     expect(globalsCSS).not.toMatch(/\.feed-right-rail\s*\{/);
@@ -214,7 +242,7 @@ describe("D1.1-R7 — top nav decoupling guards (textual, not overlap proof)", (
   });
 
   it("lets the desktop feed body expand independently of the nav", () => {
-    const r1Layer = globalsCSS.slice(globalsCSS.indexOf("/* ═══ R1 — Feed Desktop Final"));
+    const r1Layer = globalsCSS.slice(globalsCSS.indexOf("/* ═══ C3-FEED-RESPONSIVE-SHELL-R4"));
     expect(r1Layer).toMatch(/\.citizen-feed-shell \.web-three-col[\s\S]*?max-width:\s*none/);
     expect(r1Layer).toMatch(/\.citizen-feed-shell \.feed-app-shell-content[\s\S]*?width:\s*100%/);
   });
@@ -231,8 +259,15 @@ describe("R2B — legacy feed rail sentinels", () => {
     expect(existsSync(`${here}../../components/feed/portal/feed-tonight-events.tsx`)).toBe(false);
     expect(existsSync(`${here}../../components/feed/portal/feed-member-tribes.tsx`)).toBe(false);
     expect(existsSync(`${here}../../components/feed/portal/feed-passport-card.tsx`)).toBe(false);
-    expect(existsSync(`${here}../../components/feed/mobile/feed-mobile-bottom-nav.tsx`)).toBe(
-      false,
+  });
+
+  it("wraps the global bottom nav for the feed mobile chrome", () => {
+    const mobileBottomNav = readFileSync(
+      `${here}../../components/feed/mobile/feed-mobile-bottom-nav.tsx`,
+      "utf-8",
     );
+    expect(mobileBottomNav).toContain("WebMobileStrategicBottomNav");
+    expect(mobileBottomNav).toContain('data-feed-mobile-chrome="bottom-nav"');
+    expect(citizenShell).toContain("<FeedMobileBottomNav");
   });
 });

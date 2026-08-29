@@ -1,3 +1,3 @@
 "use client";
 
-export { FeedPortalScreen as FeedScreen } from "@/components/feed/portal/feed-portal-screen";
+export { FeedPortalScreen as FeedScreen, FeedDataController } from "@/components/feed/portal/feed-portal-screen";

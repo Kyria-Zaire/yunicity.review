@@ -20,6 +20,7 @@ const weatherCard = read("../../components/feed/portal/feed-weather-card.tsx");
 const leftRail = read("../../components/feed/desktop/feed-desktop-left-rail.tsx");
 const rightRail = read("../../components/feed/desktop/feed-desktop-right-rail.tsx");
 const passportHook = read("../../hooks/use-passport-feed-rail.ts");
+const controller = read("../../components/feed/portal/feed-data-controller.tsx");
 const globalsCSS = read("../../app/globals.css");
 const weatherTypes = read("../../../../packages/types/src/weather.ts");
 
@@ -44,16 +45,28 @@ describe("R1 — visibility activation primitive", () => {
 });
 
 describe("R1 — lazy mounting contract", () => {
-  it("keeps the weather hook out of any always-mounted parent", () => {
-    expect(weatherCard).toContain("useCurrentWeather");
-    expect(weatherCard).toMatch(/activated \? <WeatherCardContent/);
+  it("keeps the weather hook out of the views — le contrôleur seul fetch", () => {
+    expect(weatherCard).not.toContain("useCurrentWeather");
+    expect(weatherCard).not.toContain("useVisibleActivation");
     expect(leftRail).not.toContain("useCurrentWeather");
+    expect(controller).toContain("useCurrentWeather");
   });
 
-  it("keeps the passport hook out of the always-mounted right rail shell", () => {
-    expect(rightRail).toContain("usePassportFeedRail");
-    expect(rightRail).toMatch(/activated \? <PassportLoadedContent|!activated \|\| loading/);
+  it("keeps the passport hook out of the views — le contrôleur seul fetch", () => {
+    expect(rightRail).not.toContain("usePassportFeedRail");
+    expect(rightRail).not.toContain("useVisibleActivation");
     expect(leftRail).not.toContain("usePassportFeedRail");
+    expect(controller).toContain("usePassportFeedRail");
+  });
+
+  it("n'arme les modules Desktop qu'en Desktop, et sans refetch au resize", () => {
+    // Armés quand le rail devient réellement visible, donc jamais sous 1024px
+    // où il est `display: none` et n'intersecte pas.
+    expect(controller).toContain("useVisibleActivation");
+    expect(controller).toMatch(/activated: desktopRailsEnabled/);
+    expect(controller).toContain("usePassportFeedRail(desktopRailsEnabled)");
+    // …et jamais désarmés : l'activation du hook est définitive (cf. son test).
+    expect(code(controller)).not.toMatch(/setDesktopRailsSeen|matchMedia|innerWidth/);
   });
 
   it("uses no breakpoint JavaScript anywhere in the new modules", () => {
@@ -62,12 +75,12 @@ describe("R1 — lazy mounting contract", () => {
     }
   });
 
-  it("reveals the weather slot inside the desktop left rail from 1280px", () => {
+  it("reveals the weather slot inside the desktop left rail from 1024px", () => {
     expect(globalsCSS).toMatch(
       /\.feed-weather-slot,\s*\n\s*\.feed-passport-slot\s*\{\s*display:\s*none/,
     );
-    const layer = globalsCSS.slice(globalsCSS.indexOf("/* ═══ R1 — Feed Desktop Final"));
-    expect(layer).toMatch(/@media\s*\(\s*min-width:\s*1280px\s*\)/);
+    const layer = globalsCSS.slice(globalsCSS.indexOf("/* ═══ C3-FEED-RESPONSIVE-SHELL-R4"));
+    expect(layer).toMatch(/@media\s*\(\s*min-width:\s*1024px\s*\)/);
     expect(layer).toMatch(/\.feed-desktop-left-rail \.feed-weather-slot/);
   });
 
@@ -138,7 +151,7 @@ describe("R1 — right rail order and layout", () => {
   });
 
   it("uses the new 3-column desktop layout classes", () => {
-    expect(globalsCSS).toContain(".feed-desktop-layout");
+    expect(globalsCSS).toContain(".feed-shell");
     expect(globalsCSS).toContain(".feed-desktop-left-rail");
     expect(globalsCSS).toContain(".feed-desktop-right-rail");
     expect(globalsCSS).not.toMatch(/\.feed-right-rail\s*\{/);

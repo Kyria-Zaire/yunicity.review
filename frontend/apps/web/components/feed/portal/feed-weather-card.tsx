@@ -1,9 +1,9 @@
 "use client";
 
+import type { WeatherCurrent } from "@yunicity/types";
+
 import { getWeatherVisual } from "@/lib/weather-visual";
 import { resolveFeedCityHighlightImage } from "@/lib/feed/feed-city-highlight";
-import { useCurrentWeather } from "@/hooks/use-current-weather";
-import { useVisibleActivation } from "@/hooks/use-visible-activation";
 import { ArrowDown, ArrowUp, Wind } from "lucide-react";
 import Image from "next/image";
 
@@ -12,6 +12,16 @@ import Image from "next/image";
  */
 
 const WEATHER_UNAVAILABLE = "Météo indisponible";
+
+/**
+ * Données météo fournies par le contrôleur — la vue ne fetch pas.
+ * Un changement de largeur remonte/démonte la vue Desktop sans relancer d'appel.
+ */
+export type FeedWeatherCardData = {
+  weather: WeatherCurrent | null;
+  loading: boolean;
+  error: boolean;
+};
 
 function formatWeatherDate(now: Date): string {
   return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(now);
@@ -51,8 +61,7 @@ function WeatherUnavailable() {
   );
 }
 
-function WeatherCardContent({ city }: { city: string }) {
-  const { weather, loading, error } = useCurrentWeather({ city });
+function WeatherCardContent({ city, weather, loading, error }: { city: string } & FeedWeatherCardData) {
   const cityImage = resolveFeedCityHighlightImage(city);
   const today = formatWeatherDate(new Date());
 
@@ -159,12 +168,10 @@ function WeatherCardContent({ city }: { city: string }) {
   );
 }
 
-export function FeedWeatherCard({ city }: { city: string }) {
-  const { ref, activated } = useVisibleActivation<HTMLDivElement>();
-
+export function FeedWeatherCard({ city, weather, loading, error }: { city: string } & FeedWeatherCardData) {
   return (
-    <div ref={ref} data-feed-weather-slot="" className="feed-weather-slot">
-      {activated ? <WeatherCardContent city={city} /> : null}
+    <div data-feed-weather-slot="" className="feed-weather-slot">
+      <WeatherCardContent city={city} weather={weather} loading={loading} error={error} />
     </div>
   );
 }

@@ -224,17 +224,23 @@ export function WebSidebar() {
             contenir que les quatre destinations (Navbar V3).
           */}
           <div className="flex flex-col items-center gap-4 py-2 xl:items-stretch xl:gap-0.5 xl:py-0">
-            <WebSidebarTooltip label={WEB_CITIZEN_SEARCH_ACCESS.label}>
-              <span
-                className="flex items-center justify-center"
-                style={{
-                  width: "var(--web-sidebar-icon-hit)",
-                  height: "var(--web-sidebar-icon-hit)",
-                }}
-              >
-                <ExplorerTriggerButton variant="medium-rail" />
-              </span>
-            </WebSidebarTooltip>
+            {/* Bande medium : le rail citoyen (`CitizenMediumRail`) remplace la sidebar
+                compacte ; la recherche y vit dans le header de contenu (feed medium),
+                pas dans la colonne latérale. Masquer ici évite un doublon si l'aside
+                legacy réapparaît avant le swap CSS. */}
+            {!railActive ? (
+              <WebSidebarTooltip label={WEB_CITIZEN_SEARCH_ACCESS.label}>
+                <span
+                  className="flex items-center justify-center"
+                  style={{
+                    width: "var(--web-sidebar-icon-hit)",
+                    height: "var(--web-sidebar-icon-hit)",
+                  }}
+                >
+                  <ExplorerTriggerButton variant="medium-rail" />
+                </span>
+              </WebSidebarTooltip>
+            ) : null}
             <ExplorerTriggerButton variant="sidebar-expanded" />
             {/* C3-CITIZEN-MEDIUM-SHELL-R1C : l'apparence de la sidebar est
                 CONSTANTE. Seul le fait global transite — le rail est-il rendu ?
@@ -304,7 +310,7 @@ export function WebSidebar() {
     {/*
       C3-CITIZEN-MEDIUM-SHELL-R1F — marqueur structurel creation-flow.
       Propriétaire unique : WebSidebar. Aucune page de création ne le porte.
-      Le CSS medium (`640–1279,98`) reconnaît ce marqueur pour masquer la
+      Le CSS medium (`640–1023,98`) reconnaît ce marqueur pour masquer la
       sidebar historique compacte et libérer une colonne unique.
     */}
     {creationFlow ? (

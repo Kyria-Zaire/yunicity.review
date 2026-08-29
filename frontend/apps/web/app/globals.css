@@ -21,6 +21,8 @@
      leur propre token, distinct. */
   --feed-medium-region-gap: 20px;
   --feed-medium-stream-gap: 20px;
+  /* C3-FEED-M3.2B : gouttiere horizontale entre rail, contenu et bord droit. */
+  --feed-medium-content-gutter: 1rem;
   --web-sidebar-width-full: 16.25rem; /* 260px */
   --web-context-rail-width: 21.25rem; /* 340px */
   --citizen-top-nav-height: 4.25rem;
@@ -43,6 +45,22 @@
   width: 100%;
   overflow-x: clip;
   background: var(--yunicity-background);
+}
+
+/* C3-FEED-RESPONSIVE-SHELL-R4 — cause racine de la navbar basse tronquée.
+   `overflow-x: clip` avec `overflow-y: visible` fait calculer `overflow-y` en
+   `auto` : `.web-shell-page` devient alors un conteneur de défilement, et un
+   conteneur de défilement clippe ses descendants `position: fixed`. Le bas du
+   rectangle de clip suivant la hauteur du contenu, la navbar disparaissait ou
+   se coupait selon la hauteur du viewport.
+   Le Feed n'a plus besoin de ce garde-fou : sa colonne est fluide et aucun
+   élément ne déborde (Phase 2). La neutralisation porte sur l'élément qui
+   porte la règle — une règle sur un descendant ne défait pas le clip d'un
+   ancêtre.
+   TODO(debt): la règle globale reste un piège pour les autres routes
+   (map, passport, tribes, sortir…) — ticket dédié hors périmètre R4. */
+.web-shell-page.citizen-feed-shell {
+  overflow-x: visible;
 }
 
 body {
@@ -71,6 +89,8 @@ body {
 .web-mobile-feed-only {
   display: block;
 }
+
+/* Navbar mobile — visibilité portée par Tailwind sur le composant (block + min-[640px]:hidden). */
 
 .web-desktop-feed-only {
   display: none;
@@ -118,10 +138,41 @@ body {
 
   .feed-stream-hint,
   .feed-stream-notice,
-  .feed-stream-region > [data-feed-medium-surface="primary"],
   .feed-stream-region > [data-feed-empty-state],
   .feed-stream-region > [data-feed-loading-state],
   .feed-stream-region > [data-feed-error-state] {
+    margin-inline: 1rem;
+  }
+
+  /* Colonne éditoriale unifiée : le rythme est porté par la grille, pas des marges ad hoc. */
+  .citizen-feed-shell .feed-main-column .feed-stream-region {
+    margin-top: 0;
+  }
+
+  .citizen-feed-shell
+    .feed-main-column
+    .feed-stream-region
+    > [data-feed-medium-surface="primary"],
+  .citizen-feed-shell
+    .feed-main-column
+    .feed-stream-region
+    > [data-feed-empty-state],
+  .citizen-feed-shell
+    .feed-main-column
+    .feed-stream-region
+    > [data-feed-loading-state],
+  .citizen-feed-shell
+    .feed-main-column
+    .feed-stream-region
+    > [data-feed-error-state] {
+    margin-inline: 0;
+  }
+
+  .citizen-feed-shell .feed-main-column .feed-stream-pagination {
+    padding-inline: 0;
+  }
+
+  .feed-stream-region > [data-feed-medium-surface="primary"] {
     margin-inline: 1rem;
   }
 
@@ -170,8 +221,8 @@ body {
   padding-right: 0;
 }
 
-/* MOBILE-REFONDE-01 — fil local : layout mobile + bottom nav jusqu'à 639px */
-@media (max-width: 639.98px) {
+/* MOBILE-REFONDE-01 — fil local : layout mobile jusqu'à 639px */
+@media (max-width: 639px) {
   .feed-mobile-shell .feed-app-shell-content {
     display: block;
   }
@@ -217,8 +268,8 @@ body {
   }
 }
 
-/* ——— Feed shell : top nav desktop (>=1280px) ——— */
-@media (min-width: 1280px) {
+/* ——— Feed shell : top nav desktop (>=1024px) ——— */
+@media (min-width: 1024px) {
   .citizen-feed-shell .citizen-top-nav {
     display: block;
   }
@@ -263,27 +314,66 @@ body {
   display: none;
 }
 
-/* ═══ R1 — Feed Desktop Final : 3-column from-scratch layout ═══════════════
-   Desktop ≥1280px → FeedDesktopScreen. Mobile/tablette <1280px → feed-medium-mobile-view.
+/* ═══ C3-FEED-RESPONSIVE-SHELL-R4 — squelette responsive du fil ════════════
+   UN seul arbre DOM. La colonne centrale `.feed-main-column` est montée en
+   permanence et rend une unique liste de publications : rien n'est dupliqué
+   puis masqué. Seuls les éléments de shell varient, et uniquement ici — aucun
+   `matchMedia`, aucun `resize`, aucun `innerWidth` ne décide de l'affichage.
+
+   Bornes (miroir exact de `feed-breakpoints.ts`, seule source du fil) :
+     Mobile  0 – 639,98px   · Medium 640 – 1023,98px · Desktop ≥ 1024px
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.feed-desktop-view {
+/* Colonne unique — fluide à toutes les largeurs. Le `row-gap` de 20px reprend
+   exactement les `mt-5` que la colonne Desktop portait bloc par bloc. */
+.feed-main-column {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--feed-medium-region-gap);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Aucun enfant ne peut imposer sa largeur intrinseque a la colonne.
+   R4A : PAS de `max-width: 100%` ici. Plusieurs regions sont volontairement
+   full-bleed via des marges negatives qui annulent la gouttiere de la colonne
+   (header medium, separateurs mobile) ; un plafond de largeur les ramenait
+   dans la gouttiere — mesure : header a 608px pour un shell de 640px, et
+   separateur a 16px du bord au lieu de 0. `min-width: 0` suffit a garder la
+   colonne fluide ; les cartes ont deja leurs propres plafonds. */
+.feed-main-column > * {
+  min-width: 0;
+}
+
+/* Shells : masqués hors de leur palier. Les headers mobile et medium portent
+   déjà leur propre media query (`.web-mobile-feed-only`, `.feed-medium-header`)
+   et restent enfants directs de la colonne pour conserver leur `sticky`. */
+.feed-shell-desktop-header,
+.feed-desktop-left-rail,
+.feed-desktop-right-rail {
   display: none;
 }
 
-.feed-medium-mobile-view {
-  display: contents;
-}
-
-@media (min-width: 1280px) {
-  .citizen-feed-shell .feed-desktop-view {
-    display: block;
-    width: 100%;
-    min-width: 0;
+@media (min-width: 1024px) {
+  .feed-shell-desktop-header {
+    display: flex;
   }
 
-  .citizen-feed-shell .feed-medium-mobile-view {
-    display: none;
+  .feed-desktop-left-rail {
+    display: flex;
+  }
+
+  .feed-desktop-right-rail {
+    display: block;
+  }
+
+  /* Écart « Ce soir » ↔ carte éditoriale : nul sous 1024px (rendu mobile et
+     medium validé), 20px au-delà comme la colonne Desktop d'origine. */
+  .feed-editorial-evening-featured {
+    display: grid;
+    row-gap: var(--feed-medium-region-gap);
   }
 
   .citizen-feed-shell {
@@ -305,14 +395,33 @@ body {
   }
 }
 
-.feed-desktop-layout {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-  width: 100%;
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 1.5rem 0 2rem;
+/* Squelette du fil. Sous 1024px la colonne occupe toute la largeur (les rails
+   sont `display: none`) ; à partir de 1024px la géométrie trois colonnes
+   fluide s'applique (deux rails présents, largeurs clamp jusqu'au nominal). */
+.feed-shell {
+  /* R4A : `display: contents` sous 1024px, et non `block`. Le shell ne doit pas
+     s'interposer comme boite : la colonne Feed reste l'enfant flex direct de
+     `.feed-app-shell-content`, exactement comme avant le rebuild (l'ancien
+     conteneur de palier etait lui aussi transparent). Une boite intermediaire
+     captait le `flex` a la place de la colonne. */
+  display: contents;
+}
+
+/* La colonne porte donc elle-meme le comportement flex sous 1024px. */
+.feed-main-column {
+  flex: 1 1 auto;
+}
+
+@media (min-width: 1024px) {
+  .feed-shell {
+    display: flex;
+    gap: clamp(0.5rem, 1vw, 1rem);
+    align-items: flex-start;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 1.5rem 0 2rem;
+  }
 }
 
 .feed-desktop-surface {
@@ -395,11 +504,17 @@ body {
   display: none;
 }
 
+/* R4A : PAS de `display` ici. Cette regle est posterieure au garde-fou
+   `.feed-desktop-left-rail { display: none }` et de meme specificite : un
+   `display: flex` a cet endroit gagnait la cascade et rendait le rail de
+   navigation Desktop visible sur Mobile et Medium, dans le flux normal. Le
+   `display: flex` du palier Desktop est declare avec les autres shells, dans
+   la media query >= 1024px. */
 .feed-desktop-left-rail {
-  display: flex;
   flex-direction: column;
-  flex: 0 0 208px;
-  width: 208px;
+  flex: 0 0 clamp(10rem, 15.5vw, 13rem);
+  width: clamp(10rem, 15.5vw, 13rem);
+  min-width: 0;
   position: sticky;
   top: 6rem;
   height: fit-content;
@@ -429,13 +544,33 @@ body {
 }
 
 .feed-desktop-right-rail {
-  flex: 0 0 284px;
-  width: 284px;
+  flex: 0 0 clamp(13rem, 22vw, 17.75rem);
+  width: clamp(13rem, 22vw, 17.75rem);
+  min-width: 0;
   position: sticky;
   top: 6rem;
   height: fit-content;
   max-height: calc(100dvh - 7rem);
   overflow-y: auto;
+}
+
+/* Géométrie Desktop nominale — après les bases fluides (cascade R4B). */
+@media (min-width: 1280px) {
+  .feed-shell {
+    gap: 1rem;
+  }
+
+  .feed-desktop-left-rail {
+    flex: 0 0 208px;
+    width: 208px;
+    min-width: 208px;
+  }
+
+  .feed-desktop-right-rail {
+    flex: 0 0 284px;
+    width: 284px;
+    min-width: 284px;
+  }
 }
 
 @media (min-width: 1440px) {
@@ -448,7 +583,7 @@ body {
     padding-right: 2rem;
   }
 
-  .feed-desktop-layout {
+  .feed-shell {
     gap: 1.5rem;
     max-width: 1352px;
   }
@@ -468,8 +603,8 @@ body {
   }
 }
 
-/* ——— C3-FEED-M3 : header de contenu du Feed moyen (640 → 1279.98) ———
-   Masque par defaut, borne EN HAUT a 1279.98px : le desktop >= 1280 conserve son
+/* ——— C3-FEED-M3 : header de contenu du Feed moyen (640 → 1023.98) ———
+   Masque par defaut, borne EN HAUT a 1023.98px : le desktop >= 1024 conserve son
    propre header. Sticky en haut de la colonne de contenu, fond opaque pour
    preserver la lecture, et z-index volontairement BAS afin que les overlays
    Explorer / Menu / Create le recouvrent (pile R1E inchangee). */
@@ -477,7 +612,7 @@ body {
   display: none;
 }
 
-@media (min-width: 640px) and (max-width: 1279.98px) {
+@media (min-width: 640px) and (max-width: 1023.98px) {
   .feed-medium-header {
     position: sticky;
     top: 0;
@@ -486,9 +621,11 @@ body {
     align-items: center;
     gap: 0.75rem;
     margin-bottom: 0.75rem;
-    /* Padding INTERNE (le texte ne touche pas le bord) — ce n'est pas une
-       gouttiere : les BORDS du header restent alignes sur la zone principale. */
-    padding: 0.625rem 0.75rem;
+    /* Full-bleed : le séparateur bas touche rail.right à gauche et le bord
+       droit réel de l'écran ; le contenu interne conserve gouttière + 12px. */
+    margin-left: calc(-1 * var(--feed-medium-content-gutter));
+    margin-right: calc(-1 * var(--feed-medium-content-gutter));
+    padding: 0.625rem calc(var(--feed-medium-content-gutter) + 0.75rem);
     /* C3-FEED-M3.1 : barre de contenu, pas carte flottante. Mesure M3 : bords
        deja alignes (ecart 0 aux 5 viewports), mais `border: 1px` sur quatre
        cotes + `border-radius: 1rem` donnaient l'effet de petite carte
@@ -513,14 +650,20 @@ body {
   }
 }
 
-/* ——— C3-FEED-M4 : grille editoriale du Feed medium (640 → 1279.98) ———
+/* ——— C3-FEED-M4 : grille editoriale du Feed medium (640 → 1023.98) ———
    Une seule voie principale apres le rail : la maquette medium ne comporte
    aucun aside droit permanent, et les sous-grilles internes (Stories, videos,
    blocs locaux) appartiennent a M5–M9. La grille est l'unique proprietaire du
    placement vertical des cinq regions ; les marges portees par les enfants sont
    neutralisees pour qu'aucun espacement ne s'additionne. */
-@media (min-width: 640px) and (max-width: 1279.98px) {
-  .citizen-medium-shell .feed-medium-editorial-grid {
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .citizen-feed-shell .feed-main-column {
+    padding-left: var(--feed-medium-content-gutter);
+    padding-right: var(--feed-medium-content-gutter);
+    box-sizing: border-box;
+  }
+
+  .citizen-medium-shell .feed-main-column {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     width: 100%;
@@ -528,7 +671,7 @@ body {
     row-gap: var(--feed-medium-region-gap);
   }
 
-  .citizen-medium-shell .feed-medium-editorial-grid > [data-feed-medium-region] {
+  .citizen-medium-shell .feed-main-column > [data-feed-medium-region] {
     grid-column: 1 / -1;
     min-width: 0;
     /* Source unique : aucun `margin` d'enfant ne s'ajoute au `row-gap`. */
@@ -551,9 +694,66 @@ body {
   /* CTA dédiés des en-têtes de tuile : cible tactile minimale. */
 }
 
+/* --- C3-FEED-M5 : composition Stories medium (640 -> 1023.98) ---
+   FeedDesktopMoments est partage avec Desktop >= 1024 et /stories : ces regles
+   ne s'appliquent que dans la region stories du shell medium. */
+@media (min-width: 640px) and (max-width: 767.98px) {
+  .citizen-medium-shell [data-feed-medium-region="stories"] {
+    --feed-medium-story-item: 7rem;
+    --feed-medium-story-circle: 4.625rem;
+    --feed-medium-story-gap: 16px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .citizen-medium-shell [data-feed-medium-region="stories"] {
+    --feed-medium-story-item: 8rem;
+    --feed-medium-story-circle: 5rem;
+    --feed-medium-story-gap: 20px;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .citizen-medium-shell [data-feed-medium-region="stories"] .feed-desktop-moments > div.flex {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-inline: 0;
+    justify-content: flex-start;
+    gap: var(--feed-medium-story-gap);
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-desktop-moment] {
+    width: var(--feed-medium-story-item);
+    min-width: var(--feed-medium-story-item);
+    max-width: var(--feed-medium-story-item);
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-desktop-moment] > span {
+    max-width: 100%;
+  }
+
+  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-desktop-moment-ring] {
+    width: var(--feed-medium-story-circle);
+    height: var(--feed-medium-story-circle);
+    flex-shrink: 0;
+  }
+}
+
 /* C3-FEED-M9 — 768 → 1023,98 : deux colonnes équilibrées. */
-/* C3-FEED-M9 — 1024 → 1279,98 : mosaïque 12 colonnes 7/5 puis 5/7. */
-/* ——— C3-FEED-M3.3 : surfaces principales plates (640 → 1279.98) ———
+/* C3-FEED-M9 — mosaïque 12 cols retiree : 1024+ est Desktop. */
+
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  :root {
+    --feed-medium-content-gutter: 1.25rem;
+  }
+}
+
+/* M9 gutter 1.5rem retire : bande 1024+ est Desktop. */
+
+/* ——— C3-FEED-M3.3 : surfaces principales plates (640 → 1023.98) ———
    Les grandes surfaces du fil (stories/onglets, compositeur, section video,
    publications, blocs locaux) portaient `rounded-2xl` + `shadow-sm` : mesure a
    768px, 10 surfaces a `border-radius: 16px` avec ombre, ce qui recreait un
@@ -566,14 +766,14 @@ body {
    internes, miniatures, avatars, boutons et pilules ne portent pas le marqueur
    et gardent donc leurs formes.
    Les bordures sont conservees : ce sont elles qui separent les surfaces. */
-@media (min-width: 640px) and (max-width: 1279.98px) {
-  .citizen-medium-shell .feed-medium-column [data-feed-medium-surface="primary"] {
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .citizen-medium-shell .feed-main-column [data-feed-medium-surface="primary"] {
     border-radius: 0;
     box-shadow: none;
   }
 }
 
-/* --- C3-FEED-M7-R2 : la video vit DANS le flux de publications (640 -> 1279.98)
+/* --- C3-FEED-M7-R2 : la video vit DANS le flux de publications (640 -> 1023.98)
    Direction CTO : plus de section autonome « Videos pres de chez vous » dans la
    bande medium. La video locale devient un enfant de la MEME liste que les
    publications texte et image.
@@ -589,16 +789,16 @@ body {
    ET de l'ordre de tabulation -- aucun lien cache focalisable. */
 
 /* La publication video n'existe que dans la bande medium. */
-/* --- C3-FEED-M8 : cartes publication unifiées (640 -> 1279.98) ---
+/* --- C3-FEED-M8 : cartes publication unifiées (640 -> 1023.98) ---
    Mesures RED : padding post 20-24 px vs vidéo 16-20 px ; header post centré
    verticalement ; actions à 36 px ; écarts header/corps hétérogènes entre texte
    et vidéo. Source unique de rythme sur la région stream, marqueurs explicites
    sur chaque partie (header, identité, meta, corps, média, actions).
 
    Portée : publications texte/image ET vidéo locale dans le même parent
-   `[data-feed-stream-list]`. Mobile < 640 et desktop >= 1280 inchangés. */
+   `[data-feed-stream-list]`. Mobile < 640 et desktop >= 1024 inchangés. */
 
-@media (min-width: 640px) and (max-width: 1279.98px) {
+@media (min-width: 640px) and (max-width: 1023.98px) {
   .citizen-medium-shell [data-feed-medium-region="stream"] {
     --feed-medium-publication-measure: 42rem;
     --feed-medium-card-padding-inline: 16px;
@@ -669,7 +869,7 @@ body {
   .citizen-medium-shell
     [data-feed-medium-region="stream"]
     [data-feed-publication-header]
-    > div:first-of-type {
+    > .feed-publication-identity-link {
     align-items: flex-start;
   }
 
@@ -725,270 +925,179 @@ body {
   }
 }
 
-/* --- C3-FEED-M6 : composition du compositeur medium (640 -> 1279.98) ---
-   `FeedComposer` est PARTAGE : Feed desktop >= 1280 et mur de tribu le rendent
-   aussi. Toute la composition medium passe donc par des attributs INERTES et
-   ces regles bornees en haut a 1279.98px, scopees a la region `composer` du
-   shell citoyen. Hors bande, rien ne change.
+/* --- Fin des cartes publication medium (M8) --- */
 
-   Mesure RED (bande medium) : surface 161,38 px au repos pour deux lignes de
-   contenu ; trois actions de 36x36 px SANS libelle visible ; bouton Publier de
-   36 px de haut, seul a l'extremite droite d'une barre vide a 62 % (640) et
-   83 % (1279). Cibles tactiles toutes sous les 44 px WCAG 2.5.5.
-
-   Choix de structure : la ligne 1 reste [avatar | saisie] et Publier reste en
-   FIN de barre d'actions. Remonter Publier sur la ligne 1 aurait impose soit de
-   reordonner le DOM partage (desktop + mur de tribu), soit de dissocier ordre
-   DOM et ordre visuel — l'un et l'autre interdits. Le vide qui isolait Publier
-   est comble par les libelles d'action, pas par un deplacement. */
-
-/* Libelle d'action : present dans le DOM partout, visible seulement en medium. */
-.feed-medium-composer-label {
-  display: none;
-}
-
-@media (min-width: 640px) and (max-width: 1279.98px) {
-  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer {
-    /* 161,38 -> cible 104-136 : le rythme vient du padding et des interlignes,
-       jamais d'un ecrasement des cibles ou du texte. */
-    padding-top: 0.625rem;
-    padding-bottom: 0.625rem;
+/* ——— C3-FEED-M4 mobile : même colonne éditoriale que medium (<640) ——— */
+@media (max-width: 639.98px) {
+  .citizen-feed-shell .feed-main-column {
+    padding-left: var(--feed-medium-content-gutter);
+    padding-right: var(--feed-medium-content-gutter);
+    box-sizing: border-box;
   }
 
-  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer-row {
-    /* `center` alignait joliment au repos mais faisait FLOTTER l'avatar a
-       mi-hauteur des qu'un apercu photo etendait la colonne de saisie (constate
-       sur la capture 768 photo). L'ancrage haut vaut dans les deux etats. */
+  .citizen-feed-shell .feed-main-column {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: none;
+    row-gap: var(--feed-medium-region-gap);
+  }
+
+  .citizen-feed-shell .feed-main-column > [data-feed-medium-region] {
+    grid-column: 1 / -1;
+    min-width: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .citizen-feed-shell .feed-main-column [data-feed-medium-region="stream"] ul[aria-label] {
+    display: grid;
+    row-gap: var(--feed-medium-stream-gap);
+  }
+
+  .citizen-feed-shell
+    .feed-main-column
+    [data-feed-medium-region="stream"]
+    ul[aria-label]
+    > li {
+    margin-top: 0;
+  }
+
+  .citizen-feed-shell .feed-main-column [data-feed-medium-surface="primary"] {
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .citizen-feed-shell .feed-main-column [data-feed-medium-region="stream"] {
+    --feed-medium-publication-measure: 42rem;
+    --feed-medium-card-padding-inline: 16px;
+    --feed-medium-card-padding-block: 12px;
+    --feed-medium-card-gap-avatar: 12px;
+    --feed-medium-card-gap-header-body: 12px;
+    --feed-medium-card-gap-body-media: 12px;
+    --feed-medium-card-action-min: 44px;
+  }
+
+  .citizen-feed-shell
+    .feed-main-column
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-editorial] {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--feed-medium-publication-measure);
+    margin-inline: 0;
+  }
+
+  .citizen-feed-shell
+    .feed-main-column
+    [data-feed-medium-region="stream"]
+    [data-feed-medium-surface="primary"] {
+    border-radius: 2px;
+  }
+
+  .citizen-feed-shell
+    .feed-main-column
+    [data-feed-medium-region="stream"]
+    [data-feed-stream-item="post"]
+    [data-feed-publication-content] {
+    padding: var(--feed-medium-card-padding-block) var(--feed-medium-card-padding-inline);
+  }
+
+  .citizen-feed-shell
+    .feed-main-column
+    [data-feed-medium-region="stream"]
+    [data-feed-stream-item="post"]
+    [data-feed-publication-actions] {
+    padding: 0.625rem var(--feed-medium-card-padding-inline);
+  }
+
+  .citizen-feed-shell
+    .feed-main-column
+    [data-feed-medium-region="stream"]
+    [data-feed-stream-item="local-video"]
+    [data-feed-publication-editorial] {
+    padding: var(--feed-medium-card-padding-block) var(--feed-medium-card-padding-inline);
+  }
+
+  .citizen-feed-shell
+    .feed-main-column
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-header] {
     align-items: flex-start;
-    gap: 0.75rem;
+    gap: var(--feed-medium-card-gap-avatar);
   }
 
-  /* L'avatar de 56 px pilotait a lui seul la hauteur de la ligne 1 (mesure : 144
-     px au total). Aligne sur la hauteur des pilules d'action, il donne un rythme
-     unique et fait tomber la surface dans la fourchette visee, sans reduire
-     aucune cible tactile ni ecraser le texte. */
-  .citizen-medium-shell [data-feed-medium-region="composer"] [data-feed-composer-avatar] {
-    padding-top: 0;
+  .citizen-feed-shell
+    .feed-main-column
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-body] {
+    margin-top: var(--feed-medium-card-gap-header-body);
   }
 
-  .citizen-medium-shell [data-feed-medium-region="composer"] [data-feed-composer-avatar] > * {
-    width: 2.75rem;
-    height: 2.75rem;
-  }
-
-  /* La saisie occupe l'espace disponible ; sa hauteur minimale reste au-dessus
-     de la cible tactile et le texte n'est jamais ecrase. */
-  .citizen-medium-shell [data-feed-medium-region="composer"] [data-feed-composer-input] {
-    min-height: 2.75rem;
-    font-size: 1.0625rem;
-    line-height: 1.45;
-  }
-
-  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer-bar {
-    margin-top: 0.5rem;
-    /* Les actions se lisent, elles ne se devinent plus : le retrait mobile qui
-       alignait la barre sous l'avatar n'a plus lieu d'etre. */
-    padding-left: 0;
-    gap: 0.75rem;
-  }
-
-  /* Action : pastille -> pilule icone + libelle, cible WCAG 2.5.5. */
-  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer-action {
-    width: auto;
-    height: 2.75rem;
-    min-width: 2.75rem;
-    gap: 0.4375rem;
-    padding-inline: 0.75rem;
-    border-radius: 9999px;
-    background-color: #f4f5ff;
-    font-size: 0.8125rem;
-    font-weight: 600;
-  }
-
-  .citizen-medium-shell
-    [data-feed-medium-region="composer"]
-    .feed-composer-action:hover {
-    background-color: #e9ebff;
-  }
-
-  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-medium-composer-label {
-    display: inline;
-    white-space: nowrap;
-  }
-
-  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer-submit {
-    min-height: 2.75rem;
-    padding-inline: 1.25rem;
-  }
-
-  /* Regle texte obligatoire : enoncee a voix haute pour tous, RENDUE VISIBLE
-     quand une photo attend son texte. Le bouton desactive cesse d'etre muet. */
-  .citizen-medium-shell
-    [data-feed-medium-region="composer"]
-    [data-feed-composer-hint][data-hint-active="true"] {
-    position: static;
-    width: auto;
-    height: auto;
-    margin: 0.625rem 0 0;
-    overflow: visible;
-    clip: auto;
-    clip-path: none;
-    white-space: normal;
-    display: block;
-    font-size: 0.8125rem;
-    color: #8a5a00;
-  }
-
-  /* Apercu photo : pleine largeur utile interne, jamais une carte concurrente. */
-  .citizen-medium-shell [data-feed-medium-region="composer"] [data-feed-composer-preview] {
+  .citizen-feed-shell
+    .feed-main-column
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-media] {
     display: block;
     width: 100%;
-  }
-
-  .citizen-medium-shell [data-feed-medium-region="composer"] [data-feed-composer-preview] img {
-    width: 100%;
-    max-height: 15rem;
+    max-height: none;
+    margin-top: var(--feed-medium-card-gap-body-media);
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: 8px;
     object-fit: cover;
   }
 
-  .citizen-medium-shell [data-feed-medium-region="composer"] .feed-composer-error {
-    padding-left: 0;
-  }
-}
-
-/* --- C3-FEED-M5 : composition de la region Stories (640 -> 1279.98) ---
-   `FeedStoriesRail` est PARTAGE : le Feed desktop >= 1280 et la page /stories le
-   rendent aussi. Toute la composition medium passe donc par des attributs
-   INERTES poses sur ce rail partage + ces regles bornees en haut a 1279.98px et
-   scopees a la region `stories` du shell citoyen. Hors de cette bande, aucune
-   de ces regles ne s'applique : le rail garde son item de 88 px et sa pastille
-   de 72 px.
-
-   Mesure avant M5 (bande medium, zone de contenu 592 -> 1231 px) : groupe colle
-   a gauche, item 88 px, pastille 72 px, relais « voir tout » rendu en carte
-   rectangulaire bleutee. Le vide a droite atteignait plusieurs centaines de px.
-
-   Paliers de dimension imposes (CTO) : pastille 72-76 a 640, 76-84 a 768/834,
-   80-88 a 1024/1279 ; item 112-160 partout. Une seule source par palier. */
-
-/* Masque PAR DEFAUT, comme `.feed-medium-header` : le titre n'existe que dans la
-   bande medium. Le desktop >= 1280 et le mobile gardent leur propre en-tete. */
-.feed-medium-stories-title {
-  display: none;
-}
-
-@media (min-width: 640px) and (max-width: 1279.98px) {
-  .citizen-medium-shell [data-feed-medium-region="stories"] {
-    --feed-medium-story-item: 116px;
-    --feed-medium-story-circle: 74px;
-    --feed-medium-story-gap: 16px;
-  }
-}
-
-@media (min-width: 768px) and (max-width: 1023.98px) {
-  .citizen-medium-shell [data-feed-medium-region="stories"] {
-    --feed-medium-story-item: 128px;
-    --feed-medium-story-circle: 80px;
-    --feed-medium-story-gap: 20px;
-  }
-}
-
-@media (min-width: 1024px) and (max-width: 1279.98px) {
-  .citizen-medium-shell [data-feed-medium-region="stories"] {
-    --feed-medium-story-item: 140px;
-    --feed-medium-story-circle: 84px;
-    --feed-medium-story-gap: 24px;
-  }
-}
-
-@media (min-width: 640px) and (max-width: 1279.98px) {
-  .citizen-medium-shell .feed-medium-stories-title {
-    display: block;
-    margin-bottom: 0.875rem;
+  .citizen-feed-shell
+    .feed-main-column
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-actions]
+    [role="toolbar"]
+    a,
+  .citizen-feed-shell
+    .feed-main-column
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-actions]
+    [role="toolbar"]
+    button {
+    min-height: var(--feed-medium-card-action-min);
+    min-width: var(--feed-medium-card-action-min);
+    justify-content: center;
   }
 
-  /* Groupe cohesif a gauche (C3-FEED-M5.2-R1). M5.2 `space-between` + `min-width:
-     100 %` fermait le vide a gauche mais distribuait artificiellement l'espace
-     INTERNE entre « Votre story », le raccourci local et « Voir toutes les
-     stories » — a 1279 px les trois controles ne formaient plus un groupe.
-
-     Regle retenue : items regroupes a gauche avec `--feed-medium-story-gap` stable,
-     largeur naturelle (`max-content`), espace residuel uniquement APRES le CTA.
-     Rail long : `max-content` depasse le conteneur, le defilement interne prend le
-     relais sans etirer ni comprimer les items. */
-  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-medium-stories-rail] > ul {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: flex-start;
-    width: max-content;
-    min-width: max-content;
-    margin-inline: 0;
-    justify-content: flex-start;
-    gap: var(--feed-medium-story-gap);
-    list-style: none;
-    padding: 0;
-  }
-
-  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-medium-stories-rail] > ul > li {
-    list-style: none;
-  }
-
-  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-medium-stories-item] {
-    width: var(--feed-medium-story-item);
-  }
-
-  /* Les libellés sont bornés a 5.5rem par le rail partage : sans cela ils
-     tronqueraient au milieu d'un item devenu plus large. Le badge « + » est
-     imbrique plus profond et n'est donc pas atteint. */
-  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-medium-stories-item] > span {
-    max-width: 100%;
-  }
-
-  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-medium-stories-circle] {
-    width: var(--feed-medium-story-circle);
-    height: var(--feed-medium-story-circle);
-  }
-
-  /* Relais « voir toutes les stories » : meme grammaire circulaire que les
-     Stories, jamais une carte concurrente. Sa DESTINATION est inchangee. */
-  .citizen-medium-shell [data-feed-medium-region="stories"] [data-feed-medium-stories-cta] {
-    width: var(--feed-medium-story-item);
-    justify-content: flex-start;
-    gap: 0.625rem;
-    padding: 0;
-    border-radius: 0;
-    background-color: transparent;
-  }
-
-  .citizen-medium-shell
-    [data-feed-medium-region="stories"]
-    [data-feed-medium-stories-cta]:hover
-    [data-feed-medium-stories-circle] {
-    background-color: #e4e7ff;
-  }
-
-  .citizen-medium-shell
-    [data-feed-medium-region="stories"]
-    [data-feed-medium-stories-cta]
-    [data-feed-medium-stories-circle] {
-    background-color: #eef0ff;
+  /* Parité medium : cartes encadrées, pas le bord à bord historique R1D. */
+  .citizen-feed-shell .feed-main-column .feed-publication-frame {
+    border-radius: 2px;
+    border-left-width: 1px;
+    border-right-width: 1px;
     box-shadow: none;
-    transition: background-color 150ms ease;
   }
 
-  .citizen-medium-shell
-    [data-feed-medium-region="stories"]
-    [data-feed-medium-stories-cta]
-    svg {
-    width: 1.5rem;
-    height: 1.5rem;
+  .citizen-feed-shell .feed-main-column .feed-publication-padding {
+    padding: var(--feed-medium-card-padding-block) var(--feed-medium-card-padding-inline);
+  }
+
+  .citizen-feed-shell .feed-main-column .feed-publication-footer-padding {
+    padding: 0.625rem var(--feed-medium-card-padding-inline);
+  }
+
+  .citizen-feed-shell .feed-main-column .feed-publication-media {
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: 8px;
+    border-left-width: 1px;
+    border-right-width: 1px;
+  }
+
+  .citizen-feed-shell .feed-main-column .feed-publication-media-img {
+    border-radius: 8px;
   }
 }
 
-/* ——— C3-FEED-M2 : rail du Feed moyen (640 → 1279.98) ———
+/* ——— C3-FEED-M2 : rail du Feed moyen (640 → 1023.98) ———
    Toutes les regles sont bornees EN HAUT a 1279.98px et scopees a
    `.citizen-medium-shell`, portee par tout shell qui MONTE explicitement le rail
-   citoyen medium : le desktop >= 1280 et les
+   citoyen medium : le desktop >= 1024 et les
    autres familles de routes ne peuvent pas les recevoir. Le rail medium est
    masque par defaut, il n'apparait que dans la bande. */
 .citizen-medium-rail-only {
@@ -1064,10 +1173,10 @@ body {
   display: none;
 }
 
-/* T6 — scroll-lock du drawer Filtres medium. Borné à < 1280px : au-delà, le drawer est masqué
+/* T6 — scroll-lock du drawer Filtres medium. Borné à < 1024px : au-delà, le drawer est masqué
    (xl:hidden) même si son state reste ouvert, donc le lock ne doit PAS s'appliquer. Le breakpoint
    vit ici (CSS), pas dans un listener JS. */
-@media (max-width: 1279.98px) {
+@media (max-width: 1023.98px) {
   body.map-drawer-scroll-lock {
     overflow: hidden;
   }
@@ -1890,7 +1999,7 @@ body {
   flex-shrink: 0;
 }
 
-/* Passport — sidebar compacte 480–1279px, top nav 1280px+ */
+/* Passport — sidebar compacte 480–1279px, top nav 1280px+ (hors R4B Feed). */
 @media (min-width: 1280px) {
   .passport-shell-grid.web-three-col {
     grid-template-columns: minmax(0, 1fr);
@@ -1915,7 +2024,7 @@ body {
 }
 
 /* Notifications — sidebar compacte 480-1279px, top nav 1280px+ */
-@media (min-width: 1280px) {
+@media (min-width: 1024px) {
   .notifications-shell-grid.web-three-col {
     grid-template-columns: minmax(0, 1fr);
     padding-top: 0;
@@ -1930,14 +2039,14 @@ body {
   }
 }
 
-@media (max-width: 1279.98px) {
+@media (max-width: 1023.98px) {
   .notifications-shell-grid .citizen-top-nav {
     display: none !important;
   }
 }
 
 /* Lieux — sidebar interne + top nav desktop */
-@media (min-width: 1280px) {
+@media (min-width: 1024px) {
   .places-shell-grid.web-three-col {
     grid-template-columns: minmax(0, 1fr);
     padding-top: 0;
@@ -1952,14 +2061,14 @@ body {
   }
 }
 
-@media (max-width: 1279.98px) {
+@media (max-width: 1023.98px) {
   .places-shell-grid .citizen-top-nav {
     display: none !important;
   }
 }
 
-/* Recherche — même comportement que lieux / notifications (xl+ top nav) */
-@media (min-width: 1280px) {
+/* Recherche — même comportement que lieux / notifications (Desktop ≥1024) */
+@media (min-width: 1024px) {
   .search-shell-grid.web-three-col {
     grid-template-columns: minmax(0, 1fr);
     padding-top: 0;
@@ -1974,7 +2083,7 @@ body {
   }
 }
 
-@media (max-width: 1279.98px) {
+@media (max-width: 1023.98px) {
   .search-shell-grid .citizen-top-nav {
     display: none !important;
   }
@@ -2113,7 +2222,7 @@ body {
    eligible : la sidebar historique ne cede donc la place que la ou un rail
    citoyen existe vraiment. Route non eligible -> comportement historique.
    `:has()` est borne a `.web-three-col` et a la bande medium. */
-@media (min-width: 640px) and (max-width: 1279.98px) {
+@media (min-width: 640px) and (max-width: 1023.98px) {
   [data-citizen-medium-rail].citizen-medium-rail-only {
     display: flex;
   }
@@ -2135,6 +2244,7 @@ body {
   }
 
   [data-citizen-medium-rail].citizen-medium-rail {
+    display: flex;
     flex-direction: column;
     position: sticky;
     top: 0;
@@ -2147,27 +2257,22 @@ body {
        viewport de 900). La hauteur est donc bornee sur l'offset reel. */
     height: calc(100dvh - 1rem);
     max-height: calc(100dvh - 1rem);
-    /* Aucun scroll interne : la navigation tient dans la hauteur. */
     overflow: hidden;
     background: #ffffff;
     border-right: 1px solid rgb(229 229 229 / 0.8);
   }
 
-  /* Grammaire visuelle du déclencheur Menu Yunicity dans le rail (complément
-     M2.3) : icône `Grid3x3` NOIRE sur pastille circulaire gris clair. Le
-     composant partagé `CitizenYunicityMenu` n'est pas modifié — seul son rendu
-     DANS ce rail est habillé, les autres surfaces gardent leur tonalité. */
-  /* Le declencheur est enveloppe par `WebSidebarTooltip` : selecteur descendant. */
-  [data-citizen-medium-rail].citizen-medium-rail [data-rail-label="Menu"] button {
-    min-width: 2.75rem;
-    min-height: 2.75rem;
-    background: #F1F1F3;
-    color: #111827;
+  [data-citizen-medium-rail-nav] {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
-  [data-citizen-medium-rail].citizen-medium-rail [data-rail-label="Menu"] button:hover {
-    background: #E6E6EA;
-    color: #111827;
+  [data-citizen-medium-rail-footer] {
+    flex-shrink: 0;
   }
 
   /* --- C3-CITIZEN-MEDIUM-SHELL-R1F : canvas creation-flow plein format ---
@@ -2195,7 +2300,8 @@ body {
    ci-dessous ne masque un contrôle ni une identité — seulement des libellés
    visuels dont le nom accessible reste porté par `aria-label`.
 
-   Base = desktop/medium. Le mobile (< 640) revient au bord à bord C3.1-R1D. */
+   Base = desktop/medium. Le mobile feed (<640) reprend la même colonne éditoriale
+   unifiée (`.feed-main-column`), pas le bord à bord R1D historique. */
 
 /* Le handle n'est mis en avant qu'en mobile : en desktop l'identité est le nom
    affiché, et le handle ferait doublon sur deux lignes. */
@@ -2283,5 +2389,255 @@ body {
 @media (min-width: 640px) {
   .feed-publication-media img {
     max-height: 20rem;
+  }
+}
+
+/* ═══ C3-FEED-RESPONSIVE-FINAL-R3 — contrats mobile/medium (CSS seul) ═══════ */
+
+@media (max-width: 639.98px) {
+  .feed-mobile-shell .web-main-column,
+  .feed-mobile-shell .feed-app-shell-content,
+  .feed-mobile-shell .feed-main-column {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Navbar basse — viewport réel, indépendante du conteneur Feed. */
+  .citizen-feed-shell .web-mobile-strategic-bottom-nav {
+    display: block;
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 100vw;
+    z-index: var(--z-chrome, 40);
+    box-sizing: border-box;
+  }
+
+  .citizen-feed-shell .web-mobile-strategic-bottom-nav > div {
+    max-width: min(32rem, calc(100vw - 1.5rem));
+  }
+
+  /* Header mobile — flex shrink sans masquer de commande. */
+  .citizen-feed-shell .web-mobile-feed-only > div {
+    min-width: 0;
+    gap: 0.375rem;
+    padding-inline: 0.75rem;
+  }
+
+  /* R4A — header mobile full-bleed (contrat C3.1-R1D : le separateur sous le
+     header touche les deux bords du viewport). Le header est enfant de la
+     colonne, qui porte la gouttiere de 16px ; on l'annule pour lui seul, comme
+     le header medium le fait deja pour son propre palier. Effet de bord
+     bienvenu : les 32px recuperes suffisent au wordmark complet des 360px. */
+  .citizen-feed-shell .web-mobile-feed-only {
+    margin-left: calc(-1 * var(--feed-medium-content-gutter));
+    margin-right: calc(-1 * var(--feed-medium-content-gutter));
+  }
+
+  /* R4C — wordmark entier des 320px : pas d'ellipsis. On recupere l'espace via
+     gouttiere, gaps et mascotte compacte ; le slot logo garde min-width: 0 pour
+     que flex-1 ne pousse pas les commandes hors viewport. */
+  .citizen-feed-shell [data-yunicity-mobile-header-control="logo"] {
+    min-width: 0;
+  }
+
+  .citizen-feed-shell [data-yunicity-mobile-header-control="logo"] a,
+  .citizen-feed-shell [data-yunicity-mobile-header-control="logo"] a > span {
+    min-width: 0;
+  }
+
+  .citizen-feed-shell .web-mobile-feed-only > div > .flex.shrink-0 {
+    gap: 0.25rem;
+  }
+
+  @media (max-width: 389.98px) {
+    .citizen-feed-shell .web-mobile-feed-only > div {
+      gap: 0.25rem;
+      padding-inline: 0.625rem;
+    }
+
+    .citizen-feed-shell [data-yunicity-mobile-header-control="logo"] a > span {
+      gap: 0.25rem;
+    }
+  }
+
+  @media (max-width: 359.98px) {
+    .citizen-feed-shell [data-yunicity-mobile-header-control="logo"] a > span > span {
+      font-size: 0.9375rem;
+      line-height: 1.2;
+    }
+  }
+
+  /* Composeur — trois actions fluides, libellés intacts. */
+  .citizen-feed-shell .feed-desktop-composer .border-t > .flex {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    padding-inline: 0.125rem;
+  }
+
+  .citizen-feed-shell .feed-desktop-composer [data-feed-desktop-composer-action] {
+    min-width: 0;
+    flex: unset;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem 0.125rem;
+    font-size: clamp(0.625rem, 2.85vw, 0.875rem);
+    line-height: 1.15;
+    text-align: center;
+    hyphens: none;
+  }
+
+  .citizen-feed-shell .feed-desktop-composer [data-feed-desktop-composer-action] span {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+
+  /* Cartes et médias contenus dans la colonne mobile. */
+  .citizen-feed-shell .feed-main-column [data-feed-medium-region],
+  .citizen-feed-shell .feed-main-column [data-feed-publication-editorial],
+  .citizen-feed-shell .feed-main-column [data-feed-publication-media],
+  .citizen-feed-shell .feed-main-column [data-feed-publication-media] img,
+  .citizen-feed-shell .feed-main-column [data-feed-medium-surface="primary"] {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .citizen-feed-shell
+    .feed-main-column
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-editorial] {
+    max-width: min(var(--feed-medium-publication-measure, 42rem), 100%);
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  /* R4A : `.feed-medium-header` est volontairement EXCLU du plafond de largeur.
+     Il est full-bleed par marges negatives (contrat C3-FEED-M3.2 : le header
+     touche rail.right a gauche et le bord reel de l'ecran a droite). Un
+     `max-width: 100%` le replafonnait a la largeur de contenu de la colonne :
+     la marge gauche le decalait sans que la droite ne s'etende, d'ou un bord
+     droit a 608px pour un shell de 640px. */
+  .citizen-feed-shell .feed-main-column,
+  .citizen-feed-shell [data-feed-medium-region="stream"] {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* R4A : pas de `width: 100%` non plus. Fixer la largeur a celle du contenu
+     parent rendait les marges negatives purement translatoires — le header
+     glissait de 16px a gauche sans s'etendre a droite. Sans largeur imposee,
+     il s'etire naturellement et les marges l'elargissent jusqu'aux deux bords. */
+  .citizen-feed-shell .feed-medium-header {
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .citizen-feed-shell .feed-medium-header [data-feed-medium-header-search] {
+    min-width: 0;
+  }
+
+  .citizen-feed-shell [data-feed-medium-region="stream"] [data-feed-publication-editorial],
+  .citizen-feed-shell [data-feed-medium-region="stream"] [data-feed-publication-media],
+  .citizen-feed-shell [data-feed-medium-region="stream"] [data-feed-publication-media] img,
+  .citizen-feed-shell [data-feed-medium-region="featured-event"] [data-feed-medium-surface="primary"],
+  .citizen-feed-shell [data-feed-medium-region="evening-events"] [data-feed-medium-surface="primary"] {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .citizen-feed-shell
+    [data-feed-medium-region="stream"]
+    [data-feed-publication-editorial] {
+    max-width: min(var(--feed-medium-publication-measure, 42rem), 100%);
+  }
+}
+
+@media (min-width: 640px) and (max-width: 719.98px) {
+  /* R4C — Medium compact : rail 76→88px, gouttières 12→16px, header plus aéré. */
+  .citizen-feed-shell {
+    --citizen-medium-rail-width: clamp(4.75rem, calc(4.75rem + (100vw - 640px) * 0.15), 5.5rem);
+    --feed-medium-content-gutter: clamp(0.75rem, calc(0.75rem + (100vw - 640px) * 0.05), 1rem);
+  }
+
+  .citizen-feed-shell .feed-medium-header {
+    gap: clamp(0.375rem, 1.2vw, 0.5rem);
+  }
+
+  .citizen-feed-shell [data-feed-medium-header-identity] {
+    font-size: 0.9375rem;
+    letter-spacing: -0.02em;
+  }
+
+  .citizen-feed-shell [data-feed-medium-header-city] {
+    font-size: 0.8125rem;
+    min-width: 0;
+  }
+
+  .citizen-feed-shell [data-feed-medium-header-search] {
+    padding-inline: 0.625rem;
+  }
+
+  .citizen-feed-shell [data-feed-medium-header-filter] {
+    padding-inline: 0.625rem;
+  }
+
+  .citizen-feed-shell .feed-featured-event-card > article {
+    flex-direction: column;
+  }
+
+  .citizen-feed-shell .feed-featured-event-card > article > a {
+    width: 100%;
+    min-height: 12rem;
+  }
+}
+
+/* R4C — Desktop compact 1024→1279 : rails fluides deja en base ; resserrer
+   paddings/gaps et autoriser un retour a la ligne controle sur les libelles. */
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  .citizen-feed-shell .web-three-col {
+    padding-left: clamp(0.5rem, 1vw, 1rem);
+    padding-right: clamp(0.5rem, 1vw, 1rem);
+  }
+
+  .feed-shell {
+    gap: clamp(0.375rem, 0.8vw, 0.625rem);
+    padding: 1rem 0 1.5rem;
+  }
+
+  .feed-desktop-left-rail .feed-desktop-surface {
+    padding: 0.25rem;
+  }
+
+  .feed-desktop-left-rail nav a,
+  .feed-desktop-left-rail nav button {
+    gap: 0.5rem;
+    padding: 0.5rem 0.625rem;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+
+  .feed-desktop-right-rail [data-feed-desktop-evening-event] a {
+    padding-inline: 0.75rem;
+  }
+
+  .feed-desktop-right-rail [data-feed-desktop-evening-event] .min-w-0 {
+    min-width: 0;
+  }
+
+  .feed-desktop-right-rail .truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }

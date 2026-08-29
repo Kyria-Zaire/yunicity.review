@@ -11,8 +11,10 @@ import {
 } from "@yunicity/utils";
 import { CalendarDays, Compass, Heart, Home, Users } from "lucide-react";
 import Link from "next/link";
+import type { MutableRefObject } from "react";
 
 import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
+import type { FeedWeatherCardData } from "@/components/feed/portal/feed-weather-card";
 import { FeedWeatherCard } from "@/components/feed/portal/feed-weather-card";
 
 type FeedLeftNavId =
@@ -35,6 +37,13 @@ type FeedDesktopLeftRailProps = {
   activeView: FeedPortalView;
   leftNav: FeedLeftNavId;
   onNavSelect: (nav: FeedLeftNavId) => void;
+  weather: FeedWeatherCardData;
+  /**
+   * Sonde de visibilité du palier Desktop (R4). Le rail est `display: none`
+   * sous 1280px : il n'intersecte jamais, donc le contrôleur n'arme aucune
+   * requête de rail tant que le Desktop n'est pas réellement affiché.
+   */
+  desktopProbeRef?: MutableRefObject<HTMLElement | null>;
 };
 
 const NAV_ITEMS: Array<{
@@ -57,9 +66,11 @@ export function FeedDesktopLeftRail({
   activeView,
   leftNav,
   onNavSelect,
+  weather,
+  desktopProbeRef,
 }: FeedDesktopLeftRailProps) {
   return (
-    <aside className="feed-desktop-left-rail" aria-label="Navigation du fil">
+    <aside ref={desktopProbeRef} className="feed-desktop-left-rail" aria-label="Navigation du fil">
       <nav className="feed-desktop-surface p-1.5">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
@@ -112,7 +123,12 @@ export function FeedDesktopLeftRail({
       </CreateHubTriggerButton>
 
       <div className="mt-4">
-        <FeedWeatherCard city={city} />
+        <FeedWeatherCard
+          city={city}
+          weather={weather.weather}
+          loading={weather.loading}
+          error={weather.error}
+        />
       </div>
     </aside>
   );
