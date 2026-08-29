@@ -8,7 +8,6 @@ import {
   type WebNavItem,
 } from "@/lib/layout/web-layout-config";
 import { WebNavIcon } from "@/lib/layout/web-nav-icons";
-import { Z_INDEX } from "@/lib/layout/z-index";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -42,20 +41,17 @@ function BottomNavLink({ item, pathname }: { item: WebNavItem; pathname: string 
         ) : (
           <WebNavIcon id={item.icon} className="h-[22px] w-[22px] text-yunicity-primary" />
         )}
-        <span className="max-w-full truncate">{item.label}</span>
+        <span className="max-w-full truncate">{item.mobileLabel ?? item.label}</span>
       </Link>
     </li>
   );
 }
 
 /**
- * Bottom nav mobile flottante — Navbar V3 (C3.1-T2, ≤639.98px).
+ * Bottom nav mobile flottante — Navbar V3 (C3.1-T2, viewport strictement sous 640px).
  *
- * QUATRE destinations issues de `WEB_CITIZEN_DESTINATIONS`, avec le CTA **Créer** au centre
- * (2 destinations · Créer · 2 destinations), conformément à la maquette canonique.
- *
- * Menu Yunicity n'est plus un FAB concurrent ici : il est porté par le header mobile, donc
- * toujours visible et annoncé, sans doublon d'entrée.
+ * Visibilité portée par globals.css (media query width inférieure à 640px).
+ * QUATRE destinations + CTA Créer au centre (Accueil · Video · + · Carte · Sortir).
  */
 export function WebMobileStrategicBottomNav() {
   const pathname = usePathname();
@@ -66,9 +62,8 @@ export function WebMobileStrategicBottomNav() {
 
   return (
     <nav
-      className="web-mobile-strategic-bottom-nav pointer-events-none fixed inset-x-0 bottom-0 hidden max-[639.98px]:block px-3"
+      className="web-mobile-strategic-bottom-nav pointer-events-none fixed inset-x-0 bottom-0 z-[var(--z-chrome,40)] block min-[640px]:hidden px-3"
       style={{
-        zIndex: Z_INDEX.CHROME,
         paddingBottom: `max(${CITIZEN_MOBILE_FLOATING_NAV_BOTTOM_GAP}, env(safe-area-inset-bottom))`,
       }}
       aria-label="Navigation principale"

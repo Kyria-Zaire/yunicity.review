@@ -14,11 +14,20 @@ import type { Page } from "@playwright/test";
  * Données QA réelles, acteur seedé, aucun token fabriqué, aucune attente fixe.
  */
 const DESTINATIONS = [
-  { label: "Fil local", path: "/feed" },
-  { label: "Vidéos", path: "/videos" },
+  { label: "Fil local", mobileLabel: "Accueil", path: "/feed" },
+  { label: "Vidéos", mobileLabel: "Video", path: "/videos" },
   { label: "Carte", path: "/map" },
   { label: "Sortir", path: "/sortir" },
 ] as const;
+
+function destinationLabel(
+  destination: (typeof DESTINATIONS)[number],
+  viewportWidth: number,
+): string {
+  return viewportWidth < 640 && "mobileLabel" in destination && destination.mobileLabel
+    ? destination.mobileLabel
+    : destination.label;
+}
 
 const SEARCH_LABEL = "Explorer Reims";
 const CREATE_LABEL = "Créer";
@@ -78,7 +87,7 @@ test.describe("Navbar V3 — chrome citoyen", () => {
         page,
         "/feed",
         /\/feed(?:\?|$)/,
-        page.getByRole("region", { name: "Publier sur le fil local" }).filter({ visible: true }),
+        page.locator("[data-feed-desktop-composer]").filter({ visible: true }),
       );
 
       // 1. Exactement quatre destinations dans la navigation principale visible.
@@ -94,9 +103,8 @@ test.describe("Navbar V3 — chrome citoyen", () => {
       );
       const normalized = labels.filter(Boolean);
       for (const destination of DESTINATIONS) {
-        expect(normalized.join(" | "), `${destination.label} absent en ${viewport.name}`).toContain(
-          destination.label,
-        );
+        const expected = destinationLabel(destination, viewport.width);
+        expect(normalized.join(" | "), `${expected} absent en ${viewport.name}`).toContain(expected);
       }
 
       // 2. Recherche n'est PAS une destination.
@@ -141,15 +149,16 @@ test.describe("Navbar V3 — chrome citoyen", () => {
     await gotoCold(page, "/feed", /\/feed/);
 
     for (const destination of DESTINATIONS) {
+      const expected = destinationLabel(destination, 390);
       const nav = visibleMainNav(page).filter({ has: page.getByRole("link") }).first();
-      await nav.getByRole("link", { name: destination.label }).click();
+      await nav.getByRole("link", { name: expected }).click();
       await expect(page).toHaveURL(new RegExp(destination.path), { timeout: COLD_START_TIMEOUT });
 
       const active = visibleMainNav(page)
         .filter({ has: page.getByRole("link") })
         .first()
-        .getByRole("link", { name: destination.label });
-      await expect(active, `aria-current manquant sur ${destination.label}`).toHaveAttribute(
+        .getByRole("link", { name: expected });
+      await expect(active, `aria-current manquant sur ${expected}`).toHaveAttribute(
         "aria-current",
         "page",
         { timeout: COLD_START_TIMEOUT },
@@ -184,9 +193,7 @@ test.describe("Navbar V3 — chrome citoyen", () => {
     for (const route of routes) {
       const authoritativeContent =
         route === "/feed"
-          ? page
-              .getByRole("region", { name: "Publier sur le fil local" })
-              .filter({ visible: true })
+          ? page.locator("[data-feed-desktop-composer]").filter({ visible: true })
           : page.locator("h1:visible, h2:visible").first();
       await waitForCitizenRouteReady(
         page,

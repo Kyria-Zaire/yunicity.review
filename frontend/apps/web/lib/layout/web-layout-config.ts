@@ -30,6 +30,8 @@ export type WebNavTier = "primary" | "secondary";
 export type WebNavItem = {
   href: string;
   label: string;
+  /** Libellé compact bottom nav mobile (<640px) — ex. « Accueil » pour le fil. */
+  mobileLabel?: string;
   icon: WebNavIconId;
   match?: WebNavMatch;
   tier?: WebNavTier;
@@ -52,8 +54,8 @@ export const WEB_CITIZEN_ACCOUNT_MENU: WebNavItem[] = [
  * peut plus diverger. Ordre = ordre d'affichage à tous les paliers (390 / 900 / 1366).
  */
 export const WEB_CITIZEN_DESTINATIONS: readonly WebNavItem[] = [
-  { href: "/feed", label: "Fil local", icon: "feed", match: "prefix", tier: "primary" },
-  { href: "/videos", label: "Vidéos", icon: "videos", match: "prefix", tier: "primary" },
+  { href: "/feed", label: "Fil local", mobileLabel: "Accueil", icon: "feed", match: "prefix", tier: "primary" },
+  { href: "/videos", label: "Vidéos", mobileLabel: "Video", icon: "videos", match: "prefix", tier: "primary" },
   { href: "/map", label: "Carte", icon: "map", match: "prefix", tier: "primary" },
   { href: "/sortir", label: "Sortir", icon: "sortir", match: "prefix", tier: "primary" },
 ] as const;

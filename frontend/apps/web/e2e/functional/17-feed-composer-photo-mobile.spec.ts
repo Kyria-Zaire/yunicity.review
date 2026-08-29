@@ -30,7 +30,7 @@ async function gotoFeedReady(page: Page): Promise<void> {
 }
 
 function mobileComposer(page: Page) {
-  return page.locator('section.web-mobile-feed-only[aria-label="Publier sur le fil local"]');
+  return page.locator("[data-feed-desktop-composer]").filter({ visible: true });
 }
 
 function visibleFeedArticle(page: Page, marker: string) {

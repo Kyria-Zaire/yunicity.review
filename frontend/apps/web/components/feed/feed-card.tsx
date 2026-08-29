@@ -36,16 +36,25 @@ function FeedCardBody({
   post,
   currentUserId,
   onReport,
+  onToggleEventInterest,
 }: {
   post: FeedPost;
   currentUserId: string | null;
   onReport?: (reason: FeedReportReason) => Promise<void>;
+  onToggleEventInterest?: () => Promise<void>;
 }) {
   if (post.type === "offer") {
     return <OfferFeedCard post={post} currentUserId={currentUserId} onReport={onReport} />;
   }
   if (post.type === "event") {
-    return <EventFeedCard post={post} currentUserId={currentUserId} onReport={onReport} />;
+    return (
+      <EventFeedCard
+        post={post}
+        currentUserId={currentUserId}
+        onReport={onReport}
+        onToggleEventInterest={onToggleEventInterest}
+      />
+    );
   }
   if (post.type === "partner_creator" || post.author.type === "organization") {
     return <OrganizationPostCard post={post} currentUserId={currentUserId} onReport={onReport} />;
@@ -195,17 +204,15 @@ export function FeedCardWithDependencies({
    * n'y figure plus — il vit dans le menu `…` de l'en-tete, seul chemin de
    * signalement, identique sur les trois bandes.
    */
-  const footer = (
-    <FeedPublicationSocialActions
-      post={post}
-      commentsOpen={commentsOpen}
-      onToggleLike={() => void onToggleLike(post)}
-      onToggleComments={() => void toggleComments()}
-      onToggleEventInterest={
-        post.type === "event" && post.event ? () => toggleEventInterest() : undefined
-      }
-    />
-  );
+  const footer =
+    post.type === "event" ? null : (
+      <FeedPublicationSocialActions
+        post={post}
+        commentsOpen={commentsOpen}
+        onToggleLike={() => void onToggleLike(post)}
+        onToggleComments={() => void toggleComments()}
+      />
+    );
 
   return (
     <FeedCardShell
@@ -232,6 +239,9 @@ export function FeedCardWithDependencies({
         post={post}
         currentUserId={dependencies.currentUserId}
         onReport={(reason) => onReport(post.id, reason)}
+        onToggleEventInterest={
+          post.type === "event" && post.event ? () => toggleEventInterest() : undefined
+        }
       />
     </FeedCardShell>
   );

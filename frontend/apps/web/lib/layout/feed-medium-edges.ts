@@ -15,8 +15,8 @@ export type FeedEdgeZone = "mobile" | "medium" | "desktop";
 /** Interprétation de la zone disponible selon le viewport. */
 export const FEED_EDGE_ZONE_DEFINITION: Record<FeedEdgeZone, string> = {
   mobile: "limites utiles du viewport mobile (< 640px)",
-  medium: "de rail.right jusqu'a shell.right — jamais une colonne deja mise en page",
-  desktop: "limites de la colonne centrale entre les rails/asides (≥ 1280px)",
+  medium: "de rail.right + gouttière jusqu'à shell.right − gouttière",
+  desktop: "limites de la colonne centrale entre les rails/asides (≥ 1024px)",
 };
 
 /** Tolérance d'arrondi subpixel — jamais un moyen de masquer une marge réelle. */
@@ -31,19 +31,23 @@ export const FEED_SEPARATOR_MIN_WIDTH_RATIO = 0.99;
 export type EdgeBox = { left: number; right: number; width: number };
 
 /**
- * Zone utile medium — définition AUTORITAIRE (C3-FEED-M3.2).
+ * Zone utile medium — définition AUTORITAIRE (C3-FEED-M3.2B).
  *
- * La définition précédente prenait la largeur courante de `.web-main-column`
- * comme référence. Elle était CIRCULAIRE : cette colonne est elle-même déjà
- * rétrécie par la gouttière et les paddings du shell, donc un composant « plein
- * à 100 % » y restait rétréci. Mesuré : écart gauche 24 px (`column-gap`) et
- * écart droit 16 px (`padding-right`) aux cinq viewports.
- *
- * La zone commence désormais à la frontière PHYSIQUE du rail et se termine au
- * bord droit intérieur réel du shell.
+ * La zone commence après le rail ET la gouttière horizontale du contenu,
+ * et se termine avant le bord droit du shell avec la même gouttière.
  */
-export function mediumContentZone(rail: EdgeBox, shell: EdgeBox): EdgeBox {
-  return { left: rail.right, right: shell.right, width: shell.right - rail.right };
+export const FEED_MEDIUM_CONTENT_GUTTER_PX = 16;
+
+export function mediumContentZone(
+  rail: EdgeBox,
+  shell: EdgeBox,
+  gutterPx = FEED_MEDIUM_CONTENT_GUTTER_PX,
+): EdgeBox {
+  return {
+    left: rail.right + gutterPx,
+    right: shell.right - gutterPx,
+    width: shell.right - rail.right - gutterPx * 2,
+  };
 }
 
 /** Les axes gauche/droit coïncident-ils, aux arrondis subpixel près ? */

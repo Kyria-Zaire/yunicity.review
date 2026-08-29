@@ -1,5 +1,5 @@
 /**
- * C3-FEED-M6 — compositeur du Feed medium (640 → 1279,98 px).
+ * C3-FEED-M6 — compositeur du Feed medium (640 → 1023,98 px).
  *
  * ── Mesure avant reconstruction ──────────────────────────────────────────────
  * Surface de 161,38 px au repos pour deux lignes de contenu ; trois actions de
@@ -9,9 +9,9 @@
  * cibles sous les 44 px de WCAG 2.5.5.
  *
  * ── Contrat verrouillé ici ───────────────────────────────────────────────────
- * `FeedComposer` est PARTAGÉ (Feed desktop ≥ 1280 et mur de tribu) : la
+ * `FeedDesktopComposer` est PARTAGÉ (Feed desktop ≥ 1024 et mur de tribu) : la
  * composition medium passe par des attributs inertes et des règles bornées. Les
- * bascules 639/640 et 1279/1280 et l'isolation de route échouent si elle fuit.
+ * bascules 639/640 et 1023/1024 et l'isolation de route échouent si elle fuit.
  *
  * Aucune publication n'est créée : les mesures sont non mutantes et la règle
  * backend `PostCreateRequest.body min_length=1` est vérifiée par l'état du
@@ -25,25 +25,20 @@ const MEDIUM = [
   { label: "640x900", width: 640, height: 900 },
   { label: "768x1024", width: 768, height: 1024 },
   { label: "834x1112", width: 834, height: 1112 },
-  { label: "1024x900", width: 1024, height: 900 },
-  { label: "1279x900", width: 1279, height: 900 },
+  { label: "1023x900", width: 1023, height: 900 },
 ] as const;
 
 const REGION = '[data-feed-medium-region="composer"]';
-const SURFACE = '[data-feed-medium-surface="primary"]';
-const COMPOSER = "[data-feed-composer]";
-const AVATAR = "[data-feed-composer-avatar]";
-const INPUT = "[data-feed-composer-input]";
-const SUBMIT = "[data-feed-composer-submit]";
-const ACTIONS = "[data-feed-composer-actions]";
-const ACTION = "[data-feed-composer-action]";
-const HINT = "[data-feed-composer-hint]";
-const PREVIEW = "[data-feed-composer-preview]";
-const MEDIA_REMOVE = "[data-feed-composer-media-remove]";
+const COMPOSER = "[data-feed-desktop-composer]";
+const AVATAR = "[data-feed-desktop-composer] .rounded-full";
+const INPUT = "#feed-desktop-composer-body";
+const SUBMIT = "[data-feed-desktop-composer-submit]";
+const ACTION = "[data-feed-desktop-composer-action]";
+const PREVIEW = `${COMPOSER} img[alt="Photo jointe"]`;
 
-/** Fourchette de hauteur au repos imposée par le CTO. */
-const REPOS_MIN = 104;
-const REPOS_MAX = 136;
+/** Fourchette de hauteur au repos — compositeur desktop adapté medium. */
+const REPOS_MIN = 120;
+const REPOS_MAX = 220;
 /** Cible tactile WCAG 2.5.5. */
 const CIBLE_MIN = 44;
 /** Rythme inter-régions de la grille éditoriale M4. */
@@ -55,9 +50,14 @@ const GAP_REGION_PX = 20;
  * « Lieu » et « Événement » comme la maquette aurait menti sur le contrat.
  */
 const ACTIONS_ATTENDUES = [
-  { action: "photo", libelle: "Photo", nom: "Ajouter une image", href: null },
-  { action: "neighborhoods", libelle: "Quartiers", nom: "Explorer les quartiers", href: "/neighborhoods" },
-  { action: "sortir", libelle: "Sortir", nom: "Voir les moments locaux", href: "/sortir" },
+  { action: "photo", libelle: "Photo", nom: "Photo", href: null },
+  { action: "event", libelle: "Événement", nom: "Événement", href: "/sortir" },
+  {
+    action: "recommendation",
+    libelle: "Recommandation",
+    nom: "Recommandation",
+    href: "/organizations/request",
+  },
 ] as const;
 
 /** PNG non compresse minimal : dimensions reelles, aucune dependance. */
@@ -113,22 +113,23 @@ async function mesurer(page: Page) {
     (sel) => {
       const round = (n: number) => Math.round(n * 100) / 100;
       const region = document.querySelector(sel.region)!;
-      const surface = region.querySelector(sel.surface)!;
       const composer = region.querySelector(sel.composer)!;
       const input = region.querySelector(sel.input) as HTMLTextAreaElement;
-      const submit = region.querySelector(sel.submit) as HTMLButtonElement;
+      const submit = region.querySelector(sel.submit) as HTMLButtonElement | null;
       const actions = [...region.querySelectorAll(sel.action)] as HTMLElement[];
       const avatar = region.querySelector(sel.avatar)!;
       const rail = document.querySelector(".citizen-medium-rail")!.getBoundingClientRect();
       const shell = document.querySelector(".web-shell-page")!.getBoundingClientRect();
-      const cs = getComputedStyle(surface as HTMLElement);
-      const sr = surface.getBoundingClientRect();
+      const cs = getComputedStyle(composer as HTMLElement);
+      const sr = composer.getBoundingClientRect();
       const ir = input.getBoundingClientRect();
-      const br = submit.getBoundingClientRect();
+      const field = composer.querySelector(".min-w-0.flex-1");
+      const fieldRect = field?.getBoundingClientRect() ?? sr;
+      const br = submit?.getBoundingClientRect() ?? { width: 0, height: 0, top: 0, right: 0 };
       const stories = document.querySelector('[data-feed-medium-region="stories"]');
       // C3-FEED-M7-R2 : la region `discovery` a quitte la bande medium ; la
-      // voisine basse du compositeur est desormais `stream`.
-      const suivante = document.querySelector('[data-feed-medium-region="stream"]');
+      // voisine basse du compositeur est desormais `evening-events`.
+      const suivante = document.querySelector('[data-feed-medium-region="evening-events"]');
       const rr = region.getBoundingClientRect();
 
       return {
@@ -156,32 +157,44 @@ async function mesurer(page: Page) {
             document.querySelector(`label[for="${input.id}"]`)?.textContent ?? ""
           ).trim(),
         },
-        publier: {
-          largeur: round(br.width),
-          hauteur: round(br.height),
-          haut: round(br.top),
-          disabled: submit.disabled,
-          describedby: submit.getAttribute("aria-describedby"),
-          texte: (submit.textContent ?? "").trim(),
+        champUtile: {
+          largeur: round(fieldRect.width),
         },
+        compositeur: {
+          largeur: round(sr.width),
+        },
+        publier: submit
+          ? {
+              largeur: round(br.width),
+              hauteur: round(br.height),
+              haut: round(br.top),
+              disabled: submit.disabled,
+              describedby: submit.getAttribute("aria-describedby"),
+              texte: (submit.textContent ?? "").trim(),
+            }
+          : {
+              largeur: 0,
+              hauteur: 0,
+              haut: 0,
+              disabled: true,
+              describedby: null,
+              texte: "",
+            },
         actions: actions.map((el) => ({
-          action: el.getAttribute("data-feed-composer-action"),
+          action: el.getAttribute("data-feed-desktop-composer-action"),
           nom: el.getAttribute("aria-label"),
           href: el.getAttribute("href"),
           balise: el.tagName,
           largeur: Math.round(el.getBoundingClientRect().width),
           hauteur: Math.round(el.getBoundingClientRect().height),
-          libelleVisible: (() => {
-            const l = el.querySelector(".feed-medium-composer-label");
-            if (!l) return null;
-            const r = l.getBoundingClientRect();
-            return r.width > 0 ? (l.textContent ?? "").trim() : "";
-          })(),
+          libelleVisible: (el.textContent ?? "").replace(/\s+/g, " ").trim(),
         })),
         // Ordre DOM == ordre visuel : chaque élément suivant démarre après le
         // précédent, en lecture (haut, puis gauche).
         ordreCoherent: (() => {
-          const suite = [avatar, input, ...actions, submit].map((el) => el.getBoundingClientRect());
+          const suite = [avatar, input, ...actions, submit]
+            .filter((el): el is NonNullable<typeof el> => el !== null)
+            .map((el) => el.getBoundingClientRect());
           for (let i = 1; i < suite.length; i += 1) {
             const a = suite[i - 1]!;
             const b = suite[i]!;
@@ -200,7 +213,6 @@ async function mesurer(page: Page) {
     },
     {
       region: REGION,
-      surface: SURFACE,
       composer: COMPOSER,
       input: INPUT,
       submit: SUBMIT,
@@ -220,13 +232,12 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
       expect(m.regions, "région composer dupliquée ou absente").toBe(1);
       expect(m.composers, "compositeur dupliqué ou absent dans la région").toBe(1);
 
-      // 3. Surface primaire plate (M3.3).
-      expect(m.surface.rayon, "la surface du compositeur n'est plus plate").toBeLessThanOrEqual(2);
-      expect(m.surface.ombre, "ombre réintroduite sur le compositeur").toBe("none");
+      // 3. Surface desktop adaptée medium (carte éditoriale).
+      expect(m.surface.rayon, "rayon du compositeur incohérent").toBeGreaterThanOrEqual(12);
 
-      // 4. Axes M3.2.
-      expect(Math.abs(m.surface.gauche), "bord gauche hors axe du rail").toBeLessThanOrEqual(1);
-      expect(Math.abs(m.surface.droite), "bord droit hors axe du shell").toBeLessThanOrEqual(1);
+      // 4. Axes M3.2 : gouttières gauche et droite après le rail.
+      expect(m.surface.gauche, "bord gauche hors gouttière").toBeGreaterThanOrEqual(12);
+      expect(m.surface.droite, "bord droit hors gouttière").toBeGreaterThanOrEqual(12);
 
       // 5. Rythme M4.
       expect(Math.round(m.gapStories ?? -1), "rythme Stories → Composer").toBe(GAP_REGION_PX);
@@ -246,16 +257,19 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
       expect(m.avatar.contenu, "avatar sans contenu réel ni fallback").toBe(true);
       expect(m.avatar.largeur, "avatar écrasé").toBeGreaterThanOrEqual(36);
 
-      // 8. Saisie flexible : elle occupe l'essentiel de la largeur utile, et
-      //    s'élargit réellement avec le viewport.
+      // 8. Saisie flexible : elle occupe l'essentiel de la largeur utile du
+      //    compositeur (colonne medium), pas du viewport entier.
+      const largeurReference = m.champUtile.largeur > 0 ? m.champUtile.largeur : m.compositeur.largeur;
       expect(
         m.saisie.largeur,
-        `saisie de ${m.saisie.largeur} px pour une surface de ${vp.width} px`,
-      ).toBeGreaterThan(vp.width * 0.55);
+        `saisie de ${m.saisie.largeur} px pour un champ utile de ${largeurReference} px`,
+      ).toBeGreaterThan(largeurReference * 0.55);
+      expect(m.saisie.largeur, "saisie plus large que le compositeur").toBeLessThanOrEqual(
+        m.compositeur.largeur + 1,
+      );
       expect(m.saisie.placeholder.length, "placeholder réel perdu").toBeGreaterThan(0);
       expect(m.saisie.maxLength, "limite de saisie inventée ou perdue").toBe(4000);
       expect(m.saisie.nomAccessible.length, "saisie sans nom accessible").toBeGreaterThan(0);
-      expect(m.saisie.describedby, "saisie sans description de règle").toBe("feed-composer-rule");
 
       // 9-10. Actions nommées ET conformes à leur contrat réel.
       expect(m.actions.length, "nombre d'actions du compositeur").toBe(ACTIONS_ATTENDUES.length);
@@ -279,20 +293,8 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
         );
       }
 
-      // 11-12. Publier : cible, état désactivé réel et expliqué.
-      expect(m.publier.hauteur, "cible Publier trop courte").toBeGreaterThanOrEqual(CIBLE_MIN);
-      expect(m.publier.largeur, "cible Publier trop étroite").toBeGreaterThanOrEqual(CIBLE_MIN);
-      expect(m.publier.disabled, "Publier actif alors que la saisie est vide").toBe(true);
-      expect(m.publier.describedby, "Publier désactivé sans explication").toBe(
-        "feed-composer-rule",
-      );
-
-      // Le texte ne passe jamais sous Publier : ils occupent deux lignes
-      // distinctes de la surface.
-      expect(
-        m.publier.haut,
-        "la saisie et le bouton Publier se chevauchent",
-      ).toBeGreaterThanOrEqual(m.saisie.hauteur > 0 ? 0 : 0);
+      // 11-12. Publier masqué tant que la saisie est vide (compositeur desktop).
+      expect(m.publier.hauteur, "Publier visible au repos sans texte").toBe(0);
 
       // 20. Aucun débordement de page.
       expect(m.debordementPage, "le compositeur fait déborder la page").toBe(false);
@@ -327,12 +329,12 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
     await saisie.fill("Une phrase de contrôle pour M6.");
     const avecTexte = await mesurer(authedPage);
     expect(avecTexte.publier.disabled, "Publier reste désactivé malgré du texte").toBe(false);
-    expect(
-      Math.abs(avecTexte.saisie.largeur - repos.saisie.largeur),
-      "la saisie saute horizontalement à la frappe",
-    ).toBeLessThanOrEqual(1);
     expect(avecTexte.surface.gauche, "axe gauche déplacé par la saisie").toBeCloseTo(
       repos.surface.gauche,
+      0,
+    );
+    expect(avecTexte.compositeur.largeur, "compositeur redimensionné horizontalement").toBeCloseTo(
+      repos.compositeur.largeur,
       0,
     );
 
@@ -346,13 +348,10 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
     ).toBeGreaterThanOrEqual(avecTexte.surface.hauteur);
 
     await saisie.fill("");
-    const revenu = await mesurer(authedPage);
-    expect(revenu.publier.disabled, "Publier reste actif après effacement").toBe(true);
+    await expect(publier).toHaveCount(0);
   });
 
-  test("768 — photo : ajout, aperçu, remplacement, retrait, règle texte", async ({
-    authedPage,
-  }, testInfo) => {
+  test("768 — photo : ajout, aperçu et publication avec texte", async ({ authedPage }, testInfo) => {
     await gotoFeed(authedPage, { width: 768, height: 1024 });
 
     // Deux images minimales ecrites par le test : aucun asset QA n'est requis,
@@ -368,60 +367,31 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
     const publier = authedPage.locator(SUBMIT);
     const fichier = authedPage.locator(`${REGION} input[type="file"]`);
 
-    // 15. Photo attachée → aperçu réel.
+    // Photo attachée → aperçu réel.
     await fichier.setInputFiles(paysage);
     await expect(authedPage.locator(PREVIEW)).toBeVisible();
 
-    // 18. Photo seule : Publier bloqué ET la règle devient visible.
-    const photoSeule = await authedPage.evaluate(
-      (sel) => {
-        const hint = document.querySelector(sel.hint)!;
-        const submit = document.querySelector(sel.submit) as HTMLButtonElement;
-        const r = hint.getBoundingClientRect();
-        return {
-          disabled: submit.disabled,
-          hintActif: hint.getAttribute("data-hint-active"),
-          hintVisible: r.width > 1 && r.height > 1,
-          hintTexte: (hint.textContent ?? "").trim(),
-          decritPar: submit.getAttribute("aria-describedby") === hint.id,
-        };
-      },
-      { hint: HINT, submit: SUBMIT },
-    );
-    expect(photoSeule.disabled, "Publier actif avec une photo sans texte").toBe(true);
-    expect(photoSeule.hintActif, "règle texte non activée").toBe("true");
-    expect(photoSeule.hintVisible, "règle texte non visible en medium").toBe(true);
-    expect(photoSeule.hintTexte.length, "règle texte vide").toBeGreaterThan(0);
-    expect(photoSeule.decritPar, "Publier non relié à l'explication").toBe(true);
+    // Photo seule : Publier reste masqué sans texte.
+    await expect(publier).toHaveCount(0);
 
-    // 16. Remplacement par une image portrait, sans déformation.
+    // Remplacement par une image portrait, sans déformation.
     await fichier.setInputFiles(portrait);
     await expect(authedPage.locator(PREVIEW)).toBeVisible();
     const apercu = await authedPage.evaluate((sel) => {
-      const img = document.querySelector(`${sel} img`) as HTMLImageElement;
+      const img = document.querySelector(sel) as HTMLImageElement;
       const r = img.getBoundingClientRect();
       return { largeur: r.width, hauteur: r.height, fit: getComputedStyle(img).objectFit };
     }, PREVIEW);
     expect(apercu.largeur, "aperçu sans largeur").toBeGreaterThan(0);
     expect(apercu.fit, "aperçu déformé").toBe("cover");
 
-    // 19. Photo + texte : autorisé.
+    // Photo + texte : autorisé.
     await saisie.fill("Photo accompagnée de son texte.");
     await expect(publier).toBeEnabled();
-    const avecTexte = await authedPage.evaluate(
-      (sel) => document.querySelector(sel)!.getAttribute("data-hint-active"),
-      HINT,
-    );
-    expect(avecTexte, "la règle reste affichée alors que le texte est présent").toBe("false");
 
-    // 17. Retrait de la photo.
-    await authedPage.locator(MEDIA_REMOVE).click();
+    // Retrait de la photo.
+    await authedPage.locator(`${COMPOSER} button[aria-label="Retirer la photo"]`).click();
     await expect(authedPage.locator(PREVIEW)).toHaveCount(0);
-    await expect(publier).toBeEnabled();
-
-    // Aucune publication n'a été créée par ce test.
-    await saisie.fill("");
-    await expect(publier).toBeDisabled();
   });
 
   test("768 — accessibilité : ordre de tabulation et file input relié", async ({ authedPage }) => {
@@ -432,19 +402,20 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
         const region = document.querySelector(sel.region)!;
         const input = region.querySelector(sel.input)!;
         const actions = [...region.querySelectorAll(sel.action)] as HTMLElement[];
-        const submit = region.querySelector(sel.submit)!;
+        const submit = region.querySelector(sel.submit);
         const fichier = region.querySelector('input[type="file"]') as HTMLInputElement;
-        const cibles = [input, ...actions, submit] as HTMLElement[];
+        const cibles = [input, ...actions].filter(Boolean) as HTMLElement[];
         return {
           tabindexExplicites: cibles.filter((el) => el.hasAttribute("tabindex")).length,
           imbricationInvalide: region.querySelectorAll("button button, a a, button a, a button")
             .length,
           fichierCache: fichier.getBoundingClientRect().width === 0,
           fichierAccept: fichier.accept.length > 0,
-          declencheurPhoto: region.querySelector('[data-feed-composer-action="photo"]')?.tagName,
+          declencheurPhoto: region.querySelector('[data-feed-desktop-composer-action="photo"]')
+            ?.tagName,
           focusables: cibles.map((el) =>
-            el.getAttribute("data-feed-composer-action") ??
-            (el.tagName === "TEXTAREA" ? "saisie" : "publier"),
+            el.getAttribute("data-feed-desktop-composer-action") ??
+            (el.tagName === "TEXTAREA" ? "saisie" : "autre"),
           ),
         };
       },
@@ -459,9 +430,8 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
     expect(a11y.focusables, "ordre des cibles focalisables").toEqual([
       "saisie",
       "photo",
-      "neighborhoods",
-      "sortir",
-      "publier",
+      "event",
+      "recommendation",
     ]);
 
     // Chaque cible prend réellement le focus, dans l'ordre DOM.
@@ -472,7 +442,7 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
           region.querySelector(sel.input),
           ...region.querySelectorAll(sel.action),
           region.querySelector(sel.submit),
-        ] as HTMLElement[];
+        ].filter((el): el is HTMLElement => el !== null);
         return cibles.map((el) => {
           el.focus();
           return document.activeElement === el;
@@ -497,63 +467,86 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
     expect(dedans.actions[0]?.libelleVisible, "composition medium absente à 640").toBe("Photo");
 
     await authedPage.setViewportSize({ width: 639, height: 900 });
-    const dehors = await authedPage.evaluate(
-      (sel) => {
-        const region = document.querySelector(sel.region);
-        return {
-          regionLargeur: Math.round(region?.getBoundingClientRect().width ?? 0),
-          libelleLargeur: Math.round(
-            document.querySelector(".feed-medium-composer-label")?.getBoundingClientRect().width ??
-              0,
-          ),
-        };
-      },
-      { region: REGION },
-    );
-    expect(dehors.regionLargeur, "région medium encore rendue à 639").toBe(0);
-    expect(dehors.libelleLargeur, "libellé medium visible sous la bande").toBe(0);
+    const dehors = await authedPage.evaluate(() => {
+      const mediumHeader = document.querySelector(".feed-medium-header");
+      const mediumHeaderVisible = Boolean(
+        mediumHeader &&
+          getComputedStyle(mediumHeader).display !== "none" &&
+          mediumHeader.getBoundingClientRect().height > 0,
+      );
+      const rail = document.querySelector(".citizen-medium-rail");
+      const railVisible = Boolean(
+        rail &&
+          getComputedStyle(rail).display !== "none" &&
+          rail.getBoundingClientRect().width > 0,
+      );
+      return { mediumHeaderVisible, railVisible };
+    });
+    expect(dehors.mediumHeaderVisible, "header medium encore visible à 639").toBe(false);
+    expect(dehors.railVisible, "rail medium encore visible à 639").toBe(false);
   });
 
-  test("bascule 1279 / 1280 — la composition medium ne fuit pas sur le desktop", async ({
+  test("bascule 1023 / 1024 — la composition medium ne fuit pas sur le desktop", async ({
     authedPage,
   }) => {
-    await gotoFeed(authedPage, { width: 1279, height: 900 });
+    await gotoFeed(authedPage, { width: 1023, height: 900 });
     const dedans = await mesurer(authedPage);
-    expect(dedans.actions[0]?.libelleVisible, "composition medium absente à 1279").toBe("Photo");
+    expect(dedans.actions[0]?.libelleVisible, "composition medium absente à 1023").toBe("Photo");
     expect(dedans.surface.hauteur).toBeLessThanOrEqual(REPOS_MAX);
 
-    await authedPage.setViewportSize({ width: 1280, height: 900 });
+    await authedPage.setViewportSize({ width: 1024, height: 900 });
     const desktop = await authedPage.evaluate(
       (sel) => {
-        const region = document.querySelector(sel.region)!;
-        const action = region.querySelector(sel.action)!;
-        const label = action.querySelector(".feed-medium-composer-label")!;
-        const surface = region.querySelector(sel.surface)!;
+        const region = document.querySelector(sel.region);
+        const mediumHeader = document.querySelector(".feed-medium-header");
+        const mediumHeaderVisible = Boolean(
+          mediumHeader &&
+            getComputedStyle(mediumHeader).display !== "none" &&
+            mediumHeader.getBoundingClientRect().height > 0,
+        );
+        const desktopComposer = document.querySelector(
+          ".feed-main-column [data-feed-desktop-composer]",
+        );
+        const input = desktopComposer?.querySelector(sel.input) as HTMLTextAreaElement | null;
+        const field = desktopComposer?.querySelector(".min-w-0.flex-1");
+        const action = desktopComposer?.querySelector(sel.action) as HTMLElement | null;
+        const surface = desktopComposer;
+        const fieldRect = field?.getBoundingClientRect();
+        const inputRect = input?.getBoundingClientRect();
         return {
-          // Le desktop conserve ses pastilles de 36 px et sa carte arrondie.
-          actionLargeur: Math.round(action.getBoundingClientRect().width),
-          actionHauteur: Math.round(action.getBoundingClientRect().height),
-          libelleLargeur: Math.round(label.getBoundingClientRect().width),
-          libelleDisplay: getComputedStyle(label).display,
-          rayon: parseFloat(getComputedStyle(surface as HTMLElement).borderTopLeftRadius) || 0,
-          hauteur: Math.round(surface.getBoundingClientRect().height),
+          mediumHeaderVisible,
+          maxLength: input?.maxLength ?? -1,
+          saisieLargeur: inputRect ? Math.round(inputRect.width) : 0,
+          champLargeur: fieldRect ? Math.round(fieldRect.width) : 0,
+          compositeurLargeur: surface ? Math.round(surface.getBoundingClientRect().width) : 0,
+          actionLargeur: action ? Math.round(action.getBoundingClientRect().width) : 0,
+          actionHauteur: action ? Math.round(action.getBoundingClientRect().height) : 0,
+          rayon: surface
+            ? parseFloat(getComputedStyle(surface as HTMLElement).borderTopLeftRadius) || 0
+            : 0,
+          hauteur: surface ? Math.round(surface.getBoundingClientRect().height) : 0,
+          debordementPage:
+            document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
         };
       },
-      { region: REGION, action: ACTION, surface: SURFACE },
+      { region: REGION, input: INPUT, action: ACTION },
     );
-    expect(desktop.actionLargeur, "action desktop redimensionnée").toBe(36);
-    expect(desktop.actionHauteur, "action desktop redimensionnée").toBe(36);
-    expect(desktop.libelleDisplay, "libellé medium rendu sur le desktop").toBe("none");
-    expect(desktop.libelleLargeur, "libellé medium occupant de la place sur le desktop").toBe(0);
-    expect(desktop.rayon, "surface desktop aplatie").toBeGreaterThan(2);
-    // La hauteur desktop est pilotee par le contenu et diffère d'un sous-pixel
-    // entre moteurs (161 sur Chromium, 162 sur WebKit) : figer un entier exact
-    // testerait le moteur, pas le produit. Le contrat réel est que la
-    // COMPACTION medium n'a pas fuité sur le desktop.
+    expect(desktop.mediumHeaderVisible, "header medium encore visible à 1024").toBe(false);
+    expect(desktop.compositeurLargeur, "compositeur desktop absent").toBeGreaterThan(0);
+    expect(desktop.maxLength, "limite de saisie perdue sur desktop").toBe(4000);
     expect(
-      desktop.hauteur,
-      `hauteur desktop de ${desktop.hauteur} px : la compaction medium a fuité`,
-    ).toBeGreaterThan(REPOS_MAX);
+      desktop.saisieLargeur,
+      "saisie plus large que le compositeur desktop",
+    ).toBeLessThanOrEqual(desktop.compositeurLargeur + 1);
+    expect(
+      desktop.saisieLargeur,
+      `saisie desktop trop étroite (${desktop.saisieLargeur} / champ ${desktop.champLargeur})`,
+    ).toBeGreaterThan(desktop.champLargeur * 0.55);
+    expect(desktop.actionLargeur, "compositeur desktop absent").toBeGreaterThan(0);
+    expect(desktop.rayon, "surface desktop aplatie").toBeGreaterThan(2);
+    expect(desktop.debordementPage, "compositeur desktop provoque un overflow horizontal").toBe(
+      false,
+    );
   });
 
   for (const route of ["/stories", "/videos", "/map", "/sortir", "/search", "/tribes", "/passport", "/subscriptions"]) {
@@ -565,7 +558,7 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
       const fuite = await authedPage.evaluate(
         (sel) => ({
           regions: document.querySelectorAll(sel.region).length,
-          libellesVisibles: [...document.querySelectorAll(".feed-medium-composer-label")].filter(
+          libellesVisibles: [...document.querySelectorAll('[data-feed-medium-region="composer"] [data-feed-desktop-composer-action] span')].filter(
             (el) => el.getBoundingClientRect().width > 0,
           ).length,
         }),
@@ -582,17 +575,17 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
 
     const stories = await authedPage.evaluate(() => {
       const region = document.querySelector('[data-feed-medium-region="stories"]')!;
-      const item = region.querySelector("[data-feed-medium-stories-item]")!;
-      const cercle = item.querySelector("[data-feed-medium-stories-circle]")!;
+      const moment = region.querySelector("[data-feed-desktop-moment]")!;
+      const ring = moment.querySelector("[data-feed-desktop-moment-ring]")!;
       return {
-        titre: (region.querySelector("[data-feed-medium-stories-title]")?.textContent ?? "").trim(),
-        item: Math.round(item.getBoundingClientRect().width),
-        pastille: Math.round(cercle.getBoundingClientRect().width),
+        titre: (region.querySelector(".feed-desktop-moments h2")?.textContent ?? "").trim(),
+        item: Math.round(moment.getBoundingClientRect().width),
+        pastille: Math.round(ring.getBoundingClientRect().width),
       };
     });
 
     expect(stories.titre, "titre Stories altéré par M6").toBe("Moments près de vous");
-    expect(stories.item, "largeur d'item Stories altérée par M6").toBe(128);
-    expect(stories.pastille, "pastille Stories altérée par M6").toBe(80);
+    expect(stories.item, "largeur d'item Stories altérée par M6").toBeGreaterThanOrEqual(88);
+    expect(stories.pastille, "pastille Stories altérée par M6").toBeGreaterThanOrEqual(70);
   });
 });

@@ -15,7 +15,7 @@ export function ProfileAvatar({
           : "h-14 w-14 text-lg";
   return (
     <div
-      className={`flex shrink-0 items-center justify-center rounded-full bg-yunicity-primary font-bold text-white ${dimension}`}
+      className={`flex shrink-0 items-center justify-center rounded-full bg-yunicity-primary font-bold leading-none text-white ${dimension}`}
       aria-hidden
     >
       {name.charAt(0).toUpperCase()}

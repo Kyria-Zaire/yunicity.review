@@ -14,10 +14,24 @@ const VIEWPORTS = [
   { width: 1536, height: 900 },
 ] as const;
 
+const DESKTOP_MIN_WIDTH = 1280;
+const MEDIUM_CONTEXT_FAMILIES = ["must-see", "local-privilege"] as const;
+const DESKTOP_CONTEXT_FAMILIES = [] as const;
+const MEDIUM_MODULE_POSITIONS = [4, 10] as const;
+const DESKTOP_MODULE_POSITIONS = [] as const;
+
+function expectedContextFamilies(width: number) {
+  return width >= DESKTOP_MIN_WIDTH ? DESKTOP_CONTEXT_FAMILIES : MEDIUM_CONTEXT_FAMILIES;
+}
+
+function expectedModulePositions(width: number) {
+  return width >= DESKTOP_MIN_WIDTH ? DESKTOP_MODULE_POSITIONS : MEDIUM_MODULE_POSITIONS;
+}
+
 const STREAM = "[data-feed-stream-list]";
 // The Playwright user is not a member of the seeded public tribe.
 // Only context families carrying real content for that viewer are eligible.
-const INITIAL_CONTEXT_FAMILIES = ["must-see", "local-privilege", "local-now"] as const;
+const INITIAL_CONTEXT_FAMILIES = MEDIUM_CONTEXT_FAMILIES;
 
 function post(index: number): FeedPost {
   const id = `r2b-${String(index).padStart(2, "0")}`;
@@ -167,15 +181,15 @@ test.describe("C3-FEED-R2B - unified context stream", () => {
       await stubLongFeed(authedPage);
       await gotoFeed(authedPage, viewport);
       await waitForAsyncStreamSources(authedPage);
-      await waitForContextModules(authedPage, INITIAL_CONTEXT_FAMILIES);
+      await waitForContextModules(authedPage, expectedContextFamilies(viewport.width));
 
       const state = await streamState(authedPage);
       expect(await authedPage.locator(STREAM).count()).toBe(1);
       expect(new Set(state.postIds).size).toBe(state.postIds.length);
       expect(await authedPage.locator(`${STREAM} article`).count()).toBe(state.postIds.length);
       expect(state.videos).toBe(1);
-      expect(state.contextFamilies).toEqual([...INITIAL_CONTEXT_FAMILIES]);
-      expect(state.modulePositions).toEqual([4, 10, 17]);
+      expect(state.contextFamilies).toEqual([...expectedContextFamilies(viewport.width)]);
+      expect(state.modulePositions).toEqual([...expectedModulePositions(viewport.width)]);
     });
   }
 
@@ -194,9 +208,9 @@ test.describe("C3-FEED-R2B - unified context stream", () => {
 
     const after = await streamState(authedPage);
     expect(before.contextFamilies).toEqual([...INITIAL_CONTEXT_FAMILIES]);
-    expect(before.modulePositions).toEqual([4, 10, 17]);
+    expect(before.modulePositions).toEqual([4, 10]);
     expect(after.contextFamilies).toEqual([...INITIAL_CONTEXT_FAMILIES]);
-    expect(after.modulePositions).toEqual([4, 10, 17]);
+    expect(after.modulePositions).toEqual([4, 10]);
     expect(after.postIds.slice(0, before.postIds.length)).toEqual(before.postIds);
     expect(new Set(after.postIds).size).toBe(after.postIds.length);
     expect(feed.cursors()).toEqual([null, "r2b-page-2"]);
@@ -282,10 +296,10 @@ test.describe("C3-FEED-R2B - unified context stream", () => {
     await expect(forYou).toHaveAttribute("aria-selected", "true");
     await expect(previous).toHaveAttribute("aria-selected", "false");
     await waitForAsyncStreamSources(authedPage);
-    await waitForContextModules(authedPage, INITIAL_CONTEXT_FAMILIES);
+    await waitForContextModules(authedPage, DESKTOP_CONTEXT_FAMILIES);
     const restored = await streamState(authedPage);
     expect(restored.videos).toBe(1);
-    expect(restored.contextFamilies).toEqual([...INITIAL_CONTEXT_FAMILIES]);
+    expect(restored.contextFamilies).toEqual([...DESKTOP_CONTEXT_FAMILIES]);
     expect(new Set(restored.postIds).size).toBe(restored.postIds.length);
     expect(feed.calls()).toBe(1);
     expect(localVideoRequests, `Expected 1 request to /api/v1/local-videos/feed, got ${localVideoRequests}. Observed paths: [${observedPaths.join(", ")}]`).toBe(1);

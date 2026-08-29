@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { YunicityLogo } from "@/components/brand";
 import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
-import { ExplorerTriggerButton } from "@/components/explorer";
+import { NotificationBellIcon } from "@/components/layout/notification-bell-icon";
 import { CitizenAccountMenu } from "@/components/layout/citizen-account-menu";
 import { CitizenYunicityMenu } from "@/components/layout/citizen-yunicity-menu";
 import { useNotificationUnread } from "@/hooks/use-citizen-chrome";
@@ -105,29 +105,13 @@ export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps)
           );
         })}
 
-        {/* Actions de découverte : déclencheurs existants, aucun second overlay.
-            Leur nom accessible vient du composant (« Explorer Reims », « Menu
-            Yunicity ») ; le libellé visuel compact est donc `aria-hidden`. */}
-        <div
-          data-rail-label="Rechercher"
-          data-citizen-medium-rail-control="search"
-          className="flex flex-col items-center gap-1 rounded-xl py-1.5"
-        >
-          <ExplorerTriggerButton variant="medium-rail" />
-          <span aria-hidden className={ACTION_LABEL}>
-            Rechercher
-          </span>
-        </div>
-
         <div
           data-rail-label="Menu"
           data-citizen-medium-rail-control="menu"
           className="flex flex-col items-center gap-1 rounded-xl py-1.5"
         >
-          {/* Le variant `sidebar` rend DÉJÀ l'icône Grid3x3 et le libellé « Menu »
-              dans un bouton rond de 52 px : ajouter un second libellé ici serait
-              un doublon. Seule la grammaire visuelle (icône noire sur pastille
-              grise) est appliquée, en CSS depuis le rail. */}
+          {/* Variante medium-rail : même grammaire que les autres items (icône +
+              libellé, sans pastille circulaire). */}
           {/* C3-CITIZEN-MEDIUM-SHELL-R1B : variante DISTINCTE de la sidebar
               historique. Les deux instances ne se disputent plus l'hôte de la
               surface Menu, quel que soit l'ordre du DOM. */}
@@ -172,12 +156,7 @@ export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps)
           className={`w-full ${NAV_ITEM_BASE} ${NAV_ITEM_IDLE}`}
         >
           <span className="relative inline-flex">
-            <WebNavIcon id={WEB_CITIZEN_NOTIFICATIONS_NAV.icon} className="h-5 w-5 shrink-0" />
-            {unreadCount > 0 ? (
-              <span className="absolute -right-2 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-yunicity-primary px-1 text-[10px] font-semibold text-white">
-                {unreadCount}
-              </span>
-            ) : null}
+            <NotificationBellIcon unreadCount={unreadCount} />
           </span>
           <span className="w-full text-center">{WEB_CITIZEN_NOTIFICATIONS_NAV.label}</span>
         </Link>

@@ -1,5 +1,5 @@
 /**
- * C3-CITIZEN-MEDIUM-SHELL-R1A — rail citoyen medium global (640 → 1279,98 px).
+ * C3-CITIZEN-MEDIUM-SHELL-R1A — rail citoyen medium global (640 → 1023,98 px).
  *
  * ── État avant reprise ───────────────────────────────────────────────────────
  * Le rail n'existait que sur `/feed`, monté par `FeedAppShell`. Sur toutes les
@@ -407,7 +407,7 @@ test.describe("C3-CITIZEN-MEDIUM-SHELL — rail citoyen global", () => {
     }
   });
 
-  test("768 — depuis une route secondaire : destinations, Explorer et Menu", async ({
+  test("768 — depuis une route secondaire : destinations et Menu", async ({
     authedPage,
   }) => {
     await aller(authedPage, "/search");
@@ -426,24 +426,7 @@ test.describe("C3-CITIZEN-MEDIUM-SHELL — rail citoyen global", () => {
       expect(href, `destination de « ${libelle} »`).toBe(cible);
     }
 
-    // Explorer : ouverture, Escape, restitution du focus au déclencheur du rail.
-    const explorer = authedPage.locator(`${RAIL} [data-rail-label="Rechercher"] button`).first();
-    await explorer.click();
-    await expect(authedPage.locator("[data-yunicity-overlay]").first()).toBeVisible();
-    await authedPage.keyboard.press("Escape");
-    await expect(authedPage.locator("[data-yunicity-overlay]")).toHaveCount(0);
-    await expect
-      .poll(async () =>
-        authedPage.evaluate(
-          (sel) =>
-            document.activeElement?.closest(sel) !== null &&
-            document.activeElement?.tagName === "BUTTON",
-          RAIL,
-        ),
-      )
-      .toBe(true);
-
-    // Menu Yunicity : même contrat.
+    // Menu Yunicity : ouverture, Escape, restitution du focus au déclencheur du rail.
     const menu = authedPage.locator(`${RAIL} [data-rail-label="Menu"] button`).first();
     await menu.click();
     await expect(authedPage.locator("[data-yunicity-overlay]").first()).toBeVisible();
@@ -476,21 +459,16 @@ test.describe("C3-CITIZEN-MEDIUM-SHELL — rail citoyen global", () => {
     expect(mobile.debordementPage, "débordement horizontal en mobile").toBe(false);
   });
 
-  test("bascule 1279 / 1280 — rail actif puis desktop historique", async ({ authedPage }) => {
-    await aller(authedPage, "/feed", 1279, 900);
+  test("bascule 1023 / 1024 — rail actif puis desktop", async ({ authedPage }) => {
+    await aller(authedPage, "/feed", 1023, 900);
     const medium = await mesurer(authedPage);
-    expect(medium.railsVisibles, "rail absent à 1279").toBe(1);
-    expect(medium.sidebarsVisibles, "sidebar historique visible à 1279").toBe(0);
+    expect(medium.railsVisibles, "rail absent à 1023").toBe(1);
+    expect(medium.sidebarsVisibles, "sidebar historique visible à 1023").toBe(0);
 
-    await authedPage.setViewportSize({ width: 1280, height: 900 });
+    await authedPage.setViewportSize({ width: 1024, height: 900 });
     const desktop = await mesurer(authedPage);
-    // Le contrat de CE ticket a 1280 est que le rail medium ne fuite pas et que
-    // le layout desktop n'est pas recalcule. La visibilite de la sidebar y est
-    // decidee par chaque shell depuis longtemps — `.places-shell-grid
-    // .web-sidebar-aside { display: none }` masque deja celle du Feed au profit
-    // de `CitizenTopNav`. Revendiquer `=== 1` encoderait un design desktop qui
-    // n'appartient pas a cette passe.
-    expect(desktop.railsVisibles, "rail medium visible à 1280").toBe(0);
+    // R4B : à 1024 le rail medium ne fuite pas ; le Feed Desktop prend le relais.
+    expect(desktop.railsVisibles, "rail medium visible à 1024").toBe(0);
     expect(desktop.contenuVisible, "contenu desktop invisible").toBe(true);
     expect(desktop.debordementPage, "débordement horizontal en desktop").toBe(false);
   });
@@ -979,8 +957,8 @@ test.describe("C3-CITIZEN-MEDIUM-SHELL-R1F — canvas creation-flow", () => {
     expect(m.marqueurPresent).toBe(1);
   });
 
-  test("1279 — /videos/new : canvas creation-flow actif", async ({ authedPage }) => {
-    await aller(authedPage, "/videos/new", 1279, 900);
+  test("1023 — /videos/new : canvas creation-flow actif", async ({ authedPage }) => {
+    await aller(authedPage, "/videos/new", 1023, 900);
 
     const m = await mesurerCanvas(authedPage);
     expect(m.sidebarsVisibles).toBe(0);

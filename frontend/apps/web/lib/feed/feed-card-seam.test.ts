@@ -89,11 +89,11 @@ describe("couture FeedCard / FeedCardWithDependencies", () => {
   });
 
   it("6 — les consommateurs produit montent FeedCard, jamais la vue", () => {
-    const portail = lire("../../components/feed/portal/feed-portal-screen.tsx");
-    const listeDuFlux = lire("../../components/feed/portal/feed-stream-list.tsx");
+    const portail = lire("../../components/feed/portal/feed-data-controller.tsx");
+    const listeDuFlux = lire("../../components/feed/desktop/feed-desktop-stream.tsx");
 
     expect(portail).not.toMatch(/<FeedCardWithDependencies/);
-    expect(portail).toMatch(/<FeedStreamList\b/);
+    expect(portail).toMatch(/<FeedResponsiveShell\b/);
     expect(listeDuFlux).not.toMatch(/<FeedCardWithDependencies/);
     expect(listeDuFlux).toMatch(/<FeedCard\b/);
 

@@ -14,13 +14,12 @@ describe("contrat du rail citoyen medium", () => {
    * défaut `/videos` (bouton absent, libellé présent) passait justement à
    * travers une vérification textuelle.
    */
-  it("expose les neuf identités de contrôle dans l'ordre visuel", () => {
+  it("expose les huit identités de contrôle dans l'ordre visuel", () => {
     expect(CITIZEN_MEDIUM_RAIL_CONTROLS.map((c) => c.id)).toEqual([
       "feed",
       "videos",
       "map",
       "sortir",
-      "search",
       "menu",
       "create",
       "notifications",
@@ -52,13 +51,12 @@ describe("contrat du rail citoyen medium", () => {
     }
   });
 
-  it("expose les neuf contrôles dans l'ordre visuel exact", () => {
+  it("expose les huit contrôles dans l'ordre visuel exact", () => {
     expect([...CITIZEN_MEDIUM_RAIL_CONTROL_ORDER]).toEqual([
       "Accueil",
       "Vidéos",
       "Carte",
       "Sortir",
-      "Rechercher",
       "Menu",
       "Créer",
       "Notifications",

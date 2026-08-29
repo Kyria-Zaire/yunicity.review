@@ -3,6 +3,7 @@
 import { CitizenTopNav } from "@/components/layout/citizen-top-nav";
 import { WebSidebar } from "@/components/layout/web-sidebar";
 import { WebMobileStrategicBottomNav } from "@/components/layout/web-mobile-strategic-bottom-nav";
+import { FeedMobileBottomNav } from "@/components/feed/mobile/feed-mobile-bottom-nav";
 import { CITIZEN_MOBILE_BOTTOM_NAV_PADDING } from "@/lib/layout/feed-mobile-refonte";
 import type { ReactNode } from "react";
 
@@ -16,7 +17,8 @@ import type { ReactNode } from "react";
  * - Top: CitizenTopNav (desktop, ≥1280px)
  * - Left: WebSidebar (sticky, handles CitizenMediumRail for responsive medium breakpoint)
  * - Right: Citizens' content main column
- * - Bottom: WebMobileStrategicBottomNav (mobile, ≤639.98px, fixed float)
+ * - Bottom: WebMobileStrategicBottomNav (mobile, ≤639.98px) — sauf feed citoyen,
+ *   où la nav est montée par `FeedMobileScreen`.
  *
  * Responsiveness:
  * - <640px: Mobile chrome only (nav bottom, left sidebar hidden)
@@ -53,7 +55,11 @@ export function CitizenAuthenticatedShell({
           </div>
         </main>
       </div>
-      <WebMobileStrategicBottomNav />
+      {variant === "citizen-feed-shell" ? (
+        <FeedMobileBottomNav />
+      ) : (
+        <WebMobileStrategicBottomNav />
+      )}
     </div>
   );
 }

@@ -13,7 +13,7 @@ export function CitizenMobileHeaderActions() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="flex shrink-0 items-center gap-0.5">
+    <div className="flex shrink-0 items-center gap-1">
       <ExplorerTriggerButton variant="compact-mobile" />
 
       <CitizenYunicityMenu variant="mobile-header" />

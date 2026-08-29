@@ -7,7 +7,7 @@ import { useExplorerOptional } from "@/components/explorer/explorer-provider";
 import { FEED_PORTAL_FILTER } from "@yunicity/utils";
 
 /**
- * Header de contenu du Feed moyen — 640 → 1279,98 px (C3-FEED-M3 / M10).
+ * Header de contenu du Feed moyen — 640 → 1023,98 px (C3-FEED-M3 / M10).
  *
  * ── Filtrer (M10) ────────────────────────────────────────────────────────────
  * Le déclencheur ouvre la surface Sheet unique. `aria-expanded` reflète

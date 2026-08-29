@@ -19,6 +19,17 @@ const INITIAL: CitizenChromeSnapshot = {
 let snapshot: CitizenChromeSnapshot = INITIAL;
 const listeners = new Set<() => void>();
 let loadPromise: Promise<void> | null = null;
+/**
+ * Utilisateur pour lequel le snapshot courant est déjà chargé.
+ *
+ * `loadPromise` ne dédoublonnait que les chargements CONCURRENTS : une fois
+ * l'appel terminé il repasse à `null`, si bien que tout nouveau montage d'un
+ * consommateur relançait profil + inbox. Mesuré sur le fil : traverser 640px
+ * démonte/remonte l'en-tête mobile, donc `CitizenAccountMenu`, donc deux
+ * requêtes par bascule — alors que le contrat de ce hook est « une seule fois
+ * par session ». `refresh()` reste la voie explicite pour forcer un rechargement.
+ */
+let loadedForUserId: string | null = null;
 
 function emit() {
   listeners.forEach((listener) => listener());
@@ -43,51 +54,67 @@ export function useCitizenChromeBootstrap() {
   const api = useYunicityApi();
   const { user } = useAuth();
 
-  const load = useCallback(async () => {
-    if (!user) {
-      setSnapshot(INITIAL);
-      return;
-    }
-
-    if (loadPromise) {
-      await loadPromise;
-      return;
-    }
-
-    loadPromise = (async () => {
-      const fallbackName = user.email?.split("@")[0] ?? null;
-      try {
-        const [profileRes, inboxRes] = await Promise.allSettled([
-          api.getProfileMe(),
-          api.notifications.listInbox(1),
-        ]);
-
-        const displayName =
-          profileRes.status === "fulfilled"
-            ? profileRes.value.display_name?.trim() ||
-              profileRes.value.username?.trim() ||
-              fallbackName
-            : fallbackName;
-
-        const unreadCount =
-          inboxRes.status === "fulfilled" ? inboxRes.value.unread_count : 0;
-
-        setSnapshot({ unreadCount, displayName, isReady: true });
-      } catch {
-        setSnapshot({ unreadCount: 0, displayName: fallbackName, isReady: true });
-      } finally {
-        loadPromise = null;
+  const load = useCallback(
+    async (force = false) => {
+      if (!user) {
+        setSnapshot(INITIAL);
+        loadedForUserId = null;
+        return;
       }
-    })();
 
-    await loadPromise;
-  }, [api, user]);
+      if (!force && loadedForUserId === user.id && snapshot.isReady) {
+        return;
+      }
+
+      if (loadPromise) {
+        await loadPromise;
+        return;
+      }
+
+      loadPromise = (async () => {
+        const fallbackName = user.email?.split("@")[0] ?? null;
+        try {
+          const [profileRes, inboxRes] = await Promise.allSettled([
+            api.getProfileMe(),
+            api.notifications.listInbox(1),
+          ]);
+
+          const displayName =
+            profileRes.status === "fulfilled"
+              ? profileRes.value.display_name?.trim() ||
+                profileRes.value.username?.trim() ||
+                fallbackName
+              : fallbackName;
+
+          const unreadCount =
+            inboxRes.status === "fulfilled" ? inboxRes.value.unread_count : 0;
+
+          loadedForUserId = user.id;
+          setSnapshot({ unreadCount, displayName, isReady: true });
+        } catch {
+          loadedForUserId = user.id;
+          setSnapshot({
+            unreadCount: 0,
+            displayName: fallbackName,
+            isReady: true,
+          });
+        } finally {
+          loadPromise = null;
+        }
+      })();
+
+      await loadPromise;
+    },
+    [api, user],
+  );
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  return { refresh: load };
+  const refresh = useCallback(() => load(true), [load]);
+
+  return { refresh };
 }
 
 export function useCitizenChrome() {

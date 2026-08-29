@@ -1,67 +1,134 @@
+"use client";
+
 import type { FeedPost, FeedReportReason } from "@yunicity/types";
 import {
-  EVENT_FEED_BADGE,
-  eventTypeLabel,
-  formatEventDateRange,
+  FEED_ACTION_SAVED,
+  FEED_EVENT_INTEREST_CTA,
   formatEventLocation,
   formatTerritorialLine,
 } from "@yunicity/utils";
+import { MapPin } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 
-import { FeedAuthorHeader } from "@/components/feed/feed-author-header";
-import { FeedPublicationContextualCta } from "@/components/feed/feed-publication-actions";
+import { FeedPostOptionsMenu } from "@/components/feed/feed-post-options-menu";
 import { FeedPublicationMedia } from "@/components/feed/feed-publication-media";
-import { NeighborhoodBadge } from "@/components/neighborhoods/neighborhood-badge";
+import { formatFeedPostEventScheduleBadge } from "@/lib/feed/feed-event-badge";
+
+function IconBookmark({ filled }: { filled?: boolean }) {
+  return (
+    <svg
+      className="h-[18px] w-[18px]"
+      viewBox="0 0 24 24"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth={1.8}
+      aria-hidden
+    >
+      <path d="M6 4h12v16l-6-4-6 4V4z" />
+    </svg>
+  );
+}
 
 export function EventFeedCard({
   post,
   currentUserId,
   onReport,
+  onToggleEventInterest,
 }: {
   post: FeedPost;
   currentUserId: string | null;
   onReport?: (reason: FeedReportReason) => Promise<void>;
+  onToggleEventInterest?: () => Promise<void>;
 }) {
   const meta = post.event;
+  const [interestLoading, setInterestLoading] = useState(false);
+
   if (!meta) {
     return null;
   }
-  const typeLabel = eventTypeLabel(meta.event_type);
-  const when = formatEventDateRange(meta.starts_at, meta.ends_at);
+
+  const scheduleBadge = formatFeedPostEventScheduleBadge(meta.starts_at);
   const where =
     formatTerritorialLine(post.neighborhood_summary, post.city, meta.district) ??
     formatEventLocation(meta, post.city);
+  const eventHref = `/events/${meta.local_event_id}`;
+  const eventInterested = meta.interested_by_me;
 
-  /*
-   * C3-FEED-UNIFIED-PUBLICATION-CARD-R2A : un seul arbre. Les deux variantes
-   * divergeaient sur le media (mobile seul) et le badge quartier (desktop seul).
-   * Les deux sont desormais rendus partout ; le CSS ajuste la densite.
-   */
+  async function handleEventInterest() {
+    if (!onToggleEventInterest || interestLoading) return;
+    setInterestLoading(true);
+    try {
+      await onToggleEventInterest();
+    } finally {
+      setInterestLoading(false);
+    }
+  }
+
   return (
-    <div className="feed-publication-event -m-5 -mt-5 mb-0 rounded-t-2xl border-b border-neutral-100 bg-neutral-50/60 p-5 sm:-m-6 sm:-mt-6 sm:p-6">
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-yunicity-primary px-2.5 py-0.5 text-xs font-semibold text-white">
-          {EVENT_FEED_BADGE}
-        </span>
-        {typeLabel ? <span className="text-xs text-neutral-500">{typeLabel}</span> : null}
-      </div>
-      <FeedAuthorHeader post={post} currentUserId={currentUserId} onReport={onReport} />
-      {post.title ? (
-        <h3 className="mt-3 text-base font-semibold text-neutral-900">{post.title}</h3>
-      ) : null}
-      {post.body ? (
-        <p className="mt-2 text-sm leading-relaxed text-neutral-700">{post.body}</p>
-      ) : null}
-      <p className="mt-3 text-sm text-neutral-600">{when}</p>
-      <p className="text-sm text-neutral-500">{where}</p>
-      {post.neighborhood_summary ? (
-        <div className="mt-2">
-          <NeighborhoodBadge summary={post.neighborhood_summary} city={post.city} />
+    <div data-feed-publication-event="" className="feed-publication-event-editorial -mx-5 -mt-5 sm:-mx-6 sm:-mt-6">
+      {post.media_url ? (
+        <div className="feed-publication-event-media relative">
+          <FeedPublicationMedia mediaUrl={post.media_url} label={post.title ?? undefined} />
+          {onReport ? (
+            <div className="absolute right-3 top-3 rounded-full bg-white/90 shadow-sm">
+              <FeedPostOptionsMenu
+                onReport={onReport}
+                currentUserId={currentUserId}
+                authorUserId={post.author.type === "citizen" ? post.author.id : null}
+              />
+            </div>
+          ) : null}
         </div>
       ) : null}
-      {post.media_url ? (
-        <FeedPublicationMedia mediaUrl={post.media_url} label={post.title ?? undefined} />
-      ) : null}
-      <FeedPublicationContextualCta post={post} />
+
+      <div className="feed-publication-event-body space-y-3 px-5 py-4 sm:px-6">
+        {scheduleBadge ? (
+          <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800">
+            {scheduleBadge}
+          </span>
+        ) : null}
+
+        {post.title ? (
+          <h3 className="text-lg font-bold leading-snug text-neutral-900">{post.title}</h3>
+        ) : null}
+
+        {where ? (
+          <p className="flex items-center gap-1.5 text-sm text-neutral-500">
+            <MapPin className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="truncate">{where}</span>
+          </p>
+        ) : null}
+
+        {post.body ? (
+          <p className="text-sm leading-relaxed text-neutral-700">{post.body}</p>
+        ) : null}
+
+        <div className="feed-publication-event-cta flex items-center gap-2 pt-1">
+          <button
+            type="button"
+            disabled={interestLoading}
+            onClick={() => void handleEventInterest()}
+            aria-pressed={eventInterested}
+            data-feed-publication-action="event-interest-primary"
+            className={`inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border px-4 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+              eventInterested
+                ? "border-yunicity-primary bg-yunicity-primary-soft text-yunicity-primary"
+                : "border-yunicity-primary text-yunicity-primary hover:bg-yunicity-primary-soft"
+            }`}
+          >
+            {eventInterested ? FEED_ACTION_SAVED : FEED_EVENT_INTEREST_CTA}
+          </button>
+          <Link
+            href={eventHref}
+            aria-label="Enregistrer l'événement"
+            data-feed-publication-action="event-bookmark"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-neutral-200 text-neutral-600 transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2"
+          >
+            <IconBookmark filled={eventInterested} />
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

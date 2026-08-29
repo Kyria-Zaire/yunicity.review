@@ -1,7 +1,7 @@
 /**
  * Ossature éditoriale du Feed medium (C3-FEED-M4).
  *
- * Trois régions ordonnées composent la voie principale entre 640 et 1279,98 px.
+ * Cinq régions ordonnées composent la voie principale entre 640 et 1023,98 px.
  * La vidéo locale et les modules contextuels sont des items du `stream`.
  * Elles sont identifiées par un marqueur explicite `data-feed-medium-region`,
  * jamais par `nth-child`, profondeur DOM, balise ou texte visible.
@@ -11,14 +11,22 @@
  * visuel plat. Un même élément peut porter les deux quand il est à la fois la
  * région et son unique surface — c'est le cas de `stories`.
  */
-export const FEED_MEDIUM_REGIONS = ["stories", "composer", "stream"] as const;
+export const FEED_MEDIUM_REGIONS = [
+  "stories",
+  "composer",
+  "evening-events",
+  "featured-event",
+  "stream",
+] as const;
 
 export type FeedMediumRegion = (typeof FEED_MEDIUM_REGIONS)[number];
 
 /** Ce que chaque région porte — documenté pour les tickets M5 à M9. */
 export const FEED_MEDIUM_REGION_CONTENT: Record<FeedMediumRegion, string> = {
-  stories: "Stories et onglets de vue",
+  stories: "Moments près de vous",
   composer: "création de publication",
+  "evening-events": "Ce soir à venir",
+  "featured-event": "événement éditorial mis en avant",
   stream: "publications et publication vidéo locale, ou état filtré/vide alternatif",
 };
 

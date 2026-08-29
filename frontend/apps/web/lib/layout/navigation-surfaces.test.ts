@@ -13,12 +13,12 @@ import {
   shouldRestoreNavigationFocus,
 } from "./navigation-surfaces";
 
-describe("navigation-surfaces — constantes T2", () => {
-  it("réutilise les media-queries du chrome T2", () => {
+describe("navigation-surfaces — constantes R4B", () => {
+  it("réutilise les media-queries du chrome Desktop ≥1024", () => {
     expect(NAVIGATION_MOBILE_MAX_QUERY).toBe("(max-width: 639.98px)");
-    expect(NAVIGATION_DESKTOP_MIN_QUERY).toBe("(min-width: 1280px)");
+    expect(NAVIGATION_DESKTOP_MIN_QUERY).toBe("(min-width: 1024px)");
     expect(NAVIGATION_MOBILE_MAX_PX).toBe(639.98);
-    expect(NAVIGATION_DESKTOP_MIN_PX).toBe(1280);
+    expect(NAVIGATION_DESKTOP_MIN_PX).toBe(1024);
   });
 });
 
@@ -30,11 +30,11 @@ describe("resolveExplorerSurface", () => {
 });
 
 describe("resolveYunicityMenuSurface", () => {
-  it("bascule drawer/sheet/popover aux seuils T2", () => {
+  it("bascule drawer/sheet/popover aux seuils R4B", () => {
     expect(resolveYunicityMenuSurface(639.98)).toBe("drawer");
     expect(resolveYunicityMenuSurface(640)).toBe("sheet");
-    expect(resolveYunicityMenuSurface(1279.98)).toBe("sheet");
-    expect(resolveYunicityMenuSurface(1280)).toBe("popover");
+    expect(resolveYunicityMenuSurface(1023.98)).toBe("sheet");
+    expect(resolveYunicityMenuSurface(1024)).toBe("popover");
   });
 
   it("mappe correctement les viewports d'acceptation sans les introduire comme seuils", () => {

@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from "react";
  * `matchMedia` reintroduirait une seconde definition du Desktop, qui pourrait
  * diverger de la CSS. `IntersectionObserver` observe le RESULTAT du layout :
  * un slot `display:none` n'intersecte jamais, donc rien ne se monte et rien ne
- * fetche sous 1536px.
+ * fetche tant que le rail desktop n'est pas visible (≥1280px).
  *
  * Fail-closed : si `IntersectionObserver` n'existe pas, on n'active JAMAIS.
  * Activer par defaut declencherait les requetes Desktop sur mobile — exactement

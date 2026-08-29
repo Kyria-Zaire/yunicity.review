@@ -5,8 +5,8 @@ import type { PassportMe } from "@yunicity/types";
 import { isAuthError } from "@yunicity/utils";
 import { useCallback, useEffect, useState } from "react";
 
-/** Données legacy `/passport/me` + QR pour la carte mobile (MOBILE-PASSPORT-01). */
-export function usePassportMobileExtras(enabled: boolean) {
+// TODO(debt): legacy /passport/me + QR — migrer level/XP vers V2 en R2.
+export function usePassportMobileExtras(enabled: boolean, hasActivePassport = true) {
   const { yunicityApi } = useAuth();
   const [passportMe, setPassportMe] = useState<PassportMe | null>(null);
   const [qrPayload, setQrPayload] = useState<string | null>(null);
@@ -14,7 +14,7 @@ export function usePassportMobileExtras(enabled: boolean) {
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
-    if (!enabled) {
+    if (!enabled || !hasActivePassport) {
       setPassportMe(null);
       setQrPayload(null);
       setError(null);
@@ -24,13 +24,6 @@ export function usePassportMobileExtras(enabled: boolean) {
     setIsLoading(true);
     setError(null);
     try {
-      const profile = await yunicityApi.getProfileMe();
-      if (!profile.has_active_passport) {
-        setPassportMe(null);
-        setQrPayload(null);
-        return;
-      }
-
       const [legacyPassport, qrData] = await Promise.all([
         yunicityApi.tryGetPassportMe(),
         yunicityApi.getPassportQr(),
@@ -44,7 +37,7 @@ export function usePassportMobileExtras(enabled: boolean) {
     } finally {
       setIsLoading(false);
     }
-  }, [enabled, yunicityApi]);
+  }, [enabled, hasActivePassport, yunicityApi]);
 
   useEffect(() => {
     void reload();

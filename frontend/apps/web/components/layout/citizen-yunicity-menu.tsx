@@ -1,6 +1,7 @@
 "use client";
 
 import { CitizenYunicityMenuContent } from "@/components/layout/citizen-yunicity-menu-content";
+import { YunicityMenuIcon } from "@/components/layout/yunicity-menu-icon";
 import { WebSidebarTooltip } from "@/components/layout/web-sidebar-tooltip";
 import { useNavigationSurfaces } from "@/hooks/use-navigation-surfaces";
 import {
@@ -16,7 +17,7 @@ import { useAuth } from "@/lib/auth/auth-provider";
 import type { NavigationSurfaceCloseReason } from "@/lib/layout/navigation-surfaces";
 import { NAVIGATION_MODAL_Z_INDEX } from "@/lib/layout/navigation-overlay-layers";
 import { Drawer, Popover, Sheet, type PopoverPlacement } from "@yunicity/ui/primitives";
-import { ChevronDown, Grid3x3 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 
@@ -40,6 +41,15 @@ function placementForVariant(variant: CitizenYunicityMenuProps["variant"]): Popo
 
 function triggerTone({ menuActive, open }: TriggerTone): boolean {
   return menuActive || open;
+}
+
+/** Grille bento — taille canonique partagée rail medium et header desktop. */
+const YUNICITY_MENU_ICON_CLASS = "h-5 w-5 shrink-0";
+
+function topNavMenuTriggerClass(tone: boolean): string {
+  return `inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+    tone ? "bg-yunicity-primary-soft text-yunicity-primary" : "text-neutral-700 hover:bg-neutral-100"
+  }`;
 }
 
 function CompactTrigger({
@@ -77,7 +87,7 @@ function CompactTrigger({
           tone ? "bg-yunicity-primary-soft/50 opacity-100" : "opacity-90 hover:opacity-100"
         }`}
       >
-        <Grid3x3 className="h-[22px] w-[22px] shrink-0" aria-hidden />
+        <YunicityMenuIcon className="h-[22px] w-[22px] shrink-0" />
         <span className="max-w-full truncate text-[10px] font-semibold leading-tight">
           {YUNICITY_MENU_SHORT_LABEL}
         </span>
@@ -95,28 +105,55 @@ function CompactTrigger({
             : "bg-yunicity-primary text-white hover:bg-yunicity-primary-hover"
         }`}
       >
-        <Grid3x3 className="h-7 w-7" aria-hidden />
+        <YunicityMenuIcon className="h-7 w-7" />
       </button>
     );
   }
 
-  if (variant === "top-nav" || variant === "mobile-header") {
+  if (variant === "top-nav") {
     return (
       <button
         {...triggerProps}
-        data-yunicity-header-control={variant === "top-nav" ? "menu" : undefined}
-        data-yunicity-mobile-header-control={variant === "mobile-header" ? "menu" : undefined}
-        className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-2 text-sm font-medium transition hover:bg-yunicity-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
-          tone ? "text-yunicity-primary" : "text-yunicity-primary hover:text-yunicity-primary-hover"
-        }`}
+        data-yunicity-header-control="menu"
+        className={topNavMenuTriggerClass(tone)}
       >
-        <Grid3x3 className="h-4 w-4 shrink-0" aria-hidden />
+        <YunicityMenuIcon className={YUNICITY_MENU_ICON_CLASS} />
         <span className="whitespace-nowrap xl:hidden">{YUNICITY_MENU_SHORT_LABEL}</span>
         <span className="hidden whitespace-nowrap xl:inline">{YUNICITY_MENU_LABEL}</span>
         <ChevronDown
           className={`h-4 w-4 shrink-0 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
           aria-hidden
         />
+      </button>
+    );
+  }
+
+  if (variant === "mobile-header") {
+    return (
+      <button
+        {...triggerProps}
+        data-yunicity-mobile-header-control="menu"
+        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition hover:bg-yunicity-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+          tone ? "text-yunicity-primary" : "text-yunicity-primary hover:text-yunicity-primary-hover"
+        }`}
+      >
+        <YunicityMenuIcon className="h-[22px] w-[22px] shrink-0" aria-hidden />
+      </button>
+    );
+  }
+
+  if (variant === "medium-rail") {
+    return (
+      <button
+        {...triggerProps}
+        className={`flex min-h-14 w-full flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[11px] font-medium leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary/50 disabled:cursor-not-allowed disabled:opacity-60 ${
+          tone
+            ? "bg-yunicity-primary-soft text-yunicity-primary"
+            : "text-neutral-700 hover:bg-neutral-100"
+        }`}
+      >
+        <YunicityMenuIcon className={YUNICITY_MENU_ICON_CLASS} />
+        <span className="w-full text-center">{YUNICITY_MENU_SHORT_LABEL}</span>
       </button>
     );
   }
@@ -132,7 +169,7 @@ function CompactTrigger({
         }`}
         style={{ width: "var(--web-sidebar-icon-hit)", height: "var(--web-sidebar-icon-hit)" }}
       >
-        <Grid3x3 className="h-[26px] w-[26px]" aria-hidden />
+        <YunicityMenuIcon className="h-[26px] w-[26px]" />
         <span className="max-w-full truncate text-[10px] font-semibold leading-tight">
           {YUNICITY_MENU_SHORT_LABEL}
         </span>
@@ -170,8 +207,8 @@ function ExpandedSidebarTrigger({
         tone ? "bg-yunicity-primary-soft text-yunicity-primary" : "text-neutral-700 hover:bg-neutral-100"
       }`}
     >
-      <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center text-yunicity-primary">
-        <Grid3x3 className="h-[22px] w-[22px]" aria-hidden />
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+        <YunicityMenuIcon className={YUNICITY_MENU_ICON_CLASS} />
       </span>
       <span className="min-w-0 flex-1 truncate whitespace-nowrap text-left">{YUNICITY_MENU_LABEL}</span>
       <ChevronDown
@@ -377,8 +414,8 @@ export function CitizenYunicityMenu({
                 : "text-neutral-700 hover:bg-neutral-100"
             }`}
           >
-            <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center text-yunicity-primary">
-              <Grid3x3 className="h-[22px] w-[22px]" aria-hidden />
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+              <YunicityMenuIcon className={YUNICITY_MENU_ICON_CLASS} />
             </span>
             <span className="min-w-0 flex-1 truncate whitespace-nowrap text-left">{YUNICITY_MENU_LABEL}</span>
             <ChevronDown
@@ -406,18 +443,25 @@ export function CitizenYunicityMenu({
       placement={placementForVariant(variant)}
       trigger={(props) => {
         const tone = triggerTone({ menuActive, open: isOpen });
+        const isTopNav = variant === "top-nav";
 
         return (
           <button
             {...props}
             type="button"
             aria-label={YUNICITY_MENU_LABEL}
-            data-yunicity-header-control={variant === "top-nav" ? "menu" : undefined}
-            className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-2 text-sm font-medium transition hover:bg-yunicity-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
-              tone ? "text-yunicity-primary" : "text-yunicity-primary hover:text-yunicity-primary-hover"
-            }`}
+            data-yunicity-header-control={isTopNav ? "menu" : undefined}
+            className={
+              isTopNav
+                ? topNavMenuTriggerClass(tone)
+                : `inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-2 text-sm font-medium transition hover:bg-yunicity-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
+                    tone ? "text-yunicity-primary" : "text-yunicity-primary hover:text-yunicity-primary-hover"
+                  }`
+            }
           >
-            <Grid3x3 className="h-4 w-4 shrink-0" aria-hidden />
+            <YunicityMenuIcon
+              className={isTopNav ? YUNICITY_MENU_ICON_CLASS : "h-4 w-4 shrink-0"}
+            />
             <span className="whitespace-nowrap xl:hidden">{YUNICITY_MENU_SHORT_LABEL}</span>
             <span className="hidden whitespace-nowrap xl:inline">{YUNICITY_MENU_LABEL}</span>
             <ChevronDown

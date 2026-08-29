@@ -2,9 +2,10 @@ import type { LocalEvent, Tribe } from "@yunicity/types";
 import { describe, expect, it } from "vitest";
 
 import {
-  hasRightRailContent,
+  selectFeedRightRailEveningEvents,
   selectMemberTribes,
   selectTonightEvents,
+  selectUpcomingEveningEvents,
   tribeInitials,
 } from "./feed-right-rail-modules";
 
@@ -147,6 +148,35 @@ describe("selectTonightEvents", () => {
   });
 });
 
+describe("selectUpcomingEveningEvents", () => {
+  it("garde un evenement futur en soiree meme si ce n'est pas aujourd'hui", () => {
+    const future = event({ id: "a", starts_at: "2026-09-04T17:00:00Z" }); // 19:00 Paris
+    expect(selectUpcomingEveningEvents([future], NOW_AFTERNOON).map((e) => e.id)).toEqual(["a"]);
+  });
+
+  it("exclut un evenement de journee", () => {
+    const afternoon = event({ id: "a", starts_at: "2026-09-04T12:00:00Z" });
+    expect(selectUpcomingEveningEvents([afternoon], NOW_AFTERNOON)).toEqual([]);
+  });
+});
+
+describe("selectFeedRightRailEveningEvents", () => {
+  it("prefere ce soir aux prochains evenements", () => {
+    const tonight = event({ id: "a", starts_at: "2026-08-27T17:00:00Z" });
+    const future = event({ id: "b", starts_at: "2026-09-04T17:00:00Z" });
+    const result = selectFeedRightRailEveningEvents([future, tonight], NOW_AFTERNOON);
+    expect(result.mode).toBe("tonight");
+    expect(result.events.map((e) => e.id)).toEqual(["a"]);
+  });
+
+  it("retombe sur les prochains evenements futurs", () => {
+    const futureMorning = event({ id: "a", starts_at: "2026-09-04T10:00:00Z" });
+    const result = selectFeedRightRailEveningEvents([futureMorning], NOW_AFTERNOON);
+    expect(result.mode).toBe("upcoming");
+    expect(result.events.map((e) => e.id)).toEqual(["a"]);
+  });
+});
+
 describe("selectMemberTribes", () => {
   it("ne garde que les tribus dont l'utilisateur est membre", () => {
     const mine = tribe({ id: "1", slug: "a", name: "Alpha" });
@@ -198,21 +228,5 @@ describe("tribeInitials", () => {
 
   it("est stable sur plusieurs appels", () => {
     expect(tribeInitials("Cafés du Coin")).toBe(tribeInitials("Cafés du Coin"));
-  });
-});
-
-describe("hasRightRailContent", () => {
-  it("est faux quand aucun module n'a de contenu", () => {
-    expect(hasRightRailContent({ tonightEvents: [], memberTribes: [] })).toBe(false);
-  });
-
-  it("est vrai avec les evenements seuls", () => {
-    const e = event({ id: "a", starts_at: "2026-08-27T17:00:00Z" });
-    expect(hasRightRailContent({ tonightEvents: [e], memberTribes: [] })).toBe(true);
-  });
-
-  it("est vrai avec les tribus seules", () => {
-    const t = tribe({ id: "1", slug: "a", name: "Alpha" });
-    expect(hasRightRailContent({ tonightEvents: [], memberTribes: [t] })).toBe(true);
   });
 });

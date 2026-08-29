@@ -1,5 +1,5 @@
 /**
- * C3-FEED-M2 — shell et rail du Feed moyen (640 → 1279,98 px).
+ * C3-FEED-M2 — shell et rail du Feed moyen (640 → 1023,98 px).
  *
  * Constat M1, mesuré : la bande medium ne possède AUCUN palier propre. Elle
  * hérite du markup desktop compacté — rail de 88 px, libellés `hidden xl:flex`,
@@ -8,7 +8,7 @@
  * 804 px à 640, 928 à 768, 1016 à 834).
  *
  * Cette spec verrouille le shell medium ET ses deux frontières : le mobile gelé
- * en dessous de 640, le desktop inchangé à partir de 1280. Les assertions sont
+ * en dessous de 640, le desktop dès 1024. Les assertions sont
  * en rôles, visibilité et ratios — aucune égalité au pixel.
  */
 import type { Page } from "@playwright/test";
@@ -19,8 +19,7 @@ const MEDIUM = [
   { label: "640x900", width: 640, height: 900 },
   { label: "768x1024", width: 768, height: 1024 },
   { label: "834x1112", width: 834, height: 1112 },
-  { label: "1024x900", width: 1024, height: 900 },
-  { label: "1279x900", width: 1279, height: 900 },
+  { label: "1023x900", width: 1023, height: 900 },
 ] as const;
 
 /** Navigation medium arrêtée par le CTO (C3-FEED-M2.3) — ordre significatif. */
@@ -29,14 +28,13 @@ const RAIL_DESTINATIONS = [
   "Vidéos",
   "Carte",
   "Sortir",
-  "Rechercher",
   "Menu",
 ] as const;
 
 const OVERLAY_ENTERED = '[data-yunicity-overlay][data-yunicity-overlay-state="entered"]';
 
 /** Ratios maximaux du rail — la maquette exige un rail compact, pas une colonne. */
-const MAX_RAIL_RATIO: Record<number, number> = { 640: 0.18, 768: 0.14, 834: 0.14, 1024: 0.12, 1279: 0.12 };
+const MAX_RAIL_RATIO: Record<number, number> = { 640: 0.18, 768: 0.14, 834: 0.14, 1023: 0.12 };
 
 const FEED_FAMILY = /\/feed(\?|$)/;
 const RAIL = ".citizen-medium-rail";
@@ -275,24 +273,6 @@ test.describe("C3-FEED-M2 — shell et rail medium", () => {
     ).toBeEnabled();
   });
 
-  test("768 — Rechercher ouvre l'Explorer et rend le focus", async ({ authedPage }) => {
-    await gotoFeed(authedPage, { width: 768, height: 1024 });
-    const trigger = authedPage
-      .locator(`${RAIL} [data-rail-label="Rechercher"] button`)
-      .first();
-    await expect(trigger).toHaveCount(1);
-
-    await trigger.click();
-    const overlay = authedPage.locator(OVERLAY_ENTERED);
-    await expect(overlay, "l'Explorer ne s'est pas ouvert").toBeVisible();
-    // Aucune navigation arbitraire : on reste dans la famille Feed.
-    await expect(authedPage).toHaveURL(FEED_FAMILY);
-
-    await authedPage.keyboard.press("Escape");
-    await expect(overlay, "Escape ne ferme pas l'Explorer").toHaveCount(0);
-    await expect(trigger, "focus non restitué au bouton Rechercher").toBeFocused();
-  });
-
   test("768 — Menu ouvre le Menu Yunicity et rend le focus", async ({ authedPage }) => {
     await gotoFeed(authedPage, { width: 768, height: 1024 });
     const trigger = authedPage
@@ -343,22 +323,20 @@ test.describe("C3-FEED-M2 — shell et rail medium", () => {
     await expect(visible(authedPage, BOTTOM_NAV), "640 : bottom-nav encore rendue").toHaveCount(0);
   });
 
-  test("frontière 1279/1280 — rail medium puis shell desktop inchangé", async ({ authedPage }) => {
-    await gotoFeed(authedPage, { width: 1279, height: 900 });
-    await expect(visible(authedPage, RAIL), "1279 : rail medium attendu").toHaveCount(1);
+  test("frontière 1023/1024 — rail medium puis shell desktop", async ({ authedPage }) => {
+    await gotoFeed(authedPage, { width: 1023, height: 900 });
+    await expect(visible(authedPage, RAIL), "1023 : rail medium attendu").toHaveCount(1);
 
-    await gotoFeed(authedPage, { width: 1280, height: 900 });
+    await gotoFeed(authedPage, { width: 1024, height: 900 });
     await expect(
       visible(authedPage, RAIL),
-      "1280 : le rail medium fuit sur le desktop",
+      "1024 : le rail medium fuit sur le desktop",
     ).toHaveCount(0);
-    // Le desktop reste hors perimetre : ce ticket prouve la NON-FUITE du rail
-    // medium, pas la structure interne du shell desktop.
     expect(
       await authedPage.evaluate(
         () => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
       ),
-      "1280 : debordement horizontal introduit par le medium",
+      "1024 : debordement horizontal introduit par le medium",
     ).toBe(true);
   });
 
@@ -390,7 +368,7 @@ test.describe("C3-FEED-M2 — shell et rail medium", () => {
       const fuite = await authedPage.evaluate(() => ({
         header: document.querySelectorAll(".feed-medium-header").length,
         regions: document.querySelectorAll("[data-feed-medium-region]").length,
-        grille: document.querySelectorAll(".feed-medium-editorial-grid").length,
+        grille: document.querySelectorAll(".feed-main-column").length,
         stream: document.querySelectorAll("[data-feed-stream-list]").length,
       }));
       expect(fuite.header, "header Feed medium fuité").toBe(0);
