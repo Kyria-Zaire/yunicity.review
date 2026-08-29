@@ -69,6 +69,12 @@ describe("R1 — lazy mounting contract", () => {
     expect(code(controller)).not.toMatch(/setDesktopRailsSeen|matchMedia|innerWidth/);
   });
 
+  it("gates passport fetch behind the enabled flag passed from the controller", () => {
+    expect(passportHook).toMatch(/export function usePassportFeedRail\(enabled = false\)/);
+    expect(passportHook).toMatch(/if \(!enabled\)/);
+    expect(passportHook).toContain("[api, enabled]");
+  });
+
   it("uses no breakpoint JavaScript anywhere in the new modules", () => {
     for (const source of [weatherCard, rightRail, passportHook, leftRail]) {
       expect(code(source)).not.toMatch(/matchMedia|innerWidth|useIsDesktop/);

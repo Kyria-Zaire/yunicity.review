@@ -6,7 +6,7 @@ import { isAuthError } from "@yunicity/utils";
 import { useCallback, useEffect, useState } from "react";
 
 // TODO(debt): legacy /passport/me + QR — migrer level/XP vers V2 en R2.
-export function usePassportMobileExtras(enabled: boolean, hasActivePassport: boolean) {
+export function usePassportMobileExtras(enabled: boolean, hasActivePassport = true) {
   const { yunicityApi } = useAuth();
   const [passportMe, setPassportMe] = useState<PassportMe | null>(null);
   const [qrPayload, setQrPayload] = useState<string | null>(null);

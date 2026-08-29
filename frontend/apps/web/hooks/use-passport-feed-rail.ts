@@ -9,7 +9,7 @@ import { useYunicityApi } from "@/hooks/use-yunicity-api";
  * Données Passport pour le rail feed desktop — overview + défis actifs.
  * Deux routes canoniques existantes, montées uniquement après activation lazy.
  */
-export function usePassportFeedRail(): {
+export function usePassportFeedRail(enabled = false): {
   overview: PassportOverviewResponse | null;
   challenges: PassportChallengesResponse | null;
   loading: boolean;
@@ -23,6 +23,14 @@ export function usePassportFeedRail(): {
   const requestIdRef = useRef(0);
 
   useEffect(() => {
+    if (!enabled) {
+      setOverview(null);
+      setChallenges(null);
+      setLoading(false);
+      setError(false);
+      return;
+    }
+
     const requestId = ++requestIdRef.current;
     setLoading(true);
     setError(false);
@@ -41,7 +49,7 @@ export function usePassportFeedRail(): {
         if (requestId !== requestIdRef.current) return;
         setLoading(false);
       });
-  }, [api]);
+  }, [api, enabled]);
 
   return { overview, challenges, loading, error };
 }
