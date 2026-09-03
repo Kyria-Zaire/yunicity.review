@@ -6,14 +6,18 @@ import type {
   OrganizationRequestStepId,
 } from "@yunicity/utils";
 import {
+  clearOrganizationRequestDraft,
   createEmptyOrganizationRequestDraft,
+  loadOrganizationRequestDraft,
   nextOrganizationRequestStep,
   ORGANIZATION_REQUEST_CATEGORY_OPTIONS,
+  persistOrganizationRequestDraft,
   previousOrganizationRequestStep,
   resolveOrganizationRequestCategory,
+  validateOrganizationRequestDraft,
   validateOrganizationRequestStep,
 } from "@yunicity/utils";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
@@ -43,21 +47,43 @@ function resolveIntentCategoryId(typeParam: string | null): string | null {
   return match?.id ?? null;
 }
 
+function draftHasContent(draft: OrganizationRequestDraft): boolean {
+  return Boolean(
+    draft.name.trim() ||
+      draft.categoryId.trim() ||
+      draft.address.trim() ||
+      draft.shortDescription.trim() ||
+      draft.website.trim() ||
+      draft.phone.trim(),
+  );
+}
+
 export function useOrganizationRequestContext() {
   const api = useYunicityApi();
+  const router = useRouter();
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const intentType = searchParams.get("type");
   const [draft, setDraft] = useState<OrganizationRequestDraft>(() =>
     createEmptyOrganizationRequestDraft(user?.city?.trim() || DEFAULT_CITY),
   );
-  const [step, setStep] = useState<OrganizationRequestStepId>("info");
+  const [step, setStep] = useState<OrganizationRequestStepId>("identity");
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [submittedSlug, setSubmittedSlug] = useState<string | null>(null);
+  const [draftSavedVisible, setDraftSavedVisible] = useState(false);
+
+  useEffect(() => {
+    const stored = loadOrganizationRequestDraft();
+    if (stored) {
+      setDraft(stored.draft);
+      setStep(stored.step);
+      setDraftSavedVisible(true);
+    }
+  }, []);
 
   useEffect(() => {
     const categoryId = resolveIntentCategoryId(intentType);
@@ -98,6 +124,13 @@ export function useOrganizationRequestContext() {
     [draft.categoryId],
   );
 
+  const hasDraftContent = useMemo(() => draftHasContent(draft), [draft]);
+
+  const persistDraft = useCallback(() => {
+    persistOrganizationRequestDraft(draft, step);
+    setDraftSavedVisible(true);
+  }, [draft, step]);
+
   const updateDraft = useCallback((patch: Partial<OrganizationRequestDraft>) => {
     setDraft((prev) => ({ ...prev, ...patch }));
     setValidationMessage(null);
@@ -111,7 +144,11 @@ export function useOrganizationRequestContext() {
       return false;
     }
     const next = nextOrganizationRequestStep(step);
-    if (next) setStep(next);
+    if (next) {
+      setStep(next);
+      persistOrganizationRequestDraft(draft, next);
+      setDraftSavedVisible(true);
+    }
     setValidationMessage(null);
     return true;
   }, [draft, step]);
@@ -122,17 +159,26 @@ export function useOrganizationRequestContext() {
     setValidationMessage(null);
   }, [step]);
 
+  const saveDraft = useCallback(() => {
+    persistDraft();
+  }, [persistDraft]);
+
+  const saveAndExit = useCallback(() => {
+    persistDraft();
+    router.push("/places");
+  }, [persistDraft, router]);
+
   const submit = useCallback(async () => {
-    const validation = validateOrganizationRequestStep("info", draft);
+    const validation = validateOrganizationRequestDraft(draft);
     if (!validation.valid) {
       setValidationMessage(validation.message);
-      setStep("info");
+      setStep(validation.message?.includes("adresse") ? "address" : "identity");
       return null;
     }
     const category = resolveOrganizationRequestCategory(draft.categoryId);
     if (!category) {
       setValidationMessage("Sélectionnez une catégorie.");
-      setStep("info");
+      setStep("identity");
       return null;
     }
 
@@ -153,6 +199,7 @@ export function useOrganizationRequestContext() {
         description: draft.longDescription.trim() || undefined,
         neighborhood_label: selectedNeighborhood?.display_name ?? undefined,
       });
+      clearOrganizationRequestDraft();
       setSubmittedSlug(response.slug);
       return response;
     } catch {
@@ -175,9 +222,12 @@ export function useOrganizationRequestContext() {
     error,
     validationMessage,
     submittedSlug,
+    hasDraftContent: draftSavedVisible || hasDraftContent,
     updateDraft,
     goNext,
     goBack,
+    saveDraft,
+    saveAndExit,
     submit,
   };
 }
