@@ -30,6 +30,8 @@ function makeItem(overrides: Partial<LocalVideoFeedItem> = {}): LocalVideoFeedIt
     media_url: "https://media.example/v.mp4",
     thumbnail_url: "https://media.example/t.jpg",
     duration_seconds: 90,
+    media_width: null,
+    media_height: null,
     mime_type: "video/mp4",
     latitude: null,
     longitude: null,
@@ -84,6 +86,24 @@ describe("local-video-portal", () => {
       makeItem({ id: "new", published_at: "2026-07-02T10:00:00.000Z" }),
     ];
     expect(pickFeaturedVideos(items, 1).map((item) => item.id)).toEqual(["new"]);
+  });
+
+  it("filters nearby tab to geolocated items", () => {
+    const items = [
+      makeItem({ id: "near", distance_meters: 120 }),
+      makeItem({ id: "far", distance_meters: null }),
+    ];
+    const filtered = filterVideosPortalItems(items, DEFAULT_VIDEOS_PORTAL_SIDEBAR_FILTERS, "nearby");
+    expect(filtered.map((item) => item.id)).toEqual(["near"]);
+  });
+
+  it("sorts nearby tab by distance", () => {
+    const items = [
+      makeItem({ id: "b", distance_meters: 500 }),
+      makeItem({ id: "a", distance_meters: 100 }),
+    ];
+    const sorted = sortVideosPortalItems(items, "recent", "nearby");
+    expect(sorted.map((item) => item.id)).toEqual(["a", "b"]);
   });
 
   it("extracts unique creators", () => {

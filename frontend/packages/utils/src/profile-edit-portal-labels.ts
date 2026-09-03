@@ -1,8 +1,8 @@
 /** Profile edit page micro-copy (WEB-PROFILE-EDIT-01). */
 
-export const PROFILE_EDIT_PAGE_TITLE = "Éditer mon profil";
+export const PROFILE_EDIT_PAGE_TITLE = "Modifier mon profil";
 export const PROFILE_EDIT_PAGE_SUBTITLE =
-  "Mettez à jour vos informations et gérez votre présence sur Yunicity.";
+  "Mettez à jour les informations visibles par la communauté.";
 
 export const PROFILE_EDIT_TAB_INFO = "Informations";
 export const PROFILE_EDIT_TAB_PREFS = "Préférences";
@@ -20,10 +20,14 @@ export const PROFILE_EDIT_BANNER_CHANGE = "Changer la photo";
 export const PROFILE_EDIT_BANNER_TIP =
   "Une image de votre ville ou de vos passions donne du caractère à votre profil.";
 
-export const PROFILE_EDIT_AVATAR_UPLOAD_SUCCESS = "Photo de profil mise à jour.";
-export const PROFILE_EDIT_BANNER_UPLOAD_SUCCESS = "Photo de couverture mise à jour.";
+export const PROFILE_EDIT_AVATAR_UPLOAD_SUCCESS =
+  "Photo de profil enregistrée — visible sur votre profil public.";
+export const PROFILE_EDIT_BANNER_UPLOAD_SUCCESS =
+  "Photo de couverture enregistrée — visible sur votre profil public.";
 export const PROFILE_EDIT_MEDIA_UPLOAD_ERROR =
   "Impossible d'envoyer l'image. Utilisez JPG, PNG ou WEBP et réessayez.";
+export const PROFILE_EDIT_MEDIA_AUTO_SAVE =
+  "Les photos sont enregistrées dès l’envoi — le bouton « Enregistrer » concerne le texte et les préférences.";
 
 export const PROFILE_EDIT_PERSONAL_TITLE = "Informations personnelles";
 export const PROFILE_EDIT_FIRST_NAME = "Prénom";

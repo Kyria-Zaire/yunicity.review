@@ -1,7 +1,7 @@
-/** Neighborhoods mobile copy (MOBILE-QUARTIERS-01). */
+/** Neighborhoods mobile copy (MOBILE-QUARTIERS-01 + refonte hub). */
 
 export const NEIGHBORHOODS_MOBILE_SEARCH_PLACEHOLDER =
-  "Rechercher un quartier, un lieu, une activité…";
+  "Rechercher un quartier, une ambiance...";
 export const NEIGHBORHOODS_MOBILE_FILTERS_ARIA = "Filtres avancés";
 export const NEIGHBORHOODS_MOBILE_FILTERS_SOON = "Filtres avancés — bientôt disponible";
 
@@ -27,6 +27,19 @@ export const NEIGHBORHOODS_MOBILE_DISCOVER_STATS = (placesCount: number, eventsC
 
 export const NEIGHBORHOODS_MOBILE_RECOMMENDED_TITLE = "Recommandé pour vous";
 export const NEIGHBORHOODS_MOBILE_RECOMMENDED_VIEW_ALL = "Voir tout";
+
+/** Hub mobile refonte (maquette <640). */
+export const NEIGHBORHOODS_MOBILE_SUBTITLE =
+  "Découvrez leur identité et ce qui s'y passe aujourd'hui.";
+export const NEIGHBORHOODS_MOBILE_VIEW_ON_MAP = "Sur la carte";
+export const NEIGHBORHOODS_MOBILE_DEFINE = "Définir";
+export const NEIGHBORHOODS_MOBILE_YOUR_HOOD_HINT =
+  "Retrouvez plus vite les informations qui vous concernent.";
+export const NEIGHBORHOODS_MOBILE_MAP_BODY =
+  "Repérez les quartiers et ce qui se trouve autour de vous.";
+export const NEIGHBORHOODS_MOBILE_CONTRIBUTE_TITLE = "Contribuer";
+export const NEIGHBORHOODS_MOBILE_CONTRIBUTE_CTA = "Proposer";
+export const NEIGHBORHOODS_MOBILE_SEE_ALL_ARROW = (count: number) => `Voir les ${count}`;
 
 export function formatNeighborhoodsMobileCardStats(
   placesCount: number,

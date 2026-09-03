@@ -3,7 +3,7 @@ import type { LocalVideoFeedItem, LocalVideoTypeId } from "@yunicity/types";
 import { isLocalVideoFeedItemPlayable } from "./local-video-processing-presenter";
 import { LOCAL_VIDEO_TYPE_LABELS } from "./local-video-presenter";
 
-export type VideosPortalTabId = "all" | "trending" | "new" | "subscriptions" | "mine";
+export type VideosPortalTabId = "all" | "trending" | "new" | "subscriptions" | "mine" | "nearby";
 export type VideosPortalSortId = "recent" | "popular";
 
 export type VideosDurationFilterId = "all" | "short" | "medium" | "long";
@@ -84,6 +84,8 @@ function matchesTab(
     }
     case "subscriptions":
       return false;
+    case "nearby":
+      return item.distance_meters != null;
     case "mine":
       return Boolean(currentUserId && item.author_user_id === currentUserId);
     default:
@@ -119,6 +121,14 @@ export function sortVideosPortalItems(
     return next.sort((a, b) => {
       const likes = b.like_count - a.like_count;
       if (likes !== 0) return likes;
+      return videoTimestamp(b) - videoTimestamp(a);
+    });
+  }
+  if (tab === "nearby") {
+    return next.sort((a, b) => {
+      const da = a.distance_meters ?? Number.POSITIVE_INFINITY;
+      const db = b.distance_meters ?? Number.POSITIVE_INFINITY;
+      if (da !== db) return da - db;
       return videoTimestamp(b) - videoTimestamp(a);
     });
   }

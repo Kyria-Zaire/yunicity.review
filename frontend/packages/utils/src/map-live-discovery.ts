@@ -24,6 +24,8 @@ export type MapLiveDiscoveryItem = {
   secondaryHref?: string;
   secondaryCtaLabel?: string;
   imageUrl: string | null;
+  expiresLabel?: string | null;
+  isLiveNow?: boolean;
 };
 
 type MapLiveDiscoveryInput = {
@@ -63,30 +65,14 @@ export function buildMapLiveDiscoveryItems({
       kind: "event",
       title: upcomingEvent.title,
       subtitle: formatEventLine(upcomingEvent.starts_at, city),
-      badge: "Événement",
-      ctaLabel: "Voir l'événement",
-      href: `/events/${encodeURIComponent(upcomingEvent.id)}`,
-      secondaryHref: buildMapEventUrl(upcomingEvent.id),
-      secondaryCtaLabel: "Voir sur la carte",
+      badge: "Culture",
+      ctaLabel: "Voir sur la carte",
+      href: buildMapEventUrl(upcomingEvent.id),
+      secondaryHref: `/events/${encodeURIComponent(upcomingEvent.id)}`,
+      secondaryCtaLabel: "Voir l'événement",
       imageUrl: upcomingEvent.cover_image_url,
     });
     usedIds.add(`event:${upcomingEvent.id}`);
-  }
-
-  const firstPlace = culturalPlaces.find((place) => Boolean(resolvePlaceImage(place)));
-  if (firstPlace) {
-    items.push({
-      id: `culture:${firstPlace.slug}`,
-      kind: "culture",
-      title: firstPlace.name,
-      subtitle: "À découvrir aujourd'hui",
-      badge: "Culture",
-      ctaLabel: "Voir sur la carte",
-      href: buildMapPlaceUrl(firstPlace.slug),
-      imageUrl: resolvePlaceImage(firstPlace),
-    });
-    usedIds.add(`culture:${firstPlace.slug}`);
-    usedPlaceSlugs.add(firstPlace.slug);
   }
 
   const activeOffer = [...passportOffers]
@@ -109,8 +95,9 @@ export function buildMapLiveDiscoveryItems({
       subtitle: activeOffer.partner.name,
       badge: "Passport",
       ctaLabel: "Voir l'offre",
-      href: "/passport",
+      href: `/passport/offre/${encodeURIComponent(activeOffer.id)}`,
       imageUrl: activeOffer.partner.logo_url,
+      expiresLabel: formatOfferExpiry(activeOffer.valid_until, now),
     });
     usedIds.add(`offer:${activeOffer.id}`);
   }
@@ -125,13 +112,30 @@ export function buildMapLiveDiscoveryItems({
       id: `neighborhood:${featuredNeighborhood.slug}`,
       kind: "neighborhood",
       title: featuredNeighborhood.display_name,
-      subtitle: featuredNeighborhood.short_description || "Quartier à explorer aujourd'hui",
+      subtitle: "Animé maintenant",
       badge: "Quartier",
       ctaLabel: "Explorer",
       href: `/neighborhoods/${encodeURIComponent(featuredNeighborhood.slug)}?city=${encodeURIComponent(city)}`,
       imageUrl: resolveMapNeighborhoodImageUrl(featuredNeighborhood),
+      isLiveNow: true,
     });
     usedIds.add(`neighborhood:${featuredNeighborhood.slug}`);
+  }
+
+  const firstPlace = culturalPlaces.find((place) => Boolean(resolvePlaceImage(place)));
+  if (firstPlace) {
+    items.push({
+      id: `culture:${firstPlace.slug}`,
+      kind: "culture",
+      title: firstPlace.name,
+      subtitle: "À découvrir aujourd'hui",
+      badge: "Culture",
+      ctaLabel: "Voir sur la carte",
+      href: buildMapPlaceUrl(firstPlace.slug),
+      imageUrl: resolvePlaceImage(firstPlace),
+    });
+    usedIds.add(`culture:${firstPlace.slug}`);
+    usedPlaceSlugs.add(firstPlace.slug);
   }
 
   const calmPlace = culturalPlaces.find(
@@ -158,6 +162,19 @@ export function buildMapLiveDiscoveryItems({
 
 function resolvePlaceImage(place: CulturalPlaceListItem): string | null {
   return resolveMapPlaceImageUrl(place);
+}
+
+function formatOfferExpiry(validUntil: string | null | undefined, now: Date): string | null {
+  if (!validUntil) return null;
+  const expiresAt = Date.parse(validUntil);
+  if (!Number.isFinite(expiresAt)) return null;
+  const diffMs = expiresAt - now.getTime();
+  if (diffMs <= 0) return "Expire bientôt";
+  const hours = Math.ceil(diffMs / (60 * 60 * 1000));
+  if (hours <= 1) return "Expire dans 1 h";
+  if (hours < 24) return `Expire dans ${hours} h`;
+  const days = Math.ceil(hours / 24);
+  return `Expire dans ${days} j`;
 }
 
 function formatEventLine(startsAtIso: string, city: string): string {
