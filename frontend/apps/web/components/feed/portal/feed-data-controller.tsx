@@ -11,6 +11,7 @@ import {
   filterFeedPostsByView,
   filterFeedPostsContributions,
   filterFeedPostsDiscussions,
+  selectFeedStreamLocalVideos,
 } from "@yunicity/utils";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -29,6 +30,7 @@ import { useAuth } from "@/lib/auth/auth-provider";
 import type { FeedContextModuleFamily } from "@/lib/feed/feed-context-stream";
 import {
   feedEnrichmentForScope,
+  isSameFeedVideoEnrichment,
   resolveFeedEnrichmentSnapshot,
 } from "@/lib/feed/feed-enrichment-snapshot";
 import {
@@ -40,6 +42,7 @@ import {
   resetFeedMediumFilterActivation,
 } from "@/lib/layout/feed-medium-filter-contract";
 
+const CITY_VIDEO_TEASER_FILTER = { kind: "city" } as const;
 type FeedLeftNav =
   | FeedPortalView
   | "home"
@@ -151,8 +154,14 @@ export function FeedDataController() {
     );
   }, [portal.profile?.interests]);
 
-  const videoTeasers = useLocalVideoTeasers({ city, filter: { kind: "city" } });
-  const candidateStreamVideo = videoTeasers.items[0] ?? null;
+  const videoTeasers = useLocalVideoTeasers({
+    city,
+    filter: CITY_VIDEO_TEASER_FILTER,
+  });
+  const candidateStreamVideos = useMemo(
+    () => selectFeedStreamLocalVideos(videoTeasers.items),
+    [videoTeasers.items],
+  );
   const desktopMoments = useMemo(
     () =>
       buildFeedDesktopMoments({
@@ -204,7 +213,7 @@ export function FeedDataController() {
     () => ({
       scopeKey: city,
       value: {
-        video: candidateStreamVideo,
+        videos: candidateStreamVideos,
         families: candidateContextFamilies,
         highlights,
         highlightOffer: portal.highlightOffer,
@@ -214,7 +223,7 @@ export function FeedDataController() {
     }),
     [
       candidateContextFamilies,
-      candidateStreamVideo,
+      candidateStreamVideos,
       city,
       highlights,
       portal.highlightOffer,
@@ -231,6 +240,13 @@ export function FeedDataController() {
         current,
         enrichmentCandidate,
         enrichmentSourcesSettled,
+        (left, right) =>
+          left.highlightOffer === right.highlightOffer &&
+          left.highlights === right.highlights &&
+          isSameFeedVideoEnrichment(
+            { videos: left.videos, families: left.families },
+            { videos: right.videos, families: right.families },
+          ),
       ),
     );
   }, [enrichmentCandidate, enrichmentSourcesSettled]);
@@ -246,7 +262,7 @@ export function FeedDataController() {
     () =>
       buildFeedStream(
         displayedPosts,
-        streamIsContextual ? (renderedEnrichment?.video ?? null) : null,
+        streamIsContextual ? (renderedEnrichment?.videos ?? []) : null,
         activeView,
         {
           availableContextFamilies: streamIsContextual
