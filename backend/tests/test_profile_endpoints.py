@@ -230,10 +230,10 @@ async def test_public_profile_posts_by_username(auth_client: AsyncClient) -> Non
 
 
 @pytest.mark.asyncio
-async def test_public_profile_contributions_and_tribes_by_username(auth_client: AsyncClient) -> None:
+async def test_public_profile_contributions_and_tribes_by_username(
+    auth_client: AsyncClient,
+) -> None:
     from datetime import UTC, datetime
-
-    from sqlalchemy import select
 
     from app.core.neighborhood_v2_constants import NeighborhoodContributionStatus
     from app.core.tribe_constants import TribeCategory, TribeMemberRole, TribeVisibility
@@ -241,6 +241,7 @@ async def test_public_profile_contributions_and_tribes_by_username(auth_client: 
     from app.models.neighborhood import Neighborhood
     from app.models.neighborhood_editorial import NeighborhoodContribution
     from app.models.tribe import Tribe, TribeMember
+    from sqlalchemy import select
 
     author = await _register(auth_client, {}, suffix="pubctx")
     author_token = author["access_token"]

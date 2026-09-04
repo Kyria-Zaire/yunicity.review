@@ -6,8 +6,6 @@ import asyncio
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from sqlalchemy import select
-
 from app.core.config import get_settings
 from app.core.local_video_constants import LocalVideoType
 from app.db.seeds.qa_fixtures import CITY, QA_MEDIA_PUBLIC_PREFIX, _png_16_9, _uid
@@ -15,6 +13,7 @@ from app.db.session import get_session_factory, init_db
 from app.models.local_video import LocalVideo
 from app.models.neighborhood import Neighborhood
 from app.models.user_profile import UserProfile
+from sqlalchemy import select
 
 
 def _write_media(filename_stem: str, *, width: int, height: int) -> tuple[str, str, Path, Path]:
@@ -39,9 +38,7 @@ async def main() -> None:
 
     async with sf() as session:
         profile = (
-            await session.execute(
-                select(UserProfile).where(UserProfile.username == "qa_citizen_a")
-            )
+            await session.execute(select(UserProfile).where(UserProfile.username == "qa_citizen_a"))
         ).scalar_one()
         neighborhood_id = (
             await session.execute(
@@ -127,9 +124,7 @@ async def main() -> None:
             portrait.media_url = portrait_media
             portrait.thumbnail_url = portrait_thumb
             portrait.title = "3 adresses à tester ce week-end à Reims"
-            portrait.description = (
-                "Parcours QA portrait pour valider la carte split desktop."
-            )
+            portrait.description = "Parcours QA portrait pour valider la carte split desktop."
             portrait.status = "published"
             portrait.published_at = now - timedelta(hours=3)
             print(f"updated portrait {portrait_id} -> 1080x1920")

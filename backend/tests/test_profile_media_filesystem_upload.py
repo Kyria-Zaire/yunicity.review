@@ -53,8 +53,9 @@ async def test_upload_avatar_filesystem_success(
     auth_client: AsyncClient,
     filesystem_profile_media_env: Path,
 ) -> None:
-    email = "profile-fs-avatar@example.com"
-    token, _user_id = await _register(auth_client, email=email, username="profile_fs_avatar")
+    # `_register` derive l'email du suffixe et renvoie la reponse d'inscription complete.
+    registration = await _register(auth_client, {}, suffix="-fs-avatar")
+    token = registration["access_token"]
 
     response = await auth_client.post(
         "/api/v1/profile/me/avatar",
@@ -85,8 +86,8 @@ async def test_upload_banner_filesystem_success(
     auth_client: AsyncClient,
     filesystem_profile_media_env: Path,
 ) -> None:
-    email = "profile-fs-banner@example.com"
-    token, _user_id = await _register(auth_client, email=email, username="profile_fs_banner")
+    registration = await _register(auth_client, {}, suffix="-fs-banner")
+    token = registration["access_token"]
 
     response = await auth_client.post(
         "/api/v1/profile/me/banner",
@@ -102,6 +103,10 @@ async def test_upload_banner_filesystem_success(
     banner_url = body["banner_url"]
     assert banner_url.startswith("/api/v1/profile-media/")
     assert banner_url.endswith("/banner.png")
+
+    stored = list(filesystem_profile_media_env.rglob("banner.png"))
+    assert len(stored) == 1
+    assert stored[0].read_bytes() == MINIMAL_PNG_BYTES
 
     get_response = await auth_client.get(banner_url)
     assert get_response.status_code == 200

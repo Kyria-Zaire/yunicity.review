@@ -8,7 +8,12 @@ from pathlib import Path
 
 from app.core.config import Settings
 from app.core.errors import AppError
-from app.core.story_media_policy import _CLOUD_ENVS, _QA_ROOTS, _is_relative_to, is_managed_cloud_runtime
+from app.core.story_media_policy import (
+    _CLOUD_ENVS,
+    _QA_ROOTS,
+    _is_relative_to,
+    is_managed_cloud_runtime,
+)
 
 
 def default_profile_media_dev_dir() -> Path:
@@ -106,7 +111,8 @@ def validate_profile_media_storage_config(settings: Settings) -> list[str]:
                 ),
             )
         warnings.append(
-            "Profile media R2 non configuré — basculez PROFILE_MEDIA_STORAGE_BACKEND=filesystem en dev."
+            "Profile media R2 non configuré — basculez "
+            "PROFILE_MEDIA_STORAGE_BACKEND=filesystem en dev."
         )
         return warnings
 

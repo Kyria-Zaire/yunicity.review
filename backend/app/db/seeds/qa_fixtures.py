@@ -35,6 +35,7 @@ from app.core.local_event_constants import (
     LocalEventVisibility,
 )
 from app.core.local_video_constants import LocalVideoType
+from app.core.neighborhood_v2_constants import NeighborhoodContributionStatus
 from app.core.organization_constants import (
     OrganizationType,
     OrganizationVisibility,
@@ -47,7 +48,6 @@ from app.core.passport_constants import (
     PassportStatus,
     PassportTierCode,
 )
-from app.core.neighborhood_v2_constants import NeighborhoodContributionStatus
 from app.core.security import hash_password
 from app.core.social_notification_constants import SocialNotificationType
 from app.core.tribe_constants import TribeCategory, TribeMemberRole, TribeVisibility
@@ -136,10 +136,12 @@ async def _upsert_sortir_event(
 
 async def _resolve_neighborhood_id_by_slug(session: AsyncSession, slug: str) -> uuid.UUID:
     result = await session.execute(
-        select(Neighborhood.id).where(
+        select(Neighborhood.id)
+        .where(
             func.lower(Neighborhood.city) == CITY.lower(),
             Neighborhood.slug == slug,
-        ).limit(1)
+        )
+        .limit(1)
     )
     neighborhood_id = result.scalar_one_or_none()
     if neighborhood_id is None:
@@ -201,7 +203,13 @@ def _png_16_9(width: int = 320, height: int = 180) -> bytes:
     )
 
 
-def _write_sortir_cover_png(filename: str, *, width: int = 640, height: int = 360, rgb: tuple[int, int, int] = (40, 60, 120)) -> str:
+def _write_sortir_cover_png(
+    filename: str,
+    *,
+    width: int = 640,
+    height: int = 360,
+    rgb: tuple[int, int, int] = (40, 60, 120),
+) -> str:
     """Write a local cover image for Sortir QA events; return public /media URL."""
     settings = get_settings()
     base_url = (settings.local_video_public_base_url or "").rstrip("/")
@@ -349,11 +357,16 @@ async def seed_qa_fixtures(
         ),
     )
     for uid_, user_id, username, display_name, bio, interests in profiles_spec:
-        created_profiles += await _get_or_add(
-            session,
-            UserProfile,
-            uid_,
-            lambda uid_=uid_, user_id=user_id, username=username, display_name=display_name, bio=bio, interests=interests: UserProfile(
+
+        def _profile_factory(
+            uid_=uid_,
+            user_id=user_id,
+            username=username,
+            display_name=display_name,
+            bio=bio,
+            interests=interests,
+        ) -> UserProfile:
+            return UserProfile(
                 id=uid_,
                 user_id=user_id,
                 username=username,
@@ -363,8 +376,9 @@ async def seed_qa_fixtures(
                 interests=interests,
                 visibility=ProfileVisibility.PUBLIC,
                 onboarding_completed=True,
-            ),
-        )
+            )
+
+        created_profiles += await _get_or_add(session, UserProfile, uid_, _profile_factory)
     await session.flush()
     counts["profiles"] = created_profiles
 
@@ -481,11 +495,16 @@ async def seed_qa_fixtures(
         ),
     )
     for uid_, hood_id, author_id, title, body, approved_at in contrib_spec:
-        created_contributions += await _get_or_add(
-            session,
-            NeighborhoodContribution,
-            uid_,
-            lambda uid_=uid_, hood_id=hood_id, author_id=author_id, title=title, body=body, approved_at=approved_at: NeighborhoodContribution(
+
+        def _contribution_factory(
+            uid_=uid_,
+            hood_id=hood_id,
+            author_id=author_id,
+            title=title,
+            body=body,
+            approved_at=approved_at,
+        ) -> NeighborhoodContribution:
+            return NeighborhoodContribution(
                 id=uid_,
                 neighborhood_id=hood_id,
                 author_user_id=author_id,
@@ -497,7 +516,13 @@ async def seed_qa_fixtures(
                 passport_verified_snapshot=False,
                 submitted_at=approved_at,
                 approved_at=approved_at,
-            ),
+            )
+
+        created_contributions += await _get_or_add(
+            session,
+            NeighborhoodContribution,
+            uid_,
+            _contribution_factory,
         )
     await session.flush()
     counts["neighborhood_contributions"] = created_contributions
@@ -513,8 +538,20 @@ async def seed_qa_fixtures(
     )
     created_posts = 0
     posts_spec: tuple[tuple[uuid.UUID, uuid.UUID, str, datetime, str | None], ...] = (
-        (_uid("post-1"), citizen_a_id, "Marché de Reims ce week-end", now - timedelta(hours=2), None),
-        (_uid("post-2"), citizen_b_id, "Balade au parc de Champagne", now - timedelta(hours=5), None),
+        (
+            _uid("post-1"),
+            citizen_a_id,
+            "Marché de Reims ce week-end",
+            now - timedelta(hours=2),
+            None,
+        ),
+        (
+            _uid("post-2"),
+            citizen_b_id,
+            "Balade au parc de Champagne",
+            now - timedelta(hours=5),
+            None,
+        ),
         (
             _uid("post-3"),
             citizen_a_id,
@@ -532,7 +569,8 @@ async def seed_qa_fixtures(
         (
             _uid("post-5"),
             citizen_pro_id,
-            "Balade photo ce matin dans le centre de Reims. La lumière sur les façades est juste incroyable !",
+            "Balade photo ce matin dans le centre de Reims. "
+            "La lumière sur les façades est juste incroyable !",
             now - timedelta(days=3, hours=6),
             cover_reims_street,
         ),
@@ -566,11 +604,15 @@ async def seed_qa_fixtures(
         ),
     )
     for uid_, author_id, body, created_at, media_url in posts_spec:
-        created_posts += await _get_or_add(
-            session,
-            Post,
-            uid_,
-            lambda uid_=uid_, author_id=author_id, body=body, created_at=created_at, media_url=media_url: Post(
+
+        def _post_factory(
+            uid_=uid_,
+            author_id=author_id,
+            body=body,
+            created_at=created_at,
+            media_url=media_url,
+        ) -> Post:
+            return Post(
                 id=uid_,
                 author_type=PostAuthorType.CITIZEN.value,
                 author_id=author_id,
@@ -580,8 +622,9 @@ async def seed_qa_fixtures(
                 media_url=media_url,
                 is_active=True,
                 created_at=created_at,
-            ),
-        )
+            )
+
+        created_posts += await _get_or_add(session, Post, uid_, _post_factory)
     # Idempotent re-seed: refresh media URLs when fixture CDN links change.
     for uid_, _, _, _, media_url in posts_spec:
         if media_url is None:
@@ -951,9 +994,7 @@ async def seed_qa_fixtures(
         existing_portrait.media_url = portrait_media
         existing_portrait.thumbnail_url = portrait_thumb
         existing_portrait.title = "3 adresses à tester ce week-end à Reims"
-        existing_portrait.description = (
-            "Parcours QA portrait pour valider la carte split desktop."
-        )
+        existing_portrait.description = "Parcours QA portrait pour valider la carte split desktop."
 
     await session.flush()
     counts["local_videos"] = int(created_video) + int(created_portrait)
@@ -1025,8 +1066,8 @@ async def seed_qa_fixtures(
 EXPECTED_VOLUMES: dict[str, int] = {
     "users": 4,
     "profiles": 4,
-    "tribes": 2,
-    "tribe_members": 2,
+    "tribes": 3,
+    "tribe_members": 4,
     "posts": 9,
     "events": 6,
     "event_interests": 1,

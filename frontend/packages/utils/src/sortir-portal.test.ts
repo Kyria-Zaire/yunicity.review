@@ -65,6 +65,7 @@ describe("sortir-portal", () => {
   });
 
   it("laisse musique / food / vie locale dans Ce soir hors à-la-une expo", () => {
+    // Référence figée : starts_at >= 18h en UTC (et donc en Europe/Paris) pour isEventTonight.
     const now = new Date("2026-08-29T20:15:00.000Z");
     const exhibition = {
       ...BASE_EVENT,
@@ -83,7 +84,7 @@ describe("sortir-portal", () => {
       event_type: "local_concert",
       description: "Concert live sous les voûtes gallo-romaines du centre.",
       cover_image_url: "https://cdn.example/music.png",
-      starts_at: "2026-08-29T17:30:00.000Z",
+      starts_at: "2026-08-29T18:30:00.000Z",
       ends_at: "2026-08-29T21:45:00.000Z",
     };
     const food = {
@@ -93,7 +94,7 @@ describe("sortir-portal", () => {
       event_type: "local_market",
       description: "Marché nocturne, food trucks et ambiance locale aux Halles.",
       cover_image_url: "https://cdn.example/food.png",
-      starts_at: "2026-08-29T16:00:00.000Z",
+      starts_at: "2026-08-29T18:00:00.000Z",
       ends_at: "2026-08-29T21:45:00.000Z",
     };
     const local = {
