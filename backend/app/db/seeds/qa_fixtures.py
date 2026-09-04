@@ -359,12 +359,12 @@ async def seed_qa_fixtures(
     for uid_, user_id, username, display_name, bio, interests in profiles_spec:
 
         def _profile_factory(
-            uid_=uid_,
-            user_id=user_id,
-            username=username,
-            display_name=display_name,
-            bio=bio,
-            interests=interests,
+            uid_: uuid.UUID = uid_,
+            user_id: uuid.UUID = user_id,
+            username: str = username,
+            display_name: str = display_name,
+            bio: str | None = bio,
+            interests: list[str] = interests,
         ) -> UserProfile:
             return UserProfile(
                 id=uid_,
@@ -497,12 +497,12 @@ async def seed_qa_fixtures(
     for uid_, hood_id, author_id, title, body, approved_at in contrib_spec:
 
         def _contribution_factory(
-            uid_=uid_,
-            hood_id=hood_id,
-            author_id=author_id,
-            title=title,
-            body=body,
-            approved_at=approved_at,
+            uid_: uuid.UUID = uid_,
+            hood_id: uuid.UUID = hood_id,
+            author_id: uuid.UUID = author_id,
+            title: str = title,
+            body: str = body,
+            approved_at: datetime = approved_at,
         ) -> NeighborhoodContribution:
             return NeighborhoodContribution(
                 id=uid_,
@@ -606,11 +606,11 @@ async def seed_qa_fixtures(
     for uid_, author_id, body, created_at, media_url in posts_spec:
 
         def _post_factory(
-            uid_=uid_,
-            author_id=author_id,
-            body=body,
-            created_at=created_at,
-            media_url=media_url,
+            uid_: uuid.UUID = uid_,
+            author_id: uuid.UUID = author_id,
+            body: str = body,
+            created_at: datetime = created_at,
+            media_url: str | None = media_url,
         ) -> Post:
             return Post(
                 id=uid_,
@@ -1071,7 +1071,7 @@ EXPECTED_VOLUMES: dict[str, int] = {
     "posts": 9,
     "events": 6,
     "event_interests": 1,
-    "organizations": 1,
+    "organizations": 2,
     "partner_profiles": 1,
     "partner_offers": 2,
     "local_videos": 2,

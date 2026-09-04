@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from typing import Protocol
 
 from app.core.config import Settings
@@ -14,7 +15,7 @@ from app.services.profile_media.r2_storage import ProfileMediaR2Storage
 class ProfileMediaStorage(Protocol):
     def public_url(self, storage_key: str) -> str: ...
 
-    def delete_existing_variants(self, user_id, kind: ProfileMediaKind) -> None: ...
+    def delete_existing_variants(self, user_id: uuid.UUID, kind: ProfileMediaKind) -> None: ...
 
     def put_object(self, storage_key: str, data: bytes, content_type: str) -> None: ...
 

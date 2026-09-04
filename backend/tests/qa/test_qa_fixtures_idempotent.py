@@ -31,6 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from tests.qa_support import resolve_destructive_qa_url
 
 _FIXED_NOW = datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)
+_EXPECTED_ORGANIZATION_SLUGS = frozenset({"reims-tourisme", "qa-partenaire"})
 
 _COUNT_MODELS: dict[str, type] = {
     "users": User,
@@ -83,3 +84,8 @@ async def test_second_seed_creates_nothing_and_volumes_match(qa_session: AsyncSe
     for key, model in _COUNT_MODELS.items():
         result = await qa_session.execute(select(func.count()).select_from(model))
         assert int(result.scalar_one()) == EXPECTED_VOLUMES[key], f"volume mismatch for {key}"
+
+    org_slug_rows = await qa_session.execute(select(Organization.slug))
+    org_slugs = {str(row[0]) for row in org_slug_rows.all()}
+    assert len(org_slugs) == EXPECTED_VOLUMES["organizations"]
+    assert org_slugs == _EXPECTED_ORGANIZATION_SLUGS

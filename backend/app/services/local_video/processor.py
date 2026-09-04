@@ -179,9 +179,17 @@ class LocalVideoMediaProcessor:
         payload = json.loads(completed.stdout or "{}")
         streams = payload.get("streams") or []
         stream = streams[0] if streams else {}
+        raw_width = stream.get("width")
+        raw_height = stream.get("height")
+        if raw_width is None or raw_height is None:
+            raise AppError(
+                status_code=400,
+                code="LOCAL_VIDEO_INVALID_MEDIA",
+                detail="Dimensions vidéo introuvables.",
+            )
         try:
-            width = int(stream.get("width"))
-            height = int(stream.get("height"))
+            width = int(raw_width)
+            height = int(raw_height)
         except (TypeError, ValueError) as exc:
             raise AppError(
                 status_code=400,
