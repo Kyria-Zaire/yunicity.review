@@ -14,7 +14,7 @@ const QA_SEEDED_PASSWORD = "StrongPassword1!";
  * C3.1-R1B — accueil public `/` : landing visiteur, redirection connecté, pas de diagnostic API.
  */
 
-const HERO_TITLE = "Reims, plus proche de vous.";
+const HERO_TITLE = "Votre ville, au même endroit.";
 const VIEWPORTS = [
   { width: 390, height: 844, name: "390" },
   { width: 393, height: 852, name: "393" },
@@ -63,7 +63,7 @@ test.describe("C3.1-R1B — Public home", () => {
       "href",
       "/register",
     );
-    await expect(page.getByRole("link", { name: "Découvrir Reims" })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: "Découvrir Reims" }).first()).toHaveAttribute(
       "href",
       "/neighborhoods",
     );
@@ -71,19 +71,13 @@ test.describe("C3.1-R1B — Public home", () => {
       "href",
       "/register",
     );
-    await expect(page.getByRole("link", { name: "J’ai déjà un compte" })).toHaveAttribute(
-      "href",
-      "/login",
-    );
     await expect(page.getByRole("link", { name: "Quartiers" })).toHaveAttribute(
       "href",
       "/neighborhoods",
     );
-    await expect(page.getByRole("link", { name: "Sortir à Reims" })).toHaveAttribute(
-      "href",
-      "/sortir",
-    );
+    await expect(page.getByRole("link", { name: "Tribus" })).toHaveAttribute("href", "/tribes");
     await expect(page.getByRole("link", { name: "Lieux" })).toHaveAttribute("href", "/places");
+    await expect(page.getByText("Vous pouvez explorer sans créer de compte.")).toBeVisible();
 
     await expect(page.locator(".web-mobile-strategic-bottom-nav")).toHaveCount(0);
     await expect(page.getByRole("navigation", { name: "Navigation principale" })).toHaveCount(0);
@@ -97,10 +91,28 @@ test.describe("C3.1-R1B — Public home", () => {
     expect(landmarks.nestedMain, "<main> imbriqué sur /").toBe(0);
     expect(landmarks.roleMainConcurrent, 'role="main" concurrent sur /').toBe(0);
     expect(landmarks.visibleMainNavigation, "pas de navigation applicative sur /").toBe(0);
-    await expect(page.locator("h1")).toHaveCount(1);
+    await expect(page.locator("h1:visible")).toHaveCount(1);
 
     await page.getByRole("link", { name: "Se connecter" }).click();
     await expect(page).toHaveURL(/\/login/, { timeout: COLD_START_TIMEOUT });
+  });
+
+  test("desktop : navigation header et section Explorez Reims", async ({ page }) => {
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await gotoPublicHome(page);
+
+    await expect(page.getByRole("navigation", { name: "Navigation principale" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Découvrir Reims" })).toHaveCount(2);
+    await expect(page.getByRole("link", { name: "Comment ça marche" })).toHaveAttribute(
+      "href",
+      "#comment-ca-marche",
+    );
+    await expect(page.getByRole("heading", { name: "Explorez Reims dès maintenant" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Aide" })).toHaveAttribute("href", "/aide");
+    await expect(page.getByRole("link", { name: "Mentions légales" })).toHaveAttribute(
+      "href",
+      "/legal/conditions-generales",
+    );
   });
 
   test("connecté : `/` redirige vers `/feed` sans landing visiteur persistante", async ({
@@ -120,8 +132,6 @@ test.describe("C3.1-R1B — Public home", () => {
     await expect(page.getByRole("link", { name: "Yunicity — accueil" }).first()).toBeVisible({
       timeout: COLD_START_TIMEOUT,
     });
-    // Client navigation `/` while AuthProvider is still mounted. A document reload of
-    // localhost:3002 cannot reuse the LAN refresh cookie (cross-site vs 192.168.1.180).
     await page.getByRole("link", { name: "Yunicity — accueil" }).first().click();
     await expect(page).toHaveURL(/\/feed/, { timeout: COLD_START_TIMEOUT });
     await waitSessionReady(page);
@@ -142,7 +152,18 @@ test.describe("C3.1-R1B — Public home", () => {
           (el) => el.textContent?.trim() === "Yunicity" && el.getClientRects().length > 0,
         );
         const wordmarkRect = wordmark?.getBoundingClientRect();
-        const ctas = Array.from(document.querySelectorAll("[data-public-home-control]"));
+        const ctas = Array.from(document.querySelectorAll("[data-public-home-control]")).filter(
+          (el) => {
+            const rect = el.getBoundingClientRect();
+            const style = window.getComputedStyle(el);
+            return (
+              rect.width > 0 &&
+              rect.height > 0 &&
+              style.visibility !== "hidden" &&
+              style.display !== "none"
+            );
+          },
+        );
         const smallCtas = ctas
           .map((el) => {
             const rect = el.getBoundingClientRect();
@@ -176,7 +197,7 @@ test.describe("C3.1-R1B — Public home", () => {
     await expect(page).toHaveURL(/\/register/, { timeout: COLD_START_TIMEOUT });
     await page.goto("/");
     await waitSessionReady(page);
-    await page.getByRole("link", { name: "J’ai déjà un compte" }).click();
+    await page.getByRole("link", { name: "Se connecter" }).click();
     await expect(page).toHaveURL(/\/login/, { timeout: COLD_START_TIMEOUT });
   });
 });

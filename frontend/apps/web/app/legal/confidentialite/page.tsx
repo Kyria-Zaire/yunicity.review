@@ -1,25 +1,15 @@
-import { LegalDocumentScreen } from "@/components/legal/legal-document-screen";
-import {
-  LEGAL_PRIVACY_BODY,
-  LEGAL_PRIVACY_INTRO,
-  LEGAL_PRIVACY_PAGE_TITLE,
-} from "@/lib/legal/legal-document-content";
-import { settingsSectionDomId } from "@yunicity/utils";
+import { LegalDocumentPage } from "@/components/legal/legal-document-page";
+import { getLegalDocument } from "@/lib/legal/legal-document-contract";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
+const document = getLegalDocument("privacy");
+
 export const metadata = buildPageMetadata({
-  title: LEGAL_PRIVACY_PAGE_TITLE,
-  description: LEGAL_PRIVACY_INTRO,
+  title: document.title,
+  description: document.description,
   path: "/legal/confidentialite",
 });
 
 export default function LegalPrivacyPage() {
-  return (
-    <LegalDocumentScreen
-      title={LEGAL_PRIVACY_PAGE_TITLE}
-      intro={LEGAL_PRIVACY_INTRO}
-      body={LEGAL_PRIVACY_BODY}
-      settingsHref={`/settings#${settingsSectionDomId("privacy")}`}
-    />
-  );
+  return <LegalDocumentPage documentId="privacy" />;
 }

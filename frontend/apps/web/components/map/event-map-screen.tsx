@@ -5,14 +5,6 @@ import type { CulturalPlaceListItem } from "@yunicity/types";
 import type { MapTerritorySelection } from "@yunicity/utils";
 import {
   DEFAULT_MAP_CITY,
-  MAP_EMPTY,
-  MAP_EMPTY_HINT,
-  MAP_ERROR,
-  MAP_PORTAL_FILTERS_TITLE,
-  MAP_LOADING,
-  MAP_RETRY,
-  MAP_TOKEN_MISSING_GOOGLE_WEB,
-  MAP_TRUNCATED_HINT,
   buildMapSelectedPanelPayload,
   buildNeighborhoodMapMarkers,
   buildTribeMapMarkers,
@@ -45,28 +37,14 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { GoogleEventMap } from "@/components/map/google-event-map";
-import { MapAroundYouCarousel } from "@/components/map/map-around-you-carousel";
 import { MapAppShell } from "@/components/map/map-app-shell";
-import { MapContextDrawer } from "@/components/map/map-context-drawer";
-import { MapFilterRailContent } from "@/components/map/map-filter-rail-content";
-import { MapLeftFilterRail } from "@/components/map/map-left-filter-rail";
-import { SlidersHorizontal } from "lucide-react";
-import {
-  MapMobileAroundSheet,
-  MapMobileCategoryPills,
-  MapMobileHeader,
-  MapMobileMapControls,
-  MapMobileNeighborhoodBadge,
-  MapMobileSearchBar,
-} from "@/components/map/mobile";
+import { MapDesktopScreen } from "@/components/map/desktop";
+import { MapMediumScreen } from "@/components/map/medium";
+import { MapMobileScreen } from "@/components/map/mobile";
 import { MapPartnerDetailPanel } from "@/components/map/map-partner-detail-panel";
 import { MapPlaceDetailPanel } from "@/components/map/map-place-detail-panel";
-import { MapRightRail } from "@/components/map/map-right-rail";
-import { MapSearchChips } from "@/components/map/map-search-chips";
-import { MapSelectedPanel } from "@/components/map/map-selected-panel";
 import { useMapPortalStats } from "@/hooks/use-map-portal-stats";
-import { useIsDesktop } from "@/hooks/use-is-desktop";
+import { useMapViewportTier } from "@/hooks/use-map-viewport-tier";
 import { useMapBbox } from "@/hooks/use-map-bbox";
 import { useMapCulturalPlaces } from "@/hooks/use-map-cultural-places";
 import { useMapPartners } from "@/hooks/use-map-partners";
@@ -114,20 +92,23 @@ export function EventMapScreen() {
   const [selection, setSelection] = useState<MapTerritorySelection | null>(null);
   const [recenterSignal, setRecenterSignal] = useState(0);
   const [flyToTarget, setFlyToTarget] = useState<LatLon | null>(null);
-  const [positionHintVisible, setPositionHintVisible] = useState(false);
   const [mapNotice, setMapNotice] = useState<string | null>(null);
   const [portalFilters, setPortalFilters] = useState<MapPortalFilters>(DEFAULT_MAP_PORTAL_FILTERS);
   const [mobileCategory, setMobileCategory] = useState<MapMobileCategoryId>("all");
   const [userOrigin, setUserOrigin] = useState<LatLon | null>(null);
   // T6 — drawer Filtres medium (640–1279). State conservé au passage ≥1280 (drawer masqué CSS).
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [zoomAdjustSignal, setZoomAdjustSignal] = useState<{ delta: number; tick: number } | null>(
+    null,
+  );
 
   const portalStats = useMapPortalStats();
 
   const { bbox, updateFromBounds } = useMapBbox();
-  // Une seule instance Google Maps montée à la fois (mobile OU desktop). `display:none` ne
-  // démonte pas React : sans ce garde, les DEUX cartes s'instancient (double coût de tout rebuild).
-  const isDesktop = useIsDesktop();
+  // Une seule instance Google Maps montée à la fois. `display:none` ne démonte pas React :
+  // sans ce garde, plusieurs cartes s'instancient (double coût de tout rebuild). Le palier
+  // est à TROIS valeurs — un booléen à 640px rendait Medium et Desktop simultanément prêts.
+  const viewportTier = useMapViewportTier();
   // T5 — données carte chargées UNE fois par ville, filtrées côté client ensuite (culture/nature,
   // distance, calques). Le pan ne déclenche plus de re-fetch réseau. `bbox` ne sert plus qu'au
   // recentrage/centre local (resolveMapCenterOrigin), pas au fetch.
@@ -251,11 +232,6 @@ export function EventMapScreen() {
     );
   }, [mapParams.layer]);
 
-  const transitPoint = useMemo(() => {
-    const center = resolveMapCenterOrigin(bbox, city);
-    return { lat: center.latitude, lon: center.longitude, city };
-  }, [bbox, city]);
-
   const showEmpty =
     hasLoaded &&
     !loading &&
@@ -326,7 +302,6 @@ export function EventMapScreen() {
   }, []);
 
   const handleUsePositionOnMap = useCallback(() => {
-    setPositionHintVisible(true);
     if (!navigator.geolocation) {
       setMapNotice("La géolocalisation n’est pas disponible sur cet appareil.");
       return;
@@ -665,259 +640,117 @@ export function EventMapScreen() {
       />
     ) : null;
 
-  // Surfaces desktop (sous-carte 1280-1535 + aside ≥1536) : la fiche garde son propre X.
   const detailRail = buildDetailRail(false);
-
-  // T6.2 — surface medium active (640–1279), source unique. Filtres prioritaire, sinon détail.
+  const detailRailForDrawer = buildDetailRail(true);
   const mediumPanel = resolveMapMediumPanel({ filtersOpen, hasDetail: showDetailRail });
 
-  const rightRail =
-    detailRail ??
-    (
-      <MapRightRail
-        context={mapContext}
-        culturalPlaces={mapContext.culturalPlaces}
-        transitPoint={transitPoint}
-        selectedCulturalSlug={selectedCulturalSlug}
-        expandedCulturalSlug={null}
-        onSelectCulturalPlace={(place) => handleMapSelectCulturalSlug(place.slug)}
-        onToggleCulturalDetails={() => {}}
-      />
-    );
+  const handleSearchInZone = useCallback(() => {
+    const origin = resolveMapCenterOrigin(bbox, city);
+    setUserOrigin(origin);
+    setMapNotice(null);
+  }, [bbox, city]);
+
+  const handleZoomIn = useCallback(() => {
+    setZoomAdjustSignal({ delta: 1, tick: Date.now() });
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setZoomAdjustSignal({ delta: -1, tick: Date.now() });
+  }, []);
+
+  const leftRailProps = {
+    city,
+    filters: portalFilters,
+    favoritesCount: portalStats.favoritesCount,
+    visitedCount: portalStats.visitedCount,
+    onChangeFilters: setPortalFilters,
+    onActivateGeolocation: handleUsePositionOnMap,
+  };
+
+  const leftRailMediumProps = {
+    ...leftRailProps,
+    partners: mapPartners,
+    selectedPartnerSlug,
+    onSelectPartner: handleSelectPartner,
+  };
+
+  // `mapReady` n'est PAS dans les props partagées : chaque arbre reçoit le sien, sinon
+  // Medium et Desktop instancient tous deux leur carte au-dessus de 640px.
+  const mapStageProps = {
+    city,
+    apiKey: GOOGLE_MAPS_API_KEY,
+    mapId: GOOGLE_MAPS_MAP_ID,
+    events: visibleEvents,
+    culturalPlaces: visiblePlaces,
+    partnerMarkers: visiblePartnerMarkers,
+    neighborhoodMarkers,
+    tribeMarkers,
+    selection,
+    onBoundsChange: updateFromBounds,
+    onSelectEvent: handleSelectEvent,
+    onSelectPlace: handleMapSelectCulturalSlug,
+    onSelectPartner: handleSelectPartner,
+    onSelectNeighborhood: handleSelectNeighborhood,
+    onSelectTribe: handleSelectTribe,
+    onClearSelection: () => setSelection(null),
+    focusedEventId,
+    selectedCulturalSlug,
+    selectedPartnerSlug,
+    recenterSignal,
+    flyToTarget,
+    zoomAdjustSignal,
+    portalFilters,
+    onPortalCategoryChange: handlePortalCategoryChange,
+    aroundYouItems,
+    onAroundYouSelect: handleAroundYouSelect,
+    selectedPanel,
+    showDetailRail,
+    mapNotice,
+    showInitialLoading,
+    showEmpty,
+    error,
+    onRetry: retry,
+    loading,
+    hasLoaded,
+    truncated,
+    eventsCount: events.length,
+    onLocate: handleUsePositionOnMap,
+    onSearchInZone: handleSearchInZone,
+    onZoomIn: handleZoomIn,
+    onZoomOut: handleZoomOut,
+  };
 
   return (
-    <MapAppShell rightRail={rightRail}>
-      <div className="web-desktop-map-only">
-        <MapLeftFilterRail
-          city={city}
-          filters={portalFilters}
-          favoritesCount={portalStats.favoritesCount}
-          visitedCount={portalStats.visitedCount}
-          partners={mapPartners}
-          selectedPartnerSlug={selectedPartnerSlug}
-          onSelectPartner={handleSelectPartner}
-          onChangeFilters={setPortalFilters}
-          onActivateGeolocation={handleUsePositionOnMap}
-        />
-      </div>
+    <MapAppShell>
+      <MapMobileScreen
+        {...mapStageProps}
+        mapReady={viewportTier === "mobile"}
+        onChangeFilters={setPortalFilters}
+        mobileCategory={mobileCategory}
+        onMobileCategorySelect={handleMobileCategorySelect}
+        nearestNeighborhoodLabel={nearestNeighborhoodLabel}
+        onLocate={handleUsePositionOnMap}
+        onNavigate={handleMobileNavigate}
+        detailRail={detailRail}
+      />
 
-      <div className="web-mobile-map-only w-full min-w-0">
-        <MapMobileHeader />
-        <div className="relative h-[calc(100dvh-8.5rem)] min-h-[420px] overflow-hidden bg-white">
-          {mapNotice ? (
-            <p className="absolute inset-x-3 top-28 z-20 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-              {mapNotice}
-            </p>
-          ) : null}
+      <MapMediumScreen
+        leftRail={leftRailMediumProps}
+        mapStage={{ ...mapStageProps, mapReady: viewportTier === "medium" }}
+        filtersOpen={mediumPanel === "filters"}
+        onFiltersOpenChange={setFiltersOpen}
+        detailOpen={mediumPanel === "detail"}
+        onDetailClose={handleCloseDetail}
+        detailRail={detailRailForDrawer}
+      />
 
-          {!GOOGLE_MAPS_API_KEY ? (
-            <p className="absolute inset-x-4 top-1/2 -translate-y-1/2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              {MAP_TOKEN_MISSING_GOOGLE_WEB}
-            </p>
-          ) : (
-            <>
-              {isDesktop === false ? (
-                <GoogleEventMap
-                  city={city}
-                  apiKey={GOOGLE_MAPS_API_KEY}
-                  mapId={GOOGLE_MAPS_MAP_ID}
-                  events={visibleEvents}
-                  culturalPlaces={visiblePlaces}
-                  partnerMarkers={visiblePartnerMarkers}
-                  neighborhoodMarkers={neighborhoodMarkers}
-                  tribeMarkers={tribeMarkers}
-                  selection={selection}
-                  onBoundsChange={updateFromBounds}
-                  onSelectEvent={handleSelectEvent}
-                  onSelectPlace={handleMapSelectCulturalSlug}
-                  onSelectPartner={handleSelectPartner}
-                  onSelectNeighborhood={handleSelectNeighborhood}
-                  onSelectTribe={handleSelectTribe}
-                  onClearSelection={() => setSelection(null)}
-                  focusedEventId={focusedEventId}
-                  selectedCulturalSlug={selectedCulturalSlug}
-                  selectedPartnerSlug={selectedPartnerSlug}
-                  recenterSignal={recenterSignal}
-                  flyToTarget={flyToTarget}
-                  fullHeight
-                  hideRecenterButton
-                />
-              ) : null}
-              <MapMobileSearchBar filters={portalFilters} onChangeFilters={setPortalFilters} />
-              <MapMobileCategoryPills
-                activeCategory={mobileCategory}
-                onSelectCategory={handleMobileCategorySelect}
-              />
-              <MapMobileNeighborhoodBadge label={nearestNeighborhoodLabel} />
-              <MapMobileMapControls
-                onLocate={handleUsePositionOnMap}
-                onNavigate={handleMobileNavigate}
-              />
-              <MapMobileAroundSheet
-                items={aroundYouItems}
-                onSelectItem={handleAroundYouSelect}
-              />
-              {selectedPanel && !showDetailRail ? (
-                <MapSelectedPanel
-                  payload={selectedPanel}
-                  onClose={() => setSelection(null)}
-                />
-              ) : null}
-            </>
-          )}
-        </div>
-
-        {showDetailRail ? <div className="px-4 py-4">{detailRail}</div> : null}
-      </div>
-
-      <div className="web-desktop-map-only min-w-0 flex-1 space-y-4">
-        {/* T6 — accès filtres en medium (640–1279). Masqué ≥1280 (`xl:hidden`) où le rail
-            persistant prend le relais. Le parent `web-desktop-map-only` gère déjà le seuil 640. */}
-        <div className="xl:hidden">
-          <button
-            type="button"
-            onClick={() => setFiltersOpen(true)}
-            aria-haspopup="dialog"
-            aria-expanded={filtersOpen}
-            className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 shadow-sm transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
-          >
-            <SlidersHorizontal className="h-4 w-4" aria-hidden />
-            {MAP_PORTAL_FILTERS_TITLE}
-          </button>
-        </div>
-
-        <MapContextDrawer
-          open={mediumPanel === "filters"}
-          onClose={() => setFiltersOpen(false)}
-          side="left"
-          variant="modal"
-          title={MAP_PORTAL_FILTERS_TITLE}
-          closeLabel="Fermer les filtres"
-          className="xl:hidden"
-        >
-          <MapFilterRailContent
-            city={city}
-            filters={portalFilters}
-            favoritesCount={portalStats.favoritesCount}
-            visitedCount={portalStats.visitedCount}
-            partners={mapPartners}
-            selectedPartnerSlug={selectedPartnerSlug}
-            onSelectPartner={handleSelectPartner}
-            onChangeFilters={setPortalFilters}
-            onActivateGeolocation={handleUsePositionOnMap}
-          />
-        </MapContextDrawer>
-
-        {/* T6.2 — drawer Détail non-modal (droite), medium seulement. Overlay : la carte derrière
-            reste cliquable (sélection d'un autre marqueur). Détail rendu fetch-free (placeDetail
-            partagé). À ≥1280 : masqué CSS (`xl:hidden`), la sélection repasse sous la carte. */}
-        <MapContextDrawer
-          open={mediumPanel === "detail"}
-          onClose={handleCloseDetail}
-          side="right"
-          variant="non-modal"
-          title="Détail du lieu sélectionné"
-          closeLabel="Fermer le détail"
-          className="xl:hidden"
-        >
-          {/* T6.3 — le drawer possède le close sticky ⇒ la fiche masque son X (hideClose). */}
-          {buildDetailRail(true)}
-        </MapContextDrawer>
-
-        {mapNotice ? (
-          <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {mapNotice}
-          </p>
-        ) : null}
-
-        {!GOOGLE_MAPS_API_KEY ? (
-          <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {MAP_TOKEN_MISSING_GOOGLE_WEB}
-          </p>
-        ) : (
-          <div className="relative min-h-[520px] h-[calc(100dvh-9rem)] overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm">
-            <MapSearchChips
-              activeCategory={portalFilters.category}
-              onSelectCategory={handlePortalCategoryChange}
-            />
-            {isDesktop === true ? (
-              <GoogleEventMap
-                city={city}
-                apiKey={GOOGLE_MAPS_API_KEY}
-                mapId={GOOGLE_MAPS_MAP_ID}
-                events={visibleEvents}
-                culturalPlaces={visiblePlaces}
-                partnerMarkers={visiblePartnerMarkers}
-                neighborhoodMarkers={neighborhoodMarkers}
-                tribeMarkers={tribeMarkers}
-                selection={selection}
-                onBoundsChange={updateFromBounds}
-                onSelectEvent={handleSelectEvent}
-                onSelectPlace={handleMapSelectCulturalSlug}
-                onSelectPartner={handleSelectPartner}
-                onSelectNeighborhood={handleSelectNeighborhood}
-                onSelectTribe={handleSelectTribe}
-                onClearSelection={() => setSelection(null)}
-                focusedEventId={focusedEventId}
-                selectedCulturalSlug={selectedCulturalSlug}
-                selectedPartnerSlug={selectedPartnerSlug}
-                recenterSignal={recenterSignal}
-                flyToTarget={flyToTarget}
-                fullHeight
-              />
-            ) : null}
-            <MapAroundYouCarousel items={aroundYouItems} onSelectItem={handleAroundYouSelect} />
-            {selectedPanel && !showDetailRail ? (
-              <MapSelectedPanel
-                payload={selectedPanel}
-                onClose={() => setSelection(null)}
-              />
-            ) : null}
-          </div>
-        )}
-
-        {showInitialLoading ? (
-          <p className="text-center text-sm text-neutral-500" role="status">
-            {MAP_LOADING}
-          </p>
-        ) : null}
-
-        {error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-800">
-            <p>{MAP_ERROR}</p>
-            <button
-              type="button"
-              onClick={retry}
-              className="mt-2 font-semibold text-yunicity-primary hover:underline"
-            >
-              {MAP_RETRY}
-            </button>
-          </div>
-        ) : null}
-
-        {showEmpty && GOOGLE_MAPS_API_KEY ? (
-          <div className="rounded-xl border border-neutral-200/90 bg-white px-4 py-6 text-center shadow-sm">
-            <p className="font-medium text-neutral-800">{MAP_EMPTY}</p>
-            <p className="mt-1 text-sm text-neutral-500">{MAP_EMPTY_HINT}</p>
-          </div>
-        ) : null}
-
-        {truncated && events.length > 0 ? (
-          <p className="text-center text-xs text-neutral-500">{MAP_TRUNCATED_HINT}</p>
-        ) : null}
-
-        {loading && hasLoaded ? (
-          <p className="text-center text-xs text-neutral-400" aria-live="polite">
-            {MAP_LOADING}
-          </p>
-        ) : null}
-
-        {/* T6.2 — détail sous la carte : conservé UNIQUEMENT en 1280–1535 (`hidden xl:block
-            2xl:hidden`). En medium (640–1279) le drawer droit prend le relais ; à ≥1536 l'aside. */}
-        {showDetailRail ? (
-          <div className="hidden xl:block 2xl:hidden">{detailRail}</div>
-        ) : null}
-      </div>
+      <MapDesktopScreen
+        leftRail={leftRailProps}
+        mapStage={{ ...mapStageProps, mapReady: viewportTier === "desktop" }}
+        context={mapContext}
+        culturalPlaces={mapContext.culturalPlaces}
+        detailRail={detailRail}
+      />
     </MapAppShell>
   );
 }

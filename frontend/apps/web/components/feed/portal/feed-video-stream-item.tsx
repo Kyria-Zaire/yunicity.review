@@ -8,6 +8,7 @@ import {
   formatLocalVideoDuration,
   formatLocalVideoTypeLabel,
   formatVideoAuthorDisplayName,
+  resolveLocalVideoLayout,
   resolveLocalVideoTeaserTitle,
 } from "@yunicity/utils";
 import { Play } from "lucide-react";
@@ -33,7 +34,7 @@ function VideoStreamHeader({ auteur, video }: { auteur: string; video: LocalVide
       data-feed-publication-header=""
       className="flex items-start gap-3"
     >
-      <ProfileAvatar name={auteur} size="sm" />
+      <ProfileAvatar name={auteur} src={video.author.avatar_url} size="sm" />
       <div className="min-w-0">
         <p
           data-feed-video-stream-author=""
@@ -54,15 +55,28 @@ function VideoStreamHeader({ auteur, video }: { auteur: string; video: LocalVide
   );
 }
 
-function VideoStreamMedia({ thumbnailUrl, durationSeconds }: { thumbnailUrl: string; durationSeconds: number }) {
+function VideoStreamMedia({
+  thumbnailUrl,
+  durationSeconds,
+  orientation = "landscape",
+}: {
+  thumbnailUrl: string;
+  durationSeconds: number;
+  orientation?: "portrait" | "landscape";
+}) {
   const [thumbFailed, setThumbFailed] = useState(false);
   const showThumbnail = Boolean(thumbnailUrl?.trim()) && !thumbFailed;
+  const isPortrait = orientation === "portrait";
 
   return (
     <div
       data-feed-video-stream-media=""
-      className="relative w-full overflow-hidden bg-neutral-100"
-      style={{ aspectRatio: "16 / 9" }}
+      data-videos-media-layout={orientation}
+      className={`relative w-full overflow-hidden bg-neutral-100 ${
+        isPortrait
+          ? "mx-auto aspect-[9/16] max-w-[11rem] sm:max-w-[12.5rem] md:max-w-[13.5rem]"
+          : "aspect-video"
+      }`}
     >
       {showThumbnail ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -194,6 +208,7 @@ export function FeedVideoStreamItem({ video: initialVideo, layout = "default" }:
   const titre = resolveLocalVideoTeaserTitle(video);
   const auteur = formatVideoAuthorDisplayName(video);
   const href = buildLocalVideoTeaserHref(video.id);
+  const mediaOrientation = resolveLocalVideoLayout(video);
 
   const actionsFooter = (
     <VideoStreamActionsFooter
@@ -228,6 +243,7 @@ export function FeedVideoStreamItem({ video: initialVideo, layout = "default" }:
             <VideoStreamMedia
               thumbnailUrl={video.thumbnail_url}
               durationSeconds={video.duration_seconds}
+              orientation={mediaOrientation}
             />
             <div className="border-t border-neutral-100 px-5 py-3.5 sm:px-6">
               <VideoStreamCta layout={layout} />
@@ -251,6 +267,7 @@ export function FeedVideoStreamItem({ video: initialVideo, layout = "default" }:
                 <VideoStreamMedia
                   thumbnailUrl={video.thumbnail_url}
                   durationSeconds={video.duration_seconds}
+                  orientation={mediaOrientation}
                 />
               </div>
               <VideoStreamCta layout={layout} />

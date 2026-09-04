@@ -1,8 +1,11 @@
 import type {
+  FeedListResponse,
+  NeighborhoodContributionMeListResponse,
   ProfileCompleteRequest,
   ProfileMe,
   ProfilePublic,
   ProfileUpdateRequest,
+  TribeListResponse,
   UserProfile,
 } from "@yunicity/types";
 
@@ -29,6 +32,45 @@ export class ProfileApi extends ApiClientBase {
 
   getPublicProfileByUserId(userId: string): Promise<ProfilePublic> {
     return this.getJson<ProfilePublic>(`/users/${encodeURIComponent(userId)}/profile`);
+  }
+
+  getPublicProfilePosts(username: string, limit = 12): Promise<FeedListResponse> {
+    return this.getJson<FeedListResponse>(
+      `/profile/${encodeURIComponent(username)}/posts?limit=${limit}`,
+    );
+  }
+
+  getPublicProfilePostsByUserId(userId: string, limit = 12): Promise<FeedListResponse> {
+    return this.getJson<FeedListResponse>(
+      `/users/${encodeURIComponent(userId)}/posts?limit=${limit}`,
+    );
+  }
+
+  getPublicProfileContributions(username: string, limit = 12): Promise<NeighborhoodContributionMeListResponse> {
+    return this.getJson<NeighborhoodContributionMeListResponse>(
+      `/profile/${encodeURIComponent(username)}/contributions?limit=${limit}`,
+    );
+  }
+
+  getPublicProfileContributionsByUserId(
+    userId: string,
+    limit = 12,
+  ): Promise<NeighborhoodContributionMeListResponse> {
+    return this.getJson<NeighborhoodContributionMeListResponse>(
+      `/users/${encodeURIComponent(userId)}/contributions?limit=${limit}`,
+    );
+  }
+
+  getPublicProfileTribes(username: string, limit = 12): Promise<TribeListResponse> {
+    return this.getJson<TribeListResponse>(
+      `/profile/${encodeURIComponent(username)}/tribes?limit=${limit}`,
+    );
+  }
+
+  getPublicProfileTribesByUserId(userId: string, limit = 12): Promise<TribeListResponse> {
+    return this.getJson<TribeListResponse>(
+      `/users/${encodeURIComponent(userId)}/tribes?limit=${limit}`,
+    );
   }
 
   uploadProfileAvatar(file: File): Promise<UserProfile> {
@@ -84,4 +126,142 @@ export async function fetchPublicProfileByUserIdAnonymous(
     throw await parseApiError(response);
   }
   return (await response.json()) as ProfilePublic;
+}
+
+/** Publications publiques d'un profil (sans session). */
+export async function fetchPublicProfilePostsAnonymous(
+  apiBaseUrl: string,
+  username: string,
+  limit = 12,
+): Promise<FeedListResponse> {
+  const base = apiBaseUrl.replace(/\/$/, "");
+  const response = await fetch(
+    `${base}/api/v1/profile/${encodeURIComponent(username)}/posts?limit=${limit}`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    },
+  );
+  if (response.status === 404) {
+    throw new AuthError("PROFILE_NOT_FOUND", "Ce profil n'est pas accessible.", 404);
+  }
+  if (!response.ok) {
+    throw await parseApiError(response);
+  }
+  return (await response.json()) as FeedListResponse;
+}
+
+/** Publications publiques par identifiant utilisateur (sans session). */
+export async function fetchPublicProfilePostsByUserIdAnonymous(
+  apiBaseUrl: string,
+  userId: string,
+  limit = 12,
+): Promise<FeedListResponse> {
+  const base = apiBaseUrl.replace(/\/$/, "");
+  const response = await fetch(
+    `${base}/api/v1/users/${encodeURIComponent(userId)}/posts?limit=${limit}`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    },
+  );
+  if (response.status === 404) {
+    throw new AuthError("PROFILE_NOT_FOUND", "Ce profil n'est pas accessible.", 404);
+  }
+  if (!response.ok) {
+    throw await parseApiError(response);
+  }
+  return (await response.json()) as FeedListResponse;
+}
+
+/** Contributions publiques d'un profil (sans session). */
+export async function fetchPublicProfileContributionsAnonymous(
+  apiBaseUrl: string,
+  username: string,
+  limit = 12,
+): Promise<NeighborhoodContributionMeListResponse> {
+  const base = apiBaseUrl.replace(/\/$/, "");
+  const response = await fetch(
+    `${base}/api/v1/profile/${encodeURIComponent(username)}/contributions?limit=${limit}`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    },
+  );
+  if (response.status === 404) {
+    throw new AuthError("PROFILE_NOT_FOUND", "Ce profil n'est pas accessible.", 404);
+  }
+  if (!response.ok) {
+    throw await parseApiError(response);
+  }
+  return (await response.json()) as NeighborhoodContributionMeListResponse;
+}
+
+/** Contributions publiques par identifiant utilisateur (sans session). */
+export async function fetchPublicProfileContributionsByUserIdAnonymous(
+  apiBaseUrl: string,
+  userId: string,
+  limit = 12,
+): Promise<NeighborhoodContributionMeListResponse> {
+  const base = apiBaseUrl.replace(/\/$/, "");
+  const response = await fetch(
+    `${base}/api/v1/users/${encodeURIComponent(userId)}/contributions?limit=${limit}`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    },
+  );
+  if (response.status === 404) {
+    throw new AuthError("PROFILE_NOT_FOUND", "Ce profil n'est pas accessible.", 404);
+  }
+  if (!response.ok) {
+    throw await parseApiError(response);
+  }
+  return (await response.json()) as NeighborhoodContributionMeListResponse;
+}
+
+/** Tribus publiques d'un profil (sans session). */
+export async function fetchPublicProfileTribesAnonymous(
+  apiBaseUrl: string,
+  username: string,
+  limit = 12,
+): Promise<TribeListResponse> {
+  const base = apiBaseUrl.replace(/\/$/, "");
+  const response = await fetch(
+    `${base}/api/v1/profile/${encodeURIComponent(username)}/tribes?limit=${limit}`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    },
+  );
+  if (response.status === 404) {
+    throw new AuthError("PROFILE_NOT_FOUND", "Ce profil n'est pas accessible.", 404);
+  }
+  if (!response.ok) {
+    throw await parseApiError(response);
+  }
+  return (await response.json()) as TribeListResponse;
+}
+
+/** Tribus publiques par identifiant utilisateur (sans session). */
+export async function fetchPublicProfileTribesByUserIdAnonymous(
+  apiBaseUrl: string,
+  userId: string,
+  limit = 12,
+): Promise<TribeListResponse> {
+  const base = apiBaseUrl.replace(/\/$/, "");
+  const response = await fetch(
+    `${base}/api/v1/users/${encodeURIComponent(userId)}/tribes?limit=${limit}`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    },
+  );
+  if (response.status === 404) {
+    throw new AuthError("PROFILE_NOT_FOUND", "Ce profil n'est pas accessible.", 404);
+  }
+  if (!response.ok) {
+    throw await parseApiError(response);
+  }
+  return (await response.json()) as TribeListResponse;
 }

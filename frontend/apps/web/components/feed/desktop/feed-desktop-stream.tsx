@@ -1,12 +1,13 @@
 "use client";
 
 import type { FeedReportReason } from "@yunicity/types";
-import { FEED_LOAD_MORE_LABEL } from "@yunicity/utils";
+import { FEED_LOAD_MORE_LABEL, resolveLocalVideoLayout } from "@yunicity/utils";
 import { useEffect, useRef } from "react";
 
 import { FeedCard } from "@/components/feed/feed-card";
 import { FeedContextStreamItem } from "@/components/feed/portal/feed-context-stream-item";
 import { FeedVideoStreamItem } from "@/components/feed/portal/feed-video-stream-item";
+import { VideosDesktopPortraitCard } from "@/components/videos/desktop/videos-desktop-portrait-card";
 import type { FeedStreamItem } from "@/lib/feed/feed-stream";
 
 type FeedDesktopStreamProps = {
@@ -61,9 +62,18 @@ export function FeedDesktopStream({
           }
 
           if (item.kind === "local-video") {
+            const portrait = resolveLocalVideoLayout(item.video) === "portrait";
             return (
-              <li key={item.key} data-feed-stream-item="local-video">
-                <FeedVideoStreamItem video={item.video} layout="desktop" />
+              <li
+                key={item.key}
+                data-feed-stream-item="local-video"
+                data-feed-video-layout={portrait ? "portrait" : "landscape"}
+              >
+                {portrait ? (
+                  <VideosDesktopPortraitCard item={item.video} featured />
+                ) : (
+                  <FeedVideoStreamItem video={item.video} layout="desktop" />
+                )}
               </li>
             );
           }

@@ -28,11 +28,13 @@ class FeedAuthorResolver:
             profile = await self._profiles.get_by_user_id(user_id)
             display = profile.display_name if profile and profile.display_name else "Citoyen"
             username = profile.username if profile else None
+            avatar_url = profile.avatar_url if profile else None
             authors[user_id] = FeedAuthor(
                 type=PostAuthorType.CITIZEN.value,
                 id=user_id,
                 display_name=display,
                 username=username,
+                logo_url=avatar_url,
             )
 
         for org_id in set(org_ids):
@@ -56,6 +58,7 @@ class FeedAuthorResolver:
             id=user_id,
             display_name=display,
             username=profile.username if profile else None,
+            logo_url=profile.avatar_url if profile else None,
         )
 
     async def resolve_organization(self, org: Organization) -> FeedAuthor:

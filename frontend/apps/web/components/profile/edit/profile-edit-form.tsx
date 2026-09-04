@@ -9,6 +9,7 @@ import {
   PROFILE_EDIT_AVATAR_CHANGE,
   PROFILE_EDIT_AVATAR_REMOVE,
   PROFILE_EDIT_AVATAR_TIP,
+  PROFILE_EDIT_MEDIA_AUTO_SAVE,
   PROFILE_EDIT_AVATAR_TITLE,
   PROFILE_EDIT_BANNER_CHANGE,
   PROFILE_EDIT_BANNER_TIP,
@@ -137,6 +138,7 @@ export function ProfileEditForm({
               ) : null}
             </div>
             <p className="text-sm leading-relaxed text-neutral-500">{PROFILE_EDIT_AVATAR_TIP}</p>
+            <p className="text-xs font-medium text-emerald-700">{PROFILE_EDIT_MEDIA_AUTO_SAVE}</p>
           </div>
         </div>
         <input

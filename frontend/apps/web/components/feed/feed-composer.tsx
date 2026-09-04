@@ -162,6 +162,7 @@ export function FeedComposer({
   const photoSansTexte = Boolean(mediaUrl) && !body.trim();
 
   useEffect(() => {
+    if (!user) return;
     void api
       .getProfileMe()
       .then((profile) => {
@@ -170,7 +171,7 @@ export function FeedComposer({
       .catch(() => {
         /* session expirée : ProtectedRoute redirige vers login */
       });
-  }, [api]);
+  }, [api, user]);
 
   async function handleSubmit() {
     const trimmed = body.trim();

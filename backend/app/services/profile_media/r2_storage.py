@@ -18,6 +18,12 @@ from app.services.profile_media.storage_keys import list_profile_media_variant_k
 class ProfileMediaR2Storage:
     def __init__(self, settings: Settings) -> None:
         validate_profile_media_storage_config(settings)
+        if settings.profile_media_storage_backend != "r2":
+            raise AppError(
+                status_code=500,
+                code="PROFILE_MEDIA_R2_MISCONFIGURED",
+                detail="Backend R2 profil non sélectionné.",
+            )
         if not settings.local_video_r2_endpoint or not settings.local_video_r2_bucket:
             raise AppError(
                 status_code=500,
@@ -62,7 +68,3 @@ class ProfileMediaR2Storage:
             Body=data,
             ContentType=content_type,
         )
-
-
-def build_profile_media_storage(settings: Settings) -> ProfileMediaR2Storage:
-    return ProfileMediaR2Storage(settings)

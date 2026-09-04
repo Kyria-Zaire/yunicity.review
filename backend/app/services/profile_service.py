@@ -276,6 +276,9 @@ class ProfileService:
             )
         return normalized
 
+    def can_view_profile(self, profile: UserProfile, *, viewer: User | None) -> bool:
+        return self._can_view_profile(profile, viewer=viewer)
+
     def _can_view_profile(self, profile: UserProfile, *, viewer: User | None) -> bool:
         if viewer is not None and viewer.id == profile.user_id:
             return True

@@ -11,7 +11,7 @@ import type { Page } from "@playwright/test";
  * C3.1-T2 — Navbar V3 : quatre destinations, Recherche hors de la barre, Créer et Menu
  * toujours visibles, aux trois paliers 390 / 900 / 1366.
  *
- * Données QA réelles, acteur seedé, aucun token fabriqué, aucune attente fixe.
+ * Mobile : barre ancrée pleine largeur (non flottante) collée au bas de l'écran.
  */
 const DESTINATIONS = [
   { label: "Fil local", mobileLabel: "Accueil", path: "/feed" },

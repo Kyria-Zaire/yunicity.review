@@ -1,10 +1,8 @@
 "use client";
 
+import { SettingsDesktopScreen } from "@/components/settings/desktop";
+import { SettingsMediumScreen } from "@/components/settings/medium";
 import { SettingsAppShell } from "@/components/settings/settings-app-shell";
-import { SettingsHubRows, scrollToSettingsSection } from "@/components/settings/settings-hub-rows";
-import { SettingsInternalSidebar } from "@/components/settings/settings-internal-sidebar";
-import { SettingsRightRail } from "@/components/settings/settings-right-rail";
-import { SettingsSections } from "@/components/settings/settings-sections";
 import { SettingsMobileView } from "@/components/settings/mobile";
 import { useSettingsPageContext } from "@/hooks/use-settings-page-context";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -17,10 +15,6 @@ export function SettingsScreen() {
   const { logout } = useAuth();
   const router = useRouter();
 
-  const scrollToHelp = useCallback(() => {
-    scrollToSettingsSection("help");
-  }, []);
-
   const handleLogout = useCallback(async () => {
     await logout();
     router.replace("/login");
@@ -31,6 +25,12 @@ export function SettingsScreen() {
       <SettingsAppShell>
         <p
           className="web-mobile-settings-only px-4 py-12 text-center text-sm text-neutral-500"
+          role="status"
+        >
+          {SETTINGS_LOADING}
+        </p>
+        <p
+          className="web-medium-settings-only px-4 py-12 text-center text-sm text-neutral-500"
           role="status"
         >
           {SETTINGS_LOADING}
@@ -60,6 +60,16 @@ export function SettingsScreen() {
             </button>
           </div>
         </div>
+        <div className="web-medium-settings-only mx-auto max-w-lg rounded-2xl border border-red-100 bg-red-50 px-6 py-10 text-center">
+          <p className="text-sm text-red-800">{SETTINGS_ERROR}</p>
+          <button
+            type="button"
+            onClick={() => void ctx.reload()}
+            className="mt-4 text-sm font-semibold text-yunicity-primary hover:underline"
+          >
+            {SETTINGS_RETRY}
+          </button>
+        </div>
         <div className="web-desktop-settings-only mx-auto max-w-lg rounded-2xl border border-red-100 bg-red-50 px-6 py-10 text-center">
           <p className="text-sm text-red-800">{SETTINGS_ERROR}</p>
           <button
@@ -73,49 +83,6 @@ export function SettingsScreen() {
       </SettingsAppShell>
     );
   }
-
-  const desktopContent = (
-    <div className="web-desktop-settings-only mx-auto w-full max-w-[1400px] px-3 py-2 sm:px-4 lg:px-6">
-      <div className="grid gap-8 xl:grid-cols-[16rem_minmax(0,1fr)_18rem]">
-        <SettingsInternalSidebar
-          unreadCount={ctx.unreadNotifications}
-          onScrollToHelp={scrollToHelp}
-        />
-
-        <div className="min-w-0">
-          <SettingsHubRows
-            groups={ctx.hubGroups}
-            onNavigate={scrollToSettingsSection}
-            onLogout={() => void handleLogout()}
-          />
-
-          <SettingsSections
-            user={ctx.user}
-            profile={ctx.profile}
-            preferences={ctx.preferences}
-            pushDevices={ctx.pushDevices}
-            verification={ctx.verification}
-            isSavingProfile={ctx.isSavingProfile}
-            isSavingPrefs={ctx.isSavingPrefs}
-            removingDeviceId={ctx.removingDeviceId}
-            onSaveProfile={ctx.updateProfile}
-            onPreferenceChange={(key, value) => void ctx.updatePreference(key, value)}
-            onRemoveDevice={(deviceId) => void ctx.removePushDevice(deviceId)}
-          />
-        </div>
-
-        <SettingsRightRail
-          user={ctx.user}
-          displayName={ctx.displayName}
-          verification={ctx.verification}
-          accountStatus={ctx.accountStatus}
-          onScrollToDevices={() => scrollToSettingsSection("devices")}
-          onScrollToExport={() => scrollToSettingsSection("export")}
-          onScrollToDelete={() => scrollToSettingsSection("delete")}
-        />
-      </div>
-    </div>
-  );
 
   return (
     <SettingsAppShell>
@@ -136,7 +103,34 @@ export function SettingsScreen() {
         onRemoveDevice={(deviceId) => void ctx.removePushDevice(deviceId)}
         onLogout={() => void handleLogout()}
       />
-      {desktopContent}
+      <div className="web-medium-settings-only">
+        <SettingsMediumScreen
+          user={ctx.user}
+          profile={ctx.profile}
+          displayName={ctx.displayName}
+          preferences={ctx.preferences}
+          accountStatus={ctx.accountStatus}
+          isSavingProfile={ctx.isSavingProfile}
+          isSavingPrefs={ctx.isSavingPrefs}
+          onSaveProfile={ctx.updateProfile}
+          onPreferenceChange={(key, value) => void ctx.updatePreference(key, value)}
+          onLogout={() => void handleLogout()}
+        />
+      </div>
+      <div className="web-desktop-settings-only">
+        <SettingsDesktopScreen
+          user={ctx.user}
+          profile={ctx.profile}
+          displayName={ctx.displayName}
+          preferences={ctx.preferences}
+          accountStatus={ctx.accountStatus}
+          isSavingProfile={ctx.isSavingProfile}
+          isSavingPrefs={ctx.isSavingPrefs}
+          onSaveProfile={ctx.updateProfile}
+          onPreferenceChange={(key, value) => void ctx.updatePreference(key, value)}
+          onLogout={() => void handleLogout()}
+        />
+      </div>
     </SettingsAppShell>
   );
 }

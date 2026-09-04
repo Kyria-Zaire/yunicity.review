@@ -53,6 +53,8 @@ def mock_processor(monkeypatch: pytest.MonkeyPatch) -> None:
         del self, content_type, source_storage_key
         return LocalVideoProcessResult(
             duration_seconds=12.5,
+            media_width=1080,
+            media_height=1920,
             source_storage_key=f"local-video/{city_slug}/{video_id}/processed.mp4",
             thumbnail_storage_key=f"local-video/{city_slug}/{video_id}/thumbnail.jpg",
             mime_type="video/mp4",
@@ -295,6 +297,8 @@ async def test_worker_skips_already_ready(
         city_slug = kwargs["city_slug"]
         return LocalVideoProcessResult(
             duration_seconds=1.0,
+            media_width=1920,
+            media_height=1080,
             source_storage_key=f"local-video/{city_slug}/{video_id}/processed.mp4",
             thumbnail_storage_key=f"local-video/{city_slug}/{video_id}/thumbnail.jpg",
             mime_type="video/mp4",

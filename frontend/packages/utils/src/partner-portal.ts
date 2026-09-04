@@ -113,6 +113,10 @@ export function buildPartnerPortalOffersHref(): string {
   return `${PARTNER_PORTAL_BASE}/offers`;
 }
 
+export function buildPartnerPortalOfferCreateHref(): string {
+  return `${PARTNER_PORTAL_BASE}/offers/new`;
+}
+
 export function buildPartnerPortalEventsHref(): string {
   return `${PARTNER_PORTAL_BASE}/events`;
 }

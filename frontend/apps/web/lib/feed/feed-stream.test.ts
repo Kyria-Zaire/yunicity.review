@@ -80,6 +80,8 @@ const video = (id = "v1"): LocalVideoFeedItem => ({
   media_url: "/media/qa/qa-sample-video.mp4",
   thumbnail_url: "/media/qa/qa-sample-video.png",
   duration_seconds: 42,
+  media_width: 1920,
+  media_height: 1080,
   mime_type: "video/mp4",
   latitude: null,
   longitude: null,
@@ -99,6 +101,32 @@ describe("buildFeedStream", () => {
     const flux = buildFeedStream([post("a"), post("b"), post("c")], video(), "for_you");
     expect(flux.map((e) => e.kind)).toEqual(["post", "local-video", "post", "post"]);
     expect(countStreamVideos(flux)).toBe(1);
+  });
+
+  it("insere portrait puis paysage aux rangs editoriaux (1re et 3e publication)", () => {
+    const flux = buildFeedStream(
+      [post("a"), post("b"), post("c"), post("d")],
+      [video("port"), video("land")],
+      "for_you",
+    );
+    expect(flux.map((e) => (e.kind === "local-video" ? e.video.id : e.kind))).toEqual([
+      "post",
+      "port",
+      "post",
+      "post",
+      "land",
+      "post",
+    ]);
+    expect(countStreamVideos(flux)).toBe(2);
+  });
+
+  it("ne duplique jamais au-dela de deux videos meme si plus sont fournies", () => {
+    const flux = buildFeedStream(
+      posts(10),
+      [video("a"), video("b"), video("c")],
+      "for_you",
+    );
+    expect(countStreamVideos(flux)).toBe(2);
   });
 
   it("garde la meme position quand la liste s'allonge (pagination)", () => {

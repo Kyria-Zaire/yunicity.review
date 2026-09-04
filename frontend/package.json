@@ -59,7 +59,8 @@
       "vitest>vite": "7.3.5",
       "@vitest/mocker>vite": "7.3.5",
       "vite": "7.3.5",
-      "undici@<6.27.0": "6.27.0"
+      "undici@<6.27.0": "6.27.0",
+      "browserslist": "4.28.7"
     }
   }
 }

@@ -283,7 +283,7 @@ test.describe("C3.1-T3 — fonctions de navigation", () => {
   });
 
   for (const viewport of ACCEPTANCE_VIEWPORTS) {
-    test(`${viewport.name} — Créer connecté : cinq actions sans soon`, async ({
+    test(`${viewport.name} — Créer connecté : six actions sans soon`, async ({
       citizenAPage: page,
     }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
@@ -300,6 +300,7 @@ test.describe("C3.1-T3 — fonctions de navigation", () => {
         "Publier sur le Fil",
         "Créer une Story",
         "Publier une vidéo",
+        "Créer un événement",
         "Créer une tribu",
         "Proposer un lieu",
       ]) {

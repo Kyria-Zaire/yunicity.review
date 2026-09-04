@@ -14,9 +14,10 @@ const MOMENT_RING_GRADIENTS = [
   "bg-gradient-to-tr from-orange-300 via-amber-400 to-yellow-400",
 ] as const;
 
-const AVATAR_SIZE = "h-[4.5rem] w-[4.5rem]";
-const ITEM_WIDTH = "w-[5.75rem]";
-const MOMENTS_GAP = "gap-5 sm:gap-6";
+const AVATAR_SIZE = "h-14 w-14 lg:h-[4.5rem] lg:w-[4.5rem]";
+const ITEM_WIDTH = "w-[4.5rem] lg:w-[5.75rem]";
+const MOMENTS_GAP = "gap-3.5 lg:gap-5";
+const ITEM_LABEL_MAX = "max-w-[4.5rem] lg:max-w-[5.75rem]";
 
 type FeedDesktopMomentsProps = {
   moments: readonly FeedDesktopMoment[];
@@ -29,18 +30,18 @@ function PublishMomentItem({ href }: { href: string }) {
       href={href}
       data-feed-desktop-moment=""
       data-feed-desktop-moment-publish=""
-      className={`group flex ${ITEM_WIDTH} shrink-0 flex-col items-center gap-1.5`}
+      className={`group flex ${ITEM_WIDTH} shrink-0 flex-col items-center gap-1 lg:gap-1.5`}
     >
       <div
         data-feed-desktop-moment-ring=""
-        className={`flex ${AVATAR_SIZE} items-center justify-center rounded-full border-2 border-dashed border-neutral-300 bg-neutral-50 text-3xl font-light leading-none text-neutral-700 transition group-hover:border-yunicity-primary group-hover:text-yunicity-primary`}
+        className={`flex ${AVATAR_SIZE} items-center justify-center rounded-full border-2 border-dashed border-neutral-300 bg-neutral-50 text-2xl font-light leading-none text-neutral-700 transition group-hover:border-yunicity-primary group-hover:text-yunicity-primary lg:text-3xl`}
       >
         +
       </div>
-      <span className="max-w-[5.75rem] truncate text-center text-[13px] font-semibold leading-tight text-neutral-900">
+      <span className={`${ITEM_LABEL_MAX} truncate text-center text-xs font-semibold leading-tight text-neutral-900 lg:text-[13px]`}>
         {FEED_PORTAL_STORY_PUBLISH}
       </span>
-      <span className="max-w-[5.75rem] truncate text-center text-[11px] font-medium text-neutral-500">
+      <span className={`${ITEM_LABEL_MAX} truncate text-center text-[10px] font-medium text-neutral-500 lg:text-[11px]`}>
         {FEED_PORTAL_STORY_PUBLISH_HINT}
       </span>
     </Link>
@@ -54,7 +55,7 @@ function MomentItem({ moment, index }: { moment: FeedDesktopMoment; index: numbe
     // eslint-disable-next-line @next/next/no-img-element -- vignette territoriale dynamique
     <img src={moment.imageUrl} alt="" className="h-full w-full rounded-full object-cover" loading="lazy" />
   ) : (
-    <span className="flex h-full w-full items-center justify-center rounded-full bg-yunicity-primary-soft text-base font-bold text-yunicity-primary">
+    <span className="flex h-full w-full items-center justify-center rounded-full bg-yunicity-primary-soft text-sm font-bold text-yunicity-primary lg:text-base">
       {moment.name.slice(0, 1).toUpperCase()}
     </span>
   );
@@ -63,15 +64,15 @@ function MomentItem({ moment, index }: { moment: FeedDesktopMoment; index: numbe
     <Link
       href={moment.href}
       data-feed-desktop-moment=""
-      className={`flex ${ITEM_WIDTH} shrink-0 flex-col items-center gap-1.5`}
+      className={`flex ${ITEM_WIDTH} shrink-0 flex-col items-center gap-1 lg:gap-1.5`}
     >
       <div data-feed-desktop-moment-ring="" className={`rounded-full ${AVATAR_SIZE} ${ringClass}`}>
-        <div className="h-full w-full rounded-full bg-white p-[3px]">{inner}</div>
+        <div className="h-full w-full rounded-full bg-white p-[2.5px] lg:p-[3px]">{inner}</div>
       </div>
-      <span className="max-w-[5.75rem] truncate text-center text-[13px] font-semibold leading-tight text-neutral-900">
+      <span className={`${ITEM_LABEL_MAX} truncate text-center text-xs font-semibold leading-tight text-neutral-900 lg:text-[13px]`}>
         {moment.name}
       </span>
-      <span className="max-w-[5.75rem] truncate text-center text-[11px] font-medium text-neutral-500">
+      <span className={`${ITEM_LABEL_MAX} truncate text-center text-[10px] font-medium text-neutral-500 lg:text-[11px]`}>
         {moment.timeLabel}
       </span>
     </Link>
@@ -83,8 +84,10 @@ export function FeedDesktopMoments({
   publishHref = "/stories/new",
 }: FeedDesktopMomentsProps) {
   return (
-    <section className="feed-desktop-surface feed-desktop-moments p-5" aria-label="Moments près de vous">
-      <h2 className="mb-4 text-base font-bold tracking-tight text-neutral-900">Moments près de vous</h2>
+    <section className="feed-desktop-surface feed-desktop-moments p-3.5 lg:p-5" aria-label="Moments près de vous">
+      <h2 className="mb-3 text-sm font-bold tracking-tight text-neutral-900 lg:mb-4 lg:text-base">
+        Moments près de vous
+      </h2>
       <div className={`flex ${MOMENTS_GAP} overflow-x-auto pb-0.5 scrollbar-none`}>
         <PublishMomentItem href={publishHref} />
         {moments.map((moment, index) => (

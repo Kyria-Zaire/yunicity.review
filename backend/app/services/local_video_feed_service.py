@@ -136,6 +136,8 @@ class LocalVideoFeedService:
             media_url=video.media_url,
             thumbnail_url=video.thumbnail_url,
             duration_seconds=float(video.duration_seconds),
+            media_width=video.media_width,
+            media_height=video.media_height,
             mime_type=video.mime_type,
             latitude=float(video.latitude) if video.latitude is not None else None,
             longitude=float(video.longitude) if video.longitude is not None else None,

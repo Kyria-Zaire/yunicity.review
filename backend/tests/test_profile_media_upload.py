@@ -28,6 +28,7 @@ PROFILE_MEDIA_BUCKET = "yunicity-media-test"
 
 @pytest.fixture(autouse=True)
 def profile_media_r2_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PROFILE_MEDIA_STORAGE_BACKEND", "r2")
     monkeypatch.setenv("LOCAL_VIDEO_R2_ENDPOINT", "https://example.r2.cloudflarestorage.com")
     monkeypatch.setenv("LOCAL_VIDEO_R2_BUCKET", PROFILE_MEDIA_BUCKET)
     monkeypatch.setenv("LOCAL_VIDEO_R2_ACCESS_KEY_ID", "test-access-key")

@@ -44,6 +44,11 @@ const MERGED_NEIGHBORHOOD_SLUGS = ["cernay", "jean-jaures", "boulingrin"] as con
 const nextConfig: NextConfig = {
   transpilePackages: ["@yunicity/types", "@yunicity/utils", "@yunicity/ui"],
   outputFileTracingRoot: workspaceRoot,
+  // Sidebar citoyenne (profil en bas à gauche) : l'indicateur dev Next.js par défaut
+  // chevauche l'avatar compte en `bottom-left` — le déplacer évite le faux double avatar.
+  devIndicators: {
+    position: "bottom-right",
+  },
   images: {
     remotePatterns: culturalImageRemotePatterns(),
   },

@@ -8,8 +8,9 @@ import {
   FEED_PORTAL_LEFT_FOR_YOU,
   FEED_PORTAL_LEFT_MY_EVENTS,
   FEED_PORTAL_LEFT_MY_TRIBES,
+  FEED_PORTAL_LEFT_DISCUSSIONS,
 } from "@yunicity/utils";
-import { CalendarDays, Compass, Heart, Home, Users } from "lucide-react";
+import { CalendarDays, Compass, Heart, Home, MessageCircle, Users } from "lucide-react";
 import Link from "next/link";
 import type { MutableRefObject } from "react";
 
@@ -59,6 +60,7 @@ const NAV_ITEMS: Array<{
   { id: "favorites", label: FEED_PORTAL_LEFT_FAVORITES, icon: Heart, nav: "saved" },
   { id: "my_events", label: FEED_PORTAL_LEFT_MY_EVENTS, icon: CalendarDays, href: "/sortir" },
   { id: "my_tribes", label: FEED_PORTAL_LEFT_MY_TRIBES, icon: Users, href: "/tribes" },
+  { id: "discussions", label: FEED_PORTAL_LEFT_DISCUSSIONS, icon: MessageCircle, href: "/discussions" },
 ];
 
 export function FeedDesktopLeftRail({

@@ -126,6 +126,14 @@ class Settings(BaseSettings):
         default=None,
         alias="STORY_MEDIA_UPLOAD_DIR",
     )
+    profile_media_storage_backend: Literal["r2", "filesystem"] = Field(
+        default="filesystem",
+        alias="PROFILE_MEDIA_STORAGE_BACKEND",
+    )
+    profile_media_upload_dir: str | None = Field(
+        default=None,
+        alias="PROFILE_MEDIA_UPLOAD_DIR",
+    )
     local_video_max_bytes: int = Field(default=52_428_800, alias="LOCAL_VIDEO_MAX_BYTES")
     local_video_max_duration_seconds: int = Field(
         default=60,

@@ -18,7 +18,10 @@ type VideosPortalToolbarProps = {
   sort: VideosPortalSortId;
   onTabChange: (tab: VideosPortalTabId) => void;
   onSortChange: (sort: VideosPortalSortId) => void;
+  desktopTabs?: readonly { id: VideosPortalTabId; label: string }[];
 };
+
+export type { VideosPortalToolbarProps };
 
 const TABS: { id: VideosPortalTabId; label: string }[] = [
   { id: "all", label: VIDEOS_TAB_ALL },
@@ -46,18 +49,35 @@ export function VideosPortalToolbar({
   sort,
   onTabChange,
   onSortChange,
+  desktopTabs,
 }: VideosPortalToolbarProps) {
+  const tabs = desktopTabs ?? TABS;
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-2">
-          {TABS.map((item) => (
+        <div
+          className={`flex flex-wrap gap-2 ${desktopTabs ? "videos-desktop-tabs border-b border-neutral-200 pb-1" : ""}`}
+          role={desktopTabs ? "tablist" : undefined}
+          aria-label={desktopTabs ? "Vues vidéo" : undefined}
+        >
+          {tabs.map((item) => (
             <button
               key={item.id}
               type="button"
+              role={desktopTabs ? "tab" : undefined}
+              aria-selected={desktopTabs ? tab === item.id : undefined}
               onClick={() => onTabChange(item.id)}
-              aria-pressed={tab === item.id}
-              className={chipClass(tab === item.id)}
+              aria-pressed={!desktopTabs ? tab === item.id : undefined}
+              className={
+                desktopTabs
+                  ? `border-b-2 px-1 pb-2 text-sm font-semibold transition ${
+                      tab === item.id
+                        ? "border-yunicity-primary text-yunicity-primary"
+                        : "border-transparent text-neutral-600 hover:text-neutral-900"
+                    }`
+                  : chipClass(tab === item.id)
+              }
             >
               {item.label}
             </button>

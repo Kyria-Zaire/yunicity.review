@@ -3,54 +3,130 @@
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import {
   LOCAL_VIDEO_DEFAULT_MUTED,
-  buildVideoTerritoryLines,
   isDoubleTap,
   isLocalVideoFeedItemProcessing,
-  resolveVideoGoCta,
+  resolveLocalVideoLayout,
 } from "@yunicity/utils";
-import { Heart, MoreVertical, Pause, Play, Volume2, VolumeX } from "lucide-react";
+import { Heart, Pause, Play } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { LocalVideoProcessingSlide } from "@/components/videos/local-video-processing-slide";
 import { LocalVideoActionRail } from "@/components/videos/local-video-action-rail";
-import { LocalVideoGoCta } from "@/components/videos/local-video-go-cta";
-import { LocalVideoMetaStrip } from "@/components/videos/local-video-meta-strip";
-import { LocalVideoTerritoryBanner } from "@/components/videos/local-video-territory-banner";
+import { LocalVideoMobileMetaOverlay } from "@/components/videos/local-video-mobile-meta-overlay";
+import { LocalVideoPlaybackBar } from "@/components/videos/local-video-playback-bar";
+import { LocalVideoProcessingSlide } from "@/components/videos/local-video-processing-slide";
+import { useDeviceOrientation } from "@/hooks/use-device-orientation";
 
 const SINGLE_TAP_DELAY_MS = 260;
+/** Délai avant masquage des overlays pendant la lecture (style Reels / Shorts). */
+const CHROME_AUTO_HIDE_MS = 5_000;
 
 type LocalVideoSlideProps = {
   item: LocalVideoFeedItem;
   isActive: boolean;
+  pointerOverFeed?: boolean;
   processingError?: string | null;
   onDismissProcessing?: () => void;
   onOpenComments: () => void;
   onToggleLike: () => void;
   onShare: () => void;
-  onOpenReport: () => void;
+  onChromeVisibleChange?: (visible: boolean) => void;
 };
 
 export function LocalVideoSlide({
   item,
   isActive,
+  pointerOverFeed = false,
   processingError,
   onDismissProcessing,
   onOpenComments,
   onToggleLike,
   onShare,
-  onOpenReport,
+  onChromeVisibleChange,
 }: LocalVideoSlideProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const lastTapAtRef = useRef<number | null>(null);
   const singleTapTimerRef = useRef<number | null>(null);
+  const hideChromeTimerRef = useRef<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [isMuted, setIsMuted] = useState(LOCAL_VIDEO_DEFAULT_MUTED);
   const [showPauseHint, setShowPauseHint] = useState(false);
   const [likeBurst, setLikeBurst] = useState(false);
   const [likeAnimating, setLikeAnimating] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [chromeVisible, setChromeVisible] = useState(true);
 
-  const territory = buildVideoTerritoryLines(item);
-  const cta = resolveVideoGoCta(item);
+  const layout = resolveLocalVideoLayout(item);
+  const isPortrait = layout === "portrait";
+  const deviceOrientation = useDeviceOrientation();
+  const isDeviceLandscape = deviceOrientation === "landscape";
+  /** Paysage sur téléphone vertical — rotation CSS silencieuse, sans bouton ni overlay. */
+  const useDiscreetLandscapeRotation = !isPortrait && !isDeviceLandscape;
+  const duration = item.duration_seconds ?? 0;
+  const isPlaying = isActive && !isPaused;
+
+  const clearHideChromeTimer = useCallback(() => {
+    if (hideChromeTimerRef.current != null) {
+      window.clearTimeout(hideChromeTimerRef.current);
+      hideChromeTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleChromeHide = useCallback(() => {
+    clearHideChromeTimer();
+    if (!isActive || isPaused) return;
+    hideChromeTimerRef.current = window.setTimeout(() => {
+      setChromeVisible(false);
+      hideChromeTimerRef.current = null;
+    }, CHROME_AUTO_HIDE_MS);
+  }, [clearHideChromeTimer, isActive, isPaused]);
+
+  const revealChrome = useCallback(
+    (autoHide: boolean) => {
+      setChromeVisible(true);
+      clearHideChromeTimer();
+      if (autoHide && isActive && !isPaused) {
+        scheduleChromeHide();
+      }
+    },
+    [clearHideChromeTimer, isActive, isPaused, scheduleChromeHide],
+  );
+
+  useEffect(() => {
+    if (!isActive) return;
+    onChromeVisibleChange?.(chromeVisible);
+  }, [chromeVisible, isActive, onChromeVisibleChange]);
+
+  useEffect(() => {
+    setCurrentTime(0);
+    setIsPaused(false);
+    setChromeVisible(true);
+    clearHideChromeTimer();
+  }, [item.id, clearHideChromeTimer]);
+
+  useEffect(() => {
+    if (!isActive) {
+      setChromeVisible(true);
+      clearHideChromeTimer();
+      return;
+    }
+    if (isPaused) {
+      setChromeVisible(true);
+      clearHideChromeTimer();
+      return;
+    }
+    revealChrome(true);
+  }, [isActive, isPaused, revealChrome, clearHideChromeTimer]);
+
+  useEffect(() => {
+    if (!isActive) return;
+    if (pointerOverFeed) {
+      revealChrome(true);
+      return;
+    }
+    if (!isPaused) {
+      scheduleChromeHide();
+    }
+  }, [isActive, isPaused, pointerOverFeed, revealChrome, scheduleChromeHide]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -73,8 +149,9 @@ export function LocalVideoSlide({
       if (singleTapTimerRef.current != null) {
         window.clearTimeout(singleTapTimerRef.current);
       }
+      clearHideChromeTimer();
     };
-  }, []);
+  }, [clearHideChromeTimer]);
 
   const triggerLikeFeedback = useCallback(() => {
     setLikeBurst(true);
@@ -84,15 +161,25 @@ export function LocalVideoSlide({
   }, []);
 
   const handleLike = useCallback(() => {
+    revealChrome(true);
     triggerLikeFeedback();
     onToggleLike();
-  }, [onToggleLike, triggerLikeFeedback]);
+  }, [onToggleLike, revealChrome, triggerLikeFeedback]);
 
   const togglePause = useCallback(() => {
-    setIsPaused((value) => !value);
+    setIsPaused((wasPaused) => {
+      const next = !wasPaused;
+      if (next) {
+        setChromeVisible(true);
+        clearHideChromeTimer();
+      } else {
+        revealChrome(true);
+      }
+      return next;
+    });
     setShowPauseHint(true);
     window.setTimeout(() => setShowPauseHint(false), 500);
-  }, []);
+  }, [clearHideChromeTimer, revealChrome]);
 
   const handleVideoTap = useCallback(() => {
     const now = Date.now();
@@ -105,6 +192,7 @@ export function LocalVideoSlide({
       if (!item.liked_by_me) {
         handleLike();
       } else {
+        revealChrome(true);
         triggerLikeFeedback();
       }
       return;
@@ -112,14 +200,39 @@ export function LocalVideoSlide({
 
     lastTapAtRef.current = now;
     singleTapTimerRef.current = window.setTimeout(() => {
-      togglePause();
+      if (!chromeVisible && isPlaying) {
+        setIsPaused(true);
+        setChromeVisible(true);
+        clearHideChromeTimer();
+      } else {
+        togglePause();
+      }
       singleTapTimerRef.current = null;
     }, SINGLE_TAP_DELAY_MS);
-  }, [handleLike, item.liked_by_me, togglePause, triggerLikeFeedback]);
+  }, [
+    chromeVisible,
+    clearHideChromeTimer,
+    handleLike,
+    isPlaying,
+    item.liked_by_me,
+    revealChrome,
+    togglePause,
+    triggerLikeFeedback,
+  ]);
 
-  const toggleMute = useCallback(() => {
-    setIsMuted((value) => !value);
-  }, []);
+  const handleSeek = useCallback(
+    (ratio: number) => {
+      const video = videoRef.current;
+      if (!video || duration <= 0) return;
+      video.currentTime = ratio * duration;
+      setCurrentTime(video.currentTime);
+      revealChrome(true);
+    },
+    [duration, revealChrome],
+  );
+
+  const chromeTransition =
+    "transition-opacity duration-300 ease-out motion-reduce:transition-none";
 
   if (isLocalVideoFeedItemProcessing(item)) {
     return (
@@ -134,47 +247,54 @@ export function LocalVideoSlide({
   return (
     <article
       data-video-slide-id={item.id}
-      className="relative h-[100dvh] w-full snap-start snap-always overflow-hidden bg-black md:h-[calc(100dvh-6rem)] md:rounded-2xl"
+      data-videos-media-layout={layout}
+      data-videos-slide-chrome-visible={chromeVisible ? "" : undefined}
+      className="relative h-full min-h-full w-full snap-start snap-always overflow-hidden bg-black"
     >
-      <video
-        ref={videoRef}
-        src={item.media_url}
-        poster={item.thumbnail_url}
-        className="absolute inset-0 h-full w-full object-cover"
-        playsInline
-        loop
-        muted={isMuted}
-        preload="metadata"
-        onClick={handleVideoTap}
+      {useDiscreetLandscapeRotation ? (
+        <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+          <video
+            ref={videoRef}
+            src={item.media_url}
+            poster={item.thumbnail_url}
+            className="h-[100vw] w-[100vh] rotate-90 object-cover"
+            playsInline
+            loop
+            muted={isMuted}
+            preload="metadata"
+            onClick={handleVideoTap}
+            onTimeUpdate={() => {
+              const video = videoRef.current;
+              if (video) setCurrentTime(video.currentTime);
+            }}
+          />
+        </div>
+      ) : (
+        <video
+          ref={videoRef}
+          src={item.media_url}
+          poster={item.thumbnail_url}
+          className="absolute inset-0 h-full w-full object-cover"
+          playsInline
+          loop
+          muted={isMuted}
+          preload="metadata"
+          onClick={handleVideoTap}
+          onTimeUpdate={() => {
+            const video = videoRef.current;
+            if (video) setCurrentTime(video.currentTime);
+          }}
+        />
+      )}
+
+      <div
+        className={`pointer-events-none absolute inset-x-0 bottom-0 h-[42%] bg-neutral-950/45 ${chromeTransition} ${
+          chromeVisible ? "opacity-100" : "opacity-0"
+        }`}
       />
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-neutral-950/90 via-neutral-950/50 to-transparent" />
-
-      <div className="absolute left-4 top-4 z-10 pt-[env(safe-area-inset-top)] md:top-3">
-        <LocalVideoTerritoryBanner lines={territory} />
-      </div>
-
-      <div className="absolute right-4 top-4 z-10 flex items-center gap-2 pt-[env(safe-area-inset-top)] md:top-3">
-        <button
-          type="button"
-          onClick={onOpenReport}
-          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-neutral-900/55 text-white backdrop-blur-sm"
-          aria-label="Options de la vidéo"
-        >
-          <MoreVertical className="h-5 w-5" aria-hidden />
-        </button>
-        <button
-          type="button"
-          onClick={toggleMute}
-          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-neutral-900/55 text-white backdrop-blur-sm"
-          aria-label={isMuted ? "Activer le son" : "Couper le son"}
-        >
-          {isMuted ? <VolumeX className="h-5 w-5" aria-hidden /> : <Volume2 className="h-5 w-5" aria-hidden />}
-        </button>
-      </div>
-
       {showPauseHint ? (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           {isPaused ? (
             <Play className="h-16 w-16 text-white/90" aria-hidden />
           ) : (
@@ -184,24 +304,56 @@ export function LocalVideoSlide({
       ) : null}
 
       {likeBurst ? (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <Heart className="h-24 w-24 animate-ping text-rose-400/90 fill-rose-400/80" aria-hidden />
         </div>
       ) : null}
 
-      <div className="pointer-events-auto absolute inset-x-0 bottom-0 z-10 flex items-end gap-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <div className="min-w-0 flex-1 space-y-3 pb-1">
-          <LocalVideoMetaStrip item={item} />
-          <LocalVideoGoCta cta={cta} />
+      <div
+        className={`videos-slide-bottom-chrome absolute inset-x-0 bottom-0 z-20 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pr-[4.75rem] ${chromeTransition} ${
+          chromeVisible ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      >
+        <div className="min-w-0 space-y-2">
+          <LocalVideoMobileMetaOverlay item={item} />
+          <LocalVideoPlaybackBar
+            currentTime={currentTime}
+            duration={duration}
+            isPaused={isPaused}
+            isMuted={isMuted}
+            onTogglePause={() => {
+              revealChrome(true);
+              togglePause();
+            }}
+            onToggleMute={() => {
+              revealChrome(true);
+              setIsMuted((value) => !value);
+            }}
+            onSeek={handleSeek}
+          />
         </div>
+      </div>
+
+      <div
+        className={`videos-slide-action-rail absolute right-3 bottom-[var(--videos-mobile-action-rail-bottom,1.75rem)] z-20 ${chromeTransition} ${
+          chromeVisible ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      >
         <LocalVideoActionRail
+          item={item}
           likeCount={item.like_count}
           commentCount={item.comment_count}
           likedByMe={item.liked_by_me}
           likeAnimating={likeAnimating}
           onLikeClick={() => void handleLike()}
-          onCommentsClick={onOpenComments}
-          onShareClick={() => void onShare()}
+          onCommentsClick={() => {
+            revealChrome(true);
+            onOpenComments();
+          }}
+          onShareClick={() => {
+            revealChrome(true);
+            void onShare();
+          }}
         />
       </div>
     </article>

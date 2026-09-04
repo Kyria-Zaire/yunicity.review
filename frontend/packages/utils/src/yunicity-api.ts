@@ -408,6 +408,30 @@ export class YunicityApi {
     return this.profile.getPublicProfileByUserId(userId);
   }
 
+  getPublicProfilePosts(username: string, limit = 12) {
+    return this.profile.getPublicProfilePosts(username, limit);
+  }
+
+  getPublicProfilePostsByUserId(userId: string, limit = 12) {
+    return this.profile.getPublicProfilePostsByUserId(userId, limit);
+  }
+
+  getPublicProfileContributions(username: string, limit = 12) {
+    return this.profile.getPublicProfileContributions(username, limit);
+  }
+
+  getPublicProfileContributionsByUserId(userId: string, limit = 12) {
+    return this.profile.getPublicProfileContributionsByUserId(userId, limit);
+  }
+
+  getPublicProfileTribes(username: string, limit = 12) {
+    return this.profile.getPublicProfileTribes(username, limit);
+  }
+
+  getPublicProfileTribesByUserId(userId: string, limit = 12) {
+    return this.profile.getPublicProfileTribesByUserId(userId, limit);
+  }
+
   listMyOrganizations(): Promise<OrganizationMeListResponse> {
     return this.organization.listMyOrganizations();
   }

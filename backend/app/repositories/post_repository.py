@@ -113,6 +113,33 @@ class PostRepository:
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
+    async def list_public_posts_by_user(
+        self,
+        user_id: uuid.UUID,
+        *,
+        limit: int,
+    ) -> list[Post]:
+        """Public citizen posts for a profile page (non-story, city feed posts)."""
+        stmt = (
+            select(Post)
+            .where(
+                Post.author_id == user_id,
+                Post.type == PostType.POST.value,
+                Post.is_active.is_(True),
+                Post.is_story.is_(False),
+                Post.tribe_id.is_(None),
+                visible_posts_filter(None),
+            )
+            .options(
+                selectinload(Post.local_event).selectinload(LocalEvent.neighborhood),
+                selectinload(Post.neighborhood),
+            )
+            .order_by(Post.created_at.desc(), Post.id.desc())
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
     async def increment_like_count(self, post_id: uuid.UUID, delta: int) -> None:
         post = await self.get_by_id(post_id)
         if post is None:

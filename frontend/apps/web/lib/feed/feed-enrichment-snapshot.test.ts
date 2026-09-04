@@ -2,61 +2,76 @@ import { describe, expect, it } from "vitest";
 
 import {
   feedEnrichmentForScope,
+  isSameFeedVideoEnrichment,
   resolveFeedEnrichmentSnapshot,
   type FeedEnrichmentSnapshot,
 } from "@/lib/feed/feed-enrichment-snapshot";
 
 type Enrichment = {
-  video: string | null;
+  videos: readonly { id: string }[];
   families: readonly string[];
 };
 
 const candidate = (
-  video: string | null,
+  videos: readonly { id: string }[],
   families: readonly string[],
 ): FeedEnrichmentSnapshot<Enrichment> => ({
   scopeKey: "Reims",
-  value: { video, families },
+  value: { videos, families },
 });
 
 describe("feed enrichment snapshot", () => {
   it("does not expose a partial first stream", () => {
     const postsReadyButSourcesPending = resolveFeedEnrichmentSnapshot(
       null,
-      candidate(null, []),
+      candidate([], []),
       false,
     );
     expect(feedEnrichmentForScope(postsReadyButSourcesPending, "Reims")).toBeNull();
 
     const firstResolved = resolveFeedEnrichmentSnapshot(
       postsReadyButSourcesPending,
-      candidate("video-1", ["must-see", "local-now"]),
+      candidate([{ id: "video-1" }], ["must-see", "local-now"]),
       true,
     );
     expect(feedEnrichmentForScope(firstResolved, "Reims")).toEqual({
-      video: "video-1",
+      videos: [{ id: "video-1" }],
       families: ["must-see", "local-now"],
     });
   });
 
   it("retains the previous snapshot during reload and replaces it atomically", () => {
-    const previous = candidate("video-1", ["must-see", "tribes"]);
+    const previous = candidate([{ id: "video-1" }], ["must-see", "tribes"]);
     const pending = resolveFeedEnrichmentSnapshot(
       previous,
-      candidate(null, ["local-now"]),
+      candidate([], ["local-now"]),
       false,
     );
     expect(pending).toBe(previous);
 
     const resolved = resolveFeedEnrichmentSnapshot(
       pending,
-      candidate(null, ["local-now"]),
+      candidate([], ["local-now"]),
       true,
     );
-    expect(resolved?.value).toEqual({ video: null, families: ["local-now"] });
+    expect(resolved?.value).toEqual({ videos: [], families: ["local-now"] });
+  });
+
+  it("keeps the current snapshot when video ids and families are unchanged", () => {
+    const previous = candidate([{ id: "a" }, { id: "b" }], ["must-see"]);
+    const next = candidate([{ id: "a" }, { id: "b" }], ["must-see"]);
+    const resolved = resolveFeedEnrichmentSnapshot(
+      previous,
+      next,
+      true,
+      isSameFeedVideoEnrichment,
+    );
+    expect(resolved).toBe(previous);
   });
 
   it("never exposes a snapshot from another city", () => {
-    expect(feedEnrichmentForScope(candidate("video-1", ["must-see"]), "Lyon")).toBeNull();
+    expect(
+      feedEnrichmentForScope(candidate([{ id: "video-1" }], ["must-see"]), "Lyon"),
+    ).toBeNull();
   });
 });

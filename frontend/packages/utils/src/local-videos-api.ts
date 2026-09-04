@@ -199,6 +199,8 @@ export function mapLocalVideoToFeedPreview(video: LocalVideo): LocalVideoFeedIte
     media_url: video.media_url,
     thumbnail_url: video.thumbnail_url,
     duration_seconds: video.duration_seconds,
+    media_width: video.media_width,
+    media_height: video.media_height,
     mime_type: video.mime_type,
     latitude: video.latitude,
     longitude: video.longitude,

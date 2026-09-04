@@ -25,9 +25,11 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
+import { useCitizenChromeBootstrap } from "@/hooks/use-citizen-chrome";
 
 export function useProfileEditContext() {
   const api = useYunicityApi();
+  const { refresh: refreshCitizenChrome } = useCitizenChromeBootstrap();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [profile, setProfile] = useState<ProfileMe | null>(null);
@@ -162,6 +164,7 @@ export function useProfileEditContext() {
       try {
         const updated = await api.uploadProfileAvatar(file);
         setProfile(updated);
+        void refreshCitizenChrome();
         setSaveMessage(PROFILE_EDIT_AVATAR_UPLOAD_SUCCESS);
         setSaveMessageIsError(false);
         return updated;
@@ -175,7 +178,7 @@ export function useProfileEditContext() {
         setIsUploadingAvatar(false);
       }
     },
-    [api],
+    [api, refreshCitizenChrome],
   );
 
   const uploadBanner = useCallback(
@@ -205,8 +208,9 @@ export function useProfileEditContext() {
   const removeAvatar = useCallback(async () => {
     const updated = await api.updateProfileMe({ avatar_url: null });
     setProfile(updated);
+    void refreshCitizenChrome();
     return updated;
-  }, [api]);
+  }, [api, refreshCitizenChrome]);
 
   const removeBanner = useCallback(async () => {
     const updated = await api.updateProfileMe({ banner_url: null });

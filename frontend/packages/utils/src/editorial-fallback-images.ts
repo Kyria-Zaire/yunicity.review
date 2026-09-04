@@ -4,9 +4,6 @@ import { isPendingYunicityHostedCoverUrl } from "./map-media-url";
 
 /** Images éditoriales Unsplash — carrousel « À la une » + cards moments (Reims demo). */
 
-export const NEIGHBORHOODS_PORTAL_HERO_IMAGE_URL =
-  "https://images.unsplash.com/photo-1444084316824-dc26d6657664?w=1200&auto=format&fit=crop&q=80";
-
 export const EDITORIAL_IMAGE_CAFE_RENCONTRE_ENTREPRENEURS =
   "https://images.unsplash.com/photo-1526547319484-63dce467060b?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fENhZiVDMyVBOS1yZW5jb250cmUlMjBkZXMlMjBlbnRyZXByZW5ldXJzfGVufDB8fDB8fHww";
 
@@ -49,39 +46,110 @@ const TRIBE_CATEGORY_EDITORIAL_IMAGES: Record<string, string> = {
   sport_local: EDITORIAL_IMAGE_RUNNING_REIMS,
 };
 
-/** Images éditoriales quartiers Reims — section « L’ambiance des quartiers ». */
-export const NEIGHBORHOOD_EDITORIAL_IMAGE_CENTRE_VILLE =
-  "https://i2.wp.com/www.uncoupleenvadrouille.fr/wp-content/uploads/2019/08/Place-Drouet-dErlon-avec-monument-%C3%A0-reims.jpg?resize=1080%2C720";
+/** Images éditoriales quartiers Reims — Wikimedia Commons (lieux réels, pas de stock générique). */
+function reimsCommonsImage(filePath: string, width = 1400): string {
+  return `https://commons.wikimedia.org/wiki/Special:FilePath/${filePath}?width=${width}`;
+}
 
-export const NEIGHBORHOOD_EDITORIAL_IMAGE_SAINT_REMI =
-  "https://th.bing.com/th/id/OIP.vzWR5ppH-ajb9lYAq0yy7wHaFj?w=312&h=200&c=10&o=6&pid=genserp&rm=2";
+/** Cathédrale Notre-Dame — Centre-ville. */
+export const NEIGHBORHOOD_EDITORIAL_IMAGE_CENTRE_VILLE = reimsCommonsImage(
+  "Cathedral_of_Reims_%2817%29.jpg",
+);
 
-export const NEIGHBORHOOD_EDITORIAL_IMAGE_BOULINGRIN =
-  "https://th.bing.com/th/id/OIP.F76XNrGOhzJU5lB9yt--uAHaEK?w=324&h=182&c=7&r=0&o=7&pid=1.7&rm=3";
+/** Basilique Saint-Remi. */
+export const NEIGHBORHOOD_EDITORIAL_IMAGE_SAINT_REMI = reimsCommonsImage(
+  "Basilique_Saint-Remi_de_Reims_Exterior_1%2C_Reims%2C_France_-_Diliff.jpg",
+);
 
-export const NEIGHBORHOOD_EDITORIAL_IMAGE_CERNAY =
-  "https://cernay-les-reims.fr/wp-content/uploads/2019/11/GOPR0795.jpg";
+/** Halles du Boulingrin. */
+export const NEIGHBORHOOD_EDITORIAL_IMAGE_BOULINGRIN = reimsCommonsImage(
+  "Reims_-_halles_du_Boulingrin_(04).JPG",
+);
 
-export const NEIGHBORHOOD_EDITORIAL_IMAGE_CLAIRMARAIS =
-  "https://remeng.rosselcdn.net/sites/default/files/dpistyles_v2/ena_16_9_extra_big/2023/03/09/node_463568/13070745/public/2023/03/09/B9733679277Z.1_20230309170814_000%2BGQ7MC6H8Q.1-0.jpg?itok=nyiWOz2y1678381312";
+/** Canal / Vesle — Clairmarais. */
+export const NEIGHBORHOOD_EDITORIAL_IMAGE_CLAIRMARAIS = reimsCommonsImage(
+  "Reims_Pont_de_Vesle_sur_le_canal.jpg",
+);
 
-export const NEIGHBORHOOD_EDITORIAL_IMAGE_CROIX_ROUGE =
-  "https://media.lhebdoduvendredi.com/illustrations/00039997_normal.jpg";
+/** Épinettes / nord-est — Cernay. */
+export const NEIGHBORHOOD_EDITORIAL_IMAGE_CERNAY = reimsCommonsImage(
+  "%C3%89pinettes_reims_1006433.jpg",
+);
 
-// SEED-PROD-01A: only quartiers with a working AND Reims-relevant editorial photo
-// are mapped. Others (dead 404/403 URLs or generic non-Reims stock) are removed so
-// resolveNeighborhoodEditorialImage returns null → the card renders a clean gradient
-// + name fallback (CulturalImage) instead of a broken/irrelevant image. Real photos
-// land in a separate seed ticket (SEED-PROD-01B).
-// Removed here: murigny, jean-jaures, orgeval (404), clairmarais (403),
-// la-neuvillette, chemin-vert, maison-blanche (generic non-Reims stock).
+/** Angle Jaurès–Briand — Jean-Jaurès. */
+export const NEIGHBORHOOD_EDITORIAL_IMAGE_JEAN_JAURES = reimsCommonsImage(
+  "Angle_Jaur%C3%A8s_Briand_01636.JPG",
+);
+
+/** Quartier fusionné Cernay – Jean-Jaurès (vie de rue nord-est). */
+export const NEIGHBORHOOD_EDITORIAL_IMAGE_CERNAY_JEAN_JAURES =
+  NEIGHBORHOOD_EDITORIAL_IMAGE_JEAN_JAURES;
+
+/** Quartier Croix-Rouge. */
+export const NEIGHBORHOOD_EDITORIAL_IMAGE_CROIX_ROUGE = reimsCommonsImage(
+  "Quartier_Reims_Croix_Rouge.jpg",
+);
+
+/** Val Murigny. */
+export const NEIGHBORHOOD_EDITORIAL_IMAGE_MURIGNY = reimsCommonsImage("Val_murigny_1005095.jpg");
+
+/** Gare Maison-Blanche. */
+export const NEIGHBORHOOD_EDITORIAL_IMAGE_MAISON_BLANCHE = reimsCommonsImage(
+  "Gare_de_Reims-Maison-Blanche-2016.jpg",
+);
+
+/** Cité-jardin Chemin Vert. */
+export const NEIGHBORHOOD_EDITORIAL_IMAGE_CHEMIN_VERT = reimsCommonsImage(
+  "Chemin_vert_1512068.jpg",
+);
+
+/** Maison de quartier Orgeval. */
+export const NEIGHBORHOOD_EDITORIAL_IMAGE_ORGEVAL = reimsCommonsImage(
+  "Maison_de_quartier_orgeval_1406234.jpg",
+);
+
+/** Église Saint-Jean — La Neuvillette. */
+export const NEIGHBORHOOD_EDITORIAL_IMAGE_LA_NEUVILLETTE = reimsCommonsImage(
+  "Reims_%C3%89glise_Saint-Jean_%28la_Neuvillette%29.jpg",
+);
+
+/** Porte de Paris — Courlancy. */
+export const NEIGHBORHOOD_EDITORIAL_IMAGE_COURLANCY = reimsCommonsImage(
+  "Reims_-_porte_de_Paris_-_2023-06-04_-_11.jpg",
+);
+
+/** Parc des Châtillons. */
+export const NEIGHBORHOOD_EDITORIAL_IMAGE_CHATILLONS = reimsCommonsImage(
+  "Parc_des_Chatillons_1549799.jpg",
+);
+
+/** Place d’Erlon / fontaine Subé — hero portail quartiers. */
+export const NEIGHBORHOODS_PORTAL_HERO_IMAGE_URL = reimsCommonsImage(
+  "Reims_-_fontaine_Sub%C3%A9_-_2023-06-04_-_04.jpg",
+);
+
+/**
+ * Photos Wikimedia par slug — tous les quartiers catalogue Reims.
+ * Les covers CDN (SEED-PROD-01B) primeront via `cover_image_url` quand disponibles.
+ */
 const NEIGHBORHOOD_SLUG_EDITORIAL_IMAGES: Record<string, string> = {
   "centre-ville": NEIGHBORHOOD_EDITORIAL_IMAGE_CENTRE_VILLE,
   "saint-remi": NEIGHBORHOOD_EDITORIAL_IMAGE_SAINT_REMI,
   boulingrin: NEIGHBORHOOD_EDITORIAL_IMAGE_BOULINGRIN,
+  clairmarais: NEIGHBORHOOD_EDITORIAL_IMAGE_CLAIRMARAIS,
   cernay: NEIGHBORHOOD_EDITORIAL_IMAGE_CERNAY,
+  "jean-jaures": NEIGHBORHOOD_EDITORIAL_IMAGE_JEAN_JAURES,
+  "cernay-jean-jaures": NEIGHBORHOOD_EDITORIAL_IMAGE_CERNAY_JEAN_JAURES,
   "croix-rouge": NEIGHBORHOOD_EDITORIAL_IMAGE_CROIX_ROUGE,
+  murigny: NEIGHBORHOOD_EDITORIAL_IMAGE_MURIGNY,
+  "maison-blanche": NEIGHBORHOOD_EDITORIAL_IMAGE_MAISON_BLANCHE,
+  "chemin-vert": NEIGHBORHOOD_EDITORIAL_IMAGE_CHEMIN_VERT,
+  orgeval: NEIGHBORHOOD_EDITORIAL_IMAGE_ORGEVAL,
+  "la-neuvillette": NEIGHBORHOOD_EDITORIAL_IMAGE_LA_NEUVILLETTE,
+  courlancy: NEIGHBORHOOD_EDITORIAL_IMAGE_COURLANCY,
+  chatillons: NEIGHBORHOOD_EDITORIAL_IMAGE_CHATILLONS,
 };
+
 
 function normalizeEditorialKey(value: string): string {
   return value

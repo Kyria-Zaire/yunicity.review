@@ -1,34 +1,52 @@
 "use client";
 
 import { selectAutoplayVideoId } from "@yunicity/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-export function useVideoFeedAutoplay(itemIds: string[], preferredVideoId?: string | null) {
+export function useVideoFeedAutoplay(
+  itemIds: string[],
+  preferredVideoId?: string | null,
+  scrollRoot?: Element | null,
+) {
   const [activeId, setActiveId] = useState<string | null>(() => {
     if (preferredVideoId && itemIds.includes(preferredVideoId)) return preferredVideoId;
     return itemIds[0] ?? null;
   });
 
+  const lastPreferredRef = useRef(preferredVideoId ?? null);
+
+  /** Ne re-pin que sur changement d'URL / deep-link — pas à chaque refresh du feed. */
+  useEffect(() => {
+    const nextPreferred = preferredVideoId ?? null;
+    if (nextPreferred === lastPreferredRef.current) return;
+    lastPreferredRef.current = nextPreferred;
+    if (nextPreferred && itemIds.includes(nextPreferred)) {
+      setActiveId(nextPreferred);
+    }
+  }, [preferredVideoId, itemIds]);
+
+  /** Conserve la slide visible quand le feed se met à jour (likes, pagination). */
   useEffect(() => {
     if (itemIds.length === 0) {
       setActiveId(null);
       return;
     }
     setActiveId((current) => {
-      if (preferredVideoId && itemIds.includes(preferredVideoId)) return preferredVideoId;
       if (current && itemIds.includes(current)) return current;
+      const pinned = lastPreferredRef.current;
+      if (pinned && itemIds.includes(pinned)) return pinned;
       return itemIds[0] ?? null;
     });
-  }, [itemIds, preferredVideoId]);
+  }, [itemIds]);
 
   useEffect(() => {
-    if (itemIds.length === 0) return;
+    if (!scrollRoot || itemIds.length === 0) return;
 
     const visibility = new Map<string, number>();
     const observers: IntersectionObserver[] = [];
 
     for (const id of itemIds) {
-      const element = document.querySelector<HTMLElement>(`[data-video-slide-id="${id}"]`);
+      const element = scrollRoot.querySelector<HTMLElement>(`[data-video-slide-id="${CSS.escape(id)}"]`);
       if (!element) continue;
 
       const observer = new IntersectionObserver(
@@ -41,7 +59,7 @@ export function useVideoFeedAutoplay(itemIds: string[], preferredVideoId?: strin
           const nextId = selectAutoplayVideoId(visibility);
           if (nextId) setActiveId(nextId);
         },
-        { threshold: [0, 0.25, 0.5, 0.75, 1] },
+        { root: scrollRoot, threshold: [0, 0.25, 0.5, 0.75, 1] },
       );
       observer.observe(element);
       observers.push(observer);
@@ -50,7 +68,7 @@ export function useVideoFeedAutoplay(itemIds: string[], preferredVideoId?: strin
     return () => {
       for (const observer of observers) observer.disconnect();
     };
-  }, [itemIds]);
+  }, [itemIds, scrollRoot]);
 
   return activeId;
 }

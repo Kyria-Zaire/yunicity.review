@@ -13,8 +13,10 @@ type CulturalImageProps = {
   showFallbackCaption?: boolean;
   /** Badge affiché dans le fallback (dégradé + nom). Défaut « Culture ». */
   fallbackLabel?: string;
-  /** @deprecated Ignoré — préférer un overlay via un conteneur parent. */
+  /** @deprecated Utiliser dimOverlay. */
   overlay?: boolean;
+  /** Voile sombre sur l’image. Désactiver pour hero / lightbox. Défaut true. */
+  dimOverlay?: boolean;
 };
 
 const FALLBACK_GRADIENT =
@@ -37,14 +39,17 @@ export function CulturalImage({
   priority = false,
   showFallbackCaption = true,
   fallbackLabel = "Culture",
+  overlay,
+  dimOverlay = true,
 }: CulturalImageProps) {
+  const showDim = overlay === false ? false : dimOverlay;
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const safeSrc = useMemo(() => (src?.trim() ? src : null), [src]);
   const showImage = Boolean(safeSrc) && !failed;
 
   return (
-    <div className={`relative overflow-hidden ${className ?? ""}`}>
+    <div className={`relative h-full w-full overflow-hidden ${className ?? ""}`}>
       {showImage ? (
         <>
           {!loaded ? <div className="absolute inset-0 animate-pulse bg-neutral-200/80" aria-hidden /> : null}
@@ -61,10 +66,12 @@ export function CulturalImage({
           />
         </>
       ) : (
-        <div className={`absolute inset-0 ${FALLBACK_GRADIENT}`} aria-hidden />
+        <div className={`absolute inset-0 h-full w-full ${FALLBACK_GRADIENT}`} aria-hidden />
       )}
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" aria-hidden />
+      {showDim ? (
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" aria-hidden />
+      ) : null}
 
       {!showImage && showFallbackCaption ? (
         <div className="absolute inset-0 flex items-end p-3">
