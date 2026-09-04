@@ -20,7 +20,6 @@ import {
   isLocalVideoProcessingReady,
   mapLocalVideoToFeedPreview,
   registerLocalVideoPending,
-  reorderLocalVideoFeedForFocus,
 } from "@yunicity/utils";
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import { useSearchParams } from "next/navigation";
@@ -111,7 +110,7 @@ function VideosScreenInner() {
       }
     }
 
-    return reorderLocalVideoFeedForFocus(Array.from(byId.values()), focusVideoId);
+    return Array.from(byId.values());
   }, [feed.items, focusVideoId, pending.processingFeedItems, pinnedVideo]);
 
   const processingErrors = useMemo(() => {
@@ -125,7 +124,7 @@ function VideosScreenInner() {
   const detailProcessingError = focusVideoId ? processingErrors[focusVideoId] : null;
 
   return (
-    <VideosAppShell>
+    <VideosAppShell detailMode={isDetailMode} immersiveMode={isDetailMode}>
       <div className="relative">
         {isDetailMode && focusVideoId ? (
           feed.sessionExpired ? (
@@ -154,12 +153,18 @@ function VideosScreenInner() {
                 feed.updateItem(videoId, (item) => bumpLocalVideoCommentCount(item, delta));
               }}
               shareHint={interactions.shareHint}
+              onLoadMore={() => {
+                if (!feed.isLoadingMore && feed.nextCursor) {
+                  void feed.loadMore();
+                }
+              }}
             />
           )
         ) : feed.sessionExpired ? (
           <SessionExpiredPanel message={LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE} returnPath="/videos" />
         ) : (
           <VideosDiscoveryScreen
+            city={feed.city}
             items={displayItems}
             isLoading={feed.isLoading && pending.processingFeedItems.length === 0}
             error={feed.error}
@@ -168,6 +173,17 @@ function VideosScreenInner() {
             onRetry={() => void feed.refresh()}
             onLoadMoreFeed={() => {
               if (!feed.isLoadingMore && feed.nextCursor) feed.loadMore();
+            }}
+            processingErrors={processingErrors}
+            onDismissProcessing={(videoId) => pending.dismissTrack(videoId)}
+            onToggleLike={(item) => void interactions.toggleLike(item)}
+            onShare={(item) => void interactions.shareVideo(item)}
+            onOpenReport={(videoId) => {
+              setReportVideoId(videoId);
+              setReportOpen(true);
+            }}
+            onCommentCountDelta={(videoId, delta) => {
+              feed.updateItem(videoId, (item) => bumpLocalVideoCommentCount(item, delta));
             }}
           />
         )}

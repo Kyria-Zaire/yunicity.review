@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class LocalVideoProcessResult:
     duration_seconds: float
+    media_width: int
+    media_height: int
     source_storage_key: str
     thumbnail_storage_key: str
     mime_type: str
@@ -54,7 +56,7 @@ class LocalVideoMediaProcessor:
             source_path = tmp_dir / f"source{ext}"
             self._storage.read_to_path(source_storage_key, source_path)
 
-            duration = self._probe_duration(source_path)
+            duration, media_width, media_height = self._probe_media(source_path)
             max_duration = float(self._settings.local_video_max_duration_seconds)
             if duration > max_duration + 0.5:
                 raise AppError(
@@ -85,6 +87,8 @@ class LocalVideoMediaProcessor:
 
             return LocalVideoProcessResult(
                 duration_seconds=duration,
+                media_width=media_width,
+                media_height=media_height,
                 source_storage_key=final_source_key,
                 thumbnail_storage_key=thumb_key,
                 mime_type="video/mp4",
@@ -117,7 +121,7 @@ class LocalVideoMediaProcessor:
             processed_path = Path(tmp) / "processed.mp4"
             self._storage.read_to_path(processed_key, processed_path)
             try:
-                duration = self._probe_duration(processed_path)
+                duration, media_width, media_height = self._probe_media(processed_path)
             except AppError:
                 logger.warning(
                     "local_video_idempotent_probe_failed",
@@ -127,17 +131,23 @@ class LocalVideoMediaProcessor:
 
         return LocalVideoProcessResult(
             duration_seconds=duration,
+            media_width=media_width,
+            media_height=media_height,
             source_storage_key=processed_key,
             thumbnail_storage_key=thumb_key,
             mime_type="video/mp4",
             file_size_bytes=processed_head.content_length,
         )
 
-    def _probe_duration(self, path: Path) -> float:
+    def _probe_media(self, path: Path) -> tuple[float, int, int]:
         cmd = [
             "ffprobe",
             "-v",
             "error",
+            "-select_streams",
+            "v:0",
+            "-show_entries",
+            "stream=width,height",
             "-show_entries",
             "format=duration",
             "-of",
@@ -167,9 +177,27 @@ class LocalVideoMediaProcessor:
             ) from exc
 
         payload = json.loads(completed.stdout or "{}")
-        raw = payload.get("format", {}).get("duration")
+        streams = payload.get("streams") or []
+        stream = streams[0] if streams else {}
         try:
-            duration = float(raw)
+            width = int(stream.get("width"))
+            height = int(stream.get("height"))
+        except (TypeError, ValueError) as exc:
+            raise AppError(
+                status_code=400,
+                code="LOCAL_VIDEO_INVALID_MEDIA",
+                detail="Dimensions vidéo introuvables.",
+            ) from exc
+        if width <= 0 or height <= 0:
+            raise AppError(
+                status_code=400,
+                code="LOCAL_VIDEO_INVALID_MEDIA",
+                detail="Dimensions vidéo invalides.",
+            )
+
+        raw_duration = payload.get("format", {}).get("duration")
+        try:
+            duration = float(raw_duration)
         except (TypeError, ValueError) as exc:
             raise AppError(
                 status_code=400,
@@ -182,6 +210,10 @@ class LocalVideoMediaProcessor:
                 code="LOCAL_VIDEO_INVALID_MEDIA",
                 detail="Durée vidéo invalide.",
             )
+        return duration, width, height
+
+    def _probe_duration(self, path: Path) -> float:
+        duration, _, _ = self._probe_media(path)
         return duration
 
     def _maybe_transcode(self, source: Path, output: Path, content_type: str) -> None:

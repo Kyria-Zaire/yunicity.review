@@ -190,6 +190,130 @@ async def test_public_profile_by_user_id(auth_client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
+async def test_public_profile_posts_by_username(auth_client: AsyncClient) -> None:
+    author = await _register(auth_client, {}, suffix="pubposts")
+    author_token = author["access_token"]
+    await auth_client.post(
+        "/api/v1/profile/complete",
+        headers=_auth_headers(author_token),
+        json={"city": "Reims", "interests": ["culture"]},
+    )
+    create = await auth_client.post(
+        "/api/v1/posts",
+        headers=_auth_headers(author_token),
+        json={"author_type": "citizen", "body": "Publication visible sur mon profil public."},
+    )
+    assert create.status_code == 201, create.text
+
+    me = await auth_client.get("/api/v1/profile/me", headers=_auth_headers(author_token))
+    username = me.json()["username"]
+
+    viewer = await _register(auth_client, {}, suffix="pubviewer")
+    viewer_token = viewer["access_token"]
+    await auth_client.post(
+        "/api/v1/profile/complete",
+        headers=_auth_headers(viewer_token),
+        json={"city": "Reims", "interests": ["culture"]},
+    )
+
+    anonymous = await auth_client.get(f"/api/v1/profile/{username}/posts")
+    assert anonymous.status_code == 200, anonymous.text
+    assert len(anonymous.json()["items"]) >= 1
+    assert anonymous.json()["items"][0]["body"] == "Publication visible sur mon profil public."
+
+    authed = await auth_client.get(
+        f"/api/v1/profile/{username}/posts",
+        headers=_auth_headers(viewer_token),
+    )
+    assert authed.status_code == 200
+    assert len(authed.json()["items"]) >= 1
+
+
+@pytest.mark.asyncio
+async def test_public_profile_contributions_and_tribes_by_username(auth_client: AsyncClient) -> None:
+    from datetime import UTC, datetime
+
+    from sqlalchemy import select
+
+    from app.core.neighborhood_v2_constants import NeighborhoodContributionStatus
+    from app.core.tribe_constants import TribeCategory, TribeMemberRole, TribeVisibility
+    from app.db.session import get_session_factory
+    from app.models.neighborhood import Neighborhood
+    from app.models.neighborhood_editorial import NeighborhoodContribution
+    from app.models.tribe import Tribe, TribeMember
+
+    author = await _register(auth_client, {}, suffix="pubctx")
+    author_token = author["access_token"]
+    await auth_client.post(
+        "/api/v1/profile/complete",
+        headers=_auth_headers(author_token),
+        json={"city": "Reims", "interests": ["culture"]},
+    )
+    me = await auth_client.get("/api/v1/profile/me", headers=_auth_headers(author_token))
+    username = me.json()["username"]
+    user_id = me.json()["user_id"]
+
+    session_factory = get_session_factory()
+    assert session_factory is not None
+    async with session_factory() as session:
+        hood = (
+            await session.execute(
+                select(Neighborhood.id).where(Neighborhood.slug == "boulingrin").limit(1)
+            )
+        ).scalar_one()
+        session.add(
+            NeighborhoodContribution(
+                neighborhood_id=hood,
+                author_user_id=author["user"]["id"],
+                title="Souvenir public",
+                body="Contribution visible sur le profil public.",
+                status=NeighborhoodContributionStatus.APPROVED.value,
+                display_identity_type="pseudo",
+                display_identity_label="Auteur QA",
+                submitted_at=datetime.now(UTC),
+                approved_at=datetime.now(UTC),
+            )
+        )
+        tribe = Tribe(
+            slug=f"qa-pub-{username[:8]}",
+            name="Tribu publique profil",
+            description="Tribu publique pour test profil citoyen.",
+            city="Reims",
+            category=TribeCategory.CAFE_CULTURE.value,
+            visibility=TribeVisibility.PUBLIC.value,
+            created_by_user_id=author["user"]["id"],
+        )
+        session.add(tribe)
+        await session.flush()
+        session.add(
+            TribeMember(
+                tribe_id=tribe.id,
+                user_id=author["user"]["id"],
+                role=TribeMemberRole.OWNER.value,
+                joined_at=datetime.now(UTC),
+                charter_accepted_at=datetime.now(UTC),
+            )
+        )
+        await session.commit()
+
+    contrib = await auth_client.get(f"/api/v1/profile/{username}/contributions")
+    assert contrib.status_code == 200, contrib.text
+    assert len(contrib.json()["items"]) >= 1
+    assert contrib.json()["items"][0]["status"] == "approved"
+    assert contrib.json()["items"][0].get("rejection_reason_code") is None
+
+    tribes = await auth_client.get(f"/api/v1/profile/{username}/tribes")
+    assert tribes.status_code == 200, tribes.text
+    assert len(tribes.json()["items"]) >= 1
+    assert tribes.json()["items"][0]["visibility"] == "public"
+
+    contrib_by_id = await auth_client.get(f"/api/v1/users/{user_id}/contributions")
+    assert contrib_by_id.status_code == 200
+    tribes_by_id = await auth_client.get(f"/api/v1/users/{user_id}/tribes")
+    assert tribes_by_id.status_code == 200
+
+
+@pytest.mark.asyncio
 async def test_unauthorized_profile_me(auth_client: AsyncClient) -> None:
     response = await auth_client.get("/api/v1/profile/me")
     assert response.status_code == 401

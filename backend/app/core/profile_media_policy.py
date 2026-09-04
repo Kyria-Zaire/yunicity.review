@@ -1,13 +1,89 @@
-"""Profile media storage policy — R2 required (PILOT-FIX-02)."""
+"""Profile media storage policy — filesystem en dev, R2 en recette+ (PILOT-FIX-02)."""
 
 from __future__ import annotations
 
+import os
+import tempfile
+from pathlib import Path
+
 from app.core.config import Settings
 from app.core.errors import AppError
+from app.core.story_media_policy import _CLOUD_ENVS, _QA_ROOTS, _is_relative_to, is_managed_cloud_runtime
+
+
+def default_profile_media_dev_dir() -> Path:
+    """Cross-platform dev upload root (Windows-safe absolute path)."""
+    if os.name == "nt":
+        return Path(tempfile.gettempdir()) / "yunicity-qa" / "profile-media"
+    return Path("/tmp/yunicity-qa/profile-media")
+
+
+def allowed_profile_media_roots() -> tuple[Path, ...]:
+    roots = list(_QA_ROOTS)
+    roots.append(default_profile_media_dev_dir().parent)
+    roots.append(Path(tempfile.gettempdir()))
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        roots.append(Path(tempfile.gettempdir()))
+    # Preserve order, drop duplicates.
+    return tuple(dict.fromkeys(roots))
+
+
+def resolve_profile_media_upload_dir(raw: str | None, *, app_env: str) -> Path:
+    candidate_raw = raw
+    if candidate_raw is None or not str(candidate_raw).strip():
+        if os.environ.get("PYTEST_CURRENT_TEST"):
+            candidate_raw = str(Path(tempfile.gettempdir()) / "yunicity-profile-media")
+        elif app_env == "dev":
+            candidate_raw = str(default_profile_media_dev_dir())
+        else:
+            raise AppError(
+                status_code=500,
+                code="PROFILE_MEDIA_FILESYSTEM_MISCONFIGURED",
+                detail="PROFILE_MEDIA_UPLOAD_DIR est requis pour le backend filesystem.",
+            )
+
+    candidate = Path(str(candidate_raw).strip())
+    if not candidate.is_absolute() or ".." in candidate.parts:
+        raise AppError(
+            status_code=500,
+            code="PROFILE_MEDIA_FILESYSTEM_MISCONFIGURED",
+            detail="PROFILE_MEDIA_UPLOAD_DIR doit être un chemin absolu contrôlé.",
+        )
+    resolved = candidate.resolve()
+    if not any(_is_relative_to(resolved, root) for root in allowed_profile_media_roots()):
+        raise AppError(
+            status_code=500,
+            code="PROFILE_MEDIA_FILESYSTEM_MISCONFIGURED",
+            detail="PROFILE_MEDIA_UPLOAD_DIR n'est pas dans un répertoire autorisé.",
+        )
+    return resolved
 
 
 def validate_profile_media_storage_config(settings: Settings) -> list[str]:
     """Return non-fatal warnings; raise AppError when profile uploads cannot run."""
+    backend = settings.profile_media_storage_backend
+    if backend == "filesystem":
+        if is_managed_cloud_runtime() or settings.app_env in _CLOUD_ENVS:
+            raise AppError(
+                status_code=500,
+                code="PROFILE_MEDIA_FILESYSTEM_FORBIDDEN",
+                detail=(
+                    "PROFILE_MEDIA_STORAGE_BACKEND=filesystem interdit hors DEV/QA local. "
+                    "Utiliser r2."
+                ),
+            )
+        if settings.app_env != "dev":
+            raise AppError(
+                status_code=500,
+                code="PROFILE_MEDIA_FILESYSTEM_FORBIDDEN",
+                detail="PROFILE_MEDIA_STORAGE_BACKEND=filesystem interdit dans cet environnement.",
+            )
+        resolve_profile_media_upload_dir(
+            settings.profile_media_upload_dir,
+            app_env=settings.app_env,
+        )
+        return []
+
     warnings: list[str] = []
     missing: list[str] = []
     if not settings.local_video_r2_endpoint:
@@ -20,7 +96,7 @@ def validate_profile_media_storage_config(settings: Settings) -> list[str]:
         missing.append("LOCAL_VIDEO_R2_SECRET_ACCESS_KEY")
 
     if missing:
-        if settings.app_env in {"recette", "preprod", "prod"}:
+        if settings.app_env in _CLOUD_ENVS:
             raise AppError(
                 status_code=500,
                 code="PROFILE_MEDIA_R2_MISCONFIGURED",
@@ -30,12 +106,12 @@ def validate_profile_media_storage_config(settings: Settings) -> list[str]:
                 ),
             )
         warnings.append(
-            "Profile media R2 non configuré — upload avatar/couverture indisponible en dev."
+            "Profile media R2 non configuré — basculez PROFILE_MEDIA_STORAGE_BACKEND=filesystem en dev."
         )
         return warnings
 
     cdn = (settings.local_video_cdn_base_url or "").strip()
-    if settings.app_env in {"recette", "preprod", "prod"} and not cdn:
+    if settings.app_env in _CLOUD_ENVS and not cdn:
         raise AppError(
             status_code=500,
             code="PROFILE_MEDIA_CDN_MISCONFIGURED",

@@ -20,6 +20,7 @@ from tests.media_fixtures import MINIMAL_JPEG_BYTES
 def _settings(**overrides: Any) -> Settings:
     base: dict[str, Any] = {
         "app_env": "recette",
+        "profile_media_storage_backend": "r2",
         "local_video_r2_endpoint": "https://example.r2.cloudflarestorage.com",
         "local_video_r2_bucket": "yunicity-media-recette",
         "local_video_r2_access_key_id": "key",
@@ -44,9 +45,24 @@ class TestProfileMediaPolicy:
 
     def test_validate_dev_missing_r2_is_warning_only(self) -> None:
         warnings = validate_profile_media_storage_config(
-            _settings(app_env="dev", local_video_r2_bucket=None)
+            _settings(app_env="dev", local_video_r2_bucket=None, profile_media_storage_backend="r2")
         )
         assert warnings
+
+    def test_validate_dev_filesystem_ok_without_r2(self) -> None:
+        warnings = validate_profile_media_storage_config(
+            _settings(app_env="dev", local_video_r2_bucket=None, profile_media_storage_backend="filesystem")
+        )
+        assert warnings == []
+
+    def test_default_dev_upload_dir_is_absolute(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from app.core.profile_media_policy import default_profile_media_dev_dir, resolve_profile_media_upload_dir
+
+        monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+        default_dir = default_profile_media_dev_dir()
+        assert default_dir.is_absolute()
+        resolved = resolve_profile_media_upload_dir(None, app_env="dev")
+        assert resolved == default_dir.resolve()
 
 
 class TestProfileMediaR2Storage:

@@ -65,7 +65,7 @@ export function VideoCommentsSheet({
   useEffect(() => {
     if (!open || !video) {
       setDraft("");
-      setComments([]);
+      setComments((current) => (current.length === 0 ? current : []));
       setError(null);
       return;
     }
@@ -74,7 +74,7 @@ export function VideoCommentsSheet({
 
   useEffect(() => {
     if (!open) {
-      setKeyboardExpanded(false);
+      setKeyboardExpanded((expanded) => (expanded ? false : expanded));
       return;
     }
     const onKeyDown = (event: KeyboardEvent) => {

@@ -16,7 +16,7 @@ from app.core.profile_media_constants import (
     ProfileMediaKind,
 )
 from app.models.user import User
-from app.services.profile_media.r2_storage import build_profile_media_storage
+from app.services.profile_media.storage import build_profile_media_storage
 from app.services.profile_media.storage_keys import build_profile_media_key
 
 ALLOWED_IMAGE_TYPES = frozenset({"image/jpeg", "image/png", "image/webp"})

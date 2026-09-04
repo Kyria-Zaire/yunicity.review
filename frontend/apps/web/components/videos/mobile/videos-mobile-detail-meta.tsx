@@ -46,8 +46,8 @@ function ActionColumn({
       onClick={onClick}
       aria-pressed={active}
       aria-label={label}
-      className={`flex min-h-[3.25rem] flex-1 flex-col items-center justify-center gap-1 border-r border-neutral-200 px-1 py-2 text-xs font-semibold last:border-r-0 ${
-        active ? "text-yunicity-primary" : "text-neutral-700"
+      className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 py-1 text-xs font-semibold ${
+        active ? "text-yunicity-primary" : "text-neutral-600"
       }`}
     >
       {children}
@@ -113,7 +113,7 @@ export function VideosMobileDetailMeta({
       </div>
 
       <div
-        className="flex overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm"
+        className="flex items-center justify-between gap-3 px-1 py-1 sm:gap-5"
         role="toolbar"
         aria-label="Actions sur la vidéo"
       >
