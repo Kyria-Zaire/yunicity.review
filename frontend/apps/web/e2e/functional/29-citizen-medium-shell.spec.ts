@@ -770,7 +770,7 @@ test.describe("C3-CITIZEN-MEDIUM-SHELL-R1E — Create par surface", () => {
     // Le rail existe dans le DOM a toutes les largeurs (il est masque par CSS
     // hors 640–1279,98) : seule la VISIBILITE fait preuve ici.
     expect((await mesurer(authedPage)).railsVisibles, "rail medium visible en mobile").toBe(0);
-    expect(await creeVisibles(authedPage), "FAB Créer réapparu sur /videos mobile").toBe(0);
+    expect(await creeVisibles(authedPage), "bouton Créer central de la bottom-nav").toBe(1);
 
     // Bottom-nav historique toujours en place et actionnable.
     const bottomNav = authedPage.locator(".web-mobile-strategic-bottom-nav");

@@ -114,6 +114,8 @@ services:
       MEDIA_PUBLIC_BASE_URL: http://localhost:8010
       STORY_MEDIA_STORAGE_BACKEND: filesystem
       STORY_MEDIA_UPLOAD_DIR: /var/yunicity-qa/story-media
+      PROFILE_MEDIA_STORAGE_BACKEND: filesystem
+      PROFILE_MEDIA_UPLOAD_DIR: /tmp/yunicity-qa/profile-media
       # QA run marker — lets the destructive-test policy (pytest_sessionstart / guard)
       # validate this container as an authorized QA target (C3-F0-T1-R1).
       YUNICITY_QA_MODE: "1"
