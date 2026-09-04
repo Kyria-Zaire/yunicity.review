@@ -1,10 +1,7 @@
 "use client";
 
-import { MapPartnersRail } from "@/components/map/map-partners-rail";
-import type { PartnerPublic } from "@yunicity/types";
 import type { MapPortalAmbianceId, MapPortalCategoryId, MapPortalFilters } from "@yunicity/utils";
 import {
-  NEIGHBORHOOD_AMBIANCE_LABELS,
   DEFAULT_MAP_PORTAL_FILTERS,
   MAP_DESKTOP_EXPLORER_TITLE,
   MAP_PORTAL_AMBIANCE_TITLE,
@@ -18,12 +15,10 @@ import {
   MAP_PORTAL_FAVORITES,
   MAP_PORTAL_FILTERS_RESET,
   MAP_PORTAL_FILTERS_TITLE,
-  MAP_PORTAL_GEO_BODY,
-  MAP_PORTAL_GEO_CTA,
-  MAP_PORTAL_GEO_TITLE,
   MAP_PORTAL_MORE_FILTERS,
   MAP_PORTAL_OPEN_NOW,
   MAP_PORTAL_VISITED,
+  NEIGHBORHOOD_AMBIANCE_LABELS,
 } from "@yunicity/utils";
 import {
   Calendar,
@@ -32,8 +27,7 @@ import {
   Heart,
   MapPin,
   MapPinHouse,
-  Navigation,
-  Sparkles,
+  Settings2,
   Star,
   TicketPercent,
 } from "lucide-react";
@@ -51,8 +45,6 @@ const CATEGORIES: {
   { id: "partners", label: MAP_PORTAL_CATEGORY_PASSPORT, icon: TicketPercent },
 ];
 
-// Les 5 valeurs reelles de l'enum backend (NeighborhoodAmbiance). Libelles derives de
-// NEIGHBORHOOD_AMBIANCE_LABELS (source unique) et capitalises pour les chips.
 const AMBIANCE_IDS: readonly MapPortalAmbianceId[] = [
   "calm",
   "lively",
@@ -60,39 +52,22 @@ const AMBIANCE_IDS: readonly MapPortalAmbianceId[] = [
   "student",
   "green",
 ];
-const AMBIANCES: { id: MapPortalAmbianceId; label: string }[] = AMBIANCE_IDS.map((id) => {
-  const label = NEIGHBORHOOD_AMBIANCE_LABELS[id] ?? id;
-  return { id, label: label.charAt(0).toUpperCase() + label.slice(1) };
-});
 
-export type MapFilterRailContentProps = {
+export type MapDesktopLeftRailProps = {
   city: string;
   filters: MapPortalFilters;
   favoritesCount: number;
   visitedCount: number;
-  partners?: PartnerPublic[];
-  selectedPartnerSlug?: string | null;
-  onSelectPartner?: (slug: string) => void;
   onChangeFilters: (filters: MapPortalFilters) => void;
-  onActivateGeolocation: () => void;
 };
 
-/**
- * Contenu fonctionnel du rail de filtres carte — sans wrapper de layout (ni `aside`, ni `sticky`,
- * ni largeur fixe). Rendu par `MapLeftFilterRail` (desktop ≥1280, aside 224px) ET par le drawer
- * medium (T6). Aucune logique dupliquée : composant unique, entièrement contrôlé par props.
- */
-export function MapFilterRailContent({
+export function MapDesktopLeftRail({
   city,
   filters,
   favoritesCount,
   visitedCount,
-  partners = [],
-  selectedPartnerSlug = null,
-  onSelectPartner,
   onChangeFilters,
-  onActivateGeolocation,
-}: MapFilterRailContentProps) {
+}: MapDesktopLeftRailProps) {
   function resetFilters() {
     onChangeFilters({ ...DEFAULT_MAP_PORTAL_FILTERS });
   }
@@ -105,30 +80,35 @@ export function MapFilterRailContent({
   }
 
   return (
-    <div className="space-y-4" data-map-filter-rail="">
-      <h1 className="px-1 text-lg font-bold tracking-tight text-neutral-950">
+    <div className="space-y-4" data-map-desktop-left-rail="">
+      <h1 className="px-1 text-xl font-bold tracking-tight text-neutral-950">
         {MAP_DESKTOP_EXPLORER_TITLE}
       </h1>
 
       <section className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm">
         <label className="block">
-          <span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-            Ville
-          </span>
-          <div className="relative mt-2">
-            <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-yunicity-primary" aria-hidden />
+          <span className="sr-only">Ville</span>
+          <div className="relative">
+            <MapPin
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-yunicity-primary"
+              aria-hidden
+            />
             <select
               value={city}
               disabled
+              aria-label="Ville sélectionnée"
               className="w-full appearance-none rounded-xl border border-neutral-200 bg-neutral-50 py-2.5 pl-10 pr-10 text-sm font-semibold text-neutral-800"
             >
               <option value={city}>{city}</option>
             </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" aria-hidden />
+            <ChevronDown
+              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
+              aria-hidden
+            />
           </div>
         </label>
 
-        <nav className="mt-4">
+        <nav className="mt-4" aria-label="Catégories carte">
           <ul className="space-y-0.5">
             {CATEGORIES.map((item) => {
               const Icon = item.icon;
@@ -159,25 +139,25 @@ export function MapFilterRailContent({
           <li>
             <Link
               href="/events"
-              className="flex items-center justify-between rounded-xl px-2 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
+              className="flex items-center justify-between rounded-xl px-2 py-1.5 text-sm text-neutral-700 transition hover:bg-neutral-50"
             >
               <span className="inline-flex items-center gap-2">
                 <Heart className="h-4 w-4 text-yunicity-primary" aria-hidden />
                 {MAP_PORTAL_FAVORITES}
               </span>
-              <span className="font-semibold text-neutral-900">{favoritesCount}</span>
+              <span className="font-semibold tabular-nums text-neutral-900">{favoritesCount}</span>
             </Link>
           </li>
           <li>
             <Link
               href="/passport"
-              className="flex items-center justify-between rounded-xl px-2 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
+              className="flex items-center justify-between rounded-xl px-2 py-1.5 text-sm text-neutral-700 transition hover:bg-neutral-50"
             >
               <span className="inline-flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-yunicity-primary" aria-hidden />
                 {MAP_PORTAL_VISITED}
               </span>
-              <span className="font-semibold text-neutral-900">{visitedCount}</span>
+              <span className="font-semibold tabular-nums text-neutral-900">{visitedCount}</span>
             </Link>
           </li>
         </ul>
@@ -195,20 +175,29 @@ export function MapFilterRailContent({
           </button>
         </div>
 
-        <label className="mt-4 flex items-center justify-between gap-3">
+        <label className="mt-4 flex cursor-pointer items-center justify-between gap-3">
           <span className="text-sm text-neutral-700">{MAP_PORTAL_OPEN_NOW}</span>
-          <input
-            type="checkbox"
-            checked={filters.openNow}
-            onChange={(event) => onChangeFilters({ ...filters, openNow: event.target.checked })}
-            className="h-5 w-9 cursor-pointer appearance-none rounded-full bg-neutral-200 transition checked:bg-yunicity-primary"
-          />
+          <button
+            type="button"
+            role="switch"
+            aria-checked={filters.openNow}
+            onClick={() => onChangeFilters({ ...filters, openNow: !filters.openNow })}
+            className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+              filters.openNow ? "bg-yunicity-primary" : "bg-neutral-200"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 block h-5 w-5 rounded-full bg-white shadow transition ${
+                filters.openNow ? "left-[22px]" : "left-0.5"
+              }`}
+            />
+          </button>
         </label>
 
         <div className="mt-4">
           <div className="flex items-center justify-between text-sm text-neutral-700">
             <span>{MAP_PORTAL_DISTANCE}</span>
-            <span className="font-semibold text-neutral-900">
+            <span className="font-semibold tabular-nums text-neutral-900">
               {MAP_PORTAL_DISTANCE_KM(filters.maxDistanceKm)}
             </span>
           </div>
@@ -221,6 +210,7 @@ export function MapFilterRailContent({
             onChange={(event) =>
               onChangeFilters({ ...filters, maxDistanceKm: Number(event.target.value) })
             }
+            aria-label={MAP_PORTAL_DISTANCE}
             className="mt-2 w-full accent-yunicity-primary"
           />
         </div>
@@ -230,20 +220,22 @@ export function MapFilterRailContent({
             {MAP_PORTAL_AMBIANCE_TITLE}
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
-            {AMBIANCES.map((item) => {
-              const active = filters.ambiances.includes(item.id);
+            {AMBIANCE_IDS.map((id) => {
+              const label = NEIGHBORHOOD_AMBIANCE_LABELS[id] ?? id;
+              const displayLabel = label.charAt(0).toUpperCase() + label.slice(1);
+              const active = filters.ambiances.includes(id);
               return (
                 <button
-                  key={item.id}
+                  key={id}
                   type="button"
-                  onClick={() => toggleAmbiance(item.id)}
+                  onClick={() => toggleAmbiance(id)}
                   className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
                     active
-                      ? "bg-yunicity-primary text-white"
-                      : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                      ? "bg-neutral-200 text-neutral-900"
+                      : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
                   }`}
                 >
-                  {item.label}
+                  {displayLabel}
                 </button>
               );
             })}
@@ -252,36 +244,11 @@ export function MapFilterRailContent({
 
         <Link
           href="/search"
-          className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-yunicity-primary hover:underline"
+          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 transition hover:border-yunicity-primary/30 hover:text-yunicity-primary"
         >
+          <Settings2 className="h-4 w-4" aria-hidden />
           {MAP_PORTAL_MORE_FILTERS}
         </Link>
-      </section>
-
-      {onSelectPartner ? (
-        <section className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm">
-          <MapPartnersRail
-            partners={partners}
-            selectedSlug={selectedPartnerSlug}
-            onSelect={onSelectPartner}
-          />
-        </section>
-      ) : null}
-
-      <section className="rounded-2xl bg-gradient-to-br from-yunicity-primary via-[#5B5CE6] to-[#7C3AED] p-5 text-white shadow-sm">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5" aria-hidden />
-          <h2 className="text-base font-bold">{MAP_PORTAL_GEO_TITLE}</h2>
-        </div>
-        <p className="mt-2 text-sm leading-relaxed text-white/90">{MAP_PORTAL_GEO_BODY}</p>
-        <button
-          type="button"
-          onClick={onActivateGeolocation}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-yunicity-primary transition hover:bg-neutral-100"
-        >
-          <Navigation className="h-4 w-4" aria-hidden />
-          {MAP_PORTAL_GEO_CTA}
-        </button>
       </section>
     </div>
   );
