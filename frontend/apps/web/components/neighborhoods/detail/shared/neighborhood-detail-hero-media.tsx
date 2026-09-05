@@ -1,6 +1,7 @@
 "use client";
 
-import { CulturalImage } from "@/components/culture/cultural-image";
+import { CulturalImage, CulturalImageCredit } from "@/components/culture/cultural-image";
+import { formatEditorialImageAttribution, type EditorialImageCredit } from "@yunicity/utils";
 import { Camera, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -14,6 +15,8 @@ type NeighborhoodDetailHeroMediaProps = {
   photoLabel: (count: number) => string;
   compactPhotoButton?: boolean;
   showCaptionOverlay?: boolean;
+  /** Attribution de `imageUrl` uniquement — jamais celle d'une photo de galerie. */
+  imageCredit?: EditorialImageCredit | null;
 };
 
 export function NeighborhoodDetailHeroMedia({
@@ -25,6 +28,7 @@ export function NeighborhoodDetailHeroMedia({
   photoLabel,
   compactPhotoButton = false,
   showCaptionOverlay = true,
+  imageCredit = null,
 }: NeighborhoodDetailHeroMediaProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -161,6 +165,12 @@ export function NeighborhoodDetailHeroMedia({
           ) : null}
         </div>
       </div>
+      {imageCredit && heroSrc === imageUrl ? (
+        <CulturalImageCredit
+          credit={formatEditorialImageAttribution(imageCredit)}
+          sourceUrl={imageCredit.sourceUrl}
+        />
+      ) : null}
       {lightbox}
     </>
   );

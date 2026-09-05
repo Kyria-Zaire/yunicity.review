@@ -1,6 +1,6 @@
 "use client";
 
-import { CulturalImage } from "@/components/culture/cultural-image";
+import { CulturalImage, CulturalImageCredit } from "@/components/culture/cultural-image";
 import type {
   NeighborhoodsDesktopGridCard,
   NeighborhoodsDesktopHeroCard,
@@ -8,6 +8,8 @@ import type {
   NeighborhoodsMediumChipId,
 } from "@yunicity/utils";
 import {
+  formatEditorialImageAttribution,
+  resolveNeighborhoodsDesktopImageCredit,
   NEIGHBORHOODS_DESKTOP_EXPLORE,
   NEIGHBORHOODS_DESKTOP_EXPLORE_NEIGHBORHOOD,
   NEIGHBORHOODS_DESKTOP_FEATURED_BADGE,
@@ -182,6 +184,7 @@ export function NeighborhoodsMobileFeatured({
   isFollowed,
   onToggleFollow,
 }: NeighborhoodsMobileFeaturedProps) {
+  const imageCredit = resolveNeighborhoodsDesktopImageCredit({ slug: card.slug });
   return (
     <article
       className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm"
@@ -218,6 +221,12 @@ export function NeighborhoodsMobileFeatured({
             </span>
           ))}
         </div>
+        {imageCredit ? (
+          <CulturalImageCredit
+            credit={formatEditorialImageAttribution(imageCredit)}
+            sourceUrl={imageCredit.sourceUrl}
+          />
+        ) : null}
         <p className="text-sm leading-relaxed text-neutral-600">{card.description}</p>
         {card.eventLine ? (
           <p className="flex items-start gap-2 border-t border-neutral-100 pt-3 text-sm text-neutral-700">
@@ -313,6 +322,7 @@ export function NeighborhoodsMobileExploreRail({
       <ul className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
         {cards.map((card) => {
           const followed = followedSlugs.has(card.slug);
+          const imageCredit = resolveNeighborhoodsDesktopImageCredit({ slug: card.slug });
           return (
             <li key={card.id} className="w-[78%] max-w-[280px] shrink-0">
               <article className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm">
@@ -375,6 +385,12 @@ export function NeighborhoodsMobileExploreRail({
                       />
                     </button>
                   </div>
+                  {imageCredit ? (
+                    <CulturalImageCredit
+                      credit={formatEditorialImageAttribution(imageCredit)}
+                      sourceUrl={imageCredit.sourceUrl}
+                    />
+                  ) : null}
                 </div>
               </article>
             </li>

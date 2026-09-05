@@ -87,12 +87,42 @@ export function CulturalImage({
   );
 }
 
-export function CulturalImageCredit({ credit }: { credit: string | null }) {
+/**
+ * Attribution d'une image tierce. `sourceUrl` ajoute le lien vers la page source, exigé par les
+ * licences CC BY-SA : le lien est un vrai `<a>`, donc atteignable au clavier et annoncé par les
+ * lecteurs d'écran — jamais un commentaire ni un texte purement décoratif.
+ *
+ * `text-neutral-500` et non `-400` : à 10px, WCAG AA impose 4.5:1, que `neutral-400` n'atteint
+ * pas sur fond clair.
+ */
+export function CulturalImageCredit({
+  credit,
+  sourceUrl = null,
+}: {
+  credit: string | null;
+  sourceUrl?: string | null;
+}) {
   if (!credit) return null;
   const compact = credit.length > 88 ? `${credit.slice(0, 85)}...` : credit;
+  const className = "mt-2 line-clamp-1 text-[10px] text-neutral-500";
+  if (!sourceUrl) {
+    return (
+      <p className={className} title={credit}>
+        {compact}
+      </p>
+    );
+  }
   return (
-    <p className="mt-2 line-clamp-1 text-[10px] text-neutral-400" title={credit}>
-      {compact}
+    <p className={className} title={credit}>
+      <a
+        href={sourceUrl}
+        target="_blank"
+        rel="license noopener noreferrer"
+        aria-label={`${credit} — ouvrir la page source (nouvel onglet)`}
+        className="rounded underline underline-offset-2 transition hover:text-neutral-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yunicity-primary"
+      >
+        {compact}
+      </a>
     </p>
   );
 }

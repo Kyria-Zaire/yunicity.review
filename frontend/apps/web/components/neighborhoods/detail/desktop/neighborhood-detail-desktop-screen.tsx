@@ -23,6 +23,7 @@ import {
   buildNeighborhoodDetailDesktopFeedItems,
   buildNeighborhoodDetailDesktopGalleryUrls,
   buildNeighborhoodDetailDesktopHeroImage,
+  buildNeighborhoodDetailDesktopHeroCredit,
   buildNeighborhoodDetailDesktopIdentityBody,
   buildNeighborhoodDetailDesktopListHref,
   buildNeighborhoodDetailDesktopMapHref,
@@ -121,6 +122,7 @@ export function NeighborhoodDetailDesktopScreen({ detail }: NeighborhoodDetailDe
   const tagline = useMemo(() => buildNeighborhoodDetailDesktopTagline(detail), [detail]);
   const identityBody = useMemo(() => buildNeighborhoodDetailDesktopIdentityBody(detail), [detail]);
   const heroImage = useMemo(() => buildNeighborhoodDetailDesktopHeroImage(detail), [detail]);
+  const heroCredit = useMemo(() => buildNeighborhoodDetailDesktopHeroCredit(detail), [detail]);
   const galleryUrls = useMemo(() => buildNeighborhoodDetailDesktopGalleryUrls(detail), [detail]);
   const today = useMemo(() => buildNeighborhoodDetailDesktopTodayEvents(detail), [detail]);
   const places = useMemo(() => buildNeighborhoodDetailDesktopPlaceCards(detail), [detail]);
@@ -204,7 +206,12 @@ export function NeighborhoodDetailDesktopScreen({ detail }: NeighborhoodDetailDe
         <NeighborhoodDetailBreadcrumbs items={breadcrumbs} />
       </div>
 
-      <NeighborhoodDetailDesktopHero title={name} imageUrl={heroImage} galleryUrls={galleryUrls} />
+      <NeighborhoodDetailDesktopHero
+        title={name}
+        imageUrl={heroImage}
+        galleryUrls={galleryUrls}
+        imageCredit={heroCredit}
+      />
 
       <div className="neighborhood-detail-desktop-grid gap-6">
         <div className="min-w-0 space-y-6">

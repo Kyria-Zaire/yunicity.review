@@ -1815,10 +1815,14 @@ export {
   NEIGHBORHOOD_EDITORIAL_IMAGE_MURIGNY,
   NEIGHBORHOOD_EDITORIAL_IMAGE_ORGEVAL,
   NEIGHBORHOOD_EDITORIAL_IMAGE_SAINT_REMI,
+  NEIGHBORHOODS_PORTAL_HERO_CREDIT,
   NEIGHBORHOODS_PORTAL_HERO_IMAGE_URL,
+  formatEditorialImageAttribution,
   resolveEventEditorialImage,
   resolveNeighborhoodEditorialImage,
+  resolveNeighborhoodEditorialImageCredit,
   resolveTribeEditorialImage,
+  type EditorialImageCredit,
 } from "./editorial-fallback-images";
 export {
   EVENTS_EMPTY,

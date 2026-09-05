@@ -1,6 +1,11 @@
 import type { CulturalPlaceListItem, LocalEvent, Neighborhood } from "@yunicity/types";
 
-import { resolveNeighborhoodEditorialImage, NEIGHBORHOODS_PORTAL_HERO_IMAGE_URL } from "./editorial-fallback-images";
+import {
+  resolveNeighborhoodEditorialImage,
+  resolveNeighborhoodEditorialImageCredit,
+  NEIGHBORHOODS_PORTAL_HERO_IMAGE_URL,
+  type EditorialImageCredit,
+} from "./editorial-fallback-images";
 import { buildMapNeighborhoodUrl } from "./explorer-links";
 import {
   culturalPlaceBelongsToNeighborhood,
@@ -39,6 +44,20 @@ function isUnpopulatedMediaCdnCoverUrl(url: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Crédit de l'image que `resolveNeighborhoodsDesktopImage` va rendre.
+ *
+ * Même première branche que lui : la photo Wikimedia du slug prime toujours, donc son crédit
+ * est le bon dès qu'elle existe. Les autres sources (cover API, photo de lieu, hero portail)
+ * portent leur propre attribution — on renvoie `null` pour ne jamais afficher le crédit
+ * d'une image qui n'est pas à l'écran.
+ */
+export function resolveNeighborhoodsDesktopImageCredit(
+  hood: Pick<Neighborhood, "slug">,
+): EditorialImageCredit | null {
+  return resolveNeighborhoodEditorialImageCredit({ slug: hood.slug, cover_image_url: null });
 }
 
 /** Cover Reims Commons (slug) → cover API fiable → photo lieu → hero portail. */

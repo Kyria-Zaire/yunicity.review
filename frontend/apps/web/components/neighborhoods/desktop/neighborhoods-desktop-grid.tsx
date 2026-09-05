@@ -1,8 +1,10 @@
 "use client";
 
-import { CulturalImage } from "@/components/culture/cultural-image";
+import { CulturalImage, CulturalImageCredit } from "@/components/culture/cultural-image";
 import type { NeighborhoodsDesktopGridCard, NeighborhoodsDesktopTag } from "@yunicity/utils";
 import {
+  formatEditorialImageAttribution,
+  resolveNeighborhoodsDesktopImageCredit,
   NEIGHBORHOODS_DESKTOP_EXPLORE,
   NEIGHBORHOODS_DESKTOP_GRID_TITLE,
   NEIGHBORHOODS_DESKTOP_SEE_ALL,
@@ -54,6 +56,7 @@ export function NeighborhoodsDesktopGrid({
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => {
           const followed = followedSlugs.has(card.slug);
+          const imageCredit = resolveNeighborhoodsDesktopImageCredit({ slug: card.slug });
           return (
             <li key={card.id}>
               <article className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm">
@@ -120,6 +123,12 @@ export function NeighborhoodsDesktopGrid({
                       />
                     </button>
                   </div>
+                  {imageCredit ? (
+                    <CulturalImageCredit
+                      credit={formatEditorialImageAttribution(imageCredit)}
+                      sourceUrl={imageCredit.sourceUrl}
+                    />
+                  ) : null}
                 </div>
               </article>
             </li>

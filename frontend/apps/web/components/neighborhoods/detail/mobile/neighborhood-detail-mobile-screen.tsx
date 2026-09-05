@@ -21,6 +21,7 @@ import {
   buildNeighborhoodDetailMobileFeedItems,
   buildNeighborhoodDetailMobileGalleryUrls,
   buildNeighborhoodDetailMobileHeroImage,
+  buildNeighborhoodDetailMobileHeroCredit,
   buildNeighborhoodDetailMobileIdentityBody,
   buildNeighborhoodDetailMobileListHref,
   buildNeighborhoodDetailMobileMapHref,
@@ -117,6 +118,7 @@ export function NeighborhoodDetailMobileScreen({ detail }: NeighborhoodDetailMob
   const tagline = useMemo(() => buildNeighborhoodDetailMobileTagline(detail), [detail]);
   const identityBody = useMemo(() => buildNeighborhoodDetailMobileIdentityBody(detail), [detail]);
   const heroImage = useMemo(() => buildNeighborhoodDetailMobileHeroImage(detail), [detail]);
+  const heroCredit = useMemo(() => buildNeighborhoodDetailMobileHeroCredit(detail), [detail]);
   const galleryUrls = useMemo(() => buildNeighborhoodDetailMobileGalleryUrls(detail), [detail]);
   const today = useMemo(() => buildNeighborhoodDetailMobileTodayEvents(detail), [detail]);
   const places = useMemo(() => buildNeighborhoodDetailMobilePlaceCards(detail), [detail]);
@@ -193,7 +195,12 @@ export function NeighborhoodDetailMobileScreen({ detail }: NeighborhoodDetailMob
       />
 
       <div className="space-y-5 px-4 pt-3">
-        <NeighborhoodDetailMobileHero title={name} imageUrl={heroImage} galleryUrls={galleryUrls} />
+        <NeighborhoodDetailMobileHero
+        title={name}
+        imageUrl={heroImage}
+        galleryUrls={galleryUrls}
+        imageCredit={heroCredit}
+      />
 
         <NeighborhoodDetailMobileIdentity
           name={name}

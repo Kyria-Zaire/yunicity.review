@@ -16,10 +16,16 @@ import {
   NEIGHBORHOOD_DETAIL_DESKTOP_TAB_PLACES,
   NEIGHBORHOOD_DETAIL_DESKTOP_TAB_PRACTICAL,
 } from "./neighborhood-detail-desktop-labels";
-import { resolveNeighborhoodEditorialImage } from "./editorial-fallback-images";
+import {
+  resolveNeighborhoodEditorialImage,
+  type EditorialImageCredit,
+} from "./editorial-fallback-images";
 import { isPendingYunicityHostedCoverUrl } from "./map-media-url";
 import { resolveNeighborhoodV2HeroQuote } from "./neighborhood-v2-presenter";
-import { resolveNeighborhoodsDesktopImage } from "./neighborhoods-desktop-presenter";
+import {
+  resolveNeighborhoodsDesktopImage,
+  resolveNeighborhoodsDesktopImageCredit,
+} from "./neighborhoods-desktop-presenter";
 import { buildPublicPlaceHref } from "./place-routing";
 
 export type NeighborhoodDetailDesktopTabId =
@@ -218,6 +224,13 @@ export function buildNeighborhoodDetailDesktopHeroImage(detail: NeighborhoodDeta
     slug: detail.slug,
     cover_image_url: detail.cover_image_url,
   });
+}
+
+/** Attribution de l'image hero — partagée par desktop, medium et mobile. */
+export function buildNeighborhoodDetailDesktopHeroCredit(
+  detail: NeighborhoodDetail,
+): EditorialImageCredit | null {
+  return resolveNeighborhoodsDesktopImageCredit({ slug: detail.slug });
 }
 
 export function buildNeighborhoodDetailDesktopGalleryUrls(detail: NeighborhoodDetail): string[] {

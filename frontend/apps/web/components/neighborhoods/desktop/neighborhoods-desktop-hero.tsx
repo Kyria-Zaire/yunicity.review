@@ -1,8 +1,10 @@
 "use client";
 
-import { CulturalImage } from "@/components/culture/cultural-image";
+import { CulturalImage, CulturalImageCredit } from "@/components/culture/cultural-image";
 import type { NeighborhoodsDesktopHeroCard, NeighborhoodsDesktopTag } from "@yunicity/utils";
 import {
+  formatEditorialImageAttribution,
+  resolveNeighborhoodsDesktopImageCredit,
   NEIGHBORHOODS_DESKTOP_EXPLORE_NEIGHBORHOOD,
   NEIGHBORHOODS_DESKTOP_FEATURED_BADGE,
   NEIGHBORHOODS_DESKTOP_FOLLOW,
@@ -33,6 +35,7 @@ export function NeighborhoodsDesktopHero({
   isFollowed,
   onToggleFollow,
 }: NeighborhoodsDesktopHeroProps) {
+  const imageCredit = resolveNeighborhoodsDesktopImageCredit({ slug: card.slug });
   return (
     <article
       className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm"
@@ -109,6 +112,12 @@ export function NeighborhoodsDesktopHero({
               {NEIGHBORHOODS_DESKTOP_VIEW_ON_MAP}
             </Link>
           </div>
+          {imageCredit ? (
+            <CulturalImageCredit
+              credit={formatEditorialImageAttribution(imageCredit)}
+              sourceUrl={imageCredit.sourceUrl}
+            />
+          ) : null}
         </div>
       </div>
     </article>

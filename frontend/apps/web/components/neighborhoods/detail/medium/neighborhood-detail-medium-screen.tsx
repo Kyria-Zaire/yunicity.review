@@ -23,6 +23,7 @@ import {
   buildNeighborhoodDetailMediumFeedItems,
   buildNeighborhoodDetailMediumGalleryUrls,
   buildNeighborhoodDetailMediumHeroImage,
+  buildNeighborhoodDetailMediumHeroCredit,
   buildNeighborhoodDetailMediumIdentityBody,
   buildNeighborhoodDetailMediumListHref,
   buildNeighborhoodDetailMediumMapHref,
@@ -122,6 +123,7 @@ export function NeighborhoodDetailMediumScreen({ detail }: NeighborhoodDetailMed
   const tagline = useMemo(() => buildNeighborhoodDetailMediumTagline(detail), [detail]);
   const identityBody = useMemo(() => buildNeighborhoodDetailMediumIdentityBody(detail), [detail]);
   const heroImage = useMemo(() => buildNeighborhoodDetailMediumHeroImage(detail), [detail]);
+  const heroCredit = useMemo(() => buildNeighborhoodDetailMediumHeroCredit(detail), [detail]);
   const galleryUrls = useMemo(() => buildNeighborhoodDetailMediumGalleryUrls(detail), [detail]);
   const today = useMemo(() => buildNeighborhoodDetailMediumTodayEvents(detail), [detail]);
   const places = useMemo(() => buildNeighborhoodDetailMediumPlaceCards(detail), [detail]);
@@ -202,7 +204,12 @@ export function NeighborhoodDetailMediumScreen({ detail }: NeighborhoodDetailMed
         <NeighborhoodDetailBreadcrumbs items={breadcrumbs} />
       </div>
 
-      <NeighborhoodDetailMediumHero title={name} imageUrl={heroImage} galleryUrls={galleryUrls} />
+      <NeighborhoodDetailMediumHero
+        title={name}
+        imageUrl={heroImage}
+        galleryUrls={galleryUrls}
+        imageCredit={heroCredit}
+      />
 
       <NeighborhoodDetailMediumIdentity
         name={name}
