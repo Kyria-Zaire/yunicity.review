@@ -52,6 +52,15 @@ from app.core.security import hash_password
 from app.core.social_notification_constants import SocialNotificationType
 from app.core.tribe_constants import TribeCategory, TribeMemberRole, TribeVisibility
 from app.db.seeds.passport_tiers import seed_passport_tiers
+from app.db.seeds.qa_video_media import (
+    QA_LANDSCAPE_SPEC,
+    QA_LANDSCAPE_THUMB_NAME,
+    QA_LANDSCAPE_VIDEO_NAME,
+    QA_PORTRAIT_SPEC,
+    QA_PORTRAIT_THUMB_NAME,
+    QA_PORTRAIT_VIDEO_NAME,
+    ensure_qa_sample_video,
+)
 from app.db.seeds.reims_neighborhoods import seed_reims_neighborhoods
 from app.models.local_event import EventInterest, LocalEvent
 from app.models.local_video import LocalVideo
@@ -261,12 +270,11 @@ def _write_placeholder_video() -> tuple[str, str, str, str]:
     try:
         media_dir = Path(settings.media_upload_dir) / "qa"
         media_dir.mkdir(parents=True, exist_ok=True)
-        stub = bytes([0, 0, 0, 24]) + b"ftypmp42"
-        (media_dir / "qa-sample-video.mp4").write_bytes(stub)
-        (media_dir / "qa-sample-video.png").write_bytes(_png_16_9(320, 180))
-        (media_dir / "qa-sample-video-portrait.mp4").write_bytes(stub)
-        (media_dir / "qa-sample-video-portrait.png").write_bytes(_png_16_9(180, 320))
-    except OSError as exc:  # pragma: no cover - filesystem edge
+        ensure_qa_sample_video(media_dir / QA_LANDSCAPE_VIDEO_NAME, QA_LANDSCAPE_SPEC)
+        ensure_qa_sample_video(media_dir / QA_PORTRAIT_VIDEO_NAME, QA_PORTRAIT_SPEC)
+        (media_dir / QA_LANDSCAPE_THUMB_NAME).write_bytes(_png_16_9(320, 180))
+        (media_dir / QA_PORTRAIT_THUMB_NAME).write_bytes(_png_16_9(180, 320))
+    except (OSError, RuntimeError) as exc:  # pragma: no cover - filesystem edge
         logger.warning("qa_video_placeholder_skip", extra={"error": str(exc)})
     return landscape_media, landscape_thumb, portrait_media, portrait_thumb
 
@@ -939,7 +947,7 @@ async def seed_qa_fixtures(
             file_size_bytes=8,
             mime_type="video/mp4",
             status="published",
-            published_at=now - timedelta(hours=3),
+            published_at=now - timedelta(hours=6),
             latitude=49.2583,
             longitude=4.0317,
         ),
