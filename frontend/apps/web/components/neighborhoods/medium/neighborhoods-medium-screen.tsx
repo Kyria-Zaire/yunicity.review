@@ -21,6 +21,7 @@ import {
   NEIGHBORHOODS_ERROR,
   NEIGHBORHOODS_LOADING,
   NEIGHBORHOODS_RETRY,
+  NEIGHBORHOODS_EXPLORE_ROUTE,
   buildNeighborhoodsDesktopGridCards,
   buildNeighborhoodsDesktopHeroCard,
   buildNeighborhoodsDesktopNowItems,
@@ -156,6 +157,7 @@ export function NeighborhoodsMediumScreen({
 
   const followedSet = useMemo(() => new Set(followedSlugs), [followedSlugs]);
   const mapHref = `/map?city=${encodeURIComponent(city)}`;
+  const exploreHref = `${NEIGHBORHOODS_EXPLORE_ROUTE}?city=${encodeURIComponent(city)}`;
   const selectedChip = neighborhoodsMediumSelectedChip(filters.ambiances);
   const filterCount = neighborhoodsMediumActiveFilterCount({
     ambiances: filters.ambiances,
@@ -191,12 +193,6 @@ export function NeighborhoodsMediumScreen({
     }));
   }, []);
 
-  const scrollToGrid = useCallback(() => {
-    document
-      .getElementById("neighborhoods-medium-grid")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
-
   return (
     <div className="neighborhoods-medium-shell" data-neighborhoods-medium="">
       <NeighborhoodsMediumChromeHeader
@@ -217,6 +213,7 @@ export function NeighborhoodsMediumScreen({
       >
       <NeighborhoodsMediumHeader
         city={city}
+        loading={loading}
         neighborhoodsCount={neighborhoods.filter((hood) => hood.is_active).length}
         query={filters.query}
         onQueryChange={(query) => setFilters((prev) => ({ ...prev, query }))}
@@ -314,7 +311,7 @@ export function NeighborhoodsMediumScreen({
               totalCount={filteredNeighborhoods.length}
               followedSlugs={followedSet}
               onToggleFollow={toggleFollow}
-              onSeeAll={scrollToGrid}
+              seeAllHref={exploreHref}
             />
           </div>
         </div>

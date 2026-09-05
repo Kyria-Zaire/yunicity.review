@@ -4,7 +4,6 @@ import type { NeighborhoodsMediumChipId } from "@yunicity/utils";
 import {
   NEIGHBORHOODS_DESKTOP_BREADCRUMB_HOME,
   NEIGHBORHOODS_DESKTOP_BREADCRUMB_PAGE,
-  NEIGHBORHOODS_DESKTOP_KICKER,
   NEIGHBORHOODS_DESKTOP_MODE_EXPLORE,
   NEIGHBORHOODS_DESKTOP_MODE_MAP,
   NEIGHBORHOODS_DESKTOP_SEARCH_PLACEHOLDER,
@@ -16,6 +15,8 @@ import {
 import { Filter, Home, Map, MapPin, Search } from "lucide-react";
 import Link from "next/link";
 import type { Ref } from "react";
+
+import { NeighborhoodsPortalKicker } from "@/components/neighborhoods/shared/neighborhoods-portal-kicker";
 
 const CHIP_IDLE: Record<string, string> = {
   primary: "border-neutral-200 bg-white text-neutral-700",
@@ -29,6 +30,7 @@ const CHIP_IDLE: Record<string, string> = {
 type NeighborhoodsMediumHeaderProps = {
   city: string;
   neighborhoodsCount: number;
+  loading?: boolean;
   query: string;
   onQueryChange: (value: string) => void;
   selectedChip: NeighborhoodsMediumChipId;
@@ -42,6 +44,7 @@ type NeighborhoodsMediumHeaderProps = {
 export function NeighborhoodsMediumHeader({
   city,
   neighborhoodsCount,
+  loading = false,
   query,
   onQueryChange,
   selectedChip,
@@ -69,9 +72,7 @@ export function NeighborhoodsMediumHeader({
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-yunicity-primary">
-            {NEIGHBORHOODS_DESKTOP_KICKER(city, neighborhoodsCount)}
-          </p>
+          <NeighborhoodsPortalKicker city={city} count={neighborhoodsCount} loading={loading} />
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-neutral-950 sm:text-[1.75rem]">
             {NEIGHBORHOODS_DESKTOP_TITLE(city)}
           </h1>

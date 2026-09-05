@@ -14,6 +14,7 @@ import {
   NEIGHBORHOODS_ERROR,
   NEIGHBORHOODS_LOADING,
   NEIGHBORHOODS_RETRY,
+  NEIGHBORHOODS_EXPLORE_ROUTE,
   buildNeighborhoodsDesktopGridCards,
   buildNeighborhoodsDesktopHeroCard,
   buildNeighborhoodsDesktopNowItems,
@@ -146,6 +147,7 @@ export function NeighborhoodsDesktopScreen({
   const filtersActive = neighborhoodsDesktopFiltersAreActive(filters);
   const followedSet = useMemo(() => new Set(followedSlugs), [followedSlugs]);
   const mapHref = `/map?city=${encodeURIComponent(city)}`;
+  const exploreHref = `${NEIGHBORHOODS_EXPLORE_ROUTE}?city=${encodeURIComponent(city)}`;
 
   const toggleFollow = useCallback(
     (slug: string) => {
@@ -160,12 +162,6 @@ export function NeighborhoodsDesktopScreen({
     [followedSlugs, persistFollowed],
   );
 
-  const scrollToGrid = useCallback(() => {
-    document
-      .getElementById("neighborhoods-desktop-grid")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
-
   return (
     <div
       className="neighborhoods-desktop-root mx-auto w-full px-4 py-4 lg:px-6 lg:py-6"
@@ -173,6 +169,7 @@ export function NeighborhoodsDesktopScreen({
     >
       <NeighborhoodsDesktopHeader
         city={city}
+        loading={loading}
         neighborhoodsCount={neighborhoods.filter((hood) => hood.is_active).length}
         query={filters.query}
         onQueryChange={(query) => setFilters((prev) => ({ ...prev, query }))}
@@ -254,7 +251,7 @@ export function NeighborhoodsDesktopScreen({
               totalCount={filteredNeighborhoods.length}
               followedSlugs={followedSet}
               onToggleFollow={toggleFollow}
-              onSeeAll={scrollToGrid}
+              seeAllHref={exploreHref}
             />
           ) : null}
 

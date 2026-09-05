@@ -15,7 +15,6 @@ import {
   NEIGHBORHOODS_DESKTOP_FOLLOW,
   NEIGHBORHOODS_DESKTOP_FOLLOWING,
   NEIGHBORHOODS_DESKTOP_GRID_TITLE,
-  NEIGHBORHOODS_DESKTOP_KICKER,
   NEIGHBORHOODS_DESKTOP_MODE_EXPLORE,
   NEIGHBORHOODS_DESKTOP_MODE_MAP,
   NEIGHBORHOODS_DESKTOP_TITLE,
@@ -29,6 +28,7 @@ import {
   NEIGHBORHOODS_MOBILE_SUBTITLE,
   NEIGHBORHOODS_MOBILE_VIEW_ON_MAP,
   NEIGHBORHOODS_MOBILE_YOUR_HOOD_HINT,
+  NEIGHBORHOODS_EXPLORE_ROUTE,
 } from "@yunicity/utils";
 import {
   Bookmark,
@@ -41,6 +41,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { Ref } from "react";
+
+import { NeighborhoodsPortalKicker } from "@/components/neighborhoods/shared/neighborhoods-portal-kicker";
 
 const TAG_CLASS: Record<NeighborhoodsDesktopTag["tone"], string> = {
   peach: "bg-orange-100 text-orange-800",
@@ -64,6 +66,7 @@ const CHIP_IDLE: Record<string, string> = {
 type NeighborhoodsMobilePageHeaderProps = {
   city: string;
   neighborhoodsCount: number;
+  loading?: boolean;
   query: string;
   onQueryChange: (value: string) => void;
   selectedChip: NeighborhoodsMediumChipId;
@@ -77,6 +80,7 @@ type NeighborhoodsMobilePageHeaderProps = {
 export function NeighborhoodsMobilePageHeader({
   city,
   neighborhoodsCount,
+  loading = false,
   query,
   onQueryChange,
   selectedChip,
@@ -89,9 +93,12 @@ export function NeighborhoodsMobilePageHeader({
   return (
     <header className="space-y-4" data-neighborhoods-mobile-page-header="">
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-yunicity-primary">
-          {NEIGHBORHOODS_DESKTOP_KICKER(city, neighborhoodsCount)}
-        </p>
+        <NeighborhoodsPortalKicker
+          city={city}
+          count={neighborhoodsCount}
+          loading={loading}
+          className="text-[11px] font-bold uppercase tracking-[0.14em] text-yunicity-primary"
+        />
         <h1 className="mt-1 text-[1.65rem] font-bold leading-tight tracking-tight text-neutral-950">
           {NEIGHBORHOODS_DESKTOP_TITLE(city)}
         </h1>
@@ -293,6 +300,7 @@ type NeighborhoodsMobileExploreRailProps = {
   totalCount: number;
   followedSlugs: Set<string>;
   onToggleFollow: (slug: string) => void;
+  seeAllHref?: string;
 };
 
 export function NeighborhoodsMobileExploreRail({
@@ -300,6 +308,7 @@ export function NeighborhoodsMobileExploreRail({
   totalCount,
   followedSlugs,
   onToggleFollow,
+  seeAllHref = NEIGHBORHOODS_EXPLORE_ROUTE,
 }: NeighborhoodsMobileExploreRailProps) {
   if (cards.length === 0) return null;
 
@@ -307,13 +316,13 @@ export function NeighborhoodsMobileExploreRail({
     <section className="space-y-3" data-neighborhoods-mobile-explore="" id="neighborhoods-mobile-explore">
       <div className="flex items-end justify-between gap-3">
         <h2 className="text-lg font-bold text-neutral-900">{NEIGHBORHOODS_DESKTOP_GRID_TITLE}</h2>
-        <a
-          href="#neighborhoods-mobile-explore"
-          className="inline-flex items-center gap-1 text-sm font-semibold text-yunicity-primary"
+        <Link
+          href={seeAllHref}
+          className="inline-flex items-center gap-1 text-sm font-semibold text-yunicity-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yunicity-primary"
         >
           {NEIGHBORHOODS_MOBILE_SEE_ALL_ARROW(totalCount)}
           <ChevronRight className="h-4 w-4" aria-hidden />
-        </a>
+        </Link>
       </div>
       <ul className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
         {cards.map((card) => {
@@ -322,24 +331,26 @@ export function NeighborhoodsMobileExploreRail({
           return (
             <li key={card.id} className="w-[78%] max-w-[280px] shrink-0">
               <article className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm">
-                <Link href={card.href} className="relative block aspect-[4/3] overflow-hidden bg-neutral-100">
-                  <div className="absolute inset-0">
-                    <CulturalImage
-                      src={card.imageUrl}
-                      alt={card.name}
-                      placeName={card.name}
-                      className="h-full w-full"
-                      imageClassName="object-cover"
-                      sizes="280px"
-                      showFallbackCaption
-                      fallbackLabel="Quartier"
-                      overlay={false}
-                    />
-                  </div>
+                <div className="relative aspect-[4/3] overflow-hidden bg-neutral-100">
+                  <Link href={card.href} className="absolute inset-0 block">
+                    <div className="absolute inset-0">
+                      <CulturalImage
+                        src={card.imageUrl}
+                        alt={card.name}
+                        placeName={card.name}
+                        className="h-full w-full"
+                        imageClassName="object-cover"
+                        sizes="280px"
+                        showFallbackCaption
+                        fallbackLabel="Quartier"
+                        overlay={false}
+                      />
+                    </div>
+                  </Link>
                   {imageCredit ? (
                     <CulturalImageCredit variant="compact" editorialCredit={imageCredit} />
                   ) : null}
-                </Link>
+                </div>
                 <div className="space-y-2.5 p-3">
                   <div>
                     <h3 className="text-base font-bold text-neutral-900">

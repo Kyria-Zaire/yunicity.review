@@ -3,7 +3,6 @@
 import {
   NEIGHBORHOODS_DESKTOP_BREADCRUMB_HOME,
   NEIGHBORHOODS_DESKTOP_BREADCRUMB_PAGE,
-  NEIGHBORHOODS_DESKTOP_KICKER,
   NEIGHBORHOODS_DESKTOP_MODE_EXPLORE,
   NEIGHBORHOODS_DESKTOP_MODE_MAP,
   NEIGHBORHOODS_DESKTOP_SEARCH_PLACEHOLDER,
@@ -13,9 +12,12 @@ import {
 import { Map, MapPin, Search } from "lucide-react";
 import Link from "next/link";
 
+import { NeighborhoodsPortalKicker } from "@/components/neighborhoods/shared/neighborhoods-portal-kicker";
+
 type NeighborhoodsDesktopHeaderProps = {
   city: string;
   neighborhoodsCount: number;
+  loading?: boolean;
   query: string;
   onQueryChange: (value: string) => void;
   mapHref: string;
@@ -24,6 +26,7 @@ type NeighborhoodsDesktopHeaderProps = {
 export function NeighborhoodsDesktopHeader({
   city,
   neighborhoodsCount,
+  loading = false,
   query,
   onQueryChange,
   mapHref,
@@ -46,9 +49,7 @@ export function NeighborhoodsDesktopHeader({
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-yunicity-primary">
-            {NEIGHBORHOODS_DESKTOP_KICKER(city, neighborhoodsCount)}
-          </p>
+          <NeighborhoodsPortalKicker city={city} count={neighborhoodsCount} loading={loading} />
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-neutral-950">
             {NEIGHBORHOODS_DESKTOP_TITLE(city)}
           </h1>

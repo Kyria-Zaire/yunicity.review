@@ -31,6 +31,7 @@ import {
   NEIGHBORHOODS_MOBILE_MAP_BODY,
   NEIGHBORHOODS_MEDIUM_NOW_EMPTY,
   NEIGHBORHOODS_RETRY,
+  NEIGHBORHOODS_EXPLORE_ROUTE,
   buildNeighborhoodsDesktopGridCards,
   buildNeighborhoodsDesktopHeroCard,
   buildNeighborhoodsDesktopNowItems,
@@ -282,6 +283,7 @@ export function NeighborhoodsMobileScreen({
 
   const followedSet = useMemo(() => new Set(followedSlugs), [followedSlugs]);
   const mapHref = `/map?city=${encodeURIComponent(city)}`;
+  const exploreHref = `${NEIGHBORHOODS_EXPLORE_ROUTE}?city=${encodeURIComponent(city)}`;
   const selectedChip = neighborhoodsMediumSelectedChip(filters.ambiances);
   const filterCount =
     neighborhoodsMediumActiveFilterCount({
@@ -325,6 +327,7 @@ export function NeighborhoodsMobileScreen({
     >
       <NeighborhoodsMobilePageHeader
         city={city}
+        loading={loading}
         neighborhoodsCount={neighborhoods.filter((hood) => hood.is_active).length}
         query={filters.query}
         onQueryChange={(query) => setFilters((prev) => ({ ...prev, query }))}
@@ -420,6 +423,7 @@ export function NeighborhoodsMobileScreen({
           totalCount={filteredNeighborhoods.length}
           followedSlugs={followedSet}
           onToggleFollow={toggleFollow}
+          seeAllHref={exploreHref}
         />
       ) : null}
 

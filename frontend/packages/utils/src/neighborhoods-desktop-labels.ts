@@ -46,6 +46,15 @@ export const NEIGHBORHOODS_DESKTOP_EXPLORE = "Explorer";
 export const NEIGHBORHOODS_DESKTOP_GRID_TITLE = "Explorer les quartiers";
 export const NEIGHBORHOODS_DESKTOP_SEE_ALL = (count: number) => `Voir les ${count}`;
 
+/** Page catalogue `/neighborhoods/explore` (NEIGHBORHOODS-EXPLORE-01). */
+export const NEIGHBORHOODS_EXPLORE_BACK = "Retour aux quartiers";
+export const NEIGHBORHOODS_EXPLORE_PAGE_TITLE = "Explorer les quartiers";
+export const NEIGHBORHOODS_EXPLORE_PAGE_SUBTITLE =
+  "Découvrez les 12 quartiers officiels de Reims";
+export const NEIGHBORHOODS_EXPLORE_PAGE_COUNT = (count: number) =>
+  `${count} quartier${count > 1 ? "s" : ""}`;
+export const NEIGHBORHOODS_EXPLORE_ROUTE = "/neighborhoods/explore";
+
 export const NEIGHBORHOODS_DESKTOP_MAP_BANNER_TITLE = "Comparer sur la carte";
 export const NEIGHBORHOODS_DESKTOP_MAP_BANNER_BODY =
   "Visualisez les quartiers, leurs ambiances et ce qui s'y passe en un coup d'œil.";

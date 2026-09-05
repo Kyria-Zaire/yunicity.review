@@ -7,6 +7,7 @@ import {
   NEIGHBORHOODS_DESKTOP_EXPLORE,
   NEIGHBORHOODS_DESKTOP_GRID_TITLE,
   NEIGHBORHOODS_DESKTOP_SEE_ALL,
+  NEIGHBORHOODS_EXPLORE_ROUTE,
 } from "@yunicity/utils";
 import { Bookmark, CalendarDays, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -26,7 +27,10 @@ type NeighborhoodsDesktopGridProps = {
   totalCount: number;
   followedSlugs: Set<string>;
   onToggleFollow: (slug: string) => void;
-  onSeeAll: () => void;
+  showSectionHeader?: boolean;
+  showSeeAllLink?: boolean;
+  seeAllHref?: string;
+  gridClassName?: string;
 };
 
 export function NeighborhoodsDesktopGrid({
@@ -34,49 +38,57 @@ export function NeighborhoodsDesktopGrid({
   totalCount,
   followedSlugs,
   onToggleFollow,
-  onSeeAll,
+  showSectionHeader = true,
+  showSeeAllLink = true,
+  seeAllHref = NEIGHBORHOODS_EXPLORE_ROUTE,
+  gridClassName = "grid gap-4 sm:grid-cols-2 xl:grid-cols-4",
 }: NeighborhoodsDesktopGridProps) {
   if (cards.length === 0) return null;
 
   return (
     <section className="space-y-4" data-neighborhoods-desktop-grid="" id="neighborhoods-desktop-grid">
-      <div className="flex items-end justify-between gap-3">
-        <h2 className="text-xl font-bold text-neutral-900">{NEIGHBORHOODS_DESKTOP_GRID_TITLE}</h2>
-        <button
-          type="button"
-          onClick={onSeeAll}
-          className="inline-flex items-center gap-1 text-sm font-semibold text-yunicity-primary hover:underline"
-        >
-          {NEIGHBORHOODS_DESKTOP_SEE_ALL(totalCount)}
-          <ChevronRight className="h-4 w-4" aria-hidden />
-        </button>
-      </div>
+      {showSectionHeader ? (
+        <div className="flex items-end justify-between gap-3">
+          <h2 className="text-xl font-bold text-neutral-900">{NEIGHBORHOODS_DESKTOP_GRID_TITLE}</h2>
+          {showSeeAllLink ? (
+            <Link
+              href={seeAllHref}
+              className="inline-flex items-center gap-1 text-sm font-semibold text-yunicity-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yunicity-primary"
+            >
+              {NEIGHBORHOODS_DESKTOP_SEE_ALL(totalCount)}
+              <ChevronRight className="h-4 w-4" aria-hidden />
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
 
-      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <ul className={gridClassName}>
         {cards.map((card) => {
           const followed = followedSlugs.has(card.slug);
           const imageCredit = resolveNeighborhoodsDesktopImageCredit({ slug: card.slug });
           return (
             <li key={card.id}>
               <article className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm">
-                <Link href={card.href} className="relative block aspect-[3/2] overflow-hidden bg-neutral-100">
-                  <div className="absolute inset-0">
-                    <CulturalImage
-                      src={card.imageUrl}
-                      alt={card.name}
-                      placeName={card.name}
-                      className="h-full w-full"
-                      imageClassName="object-cover transition duration-300 hover:scale-[1.03]"
-                      sizes="240px"
-                      showFallbackCaption
-                      fallbackLabel="Quartier"
-                      overlay={false}
-                    />
-                  </div>
+                <div className="relative aspect-[3/2] overflow-hidden bg-neutral-100">
+                  <Link href={card.href} className="absolute inset-0 block">
+                    <div className="absolute inset-0">
+                      <CulturalImage
+                        src={card.imageUrl}
+                        alt={card.name}
+                        placeName={card.name}
+                        className="h-full w-full"
+                        imageClassName="object-cover transition duration-300 hover:scale-[1.03]"
+                        sizes="240px"
+                        showFallbackCaption
+                        fallbackLabel="Quartier"
+                        overlay={false}
+                      />
+                    </div>
+                  </Link>
                   {imageCredit ? (
                     <CulturalImageCredit variant="compact" editorialCredit={imageCredit} />
                   ) : null}
-                </Link>
+                </div>
                 <div className="space-y-3 p-3.5">
                   <div>
                     <h3 className="text-base font-bold text-neutral-900">
