@@ -3,8 +3,8 @@ import type { CulturalPlaceListItem } from "@yunicity/types";
 import { culturalPlaceCategoryLabel } from "./cultural-place-labels";
 import { resolveCulturalPlaceDisplayUrl } from "./cultural-place-display-image";
 import {
-  NEIGHBORHOOD_EDITORIAL_IMAGE_BOULINGRIN,
   NEIGHBORHOOD_EDITORIAL_IMAGE_CENTRE_VILLE,
+  NEIGHBORHOOD_EDITORIAL_IMAGE_CERNAY_JEAN_JAURES,
   NEIGHBORHOOD_EDITORIAL_IMAGE_CROIX_ROUGE,
   NEIGHBORHOOD_EDITORIAL_IMAGE_SAINT_REMI,
 } from "./editorial-fallback-images";
@@ -88,7 +88,11 @@ const NEARBY_RADIUS_METERS = 5_000;
 const DESKTOP_QUARTIER_TILES: Array<{ slug: string; label: string; imageUrl: string }> = [
   { slug: "centre-ville", label: "Centre-ville", imageUrl: NEIGHBORHOOD_EDITORIAL_IMAGE_CENTRE_VILLE },
   { slug: "saint-remi", label: "Saint-Remi", imageUrl: NEIGHBORHOOD_EDITORIAL_IMAGE_SAINT_REMI },
-  { slug: "boulingrin", label: "Boulingrin", imageUrl: NEIGHBORHOOD_EDITORIAL_IMAGE_BOULINGRIN },
+  {
+    slug: "cernay-jean-jaures",
+    label: "Cernay – Jean-Jaurès",
+    imageUrl: NEIGHBORHOOD_EDITORIAL_IMAGE_CERNAY_JEAN_JAURES,
+  },
   { slug: "croix-rouge", label: "Croix-Rouge", imageUrl: NEIGHBORHOOD_EDITORIAL_IMAGE_CROIX_ROUGE },
 ];
 

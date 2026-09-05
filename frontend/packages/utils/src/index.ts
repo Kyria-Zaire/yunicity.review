@@ -2426,6 +2426,11 @@ export {
   type NeighborhoodsPortalStats,
 } from "./neighborhood-portal";
 export {
+  isMergedNeighborhoodSlug,
+  keepOfficialSectors,
+  REIMS_MERGED_NEIGHBORHOOD_SLUGS,
+} from "./neighborhood-sectors";
+export {
   AGENDA_CALENDAR_SPAN_DAYS,
   buildAfterworkItems,
   buildAgendaWeekDays,
