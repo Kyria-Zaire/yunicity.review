@@ -73,6 +73,24 @@ describe("registre : métadonnées légales des 12 secteurs", () => {
   });
 });
 
+describe("chatillons : la Tour des Argonautes remplace le parc", () => {
+  it("utilise La tour des argonautes Reims 08864.JPG", () => {
+    const c = creditOf("chatillons");
+    expect(c.commonsFile).toBe("La tour des argonautes Reims 08864.JPG");
+    expect(c.author).toBe("G. Garitan");
+    expect(c.license).toBe("CC BY-SA 4.0");
+    expect(c.licenseUrl).toBe("https://creativecommons.org/licenses/by-sa/4.0/");
+    expect(c.sourceUrl).toBe(
+      "https://commons.wikimedia.org/wiki/File:La_tour_des_argonautes_Reims_08864.JPG",
+    );
+    expect(c.url).toContain("La_tour_des_argonautes_Reims_08864.JPG");
+  });
+
+  it("l'ancienne photo du parc n'est plus référencée", () => {
+    expect(creditOf("chatillons").commonsFile).not.toContain("Parc des Chatillons");
+  });
+});
+
 describe("croix-rouge : la carte schématique est remplacée", () => {
   it("utilise désormais Croix Rouge passerelle.jpg", () => {
     const c = creditOf("croix-rouge");

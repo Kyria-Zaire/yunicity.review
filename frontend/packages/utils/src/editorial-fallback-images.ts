@@ -169,8 +169,12 @@ const NEIGHBORHOOD_EDITORIAL_ENTRIES = {
     "Mathieu Kappler",
     "CC BY-SA 4.0",
   ),
-  /** Parc des Châtillons. */
-  chatillons: reimsCommonsEntry("Parc_des_Chatillons_1549799.jpg", "G.Garitan", "CC BY-SA 4.0"),
+  /** Tour des Argonautes — Châtillons (vue nocturne du quartier). */
+  chatillons: reimsCommonsEntry(
+    "La_tour_des_argonautes_Reims_08864.JPG",
+    "G. Garitan",
+    "CC BY-SA 4.0",
+  ),
 } as const satisfies Record<string, EditorialImageCredit>;
 
 /** Place d’Erlon / fontaine Subé — hero portail quartiers. */
