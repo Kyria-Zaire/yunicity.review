@@ -178,6 +178,7 @@ async def test_upload_init_prod_requires_city_slug(
     for _key, _value in {
         "DEBUG": "false",
         "REFRESH_COOKIE_SECURE": "true",
+        "REFRESH_TOKEN_PEPPER": "y" * 32,
         "WEB_FRONTEND_URL": "https://app.yunicity.city",
         "CORS_ORIGINS": '["https://app.yunicity.city"]',
         "MEDIA_PUBLIC_BASE_URL": "https://media.yunicity.city",
