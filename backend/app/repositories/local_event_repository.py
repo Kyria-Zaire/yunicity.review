@@ -8,9 +8,9 @@ from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import and_, func, or_, select
-from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql.elements import ColumnElement
 
 from app.core.local_event_constants import LocalEventModerationStatus
 from app.models.local_event import EventInterest, LocalEvent
