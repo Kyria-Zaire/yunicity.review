@@ -235,7 +235,6 @@ export function NewLocalVideoForm({
             </div>
             {preview.previewUrl ? (
               <div className="mt-4 overflow-hidden rounded-xl bg-black">
-                {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
                 <video
                   src={preview.previewUrl}
                   controls

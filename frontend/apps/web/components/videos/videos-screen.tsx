@@ -88,7 +88,7 @@ function VideosScreenInner() {
     return () => {
       cancelled = true;
     };
-  }, [api, feed.isLoading, feed.items, focusVideoId, pending.syncFromStorage]);
+  }, [api, feed.isLoading, feed.items, focusVideoId, pending]);
 
   const displayItems = useMemo(() => {
     const byId = new Map<string, LocalVideoFeedItem>();
@@ -111,7 +111,7 @@ function VideosScreenInner() {
     }
 
     return Array.from(byId.values());
-  }, [feed.items, focusVideoId, pending.processingFeedItems, pinnedVideo]);
+  }, [feed.items, pending.processingFeedItems, pinnedVideo]);
 
   const processingErrors = useMemo(() => {
     const map: Record<string, string | null> = {};
@@ -125,6 +125,16 @@ function VideosScreenInner() {
 
   return (
     <VideosAppShell detailMode={isDetailMode} immersiveMode={isDetailMode}>
+      {/* CLOSE-24 : retour immersif mobile (composant hors lot B — cible via aria-label). */}
+      <style>{`
+        [data-videos-immersive-mobile] a[aria-label="Retour aux vidéos"] {
+          display: inline-flex;
+          min-height: 44px;
+          min-width: 44px;
+          align-items: center;
+          justify-content: center;
+        }
+      `}</style>
       <div className="relative">
         {isDetailMode && focusVideoId ? (
           feed.sessionExpired ? (

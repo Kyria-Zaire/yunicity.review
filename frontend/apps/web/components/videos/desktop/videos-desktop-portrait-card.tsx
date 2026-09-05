@@ -3,9 +3,10 @@
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import {
   LOCAL_VIDEO_REPORT_LABEL,
-  VIDEOS_DESKTOP_FOLLOW,
   VIDEOS_DESKTOP_MORE,
   VIDEOS_DESKTOP_SAVE,
+  VIDEOS_DESKTOP_VIEW_PROFILE,
+  VIDEO_DETAIL_MOBILE_BOOKMARK_SOON,
   VIDEOS_DESKTOP_SEE_ON_MAP,
   VIDEOS_DESKTOP_SHARE,
   VIDEOS_GRID_MORE,
@@ -40,6 +41,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+
+import { VIDEO_CANVAS_FOCUS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
 
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { LocalVideoReportSheet } from "@/components/videos/local-video-report-sheet";
@@ -86,8 +89,8 @@ function PortraitOverflowMenu({
         onClick={() => setMenuOpen((open) => !open)}
         className={`inline-flex items-center justify-center rounded-full transition focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary ${
           isDark
-            ? "h-8 w-8 text-neutral-300 hover:bg-white/10"
-            : "h-7 w-7 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+            ? `${VIDEO_TOUCH_TARGET} text-neutral-300 hover:bg-white/10`
+            : "min-h-11 min-w-11 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
         }`}
       >
         <Icon className={isDark ? "h-5 w-5" : "h-4 w-4"} aria-hidden />
@@ -142,7 +145,7 @@ function PortraitSimpleMetaActions({
         onClick={onToggleLike}
         aria-pressed={item.liked_by_me}
         aria-label={VIDEO_DETAIL_LIKE}
-        className={`inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:text-yunicity-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary ${
+        className={`inline-flex min-h-11 min-w-11 items-center gap-1 rounded-md px-1 transition hover:text-yunicity-primary ${VIDEO_CANVAS_FOCUS} ${
           item.liked_by_me ? "text-yunicity-primary" : ""
         }`}
       >
@@ -154,7 +157,7 @@ function PortraitSimpleMetaActions({
         type="button"
         onClick={onOpenComments}
         aria-label={VIDEO_DETAIL_COMMENT}
-        className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:text-yunicity-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
+        className={`inline-flex min-h-11 min-w-11 items-center gap-1 rounded-md px-1 transition hover:text-yunicity-primary ${VIDEO_CANVAS_FOCUS}`}
       >
         <MessageCircle className="h-3.5 w-3.5" aria-hidden />
         {item.comment_count}
@@ -164,19 +167,21 @@ function PortraitSimpleMetaActions({
         type="button"
         onClick={onShare}
         aria-label={VIDEO_DETAIL_SHARE}
-        className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:text-yunicity-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
+        className={`inline-flex min-h-11 min-w-11 items-center gap-1 rounded-md px-1 transition hover:text-yunicity-primary ${VIDEO_CANVAS_FOCUS}`}
       >
         <Share2 className="h-3.5 w-3.5" aria-hidden />
         <span className="sr-only">{VIDEO_DETAIL_SHARE}</span>
       </button>
 
-      <span
-        aria-label={VIDEOS_DESKTOP_SAVE}
-        className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-neutral-400"
+      <button
+        type="button"
+        disabled
+        aria-label={VIDEO_DETAIL_MOBILE_BOOKMARK_SOON}
+        className={`inline-flex min-h-11 min-w-11 items-center gap-1 rounded-md px-1 text-neutral-400 ${VIDEO_CANVAS_FOCUS}`}
       >
         <Bookmark className="h-3.5 w-3.5" aria-hidden />
         <span className="sr-only">{VIDEOS_DESKTOP_SAVE}</span>
-      </span>
+      </button>
 
       {shareHint ? (
         <span className="text-[11px] font-medium text-emerald-600" role="status">
@@ -239,7 +244,7 @@ export function VideosDesktopPortraitCard({
           {profileHref ? (
             <Link
               href={profileHref}
-              className="inline-block text-sm font-medium text-neutral-500 transition hover:text-yunicity-primary"
+              className={`${VIDEO_TOUCH_TARGET} text-sm font-medium text-neutral-500 transition hover:text-yunicity-primary ${VIDEO_CANVAS_FOCUS}`}
             >
               {handle}
             </Link>
@@ -290,7 +295,7 @@ export function VideosDesktopPortraitCard({
                     href={profileHref}
                     className="mt-1.5 inline-flex rounded-lg bg-yunicity-primary px-3 py-1 text-xs font-semibold text-white transition hover:bg-yunicity-primary-hover"
                   >
-                    {VIDEOS_DESKTOP_FOLLOW}
+                    {VIDEOS_DESKTOP_VIEW_PROFILE}
                   </Link>
                 ) : null}
               </div>
@@ -321,8 +326,9 @@ export function VideosDesktopPortraitCard({
               <button
                 type="button"
                 onClick={() => void interactions.toggleLike(item)}
-                className="inline-flex items-center gap-2 transition hover:text-white"
+                aria-label={VIDEO_DETAIL_LIKE}
                 aria-pressed={item.liked_by_me}
+                className={`inline-flex min-h-11 min-w-11 items-center gap-2 transition hover:text-white ${VIDEO_CANVAS_FOCUS}`}
               >
                 <Heart
                   className={`h-5 w-5 ${item.liked_by_me ? "fill-rose-400 text-rose-400" : ""}`}
@@ -333,7 +339,8 @@ export function VideosDesktopPortraitCard({
               <button
                 type="button"
                 onClick={() => setCommentsOpen(true)}
-                className="inline-flex items-center gap-2 transition hover:text-white"
+                aria-label={VIDEO_DETAIL_COMMENT}
+                className={`inline-flex min-h-11 min-w-11 items-center gap-2 transition hover:text-white ${VIDEO_CANVAS_FOCUS}`}
               >
                 <MessageCircle className="h-5 w-5" aria-hidden />
                 {item.comment_count}
@@ -341,15 +348,21 @@ export function VideosDesktopPortraitCard({
               <button
                 type="button"
                 onClick={() => void interactions.shareVideo(item)}
-                className="inline-flex items-center gap-2 transition hover:text-white"
+                aria-label={VIDEO_DETAIL_SHARE}
+                className={`inline-flex min-h-11 min-w-11 items-center gap-2 transition hover:text-white ${VIDEO_CANVAS_FOCUS}`}
               >
                 <Share2 className="h-5 w-5" aria-hidden />
                 {VIDEOS_DESKTOP_SHARE}
               </button>
-              <span className="inline-flex items-center gap-2 text-neutral-400">
+              <button
+                type="button"
+                disabled
+                aria-label={VIDEO_DETAIL_MOBILE_BOOKMARK_SOON}
+                className={`inline-flex min-h-11 min-w-11 items-center gap-2 text-neutral-400 ${VIDEO_CANVAS_FOCUS}`}
+              >
                 <Bookmark className="h-5 w-5" aria-hidden />
                 {VIDEOS_DESKTOP_SAVE}
-              </span>
+              </button>
             </div>
 
             <div className="space-y-2 border-t border-white/10 pt-4">

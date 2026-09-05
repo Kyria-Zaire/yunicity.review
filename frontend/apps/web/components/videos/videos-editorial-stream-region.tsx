@@ -62,7 +62,6 @@ export function VideosEditorialStreamRegion({
   onOpenReport,
   onCommentCountDelta,
   onLoadMoreFeed,
-  onTabChange,
 }: VideosEditorialStreamRegionProps) {
   const viewportTier = useVideosViewportTier();
   const showDiscoveryImmersive =

@@ -4,7 +4,7 @@ import type { LocalVideoFeedItem } from "@yunicity/types";
 
 import { LocalVideoSlide } from "@/components/videos/local-video-slide";
 import { useVideoFeedAutoplay } from "@/hooks/use-video-feed-autoplay";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type LocalVideoFeedViewportProps = {
   items: LocalVideoFeedItem[];
@@ -42,7 +42,7 @@ export function LocalVideoFeedViewport({
   const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
   const suppressActiveChangeRef = useRef(false);
   const lastProgrammaticFocusRef = useRef<string | null>(null);
-  const itemIds = items.map((item) => item.id);
+  const itemIds = useMemo(() => items.map((item) => item.id), [items]);
   const activeId = useVideoFeedAutoplay(itemIds, focusVideoId, scrollRoot);
 
   /** Scroll programmatique uniquement sur changement explicite de ?video= — pas à chaque refresh items. */
@@ -104,6 +104,7 @@ export function LocalVideoFeedViewport({
           onOpenComments={() => onOpenComments(item.id)}
           onToggleLike={() => onToggleLike(item)}
           onShare={() => onShare(item)}
+          onOpenReport={() => onOpenReport(item.id)}
           onChromeVisibleChange={
             activeId === item.id ? onSlideChromeVisible : undefined
           }

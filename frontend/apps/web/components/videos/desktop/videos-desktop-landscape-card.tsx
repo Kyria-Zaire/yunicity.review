@@ -18,6 +18,8 @@ import { Heart, MessageCircle, MoreVertical, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { VIDEO_CANVAS_FOCUS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
+
 import { LocalVideoReportSheet } from "@/components/videos/local-video-report-sheet";
 import { VideoCommentsSheet } from "@/components/videos/video-comments-sheet";
 import { VideosStreamMediaFrame } from "@/components/videos/videos-stream-media-frame";
@@ -74,7 +76,7 @@ export function VideosDesktopLandscapeCard({ item: initialItem }: VideosDesktopL
         {profileHref ? (
           <Link
             href={profileHref}
-            className="inline-block text-sm font-medium text-neutral-500 transition hover:text-yunicity-primary"
+            className={`${VIDEO_TOUCH_TARGET} text-sm font-medium text-neutral-500 transition hover:text-yunicity-primary ${VIDEO_CANVAS_FOCUS}`}
           >
             {handle}
           </Link>
@@ -90,7 +92,7 @@ export function VideosDesktopLandscapeCard({ item: initialItem }: VideosDesktopL
             onClick={() => void interactions.toggleLike(item)}
             aria-pressed={item.liked_by_me}
             aria-label={VIDEO_DETAIL_LIKE}
-            className={`inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:text-yunicity-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary ${
+            className={`inline-flex min-h-11 min-w-11 items-center gap-1 rounded-md px-1 transition hover:text-yunicity-primary ${VIDEO_CANVAS_FOCUS} ${
               item.liked_by_me ? "text-yunicity-primary" : ""
             }`}
           >
@@ -102,7 +104,7 @@ export function VideosDesktopLandscapeCard({ item: initialItem }: VideosDesktopL
             type="button"
             onClick={() => setCommentsOpen(true)}
             aria-label={VIDEO_DETAIL_COMMENT}
-            className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:text-yunicity-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
+            className={`inline-flex min-h-11 min-w-11 items-center gap-1 rounded-md px-1 transition hover:text-yunicity-primary ${VIDEO_CANVAS_FOCUS}`}
           >
             <MessageCircle className="h-3.5 w-3.5" aria-hidden />
             {item.comment_count}
@@ -112,7 +114,7 @@ export function VideosDesktopLandscapeCard({ item: initialItem }: VideosDesktopL
             type="button"
             onClick={() => void interactions.shareVideo(item)}
             aria-label={VIDEO_DETAIL_SHARE}
-            className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:text-yunicity-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
+            className={`inline-flex min-h-11 min-w-11 items-center gap-1 rounded-md px-1 transition hover:text-yunicity-primary ${VIDEO_CANVAS_FOCUS}`}
           >
             <Share2 className="h-3.5 w-3.5" aria-hidden />
             <span className="sr-only">{VIDEO_DETAIL_SHARE}</span>
@@ -131,7 +133,7 @@ export function VideosDesktopLandscapeCard({ item: initialItem }: VideosDesktopL
               aria-haspopup="menu"
               aria-label={VIDEOS_GRID_MORE}
               onClick={() => setMenuOpen((open) => !open)}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
+              className={`${VIDEO_TOUCH_TARGET} rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700 ${VIDEO_CANVAS_FOCUS}`}
             >
               <MoreVertical className="h-4 w-4" aria-hidden />
             </button>

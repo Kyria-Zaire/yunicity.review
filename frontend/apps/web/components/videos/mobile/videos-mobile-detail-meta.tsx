@@ -15,6 +15,8 @@ import {
 } from "@yunicity/utils";
 import { Heart, MessageCircle, SendHorizontal, Share2 } from "lucide-react";
 
+import { VIDEO_CANVAS_FOCUS, VIDEO_FOLLOW_DISABLED_CLASS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
+
 type VideosMobileDetailMetaProps = {
   item: LocalVideoFeedItem;
   onToggleLike: () => void;
@@ -46,7 +48,7 @@ function ActionColumn({
       onClick={onClick}
       aria-pressed={active}
       aria-label={label}
-      className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 py-1 text-xs font-semibold ${
+      className={`flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-1.5 text-xs font-semibold ${VIDEO_CANVAS_FOCUS} ${
         active ? "text-yunicity-primary" : "text-neutral-600"
       }`}
     >
@@ -106,7 +108,8 @@ export function VideosMobileDetailMeta({
           type="button"
           disabled
           title={VIDEO_DETAIL_FOLLOW_SOON}
-          className="inline-flex shrink-0 items-center justify-center rounded-full bg-yunicity-primary px-4 py-2 text-sm font-semibold text-white opacity-80"
+          aria-label={VIDEO_DETAIL_FOLLOW_SOON}
+          className={`${VIDEO_TOUCH_TARGET} ${VIDEO_FOLLOW_DISABLED_CLASS} ${VIDEO_CANVAS_FOCUS}`}
         >
           {VIDEO_DETAIL_FOLLOW}
         </button>

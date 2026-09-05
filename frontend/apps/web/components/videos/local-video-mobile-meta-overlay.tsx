@@ -18,6 +18,8 @@ import {
 import { ChevronRight, MapPin, Music2 } from "lucide-react";
 import Link from "next/link";
 
+import { VIDEO_IMMERSIVE_FOCUS, VIDEO_TOUCH_TARGET, VIDEO_FOLLOW_DISABLED_CLASS } from "@/lib/videos/video-playback-a11y";
+
 type LocalVideoMobileMetaOverlayProps = {
   item: LocalVideoFeedItem;
 };
@@ -44,7 +46,11 @@ export function LocalVideoMobileMetaOverlay({ item }: LocalVideoMobileMetaOverla
     <div className="pointer-events-auto min-w-0 space-y-2.5 pr-2 text-white">
       <div className="flex flex-wrap items-center gap-2">
         {profileHref ? (
-          <Link href={profileHref} className="inline-flex min-w-0 items-center gap-1.5">
+          <Link
+            href={profileHref}
+            aria-label="Profil du créateur"
+            className={`inline-flex min-h-11 min-w-0 max-w-full items-center gap-1.5 ${VIDEO_IMMERSIVE_FOCUS}`}
+          >
             {item.author.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -66,7 +72,8 @@ export function LocalVideoMobileMetaOverlay({ item }: LocalVideoMobileMetaOverla
           type="button"
           disabled
           title={VIDEO_DETAIL_FOLLOW_SOON}
-          className="inline-flex shrink-0 items-center justify-center rounded-full bg-yunicity-primary px-3 py-1 text-xs font-semibold text-white opacity-90"
+          aria-label={VIDEO_DETAIL_FOLLOW_SOON}
+          className={`${VIDEO_TOUCH_TARGET} ${VIDEO_FOLLOW_DISABLED_CLASS} ${VIDEO_IMMERSIVE_FOCUS}`}
         >
           {VIDEO_DETAIL_FOLLOW}
         </button>
@@ -99,7 +106,7 @@ export function LocalVideoMobileMetaOverlay({ item }: LocalVideoMobileMetaOverla
       {discoverCta ? (
         <Link
           href={discoverCta.href}
-          className="inline-flex max-w-full items-center gap-1 text-sm font-semibold text-white/90 transition hover:text-white"
+          className={`${VIDEO_TOUCH_TARGET} max-w-full gap-1 text-sm font-semibold text-white/90 transition hover:text-white ${VIDEO_IMMERSIVE_FOCUS}`}
         >
           <span className="truncate">{discoverCta.label || VIDEOS_DESKTOP_DISCOVER_PLACE}</span>
           <ChevronRight className="h-4 w-4 shrink-0 text-white/70" aria-hidden />

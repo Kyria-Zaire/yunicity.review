@@ -34,7 +34,7 @@ export const VIDEOS_TAB_NEARBY = "Près de vous";
 export const VIDEOS_TAB_FOR_YOU = "Pour vous";
 export const VIDEOS_DESKTOP_LEFT_EVENTS = "Événements";
 export const VIDEOS_DESKTOP_LEFT_PLACES = "Lieux";
-export const VIDEOS_DESKTOP_LEFT_SAVED = "Enregistrées";
+export const VIDEOS_DESKTOP_LEFT_SAVED = "Mes vidéos";
 export const VIDEOS_DESKTOP_LOCAL_DISCLAIMER =
   "Les vidéos restent liées à la vie locale";
 export const VIDEOS_DESKTOP_UP_NEXT = "À découvrir ensuite";
@@ -83,8 +83,6 @@ export const VIDEOS_FEATURED_NEXT = "Vidéo suivante";
 export const VIDEOS_SUBSCRIPTIONS_TITLE = "Abonnements";
 export const VIDEOS_SUBSCRIPTIONS_VIEW_ALL = "Voir tout";
 export const VIDEOS_SUBSCRIPTIONS_ONLINE = "En ligne";
-export const VIDEOS_SUBSCRIPTIONS_EMPTY =
-  "Suivez des créateurs locaux pour les retrouver ici.";
 
 export const VIDEOS_PORTAL_LOADING = "Chargement des vidéos…";
 export const VIDEOS_PORTAL_LOAD_MORE = "Charger plus de vidéos";
@@ -92,6 +90,7 @@ export const VIDEOS_PORTAL_EMPTY =
   "Aucune vidéo ne correspond à vos filtres pour le moment.";
 export const VIDEOS_PORTAL_MINE_EMPTY = "Vous n'avez pas encore publié de vidéo.";
 export const VIDEOS_PORTAL_SUBSCRIPTIONS_EMPTY =
-  "Connectez-vous pour retrouver les créateurs que vous suivez.";
+  "Le suivi des créateurs sera bientôt disponible.";
+export const VIDEOS_SUBSCRIPTIONS_EMPTY = VIDEOS_PORTAL_SUBSCRIPTIONS_EMPTY;
 
 export const VIDEOS_GRID_MORE = "Plus d'options";

@@ -2,12 +2,16 @@
 
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import {
+  LOCAL_VIDEO_REPORT_LABEL,
+  VIDEO_DETAIL_MOBILE_BOOKMARK_SOON,
   VIDEOS_DESKTOP_SAVE,
   VIDEOS_DESKTOP_SHARE,
   buildVideoAuthorProfileHref,
 } from "@yunicity/utils";
-import { Bookmark, Heart, MessageCircle, Share2 } from "lucide-react";
+import { Bookmark, Flag, Heart, MessageCircle, Share2 } from "lucide-react";
 import Link from "next/link";
+
+import { VIDEO_IMMERSIVE_FOCUS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
 
 type LocalVideoActionRailProps = {
   item: LocalVideoFeedItem;
@@ -18,6 +22,7 @@ type LocalVideoActionRailProps = {
   onLikeClick: () => void;
   onCommentsClick: () => void;
   onShareClick: () => void;
+  onReportClick: () => void;
 };
 
 function authorInitials(item: LocalVideoFeedItem): string {
@@ -26,6 +31,8 @@ function authorInitials(item: LocalVideoFeedItem): string {
   if (parts.length >= 2) return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
   return name.slice(0, 2).toUpperCase();
 }
+
+const railButtonClass = `${VIDEO_TOUCH_TARGET} flex-col gap-1 ${VIDEO_IMMERSIVE_FOCUS}`;
 
 /** Colonne d'actions droite — avatar, like, commentaire, partage, enregistrer. */
 export function LocalVideoActionRail({
@@ -37,6 +44,7 @@ export function LocalVideoActionRail({
   onLikeClick,
   onCommentsClick,
   onShareClick,
+  onReportClick,
 }: LocalVideoActionRailProps) {
   const profileHref = buildVideoAuthorProfileHref(item);
 
@@ -52,11 +60,15 @@ export function LocalVideoActionRail({
   return (
     <div className="local-video-action-rail pointer-events-auto flex flex-col items-center gap-5 pb-1 pt-0.5">
       {profileHref ? (
-        <Link href={profileHref} className="shrink-0" aria-label="Profil du créateur">
+        <Link
+          href={profileHref}
+          className={`${VIDEO_TOUCH_TARGET} shrink-0 ${VIDEO_IMMERSIVE_FOCUS}`}
+          aria-label="Profil du créateur"
+        >
           {avatar}
         </Link>
       ) : (
-        avatar
+        <span className={`${VIDEO_TOUCH_TARGET} shrink-0`}>{avatar}</span>
       )}
 
       <button
@@ -64,9 +76,9 @@ export function LocalVideoActionRail({
         onClick={onLikeClick}
         aria-label={likedByMe ? "Retirer le like" : "Aimer la vidéo"}
         aria-pressed={likedByMe}
-        className={`flex min-h-9 min-w-9 flex-col items-center gap-1 transition-transform duration-200 ${
+        className={`${railButtonClass} transition-transform duration-200 motion-reduce:transition-none ${
           likedByMe ? "text-rose-400" : "text-white"
-        } ${likeAnimating ? "scale-110" : "scale-100"}`}
+        } ${likeAnimating ? "scale-110 motion-reduce:scale-100" : "scale-100"}`}
       >
         <Heart className={`h-5 w-5 ${likedByMe ? "fill-current" : ""}`} aria-hidden />
         <span className="text-[10px] font-semibold tabular-nums leading-none">{likeCount}</span>
@@ -76,7 +88,7 @@ export function LocalVideoActionRail({
         type="button"
         onClick={onCommentsClick}
         aria-label="Ouvrir les commentaires"
-        className="flex min-h-9 min-w-9 flex-col items-center gap-1 text-white"
+        className={`${railButtonClass} text-white`}
       >
         <MessageCircle className="h-5 w-5" aria-hidden />
         <span className="text-[10px] font-semibold tabular-nums leading-none">{commentCount}</span>
@@ -86,19 +98,31 @@ export function LocalVideoActionRail({
         type="button"
         onClick={onShareClick}
         aria-label={VIDEOS_DESKTOP_SHARE}
-        className="flex min-h-9 min-w-9 flex-col items-center gap-1 text-white"
+        className={`${railButtonClass} text-white`}
       >
         <Share2 className="h-5 w-5" aria-hidden />
         <span className="text-[10px] font-semibold leading-none">{VIDEOS_DESKTOP_SHARE}</span>
       </button>
 
-      <span
-        aria-label={VIDEOS_DESKTOP_SAVE}
-        className="flex min-h-9 min-w-9 flex-col items-center gap-1 text-white/75"
+      <button
+        type="button"
+        onClick={onReportClick}
+        aria-label={LOCAL_VIDEO_REPORT_LABEL}
+        className={`${railButtonClass} text-white`}
+      >
+        <Flag className="h-5 w-5" aria-hidden />
+        <span className="text-[10px] font-semibold leading-none">{LOCAL_VIDEO_REPORT_LABEL}</span>
+      </button>
+
+      <button
+        type="button"
+        disabled
+        aria-label={VIDEO_DETAIL_MOBILE_BOOKMARK_SOON}
+        className={`${railButtonClass} text-white/75`}
       >
         <Bookmark className="h-5 w-5" aria-hidden />
         <span className="text-[10px] font-semibold leading-none">{VIDEOS_DESKTOP_SAVE}</span>
-      </span>
+      </button>
     </div>
   );
 }

@@ -14,6 +14,10 @@ export function useVideoFeedAutoplay(
   });
 
   const lastPreferredRef = useRef(preferredVideoId ?? null);
+  /** Bloque l'IO jusqu'à ce que la slide deep-linkée soit réellement visible. */
+  const preferredLockRef = useRef<string | null>(
+    preferredVideoId && itemIds.includes(preferredVideoId) ? preferredVideoId : null,
+  );
 
   /** Ne re-pin que sur changement d'URL / deep-link — pas à chaque refresh du feed. */
   useEffect(() => {
@@ -21,6 +25,7 @@ export function useVideoFeedAutoplay(
     if (nextPreferred === lastPreferredRef.current) return;
     lastPreferredRef.current = nextPreferred;
     if (nextPreferred && itemIds.includes(nextPreferred)) {
+      preferredLockRef.current = nextPreferred;
       setActiveId(nextPreferred);
     }
   }, [preferredVideoId, itemIds]);
@@ -32,9 +37,12 @@ export function useVideoFeedAutoplay(
       return;
     }
     setActiveId((current) => {
-      if (current && itemIds.includes(current)) return current;
       const pinned = lastPreferredRef.current;
-      if (pinned && itemIds.includes(pinned)) return pinned;
+      if (pinned && itemIds.includes(pinned)) {
+        preferredLockRef.current = pinned;
+        return pinned;
+      }
+      if (current && itemIds.includes(current)) return current;
       return itemIds[0] ?? null;
     });
   }, [itemIds]);
@@ -57,7 +65,21 @@ export function useVideoFeedAutoplay(
             visibility.set(slideId, entry.intersectionRatio);
           }
           const nextId = selectAutoplayVideoId(visibility);
-          if (nextId) setActiveId(nextId);
+          if (!nextId) return;
+
+          const locked = preferredLockRef.current;
+          if (locked && itemIds.includes(locked)) {
+            const lockedRatio = visibility.get(locked) ?? 0;
+            if (lockedRatio >= 0.55) {
+              preferredLockRef.current = null;
+              setActiveId(locked);
+              return;
+            }
+            setActiveId(locked);
+            return;
+          }
+
+          setActiveId(nextId);
         },
         { root: scrollRoot, threshold: [0, 0.25, 0.5, 0.75, 1] },
       );

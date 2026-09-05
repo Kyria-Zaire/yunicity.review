@@ -3,12 +3,14 @@
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import {
   LOCAL_VIDEO_DEFAULT_MUTED,
+  LOCAL_VIDEO_PLAYBACK_ERROR,
+  LOCAL_VIDEO_PLAYBACK_FALLBACK,
   isDoubleTap,
   isLocalVideoFeedItemProcessing,
   resolveLocalVideoLayout,
 } from "@yunicity/utils";
 import { Heart, Pause, Play } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 
 import { LocalVideoActionRail } from "@/components/videos/local-video-action-rail";
 import { LocalVideoMobileMetaOverlay } from "@/components/videos/local-video-mobile-meta-overlay";
@@ -20,6 +22,20 @@ const SINGLE_TAP_DELAY_MS = 260;
 /** Délai avant masquage des overlays pendant la lecture (style Reels / Shorts). */
 const CHROME_AUTO_HIDE_MS = 5_000;
 
+/** Slide inactive : inert + aria-hidden pour exclure clavier et TA sans démonter le snap. */
+function useSlideInert(articleRef: RefObject<HTMLElement | null>, isActive: boolean): void {
+  useEffect(() => {
+    const element = articleRef.current;
+    if (!element) return;
+    element.inert = !isActive;
+    if (isActive) {
+      element.removeAttribute("aria-hidden");
+    } else {
+      element.setAttribute("aria-hidden", "true");
+    }
+  }, [articleRef, isActive]);
+}
+
 type LocalVideoSlideProps = {
   item: LocalVideoFeedItem;
   isActive: boolean;
@@ -29,6 +45,7 @@ type LocalVideoSlideProps = {
   onOpenComments: () => void;
   onToggleLike: () => void;
   onShare: () => void;
+  onOpenReport: () => void;
   onChromeVisibleChange?: (visible: boolean) => void;
 };
 
@@ -41,10 +58,13 @@ export function LocalVideoSlide({
   onOpenComments,
   onToggleLike,
   onShare,
+  onOpenReport,
   onChromeVisibleChange,
 }: LocalVideoSlideProps) {
+  const articleRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const lastTapAtRef = useRef<number | null>(null);
+  useSlideInert(articleRef, isActive);
   const singleTapTimerRef = useRef<number | null>(null);
   const hideChromeTimerRef = useRef<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -53,6 +73,7 @@ export function LocalVideoSlide({
   const [likeBurst, setLikeBurst] = useState(false);
   const [likeAnimating, setLikeAnimating] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [mediaError, setMediaError] = useState(false);
   const [chromeVisible, setChromeVisible] = useState(true);
 
   const layout = resolveLocalVideoLayout(item);
@@ -99,6 +120,7 @@ export function LocalVideoSlide({
   useEffect(() => {
     setCurrentTime(0);
     setIsPaused(false);
+    setMediaError(false);
     setChromeVisible(true);
     clearHideChromeTimer();
   }, [item.id, clearHideChromeTimer]);
@@ -130,13 +152,19 @@ export function LocalVideoSlide({
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || mediaError) return;
     if (isActive && !isPaused) {
       void video.play().catch(() => setIsPaused(true));
     } else {
       video.pause();
     }
-  }, [isActive, isPaused]);
+  }, [isActive, isPaused, mediaError]);
+
+  const handleMediaError = useCallback(() => {
+    setMediaError(true);
+    setIsPaused(true);
+    videoRef.current?.pause();
+  }, []);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -240,12 +268,14 @@ export function LocalVideoSlide({
         item={item}
         errorMessage={processingError}
         onDismiss={onDismissProcessing}
+        isActive={isActive}
       />
     );
   }
 
   return (
     <article
+      ref={articleRef}
       data-video-slide-id={item.id}
       data-videos-media-layout={layout}
       data-videos-slide-chrome-visible={chromeVisible ? "" : undefined}
@@ -263,11 +293,14 @@ export function LocalVideoSlide({
             muted={isMuted}
             preload="metadata"
             onClick={handleVideoTap}
+            onError={handleMediaError}
             onTimeUpdate={() => {
               const video = videoRef.current;
               if (video) setCurrentTime(video.currentTime);
             }}
-          />
+          >
+            {LOCAL_VIDEO_PLAYBACK_FALLBACK}
+          </video>
         </div>
       ) : (
         <video
@@ -280,12 +313,24 @@ export function LocalVideoSlide({
           muted={isMuted}
           preload="metadata"
           onClick={handleVideoTap}
+          onError={handleMediaError}
           onTimeUpdate={() => {
             const video = videoRef.current;
             if (video) setCurrentTime(video.currentTime);
           }}
-        />
+        >
+          {LOCAL_VIDEO_PLAYBACK_FALLBACK}
+        </video>
       )}
+
+      {mediaError ? (
+        <p
+          className="pointer-events-none absolute inset-x-0 bottom-[38%] z-30 px-6 text-center text-sm font-semibold text-white drop-shadow"
+          role="alert"
+        >
+          {LOCAL_VIDEO_PLAYBACK_ERROR}
+        </p>
+      ) : null}
 
       <div
         className={`pointer-events-none absolute inset-x-0 bottom-0 h-[42%] bg-neutral-950/45 ${chromeTransition} ${
@@ -305,7 +350,7 @@ export function LocalVideoSlide({
 
       {likeBurst ? (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-          <Heart className="h-24 w-24 animate-ping text-rose-400/90 fill-rose-400/80" aria-hidden />
+          <Heart className="h-24 w-24 animate-ping text-rose-400/90 fill-rose-400/80 motion-reduce:animate-none" aria-hidden />
         </div>
       ) : null}
 
@@ -353,6 +398,10 @@ export function LocalVideoSlide({
           onShareClick={() => {
             revealChrome(true);
             void onShare();
+          }}
+          onReportClick={() => {
+            revealChrome(true);
+            onOpenReport();
           }}
         />
       </div>
