@@ -183,13 +183,26 @@ function isCafePlace(place: CulturalPlaceListItem): boolean {
 }
 const EVENING_HOUR = 18;
 const TREND_HOURS = 48;
+const DEFAULT_EVENT_TIMEZONE = "Europe/Paris";
+
+function localHourInTimezone(iso: string, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    hour: "numeric",
+    hour12: false,
+  }).formatToParts(new Date(iso));
+  const hour = parts.find((part) => part.type === "hour")?.value;
+  return hour ? Number(hour) : Number.NaN;
+}
 
 export function isEventTonight(event: LocalEvent, now = new Date()): boolean {
-  const start = new Date(event.starts_at);
-  if (Number.isNaN(start.getTime())) return false;
+  const timeZone = event.timezone?.trim() || DEFAULT_EVENT_TIMEZONE;
+  if (Number.isNaN(new Date(event.starts_at).getTime())) return false;
+  const startHour = localHourInTimezone(event.starts_at, timeZone);
+  if (Number.isNaN(startHour)) return false;
   return (
     eventCalendarDayKey(event.starts_at) === eventCalendarDayKey(now.toISOString()) &&
-    start.getHours() >= EVENING_HOUR
+    startHour >= EVENING_HOUR
   );
 }
 

@@ -3,9 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import uuid
-
-from sqlalchemy import select
 
 from app.core.config import get_settings
 from app.db.seeds.qa_fixtures import CITY, _uid
@@ -13,6 +10,7 @@ from app.db.session import get_session_factory, init_db
 from app.models.cultural_place import CulturalPlace
 from app.models.local_video import LocalVideo
 from app.models.neighborhood import Neighborhood
+from sqlalchemy import select
 
 PLACE_ID = _uid("cultural-place-boulingrin")
 PORTRAIT_VIDEO_ID = _uid("local-video-portrait")

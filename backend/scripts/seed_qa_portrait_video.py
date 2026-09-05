@@ -6,8 +6,6 @@ import asyncio
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from sqlalchemy import select
-
 from app.core.config import get_settings
 from app.core.local_video_constants import LocalVideoType
 from app.db.seeds.qa_fixtures import CITY, QA_MEDIA_PUBLIC_PREFIX, _png_16_9, _uid
@@ -15,6 +13,7 @@ from app.db.session import get_session_factory, init_db
 from app.models.local_video import LocalVideo
 from app.models.neighborhood import Neighborhood
 from app.models.user_profile import UserProfile
+from sqlalchemy import select
 
 
 def _write_media(filename_stem: str, *, width: int, height: int) -> tuple[str, str, Path, Path]:

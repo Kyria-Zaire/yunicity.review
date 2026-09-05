@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import and_, func, or_, select
+from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -16,7 +17,7 @@ from app.models.local_event import EventInterest, LocalEvent
 from app.services.local_event_admin_queries import normalize_admin_event_title_query
 
 
-def _public_event_still_relevant(now: datetime):  # noqa: ANN202 — SQLAlchemy clause
+def _public_event_still_relevant(now: datetime) -> ColumnElement[bool]:
     """Future start OR still ongoing (ends_at > now).
 
     Sortir « Ce soir » needs events that already started but have not finished;

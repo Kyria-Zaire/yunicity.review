@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import AppError
 from app.core.profile_username import is_valid_username_format, normalize_username
 from app.models.user import User
+from app.models.user_profile import UserProfile
 from app.repositories.neighborhood_contribution_repository import NeighborhoodContributionRepository
 from app.repositories.profile_repository import ProfileRepository
 from app.repositories.tribe_repository import TribeRepository
@@ -104,7 +105,7 @@ class ProfilePublicContextService:
         username: str,
         *,
         viewer: User | None,
-    ):
+    ) -> UserProfile:
         normalized = normalize_username(username)
         if not is_valid_username_format(normalized):
             raise AppError(
@@ -126,7 +127,7 @@ class ProfilePublicContextService:
         user_id: uuid.UUID,
         *,
         viewer: User | None,
-    ):
+    ) -> UserProfile:
         profile = await self._profiles.get_by_user_id(user_id)
         if profile is None or not self._profile_service.can_view_profile(profile, viewer=viewer):
             raise AppError(

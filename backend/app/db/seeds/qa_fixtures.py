@@ -35,6 +35,7 @@ from app.core.local_event_constants import (
     LocalEventVisibility,
 )
 from app.core.local_video_constants import LocalVideoType
+from app.core.neighborhood_v2_constants import NeighborhoodContributionStatus
 from app.core.organization_constants import (
     OrganizationType,
     OrganizationVisibility,
@@ -47,7 +48,6 @@ from app.core.passport_constants import (
     PassportStatus,
     PassportTierCode,
 )
-from app.core.neighborhood_v2_constants import NeighborhoodContributionStatus
 from app.core.security import hash_password
 from app.core.social_notification_constants import SocialNotificationType
 from app.core.tribe_constants import TribeCategory, TribeMemberRole, TribeVisibility
@@ -210,7 +210,13 @@ def _png_16_9(width: int = 320, height: int = 180) -> bytes:
     )
 
 
-def _write_sortir_cover_png(filename: str, *, width: int = 640, height: int = 360, rgb: tuple[int, int, int] = (40, 60, 120)) -> str:
+def _write_sortir_cover_png(
+    filename: str,
+    *,
+    width: int = 640,
+    height: int = 360,
+    rgb: tuple[int, int, int] = (40, 60, 120),
+) -> str:
     """Write a local cover image for Sortir QA events; return public /media URL."""
     settings = get_settings()
     base_url = (settings.local_video_public_base_url or "").rstrip("/")
@@ -361,7 +367,12 @@ async def seed_qa_fixtures(
             session,
             UserProfile,
             uid_,
-            lambda uid_=uid_, user_id=user_id, username=username, display_name=display_name, bio=bio, interests=interests: UserProfile(
+            lambda uid_=uid_,
+            user_id=user_id,
+            username=username,
+            display_name=display_name,
+            bio=bio,
+            interests=interests: UserProfile(
                 id=uid_,
                 user_id=user_id,
                 username=username,
@@ -493,7 +504,12 @@ async def seed_qa_fixtures(
             session,
             NeighborhoodContribution,
             uid_,
-            lambda uid_=uid_, hood_id=hood_id, author_id=author_id, title=title, body=body, approved_at=approved_at: NeighborhoodContribution(
+            lambda uid_=uid_,
+            hood_id=hood_id,
+            author_id=author_id,
+            title=title,
+            body=body,
+            approved_at=approved_at: NeighborhoodContribution(
                 id=uid_,
                 neighborhood_id=hood_id,
                 author_user_id=author_id,
@@ -521,8 +537,20 @@ async def seed_qa_fixtures(
     )
     created_posts = 0
     posts_spec: tuple[tuple[uuid.UUID, uuid.UUID, str, datetime, str | None], ...] = (
-        (_uid("post-1"), citizen_a_id, "Marché de Reims ce week-end", now - timedelta(hours=2), None),
-        (_uid("post-2"), citizen_b_id, "Balade au parc de Champagne", now - timedelta(hours=5), None),
+        (
+            _uid("post-1"),
+            citizen_a_id,
+            "Marché de Reims ce week-end",
+            now - timedelta(hours=2),
+            None,
+        ),
+        (
+            _uid("post-2"),
+            citizen_b_id,
+            "Balade au parc de Champagne",
+            now - timedelta(hours=5),
+            None,
+        ),
         (
             _uid("post-3"),
             citizen_a_id,
@@ -540,7 +568,8 @@ async def seed_qa_fixtures(
         (
             _uid("post-5"),
             citizen_pro_id,
-            "Balade photo ce matin dans le centre de Reims. La lumière sur les façades est juste incroyable !",
+            "Balade photo ce matin dans le centre de Reims. "
+            "La lumière sur les façades est juste incroyable !",
             now - timedelta(days=3, hours=6),
             cover_reims_street,
         ),
@@ -578,7 +607,11 @@ async def seed_qa_fixtures(
             session,
             Post,
             uid_,
-            lambda uid_=uid_, author_id=author_id, body=body, created_at=created_at, media_url=media_url: Post(
+            lambda uid_=uid_,
+            author_id=author_id,
+            body=body,
+            created_at=created_at,
+            media_url=media_url: Post(
                 id=uid_,
                 author_type=PostAuthorType.CITIZEN.value,
                 author_id=author_id,
@@ -1033,12 +1066,12 @@ async def seed_qa_fixtures(
 EXPECTED_VOLUMES: dict[str, int] = {
     "users": 4,
     "profiles": 4,
-    "tribes": 2,
-    "tribe_members": 2,
+    "tribes": 3,
+    "tribe_members": 4,
     "posts": 9,
     "events": 6,
     "event_interests": 1,
-    "organizations": 1,
+    "organizations": 2,
     "partner_profiles": 1,
     "partner_offers": 2,
     "local_videos": 2,

@@ -53,8 +53,8 @@ async def test_upload_avatar_filesystem_success(
     auth_client: AsyncClient,
     filesystem_profile_media_env: Path,
 ) -> None:
-    email = "profile-fs-avatar@example.com"
-    token, _user_id = await _register(auth_client, email=email, username="profile_fs_avatar")
+    data = await _register(auth_client, {}, suffix="profile_fs_avatar")
+    token = data["access_token"]
 
     response = await auth_client.post(
         "/api/v1/profile/me/avatar",
@@ -85,8 +85,8 @@ async def test_upload_banner_filesystem_success(
     auth_client: AsyncClient,
     filesystem_profile_media_env: Path,
 ) -> None:
-    email = "profile-fs-banner@example.com"
-    token, _user_id = await _register(auth_client, email=email, username="profile_fs_banner")
+    data = await _register(auth_client, {}, suffix="profile_fs_banner")
+    token = data["access_token"]
 
     response = await auth_client.post(
         "/api/v1/profile/me/banner",
