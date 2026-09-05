@@ -5,6 +5,10 @@ import { buildNeighborhoodMapMarkers } from "./map-living-territory";
 import { neighborhoodHref } from "./neighborhood-labels";
 import { NEIGHBORHOOD_PORTAL_THEME_SLUGS } from "./neighborhood-portal";
 import { keepOfficialSectors } from "./neighborhood-sectors";
+import {
+  buildNeighborhoodsDesktopGridCards,
+  buildNeighborhoodsDesktopHeroCard,
+} from "./neighborhoods-desktop-presenter";
 import { buildPlacesDesktopQuartierTiles } from "./places-desktop-presenter";
 
 /**
@@ -160,5 +164,55 @@ describe("regression : 12 secteurs sur la Map, ni plus ni moins", () => {
     for (const slug of ["maison-blanche", "murigny", "orgeval"]) {
       expect(kept, `secteur perdu par la troncature: ${slug}`).toContain(slug);
     }
+  });
+});
+
+describe("regression : 12 secteurs sur le portail /neighborhoods", () => {
+  const portalNeighborhoods = () => keepOfficialSectors(liveNeighborhoods());
+
+  it("normalise le payload QA de 15 lignes en exactement 12 secteurs officiels", () => {
+    expect(portalNeighborhoods()).toHaveLength(12);
+    expect(portalNeighborhoods().map((h) => h.slug).sort()).toEqual(
+      [...REIMS_OFFICIAL_SECTOR_SLUGS].sort(),
+    );
+  });
+
+  it("n'affiche pas Boulingrin en quartier vedette", () => {
+    const hero = buildNeighborhoodsDesktopHeroCard({
+      city: "Reims",
+      neighborhoods: portalNeighborhoods() as never,
+      events: [],
+      culturalPlaces: [],
+    });
+    expect(hero?.slug).not.toBe("boulingrin");
+    expect(hero?.slug).not.toBe("cernay");
+    expect(hero?.slug).not.toBe("jean-jaures");
+  });
+
+  it("exclut les secteurs fusionnes de la grille desktop", () => {
+    const neighborhoods = portalNeighborhoods() as never;
+    const hero = buildNeighborhoodsDesktopHeroCard({
+      city: "Reims",
+      neighborhoods,
+      events: [],
+      culturalPlaces: [],
+    });
+    const grid = buildNeighborhoodsDesktopGridCards({
+      city: "Reims",
+      neighborhoods,
+      events: [],
+      culturalPlaces: [],
+      excludeSlug: hero?.slug,
+      maxItems: 12,
+    });
+    const slugs = new Set(grid.map((card) => card.slug));
+    for (const merged of MERGED_SLUGS) {
+      expect(slugs.has(merged), `slug fusionne dans la grille: ${merged}`).toBe(false);
+    }
+    expect(slugs.size).toBeGreaterThan(0);
+  });
+
+  it("derive le compteur portail de la collection filtree (12)", () => {
+    expect(portalNeighborhoods().filter((hood) => hood.is_active)).toHaveLength(12);
   });
 });
