@@ -1,7 +1,7 @@
 "use client";
 
 import { CulturalImage, CulturalImageCredit } from "@/components/culture/cultural-image";
-import { formatEditorialImageAttribution, type EditorialImageCredit } from "@yunicity/utils";
+import type { EditorialImageCredit } from "@yunicity/utils";
 import { Camera, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -163,14 +163,11 @@ export function NeighborhoodDetailHeroMedia({
               {photoLabel(photoCount)}
             </button>
           ) : null}
+          {imageCredit && heroSrc === imageUrl ? (
+            <CulturalImageCredit variant="compact" editorialCredit={imageCredit} />
+          ) : null}
         </div>
       </div>
-      {imageCredit && heroSrc === imageUrl ? (
-        <CulturalImageCredit
-          credit={formatEditorialImageAttribution(imageCredit)}
-          sourceUrl={imageCredit.sourceUrl}
-        />
-      ) : null}
       {lightbox}
     </>
   );

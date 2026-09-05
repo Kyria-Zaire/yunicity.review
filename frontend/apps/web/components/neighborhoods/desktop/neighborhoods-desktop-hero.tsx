@@ -3,7 +3,6 @@
 import { CulturalImage, CulturalImageCredit } from "@/components/culture/cultural-image";
 import type { NeighborhoodsDesktopHeroCard, NeighborhoodsDesktopTag } from "@yunicity/utils";
 import {
-  formatEditorialImageAttribution,
   resolveNeighborhoodsDesktopImageCredit,
   NEIGHBORHOODS_DESKTOP_EXPLORE_NEIGHBORHOOD,
   NEIGHBORHOODS_DESKTOP_FEATURED_BADGE,
@@ -57,6 +56,9 @@ export function NeighborhoodsDesktopHero({
               priority
             />
           </div>
+          {imageCredit ? (
+            <CulturalImageCredit variant="compact" editorialCredit={imageCredit} />
+          ) : null}
         </div>
 
         <div className="flex flex-col p-5 sm:p-6">
@@ -112,12 +114,6 @@ export function NeighborhoodsDesktopHero({
               {NEIGHBORHOODS_DESKTOP_VIEW_ON_MAP}
             </Link>
           </div>
-          {imageCredit ? (
-            <CulturalImageCredit
-              credit={formatEditorialImageAttribution(imageCredit)}
-              sourceUrl={imageCredit.sourceUrl}
-            />
-          ) : null}
         </div>
       </div>
     </article>

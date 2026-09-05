@@ -62,9 +62,27 @@ export type EditorialImageCredit = {
   commonsFile: string;
   author: string;
   license: string;
+  /** Page licence Creative Commons exacte (CC BY-SA 3.0 / 4.0). */
+  licenseUrl: string;
   /** Page `File:` — le lien vers la source exigé par CC BY-SA. */
   sourceUrl: string;
 };
+
+/** URL canonique de la licence Creative Commons correspondante. */
+export function resolveCreativeCommonsLicenseUrl(license: string): string {
+  const normalized = license.trim().toUpperCase();
+  if (normalized === "CC BY-SA 3.0") {
+    return "https://creativecommons.org/licenses/by-sa/3.0/";
+  }
+  if (normalized === "CC BY-SA 4.0") {
+    return "https://creativecommons.org/licenses/by-sa/4.0/";
+  }
+  const version = license.match(/(\d\.\d)/)?.[1];
+  if (version) {
+    return `https://creativecommons.org/licenses/by-sa/${version}/`;
+  }
+  return "https://creativecommons.org/licenses/";
+}
 
 function reimsCommonsImage(filePath: string, width = 1400): string {
   return `https://commons.wikimedia.org/wiki/Special:FilePath/${filePath}?width=${width}`;
@@ -82,6 +100,7 @@ function reimsCommonsEntry(
     commonsFile: decodeURIComponent(filePath).replace(/_/g, " "),
     author,
     license,
+    licenseUrl: resolveCreativeCommonsLicenseUrl(license),
     sourceUrl: `https://commons.wikimedia.org/wiki/File:${filePath}`,
   };
 }

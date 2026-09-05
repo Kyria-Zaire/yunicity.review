@@ -3,7 +3,6 @@
 import { CulturalImage, CulturalImageCredit } from "@/components/culture/cultural-image";
 import type { NeighborhoodsDesktopGridCard, NeighborhoodsDesktopTag } from "@yunicity/utils";
 import {
-  formatEditorialImageAttribution,
   resolveNeighborhoodsDesktopImageCredit,
   NEIGHBORHOODS_DESKTOP_EXPLORE,
   NEIGHBORHOODS_DESKTOP_GRID_TITLE,
@@ -74,6 +73,9 @@ export function NeighborhoodsDesktopGrid({
                       overlay={false}
                     />
                   </div>
+                  {imageCredit ? (
+                    <CulturalImageCredit variant="compact" editorialCredit={imageCredit} />
+                  ) : null}
                 </Link>
                 <div className="space-y-3 p-3.5">
                   <div>
@@ -123,12 +125,6 @@ export function NeighborhoodsDesktopGrid({
                       />
                     </button>
                   </div>
-                  {imageCredit ? (
-                    <CulturalImageCredit
-                      credit={formatEditorialImageAttribution(imageCredit)}
-                      sourceUrl={imageCredit.sourceUrl}
-                    />
-                  ) : null}
                 </div>
               </article>
             </li>

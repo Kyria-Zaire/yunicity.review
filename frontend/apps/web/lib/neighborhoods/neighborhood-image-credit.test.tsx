@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 
 import {
-  formatEditorialImageAttribution,
   resolveNeighborhoodEditorialImageCredit,
+  resolveCreativeCommonsLicenseUrl,
 } from "@yunicity/utils";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { CulturalImageCredit } from "@/components/culture/cultural-image";
@@ -19,39 +19,65 @@ const croixRouge = resolveNeighborhoodEditorialImageCredit({
   cover_image_url: null,
 })!;
 
-describe("attribution accessible d'une image Wikimedia", () => {
-  it("expose auteur, licence, plateforme et un lien source atteignable", () => {
-    render(
-      <CulturalImageCredit
-        credit={formatEditorialImageAttribution(croixRouge)}
-        sourceUrl={croixRouge.sourceUrl}
-      />,
+describe("attribution compacte d'une image Wikimedia", () => {
+  it("n'affiche pas de longue ligne sous la carte", () => {
+    const { container } = render(
+      <CulturalImageCredit variant="compact" editorialCredit={croixRouge} />,
     );
-    const link = screen.getByRole("link");
-    // Rôle link => focalisable au clavier et annoncé par les lecteurs d'écran.
-    expect(link.getAttribute("href")).toBe(croixRouge.sourceUrl);
-    expect(link.getAttribute("rel")).toContain("license");
-    expect(link.getAttribute("rel")).toContain("noopener");
-    const accessibleName = link.getAttribute("aria-label") ?? "";
-    expect(accessibleName).toContain(croixRouge.author);
-    expect(accessibleName).toContain(croixRouge.license);
-    expect(accessibleName).toContain("Wikimedia Commons");
+    expect(container.textContent).not.toContain("via Wikimedia Commons");
+    expect(screen.getByRole("button", { name: /Crédits de la photographie/i })).toBeTruthy();
   });
 
-  it("reste du texte lisible, jamais un commentaire ni un contenu masqué", () => {
-    const { container } = render(
-      <CulturalImageCredit credit={formatEditorialImageAttribution(croixRouge)} sourceUrl={null} />,
-    );
-    const node = container.querySelector("p");
-    expect(node?.textContent).toContain(croixRouge.author);
-    expect(node?.getAttribute("aria-hidden")).toBeNull();
-    expect(node?.className).not.toContain("sr-only");
-    expect(node?.className).not.toContain("hidden");
+  it("ouvre un popover accessible avec auteur, licence et source", () => {
+    render(<CulturalImageCredit variant="compact" editorialCredit={croixRouge} />);
+    fireEvent.click(screen.getByRole("button", { name: /Crédits de la photographie/i }));
+    const dialog = screen.getByRole("dialog", { name: /Crédits de la photographie/i });
+    expect(dialog.textContent).toContain(croixRouge.commonsFile);
+    expect(dialog.textContent).toContain(croixRouge.author);
+    expect(dialog.textContent).toContain(croixRouge.license);
+    expect(dialog.textContent).toContain("Wikimedia Commons");
+    const titleLink = screen.getByRole("link", { name: croixRouge.commonsFile });
+    expect(titleLink.getAttribute("href")).toBe(croixRouge.sourceUrl);
+    const licenseLink = screen.getByRole("link", { name: croixRouge.license });
+    expect(licenseLink.getAttribute("href")).toBe(croixRouge.licenseUrl);
+  });
+
+  it("ferme le popover avec Escape", () => {
+    render(<CulturalImageCredit variant="compact" editorialCredit={croixRouge} />);
+    fireEvent.click(screen.getByRole("button", { name: /Crédits de la photographie/i }));
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("n'affiche rien sans crédit", () => {
-    const { container } = render(<CulturalImageCredit credit={null} />);
+    const { container } = render(
+      <CulturalImageCredit variant="compact" editorialCredit={null} />,
+    );
     expect(container.innerHTML).toBe("");
+  });
+});
+
+describe("attribution textuelle legacy (default)", () => {
+  it("conserve le rendu ligne pour les autres surfaces", () => {
+    render(
+      <CulturalImageCredit
+        credit={`${croixRouge.author} / ${croixRouge.license} via Wikimedia Commons`}
+        sourceUrl={croixRouge.sourceUrl}
+      />,
+    );
+    expect(screen.getByRole("link").getAttribute("href")).toBe(croixRouge.sourceUrl);
+  });
+});
+
+describe("licence Creative Commons canonique", () => {
+  it("résout les URLs CC BY-SA 3.0 et 4.0", () => {
+    expect(resolveCreativeCommonsLicenseUrl("CC BY-SA 3.0")).toBe(
+      "https://creativecommons.org/licenses/by-sa/3.0/",
+    );
+    expect(resolveCreativeCommonsLicenseUrl("CC BY-SA 4.0")).toBe(
+      "https://creativecommons.org/licenses/by-sa/4.0/",
+    );
   });
 });
 
@@ -64,15 +90,15 @@ describe("le hero ne crédite que l'image qu'il affiche", () => {
     photoLabel: (n: number) => `${n} photos`,
   };
 
-  it("affiche l'attribution quand l'image créditée est bien rendue", () => {
+  it("superpose le bouton compact quand l'image créditée est bien rendue", () => {
     render(
       <NeighborhoodDetailHeroMedia {...base} imageUrl={croixRouge.url} imageCredit={croixRouge} />,
     );
-    expect(screen.getByRole("link").getAttribute("href")).toBe(croixRouge.sourceUrl);
+    expect(screen.getByRole("button", { name: /Crédits de la photographie/i })).toBeTruthy();
+    expect(screen.queryByText(/via Wikimedia Commons/)).toBeNull();
   });
 
   it("n'affiche aucune attribution quand une autre image est rendue", () => {
-    // heroSrc retombe sur la galerie : créditer Wikimedia désignerait la mauvaise photo.
     render(
       <NeighborhoodDetailHeroMedia
         {...base}
@@ -81,11 +107,11 @@ describe("le hero ne crédite que l'image qu'il affiche", () => {
         imageCredit={croixRouge}
       />,
     );
-    expect(screen.queryByRole("link")).toBeNull();
+    expect(screen.queryByRole("button", { name: /Crédits de la photographie/i })).toBeNull();
   });
 
   it("n'affiche aucune attribution sans crédit fourni", () => {
     render(<NeighborhoodDetailHeroMedia {...base} imageUrl={croixRouge.url} imageCredit={null} />);
-    expect(screen.queryByRole("link")).toBeNull();
+    expect(screen.queryByRole("button", { name: /Crédits de la photographie/i })).toBeNull();
   });
 });

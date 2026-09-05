@@ -1818,6 +1818,7 @@ export {
   NEIGHBORHOODS_PORTAL_HERO_CREDIT,
   NEIGHBORHOODS_PORTAL_HERO_IMAGE_URL,
   formatEditorialImageAttribution,
+  resolveCreativeCommonsLicenseUrl,
   resolveEventEditorialImage,
   resolveNeighborhoodEditorialImage,
   resolveNeighborhoodEditorialImageCredit,

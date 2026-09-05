@@ -40,6 +40,7 @@ describe("registre : métadonnées légales des 12 secteurs", () => {
       expect(c.url, slug).toMatch(/^https:\/\/commons\.wikimedia\.org\/wiki\/Special:FilePath\//);
       expect(c.author.trim(), slug).not.toBe("");
       expect(c.license, slug).toMatch(/^CC BY-SA \d\.\d$/);
+      expect(c.licenseUrl, slug).toMatch(/^https:\/\/creativecommons\.org\/licenses\/by-sa\//);
       expect(c.sourceUrl, slug).toMatch(/^https:\/\/commons\.wikimedia\.org\/wiki\/File:/);
       expect(c.commonsFile.trim(), slug).not.toBe("");
     }

@@ -8,7 +8,6 @@ import type {
   NeighborhoodsMediumChipId,
 } from "@yunicity/utils";
 import {
-  formatEditorialImageAttribution,
   resolveNeighborhoodsDesktopImageCredit,
   NEIGHBORHOODS_DESKTOP_EXPLORE,
   NEIGHBORHOODS_DESKTOP_EXPLORE_NEIGHBORHOOD,
@@ -205,6 +204,9 @@ export function NeighborhoodsMobileFeatured({
             priority
           />
         </div>
+        {imageCredit ? (
+          <CulturalImageCredit variant="compact" editorialCredit={imageCredit} />
+        ) : null}
       </div>
       <div className="space-y-3 p-4">
         <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-emerald-600">
@@ -221,12 +223,6 @@ export function NeighborhoodsMobileFeatured({
             </span>
           ))}
         </div>
-        {imageCredit ? (
-          <CulturalImageCredit
-            credit={formatEditorialImageAttribution(imageCredit)}
-            sourceUrl={imageCredit.sourceUrl}
-          />
-        ) : null}
         <p className="text-sm leading-relaxed text-neutral-600">{card.description}</p>
         {card.eventLine ? (
           <p className="flex items-start gap-2 border-t border-neutral-100 pt-3 text-sm text-neutral-700">
@@ -340,6 +336,9 @@ export function NeighborhoodsMobileExploreRail({
                       overlay={false}
                     />
                   </div>
+                  {imageCredit ? (
+                    <CulturalImageCredit variant="compact" editorialCredit={imageCredit} />
+                  ) : null}
                 </Link>
                 <div className="space-y-2.5 p-3">
                   <div>
@@ -385,12 +384,6 @@ export function NeighborhoodsMobileExploreRail({
                       />
                     </button>
                   </div>
-                  {imageCredit ? (
-                    <CulturalImageCredit
-                      credit={formatEditorialImageAttribution(imageCredit)}
-                      sourceUrl={imageCredit.sourceUrl}
-                    />
-                  ) : null}
                 </div>
               </article>
             </li>
