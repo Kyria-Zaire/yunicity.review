@@ -1,0 +1,65 @@
+# Config Railway — SERVICE UNIFIÉ API + worker (RAILWAY-UNIFIED-MEDIA-IMPLEMENT-01).
+#
+# Root directory du service : backend/
+# Config path absolu à renseigner dans Railway : /backend/railway.unified.toml
+#
+# ⚠️  NE PAS RENOMMER EN railway.toml
+#     L'API et le worker partagent le Root Directory backend/. Railway auto-détecte un
+#     fichier nommé railway.toml à cet endroit : tout service rooté sur backend/ en
+#     hériterait, y compris l'ancien worker gardé pour rollback. C'est exactement le
+#     piège OPS-02, déjà payé une fois.
+#
+# ⚠️  CE FICHIER NE CRÉE PAS LE VOLUME
+#     Un volume Railway s'attache depuis le dashboard ; l'API CLI ne l'expose pas et le
+#     TOML ne le déclare pas. À faire manuellement AVANT le premier déploiement :
+#
+#         Volume    : yunicity-media
+#         Service   : le service unifié
+#         Mount path: /data/media
+#
+#     Sans ce montage, MEDIA_UPLOAD_DIR pointe sur la couche éphémère du conteneur et
+#     les médias disparaissent à chaque redéploiement. `prepare_media_root` échoue au
+#     boot si le chemin n'est pas inscriptible : le service refuse de démarrer plutôt
+#     que de perdre des fichiers en silence.
+#
+# VARIABLES REQUISES (noms uniquement — aucune valeur, aucun secret ici)
+#
+#   Média, à poser sur ce service :
+#     MEDIA_UPLOAD_DIR          = /data/media      (racine, clés « local-video/… »)
+#     PROFILE_MEDIA_UPLOAD_DIR  = /data/media      (clés « profiles/… »)
+#     STORY_MEDIA_UPLOAD_DIR    = /data/media      (clés « stories/… »)
+#     LOCAL_VIDEO_STORAGE_BACKEND   = filesystem
+#     PROFILE_MEDIA_STORAGE_BACKEND = filesystem
+#     STORY_MEDIA_STORAGE_BACKEND   = filesystem
+#     MEDIA_PUBLIC_BASE_URL     = https://api.yunicity.city
+#
+#   Les trois domaines partagent la MÊME racine : leurs clés portent déjà leur préfixe
+#   (local-video/, profiles/, stories/), donc l'arborescence demandée se forme seule.
+#
+#   Conservées telles quelles (compatibilité des anciennes URLs R2, cf. §4 du ticket) :
+#     LOCAL_VIDEO_R2_ENDPOINT · LOCAL_VIDEO_R2_ACCESS_KEY_ID
+#     LOCAL_VIDEO_R2_SECRET_ACCESS_KEY · LOCAL_VIDEO_R2_BUCKET · LOCAL_VIDEO_CDN_BASE_URL
+#
+#   Héritées de l'ancien service API, inchangées :
+#     APP_ENV · DEBUG · DATABASE_URL · REDIS_URL · CORS_ORIGINS · WEB_FRONTEND_URL
+#     JWT_SECRET_KEY · REFRESH_TOKEN_PEPPER · REFRESH_COOKIE_SECURE
+#     EMAIL_PROVIDER · EMAIL_FROM · RESEND_API_KEY · SENTRY_DSN · OPENWEATHER_API_KEY
+#     LOCAL_VIDEO_PROCESSING_JOB_TIMEOUT_SECONDS
+
+[deploy]
+# Un seul processus parent, deux enfants supervisés. Le shell `uvicorn & arq` est
+# volontairement écarté : il ne relaie pas SIGTERM et masque la mort d'un enfant.
+startCommand = "python -m app.runtime.unified_process"
+
+# Le worker n'a pas de port ; la santé du service reste celle de l'API. La mort du
+# worker fait sortir le superviseur en code non nul, donc Railway redémarre le service
+# même si l'API répondait encore.
+healthcheckPath = "/api/v1/health"
+healthcheckTimeout = 30
+
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# Migrations appliquées entre build et déploiement, comme sur railway.api.toml : un
+# échec bloque le déploiement et laisse l'ancienne version servir.
+preDeployCommand = ["/bin/sh -c 'alembic upgrade head'"]

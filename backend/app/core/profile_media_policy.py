@@ -8,6 +8,7 @@ from pathlib import Path
 
 from app.core.config import Settings
 from app.core.errors import AppError
+from app.core.media_root import CANONICAL_MEDIA_ROOT, managed_persistent_media_opt_in
 from app.core.story_media_policy import (
     _CLOUD_ENVS,
     _QA_ROOTS,
@@ -24,12 +25,17 @@ def default_profile_media_dev_dir() -> Path:
 
 
 def allowed_profile_media_roots() -> tuple[Path, ...]:
+    # Volume persistant declare : la racine canonique devient une destination
+    # legitime, mais UNIQUEMENT sous opt-in explicite. Ouvrir la posture C3.1-R1D
+    # ne veut pas dire autoriser un chemin quelconque sur un runtime manage.
     roots = list(_QA_ROOTS)
     roots.append(default_profile_media_dev_dir().parent)
     roots.append(Path(tempfile.gettempdir()))
     if os.environ.get("PYTEST_CURRENT_TEST"):
         roots.append(Path(tempfile.gettempdir()))
     # Preserve order, drop duplicates.
+    if managed_persistent_media_opt_in():
+        roots.append(Path(CANONICAL_MEDIA_ROOT))
     return tuple(dict.fromkeys(roots))
 
 
@@ -68,7 +74,13 @@ def validate_profile_media_storage_config(settings: Settings) -> list[str]:
     """Return non-fatal warnings; raise AppError when profile uploads cannot run."""
     backend = settings.profile_media_storage_backend
     if backend == "filesystem":
-        if is_managed_cloud_runtime() or settings.app_env in _CLOUD_ENVS:
+        # Volume persistant declare et autorise : le disque local cesse d'etre ephemere,
+        # donc le motif du blocage C3.1-R1D tombe. `resolve_*_upload_dir` continue de
+        # verifier la racine, qui n'accepte /data/media que sous ce meme opt-in.
+        persistent_volume = managed_persistent_media_opt_in()
+        if (is_managed_cloud_runtime() or settings.app_env in _CLOUD_ENVS) and (
+            not persistent_volume
+        ):
             raise AppError(
                 status_code=500,
                 code="PROFILE_MEDIA_FILESYSTEM_FORBIDDEN",
@@ -77,7 +89,7 @@ def validate_profile_media_storage_config(settings: Settings) -> list[str]:
                     "Utiliser r2."
                 ),
             )
-        if settings.app_env != "dev":
+        if settings.app_env != "dev" and not persistent_volume:
             raise AppError(
                 status_code=500,
                 code="PROFILE_MEDIA_FILESYSTEM_FORBIDDEN",

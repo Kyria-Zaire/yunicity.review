@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import re
 import uuid
 from pathlib import Path
 
@@ -14,31 +13,14 @@ from app.core.profile_media_policy import (
     resolve_profile_media_upload_dir,
     validate_profile_media_storage_config,
 )
-from app.services.profile_media.storage_keys import list_profile_media_variant_keys
-
-_STORAGE_KEY_RE = re.compile(
-    r"^profiles/"
-    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/"
-    r"(avatar|banner)\.(jpg|png|webp)$",
-    re.IGNORECASE,
+from app.services.profile_media.storage_keys import (
+    CONTENT_TYPE_BY_EXT as _CONTENT_TYPE_BY_EXT,
 )
-
-_CONTENT_TYPE_BY_EXT = {
-    ".jpg": "image/jpeg",
-    ".png": "image/png",
-    ".webp": "image/webp",
-}
-
-
-def assert_valid_profile_media_key(storage_key: str) -> str:
-    normalized = storage_key.replace("\\", "/").lstrip("/")
-    if ".." in normalized.split("/") or not _STORAGE_KEY_RE.fullmatch(normalized):
-        raise AppError(
-            status_code=400,
-            code="PROFILE_MEDIA_INVALID_STORAGE_KEY",
-            detail="Clé de stockage profil invalide.",
-        )
-    return normalized
+from app.services.profile_media.storage_keys import (
+    assert_valid_profile_media_key,
+    list_profile_media_variant_keys,
+    profile_media_api_url,
+)
 
 
 class ProfileMediaFilesystemStorage:
@@ -52,10 +34,7 @@ class ProfileMediaFilesystemStorage:
         self._root.mkdir(parents=True, exist_ok=True)
 
     def public_url(self, storage_key: str) -> str:
-        key = assert_valid_profile_media_key(storage_key)
-        _prefix, user_id, filename = key.split("/")
-        prefix = self._settings.api_v1_prefix.rstrip("/")
-        return f"{prefix}/profile-media/{user_id}/{filename}"
+        return profile_media_api_url(self._settings.api_v1_prefix, storage_key)
 
     def _dest_for_key(self, storage_key: str) -> Path:
         key = assert_valid_profile_media_key(storage_key)

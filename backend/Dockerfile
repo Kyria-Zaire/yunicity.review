@@ -15,8 +15,14 @@ RUN apt-get update \
         libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN groupadd --system app \
-    && useradd --system --gid app --home-dir /app app
+# UID/GID FIXES et non privilegies. `useradd --system` choisit un identifiant
+# dynamique (999 ici) : un rebuild pourrait le deplacer et rendre illisible un volume
+# deja peuple, dont les fichiers porteraient l'ancien proprietaire. L'API et le worker
+# partageant ce conteneur, ils partagent aussi cette identite.
+ARG APP_UID=10001
+ARG APP_GID=10001
+RUN groupadd --system --gid ${APP_GID} app \
+    && useradd --system --uid ${APP_UID} --gid ${APP_GID} --home-dir /app app
 
 COPY pyproject.toml README.md ./
 COPY app ./app
@@ -31,6 +37,13 @@ RUN pip install --upgrade pip \
     && pip install -e ".[dev]"
 
 RUN chown -R app:app /app
+
+# Point de montage du volume média du service unifié, créé DANS L'IMAGE et possédé par
+# `app`. Docker et Railway initialisent un volume vierge avec les droits du répertoire
+# qu'il recouvre : sans cette ligne, le volume arrive en root:root et le conteneur non
+# privilégié ne peut rien y écrire (mesuré : « Permission denied », uid=999).
+RUN mkdir -p /data/media/local-video /data/media/profiles /data/media/stories \n    && chown -R app:app /data
+
 USER app
 
 EXPOSE 8000
