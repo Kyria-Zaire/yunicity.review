@@ -12,6 +12,7 @@ import {
   buildProfileTribeCards,
   formatProfileImpactLabel,
   profilePortalHasNoFakeMetrics,
+  resolveProfileActivityPostDescription,
 } from "./profile-portal";
 
 const PROFILE: ProfileMe = {
@@ -176,6 +177,65 @@ describe("profile-portal", () => {
     });
     expect(items).toHaveLength(1);
     expect(items[0]?.kind).toBe("post");
+  });
+
+  it("resolveProfileActivityPostDescription remplace les corps QA techniques", () => {
+    const post: FeedPost = {
+      id: "fp-qa",
+      type: "post",
+      author: { type: "citizen", id: "u1", display_name: "Kyria", username: "kyria", logo_url: null },
+      city: "Reims",
+      title: null,
+      body: "R1G fil reel 639x900 1787936213853",
+      media_url: "https://cdn.example/qa-sample-video.mp4",
+      location: null,
+      like_count: 0,
+      comment_count: 0,
+      liked_by_me: false,
+      offer: null,
+      event: null,
+      creator_content: null,
+      neighborhood_summary: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    expect(resolveProfileActivityPostDescription(post)).toBe("Vidéo partagée sur le fil local");
+  });
+
+  it("buildProfileActivityTimeline limite les publications répétitives", () => {
+    const qaPost = (id: string): FeedPost => ({
+      id,
+      type: "post",
+      author: { type: "citizen", id: "u1", display_name: "Kyria", username: "kyria", logo_url: null },
+      city: "Reims",
+      title: null,
+      body: `R1G fil reel 639x900 ${id}`,
+      media_url: null,
+      location: null,
+      like_count: 0,
+      comment_count: 0,
+      liked_by_me: false,
+      offer: null,
+      event: null,
+      creator_content: null,
+      neighborhood_summary: null,
+      created_at: "2026-05-28T12:00:00.000Z",
+      updated_at: "2026-05-28T12:00:00.000Z",
+    });
+    const timeline = buildProfileActivityTimeline({
+      profile: PROFILE,
+      passport: PASSPORT,
+      feedPosts: [qaPost("1"), qaPost("2"), qaPost("3"), qaPost("4")],
+      stamps: [STAMP],
+      tribes: [],
+      savedEvents: [],
+      culturalPlaces: [],
+      neighborhoods: [HOOD],
+      maxItems: 8,
+      now: new Date("2026-05-29T12:00:00.000Z"),
+    });
+    expect(timeline.filter((item) => item.kind === "post")).toHaveLength(2);
+    expect(timeline.some((item) => item.kind === "stamp")).toBe(true);
   });
 
   it("buildProfileActivityTimeline inclut tampons et exclut événements sans date de sauvegarde", () => {

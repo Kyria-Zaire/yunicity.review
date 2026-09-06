@@ -5,6 +5,11 @@ export const LOCAL_VIDEO_DEFAULT_MUTED = true;
 
 export const LOCAL_VIDEO_EMPTY_MESSAGE = "Aucune vidéo autour de vous pour le moment.";
 export const LOCAL_VIDEO_ERROR_MESSAGE = "Impossible de charger les vidéos.";
+/** Erreur de lecture d'une source vidéo individuelle (élément `<video onError>`). */
+export const LOCAL_VIDEO_PLAYBACK_ERROR = "Impossible de lire cette vidéo.";
+/** Texte fallback enfant de `<video>` pour navigateurs sans support ou source invalide. */
+export const LOCAL_VIDEO_PLAYBACK_FALLBACK =
+  "Votre navigateur ne peut pas lire cette vidéo.";
 export const LOCAL_VIDEO_RETRY_LABEL = "Réessayer";
 export const LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE =
   "Votre session a expiré. Reconnectez-vous pour continuer.";

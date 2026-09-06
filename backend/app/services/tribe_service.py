@@ -97,6 +97,9 @@ class TribeService:
         tribe = await self._authz.require_active_tribe(city, slug)
         return await self._to_response(tribe, viewer)
 
+    async def to_response(self, tribe: Tribe, viewer: User | None) -> TribeResponse:
+        return await self._to_response(tribe, viewer)
+
     async def create(self, actor: User, payload: TribeCreateRequest) -> TribeResponse:
         await self._authz.require_staff(actor)
         self._validate_create(payload)

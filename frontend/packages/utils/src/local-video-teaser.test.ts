@@ -36,6 +36,8 @@ function baseItem(overrides: Partial<LocalVideoFeedItem> = {}): LocalVideoFeedIt
     media_url: "https://example.com/v.mp4",
     thumbnail_url: "https://example.com/t.jpg",
     duration_seconds: 92,
+    media_width: null,
+    media_height: null,
     mime_type: "video/mp4",
     latitude: null,
     longitude: null,

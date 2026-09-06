@@ -1,29 +1,42 @@
 "use client";
 
+import { TribeDetailSectionNav } from "@/components/tribes/detail/shared";
 import {
+  TribeDetailMobileAboutPanel,
+  TribeDetailMobileDiscussionsSection,
   TribeDetailMobileHeader,
   TribeDetailMobileHero,
-  TribeDetailMobileMembershipAction,
-  TribeDetailMobileStatsGrid,
-  TribeDetailMobileTabs,
+  TribeDetailMobileJoinCard,
+  TribeDetailMobileNextEventSection,
+  TribeDetailMobileUtilityLinks,
+  TribeDetailMobileVisitorBanner,
+  TribeDetailMobileWelcomeCard,
 } from "@/components/tribes/mobile";
-import { TerritoryMobilePostComposer } from "@/components/shared/mobile";
+import { TribeEditForm } from "@/components/tribes/tribe-edit-form";
 import { TribeJoinRequestButton } from "@/components/tribes/tribe-join-request-button";
-import { useTribeWall } from "@/hooks/use-tribe-wall";
-import type { FeedPost, Tribe, TribeMember } from "@yunicity/types";
-import type { CulturalPlaceListItem, LocalEvent } from "@yunicity/types";
+import { TribeJoinRequestsSection } from "@/components/tribes/tribe-join-requests-section";
+import { TribeMembersSection } from "@/components/tribes/tribe-members-section";
+import { TribeModerationPanel } from "@/components/tribes/tribe-moderation-panel";
+import { TribeWallSection } from "@/components/tribes/tribe-wall-section";
+import { useTribeDetailSectionScroll } from "@/hooks/use-tribe-detail-section-scroll";
+import type { CulturalPlaceListItem, FeedPost, LocalEvent, Tribe, TribeMember } from "@yunicity/types";
 import {
   TRIBE_ARCHIVED_BODY,
   TRIBE_ARCHIVED_TITLE,
+  TRIBE_DETAIL_MOBILE_TABS,
   TRIBE_PRIVATE_BODY,
   TRIBE_PRIVATE_TITLE,
-  buildTribeDetailAboutFacts,
   buildTribeDetailEventCards,
-  buildTribeDetailMemberPreviews,
-  buildTribeDetailMobileStats,
-  countTribeUpcomingEvents,
+  buildTribeDetailMobileEssentialRules,
+  buildTribeDetailMobileFeaturedCard,
+  buildTribeDetailMobileLocationMeta,
+  buildTribeDetailMobileProjectUrls,
+  buildTribeDetailPostCards,
+  buildTribeDetailTags,
+  type TribeDetailEventCard,
+  type TribeDetailMobileTabId,
 } from "@yunicity/utils";
-import { useEffect, useMemo } from "react";
+import { useMemo, useRef } from "react";
 
 type TribeDetailMobileViewProps = {
   tribe: Tribe;
@@ -48,85 +61,65 @@ type TribeDetailMobileViewProps = {
 export function TribeDetailMobileView({
   tribe,
   city,
-  slug,
   events,
   places,
-  members,
-  membersTotal,
   postsPreview,
   isAuthenticated,
-  currentUserId,
   joining,
-  leaving,
   actionError,
   onJoin,
-  onLeave,
   onShare,
 }: TribeDetailMobileViewProps) {
+  const joinCardRef = useRef<HTMLDivElement>(null);
+  const { activeId, scrollTo, scrollToAnchor } = useTribeDetailSectionScroll<TribeDetailMobileTabId>(
+    TRIBE_DETAIL_MOBILE_TABS,
+    "overview",
+  );
+
   const showPrivateGate =
     tribe.visibility === "private_invite" && !tribe.viewer_is_member && !tribe.is_archived;
   const showActions = !tribe.is_archived && !showPrivateGate;
   const canSeeMembers = tribe.viewer_is_member && !tribe.is_archived;
   const canSeePosts = canSeeMembers;
+  const showJoinCard = showActions && !tribe.viewer_is_member && tribe.visibility === "public";
+  const showVisitorBanner = showJoinCard;
 
-  const wall = useTribeWall(slug, city, canSeePosts);
-
-  useEffect(() => {
-    if (canSeePosts) {
-      void wall.refresh();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh on membership/city only
-  }, [canSeePosts, slug, city]);
-
-  const eventsCount = countTribeUpcomingEvents(tribe, events);
-  const statsItems = useMemo(
-    () =>
-      buildTribeDetailMobileStats({
-        tribe,
-        eventsCount,
-        postsCount: canSeePosts ? (wall.items.length || postsPreview.length) : null,
-      }),
-    [canSeePosts, eventsCount, postsPreview.length, tribe, wall.items.length],
-  );
-
+  const tags = useMemo(() => buildTribeDetailTags(tribe), [tribe]);
+  const locationMeta = useMemo(() => buildTribeDetailMobileLocationMeta(tribe), [tribe]);
   const eventCards = useMemo(
-    () =>
-      buildTribeDetailEventCards({
-        tribe,
-        events,
-        culturalPlaces: places,
-        maxItems: 6,
-      }),
+    () => buildTribeDetailEventCards({ tribe, events, culturalPlaces: places, maxItems: 6 }),
     [events, places, tribe],
   );
-
-  const memberPreviews = useMemo(
-    () =>
-      buildTribeDetailMemberPreviews(members, {
-        currentUserId,
-        maxItems: 8,
-      }),
-    [currentUserId, members],
+  const nextEvent: TribeDetailEventCard | null = eventCards[0] ?? null;
+  const postCards = useMemo(() => buildTribeDetailPostCards(postsPreview, 4), [postsPreview]);
+  const featuredCard = useMemo(
+    () => buildTribeDetailMobileFeaturedCard(tribe, postsPreview),
+    [postsPreview, tribe],
   );
+  const projectUrls = useMemo(() => buildTribeDetailMobileProjectUrls(postsPreview), [postsPreview]);
+  const rules = useMemo(() => buildTribeDetailMobileEssentialRules(), []);
 
-  const facts = useMemo(() => buildTribeDetailAboutFacts(tribe), [tribe]);
-
-  const posts = wall.items.length > 0 ? wall.items : postsPreview;
+  function scrollToCharter() {
+    scrollToAnchor("#tribe-mobile-about-rules");
+  }
 
   return (
-    <div className="web-mobile-tribe-detail-only min-w-0 bg-white pb-6">
-      <TribeDetailMobileHeader city={city} onShare={onShare} />
+    <div
+      className="tribe-detail-mobile-shell web-mobile-tribe-detail-only min-w-0 bg-neutral-50 pb-12"
+      data-tribe-detail-mobile=""
+    >
+      <TribeDetailMobileHeader tribeName={tribe.name} city={city} onShare={onShare} />
 
       <div className="space-y-4 px-4 py-3">
         {tribe.is_archived ? (
-          <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-6">
+          <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-6">
             <h2 className="font-semibold text-neutral-900">{TRIBE_ARCHIVED_TITLE}</h2>
             <p className="mt-2 text-sm text-neutral-600">{TRIBE_ARCHIVED_BODY}</p>
           </div>
         ) : null}
 
         {showPrivateGate ? (
-          <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-6">
+          <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-6">
             <h2 className="font-semibold text-neutral-900">{TRIBE_PRIVATE_TITLE}</h2>
             <p className="mt-2 text-sm text-neutral-600">{TRIBE_PRIVATE_BODY}</p>
             {isAuthenticated ? (
@@ -137,51 +130,75 @@ export function TribeDetailMobileView({
           </div>
         ) : null}
 
-        <TribeDetailMobileHero
-          tribe={tribe}
-          members={members}
-          membershipAction={
-            showActions ? (
-              <TribeDetailMobileMembershipAction
-                tribe={tribe}
-                isAuthenticated={isAuthenticated}
-                joining={joining}
-                leaving={leaving}
-                actionError={actionError}
-                onJoin={onJoin}
-                onLeave={onLeave}
-              />
-            ) : null
-          }
-        />
-
         {!showPrivateGate ? (
           <>
-            <TribeDetailMobileStatsGrid items={statsItems} />
+            <TribeDetailMobileHero tribe={tribe} tags={tags} locationMeta={locationMeta} />
 
-            {canSeePosts ? (
-              <TerritoryMobilePostComposer
-                onSubmit={async (body, mediaUrl) => {
-                  await wall.createPost(body, mediaUrl);
-                }}
-              />
+            {showJoinCard ? (
+              <div ref={joinCardRef}>
+                <TribeDetailMobileJoinCard
+                  tribe={tribe}
+                  city={city}
+                  joining={joining}
+                  actionError={actionError}
+                  isAuthenticated={isAuthenticated}
+                  onJoin={onJoin}
+                  onReadCharter={scrollToCharter}
+                />
+              </div>
             ) : null}
 
-            <TribeDetailMobileTabs
-              tribe={tribe}
-              city={city}
-              events={eventCards}
-              members={memberPreviews}
-              membersTotal={membersTotal}
-              facts={facts}
-              canSeeMembers={canSeeMembers}
-              canSeePosts={canSeePosts}
-              posts={posts}
-              postsLoading={wall.loading}
-              onToggleLike={(post) => void wall.toggleLike(post)}
-              onLoadMorePosts={wall.loadMore}
-              hasMorePosts={Boolean(wall.nextCursor)}
-            />
+            <section className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm">
+              <TribeDetailSectionNav
+                tabs={TRIBE_DETAIL_MOBILE_TABS}
+                activeId={activeId}
+                onSelect={scrollTo}
+              />
+
+              <div className="space-y-5 bg-neutral-50 p-4">
+                <div id="tribe-mobile-overview" className="tribe-detail-section space-y-5">
+                  {showVisitorBanner ? <TribeDetailMobileVisitorBanner /> : null}
+
+                  <TribeDetailMobileWelcomeCard card={featuredCard} onReadCharter={scrollToCharter} />
+                </div>
+
+                <TribeDetailMobileDiscussionsSection posts={postCards} canSeePosts={canSeePosts} />
+
+                <TribeDetailMobileNextEventSection event={nextEvent} />
+
+                <TribeDetailMobileUtilityLinks
+                  onScrollProjects={() => scrollToAnchor("#tribe-mobile-projects")}
+                  onScrollAbout={() => scrollToAnchor("#tribe-mobile-about")}
+                  onScrollRules={() => scrollToAnchor("#tribe-mobile-about-rules")}
+                  onScrollModeration={() => scrollToAnchor("#tribe-mobile-about-moderation")}
+                />
+
+                {canSeeMembers ? (
+                  <div id="tribe-mobile-members" className="tribe-detail-section">
+                    <TribeMembersSection tribe={tribe} city={city} />
+                  </div>
+                ) : null}
+
+                {canSeeMembers ? (
+                  <section className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm">
+                    <TribeWallSection tribe={tribe} city={city} />
+                  </section>
+                ) : null}
+
+                <TribeDetailMobileAboutPanel
+                  tribe={tribe}
+                  tags={tags}
+                  locationMeta={locationMeta}
+                  rules={rules}
+                  projectUrls={projectUrls}
+                  onReadCharter={scrollToCharter}
+                />
+
+                <TribeJoinRequestsSection tribe={tribe} city={city} />
+                <TribeEditForm tribe={tribe} city={city} />
+                <TribeModerationPanel tribe={tribe} city={city} />
+              </div>
+            </section>
           </>
         ) : null}
       </div>

@@ -50,6 +50,8 @@ def mock_processor(monkeypatch: pytest.MonkeyPatch) -> None:
         del self, content_type, source_storage_key
         return LocalVideoProcessResult(
             duration_seconds=12.5,
+            media_width=1080,
+            media_height=1920,
             source_storage_key=f"local-video/{city_slug}/{video_id}/processed.mp4",
             thumbnail_storage_key=f"local-video/{city_slug}/{video_id}/thumbnail.jpg",
             mime_type="video/mp4",
@@ -176,6 +178,7 @@ async def test_upload_init_prod_requires_city_slug(
     for _key, _value in {
         "DEBUG": "false",
         "REFRESH_COOKIE_SECURE": "true",
+        "REFRESH_TOKEN_PEPPER": "y" * 32,
         "WEB_FRONTEND_URL": "https://app.yunicity.city",
         "CORS_ORIGINS": '["https://app.yunicity.city"]',
         "MEDIA_PUBLIC_BASE_URL": "https://media.yunicity.city",

@@ -54,6 +54,8 @@ export type LocalVideo = {
   media_url: string;
   thumbnail_url: string;
   duration_seconds: number;
+  media_width: number | null;
+  media_height: number | null;
   file_size_bytes: number;
   mime_type: string;
   latitude: number | null;
@@ -128,6 +130,8 @@ export type LocalVideoFeedItem = {
   media_url: string;
   thumbnail_url: string;
   duration_seconds: number;
+  media_width: number | null;
+  media_height: number | null;
   mime_type: string;
   latitude: number | null;
   longitude: number | null;

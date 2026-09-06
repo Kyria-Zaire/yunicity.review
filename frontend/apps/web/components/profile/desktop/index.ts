@@ -1,0 +1,16 @@
+export { ProfileDesktopAbout } from "./profile-desktop-about";
+export { ProfileDesktopActivity } from "./profile-desktop-activity";
+export { ProfileDesktopContributions } from "./profile-desktop-contributions";
+export { ProfileDesktopGlance } from "./profile-desktop-glance";
+export { ProfileDesktopHeader } from "./profile-desktop-header";
+export { ProfileDesktopInterests } from "./profile-desktop-interests";
+export { ProfileDesktopOverview } from "./profile-desktop-overview";
+export { ProfileDesktopOwnerScreen } from "./profile-desktop-owner-screen";
+export { ProfileDesktopPublicOverview } from "./profile-desktop-public-overview";
+export { ProfileDesktopPublicScreen } from "./profile-desktop-public-screen";
+export { ProfileDesktopPublicSidebar } from "./profile-desktop-public-sidebar";
+export { ProfileDesktopPublications } from "./profile-desktop-publications";
+export { ProfileDesktopRail } from "./profile-desktop-rail";
+export { ProfileDesktopTabs } from "./profile-desktop-tabs";
+export type { ProfileDesktopProfile } from "./profile-desktop-profile";
+export type { ProfileDesktopPublicContext } from "./profile-desktop-public-screen";

@@ -95,6 +95,8 @@ class LocalVideoItem(BaseModel):
     media_url: str
     thumbnail_url: str
     duration_seconds: float
+    media_width: int | None = None
+    media_height: int | None = None
     file_size_bytes: int
     mime_type: str
     latitude: float | None
@@ -133,6 +135,8 @@ class LocalVideoFeedItem(BaseModel):
     media_url: str
     thumbnail_url: str
     duration_seconds: float
+    media_width: int | None = None
+    media_height: int | None = None
     mime_type: str
     latitude: float | None
     longitude: float | None

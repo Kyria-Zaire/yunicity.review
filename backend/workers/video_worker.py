@@ -120,6 +120,9 @@ class WorkerSettings:
     on_shutdown = shutdown
     on_job_failure = on_job_failure
     queue_name = ARQ_QUEUE_NAME
+    # Un seul transcodage ffmpeg à la fois : le service unifié partage son CPU avec
+    # l'API, et le défaut ARQ (10) saturerait le conteneur sur des clips de 50 Mo.
+    max_jobs = 1
     job_timeout = LOCAL_VIDEO_PROCESSING_JOB_TIMEOUT_SECONDS
     max_tries = LOCAL_VIDEO_PROCESSING_MAX_TRIES
     retry_jobs = True

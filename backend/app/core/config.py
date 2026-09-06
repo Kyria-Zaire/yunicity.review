@@ -109,6 +109,13 @@ class Settings(BaseSettings):
     )
 
     media_upload_dir: str = Field(default="uploads", alias="MEDIA_UPLOAD_DIR")
+    # Opt-in EXPLICITE du stockage filesystem sur un runtime manage (Railway). Faux par
+    # defaut : sans volume persistant declare, ecrire sur le disque local revient a
+    # perdre les medias au redeploiement (posture C3.1-R1D). Voir app.core.media_root.
+    managed_persistent_media_enabled: bool = Field(
+        default=False,
+        alias="MANAGED_PERSISTENT_MEDIA_ENABLED",
+    )
     media_public_base_url: str = Field(
         default="http://localhost:8000",
         alias="MEDIA_PUBLIC_BASE_URL",
@@ -125,6 +132,14 @@ class Settings(BaseSettings):
     story_media_upload_dir: str | None = Field(
         default=None,
         alias="STORY_MEDIA_UPLOAD_DIR",
+    )
+    profile_media_storage_backend: Literal["r2", "filesystem"] = Field(
+        default="filesystem",
+        alias="PROFILE_MEDIA_STORAGE_BACKEND",
+    )
+    profile_media_upload_dir: str | None = Field(
+        default=None,
+        alias="PROFILE_MEDIA_UPLOAD_DIR",
     )
     local_video_max_bytes: int = Field(default=52_428_800, alias="LOCAL_VIDEO_MAX_BYTES")
     local_video_max_duration_seconds: int = Field(

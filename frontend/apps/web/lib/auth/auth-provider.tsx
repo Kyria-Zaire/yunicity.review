@@ -93,6 +93,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [client]);
 
+  /**
+   * Restauration depuis le cache arrière/avant (bfcache) : le JS reprend avec un
+   * access token en mémoire parfois expiré. On force un refresh cookie avant que
+   * les hooks métier (profil, chrome citoyen) ne partent en 401.
+   */
+  useEffect(() => {
+    async function recoverSessionFromBFCache() {
+      try {
+        await client.refreshAccessToken();
+        const me = await client.me();
+        setUser(me);
+      } catch {
+        setUser(null);
+      }
+    }
+
+    function onPageShow(event: PageTransitionEvent) {
+      if (event.persisted) {
+        void recoverSessionFromBFCache();
+      }
+    }
+
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, [client]);
+
   useEffect(() => {
     syncPassportSessionUser(user?.id ?? null);
   }, [user?.id]);

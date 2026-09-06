@@ -85,6 +85,28 @@ services:
       - yunicity-qa-story-media:/var/yunicity-qa/story-media
     restart: "no"
 
+  # C3-VIDEO-QA-STORAGE-PIPELINE-03 — volume partagé backend + worker pour
+  # MEDIA_UPLOAD_DIR (/tmp/yunicity-uploads). Sans volume nommé, chaque conteneur
+  # possède son propre filesystem éphémère : le worker ne voit pas les binaires PUT.
+  local-video-upload-init-qa:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: yunicity-local-video-upload-init-qa
+    user: "0:0"
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        set -e
+        mkdir -p /tmp/yunicity-uploads/qa
+        chown -R "$$(id -u app):$$(id -g app)" /tmp/yunicity-uploads
+        chmod 750 /tmp/yunicity-uploads
+        chmod 750 /tmp/yunicity-uploads/qa
+        ls -ldn /tmp/yunicity-uploads
+    volumes:
+      - yunicity-qa-local-video-uploads:/tmp/yunicity-uploads
+    restart: "no"
+
   backend-qa:
     build:
       context: ./backend
@@ -121,6 +143,7 @@ services:
     volumes:
       - ./backend:/app
       - yunicity-qa-story-media:/var/yunicity-qa/story-media
+      - yunicity-qa-local-video-uploads:/tmp/yunicity-uploads
       # C3.1-R1F/R1G — le test de contrat non-root lit ce fichier. Montage LECTURE
       # SEULE : le test reste statique et ne depend d'aucun daemon Docker.
       - ./docker-compose.qa.yml:/docker-compose.qa.yml:ro
@@ -136,6 +159,8 @@ services:
         condition: service_healthy
       story-media-init-qa:
         condition: service_completed_successfully
+      local-video-upload-init-qa:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/v1/health"]
       interval: 10s
@@ -144,5 +169,46 @@ services:
       start_period: 40s
     restart: "no"
 
+  # C3-VIDEO-QA-REAL-MEDIA-RECOVERY-02 — worker ARQ isolé QA (même image/code que backend-qa).
+  # Inline env only : pas de env_file, pas de credentials R2 production.
+  video-worker-qa:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: yunicity-video-worker-qa
+    command: arq workers.video_worker.WorkerSettings
+    environment:
+      APP_NAME: Yunicity QA Video Worker
+      APP_ENV: dev
+      DEBUG: "true"
+      API_V1_PREFIX: /api/v1
+      DATABASE_URL: postgresql+asyncpg://yunicity_qa:yunicity_qa_password@postgres-qa:5432/yunicity_qa
+      REDIS_URL: redis://redis-qa:6379/0
+      LOG_LEVEL: INFO
+      JWT_SECRET_KEY: qa-only-jwt-secret-at-least-32-characters-long!!
+      REFRESH_TOKEN_PEPPER: qa-only-pepper-32-chars-minimum!!
+      EMAIL_PROVIDER: console
+      EXPO_PUSH_ENABLED: "false"
+      LOCAL_VIDEO_STORAGE_BACKEND: filesystem
+      MEDIA_UPLOAD_DIR: /tmp/yunicity-uploads
+      MEDIA_PUBLIC_BASE_URL: http://localhost:8010
+      STORY_MEDIA_STORAGE_BACKEND: filesystem
+      STORY_MEDIA_UPLOAD_DIR: /var/yunicity-qa/story-media
+      YUNICITY_QA_MODE: "1"
+      YUNICITY_QA_RUN_TOKEN: qa-compose-run-token
+    volumes:
+      - ./backend:/app
+      - yunicity-qa-story-media:/var/yunicity-qa/story-media
+      - yunicity-qa-local-video-uploads:/tmp/yunicity-uploads
+    depends_on:
+      postgres-qa:
+        condition: service_healthy
+      redis-qa:
+        condition: service_healthy
+      local-video-upload-init-qa:
+        condition: service_completed_successfully
+    restart: "no"
+
 volumes:
   yunicity-qa-story-media:
+  yunicity-qa-local-video-uploads:
