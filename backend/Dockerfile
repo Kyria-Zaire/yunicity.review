@@ -42,7 +42,14 @@ RUN chown -R app:app /app
 # `app`. Docker et Railway initialisent un volume vierge avec les droits du répertoire
 # qu'il recouvre : sans cette ligne, le volume arrive en root:root et le conteneur non
 # privilégié ne peut rien y écrire (mesuré : « Permission denied », uid=999).
-RUN mkdir -p /data/media/local-video /data/media/profiles /data/media/stories \n    && chown -R app:app /data
+#
+# La continuation de ligne doit rester un VRAI saut de ligne. Une version antérieure
+# portait les deux caractères littéraux `\` et `n` au lieu du retour à la ligne : le
+# shell les lisait comme l'argument `n`, donc `mkdir` créait en plus un répertoire
+# parasite `/app/n` (WORKDIR). Le `chown` s'exécutait quand même — tout tenait sur une
+# seule ligne physique — ce qui rendait le défaut silencieux.
+RUN mkdir -p /data/media/local-video /data/media/profiles /data/media/stories \
+    && chown -R app:app /data
 
 USER app
 

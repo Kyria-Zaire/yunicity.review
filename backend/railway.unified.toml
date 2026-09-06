@@ -9,20 +9,41 @@
 #     hériterait, y compris l'ancien worker gardé pour rollback. C'est exactement le
 #     piège OPS-02, déjà payé une fois.
 #
-# ⚠️  CE FICHIER NE CRÉE PAS LE VOLUME
+# ⚠️  CE FICHIER NE CRÉE PAS LE VOLUME — À FAIRE AVANT LE PREMIER DÉPLOIEMENT
 #     Un volume Railway s'attache depuis le dashboard ; l'API CLI ne l'expose pas et le
-#     TOML ne le déclare pas. À faire manuellement AVANT le premier déploiement :
+#     TOML ne le déclare pas. Le montage est donc une action manuelle, préalable et
+#     obligatoire — pas une conséquence du déploiement :
 #
-#         Volume    : yunicity-media
-#         Service   : le service unifié
-#         Mount path: /data/media
+#         Volume     : yunicity-media
+#         Service    : le service unifié
+#         Mount path : /data/media          (exactement ce chemin, absolu)
 #
-#     Sans ce montage, MEDIA_UPLOAD_DIR pointe sur la couche éphémère du conteneur et
-#     les médias disparaissent à chaque redéploiement. `prepare_media_root` échoue au
-#     boot si le chemin n'est pas inscriptible : le service refuse de démarrer plutôt
-#     que de perdre des fichiers en silence.
+#     `/data/media` n'est pas un choix de configuration : c'est CANONICAL_MEDIA_ROOT
+#     (app/core/media_root.py), en dur dans le code. La politique refuse tout autre
+#     chemin sur un runtime managé. L'API et le worker étant le même conteneur, ils
+#     partagent nécessairement ce montage et l'uid applicatif 10001.
+#
+#     Déployer sans ce volume fait pointer la racine média sur la couche éphémère du
+#     conteneur. `prepare_media_root` échoue alors au boot : le service refuse de
+#     démarrer plutôt que de perdre des fichiers en silence.
+#
+# ⚠️  OPT-IN OBLIGATOIRE : MANAGED_PERSISTENT_MEDIA_ENABLED=true
+#     Railway injecte des variables RAILWAY_* : `is_managed_cloud_runtime()` est donc
+#     VRAI en production, ce qui arme la politique stricte C3.1-R1D. Sans cet opt-in,
+#     trois gardes indépendantes refusent le backend filesystem au démarrage —
+#     `check_managed_media_policy`, `validate_story_media_storage_config` et
+#     `validate_profile_media_storage_config`. L'enfant API meurt, le superviseur sort
+#     en code non nul, et le service boucle jusqu'à `restartPolicyMaxRetries`.
+#
+#     Cette variable se pose SUR LE SERVICE Railway, comme toutes les autres : Railway
+#     n'applique aucune variable déclarée dans un fichier de config. Ce fichier ne fait
+#     que la documenter — il ne contient volontairement aucune valeur d'environnement,
+#     aucun secret, aucune donnée propre à un environnement donné.
 #
 # VARIABLES REQUISES (noms uniquement — aucune valeur, aucun secret ici)
+#
+#   Opt-in du stockage persistant, sans lequel le service ne démarre pas :
+#     MANAGED_PERSISTENT_MEDIA_ENABLED = true
 #
 #   Média, à poser sur ce service :
 #     MEDIA_UPLOAD_DIR          = /data/media      (racine, clés « local-video/… »)
