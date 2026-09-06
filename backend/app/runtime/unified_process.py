@@ -31,6 +31,8 @@ import time
 from dataclasses import dataclass, field
 from types import FrameType
 
+from app.runtime.volume_bootstrap import VolumeBootstrapError, bootstrap_media_volume
+
 logger = logging.getLogger("yunicity.unified")
 
 #: Délai laissé à un enfant pour sortir sur SIGTERM avant SIGKILL.
@@ -160,6 +162,14 @@ def main() -> int:
         level=os.environ.get("LOG_LEVEL", "INFO").upper(),
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
+    # Le volume media est prepare AVANT tout enfant, et les privileges sont abandonnes
+    # dans la foulee : ni l'API ni le worker ne voient jamais l'euid 0. Un refus ici
+    # (volume absent, abandon impossible) sort non nul sans avoir rien demarre.
+    try:
+        bootstrap_media_volume()
+    except VolumeBootstrapError:
+        logger.exception("unified_bootstrap_failed")
+        return 1
     return Supervisor(children=build_default_children()).run()
 
 

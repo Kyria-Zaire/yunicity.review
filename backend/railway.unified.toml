@@ -40,7 +40,36 @@
 #     que la documenter — il ne contient volontairement aucune valeur d'environnement,
 #     aucun secret, aucune donnée propre à un environnement donné.
 #
+# ⚠️  RAILWAY_RUN_UID=0 — REQUIS, ET STRICTEMENT POUR L'INITIALISATION DU VOLUME
+#     Mesuré sur ce projet : un volume Railway fraîchement attaché arrive `root:root
+#     0755` sur un système de fichiers neuf (`lost+found` présent), donc rien n'est
+#     hérité du répertoire de l'image que le montage recouvre. Le conteneur tournant en
+#     `app` (uid 10001), la création de `/data/media/local-video` échouait en
+#     « Permission denied » et le service refusait de démarrer.
+#
+#     Le superviseur démarre donc en euid 0, exige un VRAI point de montage sur
+#     /data/media (lu dans /proc/self/mountinfo), crée les trois sous-répertoires,
+#     attribue ces quatre chemins — et QUATRE SEULEMENT — à `app`, puis abandonne
+#     IRRÉVERSIBLEMENT ses privilèges (setgroups → setgid → setuid) avant de lancer le
+#     moindre enfant. Voir app/runtime/volume_bootstrap.py.
+#
+#     Conséquences à connaître :
+#       - l'API, le worker et ffmpeg tournent en uid 10001, jamais en root ;
+#       - sans volume monté, le service SORT en erreur : aucun repli sur la couche
+#         éphémère, aucune perte silencieuse ;
+#       - aucun `chmod`, aucun world-writable, aucun `chown` récursif : les médias déjà
+#         présents et `lost+found` ne sont pas touchés ;
+#       - cette variable ne doit JAMAIS être combinée à une startCommand qui contourne
+#         `app.runtime.unified_process` — elle ferait alors tourner l'application en
+#         root, ce que tout le reste de cette configuration existe pour empêcher.
+#
+#     Le Dockerfile conserve son `USER app` : hors Railway, l'exécution reste non-root
+#     par défaut et le bootstrap privilégié ne s'exécute simplement pas.
+#
 # VARIABLES REQUISES (noms uniquement — aucune valeur, aucun secret ici)
+#
+#   Initialisation du volume, à poser sur ce service :
+#     RAILWAY_RUN_UID = 0
 #
 #   Opt-in du stockage persistant, sans lequel le service ne démarre pas :
 #     MANAGED_PERSISTENT_MEDIA_ENABLED = true

@@ -32,6 +32,9 @@ DOCKERFILE_FILENAME = "Dockerfile"
 #: Opt-in sans lequel le service unifié refuse de démarrer sur un runtime managé.
 OPT_IN_VARIABLE = "MANAGED_PERSISTENT_MEDIA_ENABLED"
 
+#: Démarrage privilégié, le temps d'initialiser le volume — puis abandon irréversible.
+RUN_UID_VARIABLE = "RAILWAY_RUN_UID"
+
 APP_USER = "app"
 APP_UID = "10001"
 ROOT_IDENTITIES = frozenset({"0", "root", "0:0", "root:root"})
@@ -103,6 +106,28 @@ class TestRailwayConfigDocumentsItsPreconditions:
         assert lines, f"{OPT_IN_VARIABLE} doit être documentée dans {RAILWAY_CONFIG_FILENAME}"
         assert any("true" in line for line in lines), (
             f"{OPT_IN_VARIABLE} doit être documentée avec la valeur attendue (true)"
+        )
+
+    def test_the_privileged_bootstrap_variable_is_documented(
+        self, railway_config_text: str
+    ) -> None:
+        """Sans `RAILWAY_RUN_UID=0`, le volume reste root:root et rien ne démarre."""
+        lines = [line for line in railway_config_text.splitlines() if RUN_UID_VARIABLE in line]
+        assert lines, f"{RUN_UID_VARIABLE} doit être documentée dans {RAILWAY_CONFIG_FILENAME}"
+        assert any("0" in line for line in lines), (
+            f"{RUN_UID_VARIABLE} doit être documentée avec la valeur attendue (0)"
+        )
+
+    def test_the_privilege_drop_is_explained_next_to_it(
+        self, railway_config_text: str
+    ) -> None:
+        """Une variable qui démarre en root ne se documente pas sans sa contrepartie."""
+        lowered = railway_config_text.lower()
+        assert "abandonne" in lowered and "privilège" in lowered, (
+            "la documentation doit dire que les privilèges sont abandonnés"
+        )
+        assert "jamais en root" in lowered, (
+            "la documentation doit dire que les processus applicatifs ne tournent pas en root"
         )
 
     def test_the_canonical_mount_path_is_documented(self, railway_config_text: str) -> None:
