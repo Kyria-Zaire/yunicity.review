@@ -108,7 +108,7 @@ class TestR2Authorization:
     async def test_the_owner_reads_the_object_through_the_api(
         self, auth_client: AsyncClient
     ) -> None:
-        auth, path, _key = await _story_on_r2(auth_client, "r2-owner")
+        auth, path, _storage_ref = await _story_on_r2(auth_client, "r2-owner")
         with patch("app.services.story_media.r2_storage.boto3.client", return_value=_fake_r2()):
             response = await auth_client.get(path, headers=_headers(auth["access_token"]))
         assert response.status_code == 200
@@ -116,7 +116,7 @@ class TestR2Authorization:
         assert response.headers["content-type"].startswith("image/jpeg")
 
     async def test_another_citizen_reads_a_public_story(self, auth_client: AsyncClient) -> None:
-        _auth, path, _key = await _story_on_r2(auth_client, "r2-viewer")
+        _auth, path, _storage_ref = await _story_on_r2(auth_client, "r2-viewer")
         other = await _register(auth_client, "r2-viewer-other")
         with patch("app.services.story_media.r2_storage.boto3.client", return_value=_fake_r2()):
             response = await auth_client.get(path, headers=_headers(other["access_token"]))
@@ -134,14 +134,14 @@ class TestR2Authorization:
         factory.return_value.get_object.assert_not_called()
 
     async def test_anonymous_is_refused(self, auth_client: AsyncClient) -> None:
-        _auth, path, _key = await _story_on_r2(auth_client, "r2-anon")
+        _auth, path, _storage_ref = await _story_on_r2(auth_client, "r2-anon")
         with patch("app.services.story_media.r2_storage.boto3.client", return_value=_fake_r2()):
             response = await auth_client.get(path)
         assert response.status_code == 401
         assert PAYLOAD not in response.content
 
     async def test_a_missing_object_is_a_clean_404(self, auth_client: AsyncClient) -> None:
-        auth, path, _key = await _story_on_r2(auth_client, "r2-missing")
+        auth, path, _storage_ref = await _story_on_r2(auth_client, "r2-missing")
         with patch(
             "app.services.story_media.r2_storage.boto3.client", return_value=_fake_r2(None)
         ):
@@ -151,7 +151,7 @@ class TestR2Authorization:
 
 class TestR2StreamingAndRange:
     async def test_an_authorized_range_returns_206(self, auth_client: AsyncClient) -> None:
-        auth, path, _key = await _story_on_r2(auth_client, "r2-range")
+        auth, path, _storage_ref = await _story_on_r2(auth_client, "r2-range")
         with patch(
             "app.services.story_media.r2_storage.boto3.client", return_value=_fake_r2()
         ) as factory:
@@ -165,14 +165,14 @@ class TestR2StreamingAndRange:
         assert factory.return_value.get_object.call_args.kwargs["Range"] == "bytes=0-99"
 
     async def test_an_unauthorized_range_leaks_no_byte(self, auth_client: AsyncClient) -> None:
-        _auth, path, _key = await _story_on_r2(auth_client, "r2-range-ko")
+        _auth, path, _storage_ref = await _story_on_r2(auth_client, "r2-range-ko")
         with patch("app.services.story_media.r2_storage.boto3.client", return_value=_fake_r2()):
             response = await auth_client.get(path, headers={"Range": "bytes=0-99"})
         assert response.status_code == 401
         assert PAYLOAD[:100] not in response.content
 
     async def test_no_cdn_redirect_ever(self, auth_client: AsyncClient) -> None:
-        auth, path, _key = await _story_on_r2(auth_client, "r2-redirect")
+        auth, path, _storage_ref = await _story_on_r2(auth_client, "r2-redirect")
         with patch("app.services.story_media.r2_storage.boto3.client", return_value=_fake_r2()):
             response = await auth_client.get(
                 path, headers=_headers(auth["access_token"]), follow_redirects=False
@@ -181,7 +181,7 @@ class TestR2StreamingAndRange:
         assert "location" not in {k.lower() for k in response.headers}
 
     async def test_private_cache_headers(self, auth_client: AsyncClient) -> None:
-        auth, path, _key = await _story_on_r2(auth_client, "r2-cache")
+        auth, path, _storage_ref = await _story_on_r2(auth_client, "r2-cache")
         with patch("app.services.story_media.r2_storage.boto3.client", return_value=_fake_r2()):
             response = await auth_client.get(path, headers=_headers(auth["access_token"]))
         assert response.headers["cache-control"] == "private, no-store"
@@ -192,8 +192,10 @@ class TestLegacyAbsoluteUrls:
     async def test_a_legacy_absolute_url_is_recognised_by_the_policy(
         self, auth_client: AsyncClient
     ) -> None:
-        _auth, path, _key = await _story_on_r2(auth_client, "r2-legacy", absolute_legacy_url=True)
-        other = await _register(auth_client, "r2-legacy-other")
+        _auth, path, _storage_ref = await _story_on_r2(
+            auth_client, "r2-legacy", absolute_legacy_url=True
+        )
+        other = await _register(auth_client, "legacy-peer")
         with patch("app.services.story_media.r2_storage.boto3.client", return_value=_fake_r2()):
             response = await auth_client.get(path, headers=_headers(other["access_token"]))
         assert response.status_code == 200, "l'ancienne forme doit resoudre"

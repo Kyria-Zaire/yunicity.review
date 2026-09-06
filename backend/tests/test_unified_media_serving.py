@@ -20,8 +20,15 @@ VIDEO_BYTES = bytes(range(256)) * 40  # 10 240 octets, deterministe
 
 
 @pytest.fixture()
-def media_client(tmp_path: Path) -> TestClient:
-    """Monte EXACTEMENT ce que `create_app` monte : local-video seulement."""
+def media_client(tmp_path: Path) -> tuple[TestClient, Path]:
+    """Monte EXACTEMENT ce que `create_app` monte : local-video seulement.
+
+    Renvoie `(client, racine)` plutot que d'accrocher la racine au `TestClient` :
+    l'attribut dynamique exigeait un `type: ignore` dont la NECESSITE depend de la
+    version de Starlette. Sous la version resolue par la CI l'ignore devenait inutile,
+    et `warn_unused_ignores` le transformait en erreur. Un tuple type ne depend
+    d'aucune version.
+    """
     root = tmp_path / "media"
     for name in ("local-video/reims", "profiles", "stories"):
         (root / name).mkdir(parents=True, exist_ok=True)
@@ -31,9 +38,7 @@ def media_client(tmp_path: Path) -> TestClient:
         MediaStaticFiles(directory=str(root / "local-video")),
         name="media-local-video",
     )
-    client = TestClient(app)
-    client.media_root = root  # type: ignore[attr-defined]
-    return client
+    return TestClient(app), root
 
 
 def _write(root: Path, key: str, payload: bytes) -> str:
@@ -45,21 +50,25 @@ def _write(root: Path, key: str, payload: bytes) -> str:
 
 
 class TestFullRead:
-    def test_serves_the_whole_video(self, media_client: TestClient) -> None:
+    def test_serves_the_whole_video(self, media_client: tuple[TestClient, Path]) -> None:
+        client, root = media_client
         key = build_processed_key(city_slug="reims", video_id=uuid.uuid4())
-        url = _write(media_client.media_root, key, VIDEO_BYTES)  # type: ignore[attr-defined]
+        url = _write(root, key, VIDEO_BYTES)
 
-        response = media_client.get(url)
+        response = client.get(url)
 
         assert response.status_code == 200
         assert response.content == VIDEO_BYTES
         assert response.headers["content-type"] == "video/mp4"
 
-    def test_serves_the_thumbnail_with_its_own_type(self, media_client: TestClient) -> None:
+    def test_serves_the_thumbnail_with_its_own_type(
+        self, media_client: tuple[TestClient, Path]
+    ) -> None:
+        client, root = media_client
         key = build_thumbnail_key(city_slug="reims", video_id=uuid.uuid4())
-        url = _write(media_client.media_root, key, b"\xff\xd8\xff\xe0jpeg")  # type: ignore[attr-defined]
+        url = _write(root, key, b"\xff\xd8\xff\xe0jpeg")
 
-        response = media_client.get(url)
+        response = client.get(url)
 
         assert response.status_code == 200
         assert response.headers["content-type"] == "image/jpeg"
@@ -67,52 +76,59 @@ class TestFullRead:
 
 class TestRangeRequests:
     def test_a_range_request_returns_206_and_the_exact_slice(
-        self, media_client: TestClient
+        self, media_client: tuple[TestClient, Path]
     ) -> None:
         """La lecture video depend du Range : sans 206, pas de seek ni de streaming."""
+        client, root = media_client
         key = build_processed_key(city_slug="reims", video_id=uuid.uuid4())
-        url = _write(media_client.media_root, key, VIDEO_BYTES)  # type: ignore[attr-defined]
+        url = _write(root, key, VIDEO_BYTES)
 
-        response = media_client.get(url, headers={"Range": "bytes=0-99"})
+        response = client.get(url, headers={"Range": "bytes=0-99"})
 
         assert response.status_code == 206
         assert response.content == VIDEO_BYTES[:100]
         assert response.headers["content-range"] == f"bytes 0-99/{len(VIDEO_BYTES)}"
         assert response.headers["content-length"] == "100"
 
-    def test_a_mid_file_range_is_honoured(self, media_client: TestClient) -> None:
+    def test_a_mid_file_range_is_honoured(self, media_client: tuple[TestClient, Path]) -> None:
+        client, root = media_client
         key = build_processed_key(city_slug="reims", video_id=uuid.uuid4())
-        url = _write(media_client.media_root, key, VIDEO_BYTES)  # type: ignore[attr-defined]
+        url = _write(root, key, VIDEO_BYTES)
 
-        response = media_client.get(url, headers={"Range": "bytes=1000-1099"})
+        response = client.get(url, headers={"Range": "bytes=1000-1099"})
 
         assert response.status_code == 206
         assert response.content == VIDEO_BYTES[1000:1100]
 
-    def test_accept_ranges_is_advertised(self, media_client: TestClient) -> None:
+    def test_accept_ranges_is_advertised(self, media_client: tuple[TestClient, Path]) -> None:
+        client, root = media_client
         key = build_processed_key(city_slug="reims", video_id=uuid.uuid4())
-        url = _write(media_client.media_root, key, VIDEO_BYTES)  # type: ignore[attr-defined]
+        url = _write(root, key, VIDEO_BYTES)
 
-        assert media_client.get(url).headers["accept-ranges"] == "bytes"
+        assert client.get(url).headers["accept-ranges"] == "bytes"
 
 
 class TestSecurityHeadersAndListing:
-    def test_nosniff_and_immutable_cache_are_set(self, media_client: TestClient) -> None:
+    def test_nosniff_and_immutable_cache_are_set(
+        self, media_client: tuple[TestClient, Path]
+    ) -> None:
         """Cles en UUID : un objet ne change jamais sous la meme cle, le cache peut etre long."""
+        client, root = media_client
         key = build_processed_key(city_slug="reims", video_id=uuid.uuid4())
-        url = _write(media_client.media_root, key, VIDEO_BYTES)  # type: ignore[attr-defined]
+        url = _write(root, key, VIDEO_BYTES)
 
-        response = media_client.get(url)
+        response = client.get(url)
 
         assert response.headers["x-content-type-options"] == "nosniff"
         assert "immutable" in response.headers["cache-control"]
         assert "max-age=31536000" in response.headers["cache-control"]
 
-    def test_directories_are_never_listed(self, media_client: TestClient) -> None:
-        _write(media_client.media_root, "local-video/reims/a.txt", b"x")  # type: ignore[attr-defined]
+    def test_directories_are_never_listed(self, media_client: tuple[TestClient, Path]) -> None:
+        client, root = media_client
+        _write(root, "local-video/reims/a.txt", b"x")
 
         for path in ("/media/", "/media/local-video/", "/media/local-video/reims/"):
-            assert media_client.get(path).status_code in (404, 405), path
+            assert client.get(path).status_code in (404, 405), path
 
     @pytest.mark.parametrize(
         "hostile",
@@ -124,14 +140,16 @@ class TestSecurityHeadersAndListing:
         ],
     )
     def test_traversal_attempts_never_serve_a_file(
-        self, media_client: TestClient, hostile: str
+        self, media_client: tuple[TestClient, Path], hostile: str
     ) -> None:
-        response = media_client.get(hostile)
+        client, _root = media_client
+        response = client.get(hostile)
         assert response.status_code in (307, 400, 404), response.status_code
         assert b"root:" not in response.content
 
-    def test_an_unknown_key_is_a_404(self, media_client: TestClient) -> None:
-        assert media_client.get("/media/local-video/reims/nope/processed.mp4").status_code == 404
+    def test_an_unknown_key_is_a_404(self, media_client: tuple[TestClient, Path]) -> None:
+        client, _root = media_client
+        assert client.get("/media/local-video/reims/nope/processed.mp4").status_code == 404
 
 
 class TestLegacyR2Urls:
@@ -186,9 +204,9 @@ class TestPublicMountIsLimitedToLocalVideo:
         ],
     )
     def test_profiles_and_stories_are_not_reachable_through_the_static_mount(
-        self, media_client: TestClient, leaked: str
+        self, media_client: tuple[TestClient, Path], leaked: str
     ) -> None:
-        root: Path = media_client.media_root  # type: ignore[attr-defined]
+        client, root = media_client
         (root / "profiles" / "11111111-1111-4111-8111-111111111111").mkdir(parents=True)
         (
             root / "profiles" / "11111111-1111-4111-8111-111111111111" / "avatar.jpg"
@@ -198,23 +216,26 @@ class TestPublicMountIsLimitedToLocalVideo:
             root / "stories" / "11111111-1111-4111-8111-111111111111" / "story.jpg"
         ).write_bytes(b"\xff\xd8\xff\xe0prive")
 
-        response = media_client.get(leaked)
+        response = client.get(leaked)
 
         assert response.status_code == 404, f"{leaked} ne doit pas etre servi"
         assert b"secret" not in response.content
         assert b"prive" not in response.content
 
-    def test_local_video_stays_readable_anonymously(self, media_client: TestClient) -> None:
+    def test_local_video_stays_readable_anonymously(
+        self, media_client: tuple[TestClient, Path]
+    ) -> None:
         """Les videos locales sont un contenu public : pas d'authentification requise."""
+        client, root = media_client
         key = build_processed_key(city_slug="reims", video_id=uuid.uuid4())
-        url = _write(media_client.media_root, key, VIDEO_BYTES)  # type: ignore[attr-defined]
+        url = _write(root, key, VIDEO_BYTES)
 
-        assert media_client.get(url).status_code == 200
+        assert client.get(url).status_code == 200
 
     def test_escaping_upwards_from_the_mount_never_reaches_a_sibling_domain(
-        self, media_client: TestClient
+        self, media_client: tuple[TestClient, Path]
     ) -> None:
-        root: Path = media_client.media_root  # type: ignore[attr-defined]
+        client, root = media_client
         (root / "stories").mkdir(parents=True, exist_ok=True)
         (root / "stories" / "leak.jpg").write_bytes(b"prive")
 
@@ -223,7 +244,7 @@ class TestPublicMountIsLimitedToLocalVideo:
             "/media/local-video/%2e%2e/stories/leak.jpg",
             "/media/local-video/..%2fstories%2fleak.jpg",
         ):
-            response = media_client.get(hostile)
+            response = client.get(hostile)
             assert b"prive" not in response.content, hostile
 
 
