@@ -1569,7 +1569,17 @@ body {
     display: none !important;
   }
 
-  .map-mobile-shell .web-three-col {
+  /* MAP-MEDIUM-SHELL-P0-19 : ce repli en bloc est le layout MOBILE, deja porte
+     par la meme regle en `max-width: 639.98px`. Sa presence ici en faisait le
+     seul `display: block !important` de la bande medium — les douze autres
+     shells bornent le leur sous 640px. Or `grid-template-columns` n'a aucun
+     effet sur un bloc : la grille du rail citoyen (`.web-three-col:has(>
+     [data-citizen-medium-rail])`) etait donc annulee, `aside` et `main`
+     redevenaient deux blocs pleine largeur, et la carte partait a y=963 pour un
+     viewport de 900 — hors ecran, navigation au centre.
+     Le repli reste donc pour un shell carte SANS rail (route non eligible), et
+     cede des que le rail existe reellement. */
+  .map-mobile-shell .web-three-col:not(:has(> [data-citizen-medium-rail])) {
     display: block !important;
     grid-template-columns: unset !important;
   }
