@@ -18,6 +18,7 @@ import os
 import uuid
 from collections.abc import AsyncGenerator
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 import sqlalchemy as sa
@@ -38,7 +39,7 @@ _MIGRATION_PATH = (
 )
 
 
-def _load_migration():  # type: ignore[no-untyped-def]
+def _load_migration() -> ModuleType:
     """Charge la revision par chemin : `alembic/versions` n'est pas un package et le
     nom de module commence par un chiffre."""
     spec = importlib.util.spec_from_file_location("_rev_0062", _MIGRATION_PATH)
