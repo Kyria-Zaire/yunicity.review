@@ -22,6 +22,7 @@ from app.schemas.admin_cockpit import (
     AdminCockpitSummaryResponse,
     AdminCockpitTopStampPartner,
 )
+from app.services.admin_cockpit_service import _agenda_health_payload
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -134,6 +135,8 @@ def _zeroed_cockpit_summary() -> AdminCockpitSummaryResponse:
             redemptions_today=3,
             passports_last_7_days=4,
             events_upcoming=5,
+            # RF-03B — coherent avec events_upcoming=5 : au-dessus du seuil de 3.
+            agenda_health=_agenda_health_payload(5),
             top_stamp_partner=AdminCockpitTopStampPartner(
                 organization_id=None,
                 name=None,

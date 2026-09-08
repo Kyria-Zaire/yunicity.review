@@ -126,6 +126,8 @@ export type {
   AdminCockpitExecutive,
   AdminCockpitPartners,
   AdminCockpitPassport,
+  AdminCockpitAgendaHealth,
+  AdminCockpitAgendaHealthStatus,
   AdminCockpitSignals,
   AdminCockpitSummaryParams,
   AdminCockpitSummaryResponse,
