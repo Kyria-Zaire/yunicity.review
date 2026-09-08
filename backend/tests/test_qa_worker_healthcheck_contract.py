@@ -17,7 +17,7 @@ Ces tests verrouillent le remplacement :
 
 from __future__ import annotations
 
-import os
+from collections.abc import Iterator
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -44,20 +44,24 @@ def _service(name: str) -> dict[str, Any]:
 
 
 
-def _worker_module() -> ModuleType:
-    """Importe `workers.video_worker` hors conteneur.
+@pytest.fixture
+def worker_module(monkeypatch: pytest.MonkeyPatch) -> Iterator[ModuleType]:
+    """Importe `workers.video_worker` hors conteneur, SANS polluer la session.
 
-    Le module resout `RedisSettings.from_dsn(REDIS_URL)` a l'import. `from_dsn`
-    ne fait que parser : une DSN locale factice suffit, aucune connexion n'est
-    ouverte. Sans elle, ces tests de contrat exigeraient un Redis.
+    Le module resout `RedisSettings.from_dsn(REDIS_URL)` a l'import ; `from_dsn`
+    ne fait que parser, aucune connexion n'est ouverte. La DSN factice est posee
+    par `monkeypatch` (donc annulee apres le test) et le cache de `get_settings`
+    est vide de part et d'autre : une variable d'environnement laissee en place
+    ferait echouer par connexion Redis tous les tests suivants de la session.
     """
-    os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
     from app.core.config import get_settings
 
+    monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
     get_settings.cache_clear()
     import workers.video_worker as module
 
-    return module
+    yield module
+    get_settings.cache_clear()
 
 
 def test_worker_declares_its_own_healthcheck() -> None:
@@ -86,11 +90,10 @@ def test_worker_healthcheck_carries_no_secret() -> None:
         assert interdit not in commande
 
 
-def test_worker_healthcheck_timings_are_coherent() -> None:
+def test_worker_healthcheck_timings_are_coherent(worker_module: ModuleType) -> None:
     """La sonde doit interroger plus souvent que la cle n'expire, laisser le temps
     au demarrage, et tolerer un rate manque sans faux negatif."""
-    worker = _worker_module()
-    WORKER_HEALTH_CHECK_INTERVAL_SECONDS = worker.WORKER_HEALTH_CHECK_INTERVAL_SECONDS
+    WORKER_HEALTH_CHECK_INTERVAL_SECONDS = worker_module.WORKER_HEALTH_CHECK_INTERVAL_SECONDS
 
     hc = _service("video-worker-qa")["healthcheck"]
     assert hc["interval"] == "30s"
@@ -102,23 +105,24 @@ def test_worker_healthcheck_timings_are_coherent() -> None:
     assert WORKER_HEALTH_CHECK_INTERVAL_SECONDS <= 30
 
 
-def test_worker_heartbeat_is_short_enough_to_detect_a_dead_worker() -> None:
+def test_worker_heartbeat_is_short_enough_to_detect_a_dead_worker(
+    worker_module: ModuleType,
+) -> None:
     """`arq --check` lit une cle a TTL = interval + 1. Avec le defaut ARQ de
     3600 s, un worker mort resterait annonce sain pendant une heure."""
-    worker = _worker_module()
-    WORKER_HEALTH_CHECK_INTERVAL_SECONDS = worker.WORKER_HEALTH_CHECK_INTERVAL_SECONDS
-    WorkerSettings = worker.WorkerSettings
+    WORKER_HEALTH_CHECK_INTERVAL_SECONDS = worker_module.WORKER_HEALTH_CHECK_INTERVAL_SECONDS
+    WorkerSettings = worker_module.WorkerSettings
 
     assert WorkerSettings.health_check_interval == WORKER_HEALTH_CHECK_INTERVAL_SECONDS
     assert WORKER_HEALTH_CHECK_INTERVAL_SECONDS < 3600, "le defaut ARQ ne convient pas"
     assert WORKER_HEALTH_CHECK_INTERVAL_SECONDS >= 10, "un battement trop frequent est inutile"
 
 
-def test_worker_probe_targets_the_same_queue_as_the_worker() -> None:
+def test_worker_probe_targets_the_same_queue_as_the_worker(worker_module: ModuleType) -> None:
     """La sonde lance la meme classe WorkerSettings : meme queue, meme Redis."""
     from app.services.local_video.job_queue import ARQ_QUEUE_NAME
 
-    WorkerSettings = _worker_module().WorkerSettings
+    WorkerSettings = worker_module.WorkerSettings
 
     assert WorkerSettings.queue_name == ARQ_QUEUE_NAME
     commande = " ".join(_service("video-worker-qa")["healthcheck"]["test"])
@@ -134,5 +138,5 @@ def test_backend_healthcheck_is_untouched() -> None:
         assert "arq" not in commande
 
 
-def test_single_ffmpeg_job_is_preserved() -> None:
-    assert _worker_module().WorkerSettings.max_jobs == 1
+def test_single_ffmpeg_job_is_preserved(worker_module: ModuleType) -> None:
+    assert worker_module.WorkerSettings.max_jobs == 1
