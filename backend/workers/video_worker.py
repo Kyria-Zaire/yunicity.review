@@ -28,6 +28,19 @@ from workers.scheduled_posts import publish_scheduled_posts_job
 
 logger = logging.getLogger(__name__)
 
+# QA-WORKER-HEALTHCHECK-P1 — cadence du heartbeat ARQ.
+#
+# ARQ ecrit `<queue_name>:health-check` toutes les `health_check_interval`
+# secondes, avec un TTL de interval + 1. `arq --check` lit cette cle : il repond
+# donc « sain » tant qu'elle n'a pas expire, PAS tant que le worker vit.
+#
+# Avec le defaut ARQ (3600 s), un worker mort restait annonce sain pendant une
+# heure — mesure : heartbeat fige a 10:27:02, `arq --check` exit=0 a 11:14:12.
+# A 30 s, la cle expire en 31 s : un worker arrete devient detectable en moins
+# d'une minute, et la sonde Docker (3 essais / 30 s) bascule en ~90 s.
+# Cout : un SET Redis toutes les 30 s.
+WORKER_HEALTH_CHECK_INTERVAL_SECONDS = 30
+
 
 async def startup(ctx: dict[str, Any]) -> None:
     del ctx
@@ -131,6 +144,9 @@ class WorkerSettings:
     on_shutdown = shutdown
     on_job_failure = on_job_failure
     queue_name = ARQ_QUEUE_NAME
+    # Voir WORKER_HEALTH_CHECK_INTERVAL_SECONDS : sans cela `arq --check` ne
+    # distingue pas un worker vivant d'un worker mort depuis moins d'une heure.
+    health_check_interval = WORKER_HEALTH_CHECK_INTERVAL_SECONDS
     # Un seul transcodage ffmpeg à la fois : le service unifié partage son CPU avec
     # l'API, et le défaut ARQ (10) saturerait le conteneur sur des clips de 50 Mo.
     max_jobs = 1

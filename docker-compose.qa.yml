@@ -177,6 +177,19 @@ services:
       dockerfile: Dockerfile
     container_name: yunicity-video-worker-qa
     command: arq workers.video_worker.WorkerSettings
+    # QA-WORKER-HEALTHCHECK-P1 — sonde NATIVE ARQ, pas HTTP.
+    # Le service heritait du HEALTHCHECK de l'image backend (`curl :8000/health`),
+    # impossible a satisfaire : un worker ARQ n'expose aucun serveur HTTP, d'ou un
+    # `unhealthy` permanent malgre un worker sain. `arq --check` lit le heartbeat
+    # que le worker ecrit dans Redis sur SA queue : il echoue si le worker est
+    # mort ET si Redis est injoignable, mais reste vert si seule l'API s'arrete.
+    # Aucun secret dans la commande : la DSN vient de REDIS_URL deja injecte.
+    healthcheck:
+      test: ["CMD", "arq", "--check", "workers.video_worker.WorkerSettings"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     environment:
       APP_NAME: Yunicity QA Video Worker
       APP_ENV: dev
