@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.local_video_constants import LOCAL_VIDEO_MAX_DURATION_SECONDS
 from app.db.database_url import to_asyncpg_url
 
 AppEnv = Literal["dev", "recette", "preprod", "prod"]
@@ -142,8 +143,11 @@ class Settings(BaseSettings):
         alias="PROFILE_MEDIA_UPLOAD_DIR",
     )
     local_video_max_bytes: int = Field(default=52_428_800, alias="LOCAL_VIDEO_MAX_BYTES")
+    # VIDEO-04A-CONTRACT-FIX-01 — le defaut derive de la constante du domaine.
+    # Une valeur dupliquee ici avait diverge (60) de la constante et du client (90) :
+    # le client acceptait 61-90 s, le serveur rejetait avec un message annoncant 90.
     local_video_max_duration_seconds: int = Field(
-        default=60,
+        default=LOCAL_VIDEO_MAX_DURATION_SECONDS,
         alias="LOCAL_VIDEO_MAX_DURATION_SECONDS",
     )
     local_video_presigned_ttl_seconds: int = Field(
