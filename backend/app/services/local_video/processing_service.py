@@ -129,6 +129,7 @@ async def run_local_video_processing(
     video_id: uuid.UUID,
     *,
     job_try: int = 1,
+    max_duration_seconds: int | None = None,
     settings: Settings | None = None,
 ) -> None:
     """Execute FFmpeg pipeline for one video (worker entrypoint)."""
@@ -209,6 +210,7 @@ async def run_local_video_processing(
                 city_slug=city_slug,
                 video_id=video_id,
                 content_type=video.mime_type,
+                max_duration_seconds=max_duration_seconds,
             )
         except AppError as exc:
             retryable = exc.code not in LOCAL_VIDEO_PROCESSING_NON_RETRYABLE_CODES

@@ -4788,6 +4788,9 @@ export {
   LOCAL_VIDEO_UPLOAD_TITLE_PLACEHOLDER,
   LOCAL_VIDEO_UPLOAD_TITLE_REQUIRED,
   LOCAL_VIDEO_UPLOAD_VIDEO_HINT,
+  localVideoUploadFileTooLong,
+  localVideoUploadPageSubtitle,
+  localVideoUploadVideoHint,
   LOCAL_VIDEO_UPLOAD_VIDEO_LABEL,
   LOCAL_VIDEO_UPLOAD_VIDEO_REQUIRED,
 } from "./local-video-labels";

@@ -46,8 +46,17 @@ async def _clear_redis_rate_limits(auth_client: AsyncClient) -> None:
 
 @pytest.fixture
 def mock_processor(monkeypatch: pytest.MonkeyPatch) -> None:
-    def _fake_process(self, *, source_storage_key, city_slug, video_id, content_type):  # type: ignore[no-untyped-def]
-        del self, content_type, source_storage_key
+    def _fake_process(  # type: ignore[no-untyped-def]
+        self,
+        *,
+        source_storage_key,
+        city_slug,
+        video_id,
+        content_type,
+        max_duration_seconds=None,
+    ):
+        # VIDEO-04D — accepte le snapshot de duree passe par le service reel.
+        del self, content_type, source_storage_key, max_duration_seconds
         return LocalVideoProcessResult(
             duration_seconds=12.5,
             media_width=1080,

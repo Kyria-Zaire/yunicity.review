@@ -3,6 +3,7 @@ import type {
   LocalVideoComment,
   LocalVideoCommentCreatePayload,
   LocalVideoCommentListResponse,
+  LocalVideoDurationPolicy,
   LocalVideoFeedItem,
   LocalVideoLikeResponse,
   LocalVideoListParams,
@@ -39,6 +40,14 @@ function buildCommentQuery(cursor?: string | null, limit?: number): string {
 }
 
 export class LocalVideosApi extends ApiClientBase {
+  /**
+   * Politique de durée du créateur connecté (VIDEO-04D).
+   * Aucun paramètre : le tier est déduit des rôles serveur.
+   */
+  getDurationPolicy(): Promise<LocalVideoDurationPolicy> {
+    return this.getJson<LocalVideoDurationPolicy>("/local-videos/policy");
+  }
+
   /** @alias createUpload */
   initUpload(payload: LocalVideoUploadInitPayload): Promise<LocalVideoUpload> {
     return this.postJson<LocalVideoUpload>("/local-videos/upload-init", payload);

@@ -4,7 +4,6 @@ import type { LocalVideoContentType, Neighborhood } from "@yunicity/types";
 import {
   LOCAL_VIDEO_ALLOWED_CONTENT_TYPES,
   LOCAL_VIDEO_MAX_BYTES,
-  LOCAL_VIDEO_MAX_DURATION_SECONDS,
 } from "@yunicity/types";
 import {
   LOCAL_VIDEO_DESCRIPTION_MAX_LENGTH,
@@ -19,7 +18,8 @@ import {
   LOCAL_VIDEO_UPLOAD_FILE_INVALID_TYPE,
   LOCAL_VIDEO_UPLOAD_FILE_SIZE_LABEL,
   LOCAL_VIDEO_UPLOAD_FILE_TOO_LARGE,
-  LOCAL_VIDEO_UPLOAD_FILE_TOO_LONG,
+  localVideoUploadFileTooLong,
+  localVideoUploadVideoHint,
   LOCAL_VIDEO_UPLOAD_NEIGHBORHOOD_LABEL,
   LOCAL_VIDEO_UPLOAD_NEIGHBORHOOD_PLACEHOLDER,
   LOCAL_VIDEO_UPLOAD_NEIGHBORHOOD_REQUIRED,
@@ -29,7 +29,6 @@ import {
   LOCAL_VIDEO_UPLOAD_TITLE_LABEL,
   LOCAL_VIDEO_UPLOAD_TITLE_PLACEHOLDER,
   LOCAL_VIDEO_UPLOAD_TITLE_REQUIRED,
-  LOCAL_VIDEO_UPLOAD_VIDEO_HINT,
   LOCAL_VIDEO_UPLOAD_VIDEO_LABEL,
   LOCAL_VIDEO_UPLOAD_VIDEO_REQUIRED,
 } from "@yunicity/utils";
@@ -53,6 +52,8 @@ type NewLocalVideoFormProps = {
   loadingNeighborhoods: boolean;
   submitting: boolean;
   error: string | null;
+  /** VIDEO-04D — limite du créateur connecté. Le backend reste l'autorité finale. */
+  maxDurationSeconds: number;
   onCancel: () => void;
   onSubmit: (values: LocalVideoUploadFormValues) => Promise<void>;
 };
@@ -109,6 +110,7 @@ export function NewLocalVideoForm({
   loadingNeighborhoods,
   submitting,
   error,
+  maxDurationSeconds,
   onCancel,
   onSubmit,
 }: NewLocalVideoFormProps) {
@@ -142,8 +144,8 @@ export function NewLocalVideoForm({
     }
 
     const duration = await readVideoDuration(selected);
-    if (duration != null && duration > LOCAL_VIDEO_MAX_DURATION_SECONDS) {
-      setFieldError(LOCAL_VIDEO_UPLOAD_FILE_TOO_LONG);
+    if (duration != null && duration > maxDurationSeconds) {
+      setFieldError(localVideoUploadFileTooLong(maxDurationSeconds));
       return;
     }
 
@@ -205,7 +207,9 @@ export function NewLocalVideoForm({
     <form onSubmit={(event) => void handleSubmit(event)} className="space-y-6">
       <section className="rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-sm sm:p-6">
         <h2 className="text-base font-bold text-neutral-900">{LOCAL_VIDEO_UPLOAD_VIDEO_LABEL}</h2>
-        <p className="mt-1 text-sm text-neutral-600">{LOCAL_VIDEO_UPLOAD_VIDEO_HINT}</p>
+        <p className="mt-1 text-sm text-neutral-600">
+          {localVideoUploadVideoHint(maxDurationSeconds)}
+        </p>
 
         {preview ? (
           <div className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50/80 p-4">

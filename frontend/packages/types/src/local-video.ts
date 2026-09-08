@@ -222,3 +222,17 @@ export type LocalVideoErrorCode =
   | "LOCAL_VIDEO_PROCESSING_TIMEOUT"
   | "RATE_LIMITED"
   | "UNKNOWN_ERROR";
+
+/**
+ * Politique de durée du créateur connecté — `GET /local-videos/policy` (VIDEO-04D).
+ *
+ * Calculée côté serveur depuis les rôles persistés. Le client ne peut ni l'envoyer
+ * ni la choisir : elle ne sert qu'à un rejet anticipé ergonomique, le backend
+ * restant l'autorité finale.
+ */
+export type LocalVideoDurationPolicy = {
+  tier: "pilot" | "verified";
+  max_duration_seconds: number;
+  max_bytes: number;
+  label: string;
+};

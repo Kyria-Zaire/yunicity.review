@@ -13,7 +13,12 @@ from tempfile import TemporaryDirectory
 
 from app.core.config import Settings
 from app.core.errors import AppError
-from app.core.local_video_constants import EXTENSION_BY_LOCAL_VIDEO_MIME
+from app.core.local_video_constants import (
+    EXTENSION_BY_LOCAL_VIDEO_MIME,
+    LOCAL_VIDEO_PROBE_TIMEOUT_SECONDS,
+    LOCAL_VIDEO_THUMBNAIL_TIMEOUT_SECONDS,
+    LOCAL_VIDEO_TRANSCODE_TIMEOUT_SECONDS,
+)
 from app.services.local_video.storage import LocalVideoStorage
 
 logger = logging.getLogger(__name__)
@@ -42,7 +47,12 @@ class LocalVideoMediaProcessor:
         city_slug: str,
         video_id: uuid.UUID,
         content_type: str,
+        max_duration_seconds: int | None = None,
     ) -> LocalVideoProcessResult:
+        """Traite une video. `max_duration_seconds` est le snapshot fige a la
+        publication (VIDEO-04D) ; absent, on retombe sur le defaut pilote des
+        reglages. La duree reelle est TOUJOURS remesuree par ffprobe ici : le
+        snapshot borne l'autorisation, il ne remplace jamais la mesure."""
         if shutil.which("ffprobe") is None or shutil.which("ffmpeg") is None:
             raise AppError(
                 status_code=503,
@@ -57,7 +67,11 @@ class LocalVideoMediaProcessor:
             self._storage.read_to_path(source_storage_key, source_path)
 
             duration, media_width, media_height = self._probe_media(source_path)
-            max_duration = float(self._settings.local_video_max_duration_seconds)
+            max_duration = float(
+                max_duration_seconds
+                if max_duration_seconds is not None
+                else self._settings.local_video_max_duration_seconds
+            )
             if duration > max_duration + 0.5:
                 raise AppError(
                     status_code=400,
@@ -232,7 +246,7 @@ class LocalVideoMediaProcessor:
                 check=True,
                 capture_output=True,
                 text=True,
-                timeout=30,
+                timeout=LOCAL_VIDEO_PROBE_TIMEOUT_SECONDS,
             )
         except subprocess.CalledProcessError as exc:
             logger.warning("ffprobe_failed", extra={"stderr": exc.stderr})
@@ -323,7 +337,9 @@ class LocalVideoMediaProcessor:
             str(output),
         ]
         try:
-            subprocess.run(cmd, check=True, capture_output=True, timeout=120)
+            subprocess.run(
+                cmd, check=True, capture_output=True, timeout=LOCAL_VIDEO_TRANSCODE_TIMEOUT_SECONDS
+            )
         except subprocess.CalledProcessError as exc:
             logger.warning("ffmpeg_transcode_failed", extra={"stderr": exc.stderr})
             raise AppError(
@@ -355,7 +371,9 @@ class LocalVideoMediaProcessor:
             str(thumb_path),
         ]
         try:
-            subprocess.run(cmd, check=True, capture_output=True, timeout=60)
+            subprocess.run(
+                cmd, check=True, capture_output=True, timeout=LOCAL_VIDEO_THUMBNAIL_TIMEOUT_SECONDS
+            )
         except subprocess.CalledProcessError as exc:
             logger.warning("ffmpeg_thumb_failed", extra={"stderr": exc.stderr})
             raise AppError(

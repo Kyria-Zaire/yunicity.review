@@ -189,3 +189,17 @@ class LocalVideoCommentListResponse(BaseModel):
 
 class LocalVideoReportCreateRequest(BaseModel):
     reason: LocalVideoReportReason
+
+
+class LocalVideoDurationPolicyResponse(BaseModel):
+    """Politique de duree servie a `/videos/new` (VIDEO-04D).
+
+    Le tier est calcule cote serveur a partir des roles persistes ; le client ne
+    peut ni l'envoyer ni le choisir. Le backend reste l'autorite : cette reponse
+    ne sert qu'a un rejet anticipe ergonomique.
+    """
+
+    tier: str
+    max_duration_seconds: int
+    max_bytes: int
+    label: str

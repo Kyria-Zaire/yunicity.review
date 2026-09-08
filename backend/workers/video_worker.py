@@ -50,10 +50,21 @@ async def shutdown(ctx: dict[str, Any]) -> None:
     await close_redis()
 
 
-async def process_local_video_job(ctx: dict[str, Any], video_id: str) -> None:
+async def process_local_video_job(
+    ctx: dict[str, Any],
+    video_id: str,
+    max_duration_seconds: int | None = None,
+) -> None:
+    # `max_duration_seconds` est le snapshot fige a la publication (VIDEO-04D).
+    # Absent pour un job enfile avant ce deploiement : le service retombe alors sur
+    # le defaut pilote.
     job_try = int(ctx.get("job_try", 1))
     try:
-        await run_local_video_processing(uuid.UUID(video_id), job_try=job_try)
+        await run_local_video_processing(
+            uuid.UUID(video_id),
+            job_try=job_try,
+            max_duration_seconds=max_duration_seconds,
+        )
     except AppError:
         raise
     except Exception as exc:

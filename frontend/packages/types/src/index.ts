@@ -434,6 +434,7 @@ export type {
   LocalVideoStatusId,
   LocalVideoTypeId,
   LocalVideoUpload,
+  LocalVideoDurationPolicy,
   LocalVideoUploadInitPayload,
 } from "./local-video";
 
