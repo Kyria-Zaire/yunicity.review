@@ -614,10 +614,14 @@ export function EventMapScreen() {
     () => buildLocalVideoTeaserFilterFromMapSelection(selection),
     [selection],
   );
+  // `showDetailRail` est la condition d'AFFICHAGE de la fiche : une selection de
+  // quartier n'ouvre pas cette fiche mais un popup leger. Recuperer des teasers
+  // dans ce cas serait une requete dont le resultat ne serait jamais montre — on
+  // aligne donc le fetch sur ce qui sera reellement rendu.
   const teasers = useLocalVideoTeasers({
     city,
     filter: teaserFilter ?? { kind: "city" },
-    enabled: teaserFilter !== null,
+    enabled: teaserFilter !== null && showDetailRail,
   });
   const teaserViews = useMemo(
     () => teasers.items.map(buildLocalVideoTeaserViewFromFeedItem),
