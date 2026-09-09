@@ -182,6 +182,10 @@ class LocalVideoRepository:
             .options(
                 selectinload(LocalVideo.author).selectinload(User.profile),
                 selectinload(LocalVideo.neighborhood),
+                # VIDEO-03 — le teaser expose le slug du lieu lie pour son CTA
+                # « Y aller ». En lot : une requete pour toute la page, jamais une
+                # par video.
+                selectinload(LocalVideo.cultural_place),
             )
             .order_by(
                 LocalVideo.published_at.desc(),

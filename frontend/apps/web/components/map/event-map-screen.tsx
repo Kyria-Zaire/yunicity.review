@@ -4,6 +4,8 @@ import { mapCulturalPlaceItemToListItem } from "@/lib/map-cultural-places";
 import type { CulturalPlaceListItem } from "@yunicity/types";
 import type { MapTerritorySelection } from "@yunicity/utils";
 import {
+  buildLocalVideoTeaserFilterFromMapSelection,
+  buildLocalVideoTeaserViewFromFeedItem,
   DEFAULT_MAP_CITY,
   buildMapSelectedPanelPayload,
   buildNeighborhoodMapMarkers,
@@ -43,6 +45,7 @@ import { MapMediumScreen } from "@/components/map/medium";
 import { MapMobileScreen } from "@/components/map/mobile";
 import { MapPartnerDetailPanel } from "@/components/map/map-partner-detail-panel";
 import { MapPlaceDetailPanel } from "@/components/map/map-place-detail-panel";
+import { useLocalVideoTeasers } from "@/hooks/use-local-video-teasers";
 import { useMapPortalStats } from "@/hooks/use-map-portal-stats";
 import { useMapViewportTier } from "@/hooks/use-map-viewport-tier";
 import { useMapBbox } from "@/hooks/use-map-bbox";
@@ -603,6 +606,24 @@ export function EventMapScreen() {
   const { placeDetail, loading: placeLoading, error: placeError } =
     useSelectedCulturalPlaceDetail(selection, city);
 
+  // VIDEO-03 — teasers vidéo de la sélection. Même raison que le détail lieu
+  // juste au-dessus : la fiche est montée jusqu'à trois fois (aside, sous-carte,
+  // drawer medium). Le fetch vit donc ICI, une seule fois, et les vues
+  // descendent en props — sinon chaque montage rejouerait la même requête.
+  const teaserFilter = useMemo(
+    () => buildLocalVideoTeaserFilterFromMapSelection(selection),
+    [selection],
+  );
+  const teasers = useLocalVideoTeasers({
+    city,
+    filter: teaserFilter ?? { kind: "city" },
+    enabled: teaserFilter !== null,
+  });
+  const teaserViews = useMemo(
+    () => teasers.items.map(buildLocalVideoTeaserViewFromFeedItem),
+    [teasers.items],
+  );
+
   // Fermeture explicite du détail : efface la sélection, sémantique identique aux surfaces
   // existantes (partenaire → slug+query ; lieu/event → selection).
   const handleCloseDetail = useCallback(() => {
@@ -630,6 +651,7 @@ export function EventMapScreen() {
       <MapPlaceDetailPanel
         city={city}
         selection={selection}
+        videoTeasers={teaserViews}
         events={visibleEvents}
         origin={userOrigin}
         onClose={handleCloseDetail}

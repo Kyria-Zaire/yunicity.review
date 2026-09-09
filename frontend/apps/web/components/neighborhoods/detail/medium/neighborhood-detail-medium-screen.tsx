@@ -1,5 +1,6 @@
 "use client";
 
+import { NeighborhoodDetailVideos } from "@/components/neighborhoods/detail/shared/neighborhood-detail-videos";
 import { NeighborhoodDetailBreadcrumbs } from "@/components/neighborhoods/neighborhood-detail-breadcrumbs";
 import { NeighborhoodDetailMediumBottom } from "@/components/neighborhoods/detail/medium/neighborhood-detail-medium-bottom";
 import { NeighborhoodDetailMediumHero } from "@/components/neighborhoods/detail/medium/neighborhood-detail-medium-hero";
@@ -247,6 +248,10 @@ export function NeighborhoodDetailMediumScreen({ detail }: NeighborhoodDetailMed
       <NeighborhoodDetailMediumIdentitySection body={identityBody} pillars={pillars} />
 
       <NeighborhoodDetailMediumPlaces places={places} />
+
+      {/* VIDEO-03 — vidéos du quartier, déjà présentes dans la charge
+          utile du détail : aucune requête supplémentaire. */}
+      <NeighborhoodDetailVideos detail={detail} layout="scroll" />
 
       <NeighborhoodDetailMediumBottom
         neighborhoodName={name}

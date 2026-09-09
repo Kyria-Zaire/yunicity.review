@@ -1,5 +1,6 @@
 "use client";
 
+import { NeighborhoodDetailVideos } from "@/components/neighborhoods/detail/shared/neighborhood-detail-videos";
 import { NeighborhoodDetailBreadcrumbs } from "@/components/neighborhoods/neighborhood-detail-breadcrumbs";
 import { NeighborhoodDetailDesktopFeed } from "@/components/neighborhoods/detail/desktop/neighborhood-detail-desktop-feed";
 import { NeighborhoodDetailDesktopHero } from "@/components/neighborhoods/detail/desktop/neighborhood-detail-desktop-hero";
@@ -239,6 +240,10 @@ export function NeighborhoodDetailDesktopScreen({ detail }: NeighborhoodDetailDe
           <NeighborhoodDetailDesktopIdentitySection body={identityBody} pillars={pillars} />
 
           <NeighborhoodDetailDesktopPlaces places={places} />
+
+          {/* VIDEO-03 — vidéos du quartier, déjà présentes dans la charge
+              utile du détail : aucune requête supplémentaire. */}
+          <NeighborhoodDetailVideos detail={detail} layout="stack" />
 
           <NeighborhoodDetailDesktopFeed items={feedItems} viewAllHref={feedHref} />
 

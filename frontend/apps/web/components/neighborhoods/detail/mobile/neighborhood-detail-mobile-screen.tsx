@@ -1,5 +1,6 @@
 "use client";
 
+import { NeighborhoodDetailVideos } from "@/components/neighborhoods/detail/shared/neighborhood-detail-videos";
 import { NeighborhoodDetailMobileBottom } from "@/components/neighborhoods/detail/mobile/neighborhood-detail-mobile-bottom";
 import { NeighborhoodDetailMobileHeader } from "@/components/neighborhoods/detail/mobile/neighborhood-detail-mobile-header";
 import { NeighborhoodDetailMobileHero } from "@/components/neighborhoods/detail/mobile/neighborhood-detail-mobile-hero";
@@ -238,6 +239,10 @@ export function NeighborhoodDetailMobileScreen({ detail }: NeighborhoodDetailMob
         <NeighborhoodDetailMobileIdentitySection body={identityBody} pillars={pillars} />
 
         <NeighborhoodDetailMobilePlaces places={places} />
+
+        {/* VIDEO-03 — vidéos du quartier, déjà présentes dans la charge
+            utile du détail : aucune requête supplémentaire. */}
+        <NeighborhoodDetailVideos detail={detail} layout="scroll" />
 
         <NeighborhoodDetailMobileBottom
           neighborhoodName={name}
