@@ -4805,6 +4805,10 @@ export {
 export type { LocalVideoShareResult } from "./local-video-state";
 export { LocalVideosApi, createLocalVideosApi, mapLocalVideoToFeedPreview } from "./local-videos-api";
 export {
+  resolveVideoRankingReason,
+  type VideoRankingReasonView,
+} from "./local-video-ranking-reason";
+export {
   humanizeLocalVideoError,
   isKnownLocalVideoErrorCode,
   isLocalVideoError,
