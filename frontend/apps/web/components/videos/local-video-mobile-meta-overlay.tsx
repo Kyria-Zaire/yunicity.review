@@ -11,6 +11,7 @@ import {
   formatVideoAuthorDisplayName,
   formatVideosPortraitOriginalSound,
   resolveLocalVideoTeaserTitle,
+  resolveVideoRankingReason,
   resolveVideosPortraitDiscoverCta,
   resolveVideosPortraitMapHref,
   resolveVideosPortraitPlaceLabel,
@@ -41,6 +42,9 @@ export function LocalVideoMobileMetaOverlay({ item }: LocalVideoMobileMetaOverla
   const mapHref = resolveVideosPortraitMapHref(item);
   const discoverCta = resolveVideosPortraitDiscoverCta(item);
   const originalSound = formatVideosPortraitOriginalSound(item);
+  // VIDEO-03 — motif du classement, decide par l'API. Le frontend ne
+  // reconstruit rien : il affiche, ou n'affiche pas.
+  const raison = resolveVideoRankingReason(item);
 
   return (
     <div className="pointer-events-auto min-w-0 space-y-2.5 pr-2 text-white">
@@ -83,6 +87,19 @@ export function LocalVideoMobileMetaOverlay({ item }: LocalVideoMobileMetaOverla
         <p className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-emerald-400/60 bg-neutral-950/55 px-3 py-1 text-xs font-semibold text-emerald-200">
           <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
           <span className="truncate">{placeLabel}</span>
+        </p>
+      ) : null}
+
+      {raison.visible ? (
+        // Pas de role="status" : c'est une precision de contexte, pas une
+        // alerte — l'annoncer interromprait la lecture a chaque changement de
+        // slide. Le texte reste dans le flux, donc lisible a la demande.
+        <p
+          className={`max-w-full text-xs ${
+            raison.emphasis ? "font-medium text-white/85" : "text-white/70"
+          }`}
+        >
+          {raison.label}
         </p>
       ) : null}
 

@@ -11,6 +11,7 @@ import {
   buildVideoAuthorProfileHref,
   bumpLocalVideoCommentCount,
   formatVideoAuthorHandle,
+  resolveVideoRankingReason,
   formatVideoTemporalLabel,
   resolveLocalVideoTeaserTitle,
 } from "@yunicity/utils";
@@ -61,6 +62,9 @@ export function VideosDesktopLandscapeCard({ item: initialItem }: VideosDesktopL
   const href = buildLocalVideoTeaserHref(item.id);
   const profileHref = buildVideoAuthorProfileHref(item);
   const handle = formatVideoAuthorHandle(item);
+  // VIDEO-03 — motif du classement, decide par l'API. Le frontend ne
+  // reconstruit rien : il affiche, ou n'affiche pas.
+  const raison = resolveVideoRankingReason(item);
 
   return (
     <article data-videos-desktop-landscape="" className="feed-desktop-surface overflow-hidden">
@@ -83,6 +87,16 @@ export function VideosDesktopLandscapeCard({ item: initialItem }: VideosDesktopL
         ) : (
           <p className="text-sm font-medium text-neutral-500">{handle}</p>
         )}
+
+        {raison.visible ? (
+          <p
+            className={`text-xs ${
+              raison.emphasis ? "font-medium text-neutral-700" : "text-neutral-500"
+            }`}
+          >
+            {raison.label}
+          </p>
+        ) : null}
 
         <div className="flex items-center gap-3 text-xs text-neutral-500">
           <span>{formatVideoTemporalLabel(item.published_at)}</span>

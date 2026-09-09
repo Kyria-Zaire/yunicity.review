@@ -71,6 +71,57 @@ describe("local-video-portal", () => {
     expect(sorted.map((item) => item.id)).toEqual(["high", "low"]);
   });
 
+  // VIDEO-03 — le backend classe le feed par pertinence territoriale
+  // (quartier, puis ville, puis repli). Un tri par récence appliqué ensuite en
+  // mémoire détruirait ce classement : la vidéo du quartier du spectateur
+  // repasserait derrière une vidéo de l'autre bout de la ville publiée cinq
+  // minutes plus tôt. Le tri par défaut doit donc rendre l'ordre du serveur
+  // intact.
+  it("preserves the server order by default", () => {
+    const items = [
+      makeItem({ id: "quartier", published_at: "2026-06-01T10:00:00.000Z" }),
+      makeItem({ id: "ville", published_at: "2026-07-02T10:00:00.000Z" }),
+    ];
+    const sorted = sortVideosPortalItems(items, "relevance", "all");
+    expect(sorted.map((item) => item.id)).toEqual(["quartier", "ville"]);
+  });
+
+  it("still sorts by recency when the viewer explicitly asks for it", () => {
+    const items = [
+      makeItem({ id: "quartier", published_at: "2026-06-01T10:00:00.000Z" }),
+      makeItem({ id: "ville", published_at: "2026-07-02T10:00:00.000Z" }),
+    ];
+    const sorted = sortVideosPortalItems(items, "recent", "all");
+    expect(sorted.map((item) => item.id)).toEqual(["ville", "quartier"]);
+  });
+
+  it("keeps the new tab on recency whatever the sort", () => {
+    const items = [
+      makeItem({ id: "vieille", published_at: "2026-06-01T10:00:00.000Z" }),
+      makeItem({ id: "recente", published_at: "2026-07-02T10:00:00.000Z" }),
+    ];
+    const sorted = sortVideosPortalItems(items, "relevance", "new");
+    expect(sorted.map((item) => item.id)).toEqual(["recente", "vieille"]);
+  });
+
+  it("keeps the trending tab on likes whatever the sort", () => {
+    const items = [
+      makeItem({ id: "peu", like_count: 1 }),
+      makeItem({ id: "beaucoup", like_count: 10 }),
+    ];
+    const sorted = sortVideosPortalItems(items, "relevance", "trending");
+    expect(sorted.map((item) => item.id)).toEqual(["beaucoup", "peu"]);
+  });
+
+  it("keeps the nearby tab on distance whatever the sort", () => {
+    const items = [
+      makeItem({ id: "loin", distance_meters: 500 }),
+      makeItem({ id: "pres", distance_meters: 100 }),
+    ];
+    const sorted = sortVideosPortalItems(items, "relevance", "nearby");
+    expect(sorted.map((item) => item.id)).toEqual(["pres", "loin"]);
+  });
+
   it("filters mine tab to current user", () => {
     const items = [
       makeItem({ id: "mine", author_user_id: "u1" }),

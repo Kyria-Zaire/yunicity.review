@@ -26,6 +26,7 @@ import {
   resolveVideosPortraitDiscoverCta,
   resolveVideosPortraitMapHref,
   resolveVideosPortraitPlaceLabel,
+  resolveVideoRankingReason,
 } from "@yunicity/utils";
 import {
   Bookmark,
@@ -218,6 +219,9 @@ export function VideosDesktopPortraitCard({
   const href = buildLocalVideoTeaserHref(item.id);
   const profileHref = buildVideoAuthorProfileHref(item);
   const placeLabel = resolveVideosPortraitPlaceLabel(item);
+  // VIDEO-03 — motif du classement, decide par l'API. Le frontend ne
+  // reconstruit rien : il affiche, ou n'affiche pas.
+  const raison = resolveVideoRankingReason(item);
   const hashtags = buildVideosPortraitHashtags(item);
   const mapHref = resolveVideosPortraitMapHref(item);
   const discoverCta = resolveVideosPortraitDiscoverCta(item);
@@ -308,6 +312,16 @@ export function VideosDesktopPortraitCard({
             <p className="mt-4 inline-flex w-fit max-w-full items-center gap-1.5 rounded-full border border-emerald-400/70 px-3 py-1 text-xs font-semibold text-emerald-300">
               <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
               <span className="truncate">{placeLabel}</span>
+            </p>
+          ) : null}
+
+          {raison.visible ? (
+            <p
+              className={`mt-2 text-xs ${
+                raison.emphasis ? "font-medium text-white/80" : "text-neutral-400"
+              }`}
+            >
+              {raison.label}
             </p>
           ) : null}
 

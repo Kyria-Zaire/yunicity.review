@@ -73,6 +73,7 @@ export const VIDEOS_MOBILE_PUBLISH_ARIA = "Publier une vidéo";
 export const VIDEOS_MOBILE_PUBLISH_LABEL = "Publier";
 
 export const VIDEOS_SORT_LABEL = "Trier par :";
+export const VIDEOS_SORT_RELEVANCE = "Au plus près de toi";
 export const VIDEOS_SORT_RECENT = "Les plus récents";
 export const VIDEOS_SORT_POPULAR = "Les plus populaires";
 

@@ -5,6 +5,7 @@ import {
   VIDEOS_SORT_LABEL,
   VIDEOS_SORT_POPULAR,
   VIDEOS_SORT_RECENT,
+  VIDEOS_SORT_RELEVANCE,
   VIDEOS_TAB_ALL,
   VIDEOS_TAB_MINE,
   VIDEOS_TAB_NEW,
@@ -32,6 +33,7 @@ const TABS: { id: VideosPortalTabId; label: string }[] = [
 ];
 
 const SORT_OPTIONS: { value: VideosPortalSortId; label: string }[] = [
+  { value: "relevance", label: VIDEOS_SORT_RELEVANCE },
   { value: "recent", label: VIDEOS_SORT_RECENT },
   { value: "popular", label: VIDEOS_SORT_POPULAR },
 ];
