@@ -425,6 +425,7 @@ export type {
   LocalVideoContentType,
   LocalVideoErrorCode,
   LocalVideoFeedItem,
+  LocalVideoFeedReasonCode,
   LocalVideoLikeResponse,
   LocalVideoListParams,
   LocalVideoListResponse,

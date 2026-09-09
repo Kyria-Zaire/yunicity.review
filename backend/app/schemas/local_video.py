@@ -148,6 +148,10 @@ class LocalVideoFeedItem(BaseModel):
     like_count: int
     comment_count: int
     view_count: int = 0
+    #: VIDEO-03 — explicabilite du classement. Champs a defaut : un client
+    #: existant qui les ignore continue de fonctionner a l'identique.
+    reason_code: str = "territory_fallback"
+    reason_label: str = ""
     liked_by_me: bool = False
 
 

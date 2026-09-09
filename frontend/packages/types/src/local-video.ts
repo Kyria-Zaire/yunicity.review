@@ -110,6 +110,12 @@ export type LocalVideoPublishAcceptedResponse = {
   message: string;
 };
 
+/** Codes de motif du feed territorial (VIDEO-03) — stables côté API. */
+export type LocalVideoFeedReasonCode =
+  | "neighborhood_match"
+  | "same_city"
+  | "territory_fallback";
+
 export type LocalVideoFeedItem = {
   id: string;
   author_user_id: string;
@@ -144,6 +150,15 @@ export type LocalVideoFeedItem = {
   comment_count: number;
   view_count: number;
   liked_by_me: boolean;
+  /**
+   * Explicabilité du classement territorial (VIDEO-03).
+   *
+   * Optionnels : le backend les sert toujours, mais les marquer requis
+   * casserait les fixtures et les consommateurs déjà écrits. Le code est
+   * stable côté API ; le libellé est déjà localisé par le serveur.
+   */
+  reason_code?: LocalVideoFeedReasonCode;
+  reason_label?: string;
 };
 
 export type LocalVideoLikeResponse = {

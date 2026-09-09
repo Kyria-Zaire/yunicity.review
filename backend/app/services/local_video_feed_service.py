@@ -18,6 +18,12 @@ from app.core.local_video_cursor import (
     decode_local_video_feed_cursor,
     encode_local_video_feed_cursor,
 )
+from app.core.local_video_feed_ranking import (
+    FEED_NEIGHBORHOOD_MATCH_RADIUS_METERS,
+    LocalVideoFeedTier,
+    reason_for_tier,
+    reason_label,
+)
 from app.models.local_video import LocalVideo
 from app.repositories.local_video_like_repository import LocalVideoLikeRepository
 from app.repositories.local_video_repository import LocalVideoRepository
@@ -51,14 +57,35 @@ class LocalVideoFeedService:
 
         cursor_published_at = None
         cursor_id = None
+        cursor_tier = None
         if query.cursor:
-            cursor_published_at, cursor_id = decode_local_video_feed_cursor(query.cursor)
+            cursor_tier, cursor_published_at, cursor_id = decode_local_video_feed_cursor(
+                query.cursor
+            )
+
+        # VIDEO-03 — quartier du spectateur, resolu depuis SES coordonnees et les
+        # quartiers ACTIFS. Aucune valeur territoriale envoyee par le client n'est
+        # utilisee : seules les coordonnees le sont, et elles ne designent pas un
+        # quartier, elles le font resoudre cote serveur.
+        viewer_neighborhood_id: uuid.UUID | None = None
+        viewer_neighborhood_name: str | None = None
+        if query.latitude is not None and query.longitude is not None:
+            resolu = await self._repo.resolve_viewer_neighborhood(
+                city=city,
+                latitude=query.latitude,
+                longitude=query.longitude,
+                default_radius_meters=FEED_NEIGHBORHOOD_MATCH_RADIUS_METERS,
+            )
+            if resolu is not None:
+                viewer_neighborhood_id, viewer_neighborhood_name = resolu
 
         rows = await self._repo.list_published_feed(
             city=city,
             limit=limit + 1,
             cursor_published_at=cursor_published_at,
             cursor_id=cursor_id,
+            cursor_tier=cursor_tier,
+            viewer_neighborhood_id=viewer_neighborhood_id,
         )
 
         has_more = len(rows) > limit
@@ -68,7 +95,7 @@ class LocalVideoFeedService:
         if query.viewer_user_id is not None and page:
             liked_ids = await self._likes.list_liked_video_ids(
                 query.viewer_user_id,
-                [video.id for video in page],
+                [video.id for video, _ in page],
             )
 
         items = [
@@ -77,15 +104,20 @@ class LocalVideoFeedService:
                 latitude=query.latitude,
                 longitude=query.longitude,
                 liked_by_me=video.id in liked_ids,
+                tier=LocalVideoFeedTier(tier),
+                viewer_neighborhood_name=viewer_neighborhood_name,
+                city=city,
             )
-            for video in page
+            for video, tier in page
         ]
 
         next_cursor = None
         if has_more and page:
-            last = page[-1]
-            if last.published_at is not None:
-                next_cursor = encode_local_video_feed_cursor(last.published_at, last.id)
+            dernier, dernier_tier = page[-1]
+            if dernier.published_at is not None:
+                next_cursor = encode_local_video_feed_cursor(
+                    dernier.published_at, dernier.id, dernier_tier
+                )
 
         return LocalVideoFeedResponse(items=items, next_cursor=next_cursor, city=city)
 
@@ -96,6 +128,9 @@ class LocalVideoFeedService:
         latitude: float | None,
         longitude: float | None,
         liked_by_me: bool = False,
+        tier: LocalVideoFeedTier = LocalVideoFeedTier.TERRITORY_FALLBACK,
+        viewer_neighborhood_name: str | None = None,
+        city: str = "",
     ) -> LocalVideoFeedItem:
         author = video.author
         profile = author.profile if author is not None else None
@@ -110,6 +145,8 @@ class LocalVideoFeedService:
                 meters = haversine_meters(latitude, longitude, target_lat, target_lon)
                 distance_meters = int(round(meters))
                 walk_minutes = walking_minutes_from_meters(meters)
+
+        raison = reason_for_tier(tier)
 
         return LocalVideoFeedItem(
             id=video.id,
@@ -150,6 +187,15 @@ class LocalVideoFeedService:
             comment_count=video.comment_count,
             view_count=video.view_count,
             liked_by_me=liked_by_me,
+            # VIDEO-03 — explicabilite : code stable + libelle. Le motif
+            # « Parce que tu es a X » n'est produit que si le quartier du
+            # spectateur a reellement ete resolu (tier 1).
+            reason_code=raison.value,
+            reason_label=reason_label(
+                raison,
+                neighborhood_name=viewer_neighborhood_name,
+                city=city or video.city,
+            ),
         )
 
     @staticmethod
