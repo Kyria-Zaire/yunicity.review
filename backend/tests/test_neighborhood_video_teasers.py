@@ -32,7 +32,7 @@ from app.models.local_video import LocalVideo
 from app.models.neighborhood import Neighborhood
 from app.models.organization import Organization
 from app.models.user import User
-from httpx import AsyncClient
+from httpx import AsyncClient, Response
 from sqlalchemy import event as sa_event
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -88,7 +88,7 @@ def _video(**kwargs: object) -> LocalVideo:
         "published_at": datetime.now(UTC),
     }
     base.update(kwargs)
-    return LocalVideo(**base)  # type: ignore[arg-type]
+    return LocalVideo(**base)
 
 
 async def _place(session: AsyncSession, hood_id: uuid.UUID, slug: str) -> uuid.UUID:
@@ -140,7 +140,7 @@ async def _event(session: AsyncSession, hood_id: uuid.UUID, author_id: uuid.UUID
     return local_event.id
 
 
-async def _detail(client: AsyncClient, slug: str = _HOOD):
+async def _detail(client: AsyncClient, slug: str = _HOOD) -> Response:
     return await client.get(f"/api/v1/neighborhoods/{slug}?city=Reims")
 
 
