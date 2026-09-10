@@ -173,8 +173,7 @@ export function ProfileEditDesktopForm({
         </h2>
         <div className={`relative ${layout === "mobile" ? "min-h-[9rem]" : "min-h-[11rem]"} bg-neutral-200`}>
           {bannerUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <AvatarImage
               key={bannerUrl}
               src={bannerUrl}
               alt=""

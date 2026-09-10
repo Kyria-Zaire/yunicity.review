@@ -11,6 +11,7 @@ import {
 } from "@yunicity/utils";
 import { ArrowLeft, Info } from "lucide-react";
 import Link from "next/link";
+import { AvatarImage } from "@/components/avatar-image";
 
 type DiscussionsMobileThreadHeaderProps = {
   thread: DiscussionThread;
@@ -40,8 +41,7 @@ export function DiscussionsMobileThreadHeader({ thread, onBack }: DiscussionsMob
 
         <div className="flex min-w-0 items-center justify-center gap-1.5 px-0.5">
           {thread.author.logo_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <AvatarImage
               src={thread.author.logo_url}
               alt=""
               className="inline-flex h-9 w-9 shrink-0 flex-none rounded-full object-cover"

@@ -13,6 +13,7 @@ import {
 } from "@yunicity/utils";
 import { BadgeCheck, MessageCircle } from "lucide-react";
 import Link from "next/link";
+import { AvatarImage } from "@/components/avatar-image";
 
 type EventMobileDetailOrganizerProps = {
   organization: LocalEventOrganization;
@@ -33,8 +34,7 @@ export function EventMobileDetailOrganizer({ organization, city }: EventMobileDe
 
       <div className="flex items-start gap-3 rounded-2xl border border-neutral-200/80 bg-white p-4">
         {organization.logo_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <AvatarImage
             src={organization.logo_url}
             alt=""
             className="h-14 w-14 shrink-0 rounded-full border border-neutral-100 object-cover"

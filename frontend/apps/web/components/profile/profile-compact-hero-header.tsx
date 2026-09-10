@@ -102,8 +102,7 @@ export function ProfileCompactHeroHeader({
         className={`relative w-full bg-neutral-200 ${isMobile ? "h-44" : "h-36 sm:h-40"}`}
       >
         {bannerUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <AvatarImage
             key={bannerUrl}
             src={bannerUrl}
             alt=""

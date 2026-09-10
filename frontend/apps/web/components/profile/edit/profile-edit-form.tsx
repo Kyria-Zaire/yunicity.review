@@ -156,8 +156,7 @@ export function ProfileEditForm({
         </h2>
         <div className="relative min-h-[140px] bg-neutral-900">
           {bannerUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <AvatarImage
               key={bannerUrl}
               src={bannerUrl}
               alt=""

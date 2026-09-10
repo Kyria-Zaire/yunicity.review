@@ -18,6 +18,7 @@ import {
 import { Flag, Link2, MapPin, Search, Shield, Users, VolumeX } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { AvatarImage } from "@/components/avatar-image";
 
 type DiscussionsDesktopContextRailProps = {
   thread: DiscussionThread | null;
@@ -51,8 +52,7 @@ export function DiscussionsDesktopContextRail({
     >
       <div className="text-center">
         {thread.author.logo_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <AvatarImage
             src={thread.author.logo_url}
             alt=""
             className="mx-auto size-20 rounded-full object-cover"

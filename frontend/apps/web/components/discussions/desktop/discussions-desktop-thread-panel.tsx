@@ -18,6 +18,7 @@ import { useMemo, useState } from "react";
 
 import { DiscussionsComposerBar } from "@/components/discussions/discussions-composer-bar";
 import { DiscussionsMessageBubble } from "@/components/discussions/discussions-message-bubble";
+import { AvatarImage } from "@/components/avatar-image";
 
 type DiscussionsDesktopThreadPanelProps = {
   thread: DiscussionThread | null;
@@ -68,8 +69,7 @@ export function DiscussionsDesktopThreadPanel({
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             {thread.author.logo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <AvatarImage
                 src={thread.author.logo_url}
                 alt=""
                 className="inline-flex h-11 w-11 shrink-0 flex-none self-start rounded-full object-cover"

@@ -38,8 +38,7 @@ export function ProfileHeroBanner({
     >
       <div className="relative min-h-[200px] sm:min-h-[220px]">
         {bannerUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <AvatarImage
             key={bannerUrl}
             src={bannerUrl}
             alt=""

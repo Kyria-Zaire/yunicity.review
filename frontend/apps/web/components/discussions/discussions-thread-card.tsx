@@ -65,8 +65,7 @@ export function DiscussionsThreadCard({
       <div className="flex gap-4 p-4 sm:p-5">
         <div className="hidden shrink-0 sm:block">
           {thread.author.logo_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <AvatarImage
               src={thread.author.logo_url}
               alt=""
               className="h-10 w-10 rounded-full object-cover"

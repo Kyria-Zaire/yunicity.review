@@ -111,8 +111,7 @@ export function ProfileDesktopHeader({
     >
       <div className="relative h-36 w-full bg-neutral-200 sm:h-44 lg:h-48">
         {bannerUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <AvatarImage
             key={bannerUrl}
             src={bannerUrl}
             alt=""
