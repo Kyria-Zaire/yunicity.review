@@ -100,9 +100,7 @@ describe("SEC-FE-04A — garde contre une derive silencieuse", () => {
         avis,
       );
     }
-    // uuid reste traite separement (SEC-FE-04B) : ne pas le retirer par megarde.
-    expect(ignores, "l'exception uuid a disparu par effet de bord").toContain(
-      "GHSA-w5hq-g745-h8pq",
-    );
+    // uuid a ete traite ensuite par SEC-FE-04B, qui a supprime son exception a son
+    // tour : ce contrat ne se prononce donc plus dessus. Voir xcode-uuid-contract.
   });
 });
