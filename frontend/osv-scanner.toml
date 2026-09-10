@@ -19,16 +19,10 @@ id = "GHSA-w5hq-g745-h8pq"
 ignoreUntil = 2026-09-15T00:00:00Z
 reason = "BUILD-ONLY uuid@7.0.3 (Expo/Xcode prebuild); no app v3/v5/v6 usage; fix is a risky major 7→11. Owner: frontend. Tracked in SEC-FE-04."
 
-# image-size@1.2.1 (transitive, BUILD-ONLY): apps/mobile → expo → metro / metro-config.
-# Used only by the Metro bundler on the app's OWN bundled assets at build time; no
-# untrusted input, no web/admin runtime path. No upstream fix exists (all versions
-# ≤ 2.0.2 affected). DoS (infinite loop) on crafted JXL/HEIF/ICNS. Follow-up: SEC-FE-04.
-[[IgnoredVulns]]
-id = "GHSA-5p2g-fcmc-qvqq"
-ignoreUntil = 2026-09-15T00:00:00Z
-reason = "BUILD-ONLY image-size@1.2.1 (Expo/Metro bundler, own assets); no upstream fix (all ≤2.0.2 affected). Owner: frontend. Tracked in SEC-FE-04."
-
-[[IgnoredVulns]]
-id = "GHSA-w3rx-r6r6-pgpr"
-ignoreUntil = 2026-09-15T00:00:00Z
-reason = "BUILD-ONLY image-size@1.2.1 (Expo/Metro bundler, own assets); no upstream fix (all ≤2.0.2 affected). Owner: frontend. Tracked in SEC-FE-04."
+# image-size: PLUS AUCUNE EXCEPTION — la dependance a ete supprimee, pas ignoree.
+# GHSA-5p2g-fcmc-qvqq et GHSA-w3rx-r6r6-pgpr concernaient image-size@1.2.1, tire par
+# metro@0.83.3. Metro a internalise ses propres parseurs d'images a partir de 0.83.8
+# (retroportage dans la ligne 0.83) et ne depend plus du tout d'image-size. Un override
+# borne par plage `metro-*@<0.83.8 -> 0.83.8` aligne la famille 0.83 sur ce que Expo
+# livre lui-meme dans @expo/metro@55.1.2, sans toucher a la famille 0.84 utilisee
+# ailleurs. Verrouille par `apps/web/lib/metro-image-size-contract.test.ts`. SEC-FE-04A.
