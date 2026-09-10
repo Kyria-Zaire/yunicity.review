@@ -366,8 +366,21 @@ body {
   display: block;
 }
 
+/* FEED-MAIN-LAYOUT-UIUX-01 §7 — emplacement compact du Passeport dans la
+   colonne centrale. Il n'existe QUE sous 1024px, la ou le volet droit est
+   `display: none` : au-dela, le Passeport reprend sa place dans le volet droit.
+   Un seul des deux emplacements genere une boite a une largeur donnee, donc un
+   seul est dans l'arbre d'accessibilite — aucun doublon percu ni annonce. */
+.feed-compact-passport {
+  display: block;
+}
+
 @media (min-width: 1024px) {
   .web-shell-sr-title {
+    display: none;
+  }
+
+  .feed-compact-passport {
     display: none;
   }
 
@@ -383,11 +396,16 @@ body {
     display: block;
   }
 
-  /* Écart « Ce soir » ↔ carte éditoriale : nul sous 1024px (rendu mobile et
-     medium validé), 20px au-delà comme la colonne Desktop d'origine. */
+  /* FEED-MAIN-LAYOUT-UIUX-01 §5 — non-duplication. Le bandeau « Ce soir » et la
+     carte editoriale derivent des MEMES `portalEvents`, par le MEME selecteur
+     (`selectFeedRightRailEveningEvents`), que le module Evenements du volet
+     droit : les afficher tous les deux montrait le meme agenda deux fois sur
+     le meme ecran. Le volet droit est la position principale a partir de
+     1024px ; sous ce seuil il disparait et la colonne centrale redevient
+     l'unique surface Evenements, avec l'ecart nul entre bandeau et carte deja
+     valide en mobile et medium (aucune regle `display` ne s'y applique). */
   .feed-editorial-evening-featured {
-    display: grid;
-    row-gap: var(--feed-medium-region-gap);
+    display: none;
   }
 
   .citizen-feed-shell {
