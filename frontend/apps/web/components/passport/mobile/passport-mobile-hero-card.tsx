@@ -20,6 +20,7 @@ import {
 } from "@yunicity/utils";
 import { Star } from "lucide-react";
 import { useMemo } from "react";
+import { AvatarImage } from "@/components/avatar-image";
 
 type PassportMobileHeroCardProps = {
   profile: ProfileMe;
@@ -87,8 +88,7 @@ export function PassportMobileHeroCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-3">
             {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <AvatarImage
                 src={avatarUrl}
                 alt={displayName}
                 className="h-14 w-14 shrink-0 rounded-full border-2 border-yunicity-premium-fg/30 object-cover"

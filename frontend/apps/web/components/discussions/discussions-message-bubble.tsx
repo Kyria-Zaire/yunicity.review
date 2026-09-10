@@ -1,6 +1,7 @@
 "use client";
 
 import type { DiscussionChatMessage } from "@yunicity/utils";
+import { AvatarImage } from "@/components/avatar-image";
 
 export function DiscussionsMessageBubble({ message }: { message: DiscussionChatMessage }) {
   if (message.isOwn) {
@@ -20,8 +21,7 @@ export function DiscussionsMessageBubble({ message }: { message: DiscussionChatM
     <div className="flex items-end gap-2">
       <span className="inline-flex h-8 w-8 shrink-0 flex-none items-center justify-center self-end rounded-full bg-[#EEF0FF] text-[10px] font-bold leading-none text-yunicity-primary">
         {message.authorAvatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={message.authorAvatarUrl} alt="" className="size-full rounded-full object-cover" />
+          <AvatarImage src={message.authorAvatarUrl} alt="" className="size-full rounded-full object-cover" />
         ) : (
           message.authorName.slice(0, 1).toUpperCase()
         )}

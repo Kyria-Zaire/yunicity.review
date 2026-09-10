@@ -20,6 +20,7 @@ import {
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
+import { AvatarImage } from "@/components/avatar-image";
 
 type ProfileEditDesktopNavRailProps = {
   profile: ProfileMe;
@@ -51,8 +52,7 @@ export function ProfileEditDesktopNavRail({ profile, preview }: ProfileEditDeskt
           <div className="flex items-start gap-3">
             <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-yunicity-primary/10">
               {avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl} alt="" className="size-full object-cover" />
+                <AvatarImage src={avatarUrl} alt="" className="size-full object-cover" />
               ) : (
                 <span className="flex size-full items-center justify-center text-sm font-bold text-yunicity-primary">
                   {preview.displayName.slice(0, 1).toUpperCase()}

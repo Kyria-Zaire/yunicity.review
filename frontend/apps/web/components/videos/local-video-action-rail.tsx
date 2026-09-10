@@ -12,6 +12,7 @@ import { Bookmark, Flag, Heart, MessageCircle, Share2 } from "lucide-react";
 import Link from "next/link";
 
 import { VIDEO_IMMERSIVE_FOCUS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
+import { AvatarImage } from "@/components/avatar-image";
 
 type LocalVideoActionRailProps = {
   item: LocalVideoFeedItem;
@@ -49,8 +50,7 @@ export function LocalVideoActionRail({
   const profileHref = buildVideoAuthorProfileHref(item);
 
   const avatar = item.author.avatar_url ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={item.author.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-white/80" />
+    <AvatarImage src={item.author.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-white/80" />
   ) : (
     <span className="flex h-9 w-9 items-center justify-center rounded-full bg-yunicity-primary text-[10px] font-bold text-white ring-2 ring-white/80">
       {authorInitials(item)}

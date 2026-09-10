@@ -1,4 +1,5 @@
 export { getApiBaseUrl, getExpoApiBaseUrl, getWebApiBaseUrl, resolveWebApiBaseUrl } from "./api-base-url";
+export { resolveApiMediaUrl } from "./api-media-url";
 export {
   YUNICITY_LOGO_SIZES,
   YUNICITY_MASCOT_ALT,

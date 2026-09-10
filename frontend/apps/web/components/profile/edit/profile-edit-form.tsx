@@ -34,6 +34,7 @@ import {
 import { Camera, Loader2, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useRef, type ChangeEvent, type FormEvent } from "react";
+import { AvatarImage } from "@/components/avatar-image";
 
 type ProfileEditFormProps = {
   profile: ProfileMe;
@@ -98,8 +99,7 @@ export function ProfileEditForm({
         <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start">
           <div className="relative h-24 w-24 shrink-0">
             {profile.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <AvatarImage
                 src={profile.avatar_url}
                 alt=""
                 className="size-full rounded-full object-cover ring-2 ring-neutral-100"

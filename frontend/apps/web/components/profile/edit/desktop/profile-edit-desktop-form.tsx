@@ -42,6 +42,7 @@ import {
 import { Camera, Loader2, Shield, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRef, type ChangeEvent, type FormEvent } from "react";
+import { AvatarImage } from "@/components/avatar-image";
 
 type ProfileEditDesktopFormProps = {
   profile: ProfileMe;
@@ -211,8 +212,7 @@ export function ProfileEditDesktopForm({
             className={`absolute ${layout === "mobile" ? "-top-8 left-4 h-16 w-16" : "-top-10 left-6 h-20 w-20"} overflow-hidden rounded-full border-[3px] border-white bg-yunicity-primary shadow-md`}
           >
             {profile.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={profile.avatar_url} alt="" className="size-full object-cover" />
+              <AvatarImage src={profile.avatar_url} alt="" className="size-full object-cover" />
             ) : (
               <span className="flex size-full items-center justify-center text-xl font-bold text-white">
                 {(displayName || profile.username).slice(0, 1).toUpperCase()}

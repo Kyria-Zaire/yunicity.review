@@ -16,6 +16,7 @@ import {
 import { Heart, MessageCircle, SendHorizontal, Share2 } from "lucide-react";
 
 import { VIDEO_CANVAS_FOCUS, VIDEO_FOLLOW_DISABLED_CLASS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
+import { AvatarImage } from "@/components/avatar-image";
 
 type VideosMobileDetailMetaProps = {
   item: LocalVideoFeedItem;
@@ -89,8 +90,7 @@ export function VideosMobileDetailMeta({
 
       <div className="flex items-center gap-3">
         {item.author.avatar_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <AvatarImage
             src={item.author.avatar_url}
             alt=""
             className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-white"

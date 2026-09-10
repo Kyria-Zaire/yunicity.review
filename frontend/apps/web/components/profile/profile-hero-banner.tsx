@@ -12,6 +12,7 @@ import {
 } from "@yunicity/utils";
 import { BadgeCheck, Camera, Home, Pencil } from "lucide-react";
 import Link from "next/link";
+import { AvatarImage } from "@/components/avatar-image";
 
 type ProfileHeroBannerProps = {
   profile: ProfileMe;
@@ -74,8 +75,7 @@ export function ProfileHeroBanner({
             <Link href={settingsHref} className="relative block">
               <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-white bg-yunicity-primary shadow-lg sm:h-28 sm:w-28">
                 {avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                  <AvatarImage src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
                 ) : (
                   <span className="flex h-full w-full items-center justify-center text-3xl font-bold text-white">
                     {displayName.charAt(0).toUpperCase()}

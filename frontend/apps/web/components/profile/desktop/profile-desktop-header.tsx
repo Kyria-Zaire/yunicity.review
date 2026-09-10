@@ -43,6 +43,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { AvatarImage } from "@/components/avatar-image";
 
 const TONE_CLASS = {
   violet: "bg-violet-100 text-violet-700",
@@ -137,8 +138,7 @@ export function ProfileDesktopHeader({
           <div className="flex min-w-0 flex-1 gap-4 sm:gap-5">
             <div className="-mt-10 h-[5.25rem] w-[5.25rem] shrink-0 overflow-hidden rounded-full border-[3px] border-white bg-yunicity-primary shadow-md sm:-mt-12 sm:h-[6.5rem] sm:w-[6.5rem]">
               {avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                <AvatarImage src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
               ) : (
                 <span className="flex h-full w-full items-center justify-center text-3xl font-bold text-white">
                   {displayName.charAt(0).toUpperCase()}

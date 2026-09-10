@@ -15,6 +15,7 @@ import {
 } from "@yunicity/utils";
 import { ArrowRight, Bookmark, MoreHorizontal, Share2 } from "lucide-react";
 import Link from "next/link";
+import { AvatarImage } from "@/components/avatar-image";
 
 type ProfileDesktopPublicationsProps = {
   posts: FeedPost[];
@@ -75,8 +76,7 @@ export function ProfileDesktopPublications({
             return (
               <li key={post.id} className="flex gap-3 py-3 first:pt-1 last:pb-0">
                 {avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <AvatarImage
                     src={avatarUrl}
                     alt=""
                     className="h-9 w-9 shrink-0 rounded-full object-cover"
@@ -122,8 +122,7 @@ export function ProfileDesktopPublications({
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2.5">
                       {avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
+                        <AvatarImage
                           src={avatarUrl}
                           alt=""
                           className="h-10 w-10 shrink-0 rounded-full object-cover"

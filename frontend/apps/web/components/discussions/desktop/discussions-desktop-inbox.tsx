@@ -16,6 +16,7 @@ import {
 import { PenSquare, Search } from "lucide-react";
 import Link from "next/link";
 import type { Ref } from "react";
+import { AvatarImage } from "@/components/avatar-image";
 
 const TABS: Array<{ id: DiscussionInboxTab; label: string }> = [
   { id: "all", label: DISCUSSIONS_DESKTOP_TAB_ALL },
@@ -44,8 +45,7 @@ function InboxAvatar({ item }: { item: DiscussionInboxItem }) {
 
   if (item.avatarUrl) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={item.avatarUrl} alt="" className={`${avatarClass} object-cover`} />
+      <AvatarImage src={item.avatarUrl} alt="" className={`${avatarClass} object-cover`} />
     );
   }
   return (

@@ -20,6 +20,7 @@ import { ChevronRight, MapPin, Music2 } from "lucide-react";
 import Link from "next/link";
 
 import { VIDEO_IMMERSIVE_FOCUS, VIDEO_TOUCH_TARGET, VIDEO_FOLLOW_DISABLED_CLASS } from "@/lib/videos/video-playback-a11y";
+import { AvatarImage } from "@/components/avatar-image";
 
 type LocalVideoMobileMetaOverlayProps = {
   item: LocalVideoFeedItem;
@@ -56,8 +57,7 @@ export function LocalVideoMobileMetaOverlay({ item }: LocalVideoMobileMetaOverla
             className={`inline-flex min-h-11 min-w-0 max-w-full items-center gap-1.5 ${VIDEO_IMMERSIVE_FOCUS}`}
           >
             {item.author.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <AvatarImage
                 src={item.author.avatar_url}
                 alt=""
                 className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-white/80"

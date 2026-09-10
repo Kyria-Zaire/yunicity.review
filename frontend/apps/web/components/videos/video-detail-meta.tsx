@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 
 import { VIDEO_CANVAS_FOCUS, VIDEO_FOLLOW_DISABLED_CLASS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
+import { AvatarImage } from "@/components/avatar-image";
 
 type VideoDetailMetaProps = {
   item: LocalVideoFeedItem;
@@ -99,8 +100,7 @@ export function VideoDetailMeta({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           {item.author.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <AvatarImage
               src={item.author.avatar_url}
               alt=""
               className="h-11 w-11 rounded-full object-cover ring-2 ring-white"

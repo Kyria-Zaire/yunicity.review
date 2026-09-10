@@ -40,6 +40,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { AvatarImage } from "@/components/avatar-image";
 
 const TONE_CLASS = {
   violet: "bg-violet-100 text-violet-700",
@@ -132,8 +133,7 @@ export function ProfileCompactHeroHeader({
             }`}
           >
             {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+              <AvatarImage src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
             ) : (
               <span className="flex h-full w-full items-center justify-center text-2xl font-bold text-white">
                 {displayName.charAt(0).toUpperCase()}

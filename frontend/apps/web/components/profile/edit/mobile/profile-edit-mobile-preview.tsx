@@ -12,6 +12,7 @@ import {
 } from "@yunicity/utils";
 import { ChevronUp, MapPin } from "lucide-react";
 import { useState } from "react";
+import { AvatarImage } from "@/components/avatar-image";
 
 const TONE_CLASS = {
   violet: "bg-violet-100 text-violet-700",
@@ -73,8 +74,7 @@ export function ProfileEditMobilePreview({ preview }: ProfileEditMobilePreviewPr
           <div className="relative px-4 pb-4 pt-9">
             <div className="absolute -top-7 left-4 h-14 w-14 overflow-hidden rounded-full border-[3px] border-white bg-neutral-200 shadow-sm">
               {preview.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={preview.avatarUrl} alt="" className="size-full object-cover" />
+                <AvatarImage src={preview.avatarUrl} alt="" className="size-full object-cover" />
               ) : (
                 <span className="flex size-full items-center justify-center bg-yunicity-primary/15 text-base font-bold text-yunicity-primary">
                   {preview.displayName.slice(0, 1).toUpperCase()}

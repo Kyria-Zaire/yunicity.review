@@ -19,6 +19,7 @@ import {
   resolveLocalVideoTeaserTitle,
 } from "@yunicity/utils";
 import Link from "next/link";
+import { AvatarImage } from "@/components/avatar-image";
 
 type VideosDesktopRightRailProps = {
   upNext: readonly LocalVideoFeedItem[];
@@ -108,8 +109,7 @@ export function VideosDesktopRightRail({
                 <li key={creator.authorUserId} className="flex items-center gap-3 px-4 py-3">
                   <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-yunicity-primary-soft">
                     {creator.avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={creator.avatarUrl} alt="" className="h-full w-full object-cover" />
+                      <AvatarImage src={creator.avatarUrl} alt="" className="h-full w-full object-cover" />
                     ) : (
                       <span className="flex h-full w-full items-center justify-center text-xs font-bold text-yunicity-primary">
                         {creatorInitials(creator.displayName)}
