@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { culturalImageRemotePatterns } from "./lib/cultural-image-hosts";
+import { SECURITY_HEADERS } from "./lib/security-headers";
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -52,6 +53,17 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: culturalImageRemotePatterns(),
   },
+  // AIF SEC-01 — aucun en-tete de securite n'etait emis. Les valeurs et leurs
+  // prudences (HSTS court et sans preload, CSP en report-only) vivent dans
+  // `lib/security-headers.ts`, ou elles sont testees.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [...SECURITY_HEADERS],
+      },
+    ];
+  },
   async redirects() {
     return MERGED_NEIGHBORHOOD_SLUGS.map((slug) => ({
       source: `/neighborhoods/${slug}`,
@@ -59,6 +71,9 @@ const nextConfig: NextConfig = {
       permanent: true,
     }));
   },
+  // Ne pas annoncer le framework dans chaque reponse : information gratuite
+  // pour qui cherche une cible.
+  poweredByHeader: false,
   // Dev uses `.next` ; production build uses `.next-build` (see package.json) to avoid races with `next dev`.
   distDir: process.env.NEXT_BUILD_DIR ?? ".next",
   eslint: { ignoreDuringBuilds: true },
