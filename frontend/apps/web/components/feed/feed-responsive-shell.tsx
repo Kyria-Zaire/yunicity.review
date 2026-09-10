@@ -1,7 +1,7 @@
 "use client";
 
 import type { PartnerOfferPublic } from "@yunicity/types";
-import type { FeedPortalView } from "@yunicity/utils";
+import { FEED_PORTAL_TITLE, type FeedPortalView } from "@yunicity/utils";
 import type { MutableRefObject, Ref } from "react";
 
 import { FeedDesktopLeftRail } from "@/components/feed/desktop/feed-desktop-left-rail";
@@ -83,6 +83,12 @@ export function FeedResponsiveShell({
       />
 
       <div className="feed-main-column feed-desktop-center">
+        {/* AIF §23 — sous 1024px, le h1 vit dans un shell desktop masqué :
+            la page n'exposait alors AUCUN titre de niveau 1. Ce titre est lu
+            par les technologies d'assistance et invisible à l'œil, donc le
+            plein écran mobile voulu ne change pas d'un pixel. */}
+        <h1 className="web-shell-sr-title sr-only">{FEED_PORTAL_TITLE}</h1>
+
         {!showSaved ? <FeedMobileHeader /> : null}
 
         <FeedMediumHeader

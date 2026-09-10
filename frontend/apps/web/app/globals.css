@@ -357,7 +357,20 @@ body {
   display: none;
 }
 
+/* AIF §23 — le h1 visible ne vit que dans les shells desktop (>=1024px).
+   Sous ce seuil, la page n'exposait aucun titre de niveau 1 : ni en mobile,
+   ni en medium. Ce titre de secours est lu par les technologies d'assistance
+   et reste invisible a l'oeil (classe `sr-only`) ; il disparait au-dela de
+   1024px pour ne jamais faire doublon avec le h1 visible. */
+.web-shell-sr-title {
+  display: block;
+}
+
 @media (min-width: 1024px) {
+  .web-shell-sr-title {
+    display: none;
+  }
+
   .feed-shell-desktop-header {
     display: flex;
   }

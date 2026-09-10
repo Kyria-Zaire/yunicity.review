@@ -129,6 +129,12 @@ export function VideosResponsiveShell({
       <VideosDesktopLeftRail city={city} activeTab={tab} onTabChange={onTabChange} />
 
       <div className="videos-main-column videos-desktop-center min-w-0">
+        {/* AIF §23 — sous 1024px, le h1 vit dans un shell desktop masqué :
+            la page n'exposait alors AUCUN titre de niveau 1. Ce titre est lu
+            par les technologies d'assistance et invisible à l'œil, donc le
+            plein écran mobile voulu ne change pas d'un pixel. */}
+        <h1 className="web-shell-sr-title sr-only">{VIDEOS_PORTAL_TITLE}</h1>
+
         <div
           className={`videos-discovery-mobile-only min-w-0 space-y-4 px-4 pb-2 pt-1 ${
             tab === "all" ? "videos-discovery-mobile-chrome" : ""
