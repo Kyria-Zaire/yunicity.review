@@ -87,6 +87,12 @@ export const REGISTER_BACK = "Retour";
 export const REGISTER_SUBMIT = "Créer mon compte Yunicitizen";
 export const REGISTER_SUBMITTING = "Création du compte…";
 
+/* Beta fermee — REGISTRATION-CONTAINMENT-01. Aucune date de reouverture n'est
+   promise : on ne s'engage pas sur un calendrier qu'on ne maitrise pas. */
+export const REGISTER_CLOSED_TITLE = "Bêta privée";
+export const REGISTER_CLOSED_BODY =
+  "Les inscriptions à la bêta Yunicity sont temporairement fermées.";
+
 export const REGISTER_SUCCESS_TITLE = "Bienvenue sur Yunicity !";
 export const REGISTER_SUCCESS_CITIZEN_BODY =
   "Votre compte est créé. Aucune étape supplémentaire n'est requise — explorez le fil local dès maintenant.";

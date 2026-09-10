@@ -67,6 +67,11 @@ class Settings(BaseSettings):
     refresh_rotation_replay_window_seconds: int = Field(
         default=5, alias="REFRESH_ROTATION_REPLAY_WINDOW_SECONDS"
     )
+    #: Ferme la creation de nouveaux comptes SANS toucher aux comptes existants
+    #: (REGISTRATION-CONTAINMENT-01). Par defaut ouvert : seul un environnement
+    #: qui le declare explicitement se ferme, donc aucun deploiement existant ne
+    #: change de comportement en installant cette version.
+    registration_enabled: bool = Field(default=True, alias="REGISTRATION_ENABLED")
     web_frontend_url: str = Field(default="http://localhost:3000", alias="WEB_FRONTEND_URL")
     password_reset_expire_hours: int = Field(default=1, alias="PASSWORD_RESET_EXPIRE_HOURS")
 

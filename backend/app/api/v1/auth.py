@@ -86,6 +86,19 @@ async def register(
     settings: Annotated[Settings, Depends(get_settings)],
     mobile: Annotated[bool, Depends(is_mobile_client)],
 ) -> AuthTokenResponse:
+    # Barriere AVANT toute autre chose : avant la limite de debit (une inscription
+    # fermee ne doit pas consommer le quota ni dependre de Redis) et avant le
+    # moindre acces base. Aucun utilisateur, aucun profil, aucun email.
+    if not settings.registration_enabled:
+        raise AppError(
+            status_code=403,
+            code="REGISTRATION_CLOSED",
+            detail=(
+                "Les inscriptions à la bêta Yunicity sont temporairement fermées. "
+                "Vous possédez déjà un compte ? Connectez-vous."
+            ),
+        )
+
     ip = _client_ip(request)
     await enforce_rate_limit(f"rl:register:ip:{ip}", limit=5, window_seconds=3600)
 

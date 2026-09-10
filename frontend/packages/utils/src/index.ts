@@ -1,5 +1,6 @@
 export { getApiBaseUrl, getExpoApiBaseUrl, getWebApiBaseUrl, resolveWebApiBaseUrl } from "./api-base-url";
 export { resolveApiMediaUrl } from "./api-media-url";
+export { isRegistrationEnabled, resolveRegistrationEnabled } from "./registration-availability";
 export {
   YUNICITY_LOGO_SIZES,
   YUNICITY_MASCOT_ALT,
@@ -829,6 +830,8 @@ export {
   REGISTER_STEP_VERIFY,
   REGISTER_SUBMIT,
   REGISTER_SUBMITTING,
+  REGISTER_CLOSED_BODY,
+  REGISTER_CLOSED_TITLE,
   REGISTER_SUCCESS_CITIZEN_BODY,
   REGISTER_SUCCESS_CTA_FEED,
   REGISTER_SUCCESS_CTA_ORG,

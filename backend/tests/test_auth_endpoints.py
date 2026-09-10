@@ -161,3 +161,120 @@ async def test_register_mobile_returns_refresh_token_in_body(
     result = await _register(auth_client, register_payload, mobile=True)
     assert result["response"].status_code == 201
     assert result["json"].get("refresh_token")
+
+
+# ─── REGISTRATION-CONTAINMENT-01 ────────────────────────────────────────────
+# Fermer la beta ne doit rien coûter aux comptes déjà créés. Ces tests couvrent
+# donc les deux faces : la porte fermée, et le fait que les habitants gardent
+# leurs clés.
+
+
+async def _compte_utilisateurs_et_profils() -> tuple[int, int]:
+    """Nombre de lignes User et UserProfile, pour prouver l'absence d'effet de bord."""
+    from app.db.session import get_engine
+    from app.models.user import User
+    from app.models.user_profile import UserProfile
+    from sqlalchemy import func, select
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+    engine = get_engine()
+    assert engine is not None
+    factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async with factory() as session:
+        utilisateurs = await session.scalar(select(func.count()).select_from(User))
+        profils = await session.scalar(select(func.count()).select_from(UserProfile))
+    return int(utilisateurs or 0), int(profils or 0)
+
+
+def _fermer_les_inscriptions(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.core.config import get_settings
+
+    monkeypatch.setenv("REGISTRATION_ENABLED", "false")
+    get_settings.cache_clear()
+
+
+@pytest.mark.asyncio
+async def test_registration_is_enabled_by_default() -> None:
+    """Aucun déploiement existant ne change de comportement en installant cette version."""
+    from app.core.config import get_settings
+
+    assert get_settings().registration_enabled is True
+
+
+@pytest.mark.asyncio
+async def test_register_refused_when_registration_closed(
+    auth_client: AsyncClient,
+    register_payload: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    avant = await _compte_utilisateurs_et_profils()
+    _fermer_les_inscriptions(monkeypatch)
+
+    result = await _register(auth_client, register_payload)
+
+    assert result["response"].status_code == 403
+    assert result["json"]["code"] == "REGISTRATION_CLOSED"
+    # Ni utilisateur, ni profil : la garde est posée avant tout accès base.
+    assert await _compte_utilisateurs_et_profils() == avant
+
+
+@pytest.mark.asyncio
+async def test_register_refused_on_mobile_client_too(
+    auth_client: AsyncClient,
+    register_payload: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Le client mobile emprunte la même route : il ne contourne pas la fermeture."""
+    _fermer_les_inscriptions(monkeypatch)
+    result = await _register(auth_client, register_payload, mobile=True)
+    assert result["response"].status_code == 403
+    assert result["json"]["code"] == "REGISTRATION_CLOSED"
+
+
+@pytest.mark.asyncio
+async def test_existing_account_keeps_working_when_registration_closed(
+    auth_client: AsyncClient,
+    register_payload: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    inscription = await _register(auth_client, register_payload)
+    assert inscription["response"].status_code == 201
+
+    _fermer_les_inscriptions(monkeypatch)
+
+    # Un NOUVEAU compte est refusé…
+    refuse = await _register(
+        auth_client, {**register_payload, "email": "nouvelle.arrivante@example.com"}
+    )
+    assert refuse["response"].status_code == 403
+
+    # …mais le compte existant se connecte, rafraîchit et se déconnecte.
+    connexion = await auth_client.post(
+        "/api/v1/auth/login",
+        json={"email": register_payload["email"], "password": register_payload["password"]},
+    )
+    assert connexion.status_code == 200
+    assert connexion.json()["access_token"]
+
+    rafraichissement = await auth_client.post("/api/v1/auth/refresh")
+    assert rafraichissement.status_code == 200
+    assert rafraichissement.json()["access_token"]
+
+    deconnexion = await auth_client.post("/api/v1/auth/logout")
+    assert deconnexion.status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_password_recovery_still_answers_when_registration_closed(
+    auth_client: AsyncClient,
+    register_payload: dict[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """La récupération de mot de passe sert les comptes existants : elle reste ouverte."""
+    await _register(auth_client, register_payload)
+    _fermer_les_inscriptions(monkeypatch)
+
+    reponse = await auth_client.post(
+        "/api/v1/auth/forgot-password", json={"email": register_payload["email"]}
+    )
+    assert reponse.status_code == 200
