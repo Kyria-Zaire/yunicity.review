@@ -83,6 +83,54 @@ class Settings(BaseSettings):
     registration_rate_limit_per_hour: int = Field(
         default=5, ge=1, alias="REGISTRATION_RATE_LIMIT_PER_HOUR"
     )
+    #: Mode d'ouverture : closed, pilot ou public (AUTH-04A). Source de verite
+    #: UNIQUE. Non declaree, le mode se deduit de `registration_enabled`, afin
+    #: qu'un deploiement existant ne change pas de comportement en installant
+    #: cette version — le Preview actuellement ouvert compris.
+    registration_mode: str = Field(default="", alias="REGISTRATION_MODE")
+    #: Plafond par IP en mode PILOT. Defaut 120 : une salle de 100 personnes
+    #: partageant une seule IP publique passe avec de la marge.
+    registration_pilot_ip_hourly_limit: int = Field(
+        default=120, ge=1, alias="REGISTRATION_PILOT_IP_HOURLY_LIMIT"
+    )
+    #: Tentatives d'inscription par adresse et par jour. Une personne s'inscrit
+    #: une fois ; trois couvre les fautes de frappe sans laisser repeter.
+    #: L'adresse n'apparait JAMAIS dans la cle : voir `rate_limit_identity`.
+    registration_email_daily_limit: int = Field(
+        default=3, ge=1, alias="REGISTRATION_EMAIL_DAILY_LIMIT"
+    )
+    #: Plafond par IP sur une minute. Coupe l'automatisation en rafale sans gener
+    #: une file d'attente humaine devant un QR code.
+    registration_ip_burst_limit: int = Field(default=10, ge=1, alias="REGISTRATION_IP_BURST_LIMIT")
+    #: Inscriptions abouties par heure, toutes IP confondues. Seul garde-fou
+    #: contre un robot reparti sur de nombreuses adresses.
+    registration_global_hourly_limit: int = Field(
+        default=100, ge=1, alias="REGISTRATION_GLOBAL_HOURLY_LIMIT"
+    )
+    #: Fin d'ouverture annoncee publiquement. Informative : la fermeture reelle
+    #: reste un changement de mode, jamais une horloge qui se declencherait seule.
+    registration_closes_at: datetime | None = Field(default=None, alias="REGISTRATION_CLOSES_AT")
+    #: Turnstile en mode PILOT : configurable, jamais impose. En PUBLIC il est
+    #: toujours exige, sans reglage possible.
+    turnstile_required_in_pilot: bool = Field(default=False, alias="TURNSTILE_REQUIRED_IN_PILOT")
+    turnstile_secret_key: str = Field(default="", alias="TURNSTILE_SECRET_KEY")
+    #: Publique par conception : sert a monter le widget, et est exposee par
+    #: `GET /auth/registration-status`.
+    turnstile_site_key: str = Field(default="", alias="TURNSTILE_SITE_KEY")
+    #: Hote attendu dans la reponse Siteverify. Vide = controle desactive, ce qui
+    #: n'est acceptable qu'en developpement.
+    turnstile_expected_hostname: str = Field(default="", alias="TURNSTILE_EXPECTED_HOSTNAME")
+    turnstile_timeout_seconds: float = Field(default=3.0, gt=0, alias="TURNSTILE_TIMEOUT_SECONDS")
+    #: Pepper DEDIE aux cles de limitation. Ne protege pas un secret : il empeche
+    #: de retrouver une adresse a partir d'une cle Redis, y compris par
+    #: dictionnaire. Distinct des autres peppers.
+    rate_limit_key_pepper: str = Field(default="", alias="RATE_LIMIT_KEY_PEPPER")
+    #: Budget d'e-mails transactionnels par jour UTC. 0 = aucun plafond.
+    email_daily_budget: int = Field(default=0, ge=0, alias="EMAIL_DAILY_BUDGET")
+    #: Part du budget reservee aux e-mails critiques — reinitialisation de mot de
+    #: passe, securite du compte. Une vague d'inscriptions ne doit jamais priver
+    #: un utilisateur legitime de la recuperation de son compte.
+    email_daily_budget_reserve: int = Field(default=10, ge=0, alias="EMAIL_DAILY_BUDGET_RESERVE")
     #: Pepper DEDIE aux jetons de verification d'adresse (AUTH-01). Volontairement
     #: distinct de `refresh_token_pepper` : compromettre l'un ne doit pas permettre
     #: de forger l'autre.

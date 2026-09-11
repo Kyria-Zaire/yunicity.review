@@ -19,6 +19,74 @@ class EmailDeliveryError(RuntimeError):
     """Raised when a transactional email could not be delivered."""
 
 
+class EmailRateLimited(EmailDeliveryError):
+    """Le fournisseur a refusé pour cause de débit ou de quota (HTTP 429).
+
+    Distincte d'une panne ou d'une erreur de configuration : elle est temporaire
+    et porte, quand le fournisseur le fournit, le délai après lequel réessayer.
+    Tout confondre dans une erreur générique empêchait de savoir s'il fallait
+    attendre trente secondes ou corriger un domaine.
+    """
+
+    def __init__(self, message: str, retry_after_seconds: int | None = None) -> None:
+        super().__init__(message)
+        self.retry_after_seconds = retry_after_seconds
+
+
+def _retry_after_seconds(response: httpx.Response) -> int | None:
+    raw = response.headers.get("retry-after")
+    if not raw:
+        return None
+    try:
+        # La spécification autorise aussi une date HTTP ; Resend renvoie des
+        # secondes. Une valeur illisible vaut mieux ignorée qu'interprétée.
+        return max(int(float(raw.strip())), 0)
+    except ValueError:
+        return None
+
+
+def observed_provider_quota(response: httpx.Response) -> dict[str, int]:
+    """Quotas restants annoncés par le fournisseur, s'il les expose.
+
+    Sert aux métriques : savoir qu'on approche du plafond avant de le heurter.
+    Absent de certaines réponses, d'où la tolérance.
+    """
+    quotas: dict[str, int] = {}
+    for entete, cle in (
+        ("x-resend-daily-quota", "daily"),
+        ("x-resend-monthly-quota", "monthly"),
+    ):
+        brut = response.headers.get(entete)
+        if brut is None:
+            continue
+        try:
+            quotas[cle] = int(float(brut.strip()))
+        except ValueError:
+            continue
+    return quotas
+
+
+def _raise_for_provider_error(response: httpx.Response, *, event: str, to: str) -> None:
+    """Traduit une réponse en échec, en séparant le débit du reste."""
+    quotas = observed_provider_quota(response)
+    if quotas:
+        logger.info("resend_quota_observed", extra=quotas)
+
+    if response.status_code == 429:
+        delai = _retry_after_seconds(response)
+        logger.warning(
+            f"{event}_rate_limited",
+            extra={"recipient": _mask_email(to), "retry_after_seconds": delai},
+        )
+        raise EmailRateLimited("Resend rate limited the request", delai)
+
+    logger.error(
+        f"{event}_provider_error",
+        extra={"recipient": _mask_email(to), "status_code": response.status_code},
+    )
+    raise EmailDeliveryError(f"Resend returned HTTP {response.status_code}")
+
+
 def local_link_disclosure_allowed(settings: Settings) -> bool:
     """Le lien peut-il etre imprime en clair dans les journaux ? (AUTH-03)
 
@@ -118,14 +186,7 @@ async def send_password_reset_email(
         raise EmailDeliveryError("Resend transport failed") from exc
 
     if response.status_code >= 400:
-        logger.error(
-            "password_reset_email_provider_error",
-            extra={
-                "recipient": _mask_email(to),
-                "status_code": response.status_code,
-            },
-        )
-        raise EmailDeliveryError(f"Resend returned HTTP {response.status_code}")
+        _raise_for_provider_error(response, event="password_reset_email", to=to)
 
     logger.info(
         "password_reset_email_sent",
@@ -218,13 +279,6 @@ async def send_email_verification_email(
         raise EmailDeliveryError("Resend transport failed") from exc
 
     if response.status_code >= 400:
-        logger.error(
-            "email_verification_provider_error",
-            extra={
-                "recipient": _mask_email(to),
-                "status_code": response.status_code,
-            },
-        )
-        raise EmailDeliveryError(f"Resend returned HTTP {response.status_code}")
+        _raise_for_provider_error(response, event="email_verification", to=to)
 
     logger.info("email_verification_sent", extra={"recipient": _mask_email(to)})

@@ -11,6 +11,7 @@ export type {
   RegisterRequest,
   RegisterResult,
   RegistrationPendingResponse,
+  RegistrationStatus,
   ResendVerificationRequest,
   ResendVerificationResponse,
   ResetPasswordRequest,

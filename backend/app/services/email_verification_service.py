@@ -35,6 +35,7 @@ from app.repositories.email_verification_token_repository import (
     EmailVerificationTokenRepository,
 )
 from app.repositories.user_repository import UserRepository
+from app.services.email_budget import EmailBudget, EmailCategory
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +127,12 @@ class EmailVerificationService:
             token_hash=token_hash,
             expires_at=expires_at,
         )
+
+        if not await EmailBudget(self._settings).try_consume(EmailCategory.ROUTINE):
+            # Budget epuise : le compte existe, le jeton est en base, le renvoi
+            # regenerera un lien demain. Rien n'est perdu, seul l'envoi attend.
+            logger.warning("email_verification_deferred_budget user_id=%s", user.id)
+            return
 
         try:
             await send_email_verification_email(

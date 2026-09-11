@@ -22,6 +22,7 @@ from app.integrations.resend_email import EmailDeliveryError, send_password_rese
 from app.repositories.password_reset_token_repository import PasswordResetTokenRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.user_repository import UserRepository
+from app.services.email_budget import EmailBudget, EmailCategory
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +82,12 @@ class PasswordResetService:
             # `console` trace sans divulguer, `resend` expedie. Conditionner l'envoi
             # a `app_env == "prod"` laissait recette et preprod sans aucun e-mail,
             # et donc sans autre moyen de recuperer le lien que la reponse HTTP.
+            # Categorie CRITIQUE : la recuperation de compte est le dernier
+            # envoi a s'eteindre, et peut entamer la reserve.
+            budget_ok = await EmailBudget(self._settings).try_consume(EmailCategory.CRITICAL)
             try:
+                if not budget_ok:
+                    raise EmailDeliveryError("daily email budget exhausted")
                 await send_password_reset_email(
                     to=normalized,
                     reset_url=self._build_reset_url(raw_token),

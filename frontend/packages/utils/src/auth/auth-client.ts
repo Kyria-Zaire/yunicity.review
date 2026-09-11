@@ -8,6 +8,7 @@ import type {
   RegisterRequest,
   RegisterResult,
   RegistrationPendingResponse,
+  RegistrationStatus,
   ResendVerificationRequest,
   ResendVerificationResponse,
   ResetPasswordRequest,
@@ -115,6 +116,20 @@ export class AuthClient {
     return this.request<ResetPasswordResponse>("/reset-password", {
       method: "POST",
       body: JSON.stringify(payload),
+      skipAuth: true,
+    });
+  }
+
+  /**
+   * État d'ouverture des inscriptions (AUTH-04A).
+   *
+   * Le backend est autoritaire : ce que cette route annonce est ce que
+   * `/register` appliquera. L'appelant est responsable du repli si elle échoue —
+   * un backend antérieur ne la connaît pas, et cela ne doit pas fermer l'écran.
+   */
+  async registrationStatus(): Promise<RegistrationStatus> {
+    return this.request<RegistrationStatus>("/registration-status", {
+      method: "GET",
       skipAuth: true,
     });
   }

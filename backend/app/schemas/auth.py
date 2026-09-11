@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field
@@ -10,6 +11,25 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=1, max_length=128)
     full_name: str = Field(min_length=2, max_length=128)
     city: str | None = Field(default=None, max_length=128)
+    #: Jeton Turnstile (AUTH-04A). Optionnel dans le contrat, exigé par le mode :
+    #: un client mobile ou une version web antérieure n'est pas cassé par le seul
+    #: déploiement de cette version, et l'exigence s'active avec le mode PUBLIC.
+    turnstile_token: str | None = Field(default=None, max_length=2048, alias="turnstile_token")
+
+
+class RegistrationStatusResponse(BaseModel):
+    """État d'ouverture, lu par le frontend au lieu d'être déclaré par lui.
+
+    Public et minimal : rien qu'un client ne puisse déjà déduire en tentant une
+    inscription. Aucun seuil, aucun quota, aucun secret — la site key Turnstile
+    est publique par conception, c'est elle qui monte le widget.
+    """
+
+    open: bool
+    mode: str
+    turnstile_required: bool
+    turnstile_site_key: str | None = None
+    closes_at: datetime | None = None
 
 
 class LoginRequest(BaseModel):

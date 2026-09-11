@@ -2,6 +2,11 @@ export { getApiBaseUrl, getExpoApiBaseUrl, getWebApiBaseUrl, resolveWebApiBaseUr
 export { resolveApiMediaUrl } from "./api-media-url";
 export { isRegistrationEnabled, resolveRegistrationEnabled } from "./registration-availability";
 export {
+  fallbackRegistrationStatus,
+  parseRegistrationStatus,
+  shouldRenderTurnstile,
+} from "./registration-status";
+export {
   YUNICITY_LOGO_SIZES,
   YUNICITY_MASCOT_ALT,
   YUNICITY_MASCOT_PATH,

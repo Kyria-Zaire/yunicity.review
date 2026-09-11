@@ -41,6 +41,30 @@ export interface RegisterRequest {
   password: string;
   full_name: string;
   city?: string | null;
+  /**
+   * Jeton Turnstile (AUTH-04A).
+   *
+   * Optionnel dans le contrat, exigé par le mode côté backend : un client mobile
+   * ou une version web antérieure n'est pas cassé par le seul déploiement, et
+   * l'exigence s'active avec le mode PUBLIC.
+   */
+  turnstile_token?: string | null;
+}
+
+/**
+ * État d'ouverture renvoyé par `GET /auth/registration-status` (AUTH-04A).
+ *
+ * Le backend est seul autoritaire : ce que cette réponse annonce est ce que
+ * `POST /auth/register` appliquera. `turnstile_site_key` est publique par
+ * conception — c'est elle qui monte le widget ; le secret ne quitte jamais
+ * le serveur.
+ */
+export interface RegistrationStatus {
+  open: boolean;
+  mode: string;
+  turnstile_required: boolean;
+  turnstile_site_key: string | null;
+  closes_at: string | null;
 }
 
 export interface AuthResponse extends AuthTokens {
