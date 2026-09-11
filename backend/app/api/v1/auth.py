@@ -239,7 +239,7 @@ async def forgot_password(
 
     service = PasswordResetService(session, settings)
     result = await service.request_password_reset(email)
-    return ForgotPasswordResponse(message=result.message, reset_url=result.reset_url)
+    return ForgotPasswordResponse(message=result.message)
 
 
 @router.post("/reset-password", response_model=ResetPasswordResponse)

@@ -47,11 +47,13 @@ class ForgotPasswordRequest(BaseModel):
 
 
 class ForgotPasswordResponse(BaseModel):
+    """Réponse unique de `forgot-password`.
+
+    Ne contient jamais le lien ni le jeton, dans aucun environnement (AUTH-03).
+    Le lien vaut un mot de passe à usage unique : il ne transite que par l'e-mail.
+    """
+
     message: str
-    reset_url: str | None = Field(
-        default=None,
-        description="Hors production uniquement (APP_ENV != prod), pour les tests.",
-    )
 
 
 class ResetPasswordRequest(BaseModel):

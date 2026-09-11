@@ -54,8 +54,14 @@ export interface ForgotPasswordRequest {
 }
 
 export interface ForgotPasswordResponse {
+  /**
+   * Réponse unique et générique (AUTH-03).
+   *
+   * Le lien de réinitialisation ne transite jamais par HTTP, dans aucun
+   * environnement : seul l'e-mail le porte. Ne pas réintroduire de champ
+   * optionnel ici — c'est exactement ce qui avait rouvert la fuite côté backend.
+   */
   message: string;
-  reset_url?: string | null;
 }
 
 export interface ResetPasswordRequest {

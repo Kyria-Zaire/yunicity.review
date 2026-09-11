@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any
 
 import httpx
@@ -16,6 +17,34 @@ RESEND_API_URL = "https://api.resend.com/emails"
 
 class EmailDeliveryError(RuntimeError):
     """Raised when a transactional email could not be delivered."""
+
+
+def local_link_disclosure_allowed(settings: Settings) -> bool:
+    """Le lien peut-il etre imprime en clair dans les journaux ? (AUTH-03)
+
+    Un lien de reinitialisation ou de verification vaut un mot de passe a usage
+    unique. L'imprimer n'a de sens que sur le poste d'un developpeur qui deroule
+    le parcours a la main ; partout ailleurs c'est une fuite.
+
+    Trois conditions CUMULATIVES, et la fonction est fail-closed : au moindre
+    doute, elle rend False.
+
+    1. `RAILWAY_ENVIRONMENT` absente. Railway injecte cette variable dans tout
+       conteneur qu'il execute ; sa presence signifie « serveur deploye », ce que
+       la configuration applicative ne peut pas simuler par erreur.
+    2. `APP_ENV` vaut exactement `dev`. Preview et Production declarent `prod`,
+       recette et preprod declarent leur propre valeur.
+    3. Le fournisseur est `console`. Avec `resend`, l'e-mail part reellement et
+       le journal n'a aucune raison de doubler le lien.
+
+    Aucun drapeau dedie n'est introduit : il n'y a donc rien qu'une variable
+    Railway mal placee puisse activer a elle seule.
+    """
+    if os.getenv("RAILWAY_ENVIRONMENT"):
+        return False
+    if settings.app_env != "dev":
+        return False
+    return settings.email_provider == "console"
 
 
 def _mask_email(email: str) -> str:
@@ -48,10 +77,14 @@ async def send_password_reset_email(
     settings: Settings,
 ) -> None:
     if settings.email_provider == "console":
-        logger.warning(
-            "password_reset_email_console_only",
-            extra={"recipient": _mask_email(to), "reset_url": reset_url},
-        )
+        # Le jeton n'est imprime que sur un poste de developpement local.
+        # Auparavant il l'etait inconditionnellement : un environnement deploye
+        # en `console` ecrivait des liens de reinitialisation valides dans ses
+        # journaux, lisibles par quiconque y a acces (AUTH-03).
+        extra: dict[str, Any] = {"recipient": _mask_email(to)}
+        if local_link_disclosure_allowed(settings):
+            extra["reset_url"] = reset_url
+        logger.warning("password_reset_email_console_only", extra=extra)
         return
 
     if settings.email_provider != "resend":
@@ -144,10 +177,12 @@ async def send_email_verification_email(
         # le lien est imprime pour pouvoir dérouler le parcours a la main ; partout
         # ailleurs — Preview inclus, qui declare app_env=prod — seul le destinataire
         # masque est trace.
-        extra = {"recipient": _mask_email(to)}
-        if settings.app_env == "dev":
-            extra["verification_url"] = verification_url
-        logger.warning("email_verification_console_only", extra=extra)
+        # Meme garde-fou que la reinitialisation : `app_env == "dev"` seul ne
+        # couvrait pas le cas d'un serveur deploye declarant `dev` (AUTH-03).
+        fields: dict[str, Any] = {"recipient": _mask_email(to)}
+        if local_link_disclosure_allowed(settings):
+            fields["verification_url"] = verification_url
+        logger.warning("email_verification_console_only", extra=fields)
         return
 
     if settings.email_provider != "resend":
