@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, Response, status
@@ -11,10 +13,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, get_settings
 from app.core.dependencies import is_mobile_client, require_authenticated_user
 from app.core.errors import AppError
-from app.core.rate_limit import enforce_rate_limit, rate_limit_identity
-from app.core.registration_mode import RegistrationPolicy, resolve_registration_policy
-from app.core.security import normalize_email
+from app.core.rate_limit import (
+    RATE_LIMIT_BACKEND_UNAVAILABLE,
+    enforce_rate_limit,
+    rate_limit_identity,
+)
+from app.core.registration_mode import (
+    RegistrationPolicy,
+    registration_config_problems,
+    resolve_registration_policy,
+)
+from app.core.security import normalize_email, validate_password_strength
 from app.db.session import get_db
+from app.integrations.redis import get_redis_client
 from app.integrations.turnstile import TurnstileUnavailable, verify_turnstile_token
 from app.models.user import User
 from app.schemas.auth import (
@@ -36,8 +47,14 @@ from app.schemas.auth import (
 )
 from app.schemas.user import UserPublic
 from app.services.auth_service import AuthService, IssuedRefreshToken
-from app.services.email_verification_service import EmailVerificationService
-from app.services.password_reset_service import PasswordResetService
+from app.services.email_verification_service import (
+    GENERIC_RESEND_MESSAGE,
+    EmailVerificationService,
+)
+from app.services.password_reset_service import (
+    GENERIC_FORGOT_MESSAGE,
+    PasswordResetService,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +90,127 @@ def _clear_refresh_cookie(response: Response, settings: Settings) -> None:
         secure=settings.refresh_cookie_secure,
         samesite=settings.refresh_cookie_samesite,
     )
+
+
+_GLOBAL_REGISTRATION_KEY = "rl:register:global"
+
+
+def _ensure_registration_is_configured(settings: Settings, policy: RegistrationPolicy) -> None:
+    """Refuse d'ouvrir si une protection indispensable manque (mode PUBLIC).
+
+    Seuls des noms de variables sont journalisés, jamais leur valeur. Le message
+    rendu ne les cite pas : la configuration du serveur ne regarde pas l'appelant.
+    """
+    manquants = registration_config_problems(settings, policy)
+    if not manquants:
+        return
+    logger.error("registration_misconfigured missing=%s", ",".join(manquants))
+    raise AppError(
+        status_code=503,
+        code="REGISTRATION_TEMPORARILY_UNAVAILABLE",
+        detail=(
+            "Les inscriptions sont momentanément indisponibles. Réessayez dans quelques instants."
+        ),
+    )
+
+
+@asynccontextmanager
+async def _registration_backend_guard() -> AsyncIterator[None]:
+    """Traduit une panne du limiteur en refus d'inscription explicite.
+
+    Le limiteur échoue déjà fermé ; on ne change donc pas la décision, seulement
+    le code rendu, pour que « je ne peux pas compter » ne se confonde pas avec
+    « tu as trop essayé ». Aucun compte n'est créé, aucun e-mail n'est tenté.
+    """
+    try:
+        yield
+    except AppError as erreur:
+        if erreur.code != RATE_LIMIT_BACKEND_UNAVAILABLE:
+            raise
+        logger.error("registration_refused_backend_unavailable")
+        raise AppError(
+            status_code=503,
+            code="REGISTRATION_TEMPORARILY_UNAVAILABLE",
+            detail=(
+                "Les inscriptions sont momentanément indisponibles. "
+                "Réessayez dans quelques instants."
+            ),
+        ) from None
+
+
+async def _ensure_global_capacity(policy: RegistrationPolicy) -> None:
+    """Vérifie le plafond global SANS le consommer.
+
+    Le plafond porte sur les inscriptions réussies : le compteur n'est
+    incrémenté qu'après création effective. Lire puis écrire laisse une course
+    sous forte concurrence — quelques comptes au-delà du plafond dans le pire
+    cas. C'est assumé : ce plafond est un coupe-circuit contre un robot, pas une
+    comptabilité, et le rendre exact coûterait de refuser des inscriptions
+    légitimes qui ont échoué ensuite.
+    """
+    client = get_redis_client()
+    if client is None:
+        return
+    try:
+        courant = await client.get(_GLOBAL_REGISTRATION_KEY)
+    except Exception:
+        logger.error("global_registration_cap_unreadable", exc_info=True)
+        raise AppError(
+            status_code=503,
+            code=RATE_LIMIT_BACKEND_UNAVAILABLE,
+            detail="Service momentanément indisponible. Réessayez dans un instant.",
+        ) from None
+
+    if courant is not None and int(courant) >= policy.global_hourly_limit:
+        logger.warning("global_registration_cap_reached limit=%s", policy.global_hourly_limit)
+        raise AppError(
+            status_code=429,
+            code="RATE_LIMITED",
+            detail="Trop de tentatives. Réessayez plus tard.",
+        )
+
+
+async def _record_successful_registration() -> None:
+    """Compte une inscription réussie. Ne fait jamais échouer la réponse.
+
+    Le compte existe déjà quand cette fonction s'exécute : une panne du compteur
+    ne doit pas transformer une inscription aboutie en erreur pour l'utilisateur.
+    """
+    client = get_redis_client()
+    if client is None:
+        return
+    try:
+        await enforce_rate_limit(
+            _GLOBAL_REGISTRATION_KEY,
+            limit=10**9,  # jamais atteint : la decision est prise en amont
+            window_seconds=3600,
+        )
+    except Exception:
+        logger.error("global_registration_counter_failed", exc_info=True)
+
+
+async def _limits_available(
+    *limites: tuple[str, int, int],
+    event: str,
+) -> bool:
+    """Applique des limites, en distinguant « dépassé » de « incomptable ».
+
+    Un dépassement se propage normalement en 429. Une panne du limiteur rend
+    False : l'appelant répond alors sa phrase générique habituelle sans rien
+    envoyer. C'est le seul moyen de tenir les deux exigences à la fois — ne pas
+    envoyer sans garantie, et ne pas laisser la réponse varier selon l'état du
+    service, ce qui redonnerait un signal exploitable.
+    """
+    try:
+        for cle, plafond, fenetre in limites:
+            await enforce_rate_limit(cle, limit=plafond, window_seconds=fenetre)
+    except AppError as erreur:
+        if erreur.code != RATE_LIMIT_BACKEND_UNAVAILABLE:
+            raise
+        # Alerte d'exploitation : un nom d'evenement, jamais une adresse.
+        logger.error("%s_suppressed_backend_unavailable", event)
+        return False
+    return True
 
 
 async def _require_turnstile(
@@ -150,14 +288,18 @@ async def registration_status(
     ne révélerait déjà.
     """
     policy = resolve_registration_policy(settings)
+    # Une protection indispensable manquante rend l'ouverture inoperante : on
+    # l'annonce plutot que de laisser afficher un formulaire qui echouera.
+    indisponible = bool(registration_config_problems(settings, policy))
     return RegistrationStatusResponse(
-        open=policy.open,
+        open=policy.open and not indisponible,
         mode=policy.mode.value,
         turnstile_required=policy.turnstile_required,
         # Publique par conception : c'est elle qui monte le widget. Le secret,
         # lui, ne quitte jamais le backend.
         turnstile_site_key=settings.turnstile_site_key or None,
         closes_at=policy.closes_at,
+        temporarily_unavailable=indisponible,
     )
 
 
@@ -197,39 +339,52 @@ async def register(
             ),
         )
 
+    # En PUBLIC, une protection indispensable manquante interdit d'ouvrir. Ne
+    # jamais transformer l'absence d'une cle en desactivation silencieuse.
+    _ensure_registration_is_configured(settings, policy)
+
     ip = _client_ip(request)
     email = normalize_email(str(payload.email))
 
-    # Trois axes, du plus specifique au plus large. L'adresse d'abord : c'est la
-    # dimension qui distingue une personne d'une salle entiere, la ou l'IP les
-    # confond. L'IP ensuite, avec un plafond assez haut pour qu'une classe
-    # derriere un seul NAT passe sans encombre. Le plafond global enfin, seul
-    # garde-fou contre un robot reparti sur de nombreuses adresses.
-    await enforce_rate_limit(
-        f"rl:register:email:{rate_limit_identity(email)}",
-        limit=settings.registration_email_daily_limit,
-        window_seconds=86400,
-    )
-    await enforce_rate_limit(
-        f"rl:register:ip-burst:{ip}",
-        limit=policy.ip_burst_limit,
-        window_seconds=60,
-    )
-    await enforce_rate_limit(
-        f"rl:register:ip:{ip}",
-        limit=policy.ip_hourly_limit,
-        window_seconds=3600,
-    )
-    await enforce_rate_limit(
-        "rl:register:global",
-        limit=policy.global_hourly_limit,
-        window_seconds=3600,
-    )
+    async with _registration_backend_guard():
+        # L'IP d'abord, mais avec des plafonds qui ne visent qu'une machine :
+        # cent personnes d'une meme salle soumettent dans la meme minute derriere
+        # une seule adresse publique. La protection reelle est ailleurs — plafond
+        # global et Turnstile.
+        await enforce_rate_limit(
+            f"rl:register:ip-burst:{ip}",
+            limit=policy.ip_burst_limit,
+            window_seconds=60,
+        )
+        await enforce_rate_limit(
+            f"rl:register:ip:{ip}",
+            limit=policy.ip_hourly_limit,
+            window_seconds=3600,
+        )
+
+        # Les validations LOCALES passent avant le compteur par adresse : une
+        # faute de frappe dans le mot de passe ne doit pas consommer un quota
+        # journalier. Le compteur ne s'incremente donc qu'une fois la demande
+        # formellement recevable. `AuthService.register` revalidera — la
+        # fonction est pure, et la route ne doit pas devenir la seule gardienne.
+        validate_password_strength(payload.password)
+
+        await enforce_rate_limit(
+            f"rl:register:email:{rate_limit_identity(email)}",
+            limit=settings.registration_email_daily_limit,
+            window_seconds=86400,
+        )
+
+        await _ensure_global_capacity(policy)
 
     await _require_turnstile(payload, request, settings=settings, policy=policy)
 
     service = AuthService(session, settings)
     result = await service.register(payload)
+
+    # Le plafond global compte les inscriptions REUSSIES : il n'est consomme
+    # qu'ici, une fois le compte reellement cree.
+    await _record_successful_registration()
 
     if result.session is None:
         # Aucun cookie, aucun jeton : le compte existe mais la session attend la
@@ -339,8 +494,17 @@ async def forgot_password(
 ) -> ForgotPasswordResponse:
     ip = _client_ip(request)
     email = normalize_email(str(payload.email))
-    await enforce_rate_limit(f"rl:forgot-password:ip:{ip}", limit=5, window_seconds=3600)
-    await enforce_rate_limit(f"rl:forgot-password:email:{email}", limit=3, window_seconds=3600)
+
+    if not await _limits_available(
+        (f"rl:forgot-password:ip:{ip}", 5, 3600),
+        (f"rl:forgot-password:email:{rate_limit_identity(email)}", 3, 3600),
+        event="forgot_password",
+    ):
+        # Redis injoignable : on ne peut garantir ni la limite ni le budget, donc
+        # on n'envoie rien. La reponse reste STRICTEMENT celle du cas nominal —
+        # un 503 ici distinguerait l'etat du service selon le moment et, surtout,
+        # romprait l'uniformite sur laquelle repose l'anti-enumeration.
+        return ForgotPasswordResponse(message=GENERIC_FORGOT_MESSAGE)
 
     service = PasswordResetService(session, settings)
     result = await service.request_password_reset(email)
@@ -391,8 +555,13 @@ async def resend_verification(
 ) -> ResendVerificationResponse:
     ip = _client_ip(request)
     email = normalize_email(str(payload.email))
-    await enforce_rate_limit(f"rl:resend-verification:ip:{ip}", limit=5, window_seconds=3600)
-    await enforce_rate_limit(f"rl:resend-verification:email:{email}", limit=3, window_seconds=3600)
+
+    if not await _limits_available(
+        (f"rl:resend-verification:ip:{ip}", 5, 3600),
+        (f"rl:resend-verification:email:{rate_limit_identity(email)}", 3, 3600),
+        event="resend_verification",
+    ):
+        return ResendVerificationResponse(message=GENERIC_RESEND_MESSAGE)
 
     service = EmailVerificationService(session, settings)
     result = await service.resend(email)

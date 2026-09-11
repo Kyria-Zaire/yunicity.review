@@ -352,20 +352,7 @@ async def test_critical_email_may_use_the_reserve(monkeypatch: pytest.MonkeyPatc
     assert await budget.try_consume(EmailCategory.CRITICAL) is False
 
 
-@pytest.mark.asyncio
-async def test_an_unreachable_redis_does_not_block_emails(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Fail-OPEN assumé : une panne de compteur ne doit pas couper la récupération."""
-
-    class _Redis:
-        async def incr(self, _key: str) -> int:
-            raise RuntimeError("redis down")
-
-        async def expire(self, _key: str, _ttl: int) -> None:
-            return None
-
-    monkeypatch.setattr("app.services.email_budget.get_redis_client", lambda: _Redis())
-
-    budget = EmailBudget(_settings(EMAIL_DAILY_BUDGET=90))
-    assert await budget.try_consume(EmailCategory.CRITICAL) is True
+# Le fail-open du budget a ete RETIRE par AUTH-04A-CORRECTION-01 : sans compteur
+# lisible, rien ne garantit qu'on n'epuise pas le quota du fournisseur. Le
+# comportement de remplacement est verifie dans
+# `test_registration_protection_correction.py`.

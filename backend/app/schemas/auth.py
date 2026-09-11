@@ -30,6 +30,10 @@ class RegistrationStatusResponse(BaseModel):
     turnstile_required: bool
     turnstile_site_key: str | None = None
     closes_at: datetime | None = None
+    #: Vrai quand le mode ouvrirait, mais qu'une protection indispensable manque.
+    #: `open` vaut alors faux : un frontend ancien qui ne lit que `open` ferme
+    #: correctement le formulaire sans connaitre ce champ.
+    temporarily_unavailable: bool = False
 
 
 class LoginRequest(BaseModel):

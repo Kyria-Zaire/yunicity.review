@@ -65,6 +65,11 @@ export interface RegistrationStatus {
   turnstile_required: boolean;
   turnstile_site_key: string | null;
   closes_at: string | null;
+  /**
+   * Le mode ouvrirait, mais une protection indispensable manque côté serveur.
+   * `open` vaut alors faux : un client qui ne lit que `open` ferme correctement.
+   */
+  temporarily_unavailable: boolean;
 }
 
 export interface AuthResponse extends AuthTokens {

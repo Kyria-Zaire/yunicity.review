@@ -26,7 +26,7 @@ from app.services.email_budget import EmailBudget, EmailCategory
 
 logger = logging.getLogger(__name__)
 
-_GENERIC_FORGOT_MESSAGE = (
+GENERIC_FORGOT_MESSAGE = (
     "Si un compte existe avec cette adresse, vous recevrez un lien de réinitialisation."
 )
 _INVALID_RESET_TOKEN_MSG = "Lien de réinitialisation invalide ou expiré."
@@ -103,7 +103,7 @@ class PasswordResetService:
 
             await self._session.commit()
 
-        return ForgotPasswordResult(message=_GENERIC_FORGOT_MESSAGE)
+        return ForgotPasswordResult(message=GENERIC_FORGOT_MESSAGE)
 
     async def reset_password(self, raw_token: str, new_password: str) -> str:
         validate_password_strength(new_password)

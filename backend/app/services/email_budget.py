@@ -59,11 +59,13 @@ class EmailBudget:
     async def try_consume(self, category: EmailCategory, *, now: datetime | None = None) -> bool:
         """Réserve un envoi. Rend False si le budget de la catégorie est épuisé.
 
-        Fail-OPEN si Redis est injoignable, contrairement au limiteur d'abus : le
-        budget protège un quota fournisseur, pas le service. Refuser tous les
-        e-mails parce que le compteur est illisible transformerait une panne de
-        Redis en impossibilité de récupérer son compte — un mal pire que le
-        dépassement qu'on cherche à éviter.
+        **Fail-CLOSED** (AUTH-04A-CORRECTION-01). Sans compteur lisible, rien ne
+        garantit qu'on ne dépasse pas le quota du fournisseur ni qu'on n'envoie
+        pas en boucle : une panne de Redis deviendrait une fenêtre d'épuisement
+        du quota et de spam. On préfère différer l'envoi — le compte reste créé,
+        son jeton est en base, et le renvoi régénère un lien quand Redis revient.
+
+        Seule exception conservée : aucun budget configuré, donc rien à garantir.
         """
         budget = self._settings.email_daily_budget
         if budget <= 0:
@@ -71,7 +73,11 @@ class EmailBudget:
 
         client = get_redis_client()
         if client is None:
-            return True
+            # Redis non configuré : pas de compteur, donc pas de garantie. Un
+            # budget déclaré sans Redis est une erreur de configuration, et on
+            # ne l'ignore pas silencieusement.
+            logger.warning("email_budget_without_redis budget=%s", budget)
+            return False
 
         instant = now or datetime.now(UTC)
         plafond = (
@@ -86,8 +92,10 @@ class EmailBudget:
             if used == 1:
                 await client.expire(key, _seconds_until_utc_midnight(instant))
         except Exception:
-            logger.warning("email_budget_backend_unavailable", exc_info=True)
-            return True
+            # Injoignable : on ne peut ni compter ni garantir. Differer est le
+            # seul comportement qui ne risque ni le quota ni le spam.
+            logger.error("email_budget_backend_unavailable", exc_info=True)
+            return False
 
         if used > plafond:
             # L'incrément a déjà eu lieu : le compteur surestime légèrement la

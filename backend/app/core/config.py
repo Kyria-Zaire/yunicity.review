@@ -88,20 +88,31 @@ class Settings(BaseSettings):
     #: qu'un deploiement existant ne change pas de comportement en installant
     #: cette version — le Preview actuellement ouvert compris.
     registration_mode: str = Field(default="", alias="REGISTRATION_MODE")
-    #: Plafond par IP en mode PILOT. Defaut 120 : une salle de 100 personnes
-    #: partageant une seule IP publique passe avec de la marge.
+    #: Plafond par IP en mode PILOT. 200/h : une salle entiere derriere un seul
+    #: NAT doit passer sans que l'IP n'intervienne jamais. Les protections
+    #: reelles sont le plafond global et Turnstile.
     registration_pilot_ip_hourly_limit: int = Field(
-        default=120, ge=1, alias="REGISTRATION_PILOT_IP_HOURLY_LIMIT"
+        default=200, ge=1, alias="REGISTRATION_PILOT_IP_HOURLY_LIMIT"
     )
-    #: Tentatives d'inscription par adresse et par jour. Une personne s'inscrit
-    #: une fois ; trois couvre les fautes de frappe sans laisser repeter.
+    #: Meme plafond en PUBLIC : l'IP ne doit jamais etre ce qui empeche un groupe
+    #: legitime de s'inscrire, quel que soit le mode.
+    registration_public_ip_hourly_limit: int = Field(
+        default=200, ge=1, alias="REGISTRATION_PUBLIC_IP_HOURLY_LIMIT"
+    )
+    #: Tentatives d'inscription par adresse et par jour. 10 : assez large pour
+    #: ne punir personne qui se trompe, assez etroit pour empecher la repetition
+    #: automatisee sur une meme adresse.
     #: L'adresse n'apparait JAMAIS dans la cle : voir `rate_limit_identity`.
+    #: Le compteur n'est incremente qu'APRES les validations locales — mot de
+    #: passe trop faible compris — de sorte qu'une erreur de saisie ne consomme
+    #: rien. Voir l'ordre des controles dans la route `register`.
     registration_email_daily_limit: int = Field(
-        default=3, ge=1, alias="REGISTRATION_EMAIL_DAILY_LIMIT"
+        default=10, ge=1, alias="REGISTRATION_EMAIL_DAILY_LIMIT"
     )
-    #: Plafond par IP sur une minute. Coupe l'automatisation en rafale sans gener
-    #: une file d'attente humaine devant un QR code.
-    registration_ip_burst_limit: int = Field(default=10, ge=1, alias="REGISTRATION_IP_BURST_LIMIT")
+    #: 120/min : une presentation scolaire fait soumettre cent personnes dans la
+    #: meme minute derriere une seule IP. Cette dimension ne protege donc plus que
+    #: d'une rafale de machine, pas d'un groupe humain.
+    registration_ip_burst_limit: int = Field(default=120, ge=1, alias="REGISTRATION_IP_BURST_LIMIT")
     #: Inscriptions abouties par heure, toutes IP confondues. Seul garde-fou
     #: contre un robot reparti sur de nombreuses adresses.
     registration_global_hourly_limit: int = Field(
