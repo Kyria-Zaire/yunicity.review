@@ -25,7 +25,10 @@ class FeedAuthorResolver:
         authors: dict[uuid.UUID, FeedAuthor] = {}
 
         for user_id in set(citizen_ids):
-            profile = await self._profiles.get_by_user_id(user_id)
+            # Identite PUBLIQUE : un compte en attente de suppression n'est plus
+            # resolu, et le repli neutre ci-dessous s'applique — le contenu
+            # reste, l'identite disparait (AUTH-02A).
+            profile = await self._profiles.get_public_identity(user_id)
             display = profile.display_name if profile and profile.display_name else "Citoyen"
             username = profile.username if profile else None
             avatar_url = profile.avatar_url if profile else None
@@ -51,7 +54,7 @@ class FeedAuthorResolver:
         return authors
 
     async def resolve_user(self, user_id: uuid.UUID) -> FeedAuthor:
-        profile = await self._profiles.get_by_user_id(user_id)
+        profile = await self._profiles.get_public_identity(user_id)
         display = profile.display_name if profile and profile.display_name else "Citoyen"
         return FeedAuthor(
             type=PostAuthorType.CITIZEN.value,

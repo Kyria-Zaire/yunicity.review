@@ -29,6 +29,41 @@ class ProfileRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_public_identity(self, user_id: uuid.UUID) -> UserProfile | None:
+        """Profil d'un utilisateur pour AFFICHAGE PUBLIC, par identifiant.
+
+        Rend `None` pour un compte dont la suppression est demandée. Les
+        appelants ont déjà un repli neutre pour ce cas — « Citoyen », sans
+        pseudonyme ni avatar — de sorte que le contenu reste affiché tandis que
+        l'identité disparaît, sans nouvelle logique de rendu.
+
+        Distinct de `get_by_user_id`, qui sert aussi à lire SON PROPRE profil :
+        y poser le filtre casserait des chemins internes légitimes.
+        """
+        result = await self._session.execute(
+            select(UserProfile)
+            .join(User, User.id == UserProfile.user_id)
+            .where(
+                UserProfile.user_id == user_id,
+                User.deletion_requested_at.is_(None),
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def list_public_identities(self, user_ids: list[uuid.UUID]) -> list[UserProfile]:
+        """Version groupée de `get_public_identity`, pour éviter le N+1."""
+        if not user_ids:
+            return []
+        result = await self._session.execute(
+            select(UserProfile)
+            .join(User, User.id == UserProfile.user_id)
+            .where(
+                UserProfile.user_id.in_(user_ids),
+                User.deletion_requested_at.is_(None),
+            )
+        )
+        return list(result.scalars().all())
+
     async def list_by_user_ids(self, user_ids: list[uuid.UUID]) -> list[UserProfile]:
         if not user_ids:
             return []

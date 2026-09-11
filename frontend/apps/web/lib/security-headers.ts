@@ -83,3 +83,25 @@ export const SECURITY_HEADERS: readonly SecurityHeader[] = [
   { key: "Permissions-Policy", value: PERMISSIONS_POLICY },
   { key: "Content-Security-Policy-Report-Only", value: CSP_REPORT_ONLY },
 ];
+
+/**
+ * Routes dont l'URL porte un secret en paramètre — AUTH-02A / AUTH-01 / AUTH-03.
+ *
+ * `strict-origin-when-cross-origin` ne transmet déjà que l'origine à un tiers,
+ * donc le jeton ne franchit pas la frontière. Il reste en revanche transmis
+ * ENTIER lors d'une navigation de même origine, et c'est suffisant pour qu'il
+ * atterrisse dans un journal applicatif ou un outil de mesure interne.
+ *
+ * `no-referrer` ferme les deux cas, et ne coûte rien sur des pages qui n'ont
+ * aucun besoin de connaître leur provenance.
+ */
+export const TOKEN_BEARING_PATHS: readonly string[] = [
+  "/login/cancel-deletion",
+  "/login/verify-email",
+  "/login/reset-password",
+];
+
+export const NO_REFERRER_HEADER: SecurityHeader = {
+  key: "Referrer-Policy",
+  value: "no-referrer",
+};

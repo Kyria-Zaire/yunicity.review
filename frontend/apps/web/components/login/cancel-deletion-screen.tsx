@@ -12,7 +12,14 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
-type Etat = "verification" | "annulee" | "echec" | "sans-jeton";
+type Etat =
+  /** Jeton reçu, en attente du clic de confirmation. Aucune requête émise. */
+  | "confirmation"
+  /** Requête en cours ; le bouton est désactivé, pas de double soumission. */
+  | "envoi"
+  | "annulee"
+  | "echec"
+  | "sans-jeton";
 
 export function CancelDeletionScreen() {
   return (
@@ -45,46 +52,49 @@ function CancelDeletionScreenInner() {
     [],
   );
 
-  const [etat, setEtat] = useState<Etat>(() => (token?.trim() ? "verification" : "sans-jeton"));
+  const [etat, setEtat] = useState<Etat>(() =>
+    token?.trim() ? "confirmation" : "sans-jeton",
+  );
   const [message, setMessage] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [renvoiFait, setRenvoiFait] = useState<string | null>(null);
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
 
-  // Un jeton ne se consomme qu'une fois : le double montage du mode strict ne
-  // doit pas produire un « déjà utilisé » sur une annulation pourtant réussie.
-  const consomme = useRef<string | null>(null);
+  // Le jeton est gardé EN MÉMOIRE, jamais consommé au montage.
+  const jetonEnMemoire = useRef<string | null>(null);
 
   useEffect(() => {
     const brut = token?.trim();
-    if (!brut || consomme.current === brut) return;
-    consomme.current = brut;
+    if (!brut) return;
 
-    let annule = false;
-    void (async () => {
-      try {
-        const reponse = await client.cancelAccountDeletion({ token: brut });
-        if (!annule) {
-          setEtat("annulee");
-          setMessage(reponse.message);
-        }
-      } catch (erreur) {
-        if (!annule) {
-          setEtat("echec");
-          setMessage(humanizeAuthFailure(erreur, "Ce lien d'annulation n'est plus valide."));
-        }
-      } finally {
-        // Le jeton quitte la barre d'adresse : il partirait sinon dans
-        // l'historique, les favoris et l'en-tête Referer. `replace` pour qu'un
-        // retour arrière ne le ramène pas.
-        if (!annule) router.replace("/login/cancel-deletion");
-      }
-    })();
+    // AUCUNE requête ici. Un scanner de messagerie qui exécute le JavaScript de
+    // la page — certains produits de sécurité le font — annulerait sinon la
+    // suppression à la place de l'utilisateur. Seul un clic consomme le jeton.
+    jetonEnMemoire.current = brut;
 
-    return () => {
-      annule = true;
-    };
-  }, [client, router, token]);
+    // Il quitte en revanche la barre d'adresse immédiatement : il partirait
+    // sinon dans l'historique, les favoris et l'en-tête Referer. `replace`
+    // pour qu'un retour arrière ne le ramène pas.
+    router.replace("/login/cancel-deletion");
+  }, [router, token]);
+
+  async function handleConfirmation() {
+    const brut = jetonEnMemoire.current;
+    if (!brut || etat === "envoi") return;
+
+    setEtat("envoi");
+    try {
+      const reponse = await client.cancelAccountDeletion({ token: brut });
+      setEtat("annulee");
+      setMessage(reponse.message);
+      // Le jeton est consommé : on ne le garde pas pour un second clic.
+      jetonEnMemoire.current = null;
+    } catch (erreur) {
+      setEtat("echec");
+      setMessage(humanizeAuthFailure(erreur, "Ce lien d'annulation n'est plus valide."));
+      jetonEnMemoire.current = null;
+    }
+  }
 
   async function handleRenvoi(event: FormEvent) {
     event.preventDefault();
@@ -114,7 +124,7 @@ function CancelDeletionScreenInner() {
         </div>
 
         <div className="mb-4 flex justify-center" aria-hidden>
-          {etat === "verification" ? (
+          {etat === "envoi" ? (
             <Loader2 className="h-8 w-8 animate-spin text-yunicity-primary motion-reduce:animate-none" />
           ) : etat === "annulee" ? (
             <CheckCircle2 className="h-8 w-8 text-emerald-600" />
@@ -126,24 +136,38 @@ function CancelDeletionScreenInner() {
         <h1 className="text-center text-xl font-bold text-neutral-900 sm:text-2xl">
           {etat === "annulee"
             ? "Suppression annulée"
-            : etat === "verification"
-              ? "Annulation en cours"
+            : etat === "confirmation" || etat === "envoi"
+              ? "Annuler la suppression ?"
               : "Lien d'annulation"}
         </h1>
 
         <p
           className="mt-3 text-center text-sm leading-relaxed text-neutral-600"
-          role={etat === "verification" ? "status" : undefined}
-          aria-live={etat === "verification" ? "polite" : undefined}
+          role={etat === "envoi" || etat === "annulee" || etat === "echec" ? "status" : undefined}
+          aria-live={etat === "envoi" || etat === "annulee" || etat === "echec" ? "polite" : undefined}
         >
-          {etat === "verification"
+          {etat === "envoi"
             ? "Un instant, nous rétablissons votre compte…"
-            : etat === "annulee"
-              ? (message ?? "Votre compte est réactivé.")
-              : etat === "echec"
-                ? (message ?? "Ce lien n'est plus valide.")
-                : "Saisissez l'adresse de votre compte pour recevoir un nouveau lien d'annulation."}
+            : etat === "confirmation"
+              ? "Votre compte sera réactivé et la suppression abandonnée. Vous devrez vous reconnecter."
+              : etat === "annulee"
+                ? (message ?? "Votre compte est réactivé.")
+                : etat === "echec"
+                  ? (message ?? "Ce lien n'est plus valide.")
+                  : "Saisissez l'adresse de votre compte pour recevoir un nouveau lien d'annulation."}
         </p>
+
+        {etat === "confirmation" || etat === "envoi" ? (
+          <button
+            type="button"
+            data-testid="confirmer-annulation"
+            onClick={() => void handleConfirmation()}
+            disabled={etat === "envoi"}
+            className="mt-6 min-h-11 w-full rounded-xl bg-yunicity-primary px-4 py-3 text-sm font-semibold text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {etat === "envoi" ? "Annulation en cours…" : "Annuler la suppression"}
+          </button>
+        ) : null}
 
         {etat === "annulee" ? (
           <button

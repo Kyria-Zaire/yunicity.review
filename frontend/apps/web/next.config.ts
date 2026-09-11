@@ -4,7 +4,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { culturalImageRemotePatterns } from "./lib/cultural-image-hosts";
-import { SECURITY_HEADERS } from "./lib/security-headers";
+import {
+  NO_REFERRER_HEADER,
+  SECURITY_HEADERS,
+  TOKEN_BEARING_PATHS,
+} from "./lib/security-headers";
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -62,6 +66,15 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: [...SECURITY_HEADERS],
       },
+      // Les pages portant un jeton dans l'URL n'ont aucun besoin de transmettre
+      // leur provenance : `no-referrer` y remplace la politique generale.
+      ...TOKEN_BEARING_PATHS.map((source) => ({
+        source,
+        headers: [
+          ...SECURITY_HEADERS.filter((h) => h.key !== "Referrer-Policy"),
+          NO_REFERRER_HEADER,
+        ],
+      })),
     ];
   },
   async redirects() {

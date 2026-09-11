@@ -809,3 +809,81 @@ async def test_no_physical_delete_ever_happens(
         ).scalar_one()
         assert user.deletion_requested_at is None, "la demande doit etre levee"
         assert user.deletion_cancelled_at is not None, "l'annulation doit etre tracee"
+
+
+# ------------------- REVIEW-GATE-02 : matrice d'identite publique
+
+
+async def test_the_public_identity_matrix_for_a_pending_account(
+    deletion_env: None, auth_client: AsyncClient, outbox: list[str]
+) -> None:
+    """Matrice complète : l'identité disparaît, les contenus restent.
+
+    Le résolveur d'auteurs a déjà un repli neutre — « Citoyen », sans pseudonyme
+    ni avatar — quand le profil n'est pas résolu. Il suffit donc de ne plus le
+    résoudre : aucune logique de rendu n'a été ajoutée.
+    """
+    from app.models.user import User
+    from app.models.user_profile import UserProfile
+    from app.repositories.profile_repository import ProfileRepository
+    from app.services.feed_author_resolver import FeedAuthorResolver
+
+    charge, jeton = await _inscrire(auth_client)
+    factory = get_session_factory()
+    assert factory is not None
+
+    async with factory() as session:
+        user = (
+            await session.execute(select(User).where(User.email == charge["email"]))
+        ).scalar_one()
+        profil = (
+            await session.execute(select(UserProfile).where(UserProfile.user_id == user.id))
+        ).scalar_one()
+        profil.onboarding_completed = True
+        profil.display_name = "Nom Reel A Masquer"
+        profil.avatar_url = "https://exemple.test/avatar.png"
+        profil.bio = "Biographie a masquer"
+        session.add(profil)
+        await session.commit()
+        user_id, pseudo = user.id, profil.username
+
+    # --- AVANT : l'identite est visible partout ---
+    async with factory() as session:
+        auteur = await FeedAuthorResolver(session).resolve_user(user_id)
+    assert auteur.display_name == "Nom Reel A Masquer"
+    assert auteur.username == pseudo
+    assert auteur.logo_url is not None
+    assert (await auth_client.get(f"/api/v1/profile/{pseudo}")).status_code == 200
+
+    assert (await _demander(auth_client, jeton)).status_code == 200
+
+    # --- APRES : profil masque sur les quatre routes publiques ---
+    for suffixe in ("", "/posts", "/tribes", "/contributions"):
+        reponse = await auth_client.get(f"/api/v1/profile/{pseudo}{suffixe}")
+        assert reponse.status_code == 404, f"/profile/{{pseudo}}{suffixe}"
+        assert "Nom Reel A Masquer" not in reponse.text
+        assert "avatar.png" not in reponse.text
+        assert "Biographie a masquer" not in reponse.text
+
+    # --- Carte d'auteur : forme NEUTRE, aucune donnee personnelle ---
+    async with factory() as session:
+        neutre = await FeedAuthorResolver(session).resolve_user(user_id)
+    assert neutre.display_name == "Citoyen", "le nom reel ne doit plus apparaitre"
+    assert neutre.username is None, "le pseudonyme ne doit plus apparaitre"
+    assert neutre.logo_url is None, "l'avatar ne doit plus apparaitre"
+
+    # --- Aucune route alternative ne rend le profil ---
+    async with factory() as session:
+        par_identifiant = await ProfileRepository(session).get_public_identity(user_id)
+    assert par_identifiant is None, "la resolution par identifiant doit etre fermee aussi"
+
+    # --- Mais RIEN n'est supprime : le profil existe toujours en base ---
+    async with factory() as session:
+        toujours_la = (
+            await session.execute(select(UserProfile).where(UserProfile.user_id == user_id))
+        ).scalar_one_or_none()
+        assert toujours_la is not None
+        assert toujours_la.display_name == "Nom Reel A Masquer", (
+            "les donnees sont masquees, pas effacees"
+        )
+        assert toujours_la.avatar_url is not None
