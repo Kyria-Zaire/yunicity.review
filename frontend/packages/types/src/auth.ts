@@ -139,3 +139,22 @@ export interface ApiErrorBody {
   code: string;
   errors?: unknown[];
 }
+
+/** Demande de suppression de compte (AUTH-02A). */
+export interface AccountDeletionRequest {
+  password: string;
+  confirm: true;
+}
+
+export interface AccountDeletionResponse {
+  message: string;
+  scheduled_for: string;
+  /** Faux quand l'e-mail d'annulation n'a pas pu partir : aucune file ne le renverra. */
+  email_sent: boolean;
+}
+
+export interface AccountDeletionStatus {
+  pending: boolean;
+  requested_at: string | null;
+  scheduled_for: string | null;
+}

@@ -1,3 +1,21 @@
+export {
+  DELETE_ACCOUNT_CANCEL_HINT,
+  DELETE_ACCOUNT_CANCEL_HINT_NO_EMAIL,
+  DELETE_ACCOUNT_CONFIRM_LABEL,
+  DELETE_ACCOUNT_CONFIRM_REQUIRED,
+  DELETE_ACCOUNT_CONSEQUENCES,
+  DELETE_ACCOUNT_INTRO,
+  DELETE_ACCOUNT_PASSWORD_HINT,
+  DELETE_ACCOUNT_PASSWORD_LABEL,
+  DELETE_ACCOUNT_PASSWORD_REQUIRED,
+  DELETE_ACCOUNT_SUBMIT,
+  DELETE_ACCOUNT_SUBMITTING,
+  DELETE_ACCOUNT_SUCCESS_TITLE,
+  DELETE_ACCOUNT_TITLE,
+  daysUntilDeletion,
+  formatDeletionDate,
+  shouldShowAccountDeletion,
+} from "./account-deletion-portal";
 export { getApiBaseUrl, getExpoApiBaseUrl, getWebApiBaseUrl, resolveWebApiBaseUrl } from "./api-base-url";
 export { resolveApiMediaUrl } from "./api-media-url";
 export {

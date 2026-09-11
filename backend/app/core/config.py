@@ -142,6 +142,18 @@ class Settings(BaseSettings):
     #: passe, securite du compte. Une vague d'inscriptions ne doit jamais priver
     #: un utilisateur legitime de la recuperation de son compte.
     email_daily_budget_reserve: int = Field(default=10, ge=0, alias="EMAIL_DAILY_BUDGET_RESERVE")
+    #: Suppression de compte (AUTH-02A). FAIL-CLOSED : absente ou fausse, la
+    #: fonctionnalite est inaccessible — aucun endpoint, aucune interface. Un
+    #: deploiement qui ne la declare pas ne peut donc pas la proposer par
+    #: inadvertance, ce qui est la bonne posture pour une action irreversible.
+    account_deletion_enabled: bool = Field(default=False, alias="ACCOUNT_DELETION_ENABLED")
+    #: Delai de grace, en jours calendaires. Pendant ce delai AUCUNE donnee n'est
+    #: supprimee : seul l'acces est coupe, et l'utilisateur peut revenir.
+    account_deletion_grace_days: int = Field(default=30, ge=1, alias="ACCOUNT_DELETION_GRACE_DAYS")
+    #: Pepper DEDIE aux jetons d'annulation. Distinct de tous les autres : un lien
+    #: d'annulation permet de reprendre la main sur un compte, le compromettre
+    #: reviendrait a decider a la place de son titulaire.
+    account_deletion_token_pepper: str = Field(default="", alias="ACCOUNT_DELETION_TOKEN_PEPPER")
     #: Pepper DEDIE aux jetons de verification d'adresse (AUTH-01). Volontairement
     #: distinct de `refresh_token_pepper` : compromettre l'un ne doit pas permettre
     #: de forger l'autre.

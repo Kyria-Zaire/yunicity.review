@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -282,3 +283,84 @@ async def send_email_verification_email(
         _raise_for_provider_error(response, event="email_verification", to=to)
 
     logger.info("email_verification_sent", extra={"recipient": _mask_email(to)})
+
+
+def build_account_deletion_email_html(cancellation_url: str, scheduled_for: str) -> str:
+    """E-mail de confirmation d'une demande de suppression (AUTH-02A).
+
+    Son rôle principal n'est pas d'annoncer : c'est de donner le moyen de
+    revenir en arrière. Le lien d'annulation y est donc l'élément dominant.
+    """
+    return f"""<!DOCTYPE html>
+<html lang="fr">
+  <body style="font-family:system-ui,sans-serif;line-height:1.6;color:#111;">
+    <p style="font-size:18px;font-weight:700;color:#2A2FFF;margin:0 0 16px;">Yunicity</p>
+    <p>Bonjour,</p>
+    <p>Nous avons enregistré votre demande de suppression de compte.</p>
+    <p><strong>Votre compte sera supprimé le {scheduled_for}.</strong></p>
+    <p>D'ici là, vous pouvez revenir sur cette décision :</p>
+    <p>
+      <a href="{cancellation_url}"
+         style="display:inline-block;padding:12px 20px;border-radius:9999px;
+                background:#2A2FFF;color:#fff;text-decoration:none;font-weight:600;">
+        Annuler la suppression
+      </a>
+    </p>
+    <p style="font-size:14px;color:#555;">
+      Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br />
+      {cancellation_url}
+    </p>
+    <p style="font-size:14px;color:#555;">
+      Vous n'êtes pas à l'origine de cette demande ? Annulez-la avec le lien
+      ci-dessus, puis changez votre mot de passe.
+    </p>
+    <p>— L'équipe Yunicity</p>
+  </body>
+</html>"""
+
+
+async def send_account_deletion_email(
+    *,
+    to: str,
+    cancellation_url: str,
+    scheduled_for: datetime,
+    settings: Settings,
+) -> None:
+    echeance = scheduled_for.astimezone(UTC).strftime("%d/%m/%Y")
+
+    if settings.email_provider == "console":
+        champs: dict[str, Any] = {"recipient": _mask_email(to)}
+        if local_link_disclosure_allowed(settings):
+            champs["cancellation_url"] = cancellation_url
+        logger.warning("account_deletion_email_console_only", extra=champs)
+        return
+
+    if settings.email_provider != "resend":
+        return
+
+    api_key = settings.resend_api_key
+    from_address = settings.email_from
+    if not api_key or not from_address:
+        raise EmailDeliveryError("Resend is not configured")
+
+    payload: dict[str, Any] = {
+        "from": from_address,
+        "to": [to],
+        "subject": "Votre demande de suppression de compte Yunicity",
+        "html": build_account_deletion_email_html(cancellation_url, echeance),
+    }
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.post(RESEND_API_URL, json=payload, headers=headers)
+    except httpx.HTTPError as exc:
+        logger.exception(
+            "account_deletion_email_transport_error", extra={"recipient": _mask_email(to)}
+        )
+        raise EmailDeliveryError("Resend transport failed") from exc
+
+    if response.status_code >= 400:
+        _raise_for_provider_error(response, event="account_deletion_email", to=to)
+
+    logger.info("account_deletion_email_sent", extra={"recipient": _mask_email(to)})

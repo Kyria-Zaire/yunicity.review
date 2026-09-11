@@ -374,6 +374,18 @@ class AuthService:
                 code="ACCOUNT_SUSPENDED",
                 detail="Ce compte est suspendu.",
             )
+        if user.deletion_requested_at is not None:
+            # Une connexion normale ne doit PAS reactiver le compte : seul le lien
+            # d'annulation le fait. Se reconnecter par inadvertance annulerait
+            # sinon une decision explicite.
+            raise AppError(
+                status_code=403,
+                code="ACCOUNT_PENDING_DELETION",
+                detail=(
+                    "La suppression de ce compte a été demandée. "
+                    "Utilisez le lien d'annulation reçu par e-mail pour le réactiver."
+                ),
+            )
         if not user.is_verified and email_verification_required_for(user, self._settings):
             raise AppError(
                 status_code=403,

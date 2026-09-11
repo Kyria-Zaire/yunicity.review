@@ -30,7 +30,12 @@ from app.db.session import get_db
 from app.integrations.turnstile import TurnstileUnavailable, verify_turnstile_token
 from app.models.user import User
 from app.schemas.auth import (
+    AccountDeletionRequest,
+    AccountDeletionResponse,
+    AccountDeletionStatusResponse,
     AuthTokenResponse,
+    CancelAccountDeletionRequest,
+    CancelAccountDeletionResponse,
     ForgotPasswordRequest,
     ForgotPasswordResponse,
     LoginRequest,
@@ -47,6 +52,7 @@ from app.schemas.auth import (
     VerifyEmailResponse,
 )
 from app.schemas.user import UserPublic
+from app.services.account_deletion_service import AccountDeletionService
 from app.services.auth_service import AuthService, IssuedRefreshToken
 from app.services.email_verification_service import (
     GENERIC_RESEND_MESSAGE,
@@ -553,3 +559,75 @@ async def resend_verification(
     service = EmailVerificationService(session, settings)
     result = await service.resend(email)
     return ResendVerificationResponse(message=result.message)
+
+
+@router.get("/account/deletion", response_model=AccountDeletionStatusResponse)
+async def account_deletion_status(
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> AccountDeletionStatusResponse:
+    """État de la demande pour le compte courant.
+
+    En pratique inatteignable tant qu'une demande est en cours, puisque l'accès
+    est coupé : elle sert à l'interface AVANT la demande, et après une annulation.
+    """
+    service = AccountDeletionService(session, settings)
+    service.ensure_feature_enabled()
+    etat = service.status_of(current_user)
+    return AccountDeletionStatusResponse(
+        pending=etat.pending,
+        requested_at=etat.requested_at,
+        scheduled_for=etat.scheduled_for,
+    )
+
+
+@router.post("/account/deletion", response_model=AccountDeletionResponse)
+async def request_account_deletion(
+    payload: AccountDeletionRequest,
+    request: Request,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> AccountDeletionResponse:
+    """Ouvre le délai de grâce. AUCUNE donnée n'est supprimée ici."""
+    await enforce_rate_limit(
+        f"rl:account-deletion:ip:{_client_ip(request)}", limit=5, window_seconds=3600
+    )
+
+    service = AccountDeletionService(session, settings)
+    result = await service.request_deletion(current_user, payload.password)
+
+    return AccountDeletionResponse(
+        message=(
+            "Votre compte sera supprimé à la date indiquée. "
+            "Un e-mail contenant un lien d'annulation vient de vous être envoyé."
+            if result.email_sent
+            else "Votre compte sera supprimé à la date indiquée. L'envoi de l'e-mail "
+            "d'annulation est momentanément indisponible : contactez le support "
+            "si vous souhaitez revenir sur cette décision."
+        ),
+        scheduled_for=result.scheduled_for,
+        email_sent=result.email_sent,
+    )
+
+
+@router.post("/account/deletion/cancel", response_model=CancelAccountDeletionResponse)
+async def cancel_account_deletion(
+    payload: CancelAccountDeletionRequest,
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> CancelAccountDeletionResponse:
+    """Annule la demande. NON authentifiée : l'accès est justement coupé.
+
+    Le jeton porte l'autorisation, comme pour une réinitialisation de mot de
+    passe. La limite par IP protège contre le balayage de l'espace des jetons.
+    """
+    await enforce_rate_limit(
+        f"rl:account-deletion-cancel:ip:{_client_ip(request)}", limit=20, window_seconds=3600
+    )
+
+    service = AccountDeletionService(session, settings)
+    message = await service.cancel_deletion(payload.token)
+    return CancelAccountDeletionResponse(message=message)

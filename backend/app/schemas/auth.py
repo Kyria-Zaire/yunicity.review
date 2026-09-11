@@ -121,3 +121,34 @@ class ResendVerificationRequest(BaseModel):
 
 class ResendVerificationResponse(BaseModel):
     message: str
+
+
+class AccountDeletionRequest(BaseModel):
+    """Demande de suppression. Le mot de passe est exigé, pas la session seule."""
+
+    password: str = Field(min_length=1, max_length=128)
+    #: Confirmation explicite : une case cochée volontairement, jamais un défaut.
+    confirm: Literal[True]
+
+
+class AccountDeletionResponse(BaseModel):
+    message: str
+    scheduled_for: datetime
+    #: Faux quand l'e-mail portant le lien d'annulation n'a pas pu partir. Aucune
+    #: file ne le renverra : l'interface doit proposer autre chose plutôt que
+    #: d'annoncer un envoi qui n'a pas eu lieu.
+    email_sent: bool
+
+
+class AccountDeletionStatusResponse(BaseModel):
+    pending: bool
+    requested_at: datetime | None = None
+    scheduled_for: datetime | None = None
+
+
+class CancelAccountDeletionRequest(BaseModel):
+    token: str = Field(min_length=1, max_length=512)
+
+
+class CancelAccountDeletionResponse(BaseModel):
+    message: str

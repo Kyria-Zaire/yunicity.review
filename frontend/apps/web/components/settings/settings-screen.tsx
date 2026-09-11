@@ -1,6 +1,7 @@
 "use client";
 
 import { VerifyEmailInviteBanner } from "@/components/login/verify-email-invite-banner";
+import { AccountDeletionSection } from "@/components/settings/account-deletion-section";
 import { SettingsDesktopScreen } from "@/components/settings/desktop";
 import { SettingsMediumScreen } from "@/components/settings/medium";
 import { SettingsAppShell } from "@/components/settings/settings-app-shell";
@@ -91,6 +92,11 @@ export function SettingsScreen() {
           vues responsives : le compte reste pleinement accessible. */}
       <div className="px-4 pt-4">
         <VerifyEmailInviteBanner user={ctx.user} />
+      </div>
+      {/* AUTH-02A — rendu une fois pour les trois vues. Le composant se masque
+          lui-meme tant que le backend ne declare pas la fonctionnalite. */}
+      <div className="px-4 pt-4">
+        <AccountDeletionSection />
       </div>
       <SettingsMobileView
         user={ctx.user}

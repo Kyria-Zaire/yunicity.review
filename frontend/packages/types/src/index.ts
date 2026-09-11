@@ -1,4 +1,7 @@
 export type {
+  AccountDeletionRequest,
+  AccountDeletionResponse,
+  AccountDeletionStatus,
   ApiErrorBody,
   AuthResponse,
   AuthTokens,

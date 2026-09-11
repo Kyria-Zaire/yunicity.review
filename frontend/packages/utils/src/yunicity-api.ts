@@ -151,8 +151,13 @@ export class YunicityApi {
   readonly organizationCreatorContent: OrganizationCreatorContentApi;
   readonly creatorPublic: CreatorPublicApi;
 
+  readonly auth: AuthClient;
+
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.apiBaseUrl = apiBaseUrl;
+    // Le client d'authentification porte deja la session courante : l'exposer
+    // evite d'en recreer un sans jeton la ou une route authentifiee est appelee.
+    this.auth = client;
     this.profile = createProfileApi(client, apiBaseUrl);
     this.organization = createOrganizationApi(client, apiBaseUrl);
     this.partnerOffers = createPartnerOffersApi(client, apiBaseUrl);

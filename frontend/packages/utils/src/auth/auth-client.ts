@@ -1,4 +1,7 @@
 import type {
+  AccountDeletionRequest,
+  AccountDeletionResponse,
+  AccountDeletionStatus,
   AuthResponse,
   AuthUser,
   ForgotPasswordRequest,
@@ -132,6 +135,23 @@ export class AuthClient {
       method: "GET",
       skipAuth: true,
     });
+  }
+
+  /**
+   * Ouvre le délai de grâce (AUTH-02A). AUCUNE donnée n'est supprimée : le
+   * compte devient inaccessible et peut être réactivé par le lien reçu.
+   */
+  async requestAccountDeletion(
+    payload: AccountDeletionRequest,
+  ): Promise<AccountDeletionResponse> {
+    return this.request<AccountDeletionResponse>("/account/deletion", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async accountDeletionStatus(): Promise<AccountDeletionStatus> {
+    return this.request<AccountDeletionStatus>("/account/deletion", { method: "GET" });
   }
 
   async verifyEmail(payload: VerifyEmailRequest): Promise<VerifyEmailResponse> {

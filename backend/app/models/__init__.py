@@ -1,5 +1,6 @@
 """ORM models — import all modules so Alembic sees Base.metadata."""
 
+from app.models.account_deletion_token import AccountDeletionToken
 from app.models.activation_wave import ActivationWave, ActivationWaveItem
 from app.models.comment import Comment
 from app.models.creator_content_admin_action import CreatorContentAdminAction
@@ -125,6 +126,7 @@ __all__ = [
     "PassportChallengeProgressEvent",
     "UserPassportChallenge",
     "ReputationEvent",
+    "AccountDeletionToken",
     "EmailVerificationToken",
     "PasswordResetToken",
     "Permission",
