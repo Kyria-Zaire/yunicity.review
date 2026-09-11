@@ -67,6 +67,38 @@ export interface ResetPasswordResponse {
   message: string;
 }
 
+/**
+ * Inscription acceptée, session différée jusqu'à la confirmation de l'adresse.
+ *
+ * Renvoyée en 202 par le backend, et uniquement pour les comptes soumis à
+ * `EMAIL_VERIFICATION_ENFORCED_FROM`. `verification_required` en discrimine le
+ * type sans dépendre du code HTTP côté client.
+ */
+export interface RegistrationPendingResponse {
+  message: string;
+  user: AuthUser;
+  verification_required: true;
+}
+
+/** Les deux issues possibles d'une inscription. */
+export type RegisterResult = AuthResponse | RegistrationPendingResponse;
+
+export interface VerifyEmailRequest {
+  token: string;
+}
+
+export interface VerifyEmailResponse {
+  message: string;
+}
+
+export interface ResendVerificationRequest {
+  email: string;
+}
+
+export interface ResendVerificationResponse {
+  message: string;
+}
+
 export interface ApiErrorBody {
   detail: string;
   code: string;

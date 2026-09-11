@@ -1,3 +1,4 @@
+from datetime import datetime
 from functools import lru_cache
 from typing import Literal
 
@@ -72,6 +73,22 @@ class Settings(BaseSettings):
     #: qui le declare explicitement se ferme, donc aucun deploiement existant ne
     #: change de comportement en installant cette version.
     registration_enabled: bool = Field(default=True, alias="REGISTRATION_ENABLED")
+    #: Pepper DEDIE aux jetons de verification d'adresse (AUTH-01). Volontairement
+    #: distinct de `refresh_token_pepper` : compromettre l'un ne doit pas permettre
+    #: de forger l'autre.
+    email_verification_token_pepper: str = Field(
+        default="", alias="EMAIL_VERIFICATION_TOKEN_PEPPER"
+    )
+    email_verification_expire_hours: int = Field(
+        default=24, alias="EMAIL_VERIFICATION_EXPIRE_HOURS"
+    )
+    #: Date a partir de laquelle un compte NOUVELLEMENT cree doit verifier son
+    #: adresse pour ouvrir une session. Non configuree = exigence DESACTIVEE :
+    #: aucun compte existant ne peut etre bloque par un oubli de configuration, et
+    #: installer cette version ne change le comportement d'aucun deploiement.
+    email_verification_enforced_from: datetime | None = Field(
+        default=None, alias="EMAIL_VERIFICATION_ENFORCED_FROM"
+    )
     web_frontend_url: str = Field(default="http://localhost:3000", alias="WEB_FRONTEND_URL")
     password_reset_expire_hours: int = Field(default=1, alias="PASSWORD_RESET_EXPIRE_HOURS")
 

@@ -8,6 +8,7 @@ from app.db.base import Base
 from app.models._mixins import TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.email_verification_token import EmailVerificationToken
     from app.models.passport import Passport
     from app.models.password_reset_token import PasswordResetToken
     from app.models.push_subscription import PushSubscription
@@ -51,6 +52,11 @@ class User(TimestampMixin, Base):
     )
     password_reset_tokens: Mapped[list["PasswordResetToken"]] = relationship(
         "PasswordResetToken",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    email_verification_tokens: Mapped[list["EmailVerificationToken"]] = relationship(
+        "EmailVerificationToken",
         back_populates="user",
         cascade="all, delete-orphan",
     )

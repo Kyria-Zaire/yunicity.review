@@ -60,8 +60,16 @@ function RegisterScreenInner() {
     clearError();
     setIsSubmitting(true);
     try {
-      const ok = await register(buildRegisterApiPayload(wizard.draft));
-      if (ok) {
+      const outcome = await register(buildRegisterApiPayload(wizard.draft));
+      if (outcome.status === "verification_required") {
+        // Le compte est cree ; la session attend la confirmation de l'adresse.
+        // `replace` pour qu'un retour arriere ne repropose pas l'assistant.
+        const path = "/login/verify-email";
+        router.replace(path);
+        setSuccessPath(path);
+        return;
+      }
+      if (outcome.status === "authenticated") {
         const path = buildRegisterPostAuthPath(wizard.draft.accountType);
         router.replace(path);
         setSuccessPath(path);

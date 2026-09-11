@@ -4,6 +4,7 @@ from app.models.activation_wave import ActivationWave, ActivationWaveItem
 from app.models.comment import Comment
 from app.models.creator_content_admin_action import CreatorContentAdminAction
 from app.models.cultural_place import CulturalPlace
+from app.models.email_verification_token import EmailVerificationToken
 from app.models.event_admin_action import EventAdminAction
 from app.models.like import Like
 from app.models.local_event import EventInterest, LocalEvent
@@ -124,6 +125,7 @@ __all__ = [
     "PassportChallengeProgressEvent",
     "UserPassportChallenge",
     "ReputationEvent",
+    "EmailVerificationToken",
     "PasswordResetToken",
     "Permission",
     "ProfileVisibility",

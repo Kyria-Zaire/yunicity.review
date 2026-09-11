@@ -7,6 +7,8 @@ import {
   createYunicityApi,
   getWebApiBaseUrl,
   humanizeAuthFailure,
+  isRegistrationPending,
+  rememberPendingVerificationEmail,
   syncPassportSessionUser,
   type YunicityApi,
 } from "@yunicity/utils";
@@ -20,6 +22,18 @@ import {
   type ReactNode,
 } from "react";
 
+/**
+ * Issue d'une inscription (AUTH-01).
+ *
+ * `verification_required` n'est PAS un échec : le compte existe, mais aucune
+ * session n'est ouverte tant que l'adresse n'est pas confirmée. Un simple
+ * booléen ne saurait pas distinguer ce cas d'une inscription refusée.
+ */
+export type RegisterOutcome =
+  | { status: "authenticated" }
+  | { status: "verification_required" }
+  | { status: "failed" };
+
 interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
@@ -27,7 +41,7 @@ interface AuthContextValue {
   error: string | null;
   yunicityApi: YunicityApi;
   login: (payload: LoginRequest) => Promise<boolean>;
-  register: (payload: RegisterRequest) => Promise<boolean>;
+  register: (payload: RegisterRequest) => Promise<RegisterOutcome>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   clearError: () => void;
@@ -139,15 +153,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const register = useCallback(
-    async (payload: RegisterRequest) => {
+    async (payload: RegisterRequest): Promise<RegisterOutcome> => {
       setError(null);
       try {
         const response = await client.register(payload);
+        if (isRegistrationPending(response)) {
+          // Aucun jeton n'a ete emis : renseigner `user` ici rendrait
+          // `isAuthenticated` vrai sans session, et toute requete authentifiee
+          // echouerait ensuite en 401.
+          rememberPendingVerificationEmail(response.user.email);
+          return { status: "verification_required" };
+        }
         setUser(response.user);
-        return true;
+        return { status: "authenticated" };
       } catch (err) {
         setError(humanizeAuthFailure(err, "Inscription impossible."));
-        return false;
+        return { status: "failed" };
       }
     },
     [client],

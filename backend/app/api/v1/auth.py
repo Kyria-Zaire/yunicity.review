@@ -22,11 +22,17 @@ from app.schemas.auth import (
     RefreshRequest,
     RefreshTokenResponse,
     RegisterRequest,
+    RegistrationPendingResponse,
+    ResendVerificationRequest,
+    ResendVerificationResponse,
     ResetPasswordRequest,
     ResetPasswordResponse,
+    VerifyEmailRequest,
+    VerifyEmailResponse,
 )
 from app.schemas.user import UserPublic
 from app.services.auth_service import AuthService, IssuedRefreshToken
+from app.services.email_verification_service import EmailVerificationService
 from app.services.password_reset_service import PasswordResetService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -75,8 +81,16 @@ def _read_refresh_token(
 
 @router.post(
     "/register",
-    response_model=AuthTokenResponse,
     status_code=status.HTTP_201_CREATED,
+    # Deux issues possibles, distinguees par le CODE HTTP : 201 = session ouverte,
+    # 202 = compte cree, session differee jusqu'a la confirmation de l'adresse.
+    # `response_model=None` laisse FastAPI serialiser le modele effectivement
+    # retourne ; les deux schemas restent documentes via `responses`.
+    response_model=None,
+    responses={
+        status.HTTP_201_CREATED: {"model": AuthTokenResponse},
+        status.HTTP_202_ACCEPTED: {"model": RegistrationPendingResponse},
+    },
 )
 async def register(
     payload: RegisterRequest,
@@ -85,7 +99,7 @@ async def register(
     session: Annotated[AsyncSession, Depends(get_db)],
     settings: Annotated[Settings, Depends(get_settings)],
     mobile: Annotated[bool, Depends(is_mobile_client)],
-) -> AuthTokenResponse:
+) -> AuthTokenResponse | RegistrationPendingResponse:
     # Barriere AVANT toute autre chose : avant la limite de debit (une inscription
     # fermee ne doit pas consommer le quota ni dependre de Redis) et avant le
     # moindre acces base. Aucun utilisateur, aucun profil, aucun email.
@@ -103,7 +117,21 @@ async def register(
     await enforce_rate_limit(f"rl:register:ip:{ip}", limit=5, window_seconds=3600)
 
     service = AuthService(session, settings)
-    bundle = await service.register(payload)
+    result = await service.register(payload)
+
+    if result.session is None:
+        # Aucun cookie, aucun jeton : le compte existe mais la session attend la
+        # confirmation de l'adresse.
+        response.status_code = status.HTTP_202_ACCEPTED
+        return RegistrationPendingResponse(
+            message=(
+                "Compte créé. Confirmez votre adresse e-mail pour accéder à Yunicity : "
+                "un lien vous a été envoyé."
+            ),
+            user=result.user,
+        )
+
+    bundle = result.session
     _set_refresh_cookie(response, bundle.refresh, settings)
     return AuthTokenResponse(
         access_token=bundle.access_token,
@@ -220,3 +248,40 @@ async def reset_password(
     service = PasswordResetService(session, settings)
     message = await service.reset_password(payload.token, payload.new_password)
     return ResetPasswordResponse(message=message)
+
+
+@router.post("/verify-email", response_model=VerifyEmailResponse)
+async def verify_email(
+    payload: VerifyEmailRequest,
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> VerifyEmailResponse:
+    # Limite par IP uniquement : le jeton est le seul identifiant fourni, il n'y a
+    # pas d'adresse a limiter. 20/h laisse place aux rechargements de page et aux
+    # pre-chargements de lien des clients de messagerie, tout en fermant le
+    # parcours d'un attaquant qui voudrait balayer l'espace des jetons.
+    await enforce_rate_limit(
+        f"rl:verify-email:ip:{_client_ip(request)}", limit=20, window_seconds=3600
+    )
+
+    service = EmailVerificationService(session, settings)
+    message = await service.verify(payload.token)
+    return VerifyEmailResponse(message=message)
+
+
+@router.post("/resend-verification", response_model=ResendVerificationResponse)
+async def resend_verification(
+    payload: ResendVerificationRequest,
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> ResendVerificationResponse:
+    ip = _client_ip(request)
+    email = normalize_email(str(payload.email))
+    await enforce_rate_limit(f"rl:resend-verification:ip:{ip}", limit=5, window_seconds=3600)
+    await enforce_rate_limit(f"rl:resend-verification:email:{email}", limit=3, window_seconds=3600)
+
+    service = EmailVerificationService(session, settings)
+    result = await service.resend(email)
+    return ResendVerificationResponse(message=result.message)

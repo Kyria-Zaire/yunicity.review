@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, EmailStr, Field
 
 from app.schemas.user import UserPublic
@@ -58,4 +60,34 @@ class ResetPasswordRequest(BaseModel):
 
 
 class ResetPasswordResponse(BaseModel):
+    message: str
+
+
+class RegistrationPendingResponse(BaseModel):
+    """Inscription enregistrée, session différée jusqu'à la vérification (AUTH-01).
+
+    Renvoyée en 202 — et non 201 — uniquement pour les comptes soumis à
+    `EMAIL_VERIFICATION_ENFORCED_FROM`. Le code HTTP suffit donc à distinguer les
+    deux issues sans rendre `access_token` optionnel dans `AuthTokenResponse`,
+    ce qui aurait cassé le contrat de tous les clients existants.
+    """
+
+    message: str
+    user: UserPublic
+    verification_required: Literal[True] = True
+
+
+class VerifyEmailRequest(BaseModel):
+    token: str = Field(min_length=1, max_length=512)
+
+
+class VerifyEmailResponse(BaseModel):
+    message: str
+
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
+
+class ResendVerificationResponse(BaseModel):
     message: str

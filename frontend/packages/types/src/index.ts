@@ -9,9 +9,15 @@ export type {
   PermissionKey,
   RefreshResponse,
   RegisterRequest,
+  RegisterResult,
+  RegistrationPendingResponse,
+  ResendVerificationRequest,
+  ResendVerificationResponse,
   ResetPasswordRequest,
   ResetPasswordResponse,
   RoleKey,
+  VerifyEmailRequest,
+  VerifyEmailResponse,
 } from "./auth";
 
 export type {

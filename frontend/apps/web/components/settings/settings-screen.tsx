@@ -1,5 +1,6 @@
 "use client";
 
+import { VerifyEmailInviteBanner } from "@/components/login/verify-email-invite-banner";
 import { SettingsDesktopScreen } from "@/components/settings/desktop";
 import { SettingsMediumScreen } from "@/components/settings/medium";
 import { SettingsAppShell } from "@/components/settings/settings-app-shell";
@@ -86,6 +87,11 @@ export function SettingsScreen() {
 
   return (
     <SettingsAppShell>
+      {/* AUTH-01 — invitation NON bloquante, rendue une fois au-dessus des trois
+          vues responsives : le compte reste pleinement accessible. */}
+      <div className="px-4 pt-4">
+        <VerifyEmailInviteBanner user={ctx.user} />
+      </div>
       <SettingsMobileView
         user={ctx.user}
         profile={ctx.profile}
