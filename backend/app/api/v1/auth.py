@@ -44,6 +44,8 @@ from app.schemas.auth import (
     RegisterRequest,
     RegistrationPendingResponse,
     RegistrationStatusResponse,
+    ResendCancellationRequest,
+    ResendCancellationResponse,
     ResendVerificationRequest,
     ResendVerificationResponse,
     ResetPasswordRequest,
@@ -52,7 +54,10 @@ from app.schemas.auth import (
     VerifyEmailResponse,
 )
 from app.schemas.user import UserPublic
-from app.services.account_deletion_service import AccountDeletionService
+from app.services.account_deletion_service import (
+    GENERIC_RESEND_CANCELLATION_MESSAGE,
+    AccountDeletionService,
+)
 from app.services.auth_service import AuthService, IssuedRefreshToken
 from app.services.email_verification_service import (
     GENERIC_RESEND_MESSAGE,
@@ -604,8 +609,8 @@ async def request_account_deletion(
             "Un e-mail contenant un lien d'annulation vient de vous être envoyé."
             if result.email_sent
             else "Votre compte sera supprimé à la date indiquée. L'envoi de l'e-mail "
-            "d'annulation est momentanément indisponible : contactez le support "
-            "si vous souhaitez revenir sur cette décision."
+            "d'annulation a échoué : demandez un nouveau lien depuis la page de "
+            "connexion pour revenir sur cette décision."
         ),
         scheduled_for=result.scheduled_for,
         email_sent=result.email_sent,
@@ -631,3 +636,32 @@ async def cancel_account_deletion(
     service = AccountDeletionService(session, settings)
     message = await service.cancel_deletion(payload.token)
     return CancelAccountDeletionResponse(message=message)
+
+
+@router.post("/account/deletion/resend", response_model=ResendCancellationResponse)
+async def resend_cancellation_link(
+    payload: ResendCancellationRequest,
+    request: Request,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> ResendCancellationResponse:
+    """Réémet le lien d'annulation. NON authentifiée : l'accès est justement coupé.
+
+    Sans cette voie, une panne d'envoi au moment de la demande enfermait
+    quelqu'un dehors sans recours. La réponse est générique et les limites
+    portent sur une empreinte de l'adresse, jamais sur l'adresse elle-même.
+    """
+    ip = _client_ip(request)
+    email = normalize_email(str(payload.email))
+
+    if not await _limits_available(
+        (f"rl:deletion-resend:ip:{ip}", 5, 3600),
+        (f"rl:deletion-resend:email:{rate_limit_identity(email)}", 3, 3600),
+        event="deletion_cancellation_resend",
+    ):
+        # Redis injoignable : on n'envoie rien, mais la reponse ne change pas.
+        return ResendCancellationResponse(message=GENERIC_RESEND_CANCELLATION_MESSAGE)
+
+    service = AccountDeletionService(session, settings)
+    message = await service.resend_cancellation_link(email)
+    return ResendCancellationResponse(message=message)

@@ -152,3 +152,11 @@ class CancelAccountDeletionRequest(BaseModel):
 
 class CancelAccountDeletionResponse(BaseModel):
     message: str
+
+
+class ResendCancellationRequest(BaseModel):
+    email: EmailStr
+
+
+class ResendCancellationResponse(BaseModel):
+    message: str

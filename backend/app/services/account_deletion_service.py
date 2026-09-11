@@ -33,7 +33,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.errors import AppError
-from app.core.security import generate_opaque_token, verify_password
+from app.core.security import generate_opaque_token, normalize_email, verify_password
 from app.models.account_deletion_token import AccountDeletionToken
 from app.models.tribe import Tribe, TribeMember
 from app.models.user import User
@@ -51,6 +51,14 @@ CRITICAL_ROLES = frozenset({"SUPER_ADMIN", "CITY_ADMIN", "MODERATOR"})
 LIVE_SUBSCRIPTION_STATUSES = frozenset({"active", "trialing", "past_due", "unpaid"})
 
 _CANCELLED_MESSAGE = "Votre compte est réactivé. Reconnectez-vous pour continuer."
+
+#: Réponse unique du renvoi : identique que l'adresse corresponde à une demande
+#: en cours, à un compte sans demande, ou à rien du tout. Toute variation
+#: permettrait de savoir qui a demandé la suppression de son compte.
+GENERIC_RESEND_CANCELLATION_MESSAGE = (
+    "Si une suppression est en cours pour cette adresse, vous allez recevoir "
+    "un nouveau lien d'annulation."
+)
 
 
 @dataclass(frozen=True)
@@ -285,6 +293,45 @@ class AccountDeletionService:
 
         logger.info("account_deletion_cancelled user_id=%s", user.id)
         return _CANCELLED_MESSAGE
+
+    # ------------------------------------------------ renvoi du lien d'annulation
+
+    async def resend_cancellation_link(self, email: str) -> str:
+        """Réémet un lien d'annulation. Répond toujours la même chose.
+
+        Sans cette voie, une panne du fournisseur au moment de la demande
+        laissait quelqu'un avec un compte inaccessible, ses sessions révoquées,
+        aucun e-mail reçu et aucun moyen d'en redemander un — un piège sans
+        sortie. L'accès étant coupé, cette route ne peut pas être authentifiée :
+        c'est l'adresse qui sert d'entrée, et la réponse générique empêche de
+        s'en servir pour savoir qui se supprime.
+        """
+        self.ensure_feature_enabled()
+
+        normalized = normalize_email(email)
+        user = (
+            await self._session.execute(select(User).where(User.email == normalized))
+        ).scalar_one_or_none()
+
+        if user is not None and user.deletion_requested_at is not None:
+            echeance = self._scheduled_for(user)
+            if echeance > datetime.now(UTC):
+                # Les liens precedents n'ont plus lieu d'etre : un seul jeton
+                # vivant a la fois limite la fenetre d'exposition.
+                await self._session.execute(
+                    update(AccountDeletionToken)
+                    .where(
+                        AccountDeletionToken.user_id == user.id,
+                        AccountDeletionToken.used_at.is_(None),
+                    )
+                    .values(used_at=datetime.now(UTC))
+                )
+                raw_token = generate_opaque_token()
+                await self._issue_cancellation_token(user, raw_token, echeance)
+                await self._session.commit()
+                await self._send_cancellation_email(user, raw_token, echeance)
+
+        return GENERIC_RESEND_CANCELLATION_MESSAGE
 
     # ------------------------------------------------------------------ etat
 

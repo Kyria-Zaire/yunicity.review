@@ -3,6 +3,10 @@ import type {
   AccountDeletionResponse,
   AccountDeletionStatus,
   AuthResponse,
+  CancelAccountDeletionRequest,
+  CancelAccountDeletionResponse,
+  ResendCancellationRequest,
+  ResendCancellationResponse,
   AuthUser,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
@@ -147,6 +151,31 @@ export class AuthClient {
     return this.request<AccountDeletionResponse>("/account/deletion", {
       method: "POST",
       body: JSON.stringify(payload),
+    });
+  }
+
+  /**
+   * Consomme le lien d'annulation. NON authentifiée : l'accès est justement
+   * coupé, c'est le jeton qui porte l'autorisation.
+   */
+  async cancelAccountDeletion(
+    payload: CancelAccountDeletionRequest,
+  ): Promise<CancelAccountDeletionResponse> {
+    return this.request<CancelAccountDeletionResponse>("/account/deletion/cancel", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      skipAuth: true,
+    });
+  }
+
+  /** Réémet le lien d'annulation. Réponse générique, quelle que soit l'issue. */
+  async resendCancellationLink(
+    payload: ResendCancellationRequest,
+  ): Promise<ResendCancellationResponse> {
+    return this.request<ResendCancellationResponse>("/account/deletion/resend", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      skipAuth: true,
     });
   }
 

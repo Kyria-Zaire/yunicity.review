@@ -540,3 +540,272 @@ async def test_a_tribe_with_another_member_does_not_block(
         ).scalar_one_or_none()
         assert encore is not None, "aucune tribu ne doit disparaitre"
         assert encore.created_by_user_id is not None
+
+
+# ------------------------------------ REVIEW-GATE-01 : renvoi du lien d'annulation
+
+
+async def test_a_provider_outage_does_not_trap_the_user(
+    deletion_env: None, auth_client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Le piège que la revue a mis au jour.
+
+    Sans voie de renvoi, une panne d'envoi laissait quelqu'un avec un compte
+    inaccessible, ses sessions révoquées, aucun e-mail et aucun recours.
+    """
+    from app.integrations.resend_email import EmailDeliveryError
+
+    envois: list[str] = []
+
+    async def _echec(*, to: str, cancellation_url: str, **_k: Any) -> None:
+        raise EmailDeliveryError("provider down")
+
+    monkeypatch.setattr("app.integrations.resend_email.send_account_deletion_email", _echec)
+
+    charge, jeton = await _inscrire(auth_client)
+    demande = await _demander(auth_client, jeton)
+
+    assert demande.status_code == 200
+    assert demande.json()["email_sent"] is False
+    # Le message oriente vers le recours, il ne renvoie pas dans le vide.
+    assert "nouveau lien" in demande.json()["message"]
+
+    # Le fournisseur revient : le renvoi doit fonctionner.
+    async def _ok(*, to: str, cancellation_url: str, **_k: Any) -> None:
+        envois.append(cancellation_url)
+
+    monkeypatch.setattr("app.integrations.resend_email.send_account_deletion_email", _ok)
+
+    renvoi = await auth_client.post(
+        "/api/v1/auth/account/deletion/resend", json={"email": charge["email"]}
+    )
+    assert renvoi.status_code == 200
+    assert len(envois) == 1, "un nouveau lien doit partir"
+
+    # Et il annule reellement.
+    annulation = await auth_client.post(
+        "/api/v1/auth/account/deletion/cancel", json={"token": _token_de(envois[0])}
+    )
+    assert annulation.status_code == 200
+
+
+async def test_the_resend_answers_the_same_for_an_unknown_address(
+    deletion_env: None, auth_client: AsyncClient, outbox: list[str]
+) -> None:
+    """Anti-énumération : savoir qui se supprime ne doit pas être possible."""
+    inconnue = await auth_client.post(
+        "/api/v1/auth/account/deletion/resend",
+        json={"email": f"inconnue-{uuid.uuid4().hex[:8]}@example.com"},
+    )
+    charge, jeton = await _inscrire(auth_client)
+    sans_demande = await auth_client.post(
+        "/api/v1/auth/account/deletion/resend", json={"email": charge["email"]}
+    )
+
+    assert inconnue.status_code == sans_demande.status_code == 200
+    assert inconnue.json() == sans_demande.json()
+    assert outbox == [], "aucun envoi sans demande en cours"
+
+
+async def test_the_resend_invalidates_the_previous_link(
+    deletion_env: None, auth_client: AsyncClient, outbox: list[str]
+) -> None:
+    charge, jeton = await _inscrire(auth_client)
+    assert (await _demander(auth_client, jeton)).status_code == 200
+    ancien = _token_de(outbox[0])
+
+    assert (
+        await auth_client.post(
+            "/api/v1/auth/account/deletion/resend", json={"email": charge["email"]}
+        )
+    ).status_code == 200
+    assert len(outbox) == 2
+
+    perime = await auth_client.post("/api/v1/auth/account/deletion/cancel", json={"token": ancien})
+    assert perime.status_code == 400, "l'ancien lien doit etre invalide"
+
+    recent = await auth_client.post(
+        "/api/v1/auth/account/deletion/cancel", json={"token": _token_de(outbox[1])}
+    )
+    assert recent.status_code == 200
+
+
+# ------------------------------------ REVIEW-GATE-01 : aucun GET ne consomme
+
+
+async def test_no_get_request_can_cancel_a_deletion(
+    deletion_env: None, auth_client: AsyncClient, outbox: list[str]
+) -> None:
+    """Un scanner de messagerie ne doit jamais annuler une suppression.
+
+    Le lien de l'e-mail pointe vers une page ; seule celle-ci envoie un POST.
+    Aucune méthode GET ne doit modifier le compte.
+    """
+    from app.models.user import User
+
+    charge, jeton = await _inscrire(auth_client)
+    assert (await _demander(auth_client, jeton)).status_code == 200
+    brut = _token_de(outbox[0])
+
+    # Toutes les formes de GET plausibles qu'un scanner tenterait.
+    for chemin in (
+        f"/api/v1/auth/account/deletion/cancel?token={brut}",
+        f"/api/v1/auth/account/deletion?token={brut}",
+    ):
+        reponse = await auth_client.get(chemin)
+        assert reponse.status_code in (401, 404, 405), (
+            f"{chemin} a repondu {reponse.status_code} : un GET ne doit rien consommer"
+        )
+
+    # Le compte est TOUJOURS en attente : rien n'a ete annule.
+    factory = get_session_factory()
+    assert factory is not None
+    async with factory() as session:
+        user = (
+            await session.execute(select(User).where(User.email == charge["email"]))
+        ).scalar_one()
+        assert user.deletion_requested_at is not None, "un GET a annule la suppression"
+
+    # Et le jeton n'a pas ete consomme : le POST fonctionne encore.
+    assert (
+        await auth_client.post("/api/v1/auth/account/deletion/cancel", json={"token": brut})
+    ).status_code == 200
+
+
+# ------------------------------------ REVIEW-GATE-01 : visibilite publique
+
+
+async def test_a_pending_account_disappears_from_public_surfaces(
+    deletion_env: None, auth_client: AsyncClient, outbox: list[str]
+) -> None:
+    """Le profil n'est plus résolu, mais rien n'est supprimé.
+
+    `ProfileRepository.get_by_username` est le point de résolution unique des
+    quatre routes publiques : le filtre y est posé une fois plutôt que répété.
+    """
+    from app.models.user import User
+    from app.models.user_profile import UserProfile
+
+    charge, jeton = await _inscrire(auth_client)
+
+    factory = get_session_factory()
+    assert factory is not None
+    async with factory() as session:
+        user = (
+            await session.execute(select(User).where(User.email == charge["email"]))
+        ).scalar_one()
+        profil = (
+            await session.execute(select(UserProfile).where(UserProfile.user_id == user.id))
+        ).scalar_one()
+        # Un compte fraichement inscrit a `onboarding_completed = False`, et
+        # `_can_view_profile` refuse alors le profil : sans cela, la ligne de
+        # base serait deja 404 et le test ne prouverait rien.
+        profil.onboarding_completed = True
+        session.add(profil)
+        await session.commit()
+        pseudo = profil.username
+        profil_id = profil.id
+
+    avant = await auth_client.get(f"/api/v1/profile/{pseudo}")
+    assert avant.status_code == 200, "le profil doit etre visible avant la demande"
+
+    assert (await _demander(auth_client, jeton)).status_code == 200
+
+    # Les quatre routes publiques passent par le meme resolveur.
+    for suffixe in ("", "/posts", "/tribes", "/contributions"):
+        apres = await auth_client.get(f"/api/v1/profile/{pseudo}{suffixe}")
+        assert apres.status_code == 404, (
+            f"/profile/{{pseudo}}{suffixe} repond {apres.status_code} : "
+            "l'identite ne doit plus etre resolue"
+        )
+
+    # Mais la ligne de profil existe TOUJOURS : rien n'est supprime.
+    async with factory() as session:
+        encore = (
+            await session.execute(select(UserProfile).where(UserProfile.id == profil_id))
+        ).scalar_one_or_none()
+        assert encore is not None, "le profil ne doit pas etre supprime, seulement masque"
+
+
+# ------------------------------------------------- REVIEW-GATE-01 : §5 divers
+
+
+async def test_the_thirty_days_are_computed_in_utc(
+    deletion_env: None, auth_client: AsyncClient, outbox: list[str]
+) -> None:
+    """Aucun fuseau local ne doit intervenir dans l'échéance."""
+    from app.models.user import User
+
+    charge, jeton = await _inscrire(auth_client)
+    assert (await _demander(auth_client, jeton)).status_code == 200
+
+    factory = get_session_factory()
+    assert factory is not None
+    async with factory() as session:
+        user = (
+            await session.execute(select(User).where(User.email == charge["email"]))
+        ).scalar_one()
+
+    assert user.deletion_requested_at is not None
+    assert user.deletion_scheduled_for is not None
+    assert user.deletion_requested_at.tzinfo is not None, "horodatage naif interdit"
+    assert user.deletion_scheduled_for.tzinfo is not None
+    ecart = user.deletion_scheduled_for - user.deletion_requested_at
+    assert ecart == timedelta(days=30), f"ecart obtenu : {ecart}"
+
+
+async def test_an_expired_cancellation_token_is_refused(
+    deletion_env: None, auth_client: AsyncClient, outbox: list[str]
+) -> None:
+    """Passée l'échéance, annuler n'a plus d'objet."""
+    from app.models.account_deletion_token import AccountDeletionToken
+
+    charge, jeton = await _inscrire(auth_client)
+    assert (await _demander(auth_client, jeton)).status_code == 200
+    brut = _token_de(outbox[0])
+
+    factory = get_session_factory()
+    assert factory is not None
+    async with factory() as session:
+        ligne = (await session.execute(select(AccountDeletionToken))).scalars().first()
+        assert ligne is not None
+        ligne.expires_at = datetime.now(UTC) - timedelta(minutes=1)
+        session.add(ligne)
+        await session.commit()
+
+    refus = await auth_client.post("/api/v1/auth/account/deletion/cancel", json={"token": brut})
+    assert refus.status_code == 400
+    assert refus.json()["code"] == "INVALID_CANCELLATION_TOKEN"
+
+
+async def test_no_physical_delete_ever_happens(
+    deletion_env: None, auth_client: AsyncClient, outbox: list[str]
+) -> None:
+    """Ni la demande ni l'annulation ne suppriment une seule ligne."""
+    from app.models.user import User
+
+    charge, jeton = await _inscrire(auth_client)
+
+    factory = get_session_factory()
+    assert factory is not None
+
+    async def _compter_utilisateurs() -> int:
+        async with factory() as session:
+            return int((await session.execute(text("SELECT count(*) FROM users"))).scalar_one())
+
+    avant = await _compter_utilisateurs()
+    assert (await _demander(auth_client, jeton)).status_code == 200
+    apres_demande = await _compter_utilisateurs()
+    await auth_client.post(
+        "/api/v1/auth/account/deletion/cancel", json={"token": _token_de(outbox[0])}
+    )
+    apres_annulation = await _compter_utilisateurs()
+
+    assert avant == apres_demande == apres_annulation
+
+    async with factory() as session:
+        user = (
+            await session.execute(select(User).where(User.email == charge["email"]))
+        ).scalar_one()
+        assert user.deletion_requested_at is None, "la demande doit etre levee"
+        assert user.deletion_cancelled_at is not None, "l'annulation doit etre tracee"

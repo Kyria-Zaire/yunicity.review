@@ -158,3 +158,19 @@ export interface AccountDeletionStatus {
   requested_at: string | null;
   scheduled_for: string | null;
 }
+
+export interface CancelAccountDeletionRequest {
+  token: string;
+}
+
+export interface CancelAccountDeletionResponse {
+  message: string;
+}
+
+export interface ResendCancellationRequest {
+  email: string;
+}
+
+export interface ResendCancellationResponse {
+  message: string;
+}
