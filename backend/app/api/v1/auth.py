@@ -114,7 +114,14 @@ async def register(
         )
 
     ip = _client_ip(request)
-    await enforce_rate_limit(f"rl:register:ip:{ip}", limit=5, window_seconds=3600)
+    # Seul le plafond change, et seulement la ou la variable est declaree : la
+    # cle, la fenetre et le caractere fail-closed du limiteur sont inchanges,
+    # comme l'unicite des adresses et les limites du renvoi de verification.
+    await enforce_rate_limit(
+        f"rl:register:ip:{ip}",
+        limit=settings.registration_rate_limit_per_hour,
+        window_seconds=3600,
+    )
 
     service = AuthService(session, settings)
     result = await service.register(payload)

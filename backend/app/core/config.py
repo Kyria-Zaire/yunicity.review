@@ -41,9 +41,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] | str = Field(default="", alias="CORS_ORIGINS")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     sentry_dsn: str | None = Field(default=None, alias="SENTRY_DSN")
-    sentry_traces_sample_rate: float = Field(
-        default=0.1, alias="SENTRY_TRACES_SAMPLE_RATE"
-    )
+    sentry_traces_sample_rate: float = Field(default=0.1, alias="SENTRY_TRACES_SAMPLE_RATE")
 
     @field_validator("database_url", mode="before")
     @classmethod
@@ -73,6 +71,18 @@ class Settings(BaseSettings):
     #: qui le declare explicitement se ferme, donc aucun deploiement existant ne
     #: change de comportement en installant cette version.
     registration_enabled: bool = Field(default=True, alias="REGISTRATION_ENABLED")
+    #: Inscriptions autorisees par heure et par IP. Defaut 5 : la valeur en vigueur
+    #: jusqu'ici, donc Production et tout deploiement qui ne declare pas cette
+    #: variable gardent EXACTEMENT le comportement actuel.
+    #:
+    #: Elle existe parce que le decompte porte sur l'IP publique vue par l'edge :
+    #: derriere le NAT d'un etablissement, une promotion entiere partage une seule
+    #: IP et 5 inscriptions suffisent a bloquer tout le monde. Relever cette seule
+    #: valeur, sur un environnement donne, est preferable a desactiver la
+    #: protection ou a la contourner par une allowlist.
+    registration_rate_limit_per_hour: int = Field(
+        default=5, ge=1, alias="REGISTRATION_RATE_LIMIT_PER_HOUR"
+    )
     #: Pepper DEDIE aux jetons de verification d'adresse (AUTH-01). Volontairement
     #: distinct de `refresh_token_pepper` : compromettre l'un ne doit pas permettre
     #: de forger l'autre.
@@ -323,9 +333,7 @@ class Settings(BaseSettings):
                         "RESEND_API_KEY is required when EMAIL_PROVIDER is resend in prod"
                     )
                 if not self.email_from or not self.email_from.strip():
-                    raise ValueError(
-                        "EMAIL_FROM is required when EMAIL_PROVIDER is resend in prod"
-                    )
+                    raise ValueError("EMAIL_FROM is required when EMAIL_PROVIDER is resend in prod")
         return self
 
     @property
