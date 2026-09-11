@@ -17,6 +17,7 @@ seulement `dev` et `prod`.
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
 from typing import Any
 
 import pytest
@@ -42,10 +43,17 @@ def _settings(app_env: AppEnv, provider: EmailProvider) -> Settings:
 
     `preprod` et `prod` imposent un secret fort et un pepper ; les renseigner
     plutôt que rabattre le test sur `dev` est ce qui rend la matrice honnête.
+
+    Tous les champs qui participent à une validation croisée sont fixés ici, y
+    compris `DEBUG`. `Settings` est un `BaseSettings` : ce qui n'est pas passé
+    explicitement est lu dans l'environnement du processus. Le conteneur de la
+    CI compose déclare `DEBUG=true`, ce qui heurtait la règle « DEBUG must be
+    false when APP_ENV is prod » et faisait échouer les seuls cas `prod`.
     """
     if app_env in ("preprod", "prod"):
         return Settings(
             APP_ENV=app_env,
+            DEBUG=False,
             EMAIL_PROVIDER=provider,
             JWT_SECRET_KEY=_STRONG_JWT,
             REFRESH_TOKEN_PEPPER="tests-auth03-pepper-refresh-non-vide",
@@ -58,7 +66,52 @@ def _settings(app_env: AppEnv, provider: EmailProvider) -> Settings:
             RESEND_API_KEY="re_test_key" if provider == "resend" else None,
             EMAIL_FROM="no-reply@exemple.test" if provider == "resend" else None,
         )
-    return Settings(APP_ENV=app_env, EMAIL_PROVIDER=provider, JWT_SECRET_KEY=_JWT)
+    return Settings(APP_ENV=app_env, DEBUG=False, EMAIL_PROVIDER=provider, JWT_SECRET_KEY=_JWT)
+
+
+@pytest.fixture
+def journal() -> Iterator[list[logging.LogRecord]]:
+    """Capture les enregistrements émis par le module d'envoi.
+
+    `caplog` ne suffit pas ici, pour la raison déjà documentée dans
+    `test_rate_limit.py` : un test de migration antérieur appelle
+    `logging.config.fileConfig()`, et le `disable_existing_loggers=True` par
+    défaut d'Alembic met `disabled = True` sur tous les loggers déjà créés.
+    `logger.warning()` rend alors la main sans rien émettre.
+
+    Conséquence sur la suite complète — invisible en exécution isolée : les
+    assertions d'absence de ce fichier passaient parce qu'il n'y avait **rien**
+    à inspecter, et seule l'assertion de présence échouait. On réactive donc le
+    logger du module et on lui attache un handler local, sans toucher à la
+    journalisation de production ; `_trace` refuse ensuite une capture vide.
+    """
+    module_logger = logging.getLogger("app.integrations.resend_email")
+    enregistrements: list[logging.LogRecord] = []
+
+    class _Collecteur(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            enregistrements.append(record)
+
+    handler = _Collecteur(level=logging.DEBUG)
+    desactive_initial, niveau_initial = module_logger.disabled, module_logger.level
+    module_logger.addHandler(handler)
+    module_logger.disabled = False
+    module_logger.setLevel(logging.DEBUG)
+    try:
+        yield enregistrements
+    finally:
+        module_logger.removeHandler(handler)
+        module_logger.disabled = desactive_initial
+        module_logger.setLevel(niveau_initial)
+
+
+def _trace(enregistrements: list[logging.LogRecord]) -> str:
+    """Tout ce qu'un lecteur des journaux pourrait voir, attributs `extra` compris."""
+    assert enregistrements, (
+        "aucun enregistrement capturé : une assertion d'absence serait vraie "
+        "pour la mauvaise raison"
+    )
+    return repr([r.__dict__ for r in enregistrements])
 
 
 # --------------------------------------------------------------- contrat HTTP
@@ -154,17 +207,16 @@ def test_disclosure_guard_is_fail_closed(
 @pytest.mark.asyncio
 async def test_deployed_environments_never_log_the_link(
     app_env: AppEnv,
-    caplog: pytest.LogCaptureFixture,
+    journal: list[logging.LogRecord],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.delenv("RAILWAY_ENVIRONMENT", raising=False)
-    caplog.set_level(logging.DEBUG)
 
     await send_password_reset_email(
         to="citoyen@example.com", reset_url=_LINK, settings=_settings(app_env, "console")
     )
 
-    trace = caplog.text + repr([r.__dict__ for r in caplog.records])
+    trace = _trace(journal)
     assert "jeton-secret-a-ne-pas-fuir" not in trace
     assert _LINK not in trace
     assert "citoyen@example.com" not in trace, "l'adresse doit rester masquée"
@@ -172,46 +224,41 @@ async def test_deployed_environments_never_log_the_link(
 
 @pytest.mark.asyncio
 async def test_railway_presence_alone_closes_the_disclosure(
-    caplog: pytest.LogCaptureFixture,
+    journal: list[logging.LogRecord],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Même en APP_ENV=dev, un conteneur Railway ne doit rien imprimer."""
     monkeypatch.setenv("RAILWAY_ENVIRONMENT", "preview")
-    caplog.set_level(logging.DEBUG)
 
     await send_password_reset_email(
         to="citoyen@example.com", reset_url=_LINK, settings=_settings("dev", "console")
     )
 
-    assert "jeton-secret-a-ne-pas-fuir" not in (
-        caplog.text + repr([r.__dict__ for r in caplog.records])
-    )
+    assert "jeton-secret-a-ne-pas-fuir" not in _trace(journal)
 
 
 @pytest.mark.asyncio
 async def test_local_development_still_prints_the_link(
-    caplog: pytest.LogCaptureFixture,
+    journal: list[logging.LogRecord],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Le confort du poste local est conservé : c'est le seul endroit permis."""
     monkeypatch.delenv("RAILWAY_ENVIRONMENT", raising=False)
-    caplog.set_level(logging.DEBUG)
 
     await send_password_reset_email(
         to="citoyen@example.com", reset_url=_LINK, settings=_settings("dev", "console")
     )
 
-    assert _LINK in repr([r.__dict__ for r in caplog.records])
+    assert _LINK in _trace(journal)
 
 
 @pytest.mark.asyncio
 async def test_the_verification_sender_obeys_the_same_guard(
-    caplog: pytest.LogCaptureFixture,
+    journal: list[logging.LogRecord],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """AUTH-01 ne doit pas rester plus permissif qu'AUTH-03."""
     monkeypatch.setenv("RAILWAY_ENVIRONMENT", "production")
-    caplog.set_level(logging.DEBUG)
 
     await send_email_verification_email(
         to="citoyen@example.com",
@@ -219,7 +266,7 @@ async def test_the_verification_sender_obeys_the_same_guard(
         settings=_settings("dev", "console"),
     )
 
-    assert "jeton-verif-secret" not in (caplog.text + repr([r.__dict__ for r in caplog.records]))
+    assert "jeton-verif-secret" not in _trace(journal)
 
 
 # ------------------------------------------------------------ envoi observable
