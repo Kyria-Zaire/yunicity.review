@@ -82,6 +82,7 @@ describe("shouldRenderTurnstile", () => {
     expect(
       shouldRenderTurnstile({
         open: true,
+        temporarily_unavailable: false,
         mode: "public",
         turnstile_required: true,
         turnstile_site_key: "0x000site",
@@ -94,6 +95,7 @@ describe("shouldRenderTurnstile", () => {
     expect(
       shouldRenderTurnstile({
         open: true,
+        temporarily_unavailable: false,
         mode: "public",
         turnstile_required: true,
         turnstile_site_key: null,
@@ -106,6 +108,7 @@ describe("shouldRenderTurnstile", () => {
     expect(
       shouldRenderTurnstile({
         open: true,
+        temporarily_unavailable: false,
         mode: "pilot",
         turnstile_required: false,
         turnstile_site_key: "0x000site",
