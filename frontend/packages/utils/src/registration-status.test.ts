@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
   TURNSTILE_SCRIPT_URL,
   TURNSTILE_TEST_SITE_KEY_ALWAYS_PASSES,
-  fallbackRegistrationStatus,
   isRegistrationFormUsable,
   parseRegistrationStatus,
   shouldRenderTurnstile,
@@ -23,6 +22,7 @@ describe("parseRegistrationStatus", () => {
     const statut = parseRegistrationStatus({
       open: true,
       mode: "public",
+      temporarily_unavailable: false,
       turnstile_required: true,
       turnstile_site_key: "0x000site",
       closes_at: null,
@@ -38,12 +38,8 @@ describe("parseRegistrationStatus", () => {
     });
   });
 
-  it("tolère une réponse partielle d'un backend plus ancien", () => {
-    // Un champ manquant vient d'une version antérieure, pas d'une fermeture.
-    const statut = parseRegistrationStatus({ open: true });
-    expect(statut?.open).toBe(true);
-    expect(statut?.turnstile_required).toBe(false);
-    expect(statut?.turnstile_site_key).toBeNull();
+  it("rejette une réponse partielle", () => {
+    expect(parseRegistrationStatus({ open: true })).toBeNull();
   });
 
   it("rejette une réponse sans état exploitable", () => {
@@ -52,28 +48,14 @@ describe("parseRegistrationStatus", () => {
     expect(parseRegistrationStatus({ mode: "public" })).toBeNull();
   });
 
-  it("ne déduit jamais une fermeture d'un champ absent", () => {
-    const statut = parseRegistrationStatus({ open: true, turnstile_required: undefined });
-    expect(statut?.open).toBe(true);
-  });
-});
-
-describe("fallbackRegistrationStatus", () => {
-  it("reste ouvert quand la variable de compilation est absente", () => {
-    // Fermer par défaut couperait l'inscription en développement local et sur
-    // tout environnement qui ne déclare rien.
-    expect(fallbackRegistrationStatus(undefined).open).toBe(true);
-  });
-
-  it("respecte une fermeture explicite", () => {
-    expect(fallbackRegistrationStatus("false").open).toBe(false);
-    expect(fallbackRegistrationStatus("off").open).toBe(false);
-  });
-
-  it("n'exige jamais Turnstile en repli", () => {
-    // Sans réponse du backend, aucune site key n'est connue : exiger le widget
-    // rendrait le formulaire impossible à soumettre.
-    expect(fallbackRegistrationStatus(undefined).turnstile_required).toBe(false);
+  it("rejette les modes et types hors contrat", () => {
+    expect(parseRegistrationStatus({ ...OUVERT_PUBLIC, mode: "unknown" })).toBeNull();
+    expect(parseRegistrationStatus({ ...OUVERT_PUBLIC, temporarily_unavailable: "false" })).toBeNull();
+    expect(parseRegistrationStatus({ ...OUVERT_PUBLIC, turnstile_required: 1 })).toBeNull();
+    expect(parseRegistrationStatus({ ...OUVERT_PUBLIC, turnstile_site_key: "" })).toBeNull();
+    expect(parseRegistrationStatus({ ...OUVERT_PUBLIC, turnstile_required: false })).toBeNull();
+    expect(parseRegistrationStatus({ ...OUVERT_PUBLIC, mode: "closed" })).toBeNull();
+    expect(parseRegistrationStatus({ ...OUVERT_PUBLIC, temporarily_unavailable: true })).toBeNull();
   });
 });
 

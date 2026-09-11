@@ -47,14 +47,21 @@ function RegisterScreenInner() {
   const [successPath, setSuccessPath] = useState<string | null>(null);
   const [submitValidationMessage, setSubmitValidationMessage] = useState<string | null>(null);
 
-  const { status: registrationStatus } = useRegistrationStatus();
+  const {
+    status: registrationStatus,
+    isLoading: isRegistrationStatusLoading,
+    isUnavailable: isRegistrationStatusUnavailable,
+    retry: retryRegistrationStatus,
+  } = useRegistrationStatus();
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileUnavailable, setTurnstileUnavailable] = useState(false);
   // Change de valeur pour forcer un widget neuf : un jeton Turnstile est a usage
   // unique, donc apres une soumission refusee il faut en redemander un.
   const [turnstileCycle, setTurnstileCycle] = useState(0);
 
-  const turnstileVisible = shouldRenderTurnstile(registrationStatus);
+  const turnstileVisible = registrationStatus
+    ? shouldRenderTurnstile(registrationStatus)
+    : false;
   const handleTurnstileToken = useCallback((token: string | null) => {
     setTurnstileToken(token);
     if (token) setTurnstileUnavailable(false);
@@ -123,12 +130,60 @@ function RegisterScreenInner() {
     loginHref,
   };
 
+  if (isRegistrationStatusLoading) {
+    return (
+      <main
+        className="flex min-h-dvh items-center justify-center bg-[#F4F5F7] px-4 py-8"
+        data-register-state="loading"
+        role="status"
+        aria-live="polite"
+      >
+        <p className="text-sm font-medium text-neutral-600">Vérification des inscriptions…</p>
+      </main>
+    );
+  }
+
+  if (
+    isRegistrationStatusUnavailable ||
+    !registrationStatus ||
+    registrationStatus.temporarily_unavailable ||
+    (registrationStatus.open && !isRegistrationFormUsable(registrationStatus))
+  ) {
+    return (
+      <main className="flex min-h-dvh items-center bg-[#F4F5F7] px-4 py-8">
+        <div
+          data-register-state="unavailable"
+          className="mx-auto w-full max-w-lg rounded-2xl border border-neutral-200 bg-white p-6 text-center shadow-sm sm:p-8"
+          role="alert"
+        >
+          <div className="mb-4 flex justify-center">
+            <YunicityLogo size="lg" />
+          </div>
+          <h1 className="text-lg font-bold text-neutral-900 sm:text-xl">
+            Les inscriptions sont momentanément indisponibles
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-neutral-600">
+            Nous ne pouvons pas vérifier leur disponibilité. Réessayez dans quelques instants.
+          </p>
+          <button
+            type="button"
+            className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-yunicity-primary px-6 py-2.5 text-sm font-semibold text-white"
+            onClick={retryRegistrationStatus}
+          >
+            Réessayer
+          </button>
+          <RegisterPortalFooter loginHref={loginHref} variant="compact" />
+        </div>
+      </main>
+    );
+  }
+
   // REGISTRATION-CONTAINMENT-01 — beta fermee. On ne fait pas remplir quatre
   // etapes d'assistant pour finir sur un 403 : l'etat est annonce d'emblee.
   // Ceci ne PROTEGE rien, la seule barriere est le backend ; c'est de
   // l'honnetete d'interface. Le pied de page existant porte deja le lien de
   // connexion (avec son `next` filtre) et les mentions legales.
-  if (!isRegistrationFormUsable(registrationStatus)) {
+  if (!registrationStatus.open) {
     return (
       <main className="flex min-h-dvh items-center bg-[#F4F5F7] px-4 py-8">
         <div

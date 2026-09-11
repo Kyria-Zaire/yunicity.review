@@ -1,11 +1,9 @@
 export { getApiBaseUrl, getExpoApiBaseUrl, getWebApiBaseUrl, resolveWebApiBaseUrl } from "./api-base-url";
 export { resolveApiMediaUrl } from "./api-media-url";
-export { isRegistrationEnabled, resolveRegistrationEnabled } from "./registration-availability";
 export {
   TURNSTILE_SCRIPT_URL,
   TURNSTILE_TEST_SITE_KEY_ALWAYS_BLOCKS,
   TURNSTILE_TEST_SITE_KEY_ALWAYS_PASSES,
-  fallbackRegistrationStatus,
   isRegistrationFormUsable,
   parseRegistrationStatus,
   shouldRenderTurnstile,

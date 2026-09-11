@@ -1,20 +1,12 @@
 /**
  * État d'ouverture des inscriptions, lu au runtime — AUTH-04A.
  *
- * `NEXT_PUBLIC_REGISTRATION_ENABLED` est figée à la compilation : elle ne peut
- * pas suivre un changement de mode côté serveur, et constituait donc une
- * seconde source de vérité, à tenir cohérente à la main. Le backend répond
- * désormais sur `GET /auth/registration-status`, et le frontend se contente de
- * le lire.
- *
- * La variable de compilation reste le **repli** pendant la transition : un WEB
- * déployé avant cette version continue de fonctionner, et un backend antérieur
- * — qui ne connaît pas encore la route — ne casse pas l'écran d'inscription.
+ * Le backend répond sur `GET /auth/registration-status` et reste la seule source
+ * de vérité. Sans réponse complète et valide, le frontend ne monte jamais le
+ * formulaire.
  */
 
 import type { RegistrationStatus } from "@yunicity/types";
-
-import { resolveRegistrationEnabled } from "./registration-availability";
 
 /** Script officiel du widget. Seul hôte autorisé pour Turnstile. */
 export const TURNSTILE_SCRIPT_URL =
@@ -30,42 +22,46 @@ export const TURNSTILE_SCRIPT_URL =
 export const TURNSTILE_TEST_SITE_KEY_ALWAYS_PASSES = "1x00000000000000000000AA";
 export const TURNSTILE_TEST_SITE_KEY_ALWAYS_BLOCKS = "2x00000000000000000000AB";
 
-/** Repli utilisé quand le backend ne répond pas, ou ne connaît pas la route. */
-export function fallbackRegistrationStatus(
-  raw: string | undefined | null,
-): RegistrationStatus {
-  return {
-    open: resolveRegistrationEnabled(raw),
-    mode: "unknown",
-    temporarily_unavailable: false,
-    turnstile_required: false,
-    turnstile_site_key: null,
-    closes_at: null,
-  };
-}
-
 /**
  * Normalise une réponse du backend.
  *
- * Tolérante par construction : un champ manquant ne doit pas fermer
- * l'inscription, seul un `open` explicitement faux le fait. Une réponse
- * partielle vient d'un backend plus ancien, pas d'une décision de fermeture.
+ * Fail-closed : une réponse partielle ou incohérente n'autorise jamais le
+ * montage du formulaire. Seul le contrat complet du backend fait foi.
  */
 export function parseRegistrationStatus(payload: unknown): RegistrationStatus | null {
   if (!payload || typeof payload !== "object") return null;
   const brut = payload as Record<string, unknown>;
-  if (typeof brut.open !== "boolean") return null;
+  if (
+    typeof brut.open !== "boolean" ||
+    !["closed", "pilot", "public"].includes(String(brut.mode)) ||
+    typeof brut.temporarily_unavailable !== "boolean" ||
+    typeof brut.turnstile_required !== "boolean" ||
+    !(
+      brut.turnstile_site_key === null ||
+      (typeof brut.turnstile_site_key === "string" && brut.turnstile_site_key.length > 0)
+    ) ||
+    !(brut.closes_at === null || typeof brut.closes_at === "string")
+  ) {
+    return null;
+  }
+
+  const mode = String(brut.mode);
+  if (
+    (mode === "closed" && brut.open) ||
+    (mode === "pilot" && !brut.open) ||
+    (brut.temporarily_unavailable && brut.open) ||
+    (mode === "public" && brut.open && (!brut.turnstile_required || !brut.turnstile_site_key))
+  ) {
+    return null;
+  }
 
   return {
     open: brut.open,
-    mode: typeof brut.mode === "string" ? brut.mode : "unknown",
-    temporarily_unavailable: brut.temporarily_unavailable === true,
-    turnstile_required: brut.turnstile_required === true,
-    turnstile_site_key:
-      typeof brut.turnstile_site_key === "string" && brut.turnstile_site_key.length > 0
-        ? brut.turnstile_site_key
-        : null,
-    closes_at: typeof brut.closes_at === "string" ? brut.closes_at : null,
+    mode,
+    temporarily_unavailable: brut.temporarily_unavailable,
+    turnstile_required: brut.turnstile_required,
+    turnstile_site_key: brut.turnstile_site_key,
+    closes_at: brut.closes_at,
   };
 }
 

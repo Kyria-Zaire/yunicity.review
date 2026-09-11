@@ -3,24 +3,40 @@
 import {
   MemoryTokenStorage,
   createAuthClient,
-  fallbackRegistrationStatus,
   getWebApiBaseUrl,
   parseRegistrationStatus,
 } from "@yunicity/utils";
 import type { RegistrationStatus } from "@yunicity/types";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+export const REGISTRATION_STATUS_TIMEOUT_MS = 8_000;
+
+export async function withTimeout<T>(operation: () => Promise<T>, timeoutMs: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      Promise.resolve().then(operation),
+      new Promise<T>((_resolve, reject) => {
+        timer = setTimeout(() => reject(new Error("registration-status-timeout")), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 /**
  * Lit l'état d'ouverture auprès du backend — AUTH-04A.
  *
- * Le backend est seul autoritaire. Ce hook ne décide de rien : il rapporte, et
- * l'écran s'y conforme. Tant que la réponse n'est pas arrivée, on part du repli
- * bâti sur l'ancienne variable de compilation, de sorte qu'un backend qui ne
- * connaît pas encore la route ne ferme pas l'écran d'inscription.
+ * Le backend est seul autoritaire. Aucun statut ouvert n'existe avant une
+ * réponse complète et valide. Réseau, timeout, 404, 5xx et JSON invalide
+ * convergent tous vers un état indisponible qui ne monte jamais le formulaire.
  */
 export function useRegistrationStatus(): {
-  status: RegistrationStatus;
+  status: RegistrationStatus | null;
   isLoading: boolean;
+  isUnavailable: boolean;
+  retry: () => void;
 } {
   const client = useMemo(
     () =>
@@ -32,22 +48,26 @@ export function useRegistrationStatus(): {
     [],
   );
 
-  const [status, setStatus] = useState<RegistrationStatus>(() =>
-    fallbackRegistrationStatus(
-      typeof process !== "undefined" ? process.env.NEXT_PUBLIC_REGISTRATION_ENABLED : undefined,
-    ),
-  );
+  const [status, setStatus] = useState<RegistrationStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUnavailable, setIsUnavailable] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt((value) => value + 1), []);
 
   useEffect(() => {
     let annule = false;
+    setStatus(null);
+    setIsLoading(true);
+    setIsUnavailable(false);
     void (async () => {
       try {
-        const recu = parseRegistrationStatus(await client.registrationStatus());
-        if (!annule && recu) setStatus(recu);
+        const recu = parseRegistrationStatus(
+          await withTimeout(() => client.registrationStatus(), REGISTRATION_STATUS_TIMEOUT_MS),
+        );
+        if (!recu) throw new Error("registration-status-invalid");
+        if (!annule) setStatus(recu);
       } catch {
-        // Backend injoignable ou route inconnue : on garde le repli. Fermer ici
-        // couperait l'inscription sur la seule foi d'une erreur reseau.
+        if (!annule) setIsUnavailable(true);
       } finally {
         if (!annule) setIsLoading(false);
       }
@@ -55,7 +75,7 @@ export function useRegistrationStatus(): {
     return () => {
       annule = true;
     };
-  }, [client]);
+  }, [attempt, client]);
 
-  return { status, isLoading };
+  return { status, isLoading, isUnavailable, retry };
 }

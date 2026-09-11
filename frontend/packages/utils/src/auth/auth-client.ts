@@ -124,8 +124,8 @@ export class AuthClient {
    * État d'ouverture des inscriptions (AUTH-04A).
    *
    * Le backend est autoritaire : ce que cette route annonce est ce que
-   * `/register` appliquera. L'appelant est responsable du repli si elle échoue —
-   * un backend antérieur ne la connaît pas, et cela ne doit pas fermer l'écran.
+   * `/register` appliquera. Une erreur ou une réponse invalide doit rester
+   * fail-closed côté appelant : elle ne constitue jamais une autorisation.
    */
   async registrationStatus(): Promise<RegistrationStatus> {
     return this.request<RegistrationStatus>("/registration-status", {
