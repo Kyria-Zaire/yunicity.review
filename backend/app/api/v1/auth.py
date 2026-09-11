@@ -17,6 +17,8 @@ from app.core.rate_limit import (
     RATE_LIMIT_BACKEND_UNAVAILABLE,
     enforce_rate_limit,
     rate_limit_identity,
+    release_slot,
+    reserve_slot,
 )
 from app.core.registration_mode import (
     RegistrationPolicy,
@@ -25,7 +27,6 @@ from app.core.registration_mode import (
 )
 from app.core.security import normalize_email, validate_password_strength
 from app.db.session import get_db
-from app.integrations.redis import get_redis_client
 from app.integrations.turnstile import TurnstileUnavailable, verify_turnstile_token
 from app.models.user import User
 from app.schemas.auth import (
@@ -138,55 +139,28 @@ async def _registration_backend_guard() -> AsyncIterator[None]:
         ) from None
 
 
-async def _ensure_global_capacity(policy: RegistrationPolicy) -> None:
-    """Vérifie le plafond global SANS le consommer.
+async def _reserve_global_slot(policy: RegistrationPolicy) -> None:
+    """Réserve une place sous le plafond global, atomiquement.
 
-    Le plafond porte sur les inscriptions réussies : le compteur n'est
-    incrémenté qu'après création effective. Lire puis écrire laisse une course
-    sous forte concurrence — quelques comptes au-delà du plafond dans le pire
-    cas. C'est assumé : ce plafond est un coupe-circuit contre un robot, pas une
-    comptabilité, et le rendre exact coûterait de refuser des inscriptions
-    légitimes qui ont échoué ensuite.
+    Verification, increment et pose du TTL sont un seul script : deux requetes
+    simultanees ne peuvent plus lire la meme valeur avant d'incrementer toutes
+    les deux. La place est prise AVANT la creation et rendue si celle-ci echoue,
+    de sorte que le compteur reflete les inscriptions reellement creees sans
+    jamais laisser le plafond etre depasse.
     """
-    client = get_redis_client()
-    if client is None:
+    if await reserve_slot(_GLOBAL_REGISTRATION_KEY, policy.global_hourly_limit, 3600):
         return
-    try:
-        courant = await client.get(_GLOBAL_REGISTRATION_KEY)
-    except Exception:
-        logger.error("global_registration_cap_unreadable", exc_info=True)
-        raise AppError(
-            status_code=503,
-            code=RATE_LIMIT_BACKEND_UNAVAILABLE,
-            detail="Service momentanément indisponible. Réessayez dans un instant.",
-        ) from None
-
-    if courant is not None and int(courant) >= policy.global_hourly_limit:
-        logger.warning("global_registration_cap_reached limit=%s", policy.global_hourly_limit)
-        raise AppError(
-            status_code=429,
-            code="RATE_LIMITED",
-            detail="Trop de tentatives. Réessayez plus tard.",
-        )
+    logger.warning("global_registration_cap_reached limit=%s", policy.global_hourly_limit)
+    raise AppError(
+        status_code=429,
+        code="RATE_LIMITED",
+        detail="Trop de tentatives. Réessayez plus tard.",
+    )
 
 
-async def _record_successful_registration() -> None:
-    """Compte une inscription réussie. Ne fait jamais échouer la réponse.
-
-    Le compte existe déjà quand cette fonction s'exécute : une panne du compteur
-    ne doit pas transformer une inscription aboutie en erreur pour l'utilisateur.
-    """
-    client = get_redis_client()
-    if client is None:
-        return
-    try:
-        await enforce_rate_limit(
-            _GLOBAL_REGISTRATION_KEY,
-            limit=10**9,  # jamais atteint : la decision est prise en amont
-            window_seconds=3600,
-        )
-    except Exception:
-        logger.error("global_registration_counter_failed", exc_info=True)
+async def _release_global_slot() -> None:
+    """Rend la place quand la création échoue après réservation."""
+    await release_slot(_GLOBAL_REGISTRATION_KEY)
 
 
 async def _limits_available(
@@ -375,27 +349,40 @@ async def register(
             window_seconds=86400,
         )
 
-        await _ensure_global_capacity(policy)
-
     await _require_turnstile(payload, request, settings=settings, policy=policy)
 
-    service = AuthService(session, settings)
-    result = await service.register(payload)
+    # La place est prise avant la creation, et rendue si celle-ci echoue : le
+    # compteur ne comptabilise que des comptes reellement crees, sans qu'une
+    # course puisse faire depasser le plafond.
+    async with _registration_backend_guard():
+        await _reserve_global_slot(policy)
 
-    # Le plafond global compte les inscriptions REUSSIES : il n'est consomme
-    # qu'ici, une fois le compte reellement cree.
-    await _record_successful_registration()
+    try:
+        service = AuthService(session, settings)
+        result = await service.register(payload)
+    except Exception:
+        # Une seule compensation par requete : le chemin nominal ne passe jamais
+        # ici, et le script Redis refuse de descendre sous zero de toute facon.
+        await _release_global_slot()
+        raise
 
     if result.session is None:
         # Aucun cookie, aucun jeton : le compte existe mais la session attend la
         # confirmation de l'adresse.
         response.status_code = status.HTTP_202_ACCEPTED
+        # Le message dit ce qui s'est REELLEMENT passe. Aucune file de reprise
+        # n'existe : annoncer un envoi qui n'a pas eu lieu laisserait quelqu'un
+        # attendre un e-mail qui ne viendra jamais.
         return RegistrationPendingResponse(
             message=(
                 "Compte créé. Confirmez votre adresse e-mail pour accéder à Yunicity : "
                 "un lien vous a été envoyé."
+                if result.verification_email_sent
+                else "Compte créé. L'envoi de l'e-mail de confirmation est momentanément "
+                "indisponible : demandez un nouveau lien dans quelques minutes."
             ),
             user=result.user,
+            verification_email_sent=result.verification_email_sent,
         )
 
     bundle = result.session

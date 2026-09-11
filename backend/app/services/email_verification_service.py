@@ -105,8 +105,14 @@ class EmailVerificationService:
         base = self._settings.web_frontend_url.rstrip("/")
         return f"{base}/login/verify-email?token={quote(raw_token, safe='')}"
 
-    async def issue_and_send(self, user: User) -> None:
+    async def issue_and_send(self, user: User) -> bool:
         """Emet un jeton neuf, invalide les precedents, envoie l'e-mail.
+
+        Rend True si l'e-mail est effectivement parti. Aucune file de reprise
+        n'existe : quand il ne part pas, rien ne le renverra tout seul. Le jeton
+        reste valide en base et le renvoi manuel regenere un lien — c'est
+        l'appelant qui doit le DIRE a l'utilisateur plutot que de pretendre
+        qu'un e-mail est en route.
 
         Ne leve pas si l'envoi echoue : le compte vient d'etre cree et valide,
         le jeton est en base, et le renvoi permet de reprendre. Propager ici
@@ -129,10 +135,11 @@ class EmailVerificationService:
         )
 
         if not await EmailBudget(self._settings).try_consume(EmailCategory.ROUTINE):
-            # Budget epuise : le compte existe, le jeton est en base, le renvoi
-            # regenerera un lien demain. Rien n'est perdu, seul l'envoi attend.
-            logger.warning("email_verification_deferred_budget user_id=%s", user.id)
-            return
+            # Budget indisponible ou epuise. Le compte existe et son jeton est en
+            # base : il reste recuperable par un renvoi, mais AUCUNE reprise
+            # automatique ne l'enverra.
+            logger.warning("email_verification_not_sent reason=budget user_id=%s", user.id)
+            return False
 
         try:
             await send_email_verification_email(
@@ -141,7 +148,9 @@ class EmailVerificationService:
                 settings=self._settings,
             )
         except EmailDeliveryError:
-            logger.exception("email_verification_send_failed user_id=%s", user.id)
+            logger.exception("email_verification_not_sent reason=provider user_id=%s", user.id)
+            return False
+        return True
 
     async def resend(self, email: str) -> ResendResult:
         """Renvoie un lien. Repond la meme chose quoi qu'il arrive."""

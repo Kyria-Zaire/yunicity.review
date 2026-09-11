@@ -69,6 +69,9 @@ class RegistrationResult:
 
     user: UserPublic
     session: AuthSessionBundle | None
+    #: Faux quand l'e-mail de verification n'a PAS pu partir. Aucune file ne le
+    #: renverra : l'interface doit proposer un renvoi au lieu d'annoncer un envoi.
+    verification_email_sent: bool = True
 
 
 class AuthService:
@@ -141,14 +144,18 @@ class AuthService:
 
         # Apres le refresh : `created_at` est alimente par la base et conditionne
         # `email_verification_required_for`.
-        await EmailVerificationService(self._session, self._settings).issue_and_send(user)
+        envoye = await EmailVerificationService(self._session, self._settings).issue_and_send(user)
         await self._session.commit()
 
         if email_verification_required_for(user, self._settings):
-            return RegistrationResult(user=await self._build_user_public(user), session=None)
+            return RegistrationResult(
+                user=await self._build_user_public(user),
+                session=None,
+                verification_email_sent=envoye,
+            )
 
         bundle = await self._issue_session(user, new_family=True)
-        return RegistrationResult(user=bundle.user, session=bundle)
+        return RegistrationResult(user=bundle.user, session=bundle, verification_email_sent=envoye)
 
     async def login(self, payload: LoginRequest) -> AuthSessionBundle:
         email = normalize_email(str(payload.email))

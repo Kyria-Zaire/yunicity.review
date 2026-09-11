@@ -19,7 +19,11 @@ const pied = read("../../components/register/shared/register-portal-footer.tsx")
 
 describe("REGISTRATION-CONTAINMENT-01 — etat ferme", () => {
   it("annonce la fermeture avant de monter l'assistant", () => {
-    const garde = ecran.indexOf("if (!isRegistrationEnabled())");
+    // AUTH-04A : le garde-fou lit desormais le statut runtime du backend au lieu
+    // d'un drapeau de compilation. L'exigence de CONTAINMENT-01 est inchangee —
+    // l'etat ferme doit etre annonce AVANT de monter l'assistant — seule la
+    // source de verite a change, et elle est maintenant plus fiable.
+    const garde = ecran.indexOf("if (!isRegistrationFormUsable(registrationStatus))");
     const assistant = ecran.indexOf("<RegisterMobileScreen");
     expect(garde, "garde de fermeture absente").toBeGreaterThan(-1);
     expect(assistant).toBeGreaterThan(-1);
@@ -35,7 +39,7 @@ describe("REGISTRATION-CONTAINMENT-01 — etat ferme", () => {
   it("conserve le lien de connexion et les mentions legales", () => {
     // Reutilise le pied de page existant plutot que d'inventer une composition.
     const ferme = ecran.slice(
-      ecran.indexOf("if (!isRegistrationEnabled())"),
+      ecran.indexOf("if (!isRegistrationFormUsable(registrationStatus))"),
       ecran.indexOf("if (successPath)"),
     );
     expect(ferme).toContain("<RegisterPortalFooter");
@@ -43,6 +47,14 @@ describe("REGISTRATION-CONTAINMENT-01 — etat ferme", () => {
     expect(pied).toContain("REGISTER_DESKTOP_ROUTES.terms");
     expect(pied).toContain("REGISTER_DESKTOP_ROUTES.privacy");
     expect(pied).toContain("REGISTER_DESKTOP_COPY.loginLink");
+  });
+
+  it("lit l'etat aupres du backend plutot que de le declarer (AUTH-04A)", () => {
+    // Un drapeau NEXT_PUBLIC_* est fige a la compilation : il ne peut pas suivre
+    // un changement de mode cote serveur, et constituait une seconde source de
+    // verite. Le formulaire doit consommer le statut runtime.
+    expect(ecran).toContain("useRegistrationStatus");
+    expect(ecran).not.toContain("isRegistrationEnabled()");
   });
 
   it("n'ouvre aucune redirection : `next` reste interne", () => {
@@ -53,7 +65,7 @@ describe("REGISTRATION-CONTAINMENT-01 — etat ferme", () => {
 
   it("ne rend AUCUN champ de saisie dans l'etat ferme", () => {
     const ferme = ecran.slice(
-      ecran.indexOf("if (!isRegistrationEnabled())"),
+      ecran.indexOf("if (!isRegistrationFormUsable(registrationStatus))"),
       ecran.indexOf("if (successPath)"),
     );
     expect(ferme).not.toMatch(/<input|<form|<textarea|onSubmit/);

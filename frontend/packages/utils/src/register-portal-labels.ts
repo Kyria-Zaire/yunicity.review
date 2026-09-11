@@ -133,3 +133,11 @@ export const REGISTER_VALIDATION_PASSWORD = "Le mot de passe ne respecte pas les
 export const REGISTER_VALIDATION_CONFIRM_PASSWORD = "Les mots de passe ne correspondent pas.";
 export const REGISTER_VALIDATION_CITY = "Indiquez votre ville.";
 export const REGISTER_VALIDATION_TERMS = "Acceptez la charte pour continuer.";
+
+/** Turnstile exigé mais pas encore validé (AUTH-04A). */
+export const REGISTER_TURNSTILE_REQUIRED =
+  "Complétez la vérification de sécurité ci-dessous pour continuer.";
+/** PUBLIC mal configuré : le formulaire n'est pas utilisable pour l'instant. */
+export const REGISTER_UNAVAILABLE_TITLE = "Inscriptions momentanément indisponibles";
+export const REGISTER_UNAVAILABLE_BODY =
+  "Nous ne pouvons pas traiter les inscriptions pour le moment. Réessayez dans quelques instants.";

@@ -58,6 +58,81 @@ return current
 """
 
 
+#: Reserve une place SI le plafond n'est pas atteint. Verification, increment et
+#: pose du TTL sont une seule execution : deux requetes simultanees ne peuvent
+#: pas lire la meme valeur avant d'incrementer toutes les deux. Rend -1 quand le
+#: plafond est plein, sinon le rang obtenu.
+_RESERVE_SLOT = """
+local limit = tonumber(ARGV[1])
+local current = tonumber(redis.call('GET', KEYS[1]) or '0')
+if current >= limit then
+  return -1
+end
+local rank = redis.call('INCR', KEYS[1])
+if rank == 1 or redis.call('TTL', KEYS[1]) < 0 then
+  redis.call('EXPIRE', KEYS[1], ARGV[2])
+end
+return rank
+"""
+
+#: Rend une place reservee quand la creation echoue ensuite. Ne descend JAMAIS
+#: sous zero : une compensation repetee sur un compteur deja vide n'a aucun
+#: effet, ce qui rend l'operation sure meme appelee deux fois.
+_RELEASE_SLOT = """
+local current = tonumber(redis.call('GET', KEYS[1]) or '0')
+if current <= 0 then
+  return 0
+end
+return redis.call('DECR', KEYS[1])
+"""
+
+
+async def reserve_slot(key: str, limit: int, window_seconds: int) -> bool:
+    """Réserve une place sous plafond, atomiquement.
+
+    Contrairement à `enforce_rate_limit`, la place est prise AVANT l'action et
+    peut être rendue si celle-ci échoue. C'est ce qui permet à un plafond de
+    compter des créations réelles sans jamais les laisser dépasser : lire puis
+    incrémenter laissait passer autant de requêtes que la concurrence le
+    permettait entre les deux opérations.
+
+    Fail-CLOSED : sans compteur lisible, on ne peut pas garantir le plafond.
+    Redis non configuré reste le no-op documenté du module.
+    """
+    client = get_redis_client()
+    if client is None:
+        return True
+
+    try:
+        rank = int(await _eval(client, _RESERVE_SLOT, key, str(limit), str(window_seconds)))
+    except Exception:
+        logger.error("reserve_slot_backend_unavailable key=%s", key, exc_info=True)
+        raise AppError(
+            status_code=503,
+            code=RATE_LIMIT_BACKEND_UNAVAILABLE,
+            detail="Service momentanément indisponible. Réessayez dans un instant.",
+        ) from None
+
+    return rank >= 0
+
+
+async def release_slot(key: str) -> None:
+    """Rend une place réservée. Ne fait jamais échouer l'appelant.
+
+    Appelée sur le chemin d'erreur : si elle échoue à son tour, le plafond sera
+    simplement atteint un peu plus tôt jusqu'à l'expiration de la fenêtre — une
+    dégradation acceptable, là où propager transformerait un échec de création
+    en seconde erreur pour l'utilisateur.
+    """
+    client = get_redis_client()
+    if client is None:
+        return
+    try:
+        await _eval(client, _RELEASE_SLOT, key)
+    except Exception:
+        logger.error("release_slot_failed key=%s", key, exc_info=True)
+
+
 def rate_limit_identity(value: str) -> str:
     """Empreinte d'un identifiant personnel, pour usage en clé de comptage.
 
@@ -115,6 +190,12 @@ async def enforce_rate_limit(
         )
 
 
+async def _eval(client: Any, script: str, key: str, *args: str) -> Any:
+    """Exécute un script Lua. Isolé pour garder un seul point de typage souple :
+    les stubs du client Redis n'expriment pas correctement `eval`."""
+    return await client.eval(script, 1, key, *args)
+
+
 async def _incr_with_ttl(client: Any, key: str, window_seconds: int) -> int:
     """Incrémente en garantissant qu'un TTL existe, en une seule aller-retour.
 
@@ -122,5 +203,4 @@ async def _incr_with_ttl(client: Any, key: str, window_seconds: int) -> int:
     exécuter tel quel évite d'avoir à gérer un `NOSCRIPT` après un redémarrage du
     serveur Redis.
     """
-    result = await client.eval(_INCR_WITH_TTL, 1, key, window_seconds)
-    return int(result)
+    return int(await _eval(client, _INCR_WITH_TTL, key, str(window_seconds)))

@@ -5,15 +5,19 @@ import { RegisterDesktopScreen } from "@/components/register/desktop";
 import { RegisterMediumScreen } from "@/components/register/medium";
 import { RegisterMobileScreen } from "@/components/register/mobile";
 import { RegisterPortalFooter } from "@/components/register/shared/register-portal-footer";
+import { TurnstileWidget } from "@/components/register/turnstile-widget";
 import { useRegisterWizard } from "@/hooks/use-register-wizard";
+import { useRegistrationStatus } from "@/hooks/use-registration-status";
 import { useAuth } from "@/lib/auth/auth-provider";
 import {
   buildRegisterApiPayload,
   buildRegisterPostAuthPath,
   isCitizenRegisterAccountType,
-  isRegistrationEnabled,
+  isRegistrationFormUsable,
+  shouldRenderTurnstile,
   validateRegisterStep,
   REGISTER_CLOSED_BODY,
+  REGISTER_TURNSTILE_REQUIRED,
   REGISTER_CLOSED_TITLE,
   REGISTER_SUCCESS_CITIZEN_BODY,
   REGISTER_SUCCESS_CTA_FEED,
@@ -24,7 +28,7 @@ import {
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useCallback, useMemo, useState } from "react";
 
 export function RegisterScreen() {
   return (
@@ -43,6 +47,23 @@ function RegisterScreenInner() {
   const [successPath, setSuccessPath] = useState<string | null>(null);
   const [submitValidationMessage, setSubmitValidationMessage] = useState<string | null>(null);
 
+  const { status: registrationStatus } = useRegistrationStatus();
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileUnavailable, setTurnstileUnavailable] = useState(false);
+  // Change de valeur pour forcer un widget neuf : un jeton Turnstile est a usage
+  // unique, donc apres une soumission refusee il faut en redemander un.
+  const [turnstileCycle, setTurnstileCycle] = useState(0);
+
+  const turnstileVisible = shouldRenderTurnstile(registrationStatus);
+  const handleTurnstileToken = useCallback((token: string | null) => {
+    setTurnstileToken(token);
+    if (token) setTurnstileUnavailable(false);
+  }, []);
+  const handleTurnstileUnavailable = useCallback(() => {
+    setTurnstileToken(null);
+    setTurnstileUnavailable(true);
+  }, []);
+
   const loginHref = useMemo(() => {
     const next = searchParams.get("next");
     if (!next || !next.startsWith("/")) return "/login";
@@ -55,12 +76,20 @@ function RegisterScreenInner() {
       setSubmitValidationMessage(validation.message);
       return;
     }
+    if (turnstileVisible && !turnstileToken) {
+      // Les champs saisis restent intacts : on demande seulement la verification.
+      setSubmitValidationMessage(REGISTER_TURNSTILE_REQUIRED);
+      return;
+    }
     setSubmitValidationMessage(null);
 
     clearError();
     setIsSubmitting(true);
     try {
-      const outcome = await register(buildRegisterApiPayload(wizard.draft));
+      const outcome = await register({
+        ...buildRegisterApiPayload(wizard.draft),
+        ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+      });
       if (outcome.status === "verification_required") {
         // Le compte est cree ; la session attend la confirmation de l'adresse.
         // `replace` pour qu'un retour arriere ne repropose pas l'assistant.
@@ -76,6 +105,12 @@ function RegisterScreenInner() {
       }
     } finally {
       setIsSubmitting(false);
+      if (turnstileVisible) {
+        // Consomme ou refuse, le jeton ne resservira pas : on remonte un widget
+        // neuf sans toucher aux champs deja saisis.
+        setTurnstileToken(null);
+        setTurnstileCycle((cycle) => cycle + 1);
+      }
     }
   }
 
@@ -93,7 +128,7 @@ function RegisterScreenInner() {
   // Ceci ne PROTEGE rien, la seule barriere est le backend ; c'est de
   // l'honnetete d'interface. Le pied de page existant porte deja le lien de
   // connexion (avec son `next` filtre) et les mentions legales.
-  if (!isRegistrationEnabled()) {
+  if (!isRegistrationFormUsable(registrationStatus)) {
     return (
       <main className="flex min-h-dvh items-center bg-[#F4F5F7] px-4 py-8">
         <div
@@ -140,6 +175,31 @@ function RegisterScreenInner() {
       <RegisterMobileScreen {...wizardProps} />
       <RegisterMediumScreen {...wizardProps} />
       <RegisterDesktopScreen {...wizardProps} />
+
+      {/* Rendu UNE fois pour les trois points de rupture, comme la banniere des
+          reglages : monter un widget par vue en empilerait trois, et Cloudflare
+          n'en attend qu'un par page. Le conteneur reprend la largeur mesuree de
+          l'assistant pour rester aligne a 390, 900 et 1440. */}
+      {turnstileVisible && registrationStatus.turnstile_site_key ? (
+        <div
+          data-testid="register-turnstile"
+          className="mx-auto w-full max-w-lg px-4 pb-8 sm:px-0"
+        >
+          <TurnstileWidget
+            key={turnstileCycle}
+            siteKey={registrationStatus.turnstile_site_key}
+            onToken={handleTurnstileToken}
+            onUnavailable={handleTurnstileUnavailable}
+          />
+          {turnstileUnavailable ? null : (
+            <p className="sr-only" role="status" aria-live="polite">
+              {turnstileToken
+                ? "Vérification de sécurité validée."
+                : "Vérification de sécurité requise avant de continuer."}
+            </p>
+          )}
+        </div>
+      ) : null}
     </main>
   );
 }

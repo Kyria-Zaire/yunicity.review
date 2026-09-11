@@ -101,6 +101,10 @@ class RegistrationPendingResponse(BaseModel):
     message: str
     user: UserPublic
     verification_required: Literal[True] = True
+    #: Faux quand l'e-mail n'a pas pu partir. Il n'existe AUCUNE file de reprise :
+    #: le compte et son jeton restent valides, et seul un renvoi explicite
+    #: enverra le lien. Le client doit donc proposer ce renvoi.
+    verification_email_sent: bool = True
 
 
 class VerifyEmailRequest(BaseModel):
