@@ -95,7 +95,7 @@ describe("consommation au clic", () => {
 
   it("empêche la double soumission", async () => {
     searchParamsMock.token = "jeton-valide";
-    let resoudre: ((v: unknown) => void) | null = null;
+    let resoudre!: (v: unknown) => void;
     clientMock.cancelAccountDeletion.mockReturnValue(
       new Promise((r) => {
         resoudre = r;
@@ -111,7 +111,7 @@ describe("consommation au clic", () => {
 
     expect(clientMock.cancelAccountDeletion).toHaveBeenCalledTimes(1);
     expect((bouton as HTMLButtonElement).disabled).toBe(true);
-    resoudre?.({ message: "ok" });
+    resoudre({ message: "ok" });
   });
 
   it("annonce l'échec de manière accessible", async () => {
