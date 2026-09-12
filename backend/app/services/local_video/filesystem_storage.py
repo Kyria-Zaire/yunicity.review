@@ -7,6 +7,8 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from app.core.config import Settings
+from app.core.errors import AppError
+from app.core.media_root import MEDIA_URL_PREFIX
 from app.services.local_video.storage import ObjectHead, PresignedUpload
 from app.services.local_video.storage_keys import (
     build_processed_key,
@@ -23,8 +25,22 @@ class FilesystemLocalVideoStorage:
         self._api_base = settings.media_public_base_url.rstrip("/")
 
     def _path_for_key(self, storage_key: str) -> Path:
-        safe = storage_key.replace("..", "").lstrip("/")
-        return self._root / safe
+        """Résout une clé DANS la racine média, ou échoue.
+
+        L'ancienne version retirait les `..` par remplacement de chaîne : une liste noire,
+        qui ne dit rien du chemin final. On résout puis on vérifie l'appartenance à la
+        racine — même garde que `profile_media` et `story_media`.
+        """
+        candidate = (self._root / storage_key.lstrip("/")).resolve()
+        try:
+            candidate.relative_to(self._root.resolve())
+        except ValueError as exc:
+            raise AppError(
+                status_code=400,
+                code="LOCAL_VIDEO_STORAGE_KEY_INVALID",
+                detail="Clé de stockage invalide.",
+            ) from exc
+        return candidate
 
     def build_source_key(self, *, city_slug: str, video_id: uuid.UUID, ext: str) -> str:
         return build_source_upload_key(city_slug=city_slug, video_id=video_id, ext=ext)
@@ -65,8 +81,18 @@ class FilesystemLocalVideoStorage:
         return ObjectHead(content_length=path.stat().st_size, content_type=None)
 
     def public_url(self, storage_key: str) -> str:
-        safe = storage_key.replace("..", "").lstrip("/")
-        return f"{self._settings.local_video_public_base_url}/media/{safe}"
+        """URL publique canonique d'une cle -- jamais un chemin de fichier.
+
+        L'ancienne version retirait les `..` par remplacement de chaine, la meme liste
+        noire que `_path_for_key` avait deja abandonnee. On valide desormais la cle avec
+        la MEME garde de confinement, puis on reconstruit l'URL a partir de segments
+        normalises : pas de `//`, pas de segment vide, pas de chemin Windows.
+        """
+        # Confinement : une cle qui sortirait de la racine ne doit pas produire d'URL.
+        self._path_for_key(storage_key)
+        segments = [part for part in storage_key.replace("\\", "/").split("/") if part]
+        base = self._api_base.rstrip("/")
+        return f"{base}/{MEDIA_URL_PREFIX}/{'/'.join(segments)}"
 
     def write_bytes(self, storage_key: str, data: bytes, content_type: str) -> None:
         del content_type

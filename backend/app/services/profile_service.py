@@ -175,7 +175,9 @@ class ProfileService:
         *,
         viewer: User | None = None,
     ) -> ProfilePublicResponse:
-        profile = await self._profiles.get_by_user_id(user_id)
+        # Voie ALTERNATIVE vers le meme profil : sans ce filtre, masquer la
+        # resolution par pseudonyme ne servirait a rien (AUTH-02A).
+        profile = await self._profiles.get_public_identity(user_id)
         if profile is None:
             raise AppError(
                 status_code=404,
@@ -275,6 +277,9 @@ class ProfileService:
                 detail=f"Maximum {INTERESTS_MAX_COUNT} intérêts autorisés.",
             )
         return normalized
+
+    def can_view_profile(self, profile: UserProfile, *, viewer: User | None) -> bool:
+        return self._can_view_profile(profile, viewer=viewer)
 
     def _can_view_profile(self, profile: UserProfile, *, viewer: User | None) -> bool:
         if viewer is not None and viewer.id == profile.user_id:

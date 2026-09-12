@@ -8,7 +8,7 @@ import {
   readLandmarkState,
   waitForCitizenRouteReady,
 } from "../landmark-assertions";
-import { API_URL, bearer, expect, test, type QaUser } from "../fixtures";
+import { API_URL, bearer, expect, testCitizen as test, type QaUser } from "../fixtures";
 import { COLD_START_TEST_TIMEOUT } from "../cold-start";
 
 type ShellRoute = {

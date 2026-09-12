@@ -301,6 +301,8 @@ export function mapNeighborhoodDetailVideosToFeedItems(detail: NeighborhoodDetai
     media_url: video.thumbnail_url,
     thumbnail_url: video.thumbnail_url,
     duration_seconds: video.duration_seconds,
+    media_width: null,
+    media_height: null,
     mime_type: "video/mp4",
     latitude: null,
     longitude: null,

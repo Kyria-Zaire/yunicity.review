@@ -2,7 +2,7 @@
 
 import { CREATE_HUB_FAB_LABEL } from "@/components/create-hub/create-hub-labels";
 import { useCreateHubOptional } from "@/components/create-hub/create-hub-provider";
-import { useCreateHubVisibility } from "@/hooks/use-create-hub-visibility";
+import { useCreateHubAvailability, useCreateHubVisibility } from "@/hooks/use-create-hub-visibility";
 import type { CreateHubSurface } from "@/lib/create-hub/create-hub-routes";
 import { useNavigationSurfacesOptional } from "@/hooks/use-navigation-surfaces";
 import { Plus } from "lucide-react";
@@ -32,7 +32,10 @@ export function CreateHubTriggerButton({
 }: CreateHubTriggerButtonProps) {
   const createHub = useCreateHubOptional();
   const surfaces = useNavigationSurfacesOptional();
-  const visible = useCreateHubVisibility(visibilitySurface);
+  const visibleBySurface = useCreateHubVisibility(visibilitySurface);
+  const routeAvailable = useCreateHubAvailability();
+  /** Barre mobile ancrée : le + reste au centre dès que le hub est ouvrable sur la route. */
+  const visible = variant === "bottom-nav" ? routeAvailable : visibleBySurface;
   const surfacesReady = surfaces?.surfacesInitialized ?? false;
 
   if (!createHub || !visible) {
@@ -81,9 +84,9 @@ export function CreateHubTriggerButton({
     return (
       <button
         {...triggerProps}
-        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-yunicity-primary text-white shadow-md transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-yunicity-primary text-white shadow-sm transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
       >
-        <Plus className="h-6 w-6" strokeWidth={2.25} aria-hidden />
+        <Plus className="h-5 w-5" strokeWidth={2.25} aria-hidden />
       </button>
     );
   }

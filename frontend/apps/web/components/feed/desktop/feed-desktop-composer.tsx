@@ -4,6 +4,7 @@ import { useComposerMedia } from "@/hooks/use-composer-media";
 import { Loader2, X } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState, type ReactNode } from "react";
+import { AvatarImage } from "@/components/avatar-image";
 
 type FeedDesktopComposerProps = {
   city: string;
@@ -124,8 +125,7 @@ export function FeedDesktopComposer({
         <div className="relative shrink-0">
           <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-yunicity-primary-soft ring-1 ring-neutral-200/80">
             {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- dynamic user avatar
-              <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+              <AvatarImage src={avatarUrl} alt="" className="h-full w-full object-cover" />
             ) : (
               <span className="text-sm font-bold text-yunicity-primary" aria-hidden>
                 {avatarInitial}

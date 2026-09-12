@@ -9,6 +9,7 @@ import { Heart, MessageCircle } from "lucide-react";
 
 import { FeedCard } from "@/components/feed/feed-card";
 import { NeighborhoodBadge } from "@/components/neighborhoods/neighborhood-badge";
+import { AvatarImage } from "@/components/avatar-image";
 
 type DiscussionsThreadCardProps = {
   thread: DiscussionThread;
@@ -32,8 +33,7 @@ function ParticipantStack({ thread }: { thread: DiscussionThread }) {
             className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-yunicity-primary-soft text-[10px] font-bold text-yunicity-primary"
           >
             {p.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
+              <AvatarImage src={p.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
             ) : (
               p.display_name.slice(0, 1)
             )}
@@ -65,8 +65,7 @@ export function DiscussionsThreadCard({
       <div className="flex gap-4 p-4 sm:p-5">
         <div className="hidden shrink-0 sm:block">
           {thread.author.logo_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <AvatarImage
               src={thread.author.logo_url}
               alt=""
               className="h-10 w-10 rounded-full object-cover"

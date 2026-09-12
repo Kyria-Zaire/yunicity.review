@@ -1,9 +1,11 @@
+from datetime import datetime
 from functools import lru_cache
 from typing import Literal
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.local_video_constants import LOCAL_VIDEO_MAX_DURATION_SECONDS
 from app.db.database_url import to_asyncpg_url
 
 AppEnv = Literal["dev", "recette", "preprod", "prod"]
@@ -39,9 +41,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] | str = Field(default="", alias="CORS_ORIGINS")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     sentry_dsn: str | None = Field(default=None, alias="SENTRY_DSN")
-    sentry_traces_sample_rate: float = Field(
-        default=0.1, alias="SENTRY_TRACES_SAMPLE_RATE"
-    )
+    sentry_traces_sample_rate: float = Field(default=0.1, alias="SENTRY_TRACES_SAMPLE_RATE")
 
     @field_validator("database_url", mode="before")
     @classmethod
@@ -65,6 +65,110 @@ class Settings(BaseSettings):
     refresh_token_pepper: str = Field(default="", alias="REFRESH_TOKEN_PEPPER")
     refresh_rotation_replay_window_seconds: int = Field(
         default=5, alias="REFRESH_ROTATION_REPLAY_WINDOW_SECONDS"
+    )
+    #: Ferme la creation de nouveaux comptes SANS toucher aux comptes existants
+    #: (REGISTRATION-CONTAINMENT-01). Par defaut ouvert : seul un environnement
+    #: qui le declare explicitement se ferme, donc aucun deploiement existant ne
+    #: change de comportement en installant cette version.
+    registration_enabled: bool = Field(default=True, alias="REGISTRATION_ENABLED")
+    #: Inscriptions autorisees par heure et par IP. Defaut 5 : la valeur en vigueur
+    #: jusqu'ici, donc Production et tout deploiement qui ne declare pas cette
+    #: variable gardent EXACTEMENT le comportement actuel.
+    #:
+    #: Elle existe parce que le decompte porte sur l'IP publique vue par l'edge :
+    #: derriere le NAT d'un etablissement, une promotion entiere partage une seule
+    #: IP et 5 inscriptions suffisent a bloquer tout le monde. Relever cette seule
+    #: valeur, sur un environnement donne, est preferable a desactiver la
+    #: protection ou a la contourner par une allowlist.
+    registration_rate_limit_per_hour: int = Field(
+        default=5, ge=1, alias="REGISTRATION_RATE_LIMIT_PER_HOUR"
+    )
+    #: Mode d'ouverture : closed, pilot ou public (AUTH-04A). Source de verite
+    #: UNIQUE. Non declaree, le mode se deduit de `registration_enabled`, afin
+    #: qu'un deploiement existant ne change pas de comportement en installant
+    #: cette version — le Preview actuellement ouvert compris.
+    registration_mode: str = Field(default="", alias="REGISTRATION_MODE")
+    #: Plafond par IP en mode PILOT. 200/h : une salle entiere derriere un seul
+    #: NAT doit passer sans que l'IP n'intervienne jamais. Les protections
+    #: reelles sont le plafond global et Turnstile.
+    registration_pilot_ip_hourly_limit: int = Field(
+        default=200, ge=1, alias="REGISTRATION_PILOT_IP_HOURLY_LIMIT"
+    )
+    #: Meme plafond en PUBLIC : l'IP ne doit jamais etre ce qui empeche un groupe
+    #: legitime de s'inscrire, quel que soit le mode.
+    registration_public_ip_hourly_limit: int = Field(
+        default=200, ge=1, alias="REGISTRATION_PUBLIC_IP_HOURLY_LIMIT"
+    )
+    #: Tentatives d'inscription par adresse et par jour. 10 : assez large pour
+    #: ne punir personne qui se trompe, assez etroit pour empecher la repetition
+    #: automatisee sur une meme adresse.
+    #: L'adresse n'apparait JAMAIS dans la cle : voir `rate_limit_identity`.
+    #: Le compteur n'est incremente qu'APRES les validations locales — mot de
+    #: passe trop faible compris — de sorte qu'une erreur de saisie ne consomme
+    #: rien. Voir l'ordre des controles dans la route `register`.
+    registration_email_daily_limit: int = Field(
+        default=10, ge=1, alias="REGISTRATION_EMAIL_DAILY_LIMIT"
+    )
+    #: 120/min : une presentation scolaire fait soumettre cent personnes dans la
+    #: meme minute derriere une seule IP. Cette dimension ne protege donc plus que
+    #: d'une rafale de machine, pas d'un groupe humain.
+    registration_ip_burst_limit: int = Field(default=120, ge=1, alias="REGISTRATION_IP_BURST_LIMIT")
+    #: Inscriptions abouties par heure, toutes IP confondues. Seul garde-fou
+    #: contre un robot reparti sur de nombreuses adresses.
+    registration_global_hourly_limit: int = Field(
+        default=100, ge=1, alias="REGISTRATION_GLOBAL_HOURLY_LIMIT"
+    )
+    #: Fin d'ouverture annoncee publiquement. Informative : la fermeture reelle
+    #: reste un changement de mode, jamais une horloge qui se declencherait seule.
+    registration_closes_at: datetime | None = Field(default=None, alias="REGISTRATION_CLOSES_AT")
+    #: Turnstile en mode PILOT : configurable, jamais impose. En PUBLIC il est
+    #: toujours exige, sans reglage possible.
+    turnstile_required_in_pilot: bool = Field(default=False, alias="TURNSTILE_REQUIRED_IN_PILOT")
+    turnstile_secret_key: str = Field(default="", alias="TURNSTILE_SECRET_KEY")
+    #: Publique par conception : sert a monter le widget, et est exposee par
+    #: `GET /auth/registration-status`.
+    turnstile_site_key: str = Field(default="", alias="TURNSTILE_SITE_KEY")
+    #: Hote attendu dans la reponse Siteverify. Vide = controle desactive, ce qui
+    #: n'est acceptable qu'en developpement.
+    turnstile_expected_hostname: str = Field(default="", alias="TURNSTILE_EXPECTED_HOSTNAME")
+    turnstile_timeout_seconds: float = Field(default=3.0, gt=0, alias="TURNSTILE_TIMEOUT_SECONDS")
+    #: Pepper DEDIE aux cles de limitation. Ne protege pas un secret : il empeche
+    #: de retrouver une adresse a partir d'une cle Redis, y compris par
+    #: dictionnaire. Distinct des autres peppers.
+    rate_limit_key_pepper: str = Field(default="", alias="RATE_LIMIT_KEY_PEPPER")
+    #: Budget d'e-mails transactionnels par jour UTC. 0 = aucun plafond.
+    email_daily_budget: int = Field(default=0, ge=0, alias="EMAIL_DAILY_BUDGET")
+    #: Part du budget reservee aux e-mails critiques — reinitialisation de mot de
+    #: passe, securite du compte. Une vague d'inscriptions ne doit jamais priver
+    #: un utilisateur legitime de la recuperation de son compte.
+    email_daily_budget_reserve: int = Field(default=10, ge=0, alias="EMAIL_DAILY_BUDGET_RESERVE")
+    #: Suppression de compte (AUTH-02A). FAIL-CLOSED : absente ou fausse, la
+    #: fonctionnalite est inaccessible — aucun endpoint, aucune interface. Un
+    #: deploiement qui ne la declare pas ne peut donc pas la proposer par
+    #: inadvertance, ce qui est la bonne posture pour une action irreversible.
+    account_deletion_enabled: bool = Field(default=False, alias="ACCOUNT_DELETION_ENABLED")
+    #: Delai de grace, en jours calendaires. Pendant ce delai AUCUNE donnee n'est
+    #: supprimee : seul l'acces est coupe, et l'utilisateur peut revenir.
+    account_deletion_grace_days: int = Field(default=30, ge=1, alias="ACCOUNT_DELETION_GRACE_DAYS")
+    #: Pepper DEDIE aux jetons d'annulation. Distinct de tous les autres : un lien
+    #: d'annulation permet de reprendre la main sur un compte, le compromettre
+    #: reviendrait a decider a la place de son titulaire.
+    account_deletion_token_pepper: str = Field(default="", alias="ACCOUNT_DELETION_TOKEN_PEPPER")
+    #: Pepper DEDIE aux jetons de verification d'adresse (AUTH-01). Volontairement
+    #: distinct de `refresh_token_pepper` : compromettre l'un ne doit pas permettre
+    #: de forger l'autre.
+    email_verification_token_pepper: str = Field(
+        default="", alias="EMAIL_VERIFICATION_TOKEN_PEPPER"
+    )
+    email_verification_expire_hours: int = Field(
+        default=24, alias="EMAIL_VERIFICATION_EXPIRE_HOURS"
+    )
+    #: Date a partir de laquelle un compte NOUVELLEMENT cree doit verifier son
+    #: adresse pour ouvrir une session. Non configuree = exigence DESACTIVEE :
+    #: aucun compte existant ne peut etre bloque par un oubli de configuration, et
+    #: installer cette version ne change le comportement d'aucun deploiement.
+    email_verification_enforced_from: datetime | None = Field(
+        default=None, alias="EMAIL_VERIFICATION_ENFORCED_FROM"
     )
     web_frontend_url: str = Field(default="http://localhost:3000", alias="WEB_FRONTEND_URL")
     password_reset_expire_hours: int = Field(default=1, alias="PASSWORD_RESET_EXPIRE_HOURS")
@@ -109,6 +213,13 @@ class Settings(BaseSettings):
     )
 
     media_upload_dir: str = Field(default="uploads", alias="MEDIA_UPLOAD_DIR")
+    # Opt-in EXPLICITE du stockage filesystem sur un runtime manage (Railway). Faux par
+    # defaut : sans volume persistant declare, ecrire sur le disque local revient a
+    # perdre les medias au redeploiement (posture C3.1-R1D). Voir app.core.media_root.
+    managed_persistent_media_enabled: bool = Field(
+        default=False,
+        alias="MANAGED_PERSISTENT_MEDIA_ENABLED",
+    )
     media_public_base_url: str = Field(
         default="http://localhost:8000",
         alias="MEDIA_PUBLIC_BASE_URL",
@@ -126,9 +237,20 @@ class Settings(BaseSettings):
         default=None,
         alias="STORY_MEDIA_UPLOAD_DIR",
     )
+    profile_media_storage_backend: Literal["r2", "filesystem"] = Field(
+        default="filesystem",
+        alias="PROFILE_MEDIA_STORAGE_BACKEND",
+    )
+    profile_media_upload_dir: str | None = Field(
+        default=None,
+        alias="PROFILE_MEDIA_UPLOAD_DIR",
+    )
     local_video_max_bytes: int = Field(default=52_428_800, alias="LOCAL_VIDEO_MAX_BYTES")
+    # VIDEO-04A-CONTRACT-FIX-01 — le defaut derive de la constante du domaine.
+    # Une valeur dupliquee ici avait diverge (60) de la constante et du client (90) :
+    # le client acceptait 61-90 s, le serveur rejetait avec un message annoncant 90.
     local_video_max_duration_seconds: int = Field(
-        default=60,
+        default=LOCAL_VIDEO_MAX_DURATION_SECONDS,
         alias="LOCAL_VIDEO_MAX_DURATION_SECONDS",
     )
     local_video_presigned_ttl_seconds: int = Field(
@@ -282,9 +404,7 @@ class Settings(BaseSettings):
                         "RESEND_API_KEY is required when EMAIL_PROVIDER is resend in prod"
                     )
                 if not self.email_from or not self.email_from.strip():
-                    raise ValueError(
-                        "EMAIL_FROM is required when EMAIL_PROVIDER is resend in prod"
-                    )
+                    raise ValueError("EMAIL_FROM is required when EMAIL_PROVIDER is resend in prod")
         return self
 
     @property

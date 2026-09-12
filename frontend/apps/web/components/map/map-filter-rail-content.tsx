@@ -6,6 +6,7 @@ import type { MapPortalAmbianceId, MapPortalCategoryId, MapPortalFilters } from 
 import {
   NEIGHBORHOOD_AMBIANCE_LABELS,
   DEFAULT_MAP_PORTAL_FILTERS,
+  MAP_DESKTOP_EXPLORER_TITLE,
   MAP_PORTAL_AMBIANCE_TITLE,
   MAP_PORTAL_CATEGORY_ALL,
   MAP_PORTAL_CATEGORY_EVENTS,
@@ -27,6 +28,7 @@ import {
 import {
   Calendar,
   CheckCircle2,
+  ChevronDown,
   Heart,
   MapPin,
   MapPinHouse,
@@ -103,19 +105,27 @@ export function MapFilterRailContent({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-map-filter-rail="">
+      <h1 className="px-1 text-lg font-bold tracking-tight text-neutral-950">
+        {MAP_DESKTOP_EXPLORER_TITLE}
+      </h1>
+
       <section className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm">
         <label className="block">
           <span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
             Ville
           </span>
-          <select
-            value={city}
-            disabled
-            className="mt-2 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm font-medium text-neutral-800"
-          >
-            <option value={city}>{city}</option>
-          </select>
+          <div className="relative mt-2">
+            <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-yunicity-primary" aria-hidden />
+            <select
+              value={city}
+              disabled
+              className="w-full appearance-none rounded-xl border border-neutral-200 bg-neutral-50 py-2.5 pl-10 pr-10 text-sm font-semibold text-neutral-800"
+            >
+              <option value={city}>{city}</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" aria-hidden />
+          </div>
         </label>
 
         <nav className="mt-4">

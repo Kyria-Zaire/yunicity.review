@@ -1,13 +1,27 @@
 import type {
+  AccountDeletionRequest,
+  AccountDeletionResponse,
+  AccountDeletionStatus,
   AuthResponse,
+  CancelAccountDeletionRequest,
+  CancelAccountDeletionResponse,
+  ResendCancellationRequest,
+  ResendCancellationResponse,
   AuthUser,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   LoginRequest,
   RefreshResponse,
   RegisterRequest,
+  RegisterResult,
+  RegistrationPendingResponse,
+  RegistrationStatus,
+  ResendVerificationRequest,
+  ResendVerificationResponse,
   ResetPasswordRequest,
   ResetPasswordResponse,
+  VerifyEmailRequest,
+  VerifyEmailResponse,
 } from "@yunicity/types";
 
 import { AuthError, parseApiError } from "./auth-errors";
@@ -15,6 +29,13 @@ import { RefreshManager } from "./refresh-manager";
 import type { TokenStorage } from "../storage/token-storage";
 
 export type AuthPlatform = "web" | "admin" | "mobile";
+
+/** Discrimine les deux issues de `register` sans dépendre du code HTTP. */
+export function isRegistrationPending(
+  result: RegisterResult,
+): result is RegistrationPendingResponse {
+  return "verification_required" in result && result.verification_required === true;
+}
 
 export interface AuthClientConfig {
   apiBaseUrl: string;
@@ -45,12 +66,19 @@ export class AuthClient {
     return token instanceof Promise ? token : token;
   }
 
-  async register(payload: RegisterRequest): Promise<AuthResponse> {
-    const response = await this.request<AuthResponse>("/register", {
+  async register(payload: RegisterRequest): Promise<RegisterResult> {
+    const response = await this.request<RegisterResult>("/register", {
       method: "POST",
       body: JSON.stringify(payload),
       skipAuth: true,
     });
+    // Compte en attente de confirmation : aucun jeton n'a été émis, il n'y a
+    // donc rien à stocker. Appeler applyAuthResponse ici enregistrerait
+    // `undefined` comme jeton d'accès et laisserait l'application se croire
+    // connectée.
+    if (isRegistrationPending(response)) {
+      return response;
+    }
     await this.applyAuthResponse(response);
     return response;
   }
@@ -93,6 +121,80 @@ export class AuthClient {
 
   async resetPassword(payload: ResetPasswordRequest): Promise<ResetPasswordResponse> {
     return this.request<ResetPasswordResponse>("/reset-password", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      skipAuth: true,
+    });
+  }
+
+  /**
+   * État d'ouverture des inscriptions (AUTH-04A).
+   *
+   * Le backend est autoritaire : ce que cette route annonce est ce que
+   * `/register` appliquera. Une erreur ou une réponse invalide doit rester
+   * fail-closed côté appelant : elle ne constitue jamais une autorisation.
+   */
+  async registrationStatus(): Promise<RegistrationStatus> {
+    return this.request<RegistrationStatus>("/registration-status", {
+      method: "GET",
+      skipAuth: true,
+    });
+  }
+
+  /**
+   * Ouvre le délai de grâce (AUTH-02A). AUCUNE donnée n'est supprimée : le
+   * compte devient inaccessible et peut être réactivé par le lien reçu.
+   */
+  async requestAccountDeletion(
+    payload: AccountDeletionRequest,
+  ): Promise<AccountDeletionResponse> {
+    return this.request<AccountDeletionResponse>("/account/deletion", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  /**
+   * Consomme le lien d'annulation. NON authentifiée : l'accès est justement
+   * coupé, c'est le jeton qui porte l'autorisation.
+   */
+  async cancelAccountDeletion(
+    payload: CancelAccountDeletionRequest,
+  ): Promise<CancelAccountDeletionResponse> {
+    return this.request<CancelAccountDeletionResponse>("/account/deletion/cancel", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      skipAuth: true,
+    });
+  }
+
+  /** Réémet le lien d'annulation. Réponse générique, quelle que soit l'issue. */
+  async resendCancellationLink(
+    payload: ResendCancellationRequest,
+  ): Promise<ResendCancellationResponse> {
+    return this.request<ResendCancellationResponse>("/account/deletion/resend", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      skipAuth: true,
+    });
+  }
+
+  async accountDeletionStatus(): Promise<AccountDeletionStatus> {
+    return this.request<AccountDeletionStatus>("/account/deletion", { method: "GET" });
+  }
+
+  async verifyEmail(payload: VerifyEmailRequest): Promise<VerifyEmailResponse> {
+    return this.request<VerifyEmailResponse>("/verify-email", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      skipAuth: true,
+    });
+  }
+
+  async resendVerification(
+    payload: ResendVerificationRequest,
+  ): Promise<ResendVerificationResponse> {
+    return this.request<ResendVerificationResponse>("/resend-verification", {
       method: "POST",
       body: JSON.stringify(payload),
       skipAuth: true,

@@ -20,8 +20,19 @@ def auto_run_video_worker(monkeypatch: pytest.MonkeyPatch) -> None:
     Combine with ``mock_processor`` to stub the actual media transcoding.
     """
 
-    async def _enqueue(video_id: uuid.UUID, *, settings: Settings | None = None) -> str:
-        await run_local_video_processing(video_id, settings=settings or get_settings())
+    async def _enqueue(
+        video_id: uuid.UUID,
+        *,
+        max_duration_seconds: int | None = None,
+        settings: Settings | None = None,
+    ) -> str:
+        # VIDEO-04D — le stub relaie le snapshot de duree comme le fait la vraie file,
+        # sinon le harnais testerait un chemin different de la production.
+        await run_local_video_processing(
+            video_id,
+            max_duration_seconds=max_duration_seconds,
+            settings=settings or get_settings(),
+        )
         return f"local-video:{video_id}"
 
     # Patch where it is USED (imported into the publish service namespace), not where it

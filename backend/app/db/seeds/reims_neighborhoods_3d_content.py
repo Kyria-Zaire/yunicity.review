@@ -46,7 +46,7 @@ EDITORIAL_3D_FIELDS: tuple[str, ...] = (
 
 REIMS_NEIGHBORHOOD_3D_CONTENT: dict[str, dict[str, Any]] = {
     "chemin-vert": {
-        "official_label": "Europe – Chemin-Vert – Clemenceau",
+        "official_label": "Chemin Vert – Europe",
         "ambiance": NeighborhoodAmbiance.CULTURAL.value,
         "short_description": (
             "La Cité-jardin classée et le patrimoine du XXᵉ siècle, entre secteur Europe "
@@ -112,7 +112,7 @@ REIMS_NEIGHBORHOOD_3D_CONTENT: dict[str, dict[str, Any]] = {
         ),
     },
     "croix-rouge": {
-        "official_label": "Croix-Rouge – Hauts-de-Murigny",
+        "official_label": "Croix-Rouge – Hauts de Murigny",
         "ambiance": NeighborhoodAmbiance.STUDENT.value,
         "short_description": (
             "Le grand quartier universitaire de Reims — campus, Sciences Po et vie étudiante."
@@ -212,7 +212,7 @@ REIMS_NEIGHBORHOOD_3D_CONTENT: dict[str, dict[str, Any]] = {
         ),
     },
     "la-neuvillette": {
-        "official_label": "La Neuvillette – Trois Fontaines",
+        "official_label": "La Neuvillette – Trois-Fontaines",
         "ambiance": NeighborhoodAmbiance.CALM.value,
         "short_description": (
             "Ancien village au nord-ouest, esprit de proximité et cadre paisible."
@@ -243,7 +243,7 @@ REIMS_NEIGHBORHOOD_3D_CONTENT: dict[str, dict[str, Any]] = {
         ),
     },
     "orgeval": {
-        "official_label": "Laon – Zola – Neufchâtel – Orgeval",
+        "official_label": "Laon-Zola – Neufchâtel – Orgeval",
         "ambiance": NeighborhoodAmbiance.LIVELY.value,
         "short_description": (
             "Quatre secteurs contrastés au nord — axe commerçant de Laon et renouvellement urbain."

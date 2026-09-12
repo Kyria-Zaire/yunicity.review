@@ -7,7 +7,6 @@ from unittest.mock import AsyncMock
 
 import pytest
 from app.core.config import Settings, get_settings
-from app.core.errors import AppError
 from app.db.session import get_session_factory
 from app.integrations.resend_email import EmailDeliveryError
 from app.services.password_reset_service import PasswordResetService
@@ -79,16 +78,23 @@ async def test_request_password_reset_prod_sends_email(
         result = await service.request_password_reset(password_reset_payload["email"])
 
     assert result.message == _GENERIC_FORGOT_MESSAGE
-    assert result.reset_url is None
+    assert not hasattr(result, "reset_url"), "le lien ne doit plus exister dans le resultat"
     send_mock.assert_awaited_once()
 
 
 @pytest.mark.asyncio
-async def test_request_password_reset_prod_provider_error_rolls_back(
+async def test_provider_outage_does_not_reveal_that_the_account_exists(
     auth_client: AsyncClient,
     password_reset_payload: dict[str, str],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Une panne du fournisseur ne doit pas devenir un oracle d'existence.
+
+    L'envoi n'est tenté que pour un compte existant. Propager l'échec rendait
+    donc 503 pour une adresse connue et 200 pour une inconnue : de quoi énumérer
+    les comptes pendant une panne. La panne est journalisée, pas propagée.
+    """
+
     async def _fail(*_args: object, **_kwargs: object) -> None:
         raise EmailDeliveryError("provider down")
 
@@ -103,9 +109,13 @@ async def test_request_password_reset_prod_provider_error_rolls_back(
 
     async with factory() as session:
         service = PasswordResetService(session, _prod_settings())
-        with pytest.raises(AppError) as exc_info:
-            await service.request_password_reset(password_reset_payload["email"])
-        assert exc_info.value.code == "EMAIL_DELIVERY_FAILED"
+        connu = await service.request_password_reset(password_reset_payload["email"])
+
+    async with factory() as session:
+        service = PasswordResetService(session, _prod_settings())
+        inconnu = await service.request_password_reset("absente-du-tout@example.com")
+
+    assert connu.message == inconnu.message == _GENERIC_FORGOT_MESSAGE
 
 
 @pytest.mark.asyncio
@@ -127,5 +137,5 @@ async def test_request_password_reset_unknown_email_prod_no_send(
         result = await service.request_password_reset("unknown@example.com")
 
     assert result.message == _GENERIC_FORGOT_MESSAGE
-    assert result.reset_url is None
+    assert not hasattr(result, "reset_url")
     send_mock.assert_not_called()

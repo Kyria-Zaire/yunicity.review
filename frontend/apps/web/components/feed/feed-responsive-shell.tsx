@@ -1,11 +1,10 @@
 "use client";
 
 import type { PartnerOfferPublic } from "@yunicity/types";
-import type { FeedPortalView } from "@yunicity/utils";
+import { FEED_PORTAL_TITLE, type FeedPortalView } from "@yunicity/utils";
 import type { MutableRefObject, Ref } from "react";
 
 import { FeedDesktopLeftRail } from "@/components/feed/desktop/feed-desktop-left-rail";
-import type { FeedDesktopPassportRailData } from "@/components/feed/desktop/feed-desktop-right-rail";
 import { FeedDesktopRightRail } from "@/components/feed/desktop/feed-desktop-right-rail";
 import { FeedDesktopHeader } from "@/components/feed/feed-desktop-header";
 import type { FeedEditorialMainColumnProps } from "@/components/feed/feed-editorial-main-column";
@@ -28,7 +27,6 @@ type FeedResponsiveShellProps = FeedEditorialMainColumnProps & {
 
   highlightOffer: PartnerOfferPublic | null;
   weather: FeedWeatherCardData;
-  passport: FeedDesktopPassportRailData;
   /** Sonde posée sur le rail gauche : arme les requêtes de rail au premier Desktop réel. */
   desktopProbeRef?: MutableRefObject<HTMLElement | null>;
 };
@@ -44,14 +42,14 @@ type FeedResponsiveShellProps = FeedEditorialMainColumnProps & {
  * Seuls les éléments de shell varient, et uniquement par media query dans
  * `globals.css` — aucun `matchMedia`, aucun `resize`, aucun `innerWidth` ici :
  *   • `.web-mobile-feed-only` (header mobile) → visible sous 640px
- *   • `.feed-medium-header`                   → visible de 640 à 1279,98px
- *   • `.feed-shell-desktop-header`            → visible à partir de 1280px
- *   • `.feed-desktop-left-rail` / `.feed-desktop-right-rail` → à partir de 1280px
+ *   • `.feed-medium-header`                   → visible de 640 à 1023,98px
+ *   • `.feed-shell-desktop-header`            → visible à partir de 1024px
+ *   • `.feed-desktop-left-rail` / `.feed-desktop-right-rail` → à partir de 1024px
  *
  * Les deux premiers portent déjà leur propre media query : les envelopper
  * casserait leur `position: sticky`, qui doit rester relatif à la colonne.
  *
- * Les rails Desktop restent montés sous 1280px : ils sont purement
+ * Les rails Desktop restent montés sous 1024px : ils sont purement
  * présentationnels et ne déclenchent aucune requête — leurs données arrivent en
  * props depuis le contrôleur, qui reste seul propriétaire du réseau.
  */
@@ -69,7 +67,8 @@ export function FeedResponsiveShell({
   desktopProbeRef,
   ...column
 }: FeedResponsiveShellProps) {
-  const { city, userFirstName, portalEvents, showSaved } = column;
+  const { city, userFirstName, portalEvents, showSaved, eventsLoading, eventsError, onRetryEvents } =
+    column;
 
   return (
     <div className="feed-shell feed-desktop-layout">
@@ -83,6 +82,12 @@ export function FeedResponsiveShell({
       />
 
       <div className="feed-main-column feed-desktop-center">
+        {/* AIF §23 — sous 1024px, le h1 vit dans un shell desktop masqué :
+            la page n'exposait alors AUCUN titre de niveau 1. Ce titre est lu
+            par les technologies d'assistance et invisible à l'œil, donc le
+            plein écran mobile voulu ne change pas d'un pixel. */}
+        <h1 className="web-shell-sr-title sr-only">{FEED_PORTAL_TITLE}</h1>
+
         {!showSaved ? <FeedMobileHeader /> : null}
 
         <FeedMediumHeader
@@ -101,7 +106,11 @@ export function FeedResponsiveShell({
           onOpenFilter={onOpenFilter}
         />
 
-        <FeedEditorialMainColumn {...column} interestFilterActive={filterActive} />
+        <FeedEditorialMainColumn
+          {...column}
+          passport={passport}
+          interestFilterActive={filterActive}
+        />
       </div>
 
       <FeedDesktopRightRail
@@ -109,6 +118,9 @@ export function FeedResponsiveShell({
         city={city}
         highlightOffer={highlightOffer}
         passport={passport}
+        eventsLoading={eventsLoading}
+        eventsError={eventsError}
+        onRetryEvents={onRetryEvents}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import { BadgeCheck } from "lucide-react";
 import Link from "next/link";
 
 import { FlashOfferBadge } from "@/components/feed/flash-offer-badge";
+import { AvatarImage } from "@/components/avatar-image";
 
 export function OfferFeedCard({
   post,
@@ -38,8 +39,7 @@ export function OfferFeedCard({
 
           <div className="mt-3 flex items-start gap-3">
             {partnerLogo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <AvatarImage
                 src={partnerLogo}
                 alt=""
                 className="h-10 w-10 shrink-0 rounded-full border border-neutral-200 object-cover"

@@ -2,7 +2,7 @@ import { deflateSync } from "node:zlib";
 
 import type { Locator, Page, Response } from "@playwright/test";
 
-import { expect, test } from "../fixtures";
+import { expect, testCitizen as test } from "../fixtures";
 import { COLD_START_TEST_TIMEOUT, COLD_START_TIMEOUT } from "../cold-start";
 
 /**

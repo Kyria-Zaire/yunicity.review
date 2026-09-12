@@ -107,12 +107,21 @@ export function FeedDataController() {
 
   const city = portal.city || user?.city || "Reims";
 
-  // Rails Desktop : armés au premier affichage réel du rail (≥1280px), jamais
-  // désarmés → aucun refetch lorsque la largeur retraverse 1280px.
+  // Rails Desktop : armés au premier affichage réel du rail (≥1024px), jamais
+  // désarmés → aucun refetch lorsque la largeur retraverse 1024px.
   const { ref: desktopProbeRef, activated: desktopRailsEnabled } =
     useVisibleActivation<HTMLElement>();
 
-  const passportRail = usePassportFeedRail(desktopRailsEnabled);
+  // FEED-MAIN-LAYOUT-UIUX-01 §7 — le Passeport n'est plus un module Desktop : il
+  // vit aussi dans la colonne centrale sous 1024px, la ou le rail droit est
+  // masque. Le rail seul ne peut donc plus armer sa requete, sinon le module
+  // compact resterait indefiniment en chargement sur mobile et medium. Seconde
+  // sonde, meme mecanique fail-closed : chaque emplacement arme quand il est
+  // reellement visible, et un seul des deux l'est a une largeur donnee.
+  const { ref: compactPassportProbeRef, activated: compactPassportEnabled } =
+    useVisibleActivation<HTMLDivElement>();
+
+  const passportRail = usePassportFeedRail(desktopRailsEnabled || compactPassportEnabled);
   const weatherRail = useCurrentWeather({
     city: desktopRailsEnabled ? city : "",
   });
@@ -356,7 +365,11 @@ export function FeedDataController() {
           highlightOffer={renderedEnrichment?.highlightOffer ?? null}
           weather={weatherRailData}
           passport={passportRailData}
+          eventsLoading={portal.loading}
+          eventsError={portal.eventsError}
+          onRetryEvents={portal.reload}
           desktopProbeRef={desktopProbeRef}
+          compactPassportProbeRef={compactPassportProbeRef}
           showSaved={showSaved}
           stream={desktopStream}
           streamLoading={streamLoading}

@@ -76,5 +76,6 @@ describe("buildProfileEditSavePayload", () => {
     const payload = buildProfileEditSavePayload(profile, draft);
     expect(payload.bio).toBe("Nouvelle bio");
     expect(payload.display_name).toBe("Kyria D.");
+    expect(payload.visibility).toBe("public");
   });
 });

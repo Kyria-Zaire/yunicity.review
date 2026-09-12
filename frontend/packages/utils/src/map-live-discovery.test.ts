@@ -110,12 +110,12 @@ describe("buildMapLiveDiscoveryItems", () => {
     expect(items).toHaveLength(4);
     expect(items.map((item) => item.kind)).toEqual([
       "event",
-      "culture",
       "passport",
       "neighborhood",
+      "culture",
     ]);
-    expect(items[0]?.href).toBe("/events/event-1");
-    expect(items[0]?.secondaryHref).toContain("/map?event=event-1");
+    expect(items[0]?.href).toContain("/map?event=event-1");
+    expect(items[0]?.secondaryHref).toBe("/events/event-1");
   });
 
   it("returns empty when no source has data", () => {

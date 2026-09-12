@@ -27,6 +27,25 @@ def disable_password_reset_rate_limits(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
+def outbox(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Boîte d'envoi interne (AUTH-03).
+
+    L'API ne renvoie plus le lien : le récupérer par la réponse HTTP reviendrait
+    à rouvrir la fuite pour se faciliter les tests. On l'intercepte donc à
+    l'émission, ce qui teste aussi que l'e-mail part réellement.
+    """
+    liens: list[str] = []
+
+    async def _capture(*, to: str, reset_url: str, settings: object) -> None:
+        liens.append(reset_url)
+
+    monkeypatch.setattr(
+        "app.services.password_reset_service.send_password_reset_email", _capture
+    )
+    return liens
+
+
+@pytest.fixture
 def password_reset_payload(register_payload: dict[str, str]) -> dict[str, str]:
     """Unique email per test — isolation between cases."""
     suffix = uuid.uuid4().hex[:10]
@@ -56,29 +75,37 @@ def _extract_token_from_reset_url(reset_url: str) -> str:
 async def test_forgot_password_existing_email(
     auth_client: AsyncClient,
     password_reset_payload: dict[str, str],
+    outbox: list[str],
 ) -> None:
     await _register(auth_client, password_reset_payload)
     data = await _forgot(auth_client, password_reset_payload["email"])
     assert data["message"] == _GENERIC_FORGOT_MESSAGE
-    assert data.get("reset_url")
-    assert "token=" in data["reset_url"]
+    # Le contrat ne porte QUE le message : ni lien, ni jeton.
+    assert set(data) == {"message"}
+    # …et l'e-mail est bien parti.
+    assert len(outbox) == 1
+    assert "token=" in outbox[0]
 
 
 @pytest.mark.asyncio
-async def test_forgot_password_unknown_email(auth_client: AsyncClient) -> None:
+async def test_forgot_password_unknown_email(
+    auth_client: AsyncClient, outbox: list[str]
+) -> None:
     data = await _forgot(auth_client, "unknown@example.com")
     assert data["message"] == _GENERIC_FORGOT_MESSAGE
-    assert data.get("reset_url") is None
+    assert set(data) == {"message"}
+    assert outbox == [], "aucun e-mail ne doit partir pour une adresse inconnue"
 
 
 @pytest.mark.asyncio
 async def test_reset_password_valid_token(
     auth_client: AsyncClient,
     password_reset_payload: dict[str, str],
+    outbox: list[str],
 ) -> None:
     await _register(auth_client, password_reset_payload)
-    forgot = await _forgot(auth_client, password_reset_payload["email"])
-    token = _extract_token_from_reset_url(forgot["reset_url"])
+    await _forgot(auth_client, password_reset_payload["email"])
+    token = _extract_token_from_reset_url(outbox[-1])
 
     response = await auth_client.post(
         "/api/v1/auth/reset-password",
@@ -98,6 +125,7 @@ async def test_reset_password_valid_token(
 async def test_reset_password_expired_token(
     auth_client: AsyncClient,
     password_reset_payload: dict[str, str],
+    outbox: list[str],
 ) -> None:
     from app.core.config import get_settings
     from app.core.security import hash_refresh_token
@@ -107,8 +135,8 @@ async def test_reset_password_expired_token(
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
     await _register(auth_client, password_reset_payload)
-    forgot = await _forgot(auth_client, password_reset_payload["email"])
-    token = _extract_token_from_reset_url(forgot["reset_url"])
+    await _forgot(auth_client, password_reset_payload["email"])
+    token = _extract_token_from_reset_url(outbox[-1])
 
     engine = get_engine()
     assert engine is not None
@@ -145,10 +173,11 @@ async def test_reset_password_invalid_token(auth_client: AsyncClient) -> None:
 async def test_reset_password_reused_token_rejected(
     auth_client: AsyncClient,
     password_reset_payload: dict[str, str],
+    outbox: list[str],
 ) -> None:
     await _register(auth_client, password_reset_payload)
-    forgot = await _forgot(auth_client, password_reset_payload["email"])
-    token = _extract_token_from_reset_url(forgot["reset_url"])
+    await _forgot(auth_client, password_reset_payload["email"])
+    token = _extract_token_from_reset_url(outbox[-1])
 
     first = await auth_client.post(
         "/api/v1/auth/reset-password",
@@ -168,10 +197,11 @@ async def test_reset_password_reused_token_rejected(
 async def test_login_ok_after_reset(
     auth_client: AsyncClient,
     password_reset_payload: dict[str, str],
+    outbox: list[str],
 ) -> None:
     await _register(auth_client, password_reset_payload)
-    forgot = await _forgot(auth_client, password_reset_payload["email"])
-    token = _extract_token_from_reset_url(forgot["reset_url"])
+    await _forgot(auth_client, password_reset_payload["email"])
+    token = _extract_token_from_reset_url(outbox[-1])
     await auth_client.post(
         "/api/v1/auth/reset-password",
         json={"token": token, "new_password": _NEW_PASSWORD},
@@ -197,6 +227,7 @@ async def test_login_ok_after_reset(
 async def test_refresh_tokens_revoked_after_reset(
     auth_client: AsyncClient,
     password_reset_payload: dict[str, str],
+    outbox: list[str],
 ) -> None:
     from app.core.config import get_settings
 
@@ -205,8 +236,8 @@ async def test_refresh_tokens_revoked_after_reset(
     old_cookie = auth_client.cookies.get(settings.refresh_cookie_name)
     assert old_cookie
 
-    forgot = await _forgot(auth_client, password_reset_payload["email"])
-    token = _extract_token_from_reset_url(forgot["reset_url"])
+    await _forgot(auth_client, password_reset_payload["email"])
+    token = _extract_token_from_reset_url(outbox[-1])
     reset = await auth_client.post(
         "/api/v1/auth/reset-password",
         json={"token": token, "new_password": _NEW_PASSWORD},

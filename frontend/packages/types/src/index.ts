@@ -1,5 +1,12 @@
 export type {
+  AccountDeletionRequest,
+  AccountDeletionResponse,
+  AccountDeletionStatus,
   ApiErrorBody,
+  CancelAccountDeletionRequest,
+  CancelAccountDeletionResponse,
+  ResendCancellationRequest,
+  ResendCancellationResponse,
   AuthResponse,
   AuthTokens,
   AuthUser,
@@ -9,9 +16,16 @@ export type {
   PermissionKey,
   RefreshResponse,
   RegisterRequest,
+  RegisterResult,
+  RegistrationPendingResponse,
+  RegistrationStatus,
+  ResendVerificationRequest,
+  ResendVerificationResponse,
   ResetPasswordRequest,
   ResetPasswordResponse,
   RoleKey,
+  VerifyEmailRequest,
+  VerifyEmailResponse,
 } from "./auth";
 
 export type {
@@ -126,6 +140,8 @@ export type {
   AdminCockpitExecutive,
   AdminCockpitPartners,
   AdminCockpitPassport,
+  AdminCockpitAgendaHealth,
+  AdminCockpitAgendaHealthStatus,
   AdminCockpitSignals,
   AdminCockpitSummaryParams,
   AdminCockpitSummaryResponse,
@@ -423,6 +439,7 @@ export type {
   LocalVideoContentType,
   LocalVideoErrorCode,
   LocalVideoFeedItem,
+  LocalVideoFeedReasonCode,
   LocalVideoLikeResponse,
   LocalVideoListParams,
   LocalVideoListResponse,
@@ -434,6 +451,7 @@ export type {
   LocalVideoStatusId,
   LocalVideoTypeId,
   LocalVideoUpload,
+  LocalVideoDurationPolicy,
   LocalVideoUploadInitPayload,
 } from "./local-video";
 

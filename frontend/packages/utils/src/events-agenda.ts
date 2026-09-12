@@ -96,7 +96,15 @@ export function filterAgendaUpcomingEvents(events: LocalEvent[], now = new Date(
     .filter((event) => !event.is_cancelled)
     .filter((event) => {
       const startsAt = Date.parse(event.starts_at);
-      return Number.isFinite(startsAt) && startsAt >= nowMs;
+      if (!Number.isFinite(startsAt)) return false;
+      // Not started yet
+      if (startsAt >= nowMs) return true;
+      // Already started but still ongoing (Sortir « ce soir », agenda en cours)
+      if (event.ends_at) {
+        const endsAt = Date.parse(event.ends_at);
+        return Number.isFinite(endsAt) && endsAt > nowMs;
+      }
+      return false;
     })
     .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
 }

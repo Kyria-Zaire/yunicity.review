@@ -20,6 +20,7 @@ from app.core.local_video_constants import (
     LocalVideoType,
     LocalVideoUploadStatus,
 )
+from app.core.local_video_duration_policy import max_duration_for_roles
 from app.models.local_video import LocalVideo, LocalVideoUpload
 from app.models.neighborhood import Neighborhood
 from app.schemas.local_video import (
@@ -34,6 +35,7 @@ from app.services.local_video.job_queue import enqueue_local_video_processing
 from app.services.local_video.processing_status import map_video_processing_status
 from app.services.local_video.storage import LocalVideoStorage, build_local_video_storage
 from app.services.local_video.storage_keys import city_slug_from_storage_key
+from app.services.rbac_service import RbacService
 
 
 class LocalVideoService:
@@ -252,7 +254,16 @@ class LocalVideoService:
         await self._session.commit()
         await self._session.refresh(video)
 
-        job_id = await enqueue_local_video_processing(video_id)
+        # VIDEO-04D — la limite est FIGEE ici, a partir des roles persistes de
+        # l'auteur authentifie, puis transmise au job. ARQ rejoue un retry avec les
+        # memes arguments : la politique appliquee reste donc identique d'un essai a
+        # l'autre, meme si le role change entre-temps.
+        rbac = await RbacService(self._session).get_user_rbac_context(user_id)
+        max_duration_seconds = max_duration_for_roles(rbac.roles)
+        job_id = await enqueue_local_video_processing(
+            video_id,
+            max_duration_seconds=max_duration_seconds,
+        )
         return LocalVideoPublishAcceptedResponse(
             id=video.id,
             status=LocalVideoStatus(video.status),
@@ -310,6 +321,8 @@ class LocalVideoService:
             media_url=video.media_url,
             thumbnail_url=video.thumbnail_url,
             duration_seconds=float(video.duration_seconds),
+            media_width=video.media_width,
+            media_height=video.media_height,
             file_size_bytes=video.file_size_bytes,
             mime_type=video.mime_type,
             latitude=float(video.latitude) if video.latitude is not None else None,
