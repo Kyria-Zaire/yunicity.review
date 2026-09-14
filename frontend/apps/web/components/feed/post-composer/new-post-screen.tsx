@@ -10,6 +10,7 @@ import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
 import type { PostMediaItem } from "@yunicity/types";
 import {
+  COMPOSER_MEDIA_CHOOSE_OTHERS,
   COMPOSER_MEDIA_TIMEOUT,
   composerMediaErrorMessage,
   composerMediaUploadTimeoutMs,
@@ -79,6 +80,21 @@ export function NewPostScreen() {
     setSubmitting(true);
     setError(null);
 
+    /**
+     * UN contrôleur par TENTATIVE de publication, partagé par les envois
+     * séquentiels de cette tentative — et non un contrôleur par fichier.
+     *
+     * Les envois se suivent : une seule requête est en vol à la fois, et
+     * l'échec de l'une termine la tentative. Un contrôleur de lot exprime donc
+     * exactement l'unité annulable réelle.
+     *   - quitter l'écran ou abandonner annule tout le lot ;
+     *   - une échéance dépassée interrompt la tentative entière ;
+     *   - aucun envoi suivant ne démarre après un abandon — la boucle sort ;
+     *   - une nouvelle tentative crée un contrôleur neuf, jamais l'ancien.
+     *
+     * Dix contrôleurs indépendants n'apporteraient rien ici : il n'y a jamais
+     * dix requêtes simultanées à annuler séparément.
+     */
     const controller = new AbortController();
     controllerRef.current = controller;
     try {
@@ -139,7 +155,10 @@ export function NewPostScreen() {
               </p>
               <ComposerMediaResolution
                 onChooseAnother={() => draft.fileInputRef.current?.click()}
-                onContinueWithout={draft.continueWithoutMedia}
+                onContinueWithout={draft.dismissRejectedMedia}
+                chooseLabel={COMPOSER_MEDIA_CHOOSE_OTHERS}
+                continueLabel={draft.mediaResolution.continueLabel}
+                hint={draft.mediaResolution.hint}
               />
             </div>
           ) : null}

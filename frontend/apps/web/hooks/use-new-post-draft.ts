@@ -7,7 +7,11 @@ import type {
   PostVisibilityId,
 } from "@yunicity/types";
 import {
+  COMPOSER_MEDIA_CONTINUE_WITHOUT_MEDIA,
+  COMPOSER_MEDIA_CONTINUE_WITHOUT_MEDIA_HINT,
   COMPOSER_MEDIA_HEIC_NOT_SUPPORTED,
+  COMPOSER_MEDIA_IGNORE_REJECTED,
+  COMPOSER_MEDIA_IGNORE_REJECTED_HINT,
   COMPOSER_MEDIA_INVALID_TYPE,
   POST_COMPOSER_BODY_MAX,
   POST_MEDIA_MAX_COUNT,
@@ -78,14 +82,42 @@ export function useNewPostDraft(city: string) {
   }, [charCount, format, locationLabel, pollOptions, selectedMedia.length, trimmedBody]);
 
   /**
-   * Un fichier que l'utilisateur a choisi et que nous avons refusé. Tant qu'il
-   * n'a pas tranché, publier enverrait un post sans le média qu'il croit
-   * joindre — et ici le refus n'était même pas affiché.
+   * Un ou plusieurs fichiers choisis par l'utilisateur ont été refusés A LA
+   * SELECTION — format, taille, quota. Tant qu'il n'a pas tranché, publier
+   * enverrait un post amputé de ce qu'il croit joindre.
+   *
+   * A ne pas confondre avec un ECHEC D'ENVOI, traité par l'écran : un fichier
+   * localement valide dont l'upload a échoué n'est PAS « refusé », il reste
+   * sélectionné et la tentative est simplement rejouable.
    */
   const mediaRejected = uploadError !== null;
 
-  /** Abandon EXPLICITE du média refusé : n'envoie rien, ne publie rien. */
-  const continueWithoutMedia = useCallback(() => {
+  /**
+   * Libellés de l'arbitrage, calculés sur ce qui reste RÉELLEMENT attaché.
+   *
+   * Annoncer « Continuer sans image » alors que deux photos valides restent
+   * jointes décrirait l'inverse de ce qui se produit — et l'écran accepte aussi
+   * des vidéos, d'où « média » plutôt qu'« image ».
+   */
+  const mediaResolution = useMemo(
+    () =>
+      selectedMedia.length > 0
+        ? {
+            continueLabel: COMPOSER_MEDIA_IGNORE_REJECTED,
+            hint: COMPOSER_MEDIA_IGNORE_REJECTED_HINT,
+          }
+        : {
+            continueLabel: COMPOSER_MEDIA_CONTINUE_WITHOUT_MEDIA,
+            hint: COMPOSER_MEDIA_CONTINUE_WITHOUT_MEDIA_HINT,
+          },
+    [selectedMedia.length],
+  );
+
+  /**
+   * Abandon EXPLICITE des seuls fichiers refusés : n'envoie rien, ne publie
+   * rien, et ne retire aucun média valide déjà sélectionné.
+   */
+  const dismissRejectedMedia = useCallback(() => {
     setUploadError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
@@ -270,7 +302,8 @@ export function useNewPostDraft(city: string) {
     uploadError,
     setUploadError,
     mediaRejected,
-    continueWithoutMedia,
+    mediaResolution,
+    dismissRejectedMedia,
     charCount,
     canPublish,
     publishBlockReason,

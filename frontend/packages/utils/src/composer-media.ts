@@ -36,6 +36,20 @@ export const COMPOSER_MEDIA_INVALID_CONTENT =
 export const COMPOSER_PUBLICATION_FAILED_AFTER_UPLOAD =
   "L’image est prête, mais la publication a échoué. Vous pouvez réessayer sans la renvoyer.";
 /** Arbitrage d'un média refusé — actions explicites, jamais automatiques. */
+/**
+ * Parcours multi-médias : des médias VALIDES restent attachés. Le libellé doit
+ * dire ce qui est réellement abandonné — le ou les fichiers refusés — et non
+ * « sans image », qui annoncerait une publication sans média alors que les
+ * valides partent bien.
+ */
+export const COMPOSER_MEDIA_IGNORE_REJECTED = "Ignorer les médias refusés";
+export const COMPOSER_MEDIA_IGNORE_REJECTED_HINT =
+  "Les autres médias valides et votre texte seront conservés.";
+/** Parcours multi-médias, plus aucun média valide : « média » couvre la vidéo. */
+export const COMPOSER_MEDIA_CONTINUE_WITHOUT_MEDIA = "Continuer sans média";
+export const COMPOSER_MEDIA_CONTINUE_WITHOUT_MEDIA_HINT = "Votre texte sera conservé.";
+/** Parcours multi-médias : on ne parle pas d'« image » là où une vidéo est possible. */
+export const COMPOSER_MEDIA_CHOOSE_OTHERS = "Choisir d'autres médias";
 export const COMPOSER_MEDIA_CHOOSE_ANOTHER = "Choisir une autre image";
 export const COMPOSER_MEDIA_CONTINUE_WITHOUT = "Continuer sans image";
 export const COMPOSER_MEDIA_RESOLUTION_HINT =

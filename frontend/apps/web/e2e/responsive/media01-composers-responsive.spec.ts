@@ -367,6 +367,53 @@ test.describe("GATE 9 — rendu responsive des composers actifs", () => {
         expect(lisible, `cibles sous ${CIBLE_TACTILE_MIN}×${CIBLE_TACTILE_MIN} px`).toEqual([]);
       });
 
+      test("les libellés d'arbitrage disent la vérité et restent lisibles", async ({ page }) => {
+        await ouvrir(page, largeur);
+        await deplierTout(page);
+
+        // Parcours mono-image : abandonner le fichier refusé revient bien à
+        // publier sans image.
+        for (const { cle, nom, apercuInline } of COMPOSERS) {
+          if (!apercuInline) continue;
+          if (!(await estRendu(page, cle))) continue;
+          const section = page.locator(`[data-media01-composer="${cle}"]`);
+          await section.locator('input[type="file"]').setInputFiles({
+            name: "document.pdf",
+            mimeType: "application/pdf",
+            buffer: Buffer.from("%PDF-1.4", "utf8"),
+          });
+          const abandon = section.getByRole("button", { name: /Continuer sans image/i });
+          await expect(abandon, `${nom} : libellé mono-image attendu`).toHaveCount(1);
+          const boite = (await abandon.boundingBox())!;
+          expect(boite.height).toBeGreaterThanOrEqual(CIBLE_TACTILE_MIN);
+          expect(boite.width).toBeGreaterThanOrEqual(CIBLE_TACTILE_MIN);
+        }
+
+        // Parcours multi-médias : un média valide reste attaché, donc le
+        // libellé doit parler d'ignorer les refusés, jamais de « sans image ».
+        const newPost = page.locator('[data-media01-composer="new-post"]');
+        await newPost.locator('input[type="file"]').setInputFiles([
+          { name: "ok.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgo=", "base64") },
+          { name: "refuse.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4", "utf8") },
+        ]);
+        const ignorer = newPost.getByRole("button", { name: /Ignorer les médias refusés/i });
+        await expect(ignorer).toHaveCount(1);
+        await expect(newPost.getByRole("button", { name: /Continuer sans image/i })).toHaveCount(0);
+        await expect(
+          newPost.getByText(/Les autres médias valides et votre texte seront conservés/i),
+        ).toHaveCount(1);
+
+        // Une seule annonce : le message de refus, pas les boutons.
+        await expect(newPost.locator('[role="alert"]')).toHaveCount(1);
+
+        const boiteIgnorer = (await ignorer.boundingBox())!;
+        expect(boiteIgnorer.height).toBeGreaterThanOrEqual(CIBLE_TACTILE_MIN);
+        expect(boiteIgnorer.width).toBeGreaterThanOrEqual(CIBLE_TACTILE_MIN);
+        // Focus perceptible au clavier.
+        await ignorer.focus();
+        await expect(ignorer).toBeFocused();
+      });
+
       test("le bouton Fermer de /feed/new reste actionnable et assez grand", async ({ page }) => {
         await ouvrir(page, largeur);
         const fermer = page
