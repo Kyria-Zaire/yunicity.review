@@ -54,7 +54,13 @@ export function useAuthorizedMediaSource(
   mediaUrl: string | null | undefined,
 ): AuthorizedMediaSource {
   const api = useYunicityApi();
-  const fetchBlob = api.fetchAuthorizedMediaBlob;
+  // Ne jamais détacher `api.fetchAuthorizedMediaBlob` : la méthode d'instance
+  // lit `this.auth` / `this.apiBaseUrl`. Un appel sans bind lève avant le réseau
+  // (MEDIA-01C — CLIENT_PRE_NETWORK_FAILURE sur Preview Safari).
+  const fetchBlob = useCallback(
+    (url: string, signal?: AbortSignal) => api.fetchAuthorizedMediaBlob(url, signal),
+    [api],
+  );
   const [status, setStatus] = useState<AuthorizedMediaStatus>("idle");
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
