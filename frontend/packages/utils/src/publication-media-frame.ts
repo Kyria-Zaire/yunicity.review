@@ -7,7 +7,33 @@
 
 export type MediaOrientation = "portrait" | "square" | "landscape";
 
-export type PublicationMediaFrameVariant = "feed" | "composer" | "viewer" | "thumbnail";
+export type PublicationMediaFrameVariant =
+  | "feed"
+  | "compact"
+  | "composer"
+  | "viewer"
+  | "thumbnail";
+
+/**
+ * Ratio du cadre selon la variante et l'orientation mesuree.
+ *
+ * `compact` est une publication SECONDAIRE (profil, tribu, partenaire) : elle
+ * suit les memes orientations que le feed, mais son plafond de hauteur est plus
+ * bas — elle accompagne un contenu, elle ne le domine pas.
+ */
+export function frameAspectRatio(
+  variant: PublicationMediaFrameVariant,
+  orientation: MediaOrientation,
+): string | null {
+  if (variant === "viewer") return null;
+  if (variant === "thumbnail") return "1 / 1";
+  return feedAspectRatioForOrientation(orientation);
+}
+
+/** Une vignette est bornee et carree : jamais un cadre adaptatif. */
+export function isThumbnailVariant(variant: PublicationMediaFrameVariant): boolean {
+  return variant === "thumbnail";
+}
 
 /** Tolérance pour considérer un média « carré » (≈ Instagram). */
 const SQUARE_TOLERANCE = 0.05;

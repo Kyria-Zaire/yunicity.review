@@ -52,8 +52,8 @@ export function ProfileMobilePostCard({
             <AuthorizedPostImage
               mediaUrl={post.media_url}
               alt=""
-              className="h-24 w-24 shrink-0 overflow-hidden rounded-xl"
-              imgClassName="h-24 w-24 rounded-xl object-cover"
+              variant="thumbnail"
+              className="shrink-0"
             />
           ) : null}
         </div>

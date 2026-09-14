@@ -78,8 +78,8 @@ export function OfferFeedCard({
           <AuthorizedPostImage
             mediaUrl={post.media_url}
             alt=""
-            className="hidden h-24 w-24 shrink-0 overflow-hidden rounded-xl sm:block"
-            imgClassName="hidden h-24 w-24 shrink-0 rounded-xl object-cover sm:block"
+            variant="thumbnail"
+            className="hidden shrink-0 sm:block"
           />
         ) : null}
       </div>

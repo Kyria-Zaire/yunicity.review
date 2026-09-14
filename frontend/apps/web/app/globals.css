@@ -5651,6 +5651,42 @@ html.local-video-cinema-open body {
   }
 }
 
+/* Publication SECONDAIRE (profil, tribu, partenaire) : memes orientations que
+   le feed, plafond plus bas — elle accompagne un contenu, elle ne le domine pas. */
+.publication-media-frame--compact {
+  max-height: min(30svh, 300px);
+}
+
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .publication-media-frame--compact {
+    max-height: min(36svh, 340px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .publication-media-frame--compact {
+    max-height: min(40vh, 380px);
+  }
+}
+
+.publication-media-frame--compact[data-publication-media-kind="video"] .publication-media-frame__media {
+  object-fit: contain;
+  background: #0a0a0a;
+}
+
+/* Vignette : bornee, carree, jamais adaptative. */
+.publication-media-frame--thumbnail {
+  width: 6rem;
+  height: 6rem;
+  max-height: 6rem;
+  flex: none;
+  border-radius: 0.75rem;
+}
+
+.publication-media-frame--thumbnail .publication-media-frame__media {
+  object-fit: cover;
+}
+
 .publication-media-frame--viewer {
   background: #0a0a0a;
 }

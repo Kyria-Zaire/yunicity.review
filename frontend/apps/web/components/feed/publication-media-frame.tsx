@@ -4,8 +4,8 @@ import type { CSSProperties, ReactNode } from "react";
 
 import {
   defaultFeedOrientation,
-  feedAspectRatioForOrientation,
   feedObjectFitForKind,
+  frameAspectRatio,
   type MediaOrientation,
   type PublicationMediaFrameVariant,
 } from "@yunicity/utils";
@@ -38,6 +38,8 @@ function resolveOrientation(
   orientation: MediaOrientation | null,
 ): MediaOrientation {
   if (orientation) return orientation;
+  // Vignette et viewer ne dependent pas de l'orientation : le defaut portrait
+  // du feed n'a pas lieu d'y reserver une hauteur.
   if (variant === "viewer" || variant === "thumbnail") return "landscape";
   return defaultFeedOrientation();
 }
@@ -64,13 +66,13 @@ export function PublicationMediaFrame({
           maxHeight: "100dvh",
         }
       : variant === "thumbnail"
-        ? {
-            width: "100%",
-            height: "100%",
-          }
+        ? // La vignette tient sa boîte du CSS (carrée, bornée) : lui imposer
+          // 100 % la ferait dépendre d'un parent qui ne la contraint pas
+          // forcément.
+          {}
         : applyAspectRatio
           ? {
-              aspectRatio: feedAspectRatioForOrientation(resolved),
+              aspectRatio: frameAspectRatio(variant, resolved) ?? undefined,
             }
           : {
               width: "100%",

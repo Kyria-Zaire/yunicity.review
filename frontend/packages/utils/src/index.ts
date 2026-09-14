@@ -48,6 +48,8 @@ export {
   classifyMediaOrientation,
   defaultFeedOrientation,
   feedAspectRatioForOrientation,
+  frameAspectRatio,
+  isThumbnailVariant,
   feedObjectFitForKind,
   publicationMediaGridLayout,
   slicePublicationMediaForGrid,

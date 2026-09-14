@@ -160,8 +160,8 @@ export function ProfileDesktopPublications({
                     <AuthorizedPostImage
                       mediaUrl={post.media_url}
                       alt=""
-                      className="mt-3 max-h-72 w-full overflow-hidden rounded-xl"
-                      imgClassName="mt-3 max-h-72 w-full rounded-xl object-cover"
+                      variant="compact"
+                      className="mt-3"
                     />
                   ) : null}
 
@@ -169,8 +169,8 @@ export function ProfileDesktopPublications({
                     <AuthorizedPostImage
                       mediaUrl={post.media_url}
                       alt=""
-                      className="mt-3 h-20 w-20 overflow-hidden rounded-lg"
-                      imgClassName="mt-3 h-20 w-20 rounded-lg object-cover"
+                      variant="thumbnail"
+                      className="mt-3"
                     />
                   ) : null}
 

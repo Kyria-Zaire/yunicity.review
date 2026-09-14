@@ -40,8 +40,8 @@ export function TribeDetailMobilePostCard({ post, onToggleLike }: TribeDetailMob
             <AuthorizedPostImage
               mediaUrl={post.media_url}
               alt=""
-              className="max-h-52 w-full"
-              imgClassName="max-h-52 w-full object-cover"
+              variant="compact"
+              className="w-full"
             />
           </div>
         ) : null}

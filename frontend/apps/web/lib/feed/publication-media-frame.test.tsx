@@ -1,9 +1,12 @@
 // @vitest-environment jsdom
+/* eslint-disable @next/next/no-img-element -- fixtures de test : aucune image
+   n'est reellement chargee, et `next/image` ne se monte pas en jsdom. */
 
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { FeedPublicationMedia } from "@/components/feed/feed-publication-media";
+import { AuthorizedPostImage } from "@/components/feed/authorized-post-image";
 import { PublicationMediaFrame } from "@/components/feed/publication-media-frame";
 import { PublicationMediaGrid, slicePublicationMediaForGrid } from "@/components/feed/publication-media-grid";
 import {
@@ -11,6 +14,7 @@ import {
   __resetAuthorizedMediaSessionForTests,
   classifyMediaOrientation,
   feedAspectRatioForOrientation,
+  frameAspectRatio,
 } from "@yunicity/utils";
 
 const VALID_MEDIA =
@@ -299,5 +303,106 @@ describe("MEDIA-02 — viewer plein écran", () => {
       expect(frame.style.aspectRatio || "").toBe("");
       unmount();
     }
+  });
+});
+
+// ───────────── MEDIA-02 — variantes canoniques (SURFACE-COMPLETION)
+
+describe("MEDIA-02 — variantes compact et thumbnail", () => {
+  it("compact suit l'orientation mesurée, comme le feed", () => {
+    for (const [orientation, attendu] of [
+      ["portrait", "4/5"],
+      ["square", "1/1"],
+      ["landscape", "16/9"],
+    ] as const) {
+      const { container, unmount } = render(
+        <PublicationMediaFrame variant="compact" kind="image" orientation={orientation}>
+          <span />
+        </PublicationMediaFrame>,
+      );
+      const frame = container.querySelector(
+        "[data-publication-media-frame='compact']",
+      ) as HTMLElement;
+      expect(frame.style.aspectRatio.replace(/\s/g, "")).toBe(attendu);
+      expect(frame.className).toContain("publication-media-frame--compact");
+      unmount();
+    }
+  });
+
+  it("thumbnail reste carrée quelle que soit l'orientation mesurée", () => {
+    // Une vignette bornée n'a pas à devenir un cadre adaptatif : la rendre
+    // portrait transformerait une pastille de 96 px en grande carte.
+    for (const orientation of ["portrait", "square", "landscape"] as const) {
+      const { container, unmount } = render(
+        <PublicationMediaFrame variant="thumbnail" kind="image" orientation={orientation}>
+          <span />
+        </PublicationMediaFrame>,
+      );
+      const frame = container.querySelector(
+        "[data-publication-media-frame='thumbnail']",
+      ) as HTMLElement;
+      expect(frame.className).toContain("publication-media-frame--thumbnail");
+      // Pas de ratio inline : la boîte carrée vient du CSS de la variante.
+      expect(frame.style.aspectRatio || "").toBe("");
+      unmount();
+    }
+  });
+
+  it("une vidéo secondaire reste en contain, jamais recadrée", () => {
+    const { container } = render(
+      <PublicationMediaFrame variant="compact" kind="video" orientation="portrait">
+        <video />
+      </PublicationMediaFrame>,
+    );
+    const frame = container.querySelector("[data-publication-media-frame='compact']") as HTMLElement;
+    expect(frame.getAttribute("data-publication-media-fit")).toBe("contain");
+    expect(frame.getAttribute("data-publication-media-kind")).toBe("video");
+  });
+
+  it("une image secondaire est en cover", () => {
+    const { container } = render(
+      <PublicationMediaFrame variant="compact" kind="image" orientation="landscape">
+        <img alt="" />
+      </PublicationMediaFrame>,
+    );
+    const frame = container.querySelector("[data-publication-media-frame='compact']") as HTMLElement;
+    expect(frame.getAttribute("data-publication-media-fit")).toBe("cover");
+  });
+
+  it("le ratio du cadre vient de la primitive partagée, pas du composant", () => {
+    expect(frameAspectRatio("feed", "portrait")).toBe("4 / 5");
+    expect(frameAspectRatio("compact", "portrait")).toBe("4 / 5");
+    expect(frameAspectRatio("thumbnail", "portrait")).toBe("1 / 1");
+    // Le viewer ne contraint rien : il montre l'original complet.
+    expect(frameAspectRatio("viewer", "portrait")).toBeNull();
+  });
+});
+
+describe("MEDIA-02 — AuthorizedPostImage encadre les surfaces secondaires", () => {
+  it("rend le cadre canonique avec la variante demandée", () => {
+    fetchAuthorizedMediaBlob.mockReturnValue(new Promise(() => {}));
+    const { container } = render(
+      <AuthorizedPostImage mediaUrl={VALID_MEDIA} alt="x" variant="compact" />,
+    );
+    const frame = container.querySelector("[data-publication-media-frame='compact']");
+    expect(frame, "la surface secondaire n'est pas encadrée").not.toBeNull();
+  });
+
+  it("une vignette reste vignette même si le média est portrait", () => {
+    fetchAuthorizedMediaBlob.mockReturnValue(new Promise(() => {}));
+    const { container } = render(
+      <AuthorizedPostImage mediaUrl={VALID_MEDIA} alt="x" variant="thumbnail" />,
+    );
+    const frame = container.querySelector(
+      "[data-publication-media-frame='thumbnail']",
+    ) as HTMLElement;
+    expect(frame).not.toBeNull();
+    expect(frame.style.aspectRatio || "").toBe("");
+  });
+
+  it("conserve le pipeline autorisé : un seul appel réseau par média", () => {
+    fetchAuthorizedMediaBlob.mockReturnValue(new Promise(() => {}));
+    render(<AuthorizedPostImage mediaUrl={VALID_MEDIA} alt="x" variant="compact" />);
+    expect(fetchAuthorizedMediaBlob).toHaveBeenCalledTimes(1);
   });
 });
