@@ -7,11 +7,14 @@ import {
 
 import type { AuthorizedMediaStatus } from "@/hooks/use-authorized-media-source";
 
+export type MediaIntrinsicSize = { width: number; height: number };
+
 /**
- * États visuels d'une image de publication authentifiée (MEDIA-01B).
+ * États visuels d'une image de publication authentifiée (MEDIA-01B + MEDIA-02).
  *
  * Pendant `decoding`, l'`<img>` est présent pour déclencher le décodage mais
  * masqué (pas de pictogramme cassé). `ready` uniquement après `onLoad`.
+ * Les dimensions intrinsèques sont reportées au parent pour le cadre adaptatif.
  */
 export function AuthorizedPublicationImageView({
   status,
@@ -19,6 +22,7 @@ export function AuthorizedPublicationImageView({
   alt,
   className = "",
   imgClassName = "",
+  framed = false,
   onRetry,
   onDisplayed = () => undefined,
   onDecodeFailed = () => undefined,
@@ -28,15 +32,25 @@ export function AuthorizedPublicationImageView({
   alt: string;
   className?: string;
   imgClassName?: string;
+  /** true = remplit le PublicationMediaFrame (cover absolu). */
+  framed?: boolean;
   onRetry: () => void;
-  onDisplayed?: () => void;
+  onDisplayed?: (size?: MediaIntrinsicSize) => void;
   onDecodeFailed?: () => void;
 }) {
+  const reportLoad = (img: HTMLImageElement) => {
+    onDisplayed({ width: img.naturalWidth, height: img.naturalHeight });
+  };
+
   if (status === "loading" || status === "idle") {
     return (
       <div
         data-authorized-media-state="loading"
-        className={`flex min-h-[12rem] w-full items-center justify-center bg-neutral-100 motion-safe:animate-pulse ${className}`}
+        className={
+          framed
+            ? `flex h-full w-full items-center justify-center bg-neutral-100 motion-safe:animate-pulse ${className}`
+            : `flex min-h-[12rem] w-full items-center justify-center bg-neutral-100 motion-safe:animate-pulse ${className}`
+        }
         role="status"
         aria-label="Chargement de l’image"
       >
@@ -49,7 +63,11 @@ export function AuthorizedPublicationImageView({
     return (
       <div
         data-authorized-media-state="error"
-        className={`flex min-h-[12rem] w-full flex-col items-center justify-center gap-3 bg-neutral-100 px-4 py-6 text-center ${className}`}
+        className={
+          framed
+            ? `flex h-full w-full flex-col items-center justify-center gap-3 bg-neutral-100 px-4 py-6 text-center ${className}`
+            : `flex min-h-[12rem] w-full flex-col items-center justify-center gap-3 bg-neutral-100 px-4 py-6 text-center ${className}`
+        }
         role="alert"
       >
         <p className="text-sm text-neutral-700">{AUTHORIZED_MEDIA_UNAVAILABLE}</p>
@@ -69,7 +87,11 @@ export function AuthorizedPublicationImageView({
     return (
       <div
         data-authorized-media-state="decoding"
-        className={`relative flex min-h-[12rem] w-full items-center justify-center bg-neutral-100 motion-safe:animate-pulse ${className}`}
+        className={
+          framed
+            ? `relative flex h-full w-full items-center justify-center bg-neutral-100 motion-safe:animate-pulse ${className}`
+            : `relative flex min-h-[12rem] w-full items-center justify-center bg-neutral-100 motion-safe:animate-pulse ${className}`
+        }
         role="status"
         aria-label="Décodage de l’image"
       >
@@ -80,7 +102,7 @@ export function AuthorizedPublicationImageView({
           alt=""
           aria-hidden
           decoding="async"
-          onLoad={onDisplayed}
+          onLoad={(event) => reportLoad(event.currentTarget)}
           onError={onDecodeFailed}
           className="pointer-events-none absolute h-0 w-0 opacity-0"
         />
@@ -97,8 +119,13 @@ export function AuthorizedPublicationImageView({
         alt={alt}
         loading="lazy"
         decoding="async"
+        onLoad={(event) => reportLoad(event.currentTarget)}
         onError={onDecodeFailed}
-        className={imgClassName || className}
+        className={
+          framed
+            ? `publication-media-frame__media h-full w-full object-cover object-center ${imgClassName || className}`
+            : imgClassName || className
+        }
       />
     );
   }

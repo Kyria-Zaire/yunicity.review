@@ -45,6 +45,19 @@ export {
   type AuthorizedMediaUrlErrorCode,
 } from "./authorized-media-url";
 export {
+  classifyMediaOrientation,
+  defaultFeedOrientation,
+  feedAspectRatioForOrientation,
+  feedObjectFitForKind,
+  publicationMediaGridLayout,
+  slicePublicationMediaForGrid,
+  viewerObjectFit,
+  type MediaOrientation,
+  type PublicationMediaFrameVariant,
+  type PublicationMediaGridLayout,
+  type PublicationMediaObjectFit,
+} from "./publication-media-frame";
+export {
   TURNSTILE_SCRIPT_URL,
   TURNSTILE_TEST_SITE_KEY_ALWAYS_BLOCKS,
   TURNSTILE_TEST_SITE_KEY_ALWAYS_PASSES,

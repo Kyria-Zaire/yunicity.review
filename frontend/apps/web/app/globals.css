@@ -5296,7 +5296,9 @@ body {
 }
 
 @media (min-width: 640px) {
-  .feed-publication-media img {
+  /* MEDIA-02 : le plafond de hauteur est porté par PublicationMediaFrame,
+     plus par max-height sur l'img seule (qui laissait le portrait 9:16 géant). */
+  .feed-publication-media img:not(.publication-media-frame__media) {
     max-height: 20rem;
   }
 }
@@ -5587,4 +5589,159 @@ html.local-video-cinema-open body {
     min-width: 0;
     box-sizing: border-box;
   }
+}
+
+/* ═══ MEDIA-02 — PublicationMediaFrame (cadre canonique feed / composer / viewer) ═══ */
+
+.publication-media-frame {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.publication-media-frame__surface {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.publication-media-frame__surface--viewer {
+  position: relative;
+  inset: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  max-height: 100dvh;
+}
+
+.publication-media-frame__media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-position: center;
+}
+
+/* Feed / composer : plafonds viewport — une 9:16 ne reprend jamais sa hauteur native. */
+.publication-media-frame--feed,
+.publication-media-frame--composer {
+  max-height: min(42svh, 420px);
+}
+
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .publication-media-frame--feed,
+  .publication-media-frame--composer {
+    max-height: min(56svh, 520px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .publication-media-frame--feed,
+  .publication-media-frame--composer {
+    max-height: min(64vh, 640px);
+  }
+}
+
+.publication-media-frame--viewer {
+  background: #0a0a0a;
+}
+
+.publication-media-frame--viewer .publication-media-frame__media,
+.publication-media-frame--viewer img,
+.publication-media-frame--viewer video {
+  object-fit: contain;
+  max-height: 100dvh;
+  max-width: 100%;
+}
+
+.publication-media-frame--feed[data-publication-media-kind="image"] .publication-media-frame__media,
+.publication-media-frame--feed[data-publication-media-kind="image"] img[data-authorized-media-state="ready"] {
+  object-fit: cover;
+}
+
+.publication-media-frame--feed[data-publication-media-kind="video"] .publication-media-frame__media,
+.publication-media-frame--composer[data-publication-media-kind="video"] .publication-media-frame__media {
+  object-fit: contain;
+  background: #0a0a0a;
+}
+
+/* Grille multi-médias compacte */
+.publication-media-grid {
+  position: relative;
+  display: grid;
+  width: 100%;
+  gap: 0.25rem;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  max-height: min(42svh, 420px);
+}
+
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .publication-media-grid {
+    max-height: min(56svh, 520px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .publication-media-grid {
+    max-height: min(64vh, 640px);
+  }
+}
+
+.publication-media-grid--pair {
+  grid-template-columns: 1fr 1fr;
+  aspect-ratio: 16 / 9;
+}
+
+.publication-media-grid--triple {
+  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-rows: 1fr 1fr;
+  aspect-ratio: 4 / 5;
+}
+
+.publication-media-grid--triple > :first-child {
+  grid-row: 1 / span 2;
+}
+
+.publication-media-grid--quad {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  aspect-ratio: 1 / 1;
+}
+
+.publication-media-grid__tile {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  margin: 0 !important;
+}
+
+.publication-media-grid__overflow {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 0.45);
+  color: #f5f5f5;
+  font-size: 1.5rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.publication-media-grid .publication-media-grid__overflow {
+  /* badge on last tile only — already absolute on tile */
 }
