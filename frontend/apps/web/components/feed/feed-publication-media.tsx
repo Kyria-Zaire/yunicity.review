@@ -1,18 +1,14 @@
 "use client";
 
-import { useState } from "react";
-
 import { AuthorizedPublicationImageView } from "@/components/feed/authorized-publication-image";
-import { FeedMobileMediaViewer } from "@/components/feed/mobile/feed-mobile-media-viewer";
 import { useAuthorizedMediaSource } from "@/hooks/use-authorized-media-source";
+import { openFeedMediaViewer } from "@/lib/feed/feed-media-viewer-session";
 
 /**
  * Média d'une publication — responsabilité UNIQUE (C3-FEED-UNIFIED-PUBLICATION-CARD-R2A).
  *
- * Images (MEDIA-01B) : GET Bearer vers l'API → Blob → object URL. La carte et la
- * visionneuse partagent la même source ; aucun `<img src>` relatif WEB.
- *
- * Vidéos : contrat inchangé (`<video src={mediaUrl}>`).
+ * Images (MEDIA-01B) : GET Bearer → Blob → décodage onLoad. Visionneuse : session
+ * racine + compteur de références — survit au démontage de la carte.
  */
 
 function isVideoMediaUrl(url: string): boolean {
@@ -40,7 +36,6 @@ export function FeedPublicationMedia({
   label?: string;
 }) {
   const isVideo = isVideoMediaUrl(mediaUrl);
-  const [viewerOpen, setViewerOpen] = useState(false);
   const alt = label?.trim() ? label.trim() : "Image de la publication";
   const image = useAuthorizedMediaSource(isVideo ? null : mediaUrl);
 
@@ -70,46 +65,46 @@ export function FeedPublicationMedia({
   const canOpenViewer = image.status === "ready" && Boolean(image.objectUrl);
 
   return (
-    <>
-      <div
-        data-feed-publication-media=""
-        data-feed-publication-media-kind="image"
-        className="feed-publication-media mt-3 overflow-hidden rounded-xl border border-yunicity-border bg-neutral-50"
-      >
-        {canOpenViewer ? (
-          <button
-            type="button"
-            onClick={(event) => {
-              event.currentTarget.focus();
-              setViewerOpen(true);
-            }}
-            aria-label="Agrandir l’image"
-            className="block w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-yunicity-primary/50"
-          >
-            <AuthorizedPublicationImageView
-              status={image.status}
-              objectUrl={image.objectUrl}
-              alt={alt}
-              imgClassName="feed-publication-media-img mx-auto block w-full rounded-xl object-contain"
-              onRetry={image.retry}
-            />
-          </button>
-        ) : (
+    <div
+      data-feed-publication-media=""
+      data-feed-publication-media-kind="image"
+      className="feed-publication-media mt-3 overflow-hidden rounded-xl border border-yunicity-border bg-neutral-50"
+    >
+      {canOpenViewer ? (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.currentTarget.focus();
+            openFeedMediaViewer({
+              mediaUrl,
+              objectUrl: image.objectUrl,
+              label: alt,
+            });
+          }}
+          aria-label="Agrandir l’image"
+          className="block w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-yunicity-primary/50"
+        >
           <AuthorizedPublicationImageView
             status={image.status}
             objectUrl={image.objectUrl}
             alt={alt}
             imgClassName="feed-publication-media-img mx-auto block w-full rounded-xl object-contain"
             onRetry={image.retry}
+            onDisplayed={image.markDisplayed}
+            onDecodeFailed={image.markDecodeFailed}
           />
-        )}
-      </div>
-      <FeedMobileMediaViewer
-        open={viewerOpen && canOpenViewer}
-        onOpenChange={setViewerOpen}
-        objectUrl={image.objectUrl}
-        label={alt}
-      />
-    </>
+        </button>
+      ) : (
+        <AuthorizedPublicationImageView
+          status={image.status}
+          objectUrl={image.objectUrl}
+          alt={alt}
+          imgClassName="feed-publication-media-img mx-auto block w-full rounded-xl object-contain"
+          onRetry={image.retry}
+          onDisplayed={image.markDisplayed}
+          onDecodeFailed={image.markDecodeFailed}
+        />
+      )}
+    </div>
   );
 }

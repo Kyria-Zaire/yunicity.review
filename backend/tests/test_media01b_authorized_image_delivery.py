@@ -97,7 +97,52 @@ async def test_media01b_feed_post_image_delivery_chain(auth_client: AsyncClient)
     assert anon.status_code == 401
     assert MINIMAL_JPEG_BYTES not in anon.content
 
+    # Identifiant d'un autre utilisateur → 404 uniforme.
+    forged = media_url.replace(str(owner["user"]["id"]), str(viewer["user"]["id"]), 1)
+    forged_resp = await auth_client.get(forged, headers=_headers(viewer["access_token"]))
+    assert forged_resp.status_code == 404
+    assert MINIMAL_JPEG_BYTES not in forged_resp.content
+
     # Objet absent → 404 maîtrisé pour le propriétaire.
     missing = media_url.rsplit("/", 1)[0] + "/00000000-0000-4000-8000-000000000099.jpg"
     gone = await auth_client.get(missing, headers=_headers(token))
     assert gone.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_media01b_private_audience_refuses_unauthorized_viewer(
+    auth_client: AsyncClient,
+) -> None:
+    from app.core.post_composer_constants import PostVisibility
+
+    owner = await _register(auth_client, "m01b-priv-owner")
+    stranger = await _register(auth_client, "m01b-priv-stranger")
+    token = owner["access_token"]
+
+    upload = await auth_client.post(
+        "/api/v1/posts/media",
+        headers=_headers(token),
+        files={"file": ("photo.jpg", BytesIO(MINIMAL_JPEG_BYTES), "image/jpeg")},
+    )
+    assert upload.status_code == 201, upload.text
+    media_url = cast(str, upload.json()["url"])
+
+    created = await auth_client.post(
+        "/api/v1/posts",
+        headers=_headers(token),
+        json={
+            "author_type": "citizen",
+            "body": "MEDIA-01B private audience",
+            "media_url": media_url,
+            "visibility": PostVisibility.FOLLOWERS.value,
+        },
+    )
+    assert created.status_code == 201, created.text
+
+    owner_ok = await auth_client.get(media_url, headers=_headers(token))
+    assert owner_ok.status_code == 200
+
+    refused = await auth_client.get(media_url, headers=_headers(stranger["access_token"]))
+    assert refused.status_code == 404
+    assert MINIMAL_JPEG_BYTES not in refused.content
+    assert "application/json" in refused.headers.get("content-type", "")

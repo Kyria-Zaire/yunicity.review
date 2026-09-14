@@ -1,6 +1,7 @@
 "use client";
 
 import { ProfileAvatar } from "@/components/profile-avatar";
+import { AuthorizedPostImage } from "@/components/feed/authorized-post-image";
 import type { FeedPost } from "@yunicity/types";
 import { formatProfileActivityTimestamp } from "@yunicity/utils";
 import { Heart, MessageCircle, MoreVertical } from "lucide-react";
@@ -48,12 +49,11 @@ export function ProfileMobilePostCard({
             </p>
           ) : null}
           {post.media_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={post.media_url}
+            <AuthorizedPostImage
+              mediaUrl={post.media_url}
               alt=""
-              loading="lazy"
-              className="h-24 w-24 shrink-0 rounded-xl object-cover"
+              className="h-24 w-24 shrink-0 overflow-hidden rounded-xl"
+              imgClassName="h-24 w-24 rounded-xl object-cover"
             />
           ) : null}
         </div>

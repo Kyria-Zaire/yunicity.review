@@ -9,7 +9,9 @@ import type { AuthorizedMediaStatus } from "@/hooks/use-authorized-media-source"
 
 /**
  * États visuels d'une image de publication authentifiée (MEDIA-01B).
- * Vue pure — le chargement Bearer → Blob est porté par le hook parent.
+ *
+ * Pendant `decoding`, l'`<img>` est présent pour déclencher le décodage mais
+ * masqué (pas de pictogramme cassé). `ready` uniquement après `onLoad`.
  */
 export function AuthorizedPublicationImageView({
   status,
@@ -18,6 +20,8 @@ export function AuthorizedPublicationImageView({
   className = "",
   imgClassName = "",
   onRetry,
+  onDisplayed = () => undefined,
+  onDecodeFailed = () => undefined,
 }: {
   status: AuthorizedMediaStatus;
   objectUrl: string | null;
@@ -25,6 +29,8 @@ export function AuthorizedPublicationImageView({
   className?: string;
   imgClassName?: string;
   onRetry: () => void;
+  onDisplayed?: () => void;
+  onDecodeFailed?: () => void;
 }) {
   if (status === "loading" || status === "idle") {
     return (
@@ -39,7 +45,7 @@ export function AuthorizedPublicationImageView({
     );
   }
 
-  if (status === "error" || !objectUrl) {
+  if (status === "error" || (!objectUrl && status !== "decoding")) {
     return (
       <div
         data-authorized-media-state="error"
@@ -59,15 +65,43 @@ export function AuthorizedPublicationImageView({
     );
   }
 
-  return (
-    // eslint-disable-next-line @next/next/no-img-element -- blob local authentifié, hors next/image
-    <img
-      data-authorized-media-state="ready"
-      src={objectUrl}
-      alt={alt}
-      loading="lazy"
-      decoding="async"
-      className={imgClassName || className}
-    />
-  );
+  if (status === "decoding" && objectUrl) {
+    return (
+      <div
+        data-authorized-media-state="decoding"
+        className={`relative flex min-h-[12rem] w-full items-center justify-center bg-neutral-100 motion-safe:animate-pulse ${className}`}
+        role="status"
+        aria-label="Décodage de l’image"
+      >
+        <span className="sr-only">Décodage de l’image</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={objectUrl}
+          alt=""
+          aria-hidden
+          decoding="async"
+          onLoad={onDisplayed}
+          onError={onDecodeFailed}
+          className="pointer-events-none absolute h-0 w-0 opacity-0"
+        />
+      </div>
+    );
+  }
+
+  if (status === "ready" && objectUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- blob local authentifié
+      <img
+        data-authorized-media-state="ready"
+        src={objectUrl}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        onError={onDecodeFailed}
+        className={imgClassName || className}
+      />
+    );
+  }
+
+  return null;
 }

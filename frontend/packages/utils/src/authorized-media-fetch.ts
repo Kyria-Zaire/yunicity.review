@@ -1,5 +1,6 @@
 import type { AuthClient } from "./auth/auth-client";
 import { AuthError } from "./auth/auth-errors";
+import { COMPOSER_MEDIA_MAX_BYTES } from "./composer-media";
 import {
   AuthorizedMediaUrlError,
   resolveAuthorizedApiMediaUrl,
@@ -8,15 +9,15 @@ import {
 /**
  * GET authentifié d'un média image via le client existant (MEDIA-01B).
  *
- * Le Bearer voyage uniquement dans `Authorization`, jamais dans l'URL ni le
- * `src` d'un `<img>`. Les redirections sont refusées pour qu'un hop externe ne
- * puisse pas recevoir le header. Le corps n'est exposé comme Blob que si le
- * Content-Type est `image/*`.
+ * Types acceptés : JPEG / PNG / WebP uniquement (contrat StoryMediaService).
+ * Redirections refusées ; taille plafonnée à COMPOSER_MEDIA_MAX_BYTES.
  */
 
 export type AuthorizedMediaFetchErrorCode =
   | "INVALID_CONTENT_TYPE"
   | "EMPTY_BODY"
+  | "OVERSIZE"
+  | "UNEXPECTED_STATUS"
   | "NETWORK"
   | "ABORTED";
 
@@ -34,20 +35,29 @@ export class AuthorizedMediaFetchError extends Error {
 
 export type AuthorizedMediaBlob = {
   blob: Blob;
-  contentType: string;
+  contentType: "image/jpeg" | "image/png" | "image/webp";
 };
 
-function isImageContentType(value: string | null): string | null {
+const ALLOWED_CONTENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+function parseAllowedContentType(
+  value: string | null,
+): "image/jpeg" | "image/png" | "image/webp" | null {
   if (!value) return null;
+  // Un seul type MIME — pas de liste CSV.
+  if (value.includes(",")) return null;
   const mime = value.split(";", 1)[0]?.trim().toLowerCase() ?? "";
-  return mime.startsWith("image/") ? mime : null;
+  if (!ALLOWED_CONTENT_TYPES.has(mime)) return null;
+  return mime as "image/jpeg" | "image/png" | "image/webp";
 }
 
 export async function fetchAuthorizedMediaBlob(
   client: AuthClient,
   mediaUrl: string,
-  options?: { signal?: AbortSignal; publicApiUrl?: string },
+  options?: { signal?: AbortSignal; publicApiUrl?: string; maxBytes?: number },
 ): Promise<AuthorizedMediaBlob> {
+  const maxBytes = options?.maxBytes ?? COMPOSER_MEDIA_MAX_BYTES;
+  // Validation d'origine/chemin AVANT tout appel authentifié (donc avant Bearer).
   const target = resolveAuthorizedApiMediaUrl(mediaUrl, {
     publicApiUrl: options?.publicApiUrl,
   });
@@ -57,8 +67,6 @@ export async function fetchAuthorizedMediaBlob(
     response = await client.fetch(target, {
       method: "GET",
       signal: options?.signal,
-      // Refuse tout hop : un redirect cross-origin pourrait autrement emporter
-      // Authorization. Pas de suivi manuel non plus — échec explicite.
       redirect: "error",
     });
   } catch (error) {
@@ -77,12 +85,38 @@ export async function fetchAuthorizedMediaBlob(
     );
   }
 
-  const contentType = isImageContentType(response.headers.get("content-type"));
+  if (response.status === 204 || response.status === 206) {
+    try {
+      await response.arrayBuffer();
+    } catch {
+      /* ignore */
+    }
+    throw new AuthorizedMediaFetchError(
+      "UNEXPECTED_STATUS",
+      "Réponse média inattendue.",
+      response.status,
+    );
+  }
+
+  const declared = response.headers.get("content-length");
+  if (declared) {
+    const length = Number(declared);
+    if (Number.isFinite(length) && length > maxBytes) {
+      try {
+        await response.arrayBuffer();
+      } catch {
+        /* ignore */
+      }
+      throw new AuthorizedMediaFetchError("OVERSIZE", "Média trop volumineux.", response.status);
+    }
+  }
+
+  const contentType = parseAllowedContentType(response.headers.get("content-type"));
   if (!contentType) {
     try {
       await response.arrayBuffer();
     } catch {
-      // Corps déjà consommé ou coupé — ignorer.
+      /* ignore */
     }
     throw new AuthorizedMediaFetchError(
       "INVALID_CONTENT_TYPE",
@@ -94,6 +128,9 @@ export async function fetchAuthorizedMediaBlob(
   const blob = await response.blob();
   if (blob.size === 0) {
     throw new AuthorizedMediaFetchError("EMPTY_BODY", "Réponse média vide.", response.status);
+  }
+  if (blob.size > maxBytes) {
+    throw new AuthorizedMediaFetchError("OVERSIZE", "Média trop volumineux.", response.status);
   }
 
   return { blob, contentType };

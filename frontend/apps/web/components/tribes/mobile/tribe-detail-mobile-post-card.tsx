@@ -1,7 +1,7 @@
 "use client";
 
-import { CulturalImage } from "@/components/culture/cultural-image";
 import { ProfileAvatar } from "@/components/profile-avatar";
+import { AuthorizedPostImage } from "@/components/feed/authorized-post-image";
 import type { FeedPost } from "@yunicity/types";
 import { formatProfileActivityTimestamp } from "@yunicity/utils";
 import { Bookmark, Heart, MessageCircle } from "lucide-react";
@@ -37,14 +37,11 @@ export function TribeDetailMobilePostCard({ post, onToggleLike }: TribeDetailMob
 
         {post.media_url ? (
           <div className="relative mt-3 overflow-hidden rounded-xl bg-neutral-100">
-            <CulturalImage
-              src={post.media_url}
+            <AuthorizedPostImage
+              mediaUrl={post.media_url}
               alt=""
-              placeName={authorLabel}
-              className="max-h-52 w-full object-cover"
-              sizes="100vw"
-              showFallbackCaption={false}
-              overlay={false}
+              className="max-h-52 w-full"
+              imgClassName="max-h-52 w-full object-cover"
             />
           </div>
         ) : null}

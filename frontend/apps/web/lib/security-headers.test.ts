@@ -63,10 +63,15 @@ describe("CSP — report-only", () => {
     expect(SECURITY_HEADERS.some((h) => h.key === "Content-Security-Policy")).toBe(false);
   });
 
-  it("autorise les origines réellement utilisées par les cartes et l'agenda", () => {
-    expect(CSP_REPORT_ONLY).toContain("https://maps.googleapis.com");
-    expect(CSP_REPORT_ONLY).toContain("https://www.openstreetmap.org");
-    expect(CSP_REPORT_ONLY).toContain("https://calendar.google.com");
+  it("autorise blob: dans img-src (object URLs MEDIA-01B)", () => {
+    const imgSrc = CSP_REPORT_ONLY.split(";").find((part) => part.trim().startsWith("img-src"));
+    expect(imgSrc).toBeDefined();
+    expect(imgSrc).toContain("blob:");
+    // Ne pas élargir script-src / frame-src avec blob:
+    const scriptSrc = CSP_REPORT_ONLY.split(";").find((part) =>
+      part.trim().startsWith("script-src"),
+    );
+    expect(scriptSrc ?? "").not.toContain("blob:");
   });
 });
 

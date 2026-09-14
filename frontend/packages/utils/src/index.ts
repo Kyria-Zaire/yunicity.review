@@ -19,11 +19,6 @@ export {
 export { getApiBaseUrl, getExpoApiBaseUrl, getWebApiBaseUrl, resolveWebApiBaseUrl } from "./api-base-url";
 export { resolveApiMediaUrl } from "./api-media-url";
 export {
-  AuthorizedMediaUrlError,
-  resolveAuthorizedApiMediaUrl,
-  type AuthorizedMediaUrlErrorCode,
-} from "./authorized-media-url";
-export {
   AUTHORIZED_MEDIA_RETRY_LABEL,
   AUTHORIZED_MEDIA_UNAVAILABLE,
   AuthorizedMediaFetchError,
@@ -31,6 +26,17 @@ export {
   type AuthorizedMediaBlob,
   type AuthorizedMediaFetchErrorCode,
 } from "./authorized-media-fetch";
+export {
+  __authorizedObjectUrlRetainCountForTests,
+  releaseAuthorizedObjectUrl,
+  retainAuthorizedObjectUrl,
+} from "./authorized-media-object-url";
+export {
+  AUTHORIZED_STORY_MEDIA_PATH,
+  AuthorizedMediaUrlError,
+  resolveAuthorizedApiMediaUrl,
+  type AuthorizedMediaUrlErrorCode,
+} from "./authorized-media-url";
 export {
   TURNSTILE_SCRIPT_URL,
   TURNSTILE_TEST_SITE_KEY_ALWAYS_BLOCKS,

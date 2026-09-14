@@ -16,6 +16,7 @@ import {
 import { ArrowRight, Bookmark, MoreHorizontal, Share2 } from "lucide-react";
 import Link from "next/link";
 import { AvatarImage } from "@/components/avatar-image";
+import { AuthorizedPostImage } from "@/components/feed/authorized-post-image";
 
 type ProfileDesktopPublicationsProps = {
   posts: FeedPost[];
@@ -156,22 +157,20 @@ export function ProfileDesktopPublications({
                   ) : null}
 
                   {isFeatured && post.media_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={post.media_url}
+                    <AuthorizedPostImage
+                      mediaUrl={post.media_url}
                       alt=""
-                      loading="lazy"
-                      className="mt-3 max-h-72 w-full rounded-xl object-cover"
+                      className="mt-3 max-h-72 w-full overflow-hidden rounded-xl"
+                      imgClassName="mt-3 max-h-72 w-full rounded-xl object-cover"
                     />
                   ) : null}
 
                   {!isFeatured && post.media_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={post.media_url}
+                    <AuthorizedPostImage
+                      mediaUrl={post.media_url}
                       alt=""
-                      loading="lazy"
-                      className="mt-3 h-20 w-20 rounded-lg object-cover"
+                      className="mt-3 h-20 w-20 overflow-hidden rounded-lg"
+                      imgClassName="mt-3 h-20 w-20 rounded-lg object-cover"
                     />
                   ) : null}
 
