@@ -27,7 +27,14 @@ export {
   type AuthorizedMediaFetchErrorCode,
 } from "./authorized-media-fetch";
 export {
+  __authorizedMediaActiveFetchCountForTests,
+  __authorizedMediaRegistrySizeForTests,
   __authorizedObjectUrlRetainCountForTests,
+  __resetAuthorizedMediaSessionForTests,
+  beginAuthorizedMediaFetch,
+  clearAuthorizedMediaSession,
+  getAuthorizedMediaEpoch,
+  onAuthorizedMediaSessionClear,
   releaseAuthorizedObjectUrl,
   retainAuthorizedObjectUrl,
 } from "./authorized-media-object-url";

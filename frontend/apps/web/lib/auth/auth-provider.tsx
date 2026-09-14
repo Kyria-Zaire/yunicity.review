@@ -3,6 +3,7 @@
 import type { AuthUser, LoginRequest, RegisterRequest } from "@yunicity/types";
 import {
   MemoryTokenStorage,
+  clearAuthorizedMediaSession,
   createAuthClient,
   createYunicityApi,
   getWebApiBaseUrl,
@@ -18,6 +19,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -65,6 +67,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         platform: "web",
         storage,
         onSessionCleared: () => {
+          // Point central : logout, 401 final, refresh refusé, session révoquée.
+          try {
+            clearAuthorizedMediaSession();
+          } catch {
+            /* ne jamais bloquer la déconnexion */
+          }
           syncPassportSessionUser(null);
           setUser(null);
         },
@@ -137,11 +145,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     syncPassportSessionUser(user?.id ?? null);
   }, [user?.id]);
 
+  /** Switch de compte A→B sans passer par clearSession (ex. login direct). */
+  const previousUserIdRef = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    const previous = previousUserIdRef.current;
+    const next = user?.id ?? null;
+    if (previous === undefined) {
+      previousUserIdRef.current = next;
+      return;
+    }
+    if (previous && next && previous !== next) {
+      try {
+        clearAuthorizedMediaSession();
+      } catch {
+        /* ignore */
+      }
+    }
+    previousUserIdRef.current = next;
+  }, [user?.id]);
+
   const login = useCallback(
     async (payload: LoginRequest) => {
       setError(null);
       try {
         const response = await client.login(payload);
+        // Connexion (y compris A→B) : nouvelle génération média, pas de Blob hérité.
+        try {
+          clearAuthorizedMediaSession();
+        } catch {
+          /* ignore */
+        }
         setUser(response.user);
         return true;
       } catch (err) {
@@ -164,6 +197,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           rememberPendingVerificationEmail(response.user.email);
           return { status: "verification_required" };
         }
+        try {
+          clearAuthorizedMediaSession();
+        } catch {
+          /* ignore */
+        }
         setUser(response.user);
         return { status: "authenticated" };
       } catch (err) {
@@ -176,6 +214,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     setError(null);
+    // Même primitive que onSessionCleared (idempotente) — avant credentials.
+    try {
+      clearAuthorizedMediaSession();
+    } catch {
+      /* ne jamais bloquer la déconnexion */
+    }
     await client.logout();
     setUser(null);
   }, [client]);

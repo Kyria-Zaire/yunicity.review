@@ -17,6 +17,7 @@ import {
   AUTHORIZED_MEDIA_RETRY_LABEL,
   AUTHORIZED_MEDIA_UNAVAILABLE,
   __authorizedObjectUrlRetainCountForTests,
+  __resetAuthorizedMediaSessionForTests,
   releaseAuthorizedObjectUrl,
   retainAuthorizedObjectUrl,
 } from "@yunicity/utils";
@@ -40,6 +41,7 @@ afterEach(() => {
   cleanup();
   fetchAuthorizedMediaBlob.mockReset();
   __resetFeedMediaViewerSessionForTests();
+  __resetAuthorizedMediaSessionForTests();
 });
 
 async function waitDecodingImg(container: HTMLElement): Promise<HTMLImageElement> {
