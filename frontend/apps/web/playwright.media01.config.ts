@@ -18,7 +18,7 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./e2e/responsive",
-  testMatch: /media01(?:b-authorized-image)?-.*responsive\.spec\.ts$|media02-.*(responsive|layout-shift)\.spec\.ts$/,
+  testMatch: /media01(?:b-authorized-image)?-.*responsive\.spec\.ts$|media02-.*(responsive|layout-shift|interaction-accessibility|surfaces-variants)\.spec\.ts$/,
   fullyParallel: false,
   workers: 1,
   forbidOnly: true,
