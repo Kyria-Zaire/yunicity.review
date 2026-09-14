@@ -43,7 +43,23 @@ export function feedAspectRatioForOrientation(orientation: MediaOrientation): st
 
 /**
  * Orientation utilisée tant que les dimensions ne sont pas connues.
- * Portrait 4:5 : plafond de hauteur le plus haut autorisé — on ne grandit jamais après.
+ *
+ * Portrait 4:5 est le cadre le plus HAUT autorisé. Ce choix garantit la seule
+ * propriété qui compte vraiment pour la lecture : **le cadre ne grandit jamais
+ * après mesure**, donc rien n'est repoussé vers le bas sous les yeux du lecteur.
+ *
+ * En contrepartie il se CONTRACTE quand le média mesuré est plus large que 4:5.
+ * Mesuré en navigateur (viewport 844 px en mobile, 900 px ailleurs) :
+ *
+ *   orientation finale   390 px    900 px    1440 px
+ *   portrait               0 px      0 px       0 px
+ *   carré                  0 px    −64 px     −96 px
+ *   paysage / ultra-large −153 px  −256 px    −306 px
+ *
+ * Aucune valeur de défaut ne supprime ce saut : choisir 16:9 ferait GRANDIR les
+ * portraits d'autant, ce qui est pire. Le supprimer demande de connaître les
+ * dimensions avant la mise en page, donc des métadonnées servies par l'API —
+ * hors du périmètre MEDIA-02. Dette : MEDIA-03-INTRINSIC-DIMENSIONS.
  */
 export function defaultFeedOrientation(): MediaOrientation {
   return "portrait";
