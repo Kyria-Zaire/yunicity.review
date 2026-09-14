@@ -10,7 +10,8 @@
     "start": "cross-env NEXT_BUILD_DIR=.next-build next start --port 3000",
     "lint": "next lint",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:media01-responsive": "playwright test --config=playwright.media01.config.ts"
   },
   "dependencies": {
     "@googlemaps/markerclusterer": "^2.6.2",

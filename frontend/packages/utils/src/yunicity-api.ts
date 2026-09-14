@@ -533,8 +533,8 @@ export class YunicityApi {
     return this.feed.createPost(payload);
   }
 
-  uploadPostMedia(file: File): Promise<PostMediaUploadResponse> {
-    return this.feed.uploadPostMedia(file);
+  uploadPostMedia(file: File, signal?: AbortSignal): Promise<PostMediaUploadResponse> {
+    return this.feed.uploadPostMedia(file, signal);
   }
 
   likeFeedPost(postId: string): Promise<void> {
