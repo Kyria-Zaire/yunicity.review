@@ -228,19 +228,24 @@ describe("useComposerMedia — MEDIA-01", () => {
     expect(result.current.errorContext?.stage).toBe("publication");
   });
 
-  it("révoque l'object URL quand la prévisualisation n'est plus utilisée", async () => {
-    uploadPostMedia.mockResolvedValue({ url: "/final.jpg" });
+  it("conserve l'aperçu local après upload 201 et n'utilise pas l'URL distante dans displayUrl", async () => {
+    uploadPostMedia.mockResolvedValue({ url: "/api/v1/story-media/u/final.jpg" });
     const { result } = renderHook(() => useComposerMedia());
     await act(async () => {
       await result.current.onFileChange(image("photo.jpg"));
     });
     expect(createObjectURL).toHaveBeenCalled();
-    expect(revokeObjectURL).toHaveBeenCalled();
-    expect(result.current.previewUrl).toBeNull();
-    expect(result.current.displayUrl).toBe("/final.jpg");
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    expect(result.current.previewUrl).toBe("blob:preview-photo.jpg");
+    expect(result.current.displayUrl).toBe("blob:preview-photo.jpg");
+    expect(result.current.mediaUrl).toBe("/api/v1/story-media/u/final.jpg");
+    expect(result.current.displayUrl).not.toMatch(/^\/api\/v1\//);
+    expect(result.current.mediaUrl).not.toMatch(/^blob:/);
 
     act(() => result.current.clearMedia());
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:preview-photo.jpg");
     expect(result.current.displayUrl).toBeNull();
+    expect(result.current.mediaUrl).toBeNull();
   });
 
   it("n'affiche pas d'erreur visible pour une annulation AbortError", async () => {

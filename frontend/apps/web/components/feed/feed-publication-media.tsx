@@ -2,28 +2,17 @@
 
 import { useState } from "react";
 
+import { AuthorizedPublicationImageView } from "@/components/feed/authorized-publication-image";
 import { FeedMobileMediaViewer } from "@/components/feed/mobile/feed-mobile-media-viewer";
+import { useAuthorizedMediaSource } from "@/hooks/use-authorized-media-source";
 
 /**
  * Média d'une publication — responsabilité UNIQUE (C3-FEED-UNIFIED-PUBLICATION-CARD-R2A).
  *
- * ── Ce que ce composant remplace ─────────────────────────────────────────────
- * La carte bifurquait : `FeedMobileMedia` en mobile (image cliquable +
- * visionneuse + vidéo avec overlay de lecture), et un `<img>` nu partout
- * ailleurs. Ce `<img>` recevait aussi les `media_url` de VIDÉO — il affichait
- * donc une image cassée sur desktop et medium, sans visionneuse. Le défaut est
- * fermé ici : une seule responsabilité, tous les écrans.
+ * Images (MEDIA-01B) : GET Bearer vers l'API → Blob → object URL. La carte et la
+ * visionneuse partagent la même source ; aucun `<img src>` relatif WEB.
  *
- * ── Ce qui est conservé à l'identique ────────────────────────────────────────
- * Détection vidéo, `muted` + `playsInline` + `preload="metadata"` (aucun
- * autoplay sonore, aucune lecture spontanée), overlay de lecture, visionneuse
- * `FeedMobileMediaViewer`, `alt` dérivé du corps, ancrage explicite du focus au
- * clic pour que WebKit restitue le focus au déclencheur à la fermeture.
- *
- * ── Ce qui varie par bande ───────────────────────────────────────────────────
- * Uniquement le bord à bord et la hauteur, portés par `.feed-publication-media`
- * dans `globals.css`. Aucune identité, aucun contrôle, aucun `alt` ne dépend de
- * la largeur.
+ * Vidéos : contrat inchangé (`<video src={mediaUrl}>`).
  */
 
 function isVideoMediaUrl(url: string): boolean {
@@ -53,6 +42,7 @@ export function FeedPublicationMedia({
   const isVideo = isVideoMediaUrl(mediaUrl);
   const [viewerOpen, setViewerOpen] = useState(false);
   const alt = label?.trim() ? label.trim() : "Image de la publication";
+  const image = useAuthorizedMediaSource(isVideo ? null : mediaUrl);
 
   if (isVideo) {
     return (
@@ -77,42 +67,47 @@ export function FeedPublicationMedia({
     );
   }
 
+  const canOpenViewer = image.status === "ready" && Boolean(image.objectUrl);
+
   return (
     <>
-      {/* Le conteneur porte le bord a bord : un <button> reste en shrink-to-fit
-          meme en `display:block` et ne peut donc pas le porter (mesure C3.1-R1L :
-          175 px au lieu de 390). Le declencheur est A L'INTERIEUR, pleine largeur. */}
       <div
         data-feed-publication-media=""
         data-feed-publication-media-kind="image"
         className="feed-publication-media mt-3 overflow-hidden rounded-xl border border-yunicity-border bg-neutral-50"
       >
-        <button
-          type="button"
-          onClick={(event) => {
-            // WebKit ne donne pas le focus a un bouton au clic : sans cet ancrage
-            // explicite, la visionneuse memorise `body` et le focus n'est pas
-            // rendu au declencheur a la fermeture.
-            event.currentTarget.focus();
-            setViewerOpen(true);
-          }}
-          aria-label="Agrandir l’image"
-          className="block w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-yunicity-primary/50"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={mediaUrl}
+        {canOpenViewer ? (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.currentTarget.focus();
+              setViewerOpen(true);
+            }}
+            aria-label="Agrandir l’image"
+            className="block w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-yunicity-primary/50"
+          >
+            <AuthorizedPublicationImageView
+              status={image.status}
+              objectUrl={image.objectUrl}
+              alt={alt}
+              imgClassName="feed-publication-media-img mx-auto block w-full rounded-xl object-contain"
+              onRetry={image.retry}
+            />
+          </button>
+        ) : (
+          <AuthorizedPublicationImageView
+            status={image.status}
+            objectUrl={image.objectUrl}
             alt={alt}
-            loading="lazy"
-            decoding="async"
-            className="feed-publication-media-img mx-auto block w-full rounded-xl object-contain"
+            imgClassName="feed-publication-media-img mx-auto block w-full rounded-xl object-contain"
+            onRetry={image.retry}
           />
-        </button>
+        )}
       </div>
       <FeedMobileMediaViewer
-        open={viewerOpen}
+        open={viewerOpen && canOpenViewer}
         onOpenChange={setViewerOpen}
-        mediaUrl={mediaUrl}
+        objectUrl={image.objectUrl}
         label={alt}
       />
     </>

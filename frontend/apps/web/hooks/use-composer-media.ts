@@ -192,7 +192,10 @@ export function useComposerMedia() {
           return;
         }
         setMediaUrl(response.url);
-        setLocalPreview(null);
+        // MEDIA-01B : conserver l'object URL locale pour l'aperçu. L'URL relative
+        // distante ne doit jamais remplacer le src du <img> du composer — le
+        // navigateur la résoudrait contre l'origine WEB. Le payload, lui, garde
+        // uniquement response.url (remoteMediaUrl).
         setPhase("ready");
       } catch (error) {
         if (!mountedRef.current || generation !== generationRef.current) return;
@@ -238,8 +241,7 @@ export function useComposerMedia() {
   }, [invalidateActiveUpload, resetFileInput, setLocalPreview]);
 
   /** True while a selected media must finish uploading before publish. */
-  const mediaBusy =
-    phase === "validating" || phase === "uploading" || phase === "publishing" || Boolean(previewUrl);
+  const mediaBusy = phase === "validating" || phase === "uploading" || phase === "publishing";
 
   /**
    * Un média que l'utilisateur a choisi et que nous avons refusé — format,
@@ -306,10 +308,15 @@ export function useComposerMedia() {
 
   return {
     fileInputRef,
+    /** URL distante relative (`/api/v1/story-media/...`) — seule valeur envoyée au POST. */
     mediaUrl,
-    /** Local object URL or null — use `displayUrl` for preview rendering. */
+    /** Object URL locale — seule source du <img> d'aperçu (jamais l'URL relative). */
     previewUrl,
-    displayUrl: mediaUrl ?? previewUrl,
+    /**
+     * Aperçu affiché : object URL locale tant qu'elle existe. Après clear/succès,
+     * null. On ne retombe jamais sur `mediaUrl` relative (cassée hors même origine).
+     */
+    displayUrl: previewUrl,
     uploading,
     mediaError,
     phase,

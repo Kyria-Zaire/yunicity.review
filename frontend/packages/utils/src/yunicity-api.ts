@@ -120,6 +120,10 @@ import {
 import { PartnerPassportApi, createPartnerPassportApi } from "./partner-passport-api";
 import { CreatorPublicApi, createCreatorPublicApi } from "./creator-public-api";
 import { PartnersApi, createPartnersApi, fetchPublicPartnerOffers } from "./partners-api";
+import {
+  fetchAuthorizedMediaBlob as fetchAuthorizedMediaBlobRequest,
+  type AuthorizedMediaBlob,
+} from "./authorized-media-fetch";
 
 /** FaÃƒÆ’Ã‚Â§ade profile + organizations + passport. */
 export class YunicityApi {
@@ -535,6 +539,17 @@ export class YunicityApi {
 
   uploadPostMedia(file: File, signal?: AbortSignal): Promise<PostMediaUploadResponse> {
     return this.feed.uploadPostMedia(file, signal);
+  }
+
+  /**
+   * Charge un média de publication via GET Bearer vers l'origine API (MEDIA-01B).
+   * Retourne un Blob image — jamais une URL relative WEB ni un token dans le src.
+   */
+  fetchAuthorizedMediaBlob(mediaUrl: string, signal?: AbortSignal): Promise<AuthorizedMediaBlob> {
+    return fetchAuthorizedMediaBlobRequest(this.auth, mediaUrl, {
+      signal,
+      publicApiUrl: this.apiBaseUrl || undefined,
+    });
   }
 
   likeFeedPost(postId: string): Promise<void> {

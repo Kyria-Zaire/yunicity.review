@@ -136,10 +136,10 @@ function isDirectApiCall(url: string): boolean {
   return /:(8010|8000)\/api\//.test(url);
 }
 
-async function expectLoadedSameOriginImage(image: Locator): Promise<void> {
+async function expectLoadedAuthorizedImage(image: Locator): Promise<void> {
   await expect(image).toBeVisible();
   const src = await image.getAttribute("src");
-  expect(src).toMatch(/^\/api\/v1\/story-media\//);
+  expect(src).toMatch(/^blob:/);
   await expect
     .poll(async () => image.evaluate((node) => (node as HTMLImageElement).naturalWidth))
     .toBeGreaterThan(1);
@@ -261,7 +261,7 @@ test.describe("C3.1-R1C — Portrait Media Visual Closure", () => {
 
         // ─── Aperçu ───────────────────────────────────────────────
         const preview = composer.locator("img").first();
-        await expectLoadedSameOriginImage(preview);
+        await expectLoadedAuthorizedImage(preview);
 
         await expectAspectRatioPreserved(
           preview,
@@ -324,7 +324,7 @@ test.describe("C3.1-R1C — Portrait Media Visual Closure", () => {
         );
         await replaceChooser.setFiles(replacementFilePayload);
         expect((await replaceWait).status()).toBe(201);
-        await expectLoadedSameOriginImage(composer.locator("img").first());
+        await expectLoadedAuthorizedImage(composer.locator("img").first());
 
         await btnRemove.click();
         await expect(composer.locator("img")).toHaveCount(0);
@@ -335,7 +335,7 @@ test.describe("C3.1-R1C — Portrait Media Visual Closure", () => {
         );
         await fileInput.setInputFiles(filePayload);
         expect((await readdWait).status()).toBe(201);
-        await expectLoadedSameOriginImage(composer.locator("img").first());
+        await expectLoadedAuthorizedImage(composer.locator("img").first());
 
         // ─── Publier ──────────────────────────────────────────────
         const marker = `C3RC ${ratioName} ${viewport.name} ${Date.now()}`;
@@ -355,7 +355,7 @@ test.describe("C3.1-R1C — Portrait Media Visual Closure", () => {
         const card = visibleFeedArticle(page, marker);
         await expect(card).toBeVisible({ timeout: COLD_START_TIMEOUT });
         const feedImg = card.locator("img").first();
-        await expectLoadedSameOriginImage(feedImg);
+        await expectLoadedAuthorizedImage(feedImg);
         await expectAspectRatioPreserved(
           feedImg,
           naturalRatio,
@@ -369,7 +369,7 @@ test.describe("C3.1-R1C — Portrait Media Visual Closure", () => {
         const reloaded = visibleFeedArticle(page, marker);
         await expect(reloaded).toBeVisible({ timeout: COLD_START_TIMEOUT });
         const reloadImg = reloaded.locator("img").first();
-        await expectLoadedSameOriginImage(reloadImg);
+        await expectLoadedAuthorizedImage(reloadImg);
         await expectAspectRatioPreserved(
           reloadImg,
           naturalRatio,

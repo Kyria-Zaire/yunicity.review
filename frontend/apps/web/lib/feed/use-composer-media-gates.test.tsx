@@ -395,9 +395,10 @@ describe("GATE 3 — double montage Strict Mode", () => {
       await result.current.onFileChange(image("a.jpg"));
     });
     expect(vi.getTimerCount()).toBe(0);
-    // Un seul aperçu a été créé, et il a été révoqué au passage en `ready`.
+    // MEDIA-01B : l'aperçu local reste vivant après `ready` (révocation au clear/unmount).
     expect(createObjectURL).toHaveBeenCalledTimes(1);
-    expect(revokeObjectURL).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURL).toHaveBeenCalledTimes(0);
+    expect(result.current.displayUrl).toMatch(/^blob:/);
   });
 
   it("un seul envoi est déclenché malgré le double montage", async () => {
@@ -534,16 +535,16 @@ describe("GATE 7 — cycle de vie des object URL", () => {
     expect(createObjectURL).toHaveBeenCalledTimes(2);
   });
 
-  it("succès d'envoi : l'aperçu local est révoqué et l'URL distante prend le relais", async () => {
-    uploadPostMedia.mockResolvedValue({ url: "https://distant/a.jpg" });
+  it("succès d'envoi : l'aperçu local est conservé ; mediaUrl distant séparé", async () => {
+    uploadPostMedia.mockResolvedValue({ url: "/api/v1/story-media/u/a.jpg" });
     const { result } = renderHook(() => useComposerMedia());
     await act(async () => {
       await result.current.onFileChange(image("a.jpg"));
     });
-    expect(revokeObjectURL).toHaveBeenCalledTimes(1);
-    expect(result.current.displayUrl).toBe("https://distant/a.jpg");
-    // On ne révoque jamais une URL distante.
-    expect(revokeObjectURL).not.toHaveBeenCalledWith("https://distant/a.jpg");
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    expect(result.current.displayUrl).toBe("blob:preview-a.jpg");
+    expect(result.current.mediaUrl).toBe("/api/v1/story-media/u/a.jpg");
+    expect(result.current.mediaUrl).not.toMatch(/^blob:/);
   });
 
   it("retrait : révocation unique", async () => {
@@ -560,7 +561,7 @@ describe("GATE 7 — cycle de vie des object URL", () => {
   });
 
   it("sélection invalide après un aperçu valide : l'ancien aperçu est libéré", async () => {
-    uploadPostMedia.mockResolvedValue({ url: "/media/a.jpg" });
+    uploadPostMedia.mockResolvedValue({ url: "/api/v1/story-media/u/a.jpg" });
     const { result } = renderHook(() => useComposerMedia());
     await act(async () => {
       await result.current.onFileChange(image("a.jpg"));
@@ -570,15 +571,15 @@ describe("GATE 7 — cycle de vie des object URL", () => {
     await act(async () => {
       await result.current.onFileChange(image("doc.pdf", "application/pdf"));
     });
-    // L'aperçu du fichier refusé est créé puis immédiatement libéré.
+    // Remplace l'aperçu conservé après 201, crée puis libère celui du refus.
     expect(createObjectURL).toHaveBeenCalledTimes(1);
-    expect(revokeObjectURL).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURL).toHaveBeenCalledTimes(2);
     expect(result.current.displayUrl).toBeNull();
   });
 
-  it("erreur d'envoi puis nouvel essai : aucune URL locale abandonnée", async () => {
+  it("erreur d'envoi puis nouvel essai : une seule object URL vivante après succès", async () => {
     uploadPostMedia.mockRejectedValueOnce(new AuthError("UNKNOWN_ERROR", "x", 500));
-    uploadPostMedia.mockResolvedValueOnce({ url: "/media/a.jpg" });
+    uploadPostMedia.mockResolvedValueOnce({ url: "/api/v1/story-media/u/a.jpg" });
     const { result } = renderHook(() => useComposerMedia());
     await act(async () => {
       await result.current.onFileChange(image("a.jpg"));
@@ -586,7 +587,10 @@ describe("GATE 7 — cycle de vie des object URL", () => {
     await act(async () => {
       await result.current.onFileChange(image("a.jpg"));
     });
-    expect(createObjectURL.mock.calls.length).toBe(revokeObjectURL.mock.calls.length);
+    // Premier échec révoque ; le succès conserve l'aperçu du second essai.
+    expect(createObjectURL.mock.calls.length - revokeObjectURL.mock.calls.length).toBe(1);
+    expect(result.current.displayUrl).toMatch(/^blob:/);
+    expect(result.current.mediaUrl).toBe("/api/v1/story-media/u/a.jpg");
   });
 
   it("démontage avec aperçu en cours : libération exactement une fois", async () => {
