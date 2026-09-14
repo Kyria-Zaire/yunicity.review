@@ -20,7 +20,13 @@ import tailwindConfig from "../../tailwind.config";
  * nul ; sinon le contrat doit être énoncé pour ce qu'il est.
  */
 
-const LARGEURS = [390, 900, 1440] as const;
+const VIEWPORTS = [
+  { largeur: 390, hauteur: 844 },
+  { largeur: 393, hauteur: 852 },
+  { largeur: 430, hauteur: 932 },
+  { largeur: 900, hauteur: 900 },
+  { largeur: 1440, hauteur: 900 },
+] as const;
 
 let pageUrlCache: string | null = null;
 const dossiersTemporaires: string[] = [];
@@ -96,8 +102,7 @@ async function mesurer(page: Page, attribut: string) {
 }
 
 test.describe("MEDIA-02 — stabilité du cadre loading → ready", () => {
-  for (const largeur of LARGEURS) {
-    const hauteurVp = largeur === 390 ? 844 : 900;
+  for (const { largeur, hauteur: hauteurVp } of VIEWPORTS) {
 
     test(`${largeur} px — six rapports mesurés`, async ({ page }) => {
       await page.setViewportSize({ width: largeur, height: hauteurVp });
@@ -157,6 +162,9 @@ test.describe("MEDIA-02 — stabilité du cadre loading → ready", () => {
       //    bornée par l'écart entre le plafond et sa propre hauteur 16:9.
       for (const m of mesures) {
         expect(m.delta, `${m.cle} : le cadre grandit apres mesure`).toBeLessThanOrEqual(1);
+        if (largeur < 640) {
+          expect(m.ready, `${m.cle} : cadre mobile au-dessus de 320 px`).toBeLessThanOrEqual(322);
+        }
       }
       for (const m of mesures.filter((x) => x.oApres === "portrait")) {
         expect(Math.abs(m.delta), `${m.cle} : un portrait ne doit pas bouger`).toBeLessThanOrEqual(1);
@@ -165,6 +173,14 @@ test.describe("MEDIA-02 — stabilité du cadre loading → ready", () => {
       const plafond = Math.max(...mesures.map((m) => m.loading));
       for (const m of mesures) {
         expect(Math.abs(m.delta), `${m.cle} : contraction hors plafond`).toBeLessThanOrEqual(plafond);
+      }
+      if (largeur < 640) {
+        const portrait = mesures.find((m) => m.cle === "portrait-9-16")!;
+        for (const cle of ["paysage-4-3", "paysage-16-9", "ultra-large-21-9"]) {
+          expect(mesures.find((m) => m.cle === cle)!.ready, `${cle} plus haut que le portrait`).toBeLessThan(
+            portrait.ready,
+          );
+        }
       }
     });
   }

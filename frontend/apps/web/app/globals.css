@@ -5637,6 +5637,19 @@ html.local-video-cinema-open body {
   max-height: min(42svh, 420px);
 }
 
+@media (max-width: 639.98px) {
+  /* MEDIA-02B : Safari mobile peut exposer un svh sensiblement plus haut que
+     le viewport utile de la carte. Le premier max-height est le repli pour les
+     moteurs sans min()/unités viewport modernes ; les déclarations suivantes
+     affinent progressivement la borne, sans jamais dépasser 320 px. */
+  .publication-media-frame--feed {
+    max-height: 320px;
+    max-height: min(38vh, 320px);
+    max-height: min(38svh, 320px);
+    max-height: min(38dvh, 320px);
+  }
+}
+
 @media (min-width: 640px) and (max-width: 1023.98px) {
   .publication-media-frame--feed,
   .publication-media-frame--composer {

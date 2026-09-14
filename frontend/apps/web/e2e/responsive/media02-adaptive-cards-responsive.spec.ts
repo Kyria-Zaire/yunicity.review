@@ -14,7 +14,13 @@ import tailwindConfig from "../../tailwind.config";
  * MEDIA-02 — preuve responsive : cadre portrait compact vs legacy contain.
  */
 
-const LARGEURS = [390, 900, 1440] as const;
+const VIEWPORTS = [
+  { largeur: 390, hauteur: 844 },
+  { largeur: 393, hauteur: 852 },
+  { largeur: 430, hauteur: 932 },
+  { largeur: 900, hauteur: 900 },
+  { largeur: 1440, hauteur: 900 },
+] as const;
 
 let pageUrlCache: string | null = null;
 const dossiersTemporaires: string[] = [];
@@ -38,9 +44,15 @@ async function cssApplication(): Promise<string> {
 async function pageHarnais(): Promise<string> {
   if (pageUrlCache) return pageUrlCache;
   const css = await cssApplication();
-  if (!css.includes("publication-media-frame") && !css.includes("42svh")) {
-    // Les règles MEDIA-02 sont en CSS brut (pas Tailwind) — doivent survivre.
-    throw new Error("CSS MEDIA-02 (publication-media-frame / 42svh) absent du bundle.");
+  for (const declaration of [
+    "max-height: 320px",
+    "max-height: min(38vh, 320px)",
+    "max-height: min(38svh, 320px)",
+    "max-height: min(38dvh, 320px)",
+  ]) {
+    if (!css.includes(declaration)) {
+      throw new Error(`CSS MEDIA-02B incomplet : ${declaration} absent.`);
+    }
   }
 
   const sortie = await build({
@@ -83,13 +95,26 @@ async function ouvrir(page: Page, largeur: number, hauteur = 844): Promise<void>
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto(await pageHarnais());
   await expect(page.locator('[data-media02-card="portrait"]')).toBeVisible({ timeout: 15_000 });
+
+  for (const [orientation, width, height] of [
+    ["portrait", 1080, 1920],
+    ["landscape", 1920, 1080],
+  ] as const) {
+    await page.locator(`[data-media02-video="${orientation}"] video`).evaluate(
+      (video, dimensions) => {
+        Object.defineProperty(video, "videoWidth", { configurable: true, value: dimensions.width });
+        Object.defineProperty(video, "videoHeight", { configurable: true, value: dimensions.height });
+        video.dispatchEvent(new Event("loadedmetadata", { bubbles: true }));
+      },
+      { width, height },
+    );
+  }
 }
 
 test.describe("MEDIA-02 — cartes publication adaptatives", () => {
-  for (const largeur of LARGEURS) {
-    test.describe(`${largeur} px`, () => {
+  for (const { largeur, hauteur: hauteurVp } of VIEWPORTS) {
+    test.describe(`${largeur} x ${hauteurVp}`, () => {
       test("portrait nettement plus court que legacy ; actions hors nav", async ({ page }) => {
-        const hauteurVp = largeur === 390 ? 844 : 900;
         await ouvrir(page, largeur, hauteurVp);
 
         const frame = page.locator(
@@ -106,9 +131,13 @@ test.describe("MEDIA-02 — cartes publication adaptatives", () => {
 
         // Cadre portrait borné : plus court que l'ancien contain pleine largeur.
         expect(frameBox!.height).toBeLessThan(legacyBox!.height * 0.85);
-        // Plafond ~42/56/64 svh
+        // MEDIA-02B mobile : 38dvh avec plafond absolu ; medium/desktop inchangés.
         const maxAllowed =
-          largeur < 640 ? hauteurVp * 0.45 : largeur < 1024 ? hauteurVp * 0.6 : Math.min(hauteurVp * 0.7, 660);
+          largeur < 640
+            ? Math.min(hauteurVp * 0.38, 320)
+            : largeur < 1024
+              ? hauteurVp * 0.6
+              : Math.min(hauteurVp * 0.7, 660);
         expect(frameBox!.height).toBeLessThanOrEqual(maxAllowed + 2);
 
         const landscape = page.locator(
@@ -121,16 +150,43 @@ test.describe("MEDIA-02 — cartes publication adaptatives", () => {
 
         const actions = page.locator("[data-media02-actions]");
         const nav = page.locator("[data-media02-bottom-nav]");
+        const header = page.locator("[data-media02-main-header]");
         const actionsBox = await actions.boundingBox();
         const navBox = await nav.boundingBox();
+        const headerBox = await header.boundingBox();
         expect(actionsBox).not.toBeNull();
         expect(navBox).not.toBeNull();
+        expect(headerBox).not.toBeNull();
         // Pas de chevauchement actions / nav (actions entièrement au-dessus).
         expect(actionsBox!.y + actionsBox!.height).toBeLessThanOrEqual(navBox!.y + 1);
+        if (largeur < 640) {
+          expect(headerBox!.y + headerBox!.height).toBeLessThanOrEqual(frameBox!.y);
+          expect(actionsBox!.y + actionsBox!.height, "header, média et actions hors viewport utile").toBeLessThanOrEqual(
+            navBox!.y + 1,
+          );
+        }
 
         // Pas de scroll interne du cadre.
         const overflowY = await frame.evaluate((el) => getComputedStyle(el).overflowY);
         expect(["hidden", "clip"]).toContain(overflowY);
+        expect(await frame.locator("img").evaluate((el) => getComputedStyle(el).objectFit)).toBe("cover");
+        expect(await frame.locator("img").evaluate((el) => getComputedStyle(el).objectPosition)).toBe(
+          "50% 50%",
+        );
+
+        for (const orientation of ["portrait", "landscape"] as const) {
+          const videoHost = page.locator(`[data-media02-video="${orientation}"]`);
+          const videoFrame = videoHost.locator("[data-publication-media-frame='feed']");
+          await expect(videoFrame).toHaveAttribute("data-publication-media-orientation", orientation);
+          expect(await videoFrame.locator("video").evaluate((el) => getComputedStyle(el).objectFit)).toBe(
+            "contain",
+          );
+          const videoBox = await videoFrame.boundingBox();
+          expect(videoBox).not.toBeNull();
+          if (largeur < 640) {
+            expect(videoBox!.height).toBeLessThanOrEqual(322);
+          }
+        }
 
         // Contrat de ratio : 4:5 est la forme la PLUS HAUTE autorisee. Le plafond
         // responsive peut raccourcir le cadre, ce qui fait MONTER largeur/hauteur.

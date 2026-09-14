@@ -19,7 +19,13 @@ import tailwindConfig from "../../tailwind.config";
  * était ? C'est ce que ce fichier mesure, dans un vrai moteur de rendu.
  */
 
-const LARGEURS = [390, 900, 1440] as const;
+const VIEWPORTS = [
+  { largeur: 390, hauteur: 844 },
+  { largeur: 393, hauteur: 852 },
+  { largeur: 430, hauteur: 932 },
+  { largeur: 900, hauteur: 900 },
+  { largeur: 1440, hauteur: 900 },
+] as const;
 
 let pageUrlCache: string | null = null;
 const dossiersTemporaires: string[] = [];
@@ -104,10 +110,10 @@ function grille(page: Page, taille: number) {
 }
 
 test.describe("MEDIA-02 — grille multi-médias et visionneuse", () => {
-  for (const largeur of LARGEURS) {
-    test.describe(`${largeur} px`, () => {
+  for (const { largeur, hauteur } of VIEWPORTS) {
+    test.describe(`${largeur} x ${hauteur}`, () => {
       test("dispositions, badge +N et ordre, de 1 à 10 médias", async ({ page }) => {
-        await ouvrir(page, largeur);
+        await ouvrir(page, largeur, hauteur);
 
         const attendu: Array<[number, string, string | null, number]> = [
           // taille, disposition, badge, tuiles visibles
@@ -163,7 +169,7 @@ test.describe("MEDIA-02 — grille multi-médias et visionneuse", () => {
       });
 
       test("chaque tuile ouvre SON média, Escape ferme, le focus revient", async ({ page }) => {
-        await ouvrir(page, largeur);
+        await ouvrir(page, largeur, hauteur);
 
         const hote = grille(page, 10);
         const boutons = hote.locator("[aria-label^='Agrandir']");
@@ -200,7 +206,7 @@ test.describe("MEDIA-02 — grille multi-médias et visionneuse", () => {
       test("la visionneuse s'ouvre au clavier et son bouton Fermer est atteignable", async ({
         page,
       }) => {
-        await ouvrir(page, largeur);
+        await ouvrir(page, largeur, hauteur);
 
         const tuile = grille(page, 4).locator("[aria-label^='Agrandir']").first();
         await tuile.focus();
@@ -226,7 +232,7 @@ test.describe("MEDIA-02 — grille multi-médias et visionneuse", () => {
       });
 
       test("aucun débordement horizontal, quelle que soit la grille", async ({ page }) => {
-        await ouvrir(page, largeur);
+        await ouvrir(page, largeur, hauteur);
         const debordement = await page.evaluate(
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
         );

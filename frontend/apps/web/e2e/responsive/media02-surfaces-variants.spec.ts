@@ -19,7 +19,13 @@ import tailwindConfig from "../../tailwind.config";
  * cas qui monopolisait la hauteur avant MEDIA-02.
  */
 
-const LARGEURS = [390, 900, 1440] as const;
+const VIEWPORTS = [
+  { largeur: 390, hauteur: 844 },
+  { largeur: 393, hauteur: 852 },
+  { largeur: 430, hauteur: 932 },
+  { largeur: 900, hauteur: 900 },
+  { largeur: 1440, hauteur: 900 },
+] as const;
 
 /** Plafonds CSS de la variante `compact`, par palier. */
 function plafondCompact(largeur: number, hauteurVp: number): number {
@@ -121,8 +127,7 @@ async function cadres(page: Page): Promise<Cadre[]> {
 }
 
 test.describe("MEDIA-02 — variantes mesurées sur les six surfaces", () => {
-  for (const largeur of LARGEURS) {
-    const hauteurVp = largeur === 390 ? 844 : 900;
+  for (const { largeur, hauteur: hauteurVp } of VIEWPORTS) {
 
     test(`${largeur} px — compact et thumbnail tiennent leur contrat`, async ({ page }) => {
       await ouvrir(page, largeur, hauteurVp);

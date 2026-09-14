@@ -36,6 +36,12 @@ function mount(): void {
 
     createRoot(root).render(
       <div className="citizen-feed-shell feed-mobile-shell mx-auto max-w-lg bg-[#F4F5F7]">
+        <header
+          data-media02-main-header=""
+          className="flex min-h-[4.25rem] items-center border-b border-neutral-200 bg-white px-4"
+        >
+          <span className="text-sm font-bold">Yunicity</span>
+        </header>
         <div className="feed-main-column mx-auto max-w-[28rem] bg-white pb-24">
           <article
             data-media02-card="portrait"
@@ -109,6 +115,16 @@ function mount(): void {
             </div>
           </article>
 
+          <section data-media02-video="portrait" className="px-4 py-3">
+            <p className="text-sm text-neutral-800">Vidéo portrait</p>
+            <FeedPublicationMedia mediaUrl="/api/v1/local-videos/media02-portrait.mp4" />
+          </section>
+
+          <section data-media02-video="landscape" className="px-4 py-3">
+            <p className="text-sm text-neutral-800">Vidéo paysage</p>
+            <FeedPublicationMedia mediaUrl="/api/v1/local-videos/media02-landscape.mp4" />
+          </section>
+
           <article data-media02-legacy="portrait" className="px-4 py-3 opacity-40">
             <p className="text-xs">legacy contain (référence)</p>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -139,5 +155,3 @@ function mount(): void {
 }
 
 mount();
-
-void FeedPublicationMedia;
