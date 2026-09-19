@@ -7,6 +7,7 @@ import {
   formatLocalVideoDuration,
   formatVideoAuthorHandle,
   formatVideoTemporalLabel,
+  resolveLocalVideoLayout,
   resolveLocalVideoTeaserTitle,
 } from "@yunicity/utils";
 import { Heart, MessageCircle, MoreVertical, Play } from "lucide-react";
@@ -20,6 +21,7 @@ type VideosMobileGridCardProps = {
 export function VideosMobileGridCard({ item }: VideosMobileGridCardProps) {
   const title = resolveLocalVideoTeaserTitle(item);
   const href = buildLocalVideoTeaserHref(item.id);
+  const isPortrait = resolveLocalVideoLayout(item) === "portrait";
 
   return (
     <article className="min-w-0">
@@ -31,7 +33,8 @@ export function VideosMobileGridCard({ item }: VideosMobileGridCardProps) {
             alt=""
             loading="lazy"
             decoding="async"
-            className="aspect-[4/5] w-full object-cover"
+            data-videos-media-layout={isPortrait ? "portrait" : "landscape"}
+            className={`w-full object-cover ${isPortrait ? "aspect-[9/16]" : "aspect-video"}`}
           />
           <span className="absolute inset-0 flex items-center justify-center bg-black/10">
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-sm">

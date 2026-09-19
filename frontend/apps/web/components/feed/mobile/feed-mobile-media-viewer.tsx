@@ -1,45 +1,44 @@
 "use client";
 
+import { useEffect } from "react";
+
 import { Dialog } from "@yunicity/ui/primitives";
+import { useAuthorizedMediaSource } from "@/hooks/use-authorized-media-source";
+import { AuthorizedPublicationImageView } from "@/components/feed/authorized-publication-image";
+import { PublicationMediaFrame } from "@/components/feed/publication-media-frame";
+import { releaseAuthorizedObjectUrl, retainAuthorizedObjectUrl } from "@yunicity/utils";
 
 /**
- * Visionneuse média du fil mobile (C3.1-R1L, habillage C3.1-R1L.1).
+ * Visionneuse média du fil (C3.1-R1L + MEDIA-01B + MEDIA-02).
  *
- * Cliquer une image publiée ne produisait aucune action : l'image était un
- * `<img>` nu. La surface juste est un overlay — pas une page Média, pas le
- * lecteur Stories — et la primitive `Dialog` porte déjà, avec un contrat vérifié
- * en C3.1-R1E, tout ce que la revue exige : verrouillage du scroll d'arrière-plan,
- * piège à focus, fermeture par `Escape`, restauration du focus au déclencheur et
- * neutralisation de la bottom-nav par empilement.
- *
- * ── Habillage (R1L.1) ────────────────────────────────────────────────────────
- * Le premier jet réutilisait l'habillage `default` du Dialog : carte blanche
- * centrée, coins arrondis, en-tête titré, corps rembourré. Mesuré à l'ouverture :
- * panneau de 358 px sur un viewport de 390, 361 sur 393, et 512 sur 639 — le
- * plafond `max-w-[min(32rem,92vw)]` devenait visible dès 639. L'image agrandie
- * pouvait ainsi paraître PLUS PETITE que dans le fil, ce qui vide l'action de son
- * sens.
- *
- * D'où `chrome="bare"` : plein viewport, fond noir, aucune carte, aucun
- * rembourrage structurel, bouton de fermeture flottant dans la safe area. Le
- * titre reste rendu en `sr-only` — le nom accessible du dialogue est conservé,
- * seul son affichage disparaît, car ici c'est l'image qui est le sujet.
- *
- * `object-contain` garantit l'image entière, jamais recadrée ni déformée, en
- * paysage comme en portrait ; `max-h-[100dvh]` la contient dans le viewport.
+ * Préfère l'object URL partagée par la carte. Si elle disparaît (démontage carte
+ * / révocation) alors que le dialogue est ouvert, second fetch authentifié.
+ * Viewer = contain, original complet, distinct du cadre feed cover.
  */
 export function FeedMobileMediaViewer({
   open,
   onOpenChange,
+  objectUrl,
   mediaUrl,
   label,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  objectUrl: string | null;
+  /** URL distante pour repli si la source partagée n'est plus disponible. */
   mediaUrl: string;
-  /** Texte alternatif : le corps de la publication quand il existe. */
   label: string;
 }) {
+  const needsFallback = open && !objectUrl;
+  const fallback = useAuthorizedMediaSource(needsFallback ? mediaUrl : null);
+  const activeUrl = objectUrl ?? fallback.objectUrl;
+
+  useEffect(() => {
+    if (!open || !activeUrl) return;
+    retainAuthorizedObjectUrl(activeUrl);
+    return () => releaseAuthorizedObjectUrl(activeUrl);
+  }, [open, activeUrl]);
+
   return (
     <Dialog
       open={open}
@@ -49,14 +48,37 @@ export function FeedMobileMediaViewer({
       chrome="bare"
       className="bg-black"
     >
-      <div className="flex h-full w-full items-center justify-center">
-        {/* eslint-disable-next-line @next/next/no-img-element -- média filesystem/R2, hors next/image */}
-        <img
-          src={mediaUrl}
-          alt={label}
-          className="max-h-[100dvh] max-w-full object-contain"
-          decoding="async"
-        />
+      <div
+        className="flex h-full w-full items-center justify-center px-[max(0.5rem,env(safe-area-inset-left))] py-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+      >
+        <PublicationMediaFrame
+          variant="viewer"
+          kind="image"
+          orientation={null}
+          feedPublicationMarker={false}
+          className="flex max-h-[100dvh] max-w-full items-center justify-center"
+        >
+          {objectUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- object URL déjà décodée par la carte
+            <img
+              data-authorized-media-state="ready"
+              src={objectUrl}
+              alt={label}
+              className="publication-media-frame__media max-h-[100dvh] max-w-full object-contain"
+              decoding="async"
+            />
+          ) : (
+            <AuthorizedPublicationImageView
+              status={fallback.status === "idle" && needsFallback ? "loading" : fallback.status}
+              objectUrl={fallback.objectUrl}
+              alt={label}
+              imgClassName="publication-media-frame__media max-h-[100dvh] max-w-full object-contain"
+              onRetry={fallback.retry}
+              onDisplayed={fallback.markDisplayed}
+              onDecodeFailed={fallback.markDecodeFailed}
+            />
+          )}
+        </PublicationMediaFrame>
       </div>
     </Dialog>
   );

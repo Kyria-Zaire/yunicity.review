@@ -1,5 +1,10 @@
 /** Fil local portal micro-copy (WEB-FEED-PORTAL-01). */
 
+// AIF §23 — titre de page du fil local. Repris du libellé de navigation que
+// la personne voit déjà, pour qu'un lecteur d'écran annonce la même chose
+// que ce qui est affiché.
+export const FEED_PORTAL_TITLE = "Fil local";
+
 export const FEED_PORTAL_STORIES_TITLE = "À la une";
 export const FEED_PORTAL_STORY_PUBLISH = "Publier";
 export const FEED_PORTAL_STORY_YOURS = "Votre story";

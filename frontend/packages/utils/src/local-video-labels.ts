@@ -3,9 +3,19 @@ import { LOCAL_VIDEO_MAX_DURATION_SECONDS } from "@yunicity/types";
 
 /** VIDEO-04B — écran upload web */
 export const LOCAL_VIDEO_UPLOAD_PAGE_TITLE = "Publier une vidéo locale";
-export const LOCAL_VIDEO_UPLOAD_PAGE_SUBTITLE = `Partagez un moment de votre quartier en vidéo courte (MP4 ou MOV, max. 50 Mo, ${LOCAL_VIDEO_MAX_DURATION_SECONDS} s).`;
+/** VIDEO-04D — la limite dépend du créateur : ces libellés en prennent la valeur effective. */
+export const localVideoUploadPageSubtitle = (maxDurationSeconds: number): string =>
+  `Partagez un moment de votre quartier en vidéo courte (MP4 ou MOV, max. 50 Mo, ${maxDurationSeconds} s).`;
+/** Valeur pilote par défaut, conservée pour les appelants sans politique. */
+export const LOCAL_VIDEO_UPLOAD_PAGE_SUBTITLE = localVideoUploadPageSubtitle(
+  LOCAL_VIDEO_MAX_DURATION_SECONDS,
+);
 export const LOCAL_VIDEO_UPLOAD_VIDEO_LABEL = "Vidéo";
-export const LOCAL_VIDEO_UPLOAD_VIDEO_HINT = `MP4 ou MOV · max. 50 Mo · max. ${LOCAL_VIDEO_MAX_DURATION_SECONDS} s`;
+export const localVideoUploadVideoHint = (maxDurationSeconds: number): string =>
+  `MP4 ou MOV · max. 50 Mo · max. ${maxDurationSeconds} s`;
+export const LOCAL_VIDEO_UPLOAD_VIDEO_HINT = localVideoUploadVideoHint(
+  LOCAL_VIDEO_MAX_DURATION_SECONDS,
+);
 export const LOCAL_VIDEO_UPLOAD_CHOOSE_FILE = "Choisir une vidéo";
 export const LOCAL_VIDEO_UPLOAD_CHANGE_FILE = "Changer de fichier";
 export const LOCAL_VIDEO_UPLOAD_TITLE_LABEL = "Titre";
@@ -33,7 +43,11 @@ export const LOCAL_VIDEO_UPLOAD_VIDEO_REQUIRED = "Sélectionnez une vidéo à pu
 export const LOCAL_VIDEO_UPLOAD_TITLE_REQUIRED = "Le titre est obligatoire.";
 export const LOCAL_VIDEO_UPLOAD_NEIGHBORHOOD_REQUIRED = "Sélectionnez un quartier.";
 export const LOCAL_VIDEO_UPLOAD_FILE_TOO_LARGE = "Fichier trop volumineux (max. 50 Mo).";
-export const LOCAL_VIDEO_UPLOAD_FILE_TOO_LONG = `Vidéo trop longue (max. ${LOCAL_VIDEO_MAX_DURATION_SECONDS} s).`;
+export const localVideoUploadFileTooLong = (maxDurationSeconds: number): string =>
+  `Vidéo trop longue (max. ${maxDurationSeconds} s).`;
+export const LOCAL_VIDEO_UPLOAD_FILE_TOO_LONG = localVideoUploadFileTooLong(
+  LOCAL_VIDEO_MAX_DURATION_SECONDS,
+);
 export const LOCAL_VIDEO_UPLOAD_FILE_INVALID_TYPE =
   "Format non supporté. Utilisez un fichier MP4 ou MOV.";
 export const LOCAL_VIDEO_UPLOAD_DURATION_UNKNOWN = "Durée non disponible";

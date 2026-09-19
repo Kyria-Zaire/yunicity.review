@@ -3,7 +3,7 @@
 import {
   humanizeLocalVideoError,
   LOCAL_VIDEO_UPLOAD_ERROR_GENERIC,
-  LOCAL_VIDEO_UPLOAD_PAGE_SUBTITLE,
+  localVideoUploadPageSubtitle,
   LOCAL_VIDEO_UPLOAD_PAGE_TITLE,
   LOCAL_VIDEO_UPLOAD_PHASE_PROCESSING,
   LOCAL_VIDEO_UPLOAD_PHASE_PUBLISH,
@@ -20,6 +20,7 @@ import {
   type LocalVideoUploadFormValues,
 } from "@/components/videos/new-local-video-form";
 import { VideosAppShell } from "@/components/videos/videos-app-shell";
+import { useLocalVideoDurationPolicy } from "@/hooks/use-local-video-duration-policy";
 import { useLocalVideoUploadContext } from "@/hooks/use-local-video-upload-context";
 import { WEB_CONTENT_WIDTH_CLASS } from "@/lib/layout/web-layout-config";
 
@@ -28,6 +29,8 @@ type UploadPhase = "form" | "uploading" | "publishing" | "redirecting";
 export function NewLocalVideoScreen() {
   const router = useRouter();
   const { api, city, neighborhoods, loadingNeighborhoods } = useLocalVideoUploadContext();
+  // VIDEO-04D — limite du créateur connecté ; retombée pilote si indisponible.
+  const durationPolicy = useLocalVideoDurationPolicy();
   const [phase, setPhase] = useState<UploadPhase>("form");
   const [error, setError] = useState<string | null>(null);
 
@@ -93,7 +96,7 @@ export function NewLocalVideoScreen() {
               {LOCAL_VIDEO_UPLOAD_PAGE_TITLE}
             </h1>
             <p className="mt-1 text-sm leading-relaxed text-neutral-600 sm:text-base">
-              {LOCAL_VIDEO_UPLOAD_PAGE_SUBTITLE}
+              {localVideoUploadPageSubtitle(durationPolicy.maxDurationSeconds)}
             </p>
           </div>
         </header>
@@ -128,6 +131,7 @@ export function NewLocalVideoScreen() {
               loadingNeighborhoods={loadingNeighborhoods}
               submitting={isBusy}
               error={error}
+              maxDurationSeconds={durationPolicy.maxDurationSeconds}
               onCancel={() => router.push("/videos")}
               onSubmit={handleSubmit}
             />

@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 
 import type { Locator, Page, Response } from "@playwright/test";
 
-import { expect, test } from "../fixtures";
+import { expect, testCitizen as test } from "../fixtures";
 import { COLD_START_TEST_TIMEOUT, COLD_START_TIMEOUT } from "../cold-start";
 
 /**
@@ -41,10 +41,10 @@ function isDirectApiCall(url: string): boolean {
   return /:(8010|8000)\/api\//.test(url);
 }
 
-async function expectLoadedSameOriginImage(image: Locator): Promise<void> {
+async function expectLoadedAuthorizedImage(image: Locator): Promise<void> {
   await expect(image).toBeVisible();
   const src = await image.getAttribute("src");
-  expect(src).toMatch(/^\/api\/v1\/story-media\//);
+  expect(src).toMatch(/^blob:/);
   await expect
     .poll(async () => image.evaluate((node) => (node as HTMLImageElement).naturalWidth))
     .toBeGreaterThan(1);
@@ -86,7 +86,7 @@ test.describe("C3.1-R1D — Feed composer photo mobile", () => {
         );
         await fileInput.setInputFiles(QA_PHOTO);
         expect((await firstUploadWait).status()).toBe(201);
-        await expectLoadedSameOriginImage(composer.locator("img").first());
+        await expectLoadedAuthorizedImage(composer.locator("img").first());
         await expect(composer.getByRole("button", { name: "Retirer la photo" })).toBeVisible();
         await expect(composer.getByRole("button", { name: "Remplacer la photo" })).toBeVisible();
         await composer.getByRole("button", { name: "Retirer la photo" }).click();
@@ -110,7 +110,7 @@ test.describe("C3.1-R1D — Feed composer photo mobile", () => {
       const forbidden = seen.filter(isDirectApiCall);
       expect(forbidden, `appels navigateur directs vers l'API: ${forbidden.join(", ")}`).toEqual([]);
 
-      await expectLoadedSameOriginImage(composer.locator("img").first());
+      await expectLoadedAuthorizedImage(composer.locator("img").first());
 
       const marker = `QA photo mobile ${viewport.name} ${Date.now()}`;
       await composer.locator("textarea").fill(marker);
@@ -128,13 +128,13 @@ test.describe("C3.1-R1D — Feed composer photo mobile", () => {
 
       const card = visibleFeedArticle(page, marker);
       await expect(card).toBeVisible({ timeout: COLD_START_TIMEOUT });
-      await expectLoadedSameOriginImage(card.locator("img").first());
+      await expectLoadedAuthorizedImage(card.locator("img").first());
 
       await page.reload({ waitUntil: "domcontentloaded" });
       await waitSessionReady(page);
       const reloaded = visibleFeedArticle(page, marker);
       await expect(reloaded).toBeVisible({ timeout: COLD_START_TIMEOUT });
-      await expectLoadedSameOriginImage(reloaded.locator("img").first());
+      await expectLoadedAuthorizedImage(reloaded.locator("img").first());
 
       const mediaGets = seen.filter((url) => url.includes("/api/v1/story-media/"));
       expect(mediaGets.length).toBeGreaterThan(0);

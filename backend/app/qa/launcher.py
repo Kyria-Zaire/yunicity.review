@@ -21,6 +21,7 @@ import asyncio
 import os
 import sys
 import uuid
+from typing import Any, cast
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -131,7 +132,7 @@ async def _cmd_reset_rate_limits() -> int:
     try:
         await client.flushdb()
     finally:
-        await client.aclose()
+        await cast(Any, client).aclose()
     print(f"rate-limit reset OK -> {target.confirmation()}")
     return 0
 

@@ -1,4 +1,4 @@
-import { API_URL, bearer, expect, test } from "../fixtures";
+import { API_URL, bearer, expect, testCitizen as test } from "../fixtures";
 import type { Locator, Response } from "@playwright/test";
 
 /**

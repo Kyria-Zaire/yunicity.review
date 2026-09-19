@@ -6,6 +6,7 @@ import { Eye, MapPin, MoreVertical, Send } from "lucide-react";
 import { useEffect } from "react";
 
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
+import { AvatarImage } from "@/components/avatar-image";
 
 type StoryCardProps = {
   story: StoryItem;
@@ -57,8 +58,7 @@ export function StoryCard({ story, city, isHighlighted = false }: StoryCardProps
         <div className="flex min-w-0 items-center gap-2">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-xs font-bold text-white ring-2 ring-white/30">
             {story.author.logo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <AvatarImage
                 src={story.author.logo_url}
                 alt=""
                 className="h-full w-full rounded-full object-cover"
