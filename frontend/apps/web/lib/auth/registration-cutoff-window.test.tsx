@@ -138,3 +138,37 @@ describe("AUTH-04B — l'écran suit la fenêtre PILOT sans jamais la décider",
     expect(screen.queryByTestId("registration-form")).toBeNull();
   });
 });
+
+describe("AUTH-04B — soumission tardive depuis une page restée ouverte", () => {
+  it("le 403 du backend remonte son message, pas un libellé générique", async () => {
+    const { parseApiError, humanizeAuthFailure } = await import("@yunicity/utils");
+
+    // Corps exact de la route `register` une fois l'échéance passée.
+    const reponse = new Response(
+      JSON.stringify({
+        code: "REGISTRATION_CLOSED",
+        detail:
+          "Les inscriptions à la bêta Yunicity sont temporairement fermées. " +
+          "Vous possédez déjà un compte ? Connectez-vous.",
+      }),
+      { status: 403, headers: { "content-type": "application/json" } },
+    );
+
+    const erreur = await parseApiError(reponse);
+    expect(erreur.code).toBe("REGISTRATION_CLOSED");
+    expect(erreur.status).toBe(403);
+
+    // L'utilisateur qui a laissé l'onglet ouvert doit lire POURQUOI. Un
+    // « Inscription impossible. » générique le laisserait réessayer en boucle.
+    const message = humanizeAuthFailure(erreur, "Inscription impossible.");
+    expect(message).toContain("temporairement fermées");
+    expect(message).not.toBe("Inscription impossible.");
+  });
+
+  it("une erreur non typée retombe sur le libellé de repli, sans inventer de cause", async () => {
+    const { humanizeAuthFailure } = await import("@yunicity/utils");
+    expect(humanizeAuthFailure(new Error("boom"), "Inscription impossible.")).toBe(
+      "Inscription impossible.",
+    );
+  });
+});

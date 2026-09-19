@@ -29,20 +29,27 @@ async def test_ready_without_db_or_redis_returns_200(client: AsyncClient) -> Non
 
 
 @pytest.mark.asyncio
-async def test_ready_names_the_settings_that_prevent_a_pilot_from_opening(
+async def test_a_200_on_ready_never_proves_that_registration_can_open(
     client: AsyncClient,
 ) -> None:
     """AUTH-04B : sans `REGISTRATION_MODE`, l'environnement retombe sur PILOT.
 
-    Un pilote sans échéance, sans pepper et sans Redis ne peut pas ouvrir. Le
-    diagnostic le dit d'un coup et par NOMS de variables — jamais par valeurs,
-    et sans se contenter d'une liste vide qui laisserait croire l'inverse.
-    """
-    data = (await client.get("/api/v1/ready")).json()
+    Un pilote sans échéance ne peut pas ouvrir, et `/ready` le nomme. Mais il
+    répond quand même 200 : le code HTTP protège la connexion des comptes
+    existants, qui n'ont rien à voir avec l'inscription. Un futur outil
+    d'ouverture qui se contenterait du 200 se tromperait donc — la seule preuve
+    d'ouvrabilité est `checks.registration_config == []`.
 
-    assert data["checks"]["registration_config"] == [
-        "REGISTRATION_CLOSES_AT",
-        "RATE_LIMIT_KEY_PEPPER",
-        "REDIS_URL",
-    ]
+    L'assertion porte sur l'APPARTENANCE, pas sur la liste exacte : la liste
+    complète dépend de l'environnement (le compose QA fournit `REDIS_URL`, pas
+    le runner unitaire). Les listes exactes sont épinglées là où elles sont
+    déterministes, dans `test_registration_cutoff.py`.
+    """
+    response = await client.get("/api/v1/ready")
+    assert response.status_code == 200, "l'API reste joignable même si l'inscription ne peut ouvrir"
+
+    data = response.json()
+    manquants = data["checks"]["registration_config"]
+    assert "REGISTRATION_CLOSES_AT" in manquants, "un pilote sans échéance doit être signalé"
+    assert all("TURNSTILE" not in nom for nom in manquants), "Turnstile n'est jamais exigé en PILOT"
     assert data["status"] == "degraded", "une ouverture impossible ne doit pas se lire « ready »"
