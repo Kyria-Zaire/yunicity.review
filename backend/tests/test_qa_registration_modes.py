@@ -201,3 +201,87 @@ def test_each_fixture_dependency_is_really_required(variable: str, attendu: str)
     """
     settings = _settings_fixture(**{variable: ""})
     assert registration_config_problems(settings) == [attendu]
+
+
+# ------------------------------ garde : immunite a l'environnement ambiant
+
+
+@pytest.mark.parametrize("ambiant", ["", "closed", "pilot", "public"])
+def test_the_registration_helpers_ignore_the_ambient_mode(
+    monkeypatch: pytest.MonkeyPatch, ambiant: str
+) -> None:
+    """Les helpers de test doivent donner le MEME resultat partout.
+
+    Docker CI l'a prouve a nos depens : `REGISTRATION_MODE=closed` sur le
+    conteneur suffisait a faire mentir quatre tests du repli historique, verts
+    sur un runner nu et rouges dans la pile QA. Un test du repli ne s'observe
+    que si AUCUN mode n'est declare — donc les helpers doivent le neutraliser,
+    pas l'heriter.
+
+    Les helpers prives sont importes volontairement : c'est leur contrat
+    d'isolement qui est verifie ici, et il n'a de valeur que teste.
+    """
+    if ambiant:
+        monkeypatch.setenv("REGISTRATION_MODE", ambiant)
+    else:
+        monkeypatch.delenv("REGISTRATION_MODE", raising=False)
+
+    from tests.test_registration_cutoff import _settings as helper_cutoff
+    from tests.test_registration_protection import _settings as helper_protection
+    from tests.test_registration_protection_correction import _settings as helper_correction
+
+    futur = "2099-01-01T00:00:00+00:00"
+    for helper in (helper_cutoff, helper_protection, helper_correction):
+        nom = helper.__module__
+
+        # Repli historique, drapeau a vrai + echeance valide -> PILOT ouvert.
+        ouvert = resolve_registration_policy(
+            helper(
+                REGISTRATION_ENABLED=True,
+                REGISTRATION_CLOSES_AT=futur,
+                RATE_LIMIT_KEY_PEPPER="pepper-garde",
+                REDIS_URL="redis://127.0.0.1:6379/15",
+            )
+        )
+        assert ouvert.mode is RegistrationMode.PILOT, f"{nom} herite du mode ambiant {ambiant!r}"
+        assert ouvert.open is True, f"{nom} : le repli n'ouvre plus sous {ambiant!r}"
+
+        # Repli historique, drapeau a faux -> CLOSED, sans rien exiger.
+        ferme = resolve_registration_policy(helper(REGISTRATION_ENABLED=False))
+        assert ferme.mode is RegistrationMode.CLOSED, f"{nom} herite du mode ambiant {ambiant!r}"
+        assert ferme.open is False
+
+
+@pytest.mark.parametrize("ambiant", ["", "closed", "pilot"])
+def test_a_declared_mode_always_wins_over_the_legacy_flag(
+    monkeypatch: pytest.MonkeyPatch, ambiant: str
+) -> None:
+    """La precedence est la raison pour laquelle fermer par le booleen seul echouait.
+
+    `_fermer_les_inscriptions` posait uniquement `REGISTRATION_ENABLED=false`
+    alors que `auth_env` declare un pilote : le mode declare gagnait, la route
+    rendait 201. Cette precedence est un choix — elle doit rester verifiee.
+    """
+    if ambiant:
+        monkeypatch.setenv("REGISTRATION_MODE", ambiant)
+    else:
+        monkeypatch.delenv("REGISTRATION_MODE", raising=False)
+
+    ferme = Settings(
+        JWT_SECRET_KEY="test-secret-key-at-least-32-characters-long!!",
+        REGISTRATION_MODE="closed",
+        REGISTRATION_ENABLED=True,
+    )
+    assert resolve_registration_policy(ferme).mode is RegistrationMode.CLOSED
+    assert resolve_registration_policy(ferme).open is False
+
+    pilote = Settings(
+        JWT_SECRET_KEY="test-secret-key-at-least-32-characters-long!!",
+        REGISTRATION_MODE="pilot",
+        REGISTRATION_ENABLED=False,
+        REGISTRATION_CLOSES_AT="2099-01-01T00:00:00+00:00",
+        RATE_LIMIT_KEY_PEPPER="pepper-garde",
+        REDIS_URL="redis://127.0.0.1:6379/15",
+    )
+    assert resolve_registration_policy(pilote).mode is RegistrationMode.PILOT
+    assert resolve_registration_policy(pilote).open is True

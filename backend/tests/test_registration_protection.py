@@ -32,7 +32,16 @@ _JWT = "dev-only-insecure-jwt-secret-change-in-env-32chars"
 
 
 def _settings(**kwargs: Any) -> Settings:
-    return Settings(JWT_SECRET_KEY=_JWT, **kwargs)
+    """Settings de test, MODE toujours explicite — vide par défaut.
+
+    Sans ce défaut, un test du repli historique lirait le `REGISTRATION_MODE`
+    de l'environnement qui l'héberge — `closed` dans le conteneur QA — et
+    prouverait l'inverse de ce qu'il annonce : le repli ne s'observe que si
+    aucun mode n'est déclaré. Même discipline que `REGISTRATION_CLOSES_AT`.
+    """
+    base: dict[str, Any] = {"JWT_SECRET_KEY": _JWT, "REGISTRATION_MODE": ""}
+    base.update(kwargs)
+    return Settings(**base)
 
 
 def _echeance_future() -> str:

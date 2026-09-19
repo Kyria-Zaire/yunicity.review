@@ -43,7 +43,13 @@ def _settings(**kwargs: Any) -> Settings:
     ne le redéclarerait pas lirait cette valeur d'environnement et prouverait
     l'inverse de ce qu'il annonce — d'où ce défaut vide, écrasable.
     """
-    base: dict[str, Any] = {"JWT_SECRET_KEY": _JWT, "REGISTRATION_CLOSES_AT": ""}
+    base: dict[str, Any] = {
+        "JWT_SECRET_KEY": _JWT,
+        "REGISTRATION_CLOSES_AT": "",
+        # Le mode aussi : le conteneur QA declare `closed`, et un test du repli
+        # historique qui le lirait n'observerait plus aucun repli.
+        "REGISTRATION_MODE": "",
+    }
     base.update(kwargs)
     return Settings(**base)
 

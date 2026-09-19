@@ -189,6 +189,13 @@ async def _compte_utilisateurs_et_profils() -> tuple[int, int]:
 def _fermer_les_inscriptions(monkeypatch: pytest.MonkeyPatch) -> None:
     from app.core.config import get_settings
 
+    # Le MODE fait autorite des qu'il est declare, et `auth_env` declare un
+    # pilote pour que les tests d'inscription puissent s'inscrire. Fermer avec
+    # le seul booleen historique ne fermerait donc rien : le pilote resterait
+    # ouvert et la route rendrait 201 au lieu de 403.
+    monkeypatch.setenv("REGISTRATION_MODE", "closed")
+    # Le booleen reste pose : il documente l'intention, et le test voisin
+    # verifie justement que le mode declare l'emporte sur lui.
     monkeypatch.setenv("REGISTRATION_ENABLED", "false")
     get_settings.cache_clear()
 

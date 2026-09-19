@@ -31,7 +31,10 @@ _JWT = "dev-only-insecure-jwt-secret-change-in-env-32chars"
 
 
 def _settings(**kwargs: Any) -> Settings:
-    return Settings(JWT_SECRET_KEY=_JWT, **kwargs)
+    """Mode explicite par defaut : aucun test ici ne doit lire celui du conteneur."""
+    base: dict[str, Any] = {"JWT_SECRET_KEY": _JWT, "REGISTRATION_MODE": ""}
+    base.update(kwargs)
+    return Settings(**base)
 
 
 def _public_complet(**surcharges: Any) -> Settings:

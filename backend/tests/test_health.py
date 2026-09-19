@@ -30,21 +30,30 @@ async def test_ready_without_db_or_redis_returns_200(client: AsyncClient) -> Non
 
 @pytest.mark.asyncio
 async def test_a_200_on_ready_never_proves_that_registration_can_open(
-    client: AsyncClient,
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """AUTH-04B : sans `REGISTRATION_MODE`, l'environnement retombe sur PILOT.
+    """Un pilote sans échéance ne peut pas ouvrir, et `/ready` le nomme.
 
-    Un pilote sans échéance ne peut pas ouvrir, et `/ready` le nomme. Mais il
-    répond quand même 200 : le code HTTP protège la connexion des comptes
-    existants, qui n'ont rien à voir avec l'inscription. Un futur outil
+    Mais il répond quand même 200 : le code HTTP protège la connexion des
+    comptes existants, qui n'ont rien à voir avec l'inscription. Un futur outil
     d'ouverture qui se contenterait du 200 se tromperait donc — la seule preuve
     d'ouvrabilité est `checks.registration_config == []`.
 
-    L'assertion porte sur l'APPARTENANCE, pas sur la liste exacte : la liste
-    complète dépend de l'environnement (le compose QA fournit `REDIS_URL`, pas
-    le runner unitaire). Les listes exactes sont épinglées là où elles sont
-    déterministes, dans `test_registration_cutoff.py`.
+    Le pilote incomplet est DÉCLARÉ ici, jamais hérité : compter sur le mode du
+    conteneur ferait dépendre le résultat de l'endroit où la suite tourne — vert
+    sur un runner nu, rouge dans la pile QA qui déclare `closed`.
+
+    L'assertion porte sur l'APPARTENANCE, pas sur la liste exacte : le reste
+    dépend de ce que l'environnement fournit par ailleurs (pepper, Redis). Les
+    listes exactes sont épinglées là où elles sont déterministes, dans
+    `test_registration_cutoff.py`.
     """
+    from app.core.config import get_settings
+
+    monkeypatch.setenv("REGISTRATION_MODE", "pilot")
+    monkeypatch.delenv("REGISTRATION_CLOSES_AT", raising=False)
+    get_settings.cache_clear()
+
     response = await client.get("/api/v1/ready")
     assert response.status_code == 200, "l'API reste joignable même si l'inscription ne peut ouvrir"
 
