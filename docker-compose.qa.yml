@@ -128,6 +128,17 @@ services:
       LOG_LEVEL: INFO
       JWT_SECRET_KEY: qa-only-jwt-secret-at-least-32-characters-long!!
       REFRESH_TOKEN_PEPPER: qa-only-pepper-32-chars-minimum!!
+      # La pile QA n'est PAS un pilote : elle demarre fermee, explicitement.
+      #
+      # Sans cette ligne le mode venait du repli historique sur
+      # REGISTRATION_ENABLED, vrai par defaut, qui selectionne donc PILOT. Depuis
+      # AUTH-04B un pilote exige une echeance et un pepper de limitation : la
+      # pile en signalait legitimement l'absence, `/ready` passait `degraded`, et
+      # le gate readiness de la CI s'arretait avant pytest.
+      #
+      # Les tests qui ont besoin d'inscrire ouvrent leur PROPRE pilote dans la
+      # fixture `auth_env` — ils ne dependent plus de ce que vaut le defaut ici.
+      REGISTRATION_MODE: closed
       # External effects neutralized by configuration (guard-enforced).
       EMAIL_PROVIDER: console
       EXPO_PUSH_ENABLED: "false"

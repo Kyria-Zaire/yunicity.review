@@ -50,10 +50,15 @@ def auth_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     configure_destructive_qa_db(monkeypatch)
     monkeypatch.setenv("JWT_SECRET_KEY", _TEST_JWT_SECRET)
     monkeypatch.setenv("REFRESH_COOKIE_SECURE", "false")
-    # AUTH-04B : sans `REGISTRATION_MODE`, l'environnement de test retombe sur
-    # PILOT, et un pilote n'ouvre plus sans echeance declaree. La suite en pose
-    # donc une, lointaine — exactement ce qu'un deploiement doit faire desormais.
-    # Sans elle, chaque test d'inscription recevrait un 403 parfaitement legitime.
+    # AUTH-04B : les tests qui s'inscrivent ouvrent leur PROPRE pilote, declare
+    # ici de bout en bout — mode, echeance et pepper.
+    #
+    # Le mode est pose explicitement plutot que laisse au repli historique sur
+    # `REGISTRATION_ENABLED` : la pile QA, elle, demarre desormais en `closed`,
+    # et un repli aurait rendu ces tests dependants d'un defaut d'environnement
+    # qui ne leur appartient pas. Declare ici, le pilote de test tient quel que
+    # soit le mode de la pile qui l'heberge.
+    monkeypatch.setenv("REGISTRATION_MODE", "pilot")
     monkeypatch.setenv("REGISTRATION_CLOSES_AT", _TEST_REGISTRATION_CLOSES_AT)
     # Le pilote exige aussi un pepper : les cles de comptage ne doivent jamais
     # permettre de retrouver une adresse, y compris dans le Redis de test.
