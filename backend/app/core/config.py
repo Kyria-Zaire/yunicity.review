@@ -118,9 +118,17 @@ class Settings(BaseSettings):
     registration_global_hourly_limit: int = Field(
         default=100, ge=1, alias="REGISTRATION_GLOBAL_HOURLY_LIMIT"
     )
-    #: Fin d'ouverture annoncee publiquement. Informative : la fermeture reelle
-    #: reste un changement de mode, jamais une horloge qui se declencherait seule.
-    registration_closes_at: datetime | None = Field(default=None, alias="REGISTRATION_CLOSES_AT")
+    #: Fin de la fenetre PILOT, et BARRIERE REELLE depuis AUTH-04B : passe cette
+    #: echeance, `resolve_registration_policy` referme les inscriptions a chaque
+    #: requete, sans redeploiement ni planificateur. En PILOT, son absence ferme
+    #: aussi — une fenetre sans fin n'est pas une fenetre.
+    #:
+    #: Lue en TEXTE BRUT, jamais parsee par Pydantic : une valeur mal formee ne
+    #: doit pas empecher l'API de demarrer. Refuser le demarrage transformerait
+    #: une faute de frappe en panne totale, connexion des comptes existants
+    #: comprise, alors qu'elle ne doit refermer que l'inscription.
+    #: Lecture et validation : `parse_registration_cutoff`.
+    registration_closes_at: str = Field(default="", alias="REGISTRATION_CLOSES_AT")
     #: Turnstile en mode PILOT : configurable, jamais impose. En PUBLIC il est
     #: toujours exige, sans reglage possible.
     turnstile_required_in_pilot: bool = Field(default=False, alias="TURNSTILE_REQUIRED_IN_PILOT")

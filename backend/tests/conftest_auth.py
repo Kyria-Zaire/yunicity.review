@@ -24,6 +24,11 @@ from sqlalchemy import text
 from tests.qa_support import configure_destructive_qa_db
 
 _TEST_JWT_SECRET = "test-secret-key-at-least-32-characters-long!!"
+#: Echeance PILOT de la suite (AUTH-04B). Datee et lointaine plutot que calculee
+#: a partir de l'heure courante : une fenetre glissante masquerait une regression
+#: du sens de la comparaison, alors qu'une date fixe la revele.
+_TEST_REGISTRATION_CLOSES_AT = "2099-01-01T00:00:00+00:00"
+_TEST_RATE_LIMIT_PEPPER = "test-rate-limit-pepper-auth04b"
 
 
 def _reset_database_schema(connection) -> None:  # type: ignore[no-untyped-def]
@@ -45,6 +50,14 @@ def auth_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     configure_destructive_qa_db(monkeypatch)
     monkeypatch.setenv("JWT_SECRET_KEY", _TEST_JWT_SECRET)
     monkeypatch.setenv("REFRESH_COOKIE_SECURE", "false")
+    # AUTH-04B : sans `REGISTRATION_MODE`, l'environnement de test retombe sur
+    # PILOT, et un pilote n'ouvre plus sans echeance declaree. La suite en pose
+    # donc une, lointaine — exactement ce qu'un deploiement doit faire desormais.
+    # Sans elle, chaque test d'inscription recevrait un 403 parfaitement legitime.
+    monkeypatch.setenv("REGISTRATION_CLOSES_AT", _TEST_REGISTRATION_CLOSES_AT)
+    # Le pilote exige aussi un pepper : les cles de comptage ne doivent jamais
+    # permettre de retrouver une adresse, y compris dans le Redis de test.
+    monkeypatch.setenv("RATE_LIMIT_KEY_PEPPER", _TEST_RATE_LIMIT_PEPPER)
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()

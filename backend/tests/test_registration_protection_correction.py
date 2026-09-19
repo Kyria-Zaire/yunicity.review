@@ -15,6 +15,7 @@ Quatre exigences, chacune née d'un défaut du premier jet :
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -112,9 +113,24 @@ def test_an_absent_site_key_never_silently_disables_turnstile() -> None:
 
 
 def test_pilot_mode_does_not_demand_the_public_configuration() -> None:
-    """Un pilote encadré se surveille à la main ; l'exiger ici casserait le dev local."""
-    assert registration_config_problems(_settings(REGISTRATION_MODE="pilot")) == []
+    """Un pilote encadré se surveille à la main : ni Turnstile, ni clé Cloudflare.
+
+    AUTH-04B a donné des exigences propres au PILOT (échéance, Redis, pepper),
+    mais la propriété testée ici reste entière : ce ne sont jamais CELLES de
+    PUBLIC. Un pilote complet n'a donc rien à signaler.
+    """
+    pilote_complet = _settings(
+        REGISTRATION_MODE="pilot",
+        REGISTRATION_CLOSES_AT=(datetime.now(UTC) + timedelta(days=1)).isoformat(),
+        RATE_LIMIT_KEY_PEPPER="pepper-pilote",
+        REDIS_URL="redis://127.0.0.1:6379/1",
+    )
+    assert registration_config_problems(pilote_complet) == []
     assert registration_config_problems(_settings(REGISTRATION_MODE="closed")) == []
+
+    # Un pilote incomplet se plaint de SES dépendances, jamais de Cloudflare.
+    manquants = registration_config_problems(_settings(REGISTRATION_MODE="pilot"))
+    assert manquants and not any("TURNSTILE" in nom for nom in manquants)
 
 
 def test_public_mode_is_still_public_even_when_misconfigured() -> None:

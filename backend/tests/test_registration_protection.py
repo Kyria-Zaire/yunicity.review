@@ -35,6 +35,11 @@ def _settings(**kwargs: Any) -> Settings:
     return Settings(JWT_SECRET_KEY=_JWT, **kwargs)
 
 
+def _echeance_future() -> str:
+    """Échéance PILOT valide (AUTH-04B), pour observer un pilote réellement ouvert."""
+    return (datetime.now(UTC) + timedelta(days=1)).isoformat()
+
+
 # ------------------------------------------------------------ clés sans PII
 
 
@@ -112,7 +117,12 @@ def test_closed_mode_refuses_and_carries_no_turnstile_requirement() -> None:
 
 
 def test_pilot_mode_tolerates_a_shared_network() -> None:
-    policy = resolve_registration_policy(_settings(REGISTRATION_MODE="pilot"))
+    # AUTH-04B : un pilote n'ouvre plus sans echeance declaree. La propriete
+    # testee ici reste celle d'AUTH-04A — le plafond par IP — mais elle ne
+    # s'observe que sur un pilote effectivement ouvert.
+    policy = resolve_registration_policy(
+        _settings(REGISTRATION_MODE="pilot", REGISTRATION_CLOSES_AT=_echeance_future())
+    )
     assert policy.open is True
     assert policy.ip_hourly_limit >= 100, (
         "une salle de 100 personnes derriere une seule IP doit passer"
@@ -127,9 +137,17 @@ def test_public_mode_always_requires_turnstile() -> None:
     assert policy.turnstile_required is True
 
 
-def test_an_unset_mode_preserves_the_existing_deployment_behaviour() -> None:
-    """Installer cette version ne doit changer le comportement d'aucun déploiement."""
-    ouvert = resolve_registration_policy(_settings(REGISTRATION_ENABLED=True))
+def test_an_unset_mode_still_maps_the_legacy_flag_to_a_mode() -> None:
+    """Le repli historique reste en place : le booléen désigne toujours le mode.
+
+    AUTH-04B a changé ce qui en découle, pas la correspondance : un repli vers
+    PILOT exige désormais une échéance valide pour ouvrir réellement. Voir
+    `test_registration_cutoff.py` pour cette règle — ici on épingle seulement que
+    le booléen continue de désigner PILOT ou CLOSED.
+    """
+    ouvert = resolve_registration_policy(
+        _settings(REGISTRATION_ENABLED=True, REGISTRATION_CLOSES_AT=_echeance_future())
+    )
     ferme = resolve_registration_policy(_settings(REGISTRATION_ENABLED=False))
 
     assert ouvert.open is True and ouvert.mode is RegistrationMode.PILOT
