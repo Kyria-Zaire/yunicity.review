@@ -207,6 +207,7 @@ export function buildProfileEditSavePayload(
 
 export function profileEditDraftEquals(a: ProfileEditDraft, b: ProfileEditDraft): boolean {
   return (
+    a.username.trim().toLowerCase() === b.username.trim().toLowerCase() &&
     a.firstName === b.firstName &&
     a.lastName === b.lastName &&
     a.bio === b.bio &&
