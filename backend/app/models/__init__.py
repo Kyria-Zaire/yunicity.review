@@ -64,7 +64,7 @@ from app.models.tribe import (
 )
 from app.models.user import User
 from app.models.user_notification import UserNotification
-from app.models.user_profile import ProfileVisibility, UserProfile
+from app.models.user_profile import ProfileVisibility, UserProfile, UserProfileUsernameHistory
 from app.models.user_subscription import UserSubscription
 from app.models.yuni_wallet import YuniTransaction, YuniWallet
 from app.models.yunicity_category import YunicityCategory
@@ -137,6 +137,7 @@ __all__ = [
     "User",
     "UserNotification",
     "UserProfile",
+    "UserProfileUsernameHistory",
     "UserRole",
     "UserReputationSnapshot",
     "UserSubscription",

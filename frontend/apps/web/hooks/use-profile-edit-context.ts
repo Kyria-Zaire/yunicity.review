@@ -46,6 +46,9 @@ export function useProfileEditContext() {
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveMessageIsError, setSaveMessageIsError] = useState(false);
+  const [usernameAvailability, setUsernameAvailability] = useState<
+    "idle" | "checking" | "available" | "unavailable" | "invalid"
+  >("idle");
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -99,6 +102,27 @@ export function useProfileEditContext() {
     void reload();
   }, [reload]);
 
+  useEffect(() => {
+    if (!draft || !profile) return;
+    const username = draft.username.trim().toLowerCase();
+    if (username === profile.username) {
+      setUsernameAvailability("idle");
+      return;
+    }
+    if (!/^[a-z0-9_]{3,30}$/.test(username)) {
+      setUsernameAvailability("invalid");
+      return;
+    }
+    setUsernameAvailability("checking");
+    const timer = window.setTimeout(() => {
+      void api.profile
+        .checkUsernameAvailability(username)
+        .then((result) => setUsernameAvailability(result.available ? "available" : "unavailable"))
+        .catch(() => setUsernameAvailability("unavailable"));
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [api, draft, profile]);
+
   const completion = useMemo(
     () => (profile ? buildProfileEditCompletion(profile) : null),
     [profile],
@@ -139,7 +163,13 @@ export function useProfileEditContext() {
     setSaveMessage(null);
     setSaveMessageIsError(false);
     try {
-      const payload = buildProfileEditSavePayload(profile, draft);
+      let currentProfile = profile;
+      const normalizedUsername = draft.username.trim().toLowerCase();
+      const usernameChanged = normalizedUsername !== profile.username;
+      if (usernameChanged) {
+        currentProfile = await api.profile.changeUsername(normalizedUsername);
+      }
+      const payload = buildProfileEditSavePayload(currentProfile, draft);
       let updated = await api.updateProfileMe(payload);
       const city = (payload.city ?? draft.city).trim();
       const interests = payload.interests ?? draft.interests;
@@ -150,7 +180,13 @@ export function useProfileEditContext() {
       setProfile(updated);
       setDraft(nextDraft);
       setSavedDraft(nextDraft);
+      setSaveMessage(usernameChanged ? "Nom d’utilisateur et profil mis à jour." : "Profil mis à jour.");
+      setSaveMessageIsError(false);
       return updated;
+    } catch (err) {
+      setSaveMessage(humanizeAuthFailure(err, "Impossible de modifier le nom d’utilisateur."));
+      setSaveMessageIsError(true);
+      return null;
     } finally {
       setIsSaving(false);
     }
@@ -232,6 +268,7 @@ export function useProfileEditContext() {
     isUploadingBanner,
     saveMessage,
     saveMessageIsError,
+    usernameAvailability,
     setSaveMessage,
     updateDraft,
     save,

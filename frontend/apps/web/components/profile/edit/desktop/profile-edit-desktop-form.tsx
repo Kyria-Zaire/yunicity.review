@@ -31,7 +31,6 @@ import {
   PROFILE_EDIT_DESKTOP_VISIBILITY_PUBLIC_HINT,
   PROFILE_EDIT_DESKTOP_VISIBILITY_TITLE,
   PROFILE_EDIT_SAVE,
-  PROFILE_EDIT_SAVED,
   PROFILE_EDIT_SAVING,
   PROFILE_EDIT_UPLOADING,
   PROFILE_EDIT_USERNAME,
@@ -53,6 +52,7 @@ type ProfileEditDesktopFormProps = {
   isUploadingBanner: boolean;
   saveMessage: string | null;
   saveMessageIsError?: boolean;
+  usernameAvailability?: "idle" | "checking" | "available" | "unavailable" | "invalid";
   formId?: string;
   layout?: "desktop" | "medium" | "mobile";
   hideInlineActions?: boolean;
@@ -123,6 +123,7 @@ export function ProfileEditDesktopForm({
   isUploadingBanner,
   saveMessage,
   saveMessageIsError = false,
+  usernameAvailability = "idle",
   formId = "profile-edit-desktop-form",
   layout = "desktop",
   hideInlineActions = false,
@@ -131,7 +132,6 @@ export function ProfileEditDesktopForm({
   onAvatarFile,
   onBannerFile,
   onRemoveAvatar,
-  onSavedMessage,
 }: ProfileEditDesktopFormProps) {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -153,11 +153,15 @@ export function ProfileEditDesktopForm({
     layout === "mobile"
       ? "absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-xl border border-white/40 bg-black/45 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/60 disabled:opacity-60"
       : "absolute right-4 top-4 inline-flex items-center gap-2 rounded-xl border border-white/40 bg-black/45 px-3 py-2 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-black/60 disabled:opacity-60";
+  const nextUsernameChange = profile.username_next_change_at
+    ? new Date(profile.username_next_change_at)
+    : null;
+  const usernameLocked = Boolean(nextUsernameChange && nextUsernameChange.getTime() > Date.now());
+  const usernameValid = /^[a-z0-9_]{3,30}$/.test(draft.username.trim().toLowerCase());
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     await onSave();
-    onSavedMessage(PROFILE_EDIT_SAVED);
   }
 
   return (
@@ -311,12 +315,35 @@ export function ProfileEditDesktopForm({
               </span>
               <input
                 type="text"
-                readOnly
-                value={profile.username}
-                className="w-full cursor-not-allowed rounded-xl border border-neutral-200 bg-neutral-50 py-2.5 pl-8 pr-3 text-sm text-neutral-600"
+                value={draft.username}
+                disabled={usernameLocked || isSaving}
+                minLength={3}
+                maxLength={30}
+                pattern="[a-z0-9_]{3,30}"
+                aria-describedby={`${formId}-username-help`}
+                aria-invalid={!usernameValid}
+                autoCapitalize="none"
+                autoCorrect="off"
+                onChange={(event) => onDraftChange({ username: event.target.value.toLowerCase() })}
+                className="min-h-11 w-full rounded-xl border border-neutral-200 bg-white py-2.5 pl-8 pr-3 text-sm text-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-600"
               />
             </div>
-            <span className="mt-1.5 block text-xs text-neutral-500">{PROFILE_EDIT_USERNAME_HINT}</span>
+            <span id={`${formId}-username-help`} className="mt-1.5 block text-xs text-neutral-500">
+              {usernameLocked && nextUsernameChange
+                ? `Prochain changement possible le ${nextUsernameChange.toLocaleDateString("fr-FR")}.`
+                : `${PROFILE_EDIT_USERNAME_HINT} ${draft.username.length}/30 — lettres minuscules, chiffres et _.`}
+            </span>
+            {usernameAvailability !== "idle" ? (
+              <span className="mt-1 block text-xs font-medium text-neutral-700" role="status">
+                {usernameAvailability === "checking"
+                  ? "Vérification de la disponibilité…"
+                  : usernameAvailability === "available"
+                    ? "Nom d’utilisateur disponible."
+                    : usernameAvailability === "invalid"
+                      ? "Utilisez 3 à 30 lettres minuscules, chiffres ou underscores."
+                      : "Ce nom d’utilisateur n’est pas disponible."}
+              </span>
+            ) : null}
           </label>
 
           <div className="block">

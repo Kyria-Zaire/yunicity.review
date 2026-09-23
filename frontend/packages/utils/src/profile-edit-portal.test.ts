@@ -65,6 +65,7 @@ describe("buildProfileEditDraft", () => {
     const draft = buildProfileEditDraft(baseProfile());
     expect(draft.firstName).toBe("Kyria");
     expect(draft.lastName).toBe("D.");
+    expect(draft.username).toBe("kyria_d");
   });
 });
 

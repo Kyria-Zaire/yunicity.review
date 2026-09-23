@@ -21,6 +21,7 @@ type ProfileEditMobileScreenProps = {
   isUploadingBanner: boolean;
   saveMessage: string | null;
   saveMessageIsError: boolean;
+  usernameAvailability: "idle" | "checking" | "available" | "unavailable" | "invalid";
   onDraftChange: (patch: Partial<ProfileEditDraft>) => void;
   onSave: () => Promise<void>;
   onAvatarFile: (file: File) => Promise<void>;
@@ -40,6 +41,7 @@ export function ProfileEditMobileScreen({
   isUploadingBanner,
   saveMessage,
   saveMessageIsError,
+  usernameAvailability,
   onDraftChange,
   onSave,
   onAvatarFile,
@@ -80,6 +82,7 @@ export function ProfileEditMobileScreen({
           isUploadingBanner={isUploadingBanner}
           saveMessage={saveMessage}
           saveMessageIsError={saveMessageIsError}
+          usernameAvailability={usernameAvailability}
           onDraftChange={onDraftChange}
           onSave={onSave}
           onAvatarFile={onAvatarFile}

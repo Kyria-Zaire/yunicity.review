@@ -39,6 +39,7 @@ export type ProfileEditCompletionItem = {
 };
 
 export type ProfileEditDraft = {
+  username: string;
   firstName: string;
   lastName: string;
   bio: string;
@@ -87,6 +88,7 @@ export function joinDisplayName(firstName: string, lastName: string): string | n
 export function buildProfileEditDraft(profile: ProfileMe): ProfileEditDraft {
   const { firstName, lastName } = splitDisplayName(profile.display_name);
   return {
+    username: profile.username,
     firstName,
     lastName,
     bio: profile.bio ?? "",
@@ -173,7 +175,7 @@ export function buildProfileEditPreview(input: {
 
   return {
     displayName,
-    username: input.profile.username,
+    username: input.draft.username,
     bio: input.draft.bio.trim() || null,
     city: input.draft.city.trim() || null,
     avatarUrl: input.profile.avatar_url?.trim() || null,

@@ -90,6 +90,65 @@ async def test_patch_immutable_username_forbidden(auth_client: AsyncClient) -> N
 
 
 @pytest.mark.asyncio
+async def test_change_username_contract(auth_client: AsyncClient) -> None:
+    data = await _register(auth_client, {}, suffix="rename")
+    headers = _auth_headers(data["access_token"])
+
+    changed = await auth_client.patch(
+        "/api/v1/profile/me/username",
+        headers=headers,
+        json={"username": "  New_Citizen  "},
+    )
+    assert changed.status_code == 200, changed.text
+    assert changed.json()["username"] == "new_citizen"
+    assert changed.json()["username_changed_at"] is not None
+    assert changed.json()["username_next_change_at"] is not None
+
+    same = await auth_client.patch(
+        "/api/v1/profile/me/username",
+        headers=headers,
+        json={"username": "NEW_CITIZEN"},
+    )
+    assert same.status_code == 200
+    assert same.json()["username"] == "new_citizen"
+
+    blocked = await auth_client.patch(
+        "/api/v1/profile/me/username",
+        headers=headers,
+        json={"username": "another_name"},
+    )
+    assert blocked.status_code == 429
+    assert blocked.json()["code"] == "USERNAME_CHANGE_TOO_RECENT"
+    assert blocked.json()["next_change_at"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("username", "code"),
+    [("ab", "INVALID_USERNAME"), ("bad-name", "INVALID_USERNAME"), ("admin", "USERNAME_RESERVED")],
+)
+async def test_change_username_rejects_invalid_or_reserved(
+    auth_client: AsyncClient, username: str, code: str
+) -> None:
+    data = await _register(auth_client, {}, suffix=f"bad-{code}-{len(username)}")
+    response = await auth_client.patch(
+        "/api/v1/profile/me/username",
+        headers=_auth_headers(data["access_token"]),
+        json={"username": username},
+    )
+    assert response.status_code == 422
+    assert response.json()["code"] == code
+
+
+@pytest.mark.asyncio
+async def test_change_username_requires_authentication(auth_client: AsyncClient) -> None:
+    response = await auth_client.patch(
+        "/api/v1/profile/me/username", json={"username": "anonymous_name"}
+    )
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
 async def test_invalid_interests_rejected(auth_client: AsyncClient) -> None:
     data = await _register(auth_client, {}, suffix="interests")
     token = data["access_token"]

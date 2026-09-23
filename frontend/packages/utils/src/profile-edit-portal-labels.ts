@@ -34,7 +34,7 @@ export const PROFILE_EDIT_FIRST_NAME = "Prénom";
 export const PROFILE_EDIT_LAST_NAME = "Nom";
 export const PROFILE_EDIT_USERNAME = "Nom d’utilisateur";
 export const PROFILE_EDIT_USERNAME_HINT =
-  "Votre identifiant public est défini à l’inscription et ne peut pas être modifié.";
+  "Votre identifiant public peut être modifié une fois tous les 14 jours.";
 export const PROFILE_EDIT_BIO = "Bio";
 export const PROFILE_EDIT_CITY = "Localisation";
 export const PROFILE_EDIT_CITY_HINT =

@@ -50,6 +50,7 @@ export type {
   ProfileUpdateRequest,
   ProfileVisibility,
   UserProfile,
+  UsernameAvailability,
 } from "./profile";
 
 export type {

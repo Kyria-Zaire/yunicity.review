@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime, timedelta
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
@@ -19,7 +21,7 @@ from app.core.profile_username import (
     normalize_username,
 )
 from app.models.user import User
-from app.models.user_profile import ProfileVisibility, UserProfile
+from app.models.user_profile import ProfileVisibility, UserProfile, UserProfileUsernameHistory
 from app.repositories.passport_repository import PassportRepository
 from app.repositories.profile_repository import ProfileRepository
 from app.schemas.profile import (
@@ -27,11 +29,23 @@ from app.schemas.profile import (
     ProfileMeResponse,
     ProfilePublicResponse,
     ProfileUpdateRequest,
+    UsernameAvailabilityResponse,
+    UsernameChangeRequest,
     validate_interests,
 )
 
+USERNAME_CHANGE_INTERVAL = timedelta(days=14)
+
+
+def username_next_change_at(changed_at: datetime) -> datetime:
+    if changed_at.tzinfo is None:
+        changed_at = changed_at.replace(tzinfo=UTC)
+    return changed_at + USERNAME_CHANGE_INTERVAL
+
 
 class ProfileService:
+    USERNAME_CHANGE_INTERVAL = USERNAME_CHANGE_INTERVAL
+
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
         self._profiles = ProfileRepository(session)
@@ -77,6 +91,59 @@ class ProfileService:
 
         await self._profiles.update_fields(profile, fields=updates)
         await self._session.commit()
+        await self._session.refresh(profile)
+        return await self._build_me_response(user.id, profile)
+
+    async def username_availability(
+        self, user: User, username: str
+    ) -> UsernameAvailabilityResponse:
+        normalized = normalize_username(username)
+        profile = await self._get_profile_for_user(user.id)
+        unchanged = normalized == profile.username
+        if unchanged:
+            return UsernameAvailabilityResponse(username=normalized, available=True, unchanged=True)
+        available = is_valid_username_format(
+            normalized
+        ) and not await self._profiles.username_exists(normalized)
+        return UsernameAvailabilityResponse(username=normalized, available=available)
+
+    async def change_username(
+        self, user: User, payload: UsernameChangeRequest
+    ) -> ProfileMeResponse:
+        normalized = normalize_username(payload.username)
+        self.validate_username_assignment(normalized)
+        profile = await self._profiles.get_by_user_id_for_update(user.id)
+        if profile is None:
+            raise AppError(404, "PROFILE_NOT_FOUND", "Profil introuvable.")
+        if normalized == profile.username:
+            return await self._build_me_response(user.id, profile)
+
+        now = datetime.now(UTC)
+        if profile.username_changed_at is not None:
+            next_change_at = username_next_change_at(profile.username_changed_at)
+            if now < next_change_at:
+                raise AppError(
+                    429,
+                    "USERNAME_CHANGE_TOO_RECENT",
+                    "Vous pourrez modifier votre nom d'utilisateur à partir du "
+                    f"{next_change_at.isoformat()}.",
+                    metadata={"next_change_at": next_change_at.isoformat()},
+                )
+        if await self._profiles.username_exists(normalized):
+            raise AppError(409, "USERNAME_TAKEN", "Ce nom d'utilisateur n'est pas disponible.")
+
+        self._session.add(
+            UserProfileUsernameHistory(username=profile.username, user_id=user.id, retired_at=now)
+        )
+        profile.username = normalized
+        profile.username_changed_at = now
+        try:
+            await self._session.commit()
+        except IntegrityError as exc:
+            await self._session.rollback()
+            raise AppError(
+                409, "USERNAME_TAKEN", "Ce nom d'utilisateur n'est pas disponible."
+            ) from exc
         await self._session.refresh(profile)
         return await self._build_me_response(user.id, profile)
 
@@ -249,8 +316,14 @@ class ProfileService:
         has_active_passport = (
             await PassportRepository(self._session).get_active_for_user(user_id) is not None
         )
+        next_change_at = None
+        if profile.username_changed_at is not None:
+            next_change_at = username_next_change_at(profile.username_changed_at)
         return ProfileMeResponse.model_validate(profile).model_copy(
-            update={"has_active_passport": has_active_passport},
+            update={
+                "has_active_passport": has_active_passport,
+                "username_next_change_at": next_change_at,
+            },
         )
 
     def _validate_interests_list(self, values: list[str]) -> list[str]:

@@ -7,6 +7,7 @@ import type {
   ProfileUpdateRequest,
   TribeListResponse,
   UserProfile,
+  UsernameAvailability,
 } from "@yunicity/types";
 
 import type { AuthClient } from "./auth/auth-client";
@@ -20,6 +21,16 @@ export class ProfileApi extends ApiClientBase {
 
   updateProfileMe(payload: ProfileUpdateRequest): Promise<UserProfile> {
     return this.patchJson<UserProfile>("/profile/me", payload);
+  }
+
+  changeUsername(username: string): Promise<UserProfile> {
+    return this.patchJson<UserProfile>("/profile/me/username", { username });
+  }
+
+  checkUsernameAvailability(username: string): Promise<UsernameAvailability> {
+    return this.getJson<UsernameAvailability>(
+      `/profile/me/username-availability?username=${encodeURIComponent(username)}`,
+    );
   }
 
   completeProfileOnboarding(payload: ProfileCompleteRequest): Promise<UserProfile> {

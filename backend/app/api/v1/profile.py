@@ -23,6 +23,8 @@ from app.schemas.profile import (
     ProfileMeResponse,
     ProfilePublicResponse,
     ProfileUpdateRequest,
+    UsernameAvailabilityResponse,
+    UsernameChangeRequest,
 )
 from app.schemas.tribe import TribeListResponse
 from app.services.profile_media_service import ProfileMediaService
@@ -40,6 +42,30 @@ def _client_ip(request: Request) -> str:
     if request.client:
         return request.client.host
     return "unknown"
+
+
+@router.get("/me/username-availability", response_model=UsernameAvailabilityResponse)
+async def get_username_availability(
+    request: Request,
+    username: str,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> UsernameAvailabilityResponse:
+    await enforce_rate_limit(f"profile:username-check:{current_user.id}", 60, 3600)
+    await enforce_rate_limit(f"profile:username-check:ip:{_client_ip(request)}", 120, 3600)
+    return await ProfileService(session).username_availability(current_user, username)
+
+
+@router.patch("/me/username", response_model=ProfileMeResponse)
+async def patch_profile_username(
+    payload: UsernameChangeRequest,
+    request: Request,
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> ProfileMeResponse:
+    await enforce_rate_limit(f"profile:username:{current_user.id}", 10, 3600)
+    await enforce_rate_limit(f"profile:username:ip:{_client_ip(request)}", 30, 3600)
+    return await ProfileService(session).change_username(current_user, payload)
 
 
 @router.get("/me", response_model=ProfileMeResponse)

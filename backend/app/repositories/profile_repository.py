@@ -5,12 +5,12 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.profile_username import pick_available_username
 from app.models.user import User
-from app.models.user_profile import ProfileVisibility, UserProfile
+from app.models.user_profile import ProfileVisibility, UserProfile, UserProfileUsernameHistory
 
 
 class ProfileRepository:
@@ -18,10 +18,28 @@ class ProfileRepository:
         self._session = session
 
     async def username_exists(self, username: str) -> bool:
-        result = await self._session.execute(
-            select(UserProfile.id).where(UserProfile.username == username).limit(1)
+        normalized = username.lower()
+        current = await self._session.scalar(
+            select(UserProfile.id)
+            .where(func.lower(UserProfile.username) == normalized)
+            .limit(1)
         )
-        return result.scalar_one_or_none() is not None
+        if current is not None:
+            return True
+        historical = await self._session.scalar(
+            select(UserProfileUsernameHistory.user_id)
+            .where(func.lower(UserProfileUsernameHistory.username) == normalized)
+            .limit(1)
+        )
+        return historical is not None
+
+    async def get_by_user_id_for_update(self, user_id: uuid.UUID) -> UserProfile | None:
+        result = await self._session.execute(
+            select(UserProfile)
+            .where(UserProfile.user_id == user_id)
+            .with_for_update()
+        )
+        return result.scalar_one_or_none()
 
     async def get_by_user_id(self, user_id: uuid.UUID) -> UserProfile | None:
         result = await self._session.execute(

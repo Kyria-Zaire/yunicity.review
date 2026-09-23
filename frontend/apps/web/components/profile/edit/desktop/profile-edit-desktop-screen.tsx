@@ -42,6 +42,7 @@ export function ProfileEditDesktopScreen({ ctx }: ProfileEditDesktopScreenProps)
           isUploadingBanner={ctx.isUploadingBanner}
           saveMessage={ctx.saveMessage}
           saveMessageIsError={ctx.saveMessageIsError}
+          usernameAvailability={ctx.usernameAvailability}
           onDraftChange={ctx.updateDraft}
           onSave={async () => {
             await ctx.save();
