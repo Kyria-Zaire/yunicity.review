@@ -21,6 +21,7 @@ import {
   PARTNER_DETAIL_VERIFIED,
   PARTNER_DETAIL_WHY_BODY,
   PARTNER_DETAIL_WHY_TITLE,
+  buildPartnerOfferHref,
   formatEventDateRange,
   formatOfferValidUntil,
   partnerOfferValueLabel,
@@ -34,6 +35,7 @@ import {
 } from "@yunicity/utils";
 import { ChevronLeft, ExternalLink, Phone, Share2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
@@ -56,6 +58,7 @@ const BADGE_TONE_CLASS: Record<string, string> = {
 
 export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
   const api = useYunicityApi();
+  const router = useRouter();
   const [offers, setOffers] = useState<PartnerOfferPublic[]>([]);
   const [partnerEvents, setPartnerEvents] = useState<LocalEvent[]>([]);
   const [creatorContents, setCreatorContents] = useState<PartnerCreatorContentPublic[]>([]);
@@ -97,6 +100,17 @@ export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
       cancelled = true;
     };
   }, [api, partner.city, partner.slug]);
+
+  useEffect(() => {
+    if (partnerOffers.length === 0 || typeof window === "undefined") return;
+    const hash = window.location.hash.replace(/^#/, "");
+    const prefix = "passport-offer-";
+    if (!hash.startsWith(prefix)) return;
+    const offerSlug = decodeURIComponent(hash.slice(prefix.length));
+    const offer = partnerOffers.find((item) => item.slug === offerSlug);
+    if (!offer) return;
+    router.replace(buildPartnerOfferHref(offer));
+  }, [partnerOffers, router]);
 
   async function handleShare() {
     const url = typeof window !== "undefined" ? window.location.href : partnerPublicHref(partner);
@@ -268,22 +282,24 @@ export function PartnerDetailScreen({ partner }: PartnerDetailScreenProps) {
           {partnerOffers.length > 0 ? (
             <ul className="mt-4 space-y-3">
               {partnerOffers.map((offer) => (
-                <li
-                  key={offer.id}
-                  className="rounded-xl border border-neutral-100 bg-neutral-50/80 px-4 py-3"
-                >
-                  <p className="font-semibold text-neutral-900">{offer.title}</p>
-                  <p className="text-xs font-medium text-yunicity-primary">
-                    {partnerOfferValueLabel(offer)}
-                  </p>
-                  {offer.description ? (
-                    <p className="mt-1 text-sm text-neutral-600">{offer.description}</p>
-                  ) : null}
-                  {offer.valid_until ? (
-                    <p className="mt-1 text-xs text-neutral-500">
-                      {formatOfferValidUntil(offer.valid_until)}
+                <li key={offer.id}>
+                  <Link
+                    href={buildPartnerOfferHref(offer)}
+                    className="block rounded-xl border border-neutral-100 bg-neutral-50/80 px-4 py-3 transition hover:border-yunicity-primary/30 hover:bg-white"
+                  >
+                    <p className="font-semibold text-neutral-900">{offer.title}</p>
+                    <p className="text-xs font-medium text-yunicity-primary">
+                      {partnerOfferValueLabel(offer)}
                     </p>
-                  ) : null}
+                    {offer.description ? (
+                      <p className="mt-1 text-sm text-neutral-600">{offer.description}</p>
+                    ) : null}
+                    {offer.valid_until ? (
+                      <p className="mt-1 text-xs text-neutral-500">
+                        {formatOfferValidUntil(offer.valid_until)}
+                      </p>
+                    ) : null}
+                  </Link>
                 </li>
               ))}
             </ul>

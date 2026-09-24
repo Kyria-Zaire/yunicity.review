@@ -46,6 +46,16 @@ describe("resolveCitizenMediumRoute — destinations principales", () => {
     expect(resolveCitizenMediumRoute("/mapping")).toEqual({ presentation: "legacy" });
     expect(resolveCitizenMediumRoute("/feedback")).toEqual({ presentation: "legacy" });
   });
+
+  it.each([
+    ["/events", "sortir"],
+    ["/events/abc", "sortir"],
+  ])("%s active %s (famille Sortir)", (route, destination) => {
+    expect(resolveCitizenMediumRoute(route)).toEqual({
+      presentation: "rail",
+      activeDestination: destination,
+    });
+  });
 });
 
 describe("resolveCitizenMediumRoute — routes citoyennes secondaires", () => {
@@ -59,7 +69,6 @@ describe("resolveCitizenMediumRoute — routes citoyennes secondaires", () => {
     "/notifications",
     "/profile/me",
     "/neighborhoods",
-    "/events",
     "/places",
     "/settings",
   ])("%s : rail present, aucune destination active", (route) => {
@@ -72,7 +81,6 @@ describe("resolveCitizenMediumRoute — routes citoyennes secondaires", () => {
     "/tribes/qa-tribu-publique",
     "/places/some-slug",
     "/neighborhoods/boulingrin",
-    "/events/abc",
     "/user/xyz",
     "/profile/kyria",
   ])("la route dynamique %s reste citoyenne sans destination active", (route) => {
@@ -96,12 +104,15 @@ describe("resolveCitizenMediumRoute — exclusions", () => {
     expect(resolveCitizenMediumRoute(route)).toEqual({ presentation: "legacy" });
   });
 
+  // `/organizations/request` n'est PAS dans cette liste : c'est une surface
+  // citoyenne (un habitant demande la création de son organisation), déclarée
+  // parcours de création — voir le bloc « presentation creation-flow » plus bas.
+  // Seul le back-office `/organizations/me/**` relève de l'exclusion.
   it.each([
     "/organizations/me",
     "/organizations/me/partner",
     "/organizations/me/partner/offers",
     "/organizations/me/partner/passport",
-    "/organizations/request",
     "/creators",
     "/creators/abc",
     "/creator-content",
@@ -171,7 +182,13 @@ describe("resolveCitizenMediumRoute — contrat de module pur", () => {
 
 describe("parcours de création — presentation creation-flow (R1E / R1F)", () => {
   it("derive les parcours de creation depuis la liste existante", () => {
-    for (const route of ["/feed/new", "/stories/new", "/videos/new"]) {
+    for (const route of [
+      "/feed/new",
+      "/stories/new",
+      "/videos/new",
+      "/sortir/create",
+      "/organizations/request",
+    ]) {
       expect(resolveCitizenMediumRoute(route), route).toEqual({ presentation: "creation-flow" });
     }
   });

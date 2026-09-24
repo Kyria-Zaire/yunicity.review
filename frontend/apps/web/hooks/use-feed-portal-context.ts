@@ -20,6 +20,13 @@ export type FeedPortalContextState = {
   loading: boolean;
   profile: ProfileMe | null;
   events: LocalEvent[];
+  /**
+   * La liste d'evenements a echoue. `events: []` seul ne suffit pas : une panne
+   * reseau et une ville sans evenement produisent le meme tableau vide, et le
+   * module Evenements doit distinguer « rien ce soir » de « on n'a pas pu
+   * charger » (FEED-MAIN-LAYOUT-UIUX-01 §4).
+   */
+  eventsError: boolean;
   savedEvents: LocalEvent[];
   tribes: Tribe[];
   neighborhoods: Neighborhood[];
@@ -38,6 +45,7 @@ export function useFeedPortalContext(): FeedPortalContextState {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileMe | null>(null);
   const [events, setEvents] = useState<LocalEvent[]>([]);
+  const [eventsError, setEventsError] = useState(false);
   const [savedEvents, setSavedEvents] = useState<LocalEvent[]>([]);
   const [tribes, setTribes] = useState<Tribe[]>([]);
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
@@ -47,6 +55,7 @@ export function useFeedPortalContext(): FeedPortalContextState {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setEventsError(false);
     try {
       const me = await api.getProfileMe();
       setProfile(me);
@@ -77,6 +86,7 @@ export function useFeedPortalContext(): FeedPortalContextState {
         setEvents(filterAgendaUpcomingEvents(value.items));
       } else {
         setEvents([]);
+        setEventsError(true);
       }
 
       if (hoodsRes?.status === "fulfilled") {
@@ -125,6 +135,7 @@ export function useFeedPortalContext(): FeedPortalContextState {
     } catch {
       setProfile(null);
       setEvents([]);
+      setEventsError(true);
       setTribes([]);
       setStoryRings([]);
     } finally {
@@ -141,6 +152,7 @@ export function useFeedPortalContext(): FeedPortalContextState {
     loading,
     profile,
     events,
+    eventsError,
     savedEvents: savedEvents.filter((e) => isEventWithinDays(e.starts_at, 30)),
     tribes,
     neighborhoods,

@@ -1,5 +1,7 @@
 import type { ApiErrorBody } from "@yunicity/types";
 
+import { LOGIN_EMAIL_NOT_VERIFIED } from "../email-verification-portal-labels";
+
 export class AuthError extends Error {
   readonly code: string;
   readonly status: number;
@@ -78,6 +80,9 @@ export function humanizeAuthFailure(err: unknown, fallback: string): string {
   }
   if (err.code === "EMAIL_ALREADY_EXISTS") {
     return "Un compte existe déjà avec cet email. Connectez-vous ou utilisez un autre email.";
+  }
+  if (err.code === "EMAIL_NOT_VERIFIED") {
+    return LOGIN_EMAIL_NOT_VERIFIED;
   }
   if (err.code === "PROFILE_MEDIA_INVALID_TYPE") {
     return "Format non supporté. Utilisez JPG, PNG ou WEBP.";

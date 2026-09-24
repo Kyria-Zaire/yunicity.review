@@ -3,10 +3,12 @@
 export const CULTURAL_IMAGE_REMOTE_HOSTS = [
   "upload.wikimedia.org",
   "commons.wikimedia.org",
+  "commons.wikimedia.org",
   "images.unsplash.com",
   "plus.unsplash.com",
   "res.cloudinary.com",
   "th.bing.com",
+  "thumb.wikimedia.org",
   "www.actualitix.com",
   "img-4.linternaute.com",
   "cdn.elebase.io",

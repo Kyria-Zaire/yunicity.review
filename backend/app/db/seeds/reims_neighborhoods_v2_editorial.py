@@ -127,7 +127,10 @@ REIMS_NEIGHBORHOOD_V2_EDITORIAL: tuple[dict[str, Any], ...] = (
             "apaisé. C'est un quartier où les familles s'installent, où les associations animent "
             "la vie locale et où la ville se vit au quotidien, loin de l'agitation du centre."
         ),
-        "aliases": ({"alias": "Croix-Rouge sud", "is_primary": True, "sort_order": 0},),
+        "aliases": (
+            {"alias": "Croix-Rouge sud", "is_primary": True, "sort_order": 0},
+            {"alias": "Croix du Sud", "is_primary": False, "sort_order": 1},
+        ),
         "moods": (NeighborhoodMood.FAMILY.value, NeighborhoodMood.CALM.value, NeighborhoodMood.CREATIVE.value),
     },
     {
@@ -184,7 +187,10 @@ REIMS_NEIGHBORHOOD_V2_EDITORIAL: tuple[dict[str, Any], ...] = (
             "une trame locale dense, accessible à pied, ouverte à ceux qui veulent découvrir "
             "une autre facette de Reims."
         ),
-        "aliases": ({"alias": "Chemin Vert", "is_primary": True, "sort_order": 0},),
+        "aliases": (
+            {"alias": "Chemin Vert", "is_primary": True, "sort_order": 0},
+            {"alias": "Clémenceau", "is_primary": False, "sort_order": 1},
+        ),
         "moods": (NeighborhoodMood.FAMILY.value, NeighborhoodMood.FESTIVE.value, NeighborhoodMood.GOURMET.value),
     },
     {

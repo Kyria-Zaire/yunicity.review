@@ -6,6 +6,7 @@ import type {
   Neighborhood,
   PartnerOfferPublic,
   Tribe,
+  TribeInvitationPending,
 } from "@yunicity/types";
 import { filterAgendaUpcomingEvents } from "@yunicity/utils";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -22,6 +23,7 @@ export type TribesPortalContextState = {
   neighborhoods: Neighborhood[];
   culturalPlaces: CulturalPlaceListItem[];
   offers: PartnerOfferPublic[];
+  invitations: TribeInvitationPending[];
   reload: () => void;
 };
 
@@ -37,6 +39,7 @@ export function useTribesPortalContext(initialCity?: string): TribesPortalContex
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [culturalPlaces, setCulturalPlaces] = useState<CulturalPlaceListItem[]>([]);
   const [offers, setOffers] = useState<PartnerOfferPublic[]>([]);
+  const [invitations, setInvitations] = useState<TribeInvitationPending[]>([]);
 
   const city = useMemo(
     () => initialCity?.trim() || user?.city?.trim() || DEFAULT_CITY,
@@ -47,13 +50,15 @@ export function useTribesPortalContext(initialCity?: string): TribesPortalContex
     setLoading(true);
     setError(false);
     try {
-      const [tribesRes, eventsRes, hoodsRes, placesRes, offersRes] = await Promise.allSettled([
-        api.tribes.listTribes({ city, page_size: 24 }),
-        api.events.listEvents({ city }),
-        api.neighborhoods.listNeighborhoods({ city, page_size: 20 }),
-        api.listCulturalPlaces({ city, limit: 20 }),
-        api.fetchPublicPartnerOffers({ city, limit: 8 }),
-      ]);
+      const [tribesRes, eventsRes, hoodsRes, placesRes, offersRes, invitationsRes] =
+        await Promise.allSettled([
+          api.tribes.listTribes({ city, page_size: 24 }),
+          api.events.listEvents({ city }),
+          api.neighborhoods.listNeighborhoods({ city, page_size: 20 }),
+          api.listCulturalPlaces({ city, limit: 20 }),
+          api.fetchPublicPartnerOffers({ city, limit: 8 }),
+          user ? api.tribes.listMyTribeInvitations() : Promise.resolve({ items: [] }),
+        ]);
 
       setTribes(
         tribesRes.status === "fulfilled"
@@ -66,12 +71,15 @@ export function useTribesPortalContext(initialCity?: string): TribesPortalContex
       );
       setCulturalPlaces(placesRes.status === "fulfilled" ? placesRes.value.items : []);
       setOffers(offersRes.status === "fulfilled" ? offersRes.value.items.slice(0, 4) : []);
+      setInvitations(
+        invitationsRes.status === "fulfilled" ? invitationsRes.value.items : [],
+      );
     } catch {
       setError(true);
     } finally {
       setLoading(false);
     }
-  }, [api, city]);
+  }, [api, city, user]);
 
   useEffect(() => {
     void load();
@@ -86,6 +94,7 @@ export function useTribesPortalContext(initialCity?: string): TribesPortalContex
     neighborhoods,
     culturalPlaces,
     offers,
+    invitations,
     reload: load,
   };
 }

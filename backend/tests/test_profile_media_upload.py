@@ -28,6 +28,7 @@ PROFILE_MEDIA_BUCKET = "yunicity-media-test"
 
 @pytest.fixture(autouse=True)
 def profile_media_r2_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PROFILE_MEDIA_STORAGE_BACKEND", "r2")
     monkeypatch.setenv("LOCAL_VIDEO_R2_ENDPOINT", "https://example.r2.cloudflarestorage.com")
     monkeypatch.setenv("LOCAL_VIDEO_R2_BUCKET", PROFILE_MEDIA_BUCKET)
     monkeypatch.setenv("LOCAL_VIDEO_R2_ACCESS_KEY_ID", "test-access-key")
@@ -93,7 +94,7 @@ async def test_upload_avatar_success(
     )
     assert response.status_code == 200, response.text
     body = response.json()
-    expected_url = f"{PROFILE_MEDIA_CDN_BASE}/profiles/{user_id}/avatar.jpg"
+    expected_url = f"/api/v1/profile-media/{user_id}/avatar.jpg"
     assert body["avatar_url"] == expected_url
     assert mock_profile_media_r2[f"profiles/{user_id}/avatar.jpg"] == MINIMAL_JPEG_BYTES
 
@@ -118,7 +119,7 @@ async def test_upload_banner_success(
     )
     assert response.status_code == 200, response.text
     body = response.json()
-    expected_url = f"{PROFILE_MEDIA_CDN_BASE}/profiles/{user_id}/banner.png"
+    expected_url = f"/api/v1/profile-media/{user_id}/banner.png"
     assert body["banner_url"] == expected_url
     assert mock_profile_media_r2[f"profiles/{user_id}/banner.png"] == MINIMAL_PNG_BYTES
 
@@ -154,7 +155,7 @@ async def test_upload_avatar_replaces_previous_extension(
         ),
     )
     assert second.status_code == 200
-    assert second.json()["avatar_url"] == f"{PROFILE_MEDIA_CDN_BASE}/profiles/{user_id}/avatar.webp"
+    assert second.json()["avatar_url"] == f"/api/v1/profile-media/{user_id}/avatar.webp"
     assert f"profiles/{user_id}/avatar.jpg" not in mock_profile_media_r2
     assert mock_profile_media_r2[f"profiles/{user_id}/avatar.webp"] == MINIMAL_WEBP_BYTES
 
@@ -262,4 +263,4 @@ async def test_upload_avatar_persists_after_refresh(
     profile = await auth_client.get("/api/v1/profile/me", headers=_auth_headers(token))
     assert profile.status_code == 200
     assert profile.json()["avatar_url"] == avatar_url
-    assert avatar_url == f"{PROFILE_MEDIA_CDN_BASE}/profiles/{user_id}/avatar.jpg"
+    assert avatar_url == f"/api/v1/profile-media/{user_id}/avatar.jpg"

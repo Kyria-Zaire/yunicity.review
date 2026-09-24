@@ -1,0 +1,9 @@
+export { OrganizationRequestDesktopAfterSubmit } from "./organization-request-desktop-after-submit";
+export { OrganizationRequestDesktopChecklist } from "./organization-request-desktop-checklist";
+export { OrganizationRequestDesktopDuplicateCheck } from "./organization-request-desktop-duplicate-check";
+export { OrganizationRequestDesktopHeader } from "./organization-request-desktop-header";
+export { OrganizationRequestDesktopHelp } from "./organization-request-desktop-help";
+export { OrganizationRequestDesktopPreview } from "./organization-request-desktop-preview";
+export { OrganizationRequestDesktopScreen } from "./organization-request-desktop-screen";
+export { OrganizationRequestDesktopStepper } from "./organization-request-desktop-stepper";
+export { OrganizationRequestDesktopWizard } from "./organization-request-desktop-wizard";

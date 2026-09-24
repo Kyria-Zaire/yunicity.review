@@ -1,4 +1,4 @@
-import { expect, test } from "../fixtures";
+import { expect, testCitizen as test } from "../fixtures";
 
 /**
  * C3.3-R1 — Passport design compliance & structural invariants.

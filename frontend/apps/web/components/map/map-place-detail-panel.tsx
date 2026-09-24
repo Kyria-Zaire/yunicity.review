@@ -1,8 +1,9 @@
 "use client";
 
 import type { CulturalPlaceDetail, MapEventItem } from "@yunicity/types";
-import type { MapTerritorySelection } from "@yunicity/utils";
+import type { LocalVideoTeaserView, MapTerritorySelection } from "@yunicity/utils";
 import {
+  LOCAL_VIDEO_TEASER_SECTION_FEED,
   MAP_PORTAL_DETAIL_ADD_PLACE,
   MAP_PORTAL_DETAIL_CLOSE,
   MAP_PORTAL_DETAIL_ERROR,
@@ -31,6 +32,7 @@ import {
   X,
 } from "lucide-react";
 import { MapMediaThumbnail } from "@/components/map/map-media-thumbnail";
+import { LocalVideoTeaserRail } from "@/components/videos/local-video-teaser-rail";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -45,6 +47,9 @@ type MapPlaceDetailPanelProps = {
   placeDetail: CulturalPlaceDetail | null;
   loading: boolean;
   error: boolean;
+  // VIDEO-03 — teasers de la sélection, fetchés UNE fois par l'écran carte :
+  // la fiche est montée jusqu'à trois fois, elle ne doit rien récupérer elle-même.
+  videoTeasers?: LocalVideoTeaserView[];
   // T6.3 — masque le X propre de la fiche quand le drawer medium a déjà un close sticky.
   hideClose?: boolean;
 };
@@ -58,6 +63,7 @@ export function MapPlaceDetailPanel({
   placeDetail,
   loading,
   error,
+  videoTeasers = [],
   hideClose = false,
 }: MapPlaceDetailPanelProps) {
   const [expandedDescription, setExpandedDescription] = useState(false);
@@ -291,6 +297,14 @@ export function MapPlaceDetailPanel({
             </ul>
           )}
         </section>
+
+        {videoTeasers.length > 0 ? (
+          <LocalVideoTeaserRail
+            views={videoTeasers}
+            title={LOCAL_VIDEO_TEASER_SECTION_FEED}
+            layout="scroll"
+          />
+        ) : null}
 
         <Link
           href="/organizations/request"

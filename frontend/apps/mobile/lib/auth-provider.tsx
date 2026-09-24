@@ -4,6 +4,7 @@ import {
   createYunicityApi,
   getExpoApiBaseUrl,
   humanizeAuthFailure,
+  isRegistrationPending,
   syncPassportSessionUser,
   type YunicityApi,
 } from "@yunicity/utils";
@@ -19,6 +20,12 @@ import {
 
 import { SecureTokenStorage } from "./secure-storage";
 
+/** Voir `RegisterOutcome` côté web : un compte en attente n'est pas un échec. */
+export type RegisterOutcome =
+  | { status: "authenticated" }
+  | { status: "verification_required" }
+  | { status: "failed" };
+
 interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
@@ -26,7 +33,7 @@ interface AuthContextValue {
   error: string | null;
   yunicityApi: YunicityApi;
   login: (payload: LoginRequest) => Promise<void>;
-  register: (payload: RegisterRequest) => Promise<void>;
+  register: (payload: RegisterRequest) => Promise<RegisterOutcome>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -116,13 +123,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const register = useCallback(
-    async (payload: RegisterRequest) => {
+    async (payload: RegisterRequest): Promise<RegisterOutcome> => {
       setError(null);
       try {
         const response = await client.register(payload);
+        if (isRegistrationPending(response)) {
+          // Aucun jeton emis : renseigner `user` ferait croire l'application
+          // connectee alors que chaque appel authentifie repondrait 401.
+          return { status: "verification_required" };
+        }
         setUser(response.user);
+        return { status: "authenticated" };
       } catch (err) {
         setError(humanizeAuthFailure(err, "Inscription impossible."));
+        return { status: "failed" };
       }
     },
     [client],

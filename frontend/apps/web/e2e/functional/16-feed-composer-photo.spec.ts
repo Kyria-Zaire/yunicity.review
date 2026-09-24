@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 
 import type { Locator, Page, Response } from "@playwright/test";
 
-import { expect, test } from "../fixtures";
+import { expect, testCitizen as test } from "../fixtures";
 import { COLD_START_TEST_TIMEOUT, COLD_START_TIMEOUT } from "../cold-start";
 
 /**
@@ -39,10 +39,12 @@ function isDirectApiCall(url: string): boolean {
   return /:(8010|8000)\/api\//.test(url);
 }
 
-async function expectLoadedSameOriginImage(image: Locator): Promise<void> {
+async function expectLoadedAuthorizedImage(image: Locator): Promise<void> {
   await expect(image).toBeVisible();
   const src = await image.getAttribute("src");
-  expect(src).toMatch(/^\/api\/v1\/story-media\//);
+  // MEDIA-01B : object URL locale (aperçu composer ou Blob authentifié du feed).
+  // L'URL relative /api/v1/story-media n'est plus un src — elle casserait hors proxy.
+  expect(src).toMatch(/^blob:/);
   await expect
     .poll(async () => image.evaluate((node) => (node as HTMLImageElement).naturalWidth))
     .toBeGreaterThan(1);
@@ -93,7 +95,7 @@ test.describe("C3.1-R1C — Feed composer photo desktop", () => {
 
     const preview = composer.locator("img").first();
     await expect(preview).toBeVisible({ timeout: COLD_START_TIMEOUT });
-    await expectLoadedSameOriginImage(preview);
+    await expectLoadedAuthorizedImage(preview);
 
     const marker = `QA photo desktop ${Date.now()}`;
     await composer.locator("textarea").fill(marker);
@@ -113,13 +115,13 @@ test.describe("C3.1-R1C — Feed composer photo desktop", () => {
     await expect(card).toBeVisible({ timeout: COLD_START_TIMEOUT });
     const feedImg = card.locator("img").first();
     await expect(feedImg).toBeVisible();
-    await expectLoadedSameOriginImage(feedImg);
+    await expectLoadedAuthorizedImage(feedImg);
 
     await page.reload({ waitUntil: "domcontentloaded" });
     await waitSessionReady(page);
     const reloaded = visibleFeedArticle(page, marker);
     await expect(reloaded).toBeVisible({ timeout: COLD_START_TIMEOUT });
-    await expectLoadedSameOriginImage(reloaded.locator("img").first());
+    await expectLoadedAuthorizedImage(reloaded.locator("img").first());
 
     const mediaGets = seen.filter((url) => url.includes("/api/v1/story-media/"));
     expect(mediaGets.length).toBeGreaterThan(0);

@@ -7,11 +7,18 @@ import type {
   PostVisibilityId,
 } from "@yunicity/types";
 import {
+  COMPOSER_MEDIA_CONTINUE_WITHOUT_MEDIA,
+  COMPOSER_MEDIA_CONTINUE_WITHOUT_MEDIA_HINT,
+  COMPOSER_MEDIA_HEIC_NOT_SUPPORTED,
+  COMPOSER_MEDIA_IGNORE_REJECTED,
+  COMPOSER_MEDIA_IGNORE_REJECTED_HINT,
+  COMPOSER_MEDIA_INVALID_TYPE,
   POST_COMPOSER_BODY_MAX,
   POST_MEDIA_MAX_COUNT,
   POST_NEW_BODY_REQUIRED,
   POST_NEW_POLL_MIN_OPTIONS,
   STORIES_MEDIA_MAX_MB,
+  composerMediaKindFromMetadata,
 } from "@yunicity/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -74,6 +81,47 @@ export function useNewPostDraft(city: string) {
     return trimmedBody.length > 0 || selectedMedia.length > 0;
   }, [charCount, format, locationLabel, pollOptions, selectedMedia.length, trimmedBody]);
 
+  /**
+   * Un ou plusieurs fichiers choisis par l'utilisateur ont été refusés A LA
+   * SELECTION — format, taille, quota. Tant qu'il n'a pas tranché, publier
+   * enverrait un post amputé de ce qu'il croit joindre.
+   *
+   * A ne pas confondre avec un ECHEC D'ENVOI, traité par l'écran : un fichier
+   * localement valide dont l'upload a échoué n'est PAS « refusé », il reste
+   * sélectionné et la tentative est simplement rejouable.
+   */
+  const mediaRejected = uploadError !== null;
+
+  /**
+   * Libellés de l'arbitrage, calculés sur ce qui reste RÉELLEMENT attaché.
+   *
+   * Annoncer « Continuer sans image » alors que deux photos valides restent
+   * jointes décrirait l'inverse de ce qui se produit — et l'écran accepte aussi
+   * des vidéos, d'où « média » plutôt qu'« image ».
+   */
+  const mediaResolution = useMemo(
+    () =>
+      selectedMedia.length > 0
+        ? {
+            continueLabel: COMPOSER_MEDIA_IGNORE_REJECTED,
+            hint: COMPOSER_MEDIA_IGNORE_REJECTED_HINT,
+          }
+        : {
+            continueLabel: COMPOSER_MEDIA_CONTINUE_WITHOUT_MEDIA,
+            hint: COMPOSER_MEDIA_CONTINUE_WITHOUT_MEDIA_HINT,
+          },
+    [selectedMedia.length],
+  );
+
+  /**
+   * Abandon EXPLICITE des seuls fichiers refusés : n'envoie rien, ne publie
+   * rien, et ne retire aucun média valide déjà sélectionné.
+   */
+  const dismissRejectedMedia = useCallback(() => {
+    setUploadError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, []);
+
   const publishBlockReason = useMemo(() => {
     if (charCount > POST_COMPOSER_BODY_MAX) {
       return `Texte limité à ${POST_COMPOSER_BODY_MAX} caractères.`;
@@ -82,20 +130,38 @@ export function useNewPostDraft(city: string) {
       const options = pollOptions.map((item) => item.trim()).filter(Boolean);
       if (options.length < 2) return POST_NEW_POLL_MIN_OPTIONS;
     }
+    if (mediaRejected) return uploadError;
     if (!canPublish) return POST_NEW_BODY_REQUIRED;
     if (visibility === "custom" && audienceUserIds.length === 0) {
       return "Sélectionnez au moins une personne pour une audience personnalisée.";
     }
     return null;
-  }, [audienceUserIds.length, canPublish, charCount, format, pollOptions, visibility]);
+  }, [
+    audienceUserIds.length,
+    canPublish,
+    charCount,
+    format,
+    mediaRejected,
+    pollOptions,
+    uploadError,
+    visibility,
+  ]);
 
+  // Le nettoyage ne doit se produire qu'au démontage. Rattaché à `selectedMedia`,
+  // il s'exécutait à CHAQUE modification du tableau : ajouter un second média
+  // révoquait l'aperçu du premier, toujours affiché — l'image se cassait sous
+  // les yeux de l'utilisateur. La ref porte l'état courant sans réarmer l'effet.
+  const selectedMediaRef = useRef<SelectedMediaDraft[]>([]);
+  useEffect(() => {
+    selectedMediaRef.current = selectedMedia;
+  }, [selectedMedia]);
   useEffect(() => {
     return () => {
-      for (const item of selectedMedia) {
+      for (const item of selectedMediaRef.current) {
         URL.revokeObjectURL(item.previewUrl);
       }
     };
-  }, [selectedMedia]);
+  }, []);
 
   const revokeMedia = useCallback((item: SelectedMediaDraft) => {
     URL.revokeObjectURL(item.previewUrl);
@@ -116,12 +182,21 @@ export function useNewPostDraft(city: string) {
           setUploadError(`Fichier trop volumineux (max. ${STORIES_MEDIA_MAX_MB} Mo).`);
           continue;
         }
-        const isVideo = file.type.startsWith("video/");
-        const isImage = file.type.startsWith("image/");
-        if (!isVideo && !isImage) {
-          setUploadError("Format non supporté.");
+        // Même contrat que les quatre autres composers : HEIC/HEIF refusé
+        // explicitement (par MIME ou extension), et un type que le navigateur
+        // n'a pas renseigné est tranché par l'extension plutôt que refusé —
+        // c'est le cas courant du partage iOS et de certains sélecteurs Android.
+        const nature = composerMediaKindFromMetadata(file);
+        if (nature === "heic") {
+          setUploadError(COMPOSER_MEDIA_HEIC_NOT_SUPPORTED);
           continue;
         }
+        if (nature === "unknown") {
+          setUploadError(COMPOSER_MEDIA_INVALID_TYPE);
+          continue;
+        }
+        const isVideo = nature === "video";
+        const isImage = nature === "image";
         if (format === "photo" && isVideo) continue;
         if (format === "video" && isImage) continue;
         next.push({
@@ -226,6 +301,9 @@ export function useNewPostDraft(city: string) {
     removeMedia,
     uploadError,
     setUploadError,
+    mediaRejected,
+    mediaResolution,
+    dismissRejectedMedia,
     charCount,
     canPublish,
     publishBlockReason,

@@ -1,9 +1,15 @@
 "use client";
 
 import { useComposerMedia } from "@/hooks/use-composer-media";
+import { ComposerMediaResolution } from "@/components/feed/composer-media-resolution";
 import { Loader2, X } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState, type ReactNode } from "react";
+import { AvatarImage } from "@/components/avatar-image";
+import {
+  COMPOSER_MEDIA_ACCEPT_ATTR,
+  COMPOSER_MEDIA_UPLOADING_LABEL,
+} from "@yunicity/utils";
 
 type FeedDesktopComposerProps = {
   city: string;
@@ -98,18 +104,34 @@ export function FeedDesktopComposer({
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { fileInputRef, mediaUrl, uploading, mediaError, openPicker, onFileChange, clearMedia } =
-    useComposerMedia();
+  const {
+    fileInputRef,
+    mediaUrl,
+    displayUrl,
+    uploading,
+    mediaError,
+    mediaReadyForPublish,
+    mediaRejected,
+    continueWithoutMedia,
+    openPicker,
+    onFileChange,
+    clearMedia,
+    beginPublishing,
+    finishPublishing,
+  } = useComposerMedia();
 
-  const canSubmit = text.trim().length > 0 && !submitting && !uploading;
+  const canSubmit = text.trim().length > 0 && !submitting && mediaReadyForPublish;
 
   async function handleSubmit() {
-    if (!canSubmit) return;
+    if (!canSubmit || !beginPublishing()) return;
     setSubmitting(true);
     try {
       await onSubmit(text.trim(), mediaUrl);
+      finishPublishing(true);
       setText("");
       clearMedia();
+    } catch (erreur) {
+      finishPublishing(false, erreur);
     } finally {
       setSubmitting(false);
     }
@@ -124,8 +146,7 @@ export function FeedDesktopComposer({
         <div className="relative shrink-0">
           <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-yunicity-primary-soft ring-1 ring-neutral-200/80">
             {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- dynamic user avatar
-              <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+              <AvatarImage src={avatarUrl} alt="" className="h-full w-full object-cover" />
             ) : (
               <span className="text-sm font-bold text-yunicity-primary" aria-hidden>
                 {avatarInitial}
@@ -153,25 +174,45 @@ export function FeedDesktopComposer({
             className="min-h-[2.5rem] w-full resize-none border-0 bg-transparent py-1.5 text-[15px] leading-snug text-neutral-900 placeholder:text-neutral-500 focus:outline-none"
           />
 
-          {mediaUrl ? (
-            <div className="relative mt-2 inline-block">
+          {uploading ? (
+            <p className="mt-1 text-xs text-neutral-500" aria-live="polite">
+              {COMPOSER_MEDIA_UPLOADING_LABEL}
+            </p>
+          ) : null}
+          {displayUrl ? (
+            <div className="relative mt-2 w-full max-w-[12rem] overflow-hidden rounded-lg bg-neutral-100 ring-1 ring-neutral-200">
               {/* eslint-disable-next-line @next/next/no-img-element -- dynamic R2 upload URL */}
               <img
-                src={mediaUrl}
+                src={displayUrl}
                 alt="Photo jointe"
-                className="h-20 w-20 rounded-lg object-cover ring-1 ring-neutral-200"
+                className="mx-auto block h-20 w-full object-contain"
               />
+              {/* La pastille reste visuellement discrète (20 px) ; c'est la zone
+                  cliquable qui atteint 44 px, sans alourdir un aperçu de 12 rem. */}
               <button
                 type="button"
                 onClick={clearMedia}
-                className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-white shadow"
+                className="absolute -right-1 -top-1 flex min-h-11 min-w-11 items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yunicity-primary"
                 aria-label="Retirer la photo"
               >
-                <X className="h-3 w-3" />
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-white shadow">
+                  <X className="h-3 w-3" />
+                </span>
               </button>
             </div>
           ) : null}
-          {mediaError ? <p className="mt-1 text-xs text-red-600">{mediaError}</p> : null}
+          {mediaError ? (
+            <p className="mt-1 text-xs text-red-600" role="alert">
+              {mediaError}
+            </p>
+          ) : null}
+      {mediaRejected ? (
+        <ComposerMediaResolution
+          onChooseAnother={openPicker}
+          onContinueWithout={continueWithoutMedia}
+          className="px-0"
+        />
+      ) : null}
         </div>
 
         {canSubmit ? (
@@ -180,7 +221,7 @@ export function FeedDesktopComposer({
             disabled={submitting}
             onClick={() => void handleSubmit()}
             data-feed-desktop-composer-submit=""
-            className="mt-0.5 shrink-0 rounded-full bg-yunicity-primary px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-yunicity-primary-hover active:scale-[0.98] disabled:opacity-60"
+            className="mt-0.5 inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full bg-yunicity-primary px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-yunicity-primary-hover active:scale-[0.98] disabled:opacity-60"
           >
             {submitting ? "Publication…" : "Publier"}
           </button>
@@ -196,7 +237,10 @@ export function FeedDesktopComposer({
             disabled={uploading}
           >
             {uploading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-emerald-600" aria-hidden />
+              <Loader2
+                className="h-5 w-5 animate-spin text-emerald-600 motion-reduce:animate-none"
+                aria-hidden
+              />
             ) : (
               <ComposerIconImage className="h-5 w-5 text-emerald-600" />
             )}
@@ -217,7 +261,7 @@ export function FeedDesktopComposer({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept={COMPOSER_MEDIA_ACCEPT_ATTR}
             className="hidden"
             onChange={(e) => void onFileChange(e.target.files?.[0] ?? null)}
           />

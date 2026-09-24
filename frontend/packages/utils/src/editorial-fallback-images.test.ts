@@ -94,12 +94,22 @@ const baseNeighborhood = (overrides: Partial<Neighborhood>): Neighborhood => ({
 });
 
 describe("resolveNeighborhoodEditorialImage", () => {
-  it("maps Reims neighborhood slugs to editorial URLs", () => {
+  it("maps Reims neighborhood slugs to Wikimedia Commons URLs", () => {
     expect(resolveNeighborhoodEditorialImage(baseNeighborhood({ slug: "centre-ville" }))).toBe(
       NEIGHBORHOOD_EDITORIAL_IMAGE_CENTRE_VILLE,
     );
+    expect(NEIGHBORHOOD_EDITORIAL_IMAGE_CENTRE_VILLE).toContain("commons.wikimedia.org");
     expect(resolveNeighborhoodEditorialImage(baseNeighborhood({ slug: "boulingrin" }))).toBe(
       NEIGHBORHOOD_EDITORIAL_IMAGE_BOULINGRIN,
+    );
+    expect(resolveNeighborhoodEditorialImage(baseNeighborhood({ slug: "cernay-jean-jaures" }))).toContain(
+      "commons.wikimedia.org",
+    );
+    expect(resolveNeighborhoodEditorialImage(baseNeighborhood({ slug: "chatillons" }))).toContain(
+      "commons.wikimedia.org",
+    );
+    expect(resolveNeighborhoodEditorialImage(baseNeighborhood({ slug: "courlancy" }))).toContain(
+      "commons.wikimedia.org",
     );
   });
 

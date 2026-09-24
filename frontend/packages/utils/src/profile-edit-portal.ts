@@ -1,4 +1,12 @@
-import type { FeedPost, LocalEvent, PassportMe, PassportStamp, ProfileMe, Tribe } from "@yunicity/types";
+import type {
+  FeedPost,
+  LocalEvent,
+  PassportMe,
+  PassportStamp,
+  ProfileMe,
+  ProfileVisibility,
+  Tribe,
+} from "@yunicity/types";
 
 import {
   PROFILE_EDIT_BIO_MAX_LENGTH,
@@ -31,11 +39,13 @@ export type ProfileEditCompletionItem = {
 };
 
 export type ProfileEditDraft = {
+  username: string;
   firstName: string;
   lastName: string;
   bio: string;
   city: string;
   interests: string[];
+  visibility: ProfileVisibility;
 };
 
 export type ProfileEditPreviewStat = {
@@ -51,6 +61,7 @@ export type ProfileEditPreviewView = {
   city: string | null;
   avatarUrl: string | null;
   bannerUrl: string | null;
+  interests: string[];
   stats: ProfileEditPreviewStat[];
   publicProfileHref: string;
 };
@@ -77,11 +88,13 @@ export function joinDisplayName(firstName: string, lastName: string): string | n
 export function buildProfileEditDraft(profile: ProfileMe): ProfileEditDraft {
   const { firstName, lastName } = splitDisplayName(profile.display_name);
   return {
+    username: profile.username,
     firstName,
     lastName,
     bio: profile.bio ?? "",
     city: profile.city ?? "",
     interests: [...profile.interests],
+    visibility: profile.visibility,
   };
 }
 
@@ -162,11 +175,12 @@ export function buildProfileEditPreview(input: {
 
   return {
     displayName,
-    username: input.profile.username,
+    username: input.draft.username,
     bio: input.draft.bio.trim() || null,
     city: input.draft.city.trim() || null,
     avatarUrl: input.profile.avatar_url?.trim() || null,
     bannerUrl: input.profile.banner_url?.trim() || null,
+    interests: [...input.draft.interests],
     stats: previewStats,
     publicProfileHref: `/profile/${encodeURIComponent(input.profile.username)}`,
   };
@@ -180,22 +194,26 @@ export function buildProfileEditSavePayload(
   bio: string | null;
   city: string | null;
   interests: string[];
+  visibility: ProfileVisibility;
 } {
   return {
     display_name: joinDisplayName(draft.firstName, draft.lastName),
     bio: draft.bio.trim() || null,
     city: draft.city.trim() || null,
     interests: draft.interests,
+    visibility: draft.visibility,
   };
 }
 
 export function profileEditDraftEquals(a: ProfileEditDraft, b: ProfileEditDraft): boolean {
   return (
+    a.username.trim().toLowerCase() === b.username.trim().toLowerCase() &&
     a.firstName === b.firstName &&
     a.lastName === b.lastName &&
     a.bio === b.bio &&
     a.city === b.city &&
     a.interests.length === b.interests.length &&
-    a.interests.every((item, index) => item === b.interests[index])
+    a.interests.every((item, index) => item === b.interests[index]) &&
+    a.visibility === b.visibility
   );
 }

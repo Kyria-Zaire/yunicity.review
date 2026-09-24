@@ -1,7 +1,7 @@
 /**
  * Ossature éditoriale du Feed medium (C3-FEED-M4).
  *
- * Cinq régions ordonnées composent la voie principale entre 640 et 1023,98 px.
+ * Six régions ordonnées composent la voie principale entre 640 et 1023,98 px.
  * La vidéo locale et les modules contextuels sont des items du `stream`.
  * Elles sont identifiées par un marqueur explicite `data-feed-medium-region`,
  * jamais par `nth-child`, profondeur DOM, balise ou texte visible.
@@ -14,6 +14,10 @@
 export const FEED_MEDIUM_REGIONS = [
   "stories",
   "composer",
+  // FEED-MAIN-LAYOUT-UIUX-01 §7 : sous 1024px le volet droit disparait, et ses
+  // deux modules se replient ici dans le MEME ordre — Passeport, puis
+  // Evenements. Le Passeport precede donc `evening-events`, jamais l'inverse.
+  "passport",
   "evening-events",
   "featured-event",
   "stream",
@@ -25,6 +29,7 @@ export type FeedMediumRegion = (typeof FEED_MEDIUM_REGIONS)[number];
 export const FEED_MEDIUM_REGION_CONTENT: Record<FeedMediumRegion, string> = {
   stories: "Moments près de vous",
   composer: "création de publication",
+  passport: "résumé Passport local de l'utilisateur (repli du volet droit)",
   "evening-events": "Ce soir à venir",
   "featured-event": "événement éditorial mis en avant",
   stream: "publications et publication vidéo locale, ou état filtré/vide alternatif",
