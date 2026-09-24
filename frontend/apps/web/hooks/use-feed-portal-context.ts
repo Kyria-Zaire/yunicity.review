@@ -9,8 +9,13 @@ import type {
   StoryRingItem,
   Tribe,
 } from "@yunicity/types";
-import { filterAgendaUpcomingEvents, isEventWithinDays } from "@yunicity/utils";
-import { useCallback, useEffect, useState } from "react";
+import {
+  filterAgendaUpcomingEvents,
+  isEventWithinDays,
+  storyRingsVersion,
+  subscribeStoryRings,
+} from "@yunicity/utils";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -52,6 +57,8 @@ export function useFeedPortalContext(): FeedPortalContextState {
   const [culturalPlaces, setCulturalPlaces] = useState<CulturalPlaceListItem[]>([]);
   const [highlightOffer, setHighlightOffer] = useState<PartnerOfferPublic | null>(null);
   const [storyRings, setStoryRings] = useState<StoryRingItem[]>([]);
+  /** Version des anneaux au dernier chargement reussi — voir l'effet plus bas. */
+  const versionChargee = useRef(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -145,6 +152,42 @@ export function useFeedPortalContext(): FeedPortalContextState {
 
   useEffect(() => {
     void load();
+    versionChargee.current = storyRingsVersion();
+  }, [load]);
+
+  // Rafraichissement apres publication.
+  //
+  // Revenir en arriere depuis iOS Safari restaure souvent la page depuis le
+  // bfcache : les effets ne sont pas rejoues, et le rail garde l'etat d'AVANT
+  // la publication. On ne parie donc pas sur le remontage — on recharge quand
+  // la page redevient visible ET qu'une Story a ete publiee depuis la derniere
+  // lecture. Sans cette seconde condition, chaque changement d'onglet
+  // declencherait un appel reseau inutile.
+  useEffect(() => {
+    const rechargerSiPerime = (): void => {
+      const courante = storyRingsVersion();
+      if (courante === versionChargee.current) return;
+      versionChargee.current = courante;
+      void load();
+    };
+
+    // Si l'accueil est reste monte pendant la publication, on le sait tout de
+    // suite ; sinon les evenements ci-dessous s'en chargent au retour.
+    const desabonner = subscribeStoryRings(rechargerSiPerime);
+
+    const auRetour = (): void => {
+      if (document.visibilityState === "visible") rechargerSiPerime();
+    };
+    document.addEventListener("visibilitychange", auRetour);
+    // `pageshow` couvre le bfcache, que `visibilitychange` seul manque quand
+    // l'onglet n'a jamais ete masque.
+    window.addEventListener("pageshow", auRetour);
+
+    return () => {
+      desabonner();
+      document.removeEventListener("visibilitychange", auRetour);
+      window.removeEventListener("pageshow", auRetour);
+    };
   }, [load]);
 
   return {

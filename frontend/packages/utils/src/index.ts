@@ -5296,6 +5296,12 @@ export {
   type StoryTabOption,
 } from "./stories-portal";
 export {
+  __resetStoryRingsFreshnessForTests,
+  markStoryRingsStale,
+  storyRingsVersion,
+  subscribeStoryRings,
+} from "./story-rings-freshness";
+export {
   STORIES_CATEGORIES_CTA,
   STORIES_CATEGORIES_TITLE,
   STORIES_CATEGORY_ALL,
