@@ -4,6 +4,34 @@
 
 @import "@yunicity/ui/brand.css";
 
+/* PR202-MOBILE-P0 — zoom automatique de Safari iOS au focus d'un champ.
+ *
+ * Safari agrandit la page des qu'un champ saisissable recoit le focus avec une
+ * police sous 16px, puis ne la reduit pas au blur : la moitie droite du champ
+ * et le bouton sortent de l'ecran, et l'utilisateur doit dezoomer a la main.
+ * Mesure WebKit avant correction : TOUS les champs visibles rendus a 14px, a
+ * 320, 375, 390, 900 et 1440 px.
+ *
+ * On corrige la cause, pas le symptome. Le viewport reste accessible
+ * (`width=device-width, initial-scale=1`, sans `user-scalable=no` ni
+ * `maximum-scale`) : desactiver le zoom ferait disparaitre le probleme en
+ * supprimant aussi le zoom d'accessibilite, ce qui est un recul, pas un
+ * correctif.
+ *
+ * Seuls les champs qui OUVRENT UN CLAVIER sont vises : une case a cocher, un
+ * bouton radio, un curseur ou un selecteur de couleur ne declenchent aucun
+ * zoom, et les elargir deplacerait des mises en page sans rien regler.
+ *
+ * Borne a la largeur mobile : au-dela, la typographie du design est conservee.
+ */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 :root {
   --background: var(--yunicity-background);
   --foreground: var(--yunicity-text-primary);
