@@ -43,6 +43,26 @@ describe("fetchAuthorizedMediaBlob", () => {
     expect(fetch).toHaveBeenCalledOnce();
   });
 
+  it.each([
+    ["mp4", "video/mp4"],
+    ["webm", "video/webm"],
+  ])("accepte une Story vidéo %s authentifiée", async (extension, contentType) => {
+    process.env.NEXT_PUBLIC_API_URL = "https://api-preview.yunicity.city";
+    const path = VALID_STORY_MEDIA_PATH.replace(/\.jpg$/i, `.${extension}`);
+    const fetch = vi.fn(
+      async () =>
+        new Response(new Uint8Array([1, 2, 3]), {
+          status: 200,
+          headers: { "Content-Type": contentType },
+        }),
+    );
+
+    await expect(fetchAuthorizedMediaBlob(fakeClient(fetch) as never, path)).resolves.toMatchObject({
+      contentType,
+    });
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
   it("refuse une URL externe avant tout fetch (Authorization jamais ajoutée)", async () => {
     process.env.NEXT_PUBLIC_API_URL = "https://api-preview.yunicity.city";
     const fetch = vi.fn();

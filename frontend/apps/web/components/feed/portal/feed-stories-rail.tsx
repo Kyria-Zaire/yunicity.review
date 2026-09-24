@@ -5,6 +5,8 @@ import { FEED_PORTAL_STORIES_SEE_ALL, FEED_PORTAL_STORY_YOURS } from "@yunicity/
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 
+import { StoryRingMedia } from "@/components/stories/authorized-story-media";
+
 const STORY_RING_ACTIVE = [
   "bg-gradient-to-tr from-violet-500 via-purple-500 to-fuchsia-400",
   "bg-gradient-to-tr from-orange-400 via-amber-500 to-yellow-400",
@@ -39,8 +41,10 @@ function StoryAvatar({ item, index }: { item: FeedStoryShortcut; index: number }
   const ringClass = storyRingClass(item, index);
 
   const inner = item.imageUrl ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={item.imageUrl} alt="" className="h-full w-full rounded-full object-cover" />
+    <StoryRingMedia
+      src={item.imageUrl}
+      className="h-full w-full rounded-full object-cover"
+    />
   ) : (
     <span className="flex h-full w-full items-center justify-center rounded-full bg-yunicity-primary-soft text-base font-bold text-yunicity-primary">
       {item.name.slice(0, 1).toUpperCase()}

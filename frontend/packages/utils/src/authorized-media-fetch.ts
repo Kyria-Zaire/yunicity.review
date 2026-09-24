@@ -7,9 +7,9 @@ import {
 } from "./authorized-media-url";
 
 /**
- * GET authentifié d'un média image via le client existant (MEDIA-01B).
+ * GET authentifié d'un média Story via le client existant (MEDIA-01B).
  *
- * Types acceptés : JPEG / PNG / WebP uniquement (contrat StoryMediaService).
+ * Types acceptés : JPEG / PNG / WebP / MP4 / WebM (contrat StoryMediaService).
  * Redirections refusées ; taille plafonnée à COMPOSER_MEDIA_MAX_BYTES.
  */
 
@@ -35,20 +35,31 @@ export class AuthorizedMediaFetchError extends Error {
 
 export type AuthorizedMediaBlob = {
   blob: Blob;
-  contentType: "image/jpeg" | "image/png" | "image/webp";
+  contentType: AuthorizedMediaContentType;
 };
 
-const ALLOWED_CONTENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+export type AuthorizedMediaContentType =
+  | "image/jpeg"
+  | "image/png"
+  | "image/webp"
+  | "video/mp4"
+  | "video/webm";
 
-function parseAllowedContentType(
-  value: string | null,
-): "image/jpeg" | "image/png" | "image/webp" | null {
+const ALLOWED_CONTENT_TYPES = new Set<AuthorizedMediaContentType>([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "video/mp4",
+  "video/webm",
+]);
+
+function parseAllowedContentType(value: string | null): AuthorizedMediaContentType | null {
   if (!value) return null;
   // Un seul type MIME — pas de liste CSV.
   if (value.includes(",")) return null;
   const mime = value.split(";", 1)[0]?.trim().toLowerCase() ?? "";
-  if (!ALLOWED_CONTENT_TYPES.has(mime)) return null;
-  return mime as "image/jpeg" | "image/png" | "image/webp";
+  if (!ALLOWED_CONTENT_TYPES.has(mime as AuthorizedMediaContentType)) return null;
+  return mime as AuthorizedMediaContentType;
 }
 
 export async function fetchAuthorizedMediaBlob(

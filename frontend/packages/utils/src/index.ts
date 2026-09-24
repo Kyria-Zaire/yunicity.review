@@ -41,6 +41,7 @@ export {
 export {
   AUTHORIZED_STORY_MEDIA_PATH,
   AuthorizedMediaUrlError,
+  isAuthorizedStoryMediaUrl,
   resolveAuthorizedApiMediaUrl,
   type AuthorizedMediaUrlErrorCode,
 } from "./authorized-media-url";

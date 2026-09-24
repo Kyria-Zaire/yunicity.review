@@ -4,7 +4,7 @@ import { resolveApiMediaUrl } from "./api-media-url";
 /**
  * Garde d'URL pour un GET média authentifié de publication (MEDIA-01B).
  *
- * Allowlist minimale : uniquement `/api/v1/story-media/{uuid}/{uuid}.{jpg|png|webp}`.
+ * Allowlist minimale : uniquement les formats servis par `StoryMediaService`.
  * Aucun jeton n'est jamais ajouté à l'URL ; la validation précède tout fetch.
  */
 
@@ -30,7 +30,18 @@ const EMBEDDED_OR_UNSAFE = /^(javascript|data|blob|file|about|vbscript):/i;
 
 /** Forme persistée par `story_media_api_url` — UUID utilisateur + UUID fichier. */
 export const AUTHORIZED_STORY_MEDIA_PATH =
-  /^\/api\/v1\/story-media\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp)$/i;
+  /^\/api\/v1\/story-media\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp|mp4|webm)$/i;
+
+/** Classe un candidat sans assouplir la validation d'origine ni de chemin. */
+export function isAuthorizedStoryMediaUrl(src: string | null | undefined): boolean {
+  if (!src?.trim()) return false;
+  try {
+    resolveAuthorizedApiMediaUrl(src);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function publicApiBase(explicit?: string): string {
   return resolveWebApiBaseUrl({

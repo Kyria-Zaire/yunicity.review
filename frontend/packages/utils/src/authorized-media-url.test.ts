@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import { AuthorizedMediaUrlError, resolveAuthorizedApiMediaUrl } from "./authorized-media-url";
+import {
+  AuthorizedMediaUrlError,
+  isAuthorizedStoryMediaUrl,
+  resolveAuthorizedApiMediaUrl,
+} from "./authorized-media-url";
 
 /** Forme réelle persistée par story_media_api_url. */
 export const VALID_STORY_MEDIA_PATH =
@@ -26,6 +30,18 @@ describe("resolveAuthorizedApiMediaUrl", () => {
     expect(
       resolveAuthorizedApiMediaUrl(`https://api-preview.yunicity.city${VALID_STORY_MEDIA_PATH}`),
     ).toBe(`https://api-preview.yunicity.city${VALID_STORY_MEDIA_PATH}`);
+  });
+
+  it("accepte les formats vidéo Story sans ouvrir l'allowlist", () => {
+    process.env.NEXT_PUBLIC_API_URL = "https://api-preview.yunicity.city";
+    for (const extension of ["mp4", "webm"]) {
+      const path = VALID_STORY_MEDIA_PATH.replace(/\.jpg$/i, `.${extension}`);
+      expect(resolveAuthorizedApiMediaUrl(path)).toBe(
+        `https://api-preview.yunicity.city${path}`,
+      );
+      expect(isAuthorizedStoryMediaUrl(path)).toBe(true);
+    }
+    expect(isAuthorizedStoryMediaUrl("https://evil.example/story.mp4")).toBe(false);
   });
 
   it("refuse une origine externe", () => {
