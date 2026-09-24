@@ -1,6 +1,8 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { execFile } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 
 import { describe, expect, it } from "vitest";
 
@@ -15,15 +17,23 @@ import { describe, expect, it } from "vitest";
 
 const racine = join(fileURLToPath(new URL(".", import.meta.url)), "..", "..");
 const composants = join(racine, "components");
+const depot = join(racine, "..", "..", "..");
+const execFileAsync = promisify(execFile);
 
-function fichiersTsx(dossier: string): string[] {
-  const out: string[] = [];
-  for (const entree of readdirSync(dossier)) {
-    const chemin = join(dossier, entree);
-    if (statSync(chemin).isDirectory()) out.push(...fichiersTsx(chemin));
-    else if (entree.endsWith(".tsx")) out.push(chemin);
-  }
-  return out;
+async function fichiersTsxAvecMediaUrl(): Promise<string[]> {
+  // Git maintient déjà l'inventaire déterministe des sources actives. Son grep
+  // natif évite de lire les quelque 1 070 composants dans le processus Vitest,
+  // tout en incluant automatiquement toute nouvelle surface suivie par Git.
+  const { stdout } = await execFileAsync(
+    "git",
+    ["grep", "-l", "-e", "media_url", "--", ":(glob)frontend/apps/web/components/**/*.tsx"],
+    { cwd: depot, encoding: "utf8" },
+  );
+  return stdout
+    .trim()
+    .split(/\r?\n/u)
+    .filter(Boolean)
+    .map((chemin) => join(depot, chemin));
 }
 
 /** Marque une utilisation du cadre canonique, directe ou par composant dédié. */
@@ -58,12 +68,18 @@ function estExclu(chemin: string): string | null {
 }
 
 describe("MEDIA-02 — toute surface de publication passe par le cadre canonique", () => {
-  it("aucune surface active hors du cadre canonique", () => {
+  it("aucune surface active hors du cadre canonique", async () => {
     const horsCadre: string[] = [];
     const exclues: string[] = [];
 
-    for (const chemin of fichiersTsx(composants)) {
-      const source = readFileSync(chemin, "utf8");
+    // Le périmètre reste exhaustif pour les composants Web suivis. Seules les
+    // surfaces candidates sont ensuite lues, sans I/O synchrone dans Vitest.
+    const chemins = await fichiersTsxAvecMediaUrl();
+    const sources = await Promise.all(
+      chemins.map(async (chemin) => ({ chemin, source: await readFile(chemin, "utf8") })),
+    );
+
+    for (const { chemin, source } of sources) {
       // Une surface de publication = elle REND le média, pas seulement le champ.
       // Un écran de gestion qui manipule `media_url` dans un formulaire
       // n'affiche rien : le compter produirait un faux positif permanent.
@@ -91,15 +107,15 @@ describe("MEDIA-02 — toute surface de publication passe par le cadre canonique
     expect(horsCadre, "surfaces de publication hors cadre canonique").toEqual([]);
   });
 
-  it("AuthorizedPostImage encadre lui-même — sinon il ne vaut rien comme garantie", () => {
+  it("AuthorizedPostImage encadre lui-même — sinon il ne vaut rien comme garantie", async () => {
     // Le compter parmi les primitives n'a de sens que s'il applique le cadre :
     // sinon le balayage ci-dessus déclarerait conformes des cartes qui ne le
     // sont pas.
-    const source = readFileSync(join(composants, "feed/authorized-post-image.tsx"), "utf8");
+    const source = await readFile(join(composants, "feed/authorized-post-image.tsx"), "utf8");
     expect(source).toContain("PublicationMediaFrame");
   });
 
-  it("les cinq surfaces raccordées déclarent bien une variante canonique", () => {
+  it("les cinq surfaces raccordées déclarent bien une variante canonique", async () => {
     const attendues: Array<[string, string]> = [
       ["profile/desktop/profile-desktop-publications.tsx", "AuthorizedPostImage"],
       ["tribes/mobile/tribe-detail-mobile-post-card.tsx", "AuthorizedPostImage"],
@@ -108,13 +124,13 @@ describe("MEDIA-02 — toute surface de publication passe par le cadre canonique
       ["profile/mobile/profile-mobile-post-card.tsx", "AuthorizedPostImage"],
     ];
     for (const [relatif, primitive] of attendues) {
-      const source = readFileSync(join(composants, relatif), "utf8");
+      const source = await readFile(join(composants, relatif), "utf8");
       expect(source, `${relatif} n'utilise pas ${primitive}`).toContain(primitive);
       expect(source, `${relatif} passe une variante`).toMatch(/variant=["{]/);
     }
   });
 
-  it("aucune carte ne redéfinit la hauteur ou le ratio du média", () => {
+  it("aucune carte ne redéfinit la hauteur ou le ratio du média", async () => {
     const fautives: string[] = [];
     const cartes = [
       "profile/desktop/profile-desktop-publications.tsx",
@@ -124,7 +140,7 @@ describe("MEDIA-02 — toute surface de publication passe par le cadre canonique
       "profile/mobile/profile-mobile-post-card.tsx",
     ];
     for (const relatif of cartes) {
-      const source = readFileSync(join(composants, relatif), "utf8");
+      const source = await readFile(join(composants, relatif), "utf8");
       // On ne regarde que les lignes qui portent le média de publication.
       for (const ligne of source.split("\n")) {
         if (!/AuthorizedPostImage|PublicationMediaFrame|CulturalImage|media_url/.test(ligne)) continue;
