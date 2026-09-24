@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { LocalVideoFeedItem } from "@yunicity/types";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useRef, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -122,29 +122,25 @@ describe("VideoCommentsSheet — modal Drawer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Ouvrir les commentaires" }));
 
     await waitFor(() => {
-      expect(dialog()).toBeTruthy();
+      const appMain = screen.getByTestId("app-main");
+      const inertAncestor = appMain.closest("[inert]");
+      expect(inertAncestor !== null || appMain.hasAttribute("inert")).toBe(true);
+      expect(dialog().contains(document.activeElement)).toBe(true);
     });
-
-    const appMain = screen.getByTestId("app-main");
-    const inertAncestor = appMain.closest("[inert]");
-    expect(inertAncestor !== null || appMain.hasAttribute("inert")).toBe(true);
-
-    expect(dialog().contains(document.activeElement)).toBe(true);
   });
 
   it("Tab sur le dernier contrôle revient au premier", async () => {
     render(<CommentsHarness />);
     fireEvent.click(screen.getByRole("button", { name: "Ouvrir les commentaires" }));
 
-    await waitFor(() => {
-      expect(dialog()).toBeTruthy();
-    });
+    await waitFor(() => expect(dialog().contains(document.activeElement)).toBe(true));
 
     const items = focusablesInDialog();
     expect(items.length).toBeGreaterThan(1);
-    items.at(-1)?.focus();
-
-    fireEvent.keyDown(document, { key: "Tab", bubbles: true, cancelable: true });
+    act(() => {
+      items.at(-1)?.focus();
+      fireEvent.keyDown(document, { key: "Tab", bubbles: true, cancelable: true });
+    });
 
     await waitFor(() => {
       expect(items[0]?.contains(document.activeElement) || document.activeElement === items[0]).toBe(
@@ -157,14 +153,13 @@ describe("VideoCommentsSheet — modal Drawer", () => {
     render(<CommentsHarness />);
     fireEvent.click(screen.getByRole("button", { name: "Ouvrir les commentaires" }));
 
-    await waitFor(() => {
-      expect(dialog()).toBeTruthy();
-    });
+    await waitFor(() => expect(dialog().contains(document.activeElement)).toBe(true));
 
     const items = focusablesInDialog();
-    items[0]?.focus();
-
-    fireEvent.keyDown(document, { key: "Tab", shiftKey: true, bubbles: true, cancelable: true });
+    act(() => {
+      items[0]?.focus();
+      fireEvent.keyDown(document, { key: "Tab", shiftKey: true, bubbles: true, cancelable: true });
+    });
 
     await waitFor(() => {
       const last = items.at(-1);
