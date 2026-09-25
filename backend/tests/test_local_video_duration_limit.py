@@ -119,7 +119,14 @@ def test_rejection_message_carries_the_authoritative_value(
     assert f"max. {LOCAL_VIDEO_MAX_DURATION_SECONDS} s" in exc_info.value.detail
 
 
-def test_size_and_quota_are_unchanged() -> None:
-    """Ce ticket ne touche ni la taille ni le quota."""
-    assert LOCAL_VIDEO_MAX_BYTES == 50 * 1024 * 1024
+def test_duration_work_never_touches_size_or_quota() -> None:
+    """La durée et la taille restent deux contrats distincts.
+
+    Ce test gardait le ticket DURÉE hors du périmètre taille. Il le fait
+    toujours — mais la taille a depuis été portée à 200 Mo par
+    PR202-VIDEO-STREAMING-UPLOAD-01, une fois la réception par blocs en place :
+    une vidéo iPhone de 30 s en 4K pèse environ 200 Mo, et 50 Mo refusait des
+    clips ordinaires. Le quota d'envois, lui, n'a jamais bougé.
+    """
+    assert LOCAL_VIDEO_MAX_BYTES == 200 * 1024 * 1024
     assert LOCAL_VIDEO_UPLOAD_RATE_LIMIT == 10

@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import os
+import tempfile
 import uuid
+from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +17,7 @@ from app.core.errors import AppError
 from app.core.local_video_constants import (
     ALLOWED_LOCAL_VIDEO_CONTENT_TYPES,
     EXTENSION_BY_LOCAL_VIDEO_MIME,
+    LOCAL_VIDEO_MAGIC_SAMPLE_BYTES,
     LOCAL_VIDEO_UPLOAD_RATE_LIMIT,
     LOCAL_VIDEO_UPLOAD_RATE_WINDOW_SECONDS,
     LocalVideoProcessingStatus,
@@ -21,6 +26,7 @@ from app.core.local_video_constants import (
     LocalVideoUploadStatus,
 )
 from app.core.local_video_duration_policy import max_duration_for_roles
+from app.core.local_video_media_policy import validate_local_video_content_bytes
 from app.models.local_video import LocalVideo, LocalVideoUpload
 from app.models.neighborhood import Neighborhood
 from app.schemas.local_video import (
@@ -108,6 +114,102 @@ class LocalVideoService:
             upload_method=presigned.upload_method,
             upload_headers=presigned.upload_headers,
         )
+
+    async def store_streamed_upload(
+        self,
+        upload_id: uuid.UUID,
+        chunks: AsyncIterator[bytes],
+        *,
+        declared_length: int | None,
+    ) -> None:
+        """Recoit une source video PAR BLOCS, sans jamais la tenir entiere.
+
+        L'ancienne version appelait `await request.body()` : le corps complet
+        etait alloue, PUIS compare a la limite. Un client pouvait donc faire
+        allouer 2 Go a l'API pour se voir refuser un fichier de 200 Mo — la
+        limite ne protegeait que le disque, jamais la memoire.
+
+        Ici la memoire reste bornee a un bloc, quel que soit ce qu'envoie le
+        client, et la lecture s'arrete DES le depassement plutot qu'a la fin.
+        """
+        upload = await self._get_upload(upload_id)
+        self._assert_upload_writable(upload)
+        limite = min(self._settings.local_video_max_bytes, upload.expected_size_bytes)
+
+        # Refus AVANT toute lecture quand le client annonce deja trop gros.
+        # `Content-Length` n'est pas une preuve — il peut mentir ou manquer —
+        # mais quand il est honnete, il evite de lire pour rien.
+        if declared_length is not None and declared_length > limite:
+            raise self._too_large(declared_length, limite)
+
+        # `mkstemp` rend un descripteur DEJA ouvert : on ecrit dedans plutot que
+        # de rouvrir le chemin. Rouvrir laissait le premier descripteur ouvert a
+        # chaque envoi — une fuite, et sous Windows un temporaire impossible a
+        # supprimer ensuite.
+        descripteur, chemin_brut = tempfile.mkstemp(prefix="local-video-", suffix=".part")
+        destination = Path(chemin_brut)
+        recu = 0
+        entete = b""
+        try:
+            with os.fdopen(descripteur, "wb") as handle:
+                async for bloc in chunks:
+                    if not bloc:
+                        continue
+                    recu += len(bloc)
+                    if recu > limite:
+                        # Coupure immediate : on ne lit pas le reste du flux.
+                        raise self._too_large(recu, limite)
+                    if len(entete) < LOCAL_VIDEO_MAGIC_SAMPLE_BYTES:
+                        entete += bloc[: LOCAL_VIDEO_MAGIC_SAMPLE_BYTES - len(entete)]
+                    handle.write(bloc)
+
+            if recu == 0:
+                raise AppError(
+                    status_code=400,
+                    code="LOCAL_VIDEO_EMPTY",
+                    detail="Fichier vide.",
+                )
+            # L'entete suffit a reconnaitre le conteneur : valider ici evite de
+            # promouvoir un fichier que le pipeline refusera de toute facon.
+            validate_local_video_content_bytes(upload.content_type, entete)
+
+            self._storage.promote_file(destination, upload.storage_key)
+        finally:
+            # Client deconnecte, flux interrompu, validation refusee, erreur
+            # disque : aucun temporaire ne doit survivre.
+            destination.unlink(missing_ok=True)
+
+        upload.status = LocalVideoUploadStatus.UPLOADED.value
+        await self._session.commit()
+
+    def _too_large(self, taille: int, limite: int) -> AppError:
+        return AppError(
+            status_code=413,
+            code="LOCAL_VIDEO_TOO_LARGE",
+            detail=(
+                f"Fichier trop volumineux : {taille // (1024 * 1024)} Mo pour une limite de "
+                f"{limite // (1024 * 1024)} Mo. Filmez plus court ou baissez la qualite."
+            ),
+            metadata={"size_bytes": taille, "max_bytes": limite},
+        )
+
+    def _assert_upload_writable(self, upload: LocalVideoUpload) -> None:
+        if upload.status not in {
+            LocalVideoUploadStatus.PENDING.value,
+            LocalVideoUploadStatus.UPLOADED.value,
+        }:
+            raise AppError(
+                status_code=409,
+                code="LOCAL_VIDEO_UPLOAD_NOT_AVAILABLE",
+                detail="Session d'upload indisponible.",
+            )
+        if upload.expires_at <= datetime.now(tz=UTC):
+            upload.status = LocalVideoUploadStatus.EXPIRED.value
+            raise AppError(
+                status_code=410,
+                code="LOCAL_VIDEO_UPLOAD_EXPIRED",
+                detail="Session d'upload expirée.",
+            )
 
     async def store_binary_upload(self, upload_id: uuid.UUID, data: bytes) -> None:
         upload = await self._get_upload(upload_id)

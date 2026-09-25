@@ -4,7 +4,23 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-LOCAL_VIDEO_MAX_BYTES = 50 * 1024 * 1024
+#: Taille maximale d'une video locale. SOURCE CANONIQUE : le frontend n'en
+#: declare aucune copie, il lit celle-ci via `GET /local-videos/policy`.
+#:
+#: 200 Mo parce qu'un iPhone filme en 4K a ~400 Mo/min : 30 secondes pesent
+#: environ 200 Mo, et 50 Mo refusaient donc des clips parfaitement ordinaires.
+#: Cette valeur n'est tenable que depuis que l'upload filesystem lit le corps
+#: par blocs : avant, la reception allouait le fichier entier en memoire.
+LOCAL_VIDEO_MAX_BYTES = 200 * 1024 * 1024
+
+#: Taille des blocs de lecture reseau et de copie disque. 1 Mio : assez grand
+#: pour que le cout par bloc soit negligeable, assez petit pour que la memoire
+#: reste constante quelle que soit la taille du fichier.
+LOCAL_VIDEO_UPLOAD_CHUNK_BYTES = 1024 * 1024
+
+#: Octets suffisants pour reconnaitre un conteneur ISO BMFF (`ftyp` en 4..8).
+#: On valide donc l'entete sur le PREMIER bloc, sans attendre la fin.
+LOCAL_VIDEO_MAGIC_SAMPLE_BYTES = 64
 # Duree pilote citoyen (profil par defaut). Spec Founder, FEATURE-ROADMAP-POST-RC §4.
 LOCAL_VIDEO_MAX_DURATION_SECONDS = 90
 # Duree createur verifie (role RBAC VERIFIED_CREATOR). Meme source.

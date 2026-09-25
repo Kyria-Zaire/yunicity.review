@@ -54,9 +54,14 @@ describe("libellés de durée par palier", () => {
     }
   });
 
-  it("laisse la taille maximale inchangée", () => {
-    expect(localVideoUploadVideoHint(VERIFIED)).toContain("50 Mo");
-    expect(localVideoUploadPageSubtitle(VERIFIED)).toContain("50 Mo");
+  it("ne fait pas varier la taille maximale avec le palier de durée", () => {
+    // Durée et taille restent deux contrats distincts : un créateur vérifié
+    // filme plus longtemps, pas plus lourd. La valeur annoncée est désormais
+    // 200 Mo (PR202-VIDEO-STREAMING-UPLOAD-01) — ce qui compte ici est
+    // qu'elle soit la MÊME d'un palier à l'autre.
+    expect(localVideoUploadVideoHint(VERIFIED)).toContain("200 Mo");
+    expect(localVideoUploadVideoHint(90)).toContain("200 Mo");
+    expect(localVideoUploadPageSubtitle(VERIFIED)).toContain("200 Mo");
   });
 });
 

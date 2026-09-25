@@ -86,8 +86,31 @@ async def upload_local_video_binary(
             code="LOCAL_VIDEO_BINARY_ENDPOINT_UNAVAILABLE",
             detail="Endpoint d'upload binaire indisponible.",
         )
-    body = await request.body()
-    await LocalVideoService(session, settings).store_binary_upload(upload_id, body)
+    # Lecture PAR BLOCS : `await request.body()` allouait le corps entier avant
+    # meme de le comparer a la limite. Un client pouvait donc faire allouer 2 Go
+    # a l'API pour se voir refuser 200 Mo.
+    await LocalVideoService(session, settings).store_streamed_upload(
+        upload_id,
+        request.stream(),
+        declared_length=_declared_content_length(request),
+    )
+
+
+def _declared_content_length(request: Request) -> int | None:
+    """`Content-Length` annonce, s'il est exploitable.
+
+    Indicatif seulement : il peut manquer (`Transfer-Encoding: chunked`) ou
+    mentir. Il sert a refuser tot, jamais a autoriser — le compteur reel reste
+    l'autorite.
+    """
+    brut = request.headers.get("content-length")
+    if brut is None:
+        return None
+    try:
+        valeur = int(brut)
+    except ValueError:
+        return None
+    return valeur if valeur >= 0 else None
 
 
 @router.post(
@@ -127,6 +150,7 @@ async def get_local_video_duration_policy(
         max_bytes=policy.max_bytes,
         label=policy.label,
     )
+
 
 @router.get("/feed", response_model=LocalVideoFeedResponse)
 async def list_local_video_feed(

@@ -245,8 +245,13 @@ def test_message_matches_the_applied_limit(monkeypatch: pytest.MonkeyPatch) -> N
         assert f"max. {limite} s" in exc.value.detail
 
 
-def test_size_and_quota_unchanged() -> None:
-    assert LOCAL_VIDEO_MAX_BYTES == 50 * 1024 * 1024
+def test_duration_tiers_never_touch_size_or_quota() -> None:
+    """Les paliers de durée n'emportent ni la taille ni le quota.
+
+    Taille portée à 200 Mo par PR202-VIDEO-STREAMING-UPLOAD-01, conjointement
+    à la réception par blocs. Le quota d'envois reste celui d'AUTH-04A.
+    """
+    assert LOCAL_VIDEO_MAX_BYTES == 200 * 1024 * 1024
     assert LOCAL_VIDEO_UPLOAD_RATE_LIMIT == 10
 
 

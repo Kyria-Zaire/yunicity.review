@@ -17,7 +17,7 @@ import {
   LOCAL_VIDEO_UPLOAD_DURATION_UNKNOWN,
   LOCAL_VIDEO_UPLOAD_FILE_INVALID_TYPE,
   LOCAL_VIDEO_UPLOAD_FILE_SIZE_LABEL,
-  LOCAL_VIDEO_UPLOAD_FILE_TOO_LARGE,
+  localVideoUploadFileTooLarge,
   localVideoUploadFileTooLong,
   localVideoUploadVideoHint,
   LOCAL_VIDEO_UPLOAD_NEIGHBORHOOD_LABEL,
@@ -133,7 +133,9 @@ export function NewLocalVideoForm({
     if (!selected) return;
 
     if (selected.size > LOCAL_VIDEO_MAX_BYTES) {
-      setFieldError(LOCAL_VIDEO_UPLOAD_FILE_TOO_LARGE);
+      // Dit la taille REELLE et la limite : « trop volumineux » seul laisse
+      // l'utilisateur deviner de combien il depasse.
+      setFieldError(localVideoUploadFileTooLarge(selected.size, LOCAL_VIDEO_MAX_BYTES));
       return;
     }
 

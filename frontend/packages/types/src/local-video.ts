@@ -24,7 +24,18 @@ export type LocalVideoProcessingStatusId =
 
 export type LocalVideoContentType = "video/mp4" | "video/quicktime";
 
-export const LOCAL_VIDEO_MAX_BYTES = 52_428_800;
+/**
+ * Taille maximale d'une video locale.
+ *
+ * DOIT valoir exactement `LOCAL_VIDEO_MAX_BYTES` du backend
+ * (`backend/app/core/local_video_constants.py`) : c'est lui qui applique la
+ * regle, cette copie ne sert qu'au rejet anticipe cote client. Un test de
+ * contrat compare les deux et echoue si elles divergent.
+ *
+ * 200 Mo : un iPhone filme en 4K a ~400 Mo/min, donc 30 s pesent environ
+ * 200 Mo. Tenable depuis que l'upload est recu par blocs.
+ */
+export const LOCAL_VIDEO_MAX_BYTES = 209_715_200;
 export const LOCAL_VIDEO_MAX_DURATION_SECONDS = 90;
 export const LOCAL_VIDEO_ALLOWED_CONTENT_TYPES: readonly LocalVideoContentType[] = [
   "video/mp4",

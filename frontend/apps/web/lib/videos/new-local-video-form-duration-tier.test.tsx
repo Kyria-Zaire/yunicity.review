@@ -54,9 +54,11 @@ describe("limite affichée sur /videos/new", () => {
     }
   });
 
-  it("conserve la taille maximale annoncée", () => {
+  it("annonce la taille maximale, indépendamment du palier de durée", () => {
+    // 200 Mo depuis PR202-VIDEO-STREAMING-UPLOAD-01 : une vidéo iPhone de 30 s
+    // en 4K pèse environ cela. Le palier de durée ne la fait pas varier.
     afficher(180);
-    expect(screen.getByText(/50 Mo/)).toBeTruthy();
+    expect(screen.getByText(/200 Mo/)).toBeTruthy();
   });
 });
 

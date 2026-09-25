@@ -32,6 +32,7 @@ from tests.conftest_passport import auth_header, register_user
 from tests.test_local_videos_api import (
     BASE,
     BOULINGRIN_ID,
+    MP4_MINIMAL,
     _init_upload,
     _publish_video,
 )
@@ -152,7 +153,7 @@ async def test_publish_returns_202_accepted(
     init_body = await _init_upload(auth_client, user["access_token"])
     await auth_client.put(
         init_body["presigned_url"],
-        content=b"fake-mp4-bytes-for-test",
+        content=MP4_MINIMAL,
         headers={"Content-Type": "video/mp4"},
     )
     response = await auth_client.post(
@@ -183,7 +184,7 @@ async def test_video_invisible_in_feed_during_processing(
     init_body = await _init_upload(auth_client, token)
     await auth_client.put(
         init_body["presigned_url"],
-        content=b"fake-mp4-bytes-for-test",
+        content=MP4_MINIMAL,
         headers={"Content-Type": "video/mp4"},
     )
     publish = await auth_client.post(
@@ -391,9 +392,7 @@ async def test_worker_idempotent_when_derivatives_exist(
     video_id = await _create_processing_video(author_user_id=author_id)
     settings = get_settings()
     storage = build_local_video_storage(settings)
-    video_path = (
-        Path(__file__).resolve().parents[1] / "data" / "e2e-test-video.mp4"
-    )
+    video_path = Path(__file__).resolve().parents[1] / "data" / "e2e-test-video.mp4"
     if not video_path.is_file():
         pytest.skip("e2e-test-video.mp4 missing")
 

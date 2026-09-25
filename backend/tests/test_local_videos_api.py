@@ -23,6 +23,16 @@ from sqlalchemy import update
 
 from tests.conftest_passport import auth_header, register_user
 
+#: En-tete ISO BMFF minimal (`ftyp` en octets 4..8), suivi de remplissage.
+#:
+#: L'endpoint binaire valide desormais le CONTENU
+#: (PR202-VIDEO-STREAMING-UPLOAD-01) : il acceptait auparavant n'importe
+#: quels octets comme "video", ce qui laissait passer un fichier falsifie.
+#: Ces tests portent sur la publication et le fil, pas sur la validation :
+#: ils envoient donc un entete reconnaissable plutot que du texte libre.
+MP4_MINIMAL = b"\x00\x00\x00\x18ftypisom" + b"\x00" * 32
+
+
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
 BOULINGRIN_ID = "d6010000-0000-4000-8000-000000000005"
@@ -127,7 +137,7 @@ async def test_binary_upload_endpoint_unavailable_for_r2(
 
     response = await auth_client.put(
         f"{BASE}/uploads/{uuid.uuid4()}/binary",
-        content=b"fake-mp4-bytes",
+        content=MP4_MINIMAL,
         headers={"Content-Type": "video/mp4"},
     )
     assert response.status_code == 404
@@ -222,7 +232,7 @@ async def test_publish_flow(
 
     put_response = await auth_client.put(
         presigned_url,
-        content=b"fake-mp4-bytes-for-test",
+        content=MP4_MINIMAL,
         headers={"Content-Type": "video/mp4"},
     )
     assert put_response.status_code == 204, put_response.text
@@ -287,7 +297,7 @@ async def test_publish_twice_same_upload_rejected(
     init_body = await _init_upload(auth_client, user["access_token"])
     await auth_client.put(
         init_body["presigned_url"],
-        content=b"fake-mp4-bytes",
+        content=MP4_MINIMAL,
         headers={"Content-Type": "video/mp4"},
     )
     payload = {
@@ -324,7 +334,7 @@ async def _publish_video(
     init_body = await _init_upload(auth_client, token)
     await auth_client.put(
         init_body["presigned_url"],
-        content=b"fake-mp4-bytes-for-test",
+        content=MP4_MINIMAL,
         headers={"Content-Type": "video/mp4"},
     )
     payload: dict[str, Any] = {

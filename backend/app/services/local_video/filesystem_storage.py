@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
+import os
+import shutil
+import tempfile
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import IO
 
 from app.core.config import Settings
 from app.core.errors import AppError
+from app.core.local_video_constants import LOCAL_VIDEO_UPLOAD_CHUNK_BYTES
 from app.core.media_root import MEDIA_URL_PREFIX
 from app.services.local_video.storage import ObjectHead, PresignedUpload
 from app.services.local_video.storage_keys import (
@@ -63,9 +69,7 @@ class FilesystemLocalVideoStorage:
         del content_length
         expires_at = datetime.now(tz=UTC) + timedelta(seconds=ttl_seconds)
         prefix = self._settings.api_v1_prefix.rstrip("/")
-        upload_url = (
-            f"{self._api_base}{prefix}/local-videos/uploads/{upload_id}/binary"
-        )
+        upload_url = f"{self._api_base}{prefix}/local-videos/uploads/{upload_id}/binary"
         return PresignedUpload(
             storage_key=storage_key,
             upload_url=upload_url,
@@ -95,18 +99,68 @@ class FilesystemLocalVideoStorage:
         return f"{base}/{MEDIA_URL_PREFIX}/{'/'.join(segments)}"
 
     def write_bytes(self, storage_key: str, data: bytes, content_type: str) -> None:
+        """Ecriture d'un petit objet deja en memoire — vignettes, fixtures.
+
+        N'est PAS le chemin des videos : une source de 200 Mo arrive par blocs
+        et se promeut avec `promote_file`.
+        """
         del content_type
         path = self._path_for_key(storage_key)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(data)
+        self._replace_atomically(path, lambda handle: handle.write(data))
+
+    def promote_file(self, temp_path: Path, storage_key: str) -> None:
+        """Installe un fichier deja ecrit a sa cle definitive, sans le relire.
+
+        `os.replace` sur le meme systeme de fichiers est atomique : aucun
+        lecteur ne peut observer une destination a moitie ecrite, et un echec
+        laisse l'ancienne version intacte plutot qu'un fichier tronque.
+        """
+        dest = self._path_for_key(storage_key)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            os.replace(temp_path, dest)
+        except OSError:
+            # Temporaire sur un autre volume : on recopie par blocs, puis on
+            # remplace. La memoire reste bornee au bloc dans les deux cas.
+            self._copy_streamed(temp_path, dest)
+            temp_path.unlink(missing_ok=True)
 
     def read_to_path(self, storage_key: str, dest: Path) -> None:
         src = self._path_for_key(storage_key)
         dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_bytes(src.read_bytes())
+        self._copy_streamed(src, dest)
 
     def upload_file(self, local_path: Path, storage_key: str, content_type: str) -> None:
         del content_type
         dest = self._path_for_key(storage_key)
         dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_bytes(local_path.read_bytes())
+        self._copy_streamed(local_path, dest)
+
+    def _copy_streamed(self, source: Path, dest: Path) -> None:
+        """Copie par blocs puis remplacement atomique.
+
+        `dest.write_bytes(source.read_bytes())` allouait le fichier ENTIER et,
+        en cas d'echec a mi-parcours, laissait une destination partielle que
+        rien ne distinguait d'un fichier valide.
+        """
+        with source.open("rb") as entree:
+            self._replace_atomically(
+                dest,
+                lambda handle: shutil.copyfileobj(entree, handle, LOCAL_VIDEO_UPLOAD_CHUNK_BYTES),
+            )
+
+    def _replace_atomically(self, dest: Path, ecrire: Callable[[IO[bytes]], object]) -> None:
+        # Le temporaire est cree DANS le dossier de destination : `os.replace`
+        # n'est atomique qu'au sein d'un meme systeme de fichiers.
+        descripteur, brut = tempfile.mkstemp(dir=dest.parent, prefix=".upload-", suffix=".part")
+        temporaire = Path(brut)
+        try:
+            with os.fdopen(descripteur, "wb") as handle:
+                ecrire(handle)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporaire, dest)
+        except BaseException:
+            temporaire.unlink(missing_ok=True)
+            raise

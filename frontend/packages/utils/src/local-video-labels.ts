@@ -1,18 +1,26 @@
 import type { LocalVideoReportReason } from "@yunicity/types";
-import { LOCAL_VIDEO_MAX_DURATION_SECONDS } from "@yunicity/types";
+import { LOCAL_VIDEO_MAX_BYTES, LOCAL_VIDEO_MAX_DURATION_SECONDS } from "@yunicity/types";
+
+/** Mo entiers : au-dela, la precision n'aide pas a decider quoi faire. */
+const formatMegabytes = (bytes: number): string => `${Math.round(bytes / (1024 * 1024))} Mo`;
 
 /** VIDEO-04B — écran upload web */
 export const LOCAL_VIDEO_UPLOAD_PAGE_TITLE = "Publier une vidéo locale";
 /** VIDEO-04D — la limite dépend du créateur : ces libellés en prennent la valeur effective. */
-export const localVideoUploadPageSubtitle = (maxDurationSeconds: number): string =>
-  `Partagez un moment de votre quartier en vidéo courte (MP4 ou MOV, max. 50 Mo, ${maxDurationSeconds} s).`;
+export const localVideoUploadPageSubtitle = (
+  maxDurationSeconds: number,
+  maxBytes: number = LOCAL_VIDEO_MAX_BYTES,
+): string =>
+  `Partagez un moment de votre quartier en vidéo courte (MP4 ou MOV, max. ${formatMegabytes(maxBytes)}, ${maxDurationSeconds} s).`;
 /** Valeur pilote par défaut, conservée pour les appelants sans politique. */
 export const LOCAL_VIDEO_UPLOAD_PAGE_SUBTITLE = localVideoUploadPageSubtitle(
   LOCAL_VIDEO_MAX_DURATION_SECONDS,
 );
 export const LOCAL_VIDEO_UPLOAD_VIDEO_LABEL = "Vidéo";
-export const localVideoUploadVideoHint = (maxDurationSeconds: number): string =>
-  `MP4 ou MOV · max. 50 Mo · max. ${maxDurationSeconds} s`;
+export const localVideoUploadVideoHint = (
+  maxDurationSeconds: number,
+  maxBytes: number = LOCAL_VIDEO_MAX_BYTES,
+): string => `MP4 ou MOV · max. ${formatMegabytes(maxBytes)} · max. ${maxDurationSeconds} s`;
 export const LOCAL_VIDEO_UPLOAD_VIDEO_HINT = localVideoUploadVideoHint(
   LOCAL_VIDEO_MAX_DURATION_SECONDS,
 );
@@ -42,7 +50,12 @@ export const LOCAL_VIDEO_UPLOAD_ERROR_GENERIC =
 export const LOCAL_VIDEO_UPLOAD_VIDEO_REQUIRED = "Sélectionnez une vidéo à publier.";
 export const LOCAL_VIDEO_UPLOAD_TITLE_REQUIRED = "Le titre est obligatoire.";
 export const LOCAL_VIDEO_UPLOAD_NEIGHBORHOOD_REQUIRED = "Sélectionnez un quartier.";
-export const LOCAL_VIDEO_UPLOAD_FILE_TOO_LARGE = "Fichier trop volumineux (max. 50 Mo).";
+/** Dit la taille du fichier ET la limite : « trop volumineux » seul n'aide personne. */
+export const localVideoUploadFileTooLarge = (
+  sizeBytes: number,
+  maxBytes: number = LOCAL_VIDEO_MAX_BYTES,
+): string =>
+  `Fichier trop volumineux : ${formatMegabytes(sizeBytes)} pour une limite de ${formatMegabytes(maxBytes)}. Filmez plus court ou baissez la qualité.`;
 export const localVideoUploadFileTooLong = (maxDurationSeconds: number): string =>
   `Vidéo trop longue (max. ${maxDurationSeconds} s).`;
 export const LOCAL_VIDEO_UPLOAD_FILE_TOO_LONG = localVideoUploadFileTooLong(
