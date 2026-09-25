@@ -211,42 +211,6 @@ class LocalVideoService:
                 detail="Session d'upload expirée.",
             )
 
-    async def store_binary_upload(self, upload_id: uuid.UUID, data: bytes) -> None:
-        upload = await self._get_upload(upload_id)
-        if upload.status not in {
-            LocalVideoUploadStatus.PENDING.value,
-            LocalVideoUploadStatus.UPLOADED.value,
-        }:
-            raise AppError(
-                status_code=409,
-                code="LOCAL_VIDEO_UPLOAD_NOT_AVAILABLE",
-                detail="Session d'upload indisponible.",
-            )
-        if upload.expires_at <= datetime.now(tz=UTC):
-            upload.status = LocalVideoUploadStatus.EXPIRED.value
-            await self._session.commit()
-            raise AppError(
-                status_code=410,
-                code="LOCAL_VIDEO_UPLOAD_EXPIRED",
-                detail="Session d'upload expirée.",
-            )
-        if len(data) > self._settings.local_video_max_bytes:
-            raise AppError(
-                status_code=400,
-                code="LOCAL_VIDEO_TOO_LARGE",
-                detail="Fichier trop volumineux.",
-            )
-        if len(data) > upload.expected_size_bytes:
-            raise AppError(
-                status_code=400,
-                code="LOCAL_VIDEO_SIZE_MISMATCH",
-                detail="Taille du fichier supérieure à la déclaration.",
-            )
-
-        self._storage.write_bytes(upload.storage_key, data, upload.content_type)
-        upload.status = LocalVideoUploadStatus.UPLOADED.value
-        await self._session.commit()
-
     async def publish(
         self,
         user_id: uuid.UUID,

@@ -7,13 +7,18 @@ import {
   LOCAL_VIDEO_UPLOAD_PAGE_TITLE,
   LOCAL_VIDEO_UPLOAD_PHASE_PROCESSING,
   LOCAL_VIDEO_UPLOAD_PHASE_PUBLISH,
+  LOCAL_VIDEO_UPLOAD_CANCEL_UPLOAD,
+  LOCAL_VIDEO_UPLOAD_PROGRESS_LABEL,
   LOCAL_VIDEO_UPLOAD_PHASE_UPLOAD,
   LOCAL_VIDEO_UPLOAD_SUBMITTED_BODY,
+  formatUploadProgress,
   registerLocalVideoPending,
+  UploadCancelledError,
 } from "@yunicity/utils";
+import type { UploadProgress } from "@yunicity/utils";
 import { CircleDot, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import {
   NewLocalVideoForm,
@@ -33,10 +38,26 @@ export function NewLocalVideoScreen() {
   const durationPolicy = useLocalVideoDurationPolicy();
   const [phase, setPhase] = useState<UploadPhase>("form");
   const [error, setError] = useState<string | null>(null);
+  /** Progression REELLE de l'envoi : octets confirmes, jamais un minuteur. */
+  const [progress, setProgress] = useState<UploadProgress | null>(null);
+  const abandonRef = useRef<AbortController | null>(null);
+
+  function handleCancelUpload() {
+    // Interrompt la REQUETE, pas seulement l'affichage : sans cela 200 Mo
+    // continueraient de partir sur le forfait de l'utilisateur.
+    abandonRef.current?.abort();
+  }
 
   async function handleSubmit(values: LocalVideoUploadFormValues) {
+    // Garde anti-double envoi : un second clic creerait une seconde session
+    // d'upload et laisserait la premiere orpheline.
+    if (phase !== "form") return;
+
     setError(null);
+    setProgress(null);
     setPhase("uploading");
+    const abandon = new AbortController();
+    abandonRef.current = abandon;
 
     try {
       const upload = await api.localVideos.createUpload({
@@ -47,7 +68,10 @@ export function NewLocalVideoScreen() {
         neighborhood_id: values.neighborhoodId,
       });
 
-      await api.localVideos.uploadSessionBytes(upload, values.file);
+      await api.localVideos.uploadSessionBytes(upload, values.file, {
+        signal: abandon.signal,
+        onProgress: setProgress,
+      });
 
       setPhase("publishing");
       const accepted = await api.localVideos.publishVideo({
@@ -69,7 +93,14 @@ export function NewLocalVideoScreen() {
       router.replace(`/videos?video=${encodeURIComponent(accepted.id)}`);
     } catch (err) {
       setPhase("form");
-      setError(humanizeLocalVideoError(err, LOCAL_VIDEO_UPLOAD_ERROR_GENERIC));
+      setProgress(null);
+      // Une annulation n'est pas une panne : l'annoncer comme une erreur
+      // laisserait croire a un echec alors que l'utilisateur a decide.
+      if (!(err instanceof UploadCancelledError)) {
+        setError(humanizeLocalVideoError(err, LOCAL_VIDEO_UPLOAD_ERROR_GENERIC));
+      }
+    } finally {
+      abandonRef.current = null;
     }
   }
 
@@ -111,15 +142,48 @@ export function NewLocalVideoScreen() {
               <Loader2 className="h-5 w-5 shrink-0 animate-spin text-yunicity-primary" aria-hidden />
               <div>
                 <p className="text-sm font-medium text-neutral-800">{phaseMessage}</p>
+                {phase === "uploading" && progress ? (
+                  <p className="mt-1 text-xs text-neutral-500">{formatUploadProgress(progress)}</p>
+                ) : null}
                 {phase === "redirecting" ? (
                   <p className="mt-1 text-xs text-neutral-500">
                     {LOCAL_VIDEO_UPLOAD_PHASE_PROCESSING}
                   </p>
                 ) : null}
               </div>
+              {phase === "uploading" ? (
+                <button
+                  type="button"
+                  onClick={handleCancelUpload}
+                  className="ml-auto shrink-0 rounded-xl border border-neutral-200 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                >
+                  {LOCAL_VIDEO_UPLOAD_CANCEL_UPLOAD}
+                </button>
+              ) : null}
             </div>
-            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-neutral-100">
-              <div className="h-full w-1/3 animate-pulse rounded-full bg-yunicity-primary" />
+            {/* Barre REELLE : la largeur suit les octets transmis. Quand le
+                navigateur ignore le total, on n'invente aucun pourcentage —
+                la barre reste indeterminee et le texte dit les Mo envoyes. */}
+            <div
+              className="mt-3 h-1.5 overflow-hidden rounded-full bg-neutral-100"
+              role="progressbar"
+              aria-label={LOCAL_VIDEO_UPLOAD_PROGRESS_LABEL}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              {...(progress?.ratio != null
+                ? { "aria-valuenow": Math.round(progress.ratio * 100) }
+                : {})}
+            >
+              <div
+                className={
+                  progress?.ratio != null
+                    ? "h-full rounded-full bg-yunicity-primary transition-[width] duration-200"
+                    : "h-full w-1/3 animate-pulse rounded-full bg-yunicity-primary"
+                }
+                {...(progress?.ratio != null
+                  ? { style: { width: `${Math.round(progress.ratio * 100)}%` } }
+                  : {})}
+              />
             </div>
           </div>
         ) : null}

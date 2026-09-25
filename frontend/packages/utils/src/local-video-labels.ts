@@ -113,3 +113,8 @@ export const LOCAL_VIDEO_REPORT_REASONS: LocalVideoReportReason[] = [
   "copyright",
   "other",
 ];
+
+/** Annule l'envoi en cours — distinct de « Annuler » qui quitte le formulaire. */
+export const LOCAL_VIDEO_UPLOAD_CANCEL_UPLOAD = "Annuler l'envoi";
+/** Nom accessible de la barre de progression. */
+export const LOCAL_VIDEO_UPLOAD_PROGRESS_LABEL = "Progression de l'envoi";

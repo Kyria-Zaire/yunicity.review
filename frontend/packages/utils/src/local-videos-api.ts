@@ -19,6 +19,7 @@ import type { AuthClient } from "./auth/auth-client";
 import { ApiClientBase } from "./api-client";
 import { parseLocalVideoApiError } from "./local-video-errors";
 import { uploadLocalVideoBinaryDev, uploadLocalVideoBytes } from "./local-video-upload";
+import type { UploadProgress } from "./local-video-upload-progress";
 
 function buildLocalVideoQuery(params: LocalVideoListParams): string {
   const search = new URLSearchParams();
@@ -68,6 +69,7 @@ export class LocalVideosApi extends ApiClientBase {
   uploadSessionBytes(
     upload: LocalVideoUpload,
     body: Blob | ArrayBuffer | Uint8Array,
+    options: { onProgress?: (progress: UploadProgress) => void; signal?: AbortSignal } = {},
   ): Promise<void> {
     if (this.isDevFilesystemUploadUrl(upload.presigned_url)) {
       return uploadLocalVideoBinaryDev(
@@ -75,9 +77,10 @@ export class LocalVideosApi extends ApiClientBase {
         this.apiBaseUrl,
         upload.upload_id,
         body,
+        options,
       );
     }
-    return uploadLocalVideoBytes({ upload, body });
+    return uploadLocalVideoBytes({ upload, body, ...options });
   }
 
   /** Feed deep-link compat (existing web callers expect `LocalVideoFeedItem`). */

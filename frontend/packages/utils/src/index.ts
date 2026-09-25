@@ -1,4 +1,11 @@
 export {
+  DEFAULT_UPLOAD_TIMEOUT_MS,
+  formatUploadProgress,
+  UploadCancelledError,
+  uploadBinaryWithProgress,
+} from "./local-video-upload-progress";
+export type { UploadProgress } from "./local-video-upload-progress";
+export {
   DELETE_ACCOUNT_CANCEL_HINT,
   DELETE_ACCOUNT_CANCEL_HINT_NO_EMAIL,
   DELETE_ACCOUNT_CONFIRM_LABEL,
@@ -4883,6 +4890,8 @@ export {
   LOCAL_VIDEO_UPLOAD_DURATION_UNKNOWN,
   LOCAL_VIDEO_UPLOAD_ERROR_GENERIC,
   LOCAL_VIDEO_UPLOAD_FILE_INVALID_TYPE,
+  LOCAL_VIDEO_UPLOAD_CANCEL_UPLOAD,
+  LOCAL_VIDEO_UPLOAD_PROGRESS_LABEL,
   LOCAL_VIDEO_UPLOAD_FILE_SIZE_LABEL,
   localVideoUploadFileTooLarge,
   LOCAL_VIDEO_UPLOAD_FILE_TOO_LONG,
