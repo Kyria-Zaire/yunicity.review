@@ -260,6 +260,16 @@ class Settings(BaseSettings):
     # domaine. Une valeur recopiee ici avait toute latitude pour diverger du
     # contrat annonce au client.
     local_video_max_bytes: int = Field(default=LOCAL_VIDEO_MAX_BYTES, alias="LOCAL_VIDEO_MAX_BYTES")
+    local_video_min_free_bytes: int = Field(
+        default=512 * 1024 * 1024,
+        ge=0,
+        alias="LOCAL_VIDEO_MIN_FREE_BYTES",
+    )
+    local_video_filesystem_concurrency: int = Field(
+        default=2,
+        ge=1,
+        alias="LOCAL_VIDEO_FILESYSTEM_CONCURRENCY",
+    )
     # VIDEO-04A-CONTRACT-FIX-01 — le defaut derive de la constante du domaine.
     # Une valeur dupliquee ici avait diverge (60) de la constante et du client (90) :
     # le client acceptait 61-90 s, le serveur rejetait avec un message annoncant 90.

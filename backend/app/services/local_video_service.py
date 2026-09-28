@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+import errno
 import os
-import tempfile
 import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
@@ -37,10 +37,15 @@ from app.schemas.local_video import (
     LocalVideoUploadInitResponse,
 )
 from app.services.local_video.city_slug_resolver import resolve_local_video_city_slug
+from app.services.local_video.filesystem_storage import FilesystemLocalVideoStorage
 from app.services.local_video.job_queue import enqueue_local_video_processing
 from app.services.local_video.processing_status import map_video_processing_status
 from app.services.local_video.storage import LocalVideoStorage, build_local_video_storage
 from app.services.local_video.storage_keys import city_slug_from_storage_key
+from app.services.local_video.upload_capacity import (
+    FILESYSTEM_UPLOAD_CAPACITY,
+    storage_insufficient_error,
+)
 from app.services.rbac_service import RbacService
 
 
@@ -146,11 +151,29 @@ class LocalVideoService:
         # de rouvrir le chemin. Rouvrir laissait le premier descripteur ouvert a
         # chaque envoi — une fuite, et sous Windows un temporaire impossible a
         # supprimer ensuite.
-        descripteur, chemin_brut = tempfile.mkstemp(prefix="local-video-", suffix=".part")
-        destination = Path(chemin_brut)
+        if not isinstance(self._storage, FilesystemLocalVideoStorage):
+            raise AppError(
+                status_code=503,
+                code="LOCAL_VIDEO_BINARY_ENDPOINT_UNAVAILABLE",
+                detail="Upload direct indisponible sur cet environnement.",
+            )
+        expected_bytes = (
+            declared_length
+            if declared_length is not None
+            else self._settings.local_video_max_bytes
+        )
+        lease = FILESYSTEM_UPLOAD_CAPACITY.acquire(
+            self._storage.root,
+            expected_bytes=expected_bytes,
+            minimum_free_bytes=self._settings.local_video_min_free_bytes,
+            concurrency_limit=self._settings.local_video_filesystem_concurrency,
+        )
+        destination: Path | None = None
+        promoted = False
         recu = 0
         entete = b""
         try:
+            descripteur, destination = self._storage.create_upload_temp()
             with os.fdopen(descripteur, "wb") as handle:
                 async for bloc in chunks:
                     if not bloc:
@@ -159,6 +182,7 @@ class LocalVideoService:
                     if recu > limite:
                         # Coupure immediate : on ne lit pas le reste du flux.
                         raise self._too_large(recu, limite)
+                    lease.ensure_reserved(recu)
                     if len(entete) < LOCAL_VIDEO_MAGIC_SAMPLE_BYTES:
                         entete += bloc[: LOCAL_VIDEO_MAGIC_SAMPLE_BYTES - len(entete)]
                     handle.write(bloc)
@@ -174,13 +198,28 @@ class LocalVideoService:
             validate_local_video_content_bytes(upload.content_type, entete)
 
             self._storage.promote_file(destination, upload.storage_key)
+            promoted = True
+            upload.status = LocalVideoUploadStatus.UPLOADED.value
+            try:
+                await self._session.commit()
+            except BaseException:
+                upload.status = LocalVideoUploadStatus.PENDING.value
+                self._storage.remove_object(upload.storage_key)
+                promoted = False
+                raise
+        except OSError as exc:
+            if exc.errno == errno.ENOSPC:
+                if promoted:
+                    self._storage.remove_object(upload.storage_key)
+                upload.status = LocalVideoUploadStatus.PENDING.value
+                raise storage_insufficient_error() from exc
+            raise
         finally:
             # Client deconnecte, flux interrompu, validation refusee, erreur
             # disque : aucun temporaire ne doit survivre.
-            destination.unlink(missing_ok=True)
-
-        upload.status = LocalVideoUploadStatus.UPLOADED.value
-        await self._session.commit()
+            if destination is not None:
+                destination.unlink(missing_ok=True)
+            lease.release()
 
     def _too_large(self, taille: int, limite: int) -> AppError:
         return AppError(

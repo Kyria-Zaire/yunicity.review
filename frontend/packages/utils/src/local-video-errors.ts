@@ -31,6 +31,8 @@ export const LOCAL_VIDEO_ERROR_MESSAGES: Partial<Record<LocalVideoErrorCode, str
   LOCAL_VIDEO_UPLOAD_NOT_AVAILABLE: "Session d'upload indisponible.",
   LOCAL_VIDEO_UPLOAD_ALREADY_USED: "Cette vidéo a déjà été publiée.",
   LOCAL_VIDEO_UPLOAD_NOT_FOUND: "Session d'upload introuvable.",
+  LOCAL_VIDEO_STORAGE_INSUFFICIENT:
+    "Espace de stockage temporairement insuffisant. Réessayez plus tard.",
   LOCAL_VIDEO_FORBIDDEN: "Vous n'avez pas l'autorisation pour cette action.",
   LOCAL_VIDEO_NOT_FOUND: "Vidéo introuvable.",
   LOCAL_VIDEO_INVALID_NEIGHBORHOOD: "Quartier invalide.",

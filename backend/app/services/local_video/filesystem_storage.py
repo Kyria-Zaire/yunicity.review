@@ -30,6 +30,24 @@ class FilesystemLocalVideoStorage:
         self._root.mkdir(parents=True, exist_ok=True)
         self._api_base = settings.media_public_base_url.rstrip("/")
 
+    @property
+    def root(self) -> Path:
+        return self._root
+
+    def create_upload_temp(self) -> tuple[int, Path]:
+        """Create the streamed-upload staging file on the media filesystem."""
+        staging = self._root / ".incoming"
+        staging.mkdir(parents=True, exist_ok=True)
+        descriptor, raw_path = tempfile.mkstemp(
+            dir=staging,
+            prefix="local-video-",
+            suffix=".part",
+        )
+        return descriptor, Path(raw_path)
+
+    def remove_object(self, storage_key: str) -> None:
+        self._path_for_key(storage_key).unlink(missing_ok=True)
+
     def _path_for_key(self, storage_key: str) -> Path:
         """Résout une clé DANS la racine média, ou échoue.
 
