@@ -31,8 +31,22 @@ _JWT = "dev-only-insecure-jwt-secret-change-in-env-32chars"
 
 
 def _settings(**kwargs: Any) -> Settings:
-    """Mode explicite par defaut : aucun test ici ne doit lire celui du conteneur."""
-    base: dict[str, Any] = {"JWT_SECRET_KEY": _JWT, "REGISTRATION_MODE": ""}
+    """Reglages d'inscription explicites : rien n'est lu dans le conteneur.
+
+    Neutraliser le seul MODE ne suffisait pas. Quand la pile QA a declare un
+    pilote complet, l'echeance, le pepper et Redis ont continue d'arriver par
+    l'environnement : `_settings(REGISTRATION_MODE="pilot")` produisait alors un
+    pilote COMPLET, et le test qui voulait un pilote incomplet n'avait plus rien
+    a constater. Un test du manque doit construire le manque, jamais l'esperer
+    de l'ambiant — c'est ce que fait cette base.
+    """
+    base: dict[str, Any] = {
+        "JWT_SECRET_KEY": _JWT,
+        "REGISTRATION_MODE": "",
+        "REGISTRATION_CLOSES_AT": "",
+        "RATE_LIMIT_KEY_PEPPER": "",
+        "REDIS_URL": "",
+    }
     base.update(kwargs)
     return Settings(**base)
 

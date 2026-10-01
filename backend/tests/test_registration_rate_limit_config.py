@@ -22,18 +22,40 @@ from app.core.config import Settings, get_settings
 _JWT = "dev-only-insecure-jwt-secret-change-in-env-32chars"
 
 
+def _settings(**kwargs: Any) -> Settings:
+    """Reglages d'inscription explicites : rien n'est lu dans le conteneur.
+
+    Meme convention que les trois autres fichiers d'inscription, et pour la meme
+    raison : ce fichier teste le REPLI sur `REGISTRATION_ENABLED`, qui ne
+    s'observe que si AUCUN mode n'est declare. Quand la pile QA a declare son
+    pilote, `Settings(REGISTRATION_ENABLED=False)` heritait de ce mode, le mode
+    declare l'emportait, et la route n'opposait plus `REGISTRATION_CLOSED` — elle
+    poursuivait jusqu'a buter sur un payload nul. Le test tombait alors pour une
+    raison etrangere a son sujet.
+    """
+    base: dict[str, Any] = {
+        "JWT_SECRET_KEY": _JWT,
+        "REGISTRATION_MODE": "",
+        "REGISTRATION_CLOSES_AT": "",
+        "RATE_LIMIT_KEY_PEPPER": "",
+        "REDIS_URL": "",
+    }
+    base.update(kwargs)
+    return Settings(**base)
+
+
 def test_default_is_five_so_existing_deployments_do_not_change() -> None:
-    assert Settings(JWT_SECRET_KEY=_JWT).registration_rate_limit_per_hour == 5
+    assert _settings().registration_rate_limit_per_hour == 5
 
 
 def test_the_declared_value_is_the_one_read() -> None:
-    settings = Settings(JWT_SECRET_KEY=_JWT, REGISTRATION_RATE_LIMIT_PER_HOUR=200)
+    settings = _settings(REGISTRATION_RATE_LIMIT_PER_HOUR=200)
     assert settings.registration_rate_limit_per_hour == 200
 
 
 def test_a_non_positive_limit_is_refused_rather_than_silently_disabling_the_guard() -> None:
     with pytest.raises(ValueError):
-        Settings(JWT_SECRET_KEY=_JWT, REGISTRATION_RATE_LIMIT_PER_HOUR=0)
+        _settings(REGISTRATION_RATE_LIMIT_PER_HOUR=0)
 
 
 @pytest.mark.asyncio
@@ -50,8 +72,7 @@ async def test_the_route_applies_the_configured_limit_and_nothing_else_moves(
 
     monkeypatch.setattr(auth_routes, "enforce_rate_limit", _capture)
 
-    settings = Settings(
-        JWT_SECRET_KEY=_JWT,
+    settings = _settings(
         REGISTRATION_ENABLED=False,
         REGISTRATION_RATE_LIMIT_PER_HOUR=200,
     )

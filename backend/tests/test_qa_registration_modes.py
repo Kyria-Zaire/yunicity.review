@@ -5,16 +5,26 @@ mode, le repli historique sur `REGISTRATION_ENABLED` sélectionnait PILOT, et un
 pilote sans échéance ni pepper fait légitimement passer `/ready` en `degraded`.
 Le gate readiness exige `"status":"ready"` — il tombait.
 
-Deux décisions distinctes en découlent, et ce fichier les épingle toutes les
-deux, parce qu'elles ne tiennent que si elles sont prises ENSEMBLE :
+La première correction posa `REGISTRATION_MODE: closed`. Elle rendait bien `/ready`
+vert, mais elle a fermé la seule porte par laquelle la recette navigateur entre :
+Playwright parle HTTP au conteneur et ne peut pas, contrairement à `auth_env`, se
+déclarer un pilote par variable d'environnement. Chaque `POST /auth/register` de
+la suite recevait un 403 légitime — et rien ne l'a signalé, parce que Playwright
+n'est pas exécuté par la CI.
 
-- la pile QA générale n'est pas un pilote : elle démarre `closed` ;
-- les tests qui s'inscrivent ouvrent leur propre pilote dans `auth_env`.
+Ce que `closed` protégeait réellement, c'est la COHÉRENCE, pas la fermeture. Ce
+fichier épingle donc trois décisions, qui ne tiennent qu'ensemble :
 
-Poser seulement la première casserait les quarante `POST /auth/register`, qui
-recevraient un 403 parfaitement légitime. Poser seulement la seconde laisserait
-la pile dépendre d'un repli implicite. C'est pourquoi les deux sont testées ici,
-côte à côte, plutôt que chacune dans son coin.
+- la pile QA déclare un pilote COMPLET — mode, échéance et pepper — jamais hérité
+  d'un repli, de sorte que `/ready` reste `ready` ET que la recette puisse
+  s'inscrire ;
+- l'échéance est un littéral lointain, pour que la recette ne périme jamais ;
+- les tests pytest restent indépendants de la pile : `auth_env` pose son propre
+  pilote, et continuerait de fonctionner même si la pile était fermée.
+
+Retirer la première referme la recette navigateur. Retirer la deuxième la fait
+tomber un matin donné sans raison lisible. Retirer la troisième rend les tests
+pytest dépendants d'une valeur de compose. D'où les trois, côte à côte.
 """
 
 from __future__ import annotations
@@ -49,20 +59,21 @@ def _env_backend_qa() -> dict[str, str]:
     return {str(cle): str(valeur) for cle, valeur in brut.items()}
 
 
-# --------------------------------------------- A : la pile QA demarre fermee
+# ------------------------------------ A : la pile QA declare un pilote complet
 
 
 def test_the_qa_stack_declares_its_registration_mode_explicitly() -> None:
-    """Declare, jamais deduit : un defaut qui change ne doit pas rouvrir la pile."""
-    assert _env_backend_qa().get("REGISTRATION_MODE") == "closed"
+    """Declare, jamais deduit : un defaut qui change ne doit pas changer la pile."""
+    assert _env_backend_qa().get("REGISTRATION_MODE") == "pilot"
 
 
 def test_the_qa_stack_reports_ready_so_the_ci_gate_passes() -> None:
     """Reproduit exactement ce que le gate Docker verifie sur `/ready`.
 
-    Le gate fait `grep -q '"status":"ready"'`. Un pilote incomplet rendrait
-    `degraded` et arreterait le job AVANT pytest — c'est la panne que ce ticket
-    corrige, et ce test la rattrape sans avoir besoin de Docker.
+    Le gate fait `grep -q '"status":"ready"'`. Un pilote INCOMPLET rendrait
+    `degraded` et arreterait le job AVANT pytest. C'est la completude qui est
+    exigee ici, pas la fermeture : les deux rendent `/ready` vert, une seule
+    laisse la recette navigateur s'inscrire.
     """
     # `model_validate` plutot que `Settings(**env)` : on valide EXACTEMENT ce que
     # le compose declare, sans fusionner l'environnement de la machine qui lance
@@ -70,24 +81,40 @@ def test_the_qa_stack_reports_ready_so_the_ci_gate_passes() -> None:
     settings = Settings.model_validate(_env_backend_qa())
     policy = resolve_registration_policy(settings)
 
-    assert policy.mode is RegistrationMode.CLOSED
-    assert policy.open is False
+    assert policy.mode is RegistrationMode.PILOT
     assert registration_config_problems(settings, policy) == [], (
-        "un mode CLOSED n'exige rien : toute exigence ici ferait passer /ready en degraded"
+        "un pilote incomplet ferait passer /ready en degraded et arreterait le gate"
     )
 
 
-def test_the_qa_stack_needs_no_cutoff_to_be_healthy() -> None:
-    """CLOSED n'ouvre rien, donc n'a pas d'echeance a tenir.
+def test_the_qa_stack_lets_the_browser_recette_register() -> None:
+    """Le contrat qui manquait, et dont l'absence a ferme la recette Playwright.
 
-    Exiger un cutoff d'une pile fermee reviendrait a demander une date de fin a
-    quelque chose qui n'a pas commence.
+    `auth_env` protege les tests pytest, qui tournent DANS le processus et posent
+    leurs propres variables. La suite navigateur, elle, ne dispose que de HTTP :
+    si la pile refuse d'inscrire, ses quarante `POST /auth/register` echouent en
+    403 — un 403 correct, sur une pile mal configuree pour son usage.
     """
-    env = _env_backend_qa()
-    assert "REGISTRATION_CLOSES_AT" not in env
-    settings = Settings.model_validate(env)
-    assert resolve_registration_policy(settings).closes_at is None
-    assert registration_config_problems(settings) == []
+    settings = Settings.model_validate(_env_backend_qa())
+    assert resolve_registration_policy(settings).open is True
+
+
+def test_the_qa_stack_cutoff_is_a_far_literal_so_the_recette_never_expires() -> None:
+    """Meme regle que la fixture : litterale et lointaine.
+
+    Une echeance calculee masquerait une inversion du sens de la comparaison ; une
+    echeance proche ferait tomber la recette un matin donne, sans que le message
+    d'erreur — un 403 parfaitement legitime — n'oriente vers la vraie cause.
+    """
+    brut = _env_backend_qa().get("REGISTRATION_CLOSES_AT", "")
+    echeance = parse_registration_cutoff(brut)
+
+    assert echeance is not None, "le pilote de la pile doit poser une echeance LISIBLE"
+    assert echeance.tzinfo is not None
+    assert "now" not in brut, "valeur litterale, jamais calculee"
+    assert echeance > datetime.now(UTC).replace(year=datetime.now(UTC).year + 50), (
+        "l'echeance doit rester lointaine : la recette ne doit pas perimer"
+    )
 
 
 def test_the_qa_stack_carries_no_real_provider_key() -> None:
@@ -158,15 +185,18 @@ def test_a_test_pilot_is_open_and_complete() -> None:
 
 
 def test_the_fixture_pilot_survives_a_closed_stack() -> None:
-    """Le point de tout le correctif : la fixture ne depend plus du mode de la pile.
+    """La fixture pytest ne doit RIEN devoir au mode de la pile.
 
-    On lui passe ici l'environnement REEL du conteneur — qui declare desormais
-    `closed` — et le pilote de test doit rester ouvert par-dessus.
+    La pile declare aujourd'hui un pilote, mais cette propriete ne doit pas en
+    dependre : c'est elle qui garantit que les tests pytest resteraient verts si
+    la pile etait refermee demain. On part donc de l'environnement REEL du
+    conteneur, on le referme de force, et le pilote de test doit rester ouvert
+    par-dessus.
     """
-    env = _env_backend_qa()
-    assert env["REGISTRATION_MODE"] == "closed"
+    ferme = {**_env_backend_qa(), "REGISTRATION_MODE": "closed"}
+    assert resolve_registration_policy(Settings.model_validate(ferme)).open is False
 
-    settings = _settings_fixture(**{k: v for k, v in env.items() if k != "REGISTRATION_MODE"})
+    settings = _settings_fixture(**{k: v for k, v in ferme.items() if k != "REGISTRATION_MODE"})
     policy = resolve_registration_policy(settings)
 
     assert policy.mode is RegistrationMode.PILOT
@@ -218,6 +248,12 @@ def test_the_registration_helpers_ignore_the_ambient_mode(
     que si AUCUN mode n'est declare — donc les helpers doivent le neutraliser,
     pas l'heriter.
 
+    Le mode seul ne suffisait pas. Quand la pile a declare un pilote COMPLET,
+    l'echeance et le pepper sont arrives eux aussi par l'environnement : un
+    helper qui ne neutralisait que le mode rendait soudain un pilote complet la
+    ou le test voulait un pilote incomplet. Ce garde pose donc les trois, pour
+    que la meme panne ne puisse pas revenir par une autre variable.
+
     Les helpers prives sont importes volontairement : c'est leur contrat
     d'isolement qui est verifie ici, et il n'a de valeur que teste.
     """
@@ -225,6 +261,9 @@ def test_the_registration_helpers_ignore_the_ambient_mode(
         monkeypatch.setenv("REGISTRATION_MODE", ambiant)
     else:
         monkeypatch.delenv("REGISTRATION_MODE", raising=False)
+    # Ce que la pile QA exporte reellement, en plus du mode.
+    monkeypatch.setenv("REGISTRATION_CLOSES_AT", _TEST_REGISTRATION_CLOSES_AT)
+    monkeypatch.setenv("RATE_LIMIT_KEY_PEPPER", _TEST_RATE_LIMIT_PEPPER)
 
     from tests.test_registration_cutoff import _settings as helper_cutoff
     from tests.test_registration_protection import _settings as helper_protection
