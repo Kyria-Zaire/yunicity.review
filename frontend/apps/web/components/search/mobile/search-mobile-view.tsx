@@ -1,29 +1,36 @@
 "use client";
 
-import { SearchGroupSection } from "@/components/search/search-group-section";
-import {
-  SearchMobileCategoryGrid,
-  SearchMobileExplorerHub,
-  SearchMobileHeader,
-  SearchMobileSearchBar,
-} from "@/components/search/mobile";
+import { SearchDesktopGlobalEmptyState } from "@/components/search/desktop/search-desktop-global-empty-state";
+import { SearchMediumFilterSheet } from "@/components/search/medium/search-medium-filter-sheet";
+import { SearchMobileGroupSection } from "@/components/search/mobile/search-mobile-group-section";
+import { SearchMobileHeroHeader } from "@/components/search/mobile/search-mobile-hero-header";
+import { SearchMobileOtherResults } from "@/components/search/mobile/search-mobile-other-results";
 import type { SearchExplorerContextState } from "@/hooks/use-search-explorer-context";
-import type { SearchGroups, SearchTypeFilter } from "@yunicity/types";
-import type { SearchGroupKey, SearchResultGroup } from "@yunicity/types";
+import type { SearchGroupKey, SearchGroups, SearchTypeFilter } from "@yunicity/types";
 import {
+  SEARCH_DESKTOP_RESULTS_FOR,
   SEARCH_EMPTY_BODY,
   SEARCH_EMPTY_TITLE,
   SEARCH_ERROR,
-  SEARCH_EXPLORER_RESULTS_TITLE,
   SEARCH_LOADING,
-  SEARCH_MOBILE_PAGE_SUBTITLE,
-  SEARCH_MOBILE_PAGE_TITLE,
+  SEARCH_MIN_QUERY_HINT,
   SEARCH_RETRY,
-  isSearchQueryReady,
-  type SearchMobileCategoryId,
-  visibleSearchGroups,
+  addRecentSearch,
+  buildSearchDesktopOtherRows,
+  buildSearchDesktopResultSections,
+  buildSearchUrl,
+  clearRecentSearches,
+  defaultSearchDesktopContentTypes,
+  loadRecentSearches,
+  removeRecentSearch,
+  searchDesktopGroupLabel,
+  searchDesktopPeriodToApi,
+  searchTypeFilterFromGroupKey,
+  type SearchDesktopContentTypeId,
+  type SearchDesktopPeriodPreset,
 } from "@yunicity/utils";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type SearchMobileViewProps = {
   city: string;
@@ -33,18 +40,21 @@ type SearchMobileViewProps = {
   onTypeFilterChange: (tab: SearchTypeFilter) => void;
   showExplorer: boolean;
   explorer: SearchExplorerContextState;
-  explorerLoading: boolean;
-  explorerError: boolean;
-  onExplorerRetry: () => void;
   searchLoading: boolean;
   searchError: boolean;
   onSearchRetry: () => void;
   groups: SearchGroups;
   onLoadMore: (key: SearchGroupKey) => void;
   loadingMore: boolean;
+  isQueryReady: boolean;
+  neighborhoodSlug: string;
+  onNeighborhoodSlugChange: (slug: string) => void;
+  period: "all" | "upcoming" | "past";
+  onPeriodChange: (period: "all" | "upcoming" | "past") => void;
+  onCityChange: (city: string) => void;
 };
 
-/** Vue mobile Recherche — layout MOBILE-SEARCH-01. */
+/** Vue mobile Recherche globale — MOBILE-SEARCH-02. */
 export function SearchMobileView({
   city,
   query,
@@ -53,114 +63,152 @@ export function SearchMobileView({
   onTypeFilterChange,
   showExplorer,
   explorer,
-  explorerLoading,
-  explorerError,
-  onExplorerRetry,
   searchLoading,
   searchError,
   onSearchRetry,
   groups,
   onLoadMore,
   loadingMore,
+  isQueryReady,
+  neighborhoodSlug,
+  onNeighborhoodSlugChange,
+  period,
+  onPeriodChange,
+  onCityChange,
 }: SearchMobileViewProps) {
-  const [filterActive, setFilterActive] = useState(false);
-  const [userCoords, setUserCoords] = useState<{ lat: number; lon: number } | null>(null);
-
-  const mobileCategory = (typeFilter === "neighborhood" || typeFilter === "user"
-    ? "all"
-    : typeFilter) as SearchMobileCategoryId;
+  const router = useRouter();
+  const filterButtonRef = useRef<HTMLButtonElement>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [draftCity, setDraftCity] = useState(city);
+  const [draftNeighborhoodSlug, setDraftNeighborhoodSlug] = useState(neighborhoodSlug);
+  const [draftPeriod, setDraftPeriod] = useState<SearchDesktopPeriodPreset>("all");
+  const [draftContentTypes, setDraftContentTypes] = useState<SearchDesktopContentTypeId[]>(
+    defaultSearchDesktopContentTypes(),
+  );
+  const [appliedContentTypes, setAppliedContentTypes] = useState<SearchDesktopContentTypeId[]>(
+    defaultSearchDesktopContentTypes(),
+  );
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   useEffect(() => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserCoords({
-          lat: position.coords.latitude,
-          lon: position.coords.longitude,
-        });
-      },
-      () => undefined,
-      { enableHighAccuracy: false, timeout: 10_000, maximumAge: 120_000 },
-    );
+    setRecentSearches(loadRecentSearches());
   }, []);
 
-  const sections = useMemo(
-    () => visibleSearchGroups(groups, typeFilter),
-    [groups, typeFilter],
+  useEffect(() => {
+    if (!isQueryReady || searchLoading || showExplorer) return;
+    setRecentSearches(addRecentSearch(query));
+  }, [isQueryReady, query, searchLoading, showExplorer]);
+
+  useEffect(() => {
+    setDraftCity(city);
+  }, [city]);
+
+  useEffect(() => {
+    setDraftNeighborhoodSlug(neighborhoodSlug);
+  }, [neighborhoodSlug]);
+
+  useEffect(() => {
+    if (period === "all") setDraftPeriod("all");
+    else setDraftPeriod("week");
+  }, [period]);
+
+  const handleTabChange = useCallback(
+    (tab: SearchTypeFilter) => {
+      onTypeFilterChange(tab);
+      router.replace(buildSearchUrl({ q: query, city, tab }), { scroll: false });
+    },
+    [city, onTypeFilterChange, query, router],
   );
 
-  const hasResultSections = sections.some((section) => section.group.items.length > 0);
-  const showEmptyResults =
+  const sections = useMemo(
+    () =>
+      buildSearchDesktopResultSections({
+        groups,
+        typeFilter,
+        query,
+        city,
+        enabledContentTypes: appliedContentTypes,
+      }),
+    [appliedContentTypes, city, groups, query, typeFilter],
+  );
+
+  const otherRows = useMemo(
+    () =>
+      buildSearchDesktopOtherRows({
+        groups,
+        typeFilter,
+        query,
+        city,
+        enabledContentTypes: appliedContentTypes,
+        rowLabel: (groupKey) => searchDesktopGroupLabel(groupKey),
+        rowSubtitle: (_groupKey, count) =>
+          count === 1 ? "1 résultat" : `${count} résultats`,
+        rowHref: (groupKey) =>
+          buildSearchUrl({ q: query, city, tab: searchTypeFilterFromGroupKey(groupKey) }),
+      }),
+    [appliedContentTypes, city, groups, query, typeFilter],
+  );
+
+  const showEmpty =
     !showExplorer &&
-    isSearchQueryReady(query) &&
+    isQueryReady &&
     !searchLoading &&
     !searchError &&
-    !hasResultSections;
+    sections.length === 0 &&
+    otherRows.length === 0;
 
-  function handleCategoryChange(next: SearchMobileCategoryId) {
-    onTypeFilterChange(next);
-    setFilterActive(next !== "all");
-  }
+  const filterActive =
+    neighborhoodSlug !== "" ||
+    period !== "all" ||
+    appliedContentTypes.length !== defaultSearchDesktopContentTypes().length;
+
+  const handleApplyFilters = () => {
+    onCityChange(draftCity);
+    onNeighborhoodSlugChange(draftNeighborhoodSlug);
+    onPeriodChange(searchDesktopPeriodToApi(draftPeriod));
+    setAppliedContentTypes([...draftContentTypes]);
+  };
+
+  const handleResetFilters = () => {
+    setDraftCity(city);
+    setDraftNeighborhoodSlug("");
+    setDraftPeriod("all");
+    setDraftContentTypes(defaultSearchDesktopContentTypes());
+    onCityChange(city);
+    onNeighborhoodSlugChange("");
+    onPeriodChange("all");
+    setAppliedContentTypes(defaultSearchDesktopContentTypes());
+  };
+
+  const handleDraftContentTypeToggle = (type: SearchDesktopContentTypeId) => {
+    setDraftContentTypes((current) =>
+      current.includes(type) ? current.filter((item) => item !== type) : [...current, type],
+    );
+  };
+
+  const handleSubmit = () => {
+    if (isQueryReady) {
+      router.replace(buildSearchUrl({ q: query, city, tab: typeFilter }), { scroll: false });
+    }
+  };
 
   return (
-    <div className="web-mobile-search-only min-w-0 bg-[#F4F5F7] pb-24">
-      <SearchMobileHeader />
+    <div className="web-mobile-search-only min-w-0 bg-[#F4F5F7] pb-8" data-search-mobile="">
+      <SearchMobileHeroHeader
+        city={city}
+        query={query}
+        onQueryChange={onQueryChange}
+        onSubmit={handleSubmit}
+        typeFilter={typeFilter}
+        onTypeFilterChange={handleTabChange}
+        filterActive={filterActive}
+        onOpenFilters={() => setFilterOpen(true)}
+        filterButtonRef={filterButtonRef}
+        minQueryHint={!isQueryReady && query.length > 0 ? SEARCH_MIN_QUERY_HINT : null}
+      />
 
-      <div className="space-y-5 px-4 pt-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900">
-            {SEARCH_MOBILE_PAGE_TITLE}
-          </h1>
-          <p className="mt-1 text-sm text-neutral-600">
-            {SEARCH_MOBILE_PAGE_SUBTITLE} {city}
-          </p>
-        </div>
-
-        <SearchMobileSearchBar
-          query={query}
-          onQueryChange={onQueryChange}
-          filterActive={filterActive || mobileCategory !== "all"}
-          onToggleFilter={() => {
-            document.getElementById("search-mobile-categories")?.scrollIntoView({
-              behavior: "smooth",
-              block: "start",
-            });
-          }}
-          minQueryHint={!isSearchQueryReady(query) && query.length > 0}
-        />
-
-        <SearchMobileCategoryGrid
-          activeCategory={mobileCategory}
-          onCategoryChange={handleCategoryChange}
-        />
-
-        {showExplorer ? (
-          explorerLoading ? (
-            <p className="text-sm text-neutral-500" role="status">
-              {SEARCH_LOADING}
-            </p>
-          ) : explorerError ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-800">
-              <p>{SEARCH_ERROR}</p>
-              <button
-                type="button"
-                onClick={onExplorerRetry}
-                className="mt-3 font-medium underline underline-offset-2"
-              >
-                {SEARCH_RETRY}
-              </button>
-            </div>
-          ) : (
-            <SearchMobileExplorerHub
-              explorer={explorer}
-              category={mobileCategory}
-              city={city}
-              userCoords={userCoords}
-            />
-          )
-        ) : null}
+      <div className="space-y-4 px-4 pt-4">
+        {showExplorer ? <SearchDesktopGlobalEmptyState /> : null}
 
         {!showExplorer && searchLoading ? (
           <p className="text-sm text-neutral-500" role="status">
@@ -181,33 +229,79 @@ export function SearchMobileView({
           </div>
         ) : null}
 
-        {!showExplorer && showEmptyResults ? (
-          <div className="rounded-xl border border-neutral-200 bg-white px-4 py-8 text-center">
+        {!showExplorer && isQueryReady && !searchLoading && !searchError ? (
+          <h2 className="text-base font-bold text-neutral-950">{SEARCH_DESKTOP_RESULTS_FOR(query)}</h2>
+        ) : null}
+
+        {!showExplorer && showEmpty ? (
+          <div className="rounded-xl border border-neutral-200 bg-white px-4 py-8 text-center shadow-sm">
             <p className="font-semibold text-neutral-900">{SEARCH_EMPTY_TITLE}</p>
             <p className="mt-2 text-sm text-neutral-600">{SEARCH_EMPTY_BODY}</p>
           </div>
         ) : null}
 
-        {!showExplorer && hasResultSections ? (
-          <section className="space-y-6" aria-labelledby="search-mobile-results-title">
-            <h2 id="search-mobile-results-title" className="text-base font-bold text-neutral-900">
-              {SEARCH_EXPLORER_RESULTS_TITLE}
-            </h2>
-            <div className="space-y-6">
-              {sections.map(({ key, group }: { key: SearchGroupKey; group: SearchResultGroup }) => (
-                <SearchGroupSection
-                  key={key}
-                  groupKey={key}
-                  group={group}
-                  city={city}
-                  onLoadMore={() => onLoadMore(key)}
-                  loadingMore={loadingMore}
-                />
-              ))}
-            </div>
-          </section>
+        {!showExplorer && sections.length > 0 ? (
+          <div className="space-y-4">
+            {sections.map((section) => (
+              <SearchMobileGroupSection
+                key={section.key}
+                section={section}
+                city={city}
+                previewOnly={typeFilter === "all"}
+              />
+            ))}
+            {typeFilter !== "all" && sections.some((s) => s.group.has_more) ? (
+              <button
+                type="button"
+                onClick={() => onLoadMore(sections[0]?.key ?? "events")}
+                disabled={loadingMore}
+                className="w-full rounded-xl border border-neutral-200 bg-white py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-60"
+              >
+                {loadingMore ? "Chargement…" : "Voir plus"}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
+        {!showExplorer && typeFilter === "all" && otherRows.length > 0 ? (
+          <SearchMobileOtherResults
+            rows={otherRows.map((row) => ({
+              id: row.id,
+              groupKey: row.groupKey,
+              label: row.label,
+              subtitle: row.subtitle,
+              href: row.href,
+            }))}
+            onSelect={(href) => router.push(href)}
+          />
         ) : null}
       </div>
+
+      <SearchMediumFilterSheet
+        open={filterOpen}
+        onOpenChange={setFilterOpen}
+        returnFocusRef={filterButtonRef}
+        city={city}
+        cities={[city]}
+        neighborhoods={explorer.neighborhoods}
+        draftCity={draftCity}
+        draftNeighborhoodSlug={draftNeighborhoodSlug}
+        draftPeriod={draftPeriod}
+        draftContentTypes={draftContentTypes}
+        recentSearches={recentSearches}
+        onDraftCityChange={setDraftCity}
+        onDraftNeighborhoodChange={setDraftNeighborhoodSlug}
+        onDraftPeriodChange={setDraftPeriod}
+        onDraftContentTypeToggle={handleDraftContentTypeToggle}
+        onApply={handleApplyFilters}
+        onReset={handleResetFilters}
+        onRecentSelect={(value) => {
+          onQueryChange(value);
+          router.replace(buildSearchUrl({ q: value, city, tab: typeFilter }), { scroll: false });
+        }}
+        onRecentRemove={(value) => setRecentSearches(removeRecentSearch(value))}
+        onRecentClear={() => setRecentSearches(clearRecentSearches())}
+      />
     </div>
   );
 }

@@ -38,7 +38,7 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { displayName } = useCitizenChrome();
+  const { displayName, avatarUrl } = useCitizenChrome();
 
   const profileLabel = displayName ?? user?.email?.split("@")[0] ?? "Mon profil";
   const isTopNav = variant === "top-nav";
@@ -136,7 +136,7 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
             onClick={close}
             className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-neutral-50"
           >
-            <ProfileAvatar name={profileLabel} size="md" />
+            <ProfileAvatar name={profileLabel} src={avatarUrl} size="md" />
             <span className="min-w-0">
               <span className="block truncate text-sm font-semibold text-neutral-900">
                 {profileLabel}
@@ -225,7 +225,7 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
         >
           {isBottomNav ? (
             <>
-              <ProfileAvatar name={profileLabel} size="xs" />
+              <ProfileAvatar name={profileLabel} src={avatarUrl} size="xs" />
               <ChevronDown
                 className={`h-3 w-3 shrink-0 text-yunicity-primary transition-transform ${
                   open ? "rotate-180" : ""
@@ -235,7 +235,7 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
             </>
           ) : isMobileHeader ? (
             <>
-              <ProfileAvatar name={profileLabel} size="sm" />
+              <ProfileAvatar name={profileLabel} src={avatarUrl} size="sm" />
               <ChevronDown
                 className={`h-3 w-3 shrink-0 text-yunicity-primary transition-transform ${
                   open ? "rotate-180" : ""
@@ -245,7 +245,7 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
             </>
           ) : isTopNav ? (
             <>
-              <ProfileAvatar name={profileLabel} size="sm" />
+              <ProfileAvatar name={profileLabel} src={avatarUrl} size="sm" />
               <ChevronDown
                 className={`hidden h-4 w-4 shrink-0 text-neutral-500 transition-transform sm:block ${
                   open ? "rotate-180" : ""
@@ -256,7 +256,7 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
           ) : (
             <>
               <span className="flex flex-col items-center gap-0.5 xl:hidden">
-                <ProfileAvatar name={profileLabel} size="sm" />
+                <ProfileAvatar name={profileLabel} src={avatarUrl} size="sm" />
                 <ChevronDown
                   className={`h-3.5 w-3.5 shrink-0 text-yunicity-primary transition-transform ${
                     open ? "rotate-180" : ""
@@ -265,7 +265,7 @@ export function CitizenAccountMenu({ variant = "sidebar" }: CitizenAccountMenuPr
                 />
               </span>
               <span className="hidden shrink-0 xl:inline-flex">
-                <ProfileAvatar name={profileLabel} size="md" />
+                <ProfileAvatar name={profileLabel} src={avatarUrl} size="md" />
               </span>
               <span className="hidden min-w-0 flex-1 text-left xl:block">
                 <span className="block truncate text-sm font-semibold text-neutral-900">

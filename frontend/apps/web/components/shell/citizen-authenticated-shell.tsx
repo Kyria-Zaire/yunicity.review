@@ -17,8 +17,7 @@ import type { ReactNode } from "react";
  * - Top: CitizenTopNav (desktop, ≥1280px)
  * - Left: WebSidebar (sticky, handles CitizenMediumRail for responsive medium breakpoint)
  * - Right: Citizens' content main column
- * - Bottom: WebMobileStrategicBottomNav (mobile, ≤639.98px) — sauf feed citoyen,
- *   où la nav est montée par `FeedMobileScreen`.
+ * - Bottom: barre mobile ancrée (≤639.98px) — feed via FeedMobileBottomNav, autres routes via WebMobileStrategicBottomNav.
  *
  * Responsiveness:
  * - <640px: Mobile chrome only (nav bottom, left sidebar hidden)

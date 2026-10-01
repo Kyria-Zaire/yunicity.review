@@ -1,11 +1,11 @@
-import { API_URL, bearer, expect, test } from "../fixtures";
+import { API_URL, bearer, expect, testCitizen as test } from "../fixtures";
 import { COLD_START_TEST_TIMEOUT, COLD_START_TIMEOUT, gotoCold } from "../cold-start";
 import {
   expectExactlyOneMain,
   readLandmarkState,
   waitForCitizenRouteReady,
 } from "../landmark-assertions";
-import type { Page } from "@playwright/test";
+import type { Page, Locator } from "@playwright/test";
 
 /**
  * C3.1-T2 — Navbar V3 : quatre destinations, Recherche hors de la barre, Créer et Menu
@@ -24,14 +24,27 @@ function destinationLabel(
   destination: (typeof DESTINATIONS)[number],
   viewportWidth: number,
 ): string {
-  return viewportWidth < 640 && "mobileLabel" in destination && destination.mobileLabel
-    ? destination.mobileLabel
-    : destination.label;
+  if (destination.path === "/feed" && viewportWidth < 1024) {
+    return "Accueil";
+  }
+  if (viewportWidth < 640 && "mobileLabel" in destination && destination.mobileLabel) {
+    return destination.mobileLabel;
+  }
+  return destination.label;
 }
 
-const SEARCH_LABEL = "Explorer Reims";
+const EXPLORER_SEARCH_LABEL = "Explorer Reims";
+/** Contrat feed medium 640–1023 (`FeedMediumHeader`, spec 23). */
+const FEED_MEDIUM_SEARCH_LABEL = "Rechercher à Reims";
 const CREATE_LABEL = "Créer";
 const MENU_ACCESSIBLE_LABEL = "Menu Yunicity";
+
+function searchAccessLabel(viewportWidth: number): string {
+  if (viewportWidth >= 640 && viewportWidth < 1024) {
+    return FEED_MEDIUM_SEARCH_LABEL;
+  }
+  return EXPLORER_SEARCH_LABEL;
+}
 
 const VIEWPORTS = [
   { width: 390, height: 844, name: "mobile 390", menuLabel: "Menu" },
@@ -112,12 +125,14 @@ test.describe("Navbar V3 — chrome citoyen", () => {
         normalized.join(" | ").toLowerCase(),
         `Recherche présente dans la barre en ${viewport.name}`,
       ).not.toContain("recherche");
-      await expect(nav.getByRole("link", { name: SEARCH_LABEL })).toHaveCount(0);
+      await expect(nav.getByRole("link", { name: EXPLORER_SEARCH_LABEL })).toHaveCount(0);
 
-      // 3. Accès Recherche fonctionnel HORS des destinations.
-      const searchAccess = page.getByRole("button", { name: SEARCH_LABEL }).first();
-      await expect(searchAccess, `accès Explorer absent en ${viewport.name}`).toBeVisible();
-      await expect(searchAccess).toBeEnabled({ timeout: COLD_START_TIMEOUT });
+      // 3. Accès recherche fonctionnel HORS des destinations (contrat palier-dépendant).
+      const searchLabel = searchAccessLabel(viewport.width);
+      const searchAccess = page.getByRole("button", { name: searchLabel });
+      await expect(searchAccess, `accès recherche absent en ${viewport.name}`).toHaveCount(1);
+      await expect(searchAccess.first()).toBeVisible();
+      await expect(searchAccess.first()).toBeEnabled({ timeout: COLD_START_TIMEOUT });
 
       // 4. CTA Créer et Menu Yunicity visibles.
       await expect(
@@ -126,10 +141,15 @@ test.describe("Navbar V3 — chrome citoyen", () => {
       ).toBeVisible();
       const menuButton = page.getByRole("button", { name: MENU_ACCESSIBLE_LABEL }).first();
       await expect(menuButton, `Menu invisible en ${viewport.name}`).toBeVisible();
-      await expect(
-        menuButton.locator("span:visible").filter({ hasText: new RegExp(`^${viewport.menuLabel}$`) }),
-        `libellé Menu incorrect en ${viewport.name}`,
-      ).toHaveCount(1);
+      if (viewport.width >= 640) {
+        await expect(
+          menuButton.locator("span:visible").filter({ hasText: new RegExp(`^${viewport.menuLabel}$`) }),
+          `libellé Menu incorrect en ${viewport.name}`,
+        ).toHaveCount(1);
+      } else {
+        // mobile-header / FAB : icône seule — le libellé est porté par aria-label.
+        await expect(menuButton).toHaveAttribute("aria-label", MENU_ACCESSIBLE_LABEL);
+      }
 
       // 5. Structure : pas de double bottom-nav, pas de landmark dupliqué, pas d'overflow.
       const state = await chromeState(page);
@@ -177,37 +197,65 @@ test.describe("Navbar V3 — chrome citoyen", () => {
     const eventId = ((await eventsRes.json()) as { items: Array<{ id: string }> }).items[0]?.id;
     expect(eventId, "événement QA seedé attendu").toBeTruthy();
 
-    const routes = [
-      "/feed",
-      "/videos",
-      "/map",
-      "/sortir",
-      "/search",
-      "/passport",
-      `/events/${eventId}`,
+    const routes: Array<{
+      path: string;
+      ready: (page: Page) => Locator;
+    }> = [
+      {
+        path: "/feed",
+        ready: (page) => page.locator("[data-feed-desktop-composer]").filter({ visible: true }),
+      },
+      {
+        path: "/videos",
+        ready: (page) => page.locator("h1:visible, h2:visible").first(),
+      },
+      {
+        path: "/map",
+        ready: (page) =>
+          page
+            .getByText("Carte indisponible : configurez NEXT_PUBLIC_GOOGLE_MAPS_API_KEY.", {
+              exact: true,
+            })
+            .filter({ visible: true })
+            .first(),
+      },
+      {
+        path: "/sortir",
+        ready: (page) => page.locator("h1:visible, h2:visible").first(),
+      },
+      {
+        path: "/search",
+        ready: (page) => page.locator("h1:visible, h2:visible").first(),
+      },
+      {
+        path: "/passport",
+        ready: (page) => page.locator("h1:visible, h2:visible").first(),
+      },
+      {
+        path: `/events/${eventId}`,
+        ready: (page) => page.locator("h1:visible, h2:visible").first(),
+      },
     ];
 
     await page.setViewportSize({ width: 1366, height: 900 });
     const report: string[] = [];
+    const desktopWidth = 1366;
 
     for (const route of routes) {
-      const authoritativeContent =
-        route === "/feed"
-          ? page.locator("[data-feed-desktop-composer]").filter({ visible: true })
-          : page.locator("h1:visible, h2:visible").first();
       await waitForCitizenRouteReady(
         page,
-        route,
-        new RegExp(`${route.split("?")[0]}(?:\\?|$)`),
-        authoritativeContent,
+        route.path,
+        new RegExp(`${route.path.split("?")[0]}(?:\\?|$)`),
+        route.ready(page),
+        { viewportWidth: desktopWidth },
       );
       const state = await readLandmarkState(page);
       report.push(
-        `${route} → main=${state.main} nestedMain=${state.nestedMain} ` +
+        `${route.path} → main=${state.main} nestedMain=${state.nestedMain} ` +
           `roleMainConcurrent=${state.roleMainConcurrent} ` +
-          `navPrincipale=${state.visibleMainNavigation}`,
+          `navVisible=${state.visibleMainNavigation} navHidden=${state.hiddenPrimaryNavigation}`,
       );
-      expectExactlyOneMain(state, route);
+      expectExactlyOneMain(state, route.path, { viewportWidth: desktopWidth });
     }
 
     console.log(`LANDMARKS :: ${report.join(" | ")}`);
@@ -219,8 +267,8 @@ test.describe("Navbar V3 — chrome citoyen", () => {
     await page.setViewportSize({ width: 1366, height: 900 });
     await gotoCold(page, "/feed", /\/feed/);
 
-    await page.getByRole("button", { name: SEARCH_LABEL }).first().click();
-    await expect(page.getByRole("dialog", { name: SEARCH_LABEL })).toBeVisible({
+    await page.getByRole("button", { name: EXPLORER_SEARCH_LABEL }).first().click();
+    await expect(page.getByRole("dialog", { name: EXPLORER_SEARCH_LABEL })).toBeVisible({
       timeout: COLD_START_TIMEOUT,
     });
     await expect(page).toHaveURL(/\/feed/);

@@ -2,6 +2,7 @@
 
 import type { MembershipPlanCode } from "@yunicity/types";
 import {
+  SUBSCRIPTION_CHECKOUT_UNAVAILABLE_BODY,
   SUBSCRIPTION_CHECKOUT_UNAVAILABLE_TITLE,
   SUBSCRIPTION_ERROR,
   SUBSCRIPTION_LOADING,
@@ -32,18 +33,25 @@ export function SubscriptionScreen() {
   const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
 
   const planCards = useMemo(() => {
-    if (!ctx.plans) return [];
-    return [...ctx.plans.plans]
+    const plans = ctx.plans;
+    if (!plans) return [];
+    return [...plans.plans]
       .sort((a, b) => a.display_order - b.display_order)
-      .map((plan) => buildSubscriptionPlanCardState(plan, ctx.me));
+      .map((plan) => buildSubscriptionPlanCardState(plan, ctx.me, plans.checkout_enabled));
   }, [ctx.me, ctx.plans]);
+
+  // PAY-01-GUARD — quand le paiement est desactive cote serveur, l'explication
+  // doit etre visible SANS avoir a cliquer : les boutons payants sont muets, et
+  // le bandeau dit pourquoi. Un message issu d'un echec reel garde la priorite,
+  // il n'est jamais masque par ce repli.
+  const messageCheckout =
+    checkoutMessage ??
+    (ctx.plans && !ctx.plans.checkout_enabled ? SUBSCRIPTION_CHECKOUT_UNAVAILABLE_BODY : null);
 
   async function handleSelectPlan(planCode: MembershipPlanCode) {
     if (planCode === "free") return;
     if (!ctx.plans || !canCheckoutPlan(planCode, ctx.me, ctx.plans.checkout_enabled)) {
-      setCheckoutMessage(
-        "Le paiement en ligne n'est pas encore activé. Vous pouvez continuer à utiliser l'offre gratuite.",
-      );
+      setCheckoutMessage(SUBSCRIPTION_CHECKOUT_UNAVAILABLE_BODY);
       return;
     }
 
@@ -120,13 +128,13 @@ export function SubscriptionScreen() {
           />
         </div>
 
-        {checkoutMessage ? (
+        {messageCheckout ? (
           <div
             className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
             role="status"
           >
             <p className="font-semibold">{SUBSCRIPTION_CHECKOUT_UNAVAILABLE_TITLE}</p>
-            <p className="mt-1">{checkoutMessage}</p>
+            <p className="mt-1">{messageCheckout}</p>
           </div>
         ) : null}
 

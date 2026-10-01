@@ -107,7 +107,7 @@ Aucun hardcode `reims` dans le code applicatif — seule la variable d'environne
 |----------|---------|-------------|
 | `LOCAL_VIDEO_STORAGE_BACKEND` | `filesystem` | `filesystem` (dev/CI) ou `r2` (recette+) |
 | `LOCAL_VIDEO_MAX_BYTES` | `52428800` | 50 Mo max |
-| `LOCAL_VIDEO_MAX_DURATION_SECONDS` | `60` | Durée max (ffprobe) |
+| `LOCAL_VIDEO_MAX_DURATION_SECONDS` | `90` | Durée max (ffprobe) |
 | `LOCAL_VIDEO_PRESIGNED_TTL_SECONDS` | `900` | TTL presigned PUT (15 min) |
 | `LOCAL_VIDEO_DEFAULT_CITY_SLUG` | `reims` | Fallback dev/recette si territoire absent à upload-init |
 
@@ -214,7 +214,7 @@ LOCAL_VIDEO_R2_BUCKET=yunicity-local-video-recette
 LOCAL_VIDEO_R2_ACCESS_KEY_ID=<secret>
 LOCAL_VIDEO_R2_SECRET_ACCESS_KEY=<secret>
 LOCAL_VIDEO_MAX_BYTES=52428800
-LOCAL_VIDEO_MAX_DURATION_SECONDS=60
+LOCAL_VIDEO_MAX_DURATION_SECONDS=90
 ```
 
 6. Smoke test script : `backend/scripts/pilot_m00_seed_videos.py` (adapter env recette).

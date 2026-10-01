@@ -17,8 +17,15 @@ PROCESS_LOCAL_VIDEO_JOB = "process_local_video_job"
 async def enqueue_local_video_processing(
     video_id: uuid.UUID,
     *,
+    max_duration_seconds: int | None = None,
     settings: Settings | None = None,
 ) -> str:
+    """Met en file le traitement, avec la limite de duree FIGEE a la publication.
+
+    `max_duration_seconds` voyage dans les arguments du job : ARQ rejoue un retry
+    avec les memes arguments, la politique reste donc stable sur toute la vie du
+    job. `None` (job enfile avant ce deploiement) retombe sur le defaut pilote.
+    """
     settings = settings or get_settings()
     if not settings.redis_url:
         raise RuntimeError("REDIS_URL required for async video processing")
@@ -32,6 +39,7 @@ async def enqueue_local_video_processing(
         job = await redis.enqueue_job(
             PROCESS_LOCAL_VIDEO_JOB,
             str(video_id),
+            max_duration_seconds,
             _job_id=job_id,
             _queue_name=ARQ_QUEUE_NAME,
         )

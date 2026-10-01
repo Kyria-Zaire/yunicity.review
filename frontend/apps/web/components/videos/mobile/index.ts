@@ -1,3 +1,5 @@
+export { VideosMobileImmersiveFeed } from "@/components/videos/mobile/videos-mobile-immersive-feed";
+export { VideosMobileImmersiveDetail } from "@/components/videos/mobile/videos-mobile-immersive-detail";
 export { VideosMobileDetailComments } from "@/components/videos/mobile/videos-mobile-detail-comments";
 export { VideosMobileDetailHeader } from "@/components/videos/mobile/videos-mobile-detail-header";
 export { VideosMobileDetailMeta } from "@/components/videos/mobile/videos-mobile-detail-meta";

@@ -22,15 +22,13 @@ import {
   ORG_REQUEST_FIELD_POSTAL,
   ORG_REQUEST_FIELD_SHORT_DESC,
   ORG_REQUEST_FIELD_WEBSITE,
-  ORG_REQUEST_INFO_TITLE,
+  ORG_REQUEST_IDENTITY_TITLE,
   ORG_REQUEST_NAME_PLACEHOLDER,
   ORG_REQUEST_NEIGHBORHOOD_PLACEHOLDER,
   ORG_REQUEST_NEXT,
   ORG_REQUEST_PHOTOS_BODY,
   ORG_REQUEST_PHOTOS_RULE,
   ORG_REQUEST_PHOTOS_TITLE,
-  ORG_REQUEST_PUBLISH_BODY,
-  ORG_REQUEST_PUBLISH_TITLE,
   ORG_REQUEST_REVIEW_BODY,
   ORG_REQUEST_REVIEW_TITLE,
   ORG_REQUEST_SHORT_DESC_PLACEHOLDER,
@@ -111,44 +109,84 @@ export function OrganizationRequestWizard({
         </p>
       ) : null}
 
-      {step === "info" ? (
+      {step === "identity" ? (
         <div>
           <h2
             className={
               isMobile ? "text-base font-bold text-neutral-900" : "text-xl font-bold text-neutral-900"
             }
           >
-            {ORG_REQUEST_INFO_TITLE}
+            {ORG_REQUEST_IDENTITY_TITLE}
+          </h2>
+          <div className={`mt-4 ${isMobile ? "space-y-5" : "mt-6 space-y-5"}`}>
+            <label className="block space-y-1.5 text-sm">
+              <FieldLabel required>{ORG_REQUEST_FIELD_NAME}</FieldLabel>
+              <input
+                value={draft.name}
+                onChange={(event) => onChange({ name: event.target.value })}
+                maxLength={160}
+                placeholder={ORG_REQUEST_NAME_PLACEHOLDER}
+                className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 focus:border-yunicity-primary focus:outline-none focus:ring-1 focus:ring-yunicity-primary"
+              />
+            </label>
+
+            <label className="block space-y-1.5 text-sm">
+              <FieldLabel required>{ORG_REQUEST_FIELD_CATEGORY}</FieldLabel>
+              <select
+                value={draft.categoryId}
+                onChange={(event) => onChange({ categoryId: event.target.value })}
+                className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 focus:border-yunicity-primary focus:outline-none focus:ring-1 focus:ring-yunicity-primary"
+              >
+                <option value="">Sélectionnez une catégorie</option>
+                {ORGANIZATION_REQUEST_CATEGORY_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block space-y-1.5 text-sm">
+              <FieldLabel required>{ORG_REQUEST_FIELD_SHORT_DESC}</FieldLabel>
+              <div className="relative">
+                <textarea
+                  value={draft.shortDescription}
+                  onChange={(event) => onChange({ shortDescription: event.target.value })}
+                  maxLength={ORG_REQUEST_SHORT_DESC_MAX}
+                  rows={3}
+                  placeholder={ORG_REQUEST_SHORT_DESC_PLACEHOLDER}
+                  className="w-full resize-none rounded-xl border border-neutral-200 px-3 py-2.5 focus:border-yunicity-primary focus:outline-none focus:ring-1 focus:ring-yunicity-primary"
+                />
+                <span className="absolute bottom-2 right-3 text-xs text-neutral-400">
+                  {shortDescCount}/{ORG_REQUEST_SHORT_DESC_MAX}
+                </span>
+              </div>
+            </label>
+
+            <label className="block space-y-1.5 text-sm">
+              <FieldLabel required>{ORG_REQUEST_FIELD_CITY}</FieldLabel>
+              <input
+                value={draft.city}
+                onChange={(event) => onChange({ city: event.target.value })}
+                maxLength={128}
+                className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 focus:border-yunicity-primary focus:outline-none focus:ring-1 focus:ring-yunicity-primary"
+              />
+            </label>
+          </div>
+        </div>
+      ) : null}
+
+      {step === "address" ? (
+        <div>
+          <h2
+            className={
+              isMobile ? "text-base font-bold text-neutral-900" : "text-xl font-bold text-neutral-900"
+            }
+          >
+            Adresse et carte
           </h2>
           <div className={`mt-4 ${isMobile ? "space-y-5" : "mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]"}`}>
             <div className="space-y-5">
-              <label className="block space-y-1.5 text-sm">
-                <FieldLabel required>{ORG_REQUEST_FIELD_NAME}</FieldLabel>
-                <input
-                  value={draft.name}
-                  onChange={(event) => onChange({ name: event.target.value })}
-                  maxLength={160}
-                  placeholder={ORG_REQUEST_NAME_PLACEHOLDER}
-                  className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 focus:border-yunicity-primary focus:outline-none focus:ring-1 focus:ring-yunicity-primary"
-                />
-              </label>
-
-              <label className="block space-y-1.5 text-sm">
-                <FieldLabel required>{ORG_REQUEST_FIELD_CATEGORY}</FieldLabel>
-                <select
-                  value={draft.categoryId}
-                  onChange={(event) => onChange({ categoryId: event.target.value })}
-                  className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 focus:border-yunicity-primary focus:outline-none focus:ring-1 focus:ring-yunicity-primary"
-                >
-                  <option value="">Sélectionnez une catégorie</option>
-                  {ORGANIZATION_REQUEST_CATEGORY_OPTIONS.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
               <label className="block space-y-1.5 text-sm">
                 <FieldLabel required>{ORG_REQUEST_FIELD_ADDRESS}</FieldLabel>
                 <div className="relative">
@@ -181,33 +219,6 @@ export function OrganizationRequestWizard({
                   ))}
                 </select>
               </label>
-
-              <label className="block space-y-1.5 text-sm">
-                <FieldLabel required>{ORG_REQUEST_FIELD_SHORT_DESC}</FieldLabel>
-                <div className="relative">
-                  <textarea
-                    value={draft.shortDescription}
-                    onChange={(event) => onChange({ shortDescription: event.target.value })}
-                    maxLength={ORG_REQUEST_SHORT_DESC_MAX}
-                    rows={3}
-                    placeholder={ORG_REQUEST_SHORT_DESC_PLACEHOLDER}
-                    className="w-full resize-none rounded-xl border border-neutral-200 px-3 py-2.5 focus:border-yunicity-primary focus:outline-none focus:ring-1 focus:ring-yunicity-primary"
-                  />
-                  <span className="absolute bottom-2 right-3 text-xs text-neutral-400">
-                    {shortDescCount}/{ORG_REQUEST_SHORT_DESC_MAX}
-                  </span>
-                </div>
-              </label>
-
-              <label className="block space-y-1.5 text-sm">
-                <FieldLabel required>{ORG_REQUEST_FIELD_CITY}</FieldLabel>
-                <input
-                  value={draft.city}
-                  onChange={(event) => onChange({ city: event.target.value })}
-                  maxLength={128}
-                  className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 focus:border-yunicity-primary focus:outline-none focus:ring-1 focus:ring-yunicity-primary"
-                />
-              </label>
             </div>
 
             <OrganizationRequestMapPreview
@@ -219,7 +230,7 @@ export function OrganizationRequestWizard({
         </div>
       ) : null}
 
-      {step === "details" ? (
+      {step === "practical" ? (
         <div className="space-y-5">
           <h2
             className={
@@ -281,7 +292,7 @@ export function OrganizationRequestWizard({
         </div>
       ) : null}
 
-      {step === "photos" ? (
+      {step === "visuals" ? (
         <div className="space-y-4">
           <h2
             className={
@@ -297,7 +308,7 @@ export function OrganizationRequestWizard({
         </div>
       ) : null}
 
-      {step === "review" ? (
+      {step === "verification" ? (
         <div className="space-y-4">
           <h2
             className={
@@ -318,19 +329,6 @@ export function OrganizationRequestWizard({
             <ReviewRow label="Téléphone" value={draft.phone} />
             <ReviewRow label="Code postal" value={draft.postalCode} />
           </dl>
-        </div>
-      ) : null}
-
-      {step === "publish" ? (
-        <div className="space-y-4">
-          <h2
-            className={
-              isMobile ? "text-base font-bold text-neutral-900" : "text-xl font-bold text-neutral-900"
-            }
-          >
-            {ORG_REQUEST_PUBLISH_TITLE}
-          </h2>
-          <p className="text-sm leading-relaxed text-neutral-600">{ORG_REQUEST_PUBLISH_BODY}</p>
           <div className="rounded-2xl bg-[#EEF0FF] p-5">
             <div className="flex items-start gap-3">
               <ShieldCheck className="h-6 w-6 shrink-0 text-yunicity-primary" aria-hidden />
@@ -350,7 +348,7 @@ export function OrganizationRequestWizard({
             : "mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 pt-6"
         }
       >
-        {step === "info" ? (
+        {step === "identity" ? (
           <Link
             href="/places"
             className="rounded-full border border-neutral-200 px-5 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
@@ -367,7 +365,7 @@ export function OrganizationRequestWizard({
           </button>
         )}
 
-        {step === "publish" ? (
+        {step === "verification" ? (
           <button
             type="button"
             onClick={onSubmit}

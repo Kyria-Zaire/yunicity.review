@@ -42,7 +42,7 @@ export function NewPostDesktopView({
         <button
           type="button"
           onClick={() => router.back()}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 hover:bg-white"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-neutral-600 transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yunicity-primary"
           aria-label={POST_NEW_CLOSE}
         >
           <X className="h-5 w-5" />
@@ -54,7 +54,7 @@ export function NewPostDesktopView({
           type="button"
           disabled={!canPublish}
           onClick={onPublish}
-          className="rounded-xl bg-yunicity-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-40"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-yunicity-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-40"
         >
           {POST_NEW_PUBLISH}
         </button>
@@ -75,7 +75,7 @@ export function NewPostDesktopView({
                 <p className="text-sm font-semibold text-neutral-900">{authorLabel}</p>
                 <button
                   type="button"
-                  className="mt-0.5 inline-flex items-center gap-1 rounded-md bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-700"
+                  className="mt-0.5 inline-flex min-h-11 items-center gap-1 rounded-md bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-700"
                 >
                   <Globe2 className="h-3 w-3" />
                   Public
@@ -109,7 +109,7 @@ export function NewPostDesktopView({
               <button
                 type="button"
                 onClick={() => draft.fileInputRef.current?.click()}
-                className="inline-flex items-center gap-1 text-sm font-medium text-yunicity-primary"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 text-sm font-medium text-yunicity-primary"
               >
                 {POST_NEW_GALLERY}
                 <ChevronRight className="h-4 w-4" />

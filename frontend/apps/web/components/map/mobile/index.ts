@@ -1,3 +1,4 @@
+export { MapMobileScreen } from "@/components/map/mobile/map-mobile-screen";
 export { MapMobileAroundSheet } from "@/components/map/mobile/map-mobile-around-sheet";
 export { MapMobileCategoryPills } from "@/components/map/mobile/map-mobile-category-pills";
 export { MapMobileHeader } from "@/components/map/mobile/map-mobile-header";

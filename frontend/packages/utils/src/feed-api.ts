@@ -60,10 +60,10 @@ export class FeedApi extends ApiClientBase {
     });
   }
 
-  uploadPostMedia(file: File): Promise<PostMediaUploadResponse> {
+  uploadPostMedia(file: File, signal?: AbortSignal): Promise<PostMediaUploadResponse> {
     const form = new FormData();
     form.append("file", file);
-    return this.postFormData<PostMediaUploadResponse>("/posts/media", form);
+    return this.postFormData<PostMediaUploadResponse>("/posts/media", form, { signal });
   }
 
   likePost(postId: string): Promise<void> {

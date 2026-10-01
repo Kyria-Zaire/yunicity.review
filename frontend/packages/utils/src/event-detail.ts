@@ -211,6 +211,21 @@ export function eventHasMapCoordinates(event: LocalEvent): boolean {
   return event.latitude != null && event.longitude != null;
 }
 
+/** OSM embed (no token) — preview Lieu desktop quand Mapbox n’est pas configuré. */
+export function buildOpenStreetMapEmbedUrl(
+  latitude: number,
+  longitude: number,
+  delta = 0.006,
+): string {
+  const bbox = [
+    longitude - delta,
+    latitude - delta,
+    longitude + delta,
+    latitude + delta,
+  ].join("%2C");
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${latitude}%2C${longitude}`;
+}
+
 /** Public event detail: staff/org cancel (API 410 EVENT_CANCELLED). */
 export function isEventCancelledError(err: unknown): boolean {
   return isAuthError(err) && err.status === 410 && err.code === "EVENT_CANCELLED";

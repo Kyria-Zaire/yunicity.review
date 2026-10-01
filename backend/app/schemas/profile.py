@@ -63,6 +63,20 @@ class ProfileMeResponse(BaseModel):
     has_active_passport: bool = False
     created_at: datetime
     updated_at: datetime
+    username_changed_at: datetime | None = None
+    username_next_change_at: datetime | None = None
+
+
+class UsernameChangeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    username: str = Field(min_length=1, max_length=128)
+
+
+class UsernameAvailabilityResponse(BaseModel):
+    username: str
+    available: bool
+    unchanged: bool = False
 
 
 class ProfilePublicResponse(BaseModel):

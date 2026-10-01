@@ -2,11 +2,13 @@
 
 import type { FeedPost, FeedReportReason, LocalEvent } from "@yunicity/types";
 import type { FeedHighlightEvent, FeedDesktopMoment } from "@yunicity/utils";
-import type { ReactNode, RefObject } from "react";
+import type { MutableRefObject, ReactNode, RefObject } from "react";
 
 import { FeedDesktopComposer } from "@/components/feed/desktop/feed-desktop-composer";
 import { FeedDesktopMoments } from "@/components/feed/desktop/feed-desktop-moments";
 import { FeedEditorialEveningFeatured } from "@/components/feed/feed-editorial-evening-featured";
+import type { FeedPassportRailData } from "@/components/feed/feed-passport-module";
+import { FeedPassportModule } from "@/components/feed/feed-passport-module";
 import {
   FeedEditorialStreamRegion,
   type FeedEditorialStreamRegionProps,
@@ -21,6 +23,12 @@ type FeedEditorialMainColumnProps = Omit<
   userAvatarUrl: string | null;
   portalEvents: readonly LocalEvent[];
   storyMoments: readonly FeedDesktopMoment[];
+  passport: FeedPassportRailData;
+  eventsLoading: boolean;
+  eventsError: boolean;
+  onRetryEvents: () => void;
+  /** Sonde du slot Passeport compact : arme la requête sous 1024px, où le rail droit est masqué. */
+  compactPassportProbeRef?: MutableRefObject<HTMLDivElement | null>;
   onCreatePost: (body: string, mediaUrl?: string | null) => Promise<void>;
   composerRef?: RefObject<HTMLDivElement>;
   filterHint?: ReactNode;
@@ -34,6 +42,11 @@ export function FeedEditorialMainColumn({
   userAvatarUrl,
   portalEvents,
   storyMoments,
+  passport,
+  eventsLoading,
+  eventsError,
+  onRetryEvents,
+  compactPassportProbeRef,
   onCreatePost,
   composerRef,
   filterHint,
@@ -81,8 +94,35 @@ export function FeedEditorialMainColumn({
         </div>
       ) : null}
 
+      {/* FEED-MAIN-LAYOUT-UIUX-01 §7 — sous 1024px le volet droit est masque :
+          le Passeport y serait totalement inaccessible. Il reprend ici sa place,
+          IMMEDIATEMENT AVANT les evenements, comme dans le volet droit. La
+          bascule est portee par `.feed-compact-passport` dans `globals.css` :
+          un seul des deux emplacements existe a une largeur donnee. */}
       {!showSaved ? (
-        <FeedEditorialEveningFeatured events={portalEvents} city={city} markPrimarySurface />
+        <div
+          ref={compactPassportProbeRef}
+          data-feed-medium-region="passport"
+          className="feed-compact-passport"
+        >
+          <FeedPassportModule
+            overview={passport.overview}
+            challenges={passport.challenges}
+            loading={passport.loading}
+            error={passport.error}
+          />
+        </div>
+      ) : null}
+
+      {!showSaved ? (
+        <FeedEditorialEveningFeatured
+          events={portalEvents}
+          city={city}
+          markPrimarySurface
+          loading={eventsLoading}
+          error={eventsError}
+          onRetry={onRetryEvents}
+        />
       ) : null}
 
       {!showSaved && interestFilterActive && filterHint ? (

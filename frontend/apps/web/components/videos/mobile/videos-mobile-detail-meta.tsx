@@ -15,6 +15,9 @@ import {
 } from "@yunicity/utils";
 import { Heart, MessageCircle, SendHorizontal, Share2 } from "lucide-react";
 
+import { VIDEO_CANVAS_FOCUS, VIDEO_FOLLOW_DISABLED_CLASS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
+import { AvatarImage } from "@/components/avatar-image";
+
 type VideosMobileDetailMetaProps = {
   item: LocalVideoFeedItem;
   onToggleLike: () => void;
@@ -46,8 +49,8 @@ function ActionColumn({
       onClick={onClick}
       aria-pressed={active}
       aria-label={label}
-      className={`flex min-h-[3.25rem] flex-1 flex-col items-center justify-center gap-1 border-r border-neutral-200 px-1 py-2 text-xs font-semibold last:border-r-0 ${
-        active ? "text-yunicity-primary" : "text-neutral-700"
+      className={`flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-1.5 text-xs font-semibold ${VIDEO_CANVAS_FOCUS} ${
+        active ? "text-yunicity-primary" : "text-neutral-600"
       }`}
     >
       {children}
@@ -87,8 +90,7 @@ export function VideosMobileDetailMeta({
 
       <div className="flex items-center gap-3">
         {item.author.avatar_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <AvatarImage
             src={item.author.avatar_url}
             alt=""
             className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-white"
@@ -106,14 +108,15 @@ export function VideosMobileDetailMeta({
           type="button"
           disabled
           title={VIDEO_DETAIL_FOLLOW_SOON}
-          className="inline-flex shrink-0 items-center justify-center rounded-full bg-yunicity-primary px-4 py-2 text-sm font-semibold text-white opacity-80"
+          aria-label={VIDEO_DETAIL_FOLLOW_SOON}
+          className={`${VIDEO_TOUCH_TARGET} ${VIDEO_FOLLOW_DISABLED_CLASS} ${VIDEO_CANVAS_FOCUS}`}
         >
           {VIDEO_DETAIL_FOLLOW}
         </button>
       </div>
 
       <div
-        className="flex overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm"
+        className="flex items-center justify-between gap-3 px-1 py-1 sm:gap-5"
         role="toolbar"
         aria-label="Actions sur la vidéo"
       >

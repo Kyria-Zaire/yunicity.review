@@ -17,6 +17,7 @@ import {
 } from "@yunicity/utils";
 import { Bus, Coffee, Heart, MessageCircle, Music, Shield, Tag, TreePine } from "lucide-react";
 import Link from "next/link";
+import { AvatarImage } from "@/components/avatar-image";
 
 const TREND_ICONS = [TreePine, Coffee, Music, Bus, Tag] as const;
 
@@ -112,8 +113,7 @@ export function DiscussionsRightRail({
                 >
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-yunicity-primary-soft text-xs font-bold text-yunicity-primary">
                     {item.author_avatar_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <AvatarImage
                         src={item.author_avatar_url}
                         alt=""
                         className="h-full w-full rounded-full object-cover"

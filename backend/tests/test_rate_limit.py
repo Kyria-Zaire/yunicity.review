@@ -22,6 +22,12 @@ class _FakeRedis:
             raise self._incr_exc
         return self._incr_return
 
+    async def eval(self, script: str, numkeys: int, key: str, *args: str) -> int:
+        del script, numkeys, key, args
+        if self._incr_exc is not None:
+            raise self._incr_exc
+        return self._incr_return
+
 
 def _patch_client(client: object) -> Any:
     return patch("app.core.rate_limit.get_redis_client", return_value=client)

@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import { expect, test } from "../fixtures";
+import { expect, testCitizen as test } from "../fixtures";
 import { COLD_START_TEST_TIMEOUT, COLD_START_TIMEOUT, gotoCold } from "../cold-start";
 import { waitForCitizenRouteReady } from "../landmark-assertions";
 import {

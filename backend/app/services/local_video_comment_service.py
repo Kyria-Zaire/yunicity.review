@@ -119,7 +119,8 @@ class LocalVideoCommentService:
         return "moderation.manage" in ctx.permissions or "system.admin" in ctx.permissions
 
     async def _to_response(self, comment: LocalVideoComment) -> LocalVideoCommentResponse:
-        profile = await self._profiles.get_by_user_id(comment.author_user_id)
+        # Identite PUBLIQUE : le commentaire reste, son auteur devient neutre.
+        profile = await self._profiles.get_public_identity(comment.author_user_id)
         display = profile.display_name if profile and profile.display_name else "Citoyen"
         return LocalVideoCommentResponse(
             id=comment.id,

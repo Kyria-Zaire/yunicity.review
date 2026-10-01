@@ -8,6 +8,7 @@ import {
   buildCityPulseLine,
   defaultAgendaDayKey,
   filterAgendaHeroEvents,
+  filterAgendaUpcomingEvents,
   filterEventsOnDay,
   isAfterworkEvent,
   partitionAgendaDayEvents,
@@ -70,6 +71,34 @@ describe("partitionAgendaDayEvents", () => {
     expect(highlights).toHaveLength(1);
     expect(afterwork).toHaveLength(1);
     expect(isAfterworkEvent(afterwork[0]!)).toBe(true);
+  });
+});
+
+describe("filterAgendaUpcomingEvents", () => {
+  it("keeps future events", () => {
+    const now = new Date("2026-05-27T20:00:00.000Z");
+    const events = [
+      eventAt("2026-05-27T21:00:00.000Z", { id: "future" }),
+      eventAt("2026-05-27T18:00:00.000Z", { id: "past-no-end" }),
+    ];
+    const kept = filterAgendaUpcomingEvents(events, now);
+    expect(kept.map((event) => event.id)).toEqual(["future"]);
+  });
+
+  it("keeps already-started events that are still ongoing", () => {
+    const now = new Date("2026-05-27T20:00:00.000Z");
+    const events = [
+      eventAt("2026-05-27T18:00:00.000Z", {
+        id: "ongoing",
+        ends_at: "2026-05-27T22:00:00.000Z",
+      }),
+      eventAt("2026-05-27T17:00:00.000Z", {
+        id: "ended",
+        ends_at: "2026-05-27T19:00:00.000Z",
+      }),
+    ];
+    const kept = filterAgendaUpcomingEvents(events, now);
+    expect(kept.map((event) => event.id)).toEqual(["ongoing"]);
   });
 });
 

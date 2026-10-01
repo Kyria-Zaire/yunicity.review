@@ -241,6 +241,13 @@ class NeighborhoodDetailVideoItem(BaseModel):
     neighborhood_slug: str
     published_at: datetime | None = None
     video_type: str
+    # VIDEO-03 — rattachement REEL de la video, servi tel quel.
+    # C'est ce qui autorise le CTA « Y aller » cote client : sans slug de lieu
+    # ni identifiant d'evenement, aucune route n'existe et le CTA est masque.
+    # Le nom de lieu accompagne le slug pour l'affichage, il ne le remplace pas.
+    cultural_place_slug: str | None = None
+    cultural_place_name: str | None = None
+    local_event_id: uuid.UUID | None = None
     author: NeighborhoodDetailVideoAuthor
 
 

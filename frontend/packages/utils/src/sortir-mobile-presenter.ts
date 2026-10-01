@@ -158,6 +158,8 @@ export function sortirMobileCategoryBadgeClass(
       return "bg-[#FFF0F6] text-[#DB2777]";
     case "exhibition":
       return "bg-[#EFF6FF] text-[#2563EB]";
+    case "local":
+      return "bg-[#ECFDF5] text-[#059669]";
     default:
       return "bg-[#ECFDF5] text-[#059669]";
   }
@@ -173,6 +175,8 @@ export function sortirMobileDateColumnClass(
       return "text-[#DB2777]";
     case "exhibition":
       return "text-[#2563EB]";
+    case "local":
+      return "text-[#059669]";
     default:
       return "text-[#059669]";
   }

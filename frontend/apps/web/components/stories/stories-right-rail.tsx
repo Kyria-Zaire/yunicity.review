@@ -31,6 +31,7 @@ import {
   Trophy,
 } from "lucide-react";
 import Link from "next/link";
+import { AvatarImage } from "@/components/avatar-image";
 
 const CATEGORY_ICONS = [Sparkles, Coffee, Music, Leaf, Landmark, Trophy, MapPin, Calendar] as const;
 
@@ -85,8 +86,7 @@ export function StoriesRightRail({
                 >
                   <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-yunicity-primary-soft text-xs font-bold text-yunicity-primary">
                     {item.author_avatar_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <AvatarImage
                         src={item.author_avatar_url}
                         alt=""
                         className="h-full w-full rounded-full object-cover"
@@ -160,8 +160,7 @@ export function StoriesRightRail({
                 <span className="w-4 text-sm font-bold text-neutral-400">{index + 1}</span>
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-yunicity-primary-soft text-xs font-bold text-yunicity-primary">
                   {item.author_avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <AvatarImage
                       src={item.author_avatar_url}
                       alt=""
                       className="h-full w-full rounded-full object-cover"

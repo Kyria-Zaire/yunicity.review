@@ -14,6 +14,11 @@ ROLE_DEFINITIONS: dict[str, tuple[str, str | None]] = {
     "MODERATOR": ("Modérateur", "Modération de contenus"),
     "CITY_ADMIN": ("Admin ville", "Administration locale"),
     "SUPER_ADMIN": ("Super administrateur", "Administration système"),
+    # VIDEO-04D — role PRODUIT, sans aucune permission administrative.
+    # Il n'accorde qu'un palier de duree video (180 s) ; voir
+    # `app/core/local_video_duration_policy.py`. Attribue par le staff via
+    # ADMIN-08B, jamais automatiquement, sans lien avec la verification d'email.
+    "VERIFIED_CREATOR": ("Créateur vérifié", "Palier de durée vidéo étendu (180 s)"),
 }
 
 PERMISSION_DEFINITIONS: dict[str, str] = {
@@ -57,6 +62,9 @@ ROLE_PERMISSION_KEYS: Mapping[str, frozenset[str]] = {
         }
     ),
     "SUPER_ADMIN": frozenset(PERMISSION_DEFINITIONS.keys()),
+    # Ensemble VIDE et volontaire : ce role ne doit conferer aucun droit
+    # administratif. Un test verrouille cette propriete.
+    "VERIFIED_CREATOR": frozenset(),
 }
 
 

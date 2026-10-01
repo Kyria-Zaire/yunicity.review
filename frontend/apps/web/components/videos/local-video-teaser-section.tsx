@@ -2,6 +2,7 @@
 
 import {
   LOCAL_VIDEO_TEASER_SECTION_EVENT,
+  buildLocalVideoTeaserViewFromFeedItem,
   LOCAL_VIDEO_TEASER_SECTION_FEED,
   LOCAL_VIDEO_TEASER_SECTION_NEIGHBORHOOD,
   LOCAL_VIDEO_TEASER_SECTION_PLACE,
@@ -46,7 +47,7 @@ export function LocalVideoTeaserSection({
 
   return (
     <LocalVideoTeaserRail
-      items={teasers.items}
+      views={teasers.items.map(buildLocalVideoTeaserViewFromFeedItem)}
       title={title ?? resolveDefaultTitle(filter)}
       layout={layout}
     />

@@ -1,6 +1,7 @@
 "use client";
 
 import { ProfileAvatar } from "@/components/profile-avatar";
+import { ComposerMediaResolution } from "@/components/feed/composer-media-resolution";
 import { useComposerMedia } from "@/hooks/use-composer-media";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -58,7 +59,7 @@ function ComposerTextButton({
           ? "text-amber-500"
           : "text-yunicity-primary";
 
-  const className = `feed-composer-action flex h-9 items-center justify-center gap-1.5 rounded-full px-2.5 text-sm font-medium transition-colors hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary/40 xl:px-3 ${toneClass}`;
+  const className = `feed-composer-action flex h-9 min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full px-2.5 text-sm font-medium transition-colors hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary/40 xl:px-3 ${toneClass}`;
 
   const contenu = (
     <>
@@ -142,8 +143,21 @@ export function FeedComposer({
 }) {
   const { user } = useAuth();
   const api = useYunicityApi();
-  const { fileInputRef, mediaUrl, uploading, mediaError, openPicker, onFileChange, clearMedia } =
-    useComposerMedia();
+  const {
+    fileInputRef,
+    mediaUrl,
+    displayUrl,
+    uploading,
+    mediaError,
+    mediaReadyForPublish,
+    mediaRejected,
+    continueWithoutMedia,
+    openPicker,
+    onFileChange,
+    clearMedia,
+    beginPublishing,
+    finishPublishing,
+  } = useComposerMedia();
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [body, setBody] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -153,13 +167,13 @@ export function FeedComposer({
     placeholder ?? (city ? homeComposerPlaceholder(city) : "Partagez un moment local…");
 
   const authorLabel = displayName ?? user?.email?.split("@")[0] ?? "Vous";
-  const canPublish = Boolean(body.trim()) && !isSubmitting && !uploading;
+  const canPublish = Boolean(body.trim()) && !isSubmitting && mediaReadyForPublish;
   /**
    * Le backend impose `PostCreateRequest.body` avec `min_length=1` : une photo
    * seule part en 422. Le bouton était déjà désactivé, mais SANS explication —
    * l'utilisateur voyait un bouton mort sans savoir pourquoi.
    */
-  const photoSansTexte = Boolean(mediaUrl) && !body.trim();
+  const photoSansTexte = Boolean(displayUrl) && !body.trim();
 
   useEffect(() => {
     void api
@@ -174,17 +188,23 @@ export function FeedComposer({
 
   async function handleSubmit() {
     const trimmed = body.trim();
-    if (!trimmed || isSubmitting) {
+    if (!trimmed || isSubmitting || !mediaReadyForPublish) {
+      return;
+    }
+    if (!beginPublishing()) {
       return;
     }
     setIsSubmitting(true);
     setError(null);
     try {
       await onSubmit(trimmed, mediaUrl);
+      finishPublishing(true);
       setBody("");
       clearMedia();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Publication impossible pour le moment.");
+    } catch (erreur) {
+      finishPublishing(false, erreur);
+      // Message média structuré via finishPublishing ; pas de fuite technique.
+      setError(null);
     } finally {
       setIsSubmitting(false);
     }
@@ -225,20 +245,26 @@ export function FeedComposer({
             onChange={(event) => void onFileChange(event.target.files?.[0] ?? null)}
           />
           {uploading ? (
-            <p className="mt-3 text-sm text-neutral-500">{COMPOSER_MEDIA_UPLOADING_LABEL}</p>
-          ) : mediaUrl ? (
-            <div data-feed-composer-preview="" className="relative mt-3 inline-block">
-              {/* eslint-disable-next-line @next/next/no-img-element -- aperçu média R2, hors next/image */}
+            <p className="mt-3 text-sm text-neutral-500" aria-live="polite">
+              {COMPOSER_MEDIA_UPLOADING_LABEL}
+            </p>
+          ) : null}
+          {displayUrl ? (
+            <div
+              data-feed-composer-preview=""
+              className="relative mt-3 w-full max-w-full overflow-hidden rounded-xl border border-neutral-200/90 bg-neutral-100"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- aperçu média local/R2, hors next/image */}
               <img
-                src={mediaUrl}
+                src={displayUrl}
                 alt=""
-                className="max-h-56 rounded-xl border border-neutral-200/90 object-cover"
+                className="mx-auto block max-h-56 w-full object-contain"
               />
               <button
                 type="button"
                 onClick={clearMedia}
                 data-feed-composer-media-remove=""
-                className="absolute right-2 top-2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-black/75"
+                className="absolute right-1 top-1 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-black/75"
               >
                 {COMPOSER_MEDIA_REMOVE_LABEL}
               </button>
@@ -309,7 +335,7 @@ export function FeedComposer({
           onClick={() => void handleSubmit()}
           data-feed-composer-submit=""
           aria-describedby="feed-composer-rule"
-          className={`feed-composer-submit shrink-0 rounded-full px-4 py-1.5 text-sm font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 sm:px-5 sm:py-2 ${
+          className={`feed-composer-submit inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full px-4 py-1.5 text-sm font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 sm:px-5 sm:py-2 ${
             canPublish
               ? "bg-yunicity-primary text-white hover:bg-yunicity-primary-hover"
               : "cursor-not-allowed bg-yunicity-primary/40 text-white/90"
@@ -339,6 +365,13 @@ export function FeedComposer({
         >
           {error ?? mediaError}
         </p>
+      ) : null}
+      {mediaRejected ? (
+        <ComposerMediaResolution
+          onChooseAnother={openPicker}
+          onContinueWithout={continueWithoutMedia}
+          className="px-0"
+        />
       ) : null}
     </section>
   );

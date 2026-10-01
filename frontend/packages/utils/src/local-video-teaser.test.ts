@@ -4,6 +4,7 @@ import type { LocalVideoFeedItem } from "@yunicity/types";
 
 import {
   buildLocalVideoTeaserHref,
+  buildLocalVideoTeaserFilterFromMapSelection,
   filterLocalVideoTeasers,
   formatLocalVideoDuration,
   reorderLocalVideoFeedForFocus,
@@ -36,6 +37,8 @@ function baseItem(overrides: Partial<LocalVideoFeedItem> = {}): LocalVideoFeedIt
     media_url: "https://example.com/v.mp4",
     thumbnail_url: "https://example.com/t.jpg",
     duration_seconds: 92,
+    media_width: null,
+    media_height: null,
     mime_type: "video/mp4",
     latitude: null,
     longitude: null,
@@ -127,5 +130,39 @@ describe("local-video teaser utils", () => {
         baseItem({ title: null, cultural_place_name: "Maison & Café" }),
       ),
     ).toBe("Maison & Café");
+  });
+});
+
+describe("buildLocalVideoTeaserFilterFromMapSelection", () => {
+  // La carte connait deja sa selection, servie par le backend. La convertir en
+  // filtre de teaser est un simple changement de vocabulaire : aucun slug n'est
+  // devine, aucune geographie n'est reconstruite cote client.
+  it("convertit une sélection de lieu", () => {
+    expect(buildLocalVideoTeaserFilterFromMapSelection({ kind: "place", slug: "cathedrale" })).toEqual(
+      { kind: "place", culturalPlaceSlug: "cathedrale" },
+    );
+  });
+
+  it("convertit une sélection de quartier", () => {
+    expect(
+      buildLocalVideoTeaserFilterFromMapSelection({ kind: "neighborhood", slug: "saint-remi" }),
+    ).toEqual({ kind: "neighborhood", neighborhoodSlug: "saint-remi" });
+  });
+
+  it("convertit une sélection d'événement", () => {
+    expect(buildLocalVideoTeaserFilterFromMapSelection({ kind: "event", id: "e1" })).toEqual({
+      kind: "event",
+      localEventId: "e1",
+    });
+  });
+
+  it("ne produit aucun filtre pour une tribu", () => {
+    // Une video n'est pas rattachee a une tribu : filtrer dessus renverrait un
+    // resultat arbitraire. On n'affiche donc pas de teaser.
+    expect(buildLocalVideoTeaserFilterFromMapSelection({ kind: "tribe", slug: "cyclistes" })).toBeNull();
+  });
+
+  it("ne produit aucun filtre sans sélection", () => {
+    expect(buildLocalVideoTeaserFilterFromMapSelection(null)).toBeNull();
   });
 });

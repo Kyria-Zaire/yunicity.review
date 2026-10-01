@@ -20,6 +20,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
+import { CockpitAgendaAlert } from "@/components/cockpit/cockpit-agenda-alert";
 
 interface CockpitTerritoryPulseProps {
   city: string;
@@ -177,6 +178,11 @@ export function CockpitTerritoryPulse({
           </p>
         </>
       )}
+
+      {/* RF-03B — l'alerte agenda vit dans la carte qui porte deja
+          « Evenements a venir » : pas de nouvelle surface, pas de
+          compteur duplique. Elle ne s'affiche que sous le seuil. */}
+      <CockpitAgendaAlert agendaHealth={signals.agenda_health} city={city} />
     </section>
   );
 }
