@@ -127,9 +127,28 @@ async function mesurer(page: Page) {
       const fieldRect = field?.getBoundingClientRect() ?? sr;
       const br = submit?.getBoundingClientRect() ?? { width: 0, height: 0, top: 0, right: 0 };
       const stories = document.querySelector('[data-feed-medium-region="stories"]');
-      // C3-FEED-M7-R2 : la region `discovery` a quitte la bande medium ; la
-      // voisine basse du compositeur est desormais `evening-events`.
-      const suivante = document.querySelector('[data-feed-medium-region="evening-events"]');
+      /*
+       * La voisine basse est relevee, plus jamais nommee en dur.
+       *
+       * Ce selecteur a deja ete corrige une fois (`discovery` -> `evening-events`)
+       * et l'etait redevenu faux : une region `passport` de 210 px s'est depuis
+       * intercalee, et l'ecart mesure valait 20 + 210 + 20 = 250 px pour 20
+       * attendus. Le rythme n'etait pas rompu — c'est le voisinage suppose qui
+       * avait change. Nommer une region fait echouer cette assertion a chaque
+       * reordonnancement de la bande, sans qu'aucun defaut n'existe.
+       *
+       * Le rythme a prouver est celui de la GRILLE editoriale, dont le parent du
+       * compositeur porte le `row-gap`. On mesure donc jusqu'a la region
+       * immediatement suivante DANS CETTE GRILLE, ce qui est exactement ce que
+       * l'assertion veut dire, et le reste quel que soit l'ordre des regions.
+       */
+      const suivante = (() => {
+        let n = region.nextElementSibling;
+        while (n && !(n instanceof HTMLElement && n.hasAttribute("data-feed-medium-region"))) {
+          n = n.nextElementSibling;
+        }
+        return n;
+      })();
       const rr = region.getBoundingClientRect();
 
       return {
@@ -383,7 +402,22 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
       return { largeur: r.width, hauteur: r.height, fit: getComputedStyle(img).objectFit };
     }, PREVIEW);
     expect(apercu.largeur, "aperçu sans largeur").toBeGreaterThan(0);
-    expect(apercu.fit, "aperçu déformé").toBe("cover");
+    /*
+     * `contain`, et non `cover` — contrat perime corrige.
+     *
+     * Cette assertion exigeait `cover` sous le libelle « apercu deforme », deux
+     * lignes apres avoir charge une image PORTRAIT « sans deformation ». Or
+     * `cover` remplit en ROGNANT : dans une boite `h-20 w-full`, un portrait y
+     * perd l'essentiel de sa hauteur. Et aucune des deux valeurs ne deforme —
+     * seule `fill` le fait — donc le libelle ne decrivait pas son assertion.
+     *
+     * La spec 18 (`Portrait Media Visual Closure`) enonce la regle inverse dans
+     * son propre en-tete : « object-contain avec background neutre », et « avec
+     * object-cover le ratio naturel ne serait pas respecte ». Le produit
+     * l'applique depuis `8f98c219`. On tient donc la regle documentee, qui est
+     * aussi la plus stricte sur la preservation du ratio.
+     */
+    expect(apercu.fit, "aperçu rogné au lieu d'être contenu").toBe("contain");
 
     // Photo + texte : autorisé.
     await saisie.fill("Photo accompagnée de son texte.");
