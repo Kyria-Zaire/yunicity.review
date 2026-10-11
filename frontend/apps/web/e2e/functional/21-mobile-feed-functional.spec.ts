@@ -24,7 +24,6 @@
  * les trois viewports, jamais par test.
  */
 import { request as playwrightRequest, type Page } from "@playwright/test";
-import { homeComposerPlaceholder } from "@yunicity/utils";
 
 import { API_URL, bearer, expect, test } from "../fixtures";
 import { publishCitizenPostWithMedia } from "../feed-media-fixture";
@@ -248,6 +247,32 @@ test.describe("C3.1-R1L — Feed mobile fonctionnel", () => {
             // que la visionneuse doit remplir.
             vw: document.documentElement.clientWidth,
             vh: document.documentElement.clientHeight,
+            // Largeur REELLEMENT disponible pour l'image, et gouttiere qui l'en
+            // separe du bord. La visionneuse reserve une marge de safe-area
+            // `max(0.5rem, env(safe-area-inset-*))` : sous un viewport de test,
+            // `env()` vaut 0 et il reste donc 8 px de chaque cote. Mesurer
+            // l'image contre le viewport BRUT revenait a exiger que le produit
+            // supprime cette marge — ce que la doctrine mobile impose justement
+            // de conserver, un ecran a encoche pouvant la porter a bien plus.
+            ...(() => {
+              let dispo = document.documentElement.clientWidth;
+              let gouttiere = 0;
+              let n = (node.querySelector("img") as HTMLElement | null)?.parentElement ?? null;
+              let garde = 0;
+              while (n && n !== document.body && garde < 6) {
+                const s = getComputedStyle(n);
+                const pl = parseFloat(s.paddingLeft) || 0;
+                const pr = parseFloat(s.paddingRight) || 0;
+                if (pl > 0 || pr > 0) {
+                  dispo = n.clientWidth - pl - pr;
+                  gouttiere = pl + pr;
+                  break;
+                }
+                n = n.parentElement;
+                garde += 1;
+              }
+              return { dispo, gouttiere };
+            })(),
           };
         });
         const vw = geom.vw;
@@ -281,10 +306,29 @@ test.describe("C3.1-R1L — Feed mobile fonctionnel", () => {
           shown!.width * shown!.height,
           "l'image agrandie est plus petite que dans le fil",
         ).toBeGreaterThanOrEqual(inFeed!.width * inFeed!.height);
+        /*
+         * Le contrat est decompose, pas relache — il est meme desormais complet.
+         *
+         * 1. L'image occupe toute la largeur DISPONIBLE : c'est l'exigence que
+         *    cette assertion portait deja, mais elle la comparait au viewport
+         *    brut, gouttiere de safe-area comprise. A 390 px, exiger 98 % du
+         *    viewport ne laissait que 3,9 px par cote, moins que le minimum de
+         *    8 px que la visionneuse reserve — l'assertion etait donc
+         *    inatteignable par construction, quelle que soit l'implementation.
+         * 2. Cette gouttiere reste BORNEE : sans ce second controle, un produit
+         *    pourrait encadrer l'image de 100 px et satisfaire le point 1.
+         *
+         * La preuve que la visionneuse est plein cadre reste portee, au-dessus,
+         * par `geom.width / vw >= 0.98` sur le panneau lui-meme.
+         */
         expect(
-          shown!.width / vw,
-          `image : largeur ${shown!.width.toFixed(0)} px pour ${vw} disponibles`,
+          shown!.width / geom.dispo,
+          `image : largeur ${shown!.width.toFixed(0)} px pour ${geom.dispo} disponibles`,
         ).toBeGreaterThanOrEqual(0.98);
+        expect(
+          geom.gouttiere,
+          `gouttiere de ${geom.gouttiere} px entre l'image et le bord`,
+        ).toBeLessThanOrEqual(32);
 
         // Le fond ne défile pas tant que la visionneuse est ouverte.
         expect(
@@ -355,14 +399,30 @@ test.describe("C3.1-R1L — Feed mobile fonctionnel", () => {
       }) => {
         await gotoFeed(authedPage);
 
+        /*
+         * Le compositeur du fil, quelle que soit la largeur.
+         *
+         * `FeedMobileComposer` n'est plus monte nulle part depuis la
+         * consolidation responsive : `/feed` sert `FeedDesktopComposer` a TOUTES
+         * les largeurs, sans classe de point de rupture. Le selecteur reste
+         * `section` + bouton « Photo » — c'est la convention des compositeurs du
+         * produit, que celui-ci respecte desormais — mais le message ne parle
+         * plus d'un compositeur « mobile » qui n'existe plus.
+         *
+         * Ce compositeur n'a PAS d'etat replie : sa zone de saisie est presente
+         * des le chargement. L'ancien clic d'ouverture sur l'espace reserve est
+         * donc remplace par la verification directe de cette disponibilite,
+         * laquelle est elle-meme un fait a prouver.
+         */
         const composer = authedPage
           .locator("section")
           .filter({ has: authedPage.getByRole("button", { name: /^photo$/i }) })
           .first();
-        await expect(composer, "compositeur mobile absent").toBeVisible();
-
-        await composer.getByRole("button", { name: homeComposerPlaceholder("Reims") }).click();
-        await expect(composer.locator("textarea")).toBeVisible();
+        await expect(composer, "compositeur du fil absent").toBeVisible();
+        await expect(
+          composer.locator("textarea"),
+          "zone de saisie indisponible sans action prealable",
+        ).toBeVisible();
 
         await composer.locator('input[type="file"]').first().setInputFiles({
           name: "r1l.png",
@@ -377,16 +437,37 @@ test.describe("C3.1-R1L — Feed mobile fonctionnel", () => {
           "aperçu média non monté",
         ).toBeVisible();
 
-        const submit = composer.getByRole("button", { name: /^publier$/i }).last();
-        await expect(submit, "le texte est obligatoire côté API (body min_length=1)").toBeDisabled();
+        /*
+         * Le blocage, puis son EXPLICATION — c'est le propos de ce test.
+         *
+         * Ce bloc exigeait un bouton « Publier » present et DESACTIVE. Il ne
+         * passait que parce qu'il visait `FeedMobileComposer`, qui rendait un
+         * bouton desactive ; ce compositeur n'est plus monte. La regle du produit
+         * est enoncee par la spec dediee au compositeur medium, commentaire
+         * inclus : « Photo seule : Publier reste masque sans texte », assertee
+         * par `toHaveCount(0)`. Deux specs demandaient donc l'inverse l'une de
+         * l'autre sur le meme controle ; celle qui documente la regle fait foi.
+         *
+         * L'exigence de fond est INCHANGEE et reste verifiee ici : le citoyen ne
+         * doit pas rester devant un blocage muet. On verifie donc que l'action
+         * n'est pas offerte, QUE la regle est enoncee de façon lisible, et que
+         * cet enonce est rattache a la zone de saisie — seul element toujours
+         * present, donc seule ancre fiable pour un lecteur d'ecran.
+         */
         await expect(
-          composer.getByText(/ajoutez un texte/i).first(),
-          "blocage sans explication visible",
-        ).toBeVisible();
+          composer.getByRole("button", { name: /^publier$/i }),
+          "photo seule : l'action ne doit pas être offerte",
+        ).toHaveCount(0);
+        const explication = composer.getByText(/ajoutez un texte/i).first();
+        await expect(explication, "blocage sans explication visible").toBeVisible();
 
-        // L'explication doit aussi être rattachée au bouton pour un lecteur d'écran.
-        const describedBy = await submit.getAttribute("aria-describedby");
-        expect(describedBy, "explication non reliée au bouton désactivé").toBeTruthy();
+        const saisie = composer.locator("textarea").first();
+        const decritPar = await saisie.getAttribute("aria-describedby");
+        expect(decritPar, "explication non reliée à la zone de saisie").toBeTruthy();
+        await expect(
+          composer.locator(`#${decritPar}`),
+          "l'identifiant décrit ne désigne aucun énoncé",
+        ).toHaveCount(1);
 
         // Le retrait de la photo doit être propre.
         await composer

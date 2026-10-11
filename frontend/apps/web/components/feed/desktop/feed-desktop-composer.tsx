@@ -9,7 +9,18 @@ import { AvatarImage } from "@/components/avatar-image";
 import {
   COMPOSER_MEDIA_ACCEPT_ATTR,
   COMPOSER_MEDIA_UPLOADING_LABEL,
+  COMPOSER_TEXT_REQUIRED_HINT,
+  homeComposerPlaceholder,
 } from "@yunicity/utils";
+
+/**
+ * Identifiant de l'énoncé de règle, cible de `aria-describedby`.
+ *
+ * Distinct de celui de `FeedComposer` (mur de Tribu) : deux compositeurs ne
+ * cohabitent jamais sur une même page aujourd'hui, mais un `id` partagé
+ * deviendrait un doublon silencieux le jour où ce serait le cas.
+ */
+const ID_REGLE = "feed-desktop-composer-rule";
 
 type FeedDesktopComposerProps = {
   city: string;
@@ -121,6 +132,17 @@ export function FeedDesktopComposer({
   } = useComposerMedia();
 
   const canSubmit = text.trim().length > 0 && !submitting && mediaReadyForPublish;
+  /*
+   * Une photo attachée SANS texte : l'API refuse (`PostCreateRequest.body
+   * min_length=1`). Ce cas doit être EXPLIQUÉ, pas seulement empêché.
+   *
+   * Même règle et même énoncé que `FeedComposer`, déjà en place sur le mur de
+   * Tribu. Ce compositeur-ci est le seul monté sur `/feed` et n'en avait rien :
+   * il faisait simplement DISPARAÎTRE le bouton « Publier », sans texte
+   * d'explication ni lien d'accessibilité. Le citoyen voyait son aperçu photo et
+   * plus aucune action, sans savoir ce qui manquait.
+   */
+  const photoSansTexte = Boolean(displayUrl) && !text.trim();
 
   async function handleSubmit() {
     if (!canSubmit || !beginPublishing()) return;
@@ -137,9 +159,16 @@ export function FeedDesktopComposer({
     }
   }
 
+  /*
+   * Racine : région NOMMÉE, comme les deux autres compositeurs du produit
+   * (`FeedComposer` sur le mur de Tribu, et l'ancien compositeur mobile). Un
+   * `div` anonyme ne constitue pas un repère pour un lecteur d'écran, alors que
+   * publier est l'action principale de la page.
+   */
   return (
-    <div
+    <section
       data-feed-desktop-composer=""
+      aria-label="Publier sur le fil local"
       className="feed-desktop-surface feed-desktop-composer overflow-hidden transition-shadow focus-within:ring-2 focus-within:ring-yunicity-primary/20"
     >
       <div className="flex items-start gap-3 px-4 py-3.5">
@@ -161,14 +190,18 @@ export function FeedDesktopComposer({
 
         <div className="min-w-0 flex-1">
           <label className="sr-only" htmlFor="feed-desktop-composer-body">
-            {`Quoi de neuf à ${city} ?`}
+            {/* Libellé PARTAGÉ, recopié ici et dans le `placeholder` ci-dessous :
+                `homeComposerPlaceholder` rend exactement le même texte et ajoute
+                un repli si la ville est vide. */}
+            {homeComposerPlaceholder(city)}
           </label>
           <textarea
             id="feed-desktop-composer-body"
             ref={textareaRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={`Quoi de neuf à ${city} ?`}
+            aria-describedby={ID_REGLE}
+            placeholder={homeComposerPlaceholder(city)}
             rows={1}
             maxLength={4000}
             className="min-h-[2.5rem] w-full resize-none border-0 bg-transparent py-1.5 text-[15px] leading-snug text-neutral-900 placeholder:text-neutral-500 focus:outline-none"
@@ -215,13 +248,22 @@ export function FeedDesktopComposer({
       ) : null}
         </div>
 
+        {/*
+          L'action primaire n'apparaît que lorsqu'elle est réellement exécutable.
+          C'est la règle que la spec dédiée au compositeur medium énonce
+          explicitement (« Photo seule : Publier reste masqué sans texte »), et
+          elle est donc tenue ici telle quelle. L'explication de ce qui manque
+          passe par l'énoncé de règle plus bas, rattaché à la zone de saisie —
+          seul élément toujours présent — et non à un bouton qui, par
+          construction, n'existe pas à ce moment-là.
+        */}
         {canSubmit ? (
           <button
             type="button"
             disabled={submitting}
             onClick={() => void handleSubmit()}
             data-feed-desktop-composer-submit=""
-            className="mt-0.5 inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full bg-yunicity-primary px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-yunicity-primary-hover active:scale-[0.98] disabled:opacity-60"
+            className="mt-0.5 inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full bg-yunicity-primary px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-yunicity-primary-hover active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 disabled:opacity-60"
           >
             {submitting ? "Publication…" : "Publier"}
           </button>
@@ -267,6 +309,32 @@ export function FeedDesktopComposer({
           />
         </div>
       </div>
-    </div>
+
+      {/*
+        Énoncé de la règle backend `PostCreateRequest.body min_length=1`.
+        TOUJOURS dans le DOM : il est la cible du `aria-describedby` de la ZONE DE
+        SAISIE — seul élément toujours présent, le bouton n'existant pas tant que
+        la publication est impossible. Une description qui n'apparaît que par
+        moments ne peut pas être annoncée de façon fiable. `data-hint-active`
+        expose l'état réel pour les contrôles.
+
+        Il devient VISIBLE quand une photo attend son texte, et reste `sr-only`
+        le reste du temps. Le garder toujours `sr-only` — ce que fait
+        `FeedComposer`, dont le commentaire annonce pourtant un rendu visible
+        qu'aucune CSS n'implémente — n'explique rien au citoyen voyant, qui est
+        le cas majoritaire. « Règle expliquée, pas seulement bloquée » suppose
+        que l'explication soit lisible au moment où elle s'applique.
+      */}
+      <p
+        id={ID_REGLE}
+        data-feed-composer-hint=""
+        data-hint-active={photoSansTexte ? "true" : "false"}
+        className={
+          photoSansTexte ? "px-4 pb-3 text-xs font-medium text-neutral-600" : "sr-only"
+        }
+      >
+        {COMPOSER_TEXT_REQUIRED_HINT}
+      </p>
+    </section>
   );
 }
