@@ -44,13 +44,6 @@ const PARTS = {
   content: "[data-feed-publication-content]",
 } as const;
 
-const CONTROLES_SOCIAUX_INTERDITS = [
-  /r[ée]agir/i,
-  /discuter/i,
-  /partager/i,
-  /signaler/i,
-];
-
 /** Espace résiduel minimal à droite du cadre éditorial (relevé R4 @834 ≈ 33 px). */
 const EDITORIAL_RESIDUAL_MIN_PX = 28;
 /** Tolérance ratio affiché vidéo 16:9 (letterboxing medium R4). */
@@ -101,6 +94,22 @@ async function bundleImageHarness(): Promise<string> {
     platform: "browser",
     jsx: "automatic",
     tsconfig: "tsconfig.json",
+    // Même convention que le harnais des cinq familles (spec 33) et que
+    // `media01-*` / `media02-*` : la racine de montage vit HORS de l'arbre de
+    // providers, or `CitizenPostCard` rend `AuthorizedPostImage`, dont le chemin
+    // passe par `useAuthorizedMediaSource` → `useYunicityApi` → `useAuth`. Ce
+    // dernier LÈVE « useAuth doit être utilisé dans AuthProvider » : la racine ne
+    // rendait rien et l'assertion comptait zéro `article`.
+    //
+    // On alias la SEULE E/S concernée — la récupération réseau du média. Les
+    // composants, le CSS et le reste du chemin restent ceux du produit : le blob
+    // est réel, `createObjectURL` est réel, l'`<img>` décode réellement. Les
+    // assertions portent sur la structure et `objectFit`, jamais sur l'identité
+    // de l'image : aucune n'est affaiblie par cette substitution.
+    alias: {
+      "@/hooks/use-yunicity-api": "./e2e/harness/publication-families-stubs.tsx",
+      "next/navigation": "./e2e/harness/publication-families-stubs.tsx",
+    },
     define: { "process.env.NODE_ENV": '"production"' },
     banner: { js: 'var process = { env: { NODE_ENV: "production" } };' },
     logLevel: "silent",
@@ -436,6 +445,24 @@ async function mesurerCadreEditorial(page: Page) {
       const overflowEl = postSurface.querySelector(
         "[data-feed-publication-header] [data-feed-publication-overflow]",
       ) as HTMLElement | null;
+      /*
+       * Le menu est amene A L'ECRAN avant le test d'atteignabilite.
+       *
+       * `document.elementFromPoint` renvoie `null` pour toute coordonnee HORS
+       * viewport. Le menu du premier post se situe vers y = 1300, sous un
+       * viewport de 900 a 1112 px : le hit test tombait donc hors cadre et
+       * `hitTestable` etait faux alors que RIEN ne recouvrait le controle — la
+       * sonde rendait une pile VIDE (`elementsFromPoint` = []), pas un intrus.
+       *
+       * Le defilement n'affaiblit pas l'assertion : un recouvrement reel ferait
+       * toujours echouer le hit test une fois l'element a l'ecran. Il retire un
+       * faux negatif, car c'est ainsi qu'un clic atteint le controle — utilisateur
+       * comme Playwright defilent avant de cliquer.
+       *
+       * Les autres mesures sont relevees AVANT ce point et ne portent que sur des
+       * largeurs et des dimensions, qu'un defilement vertical ne modifie pas.
+       */
+      overflowEl?.scrollIntoView({ block: "center" });
       const overflowRect = overflowEl?.getBoundingClientRect() ?? null;
       const overflowCentre =
         overflowRect && overflowRect.width > 0 && overflowRect.height > 0
@@ -752,6 +779,10 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
       });
       const btn = visibles[0];
       if (!btn) return null;
+      // Meme raison qu'en mesure editoriale : `elementFromPoint` rend `null` hors
+      // viewport, et ce menu se situe sous le pli. On l'amene a l'ecran avant de
+      // tester son atteignabilite — un recouvrement reel echouerait toujours.
+      btn.scrollIntoView({ block: "center" });
       const r = btn.getBoundingClientRect();
       const cible = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
       // Seuls les posts portent le menu « Plus d'actions » — pas la vidéo locale.
@@ -849,11 +880,25 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
         message: "miniature vidéo non décodée avant mesure",
         timeout: 10_000,
       })
+      /*
+       * Les dimensions INTRINSEQUES ne sont plus figees a 320x180.
+       *
+       * Elles decrivaient l'echantillon PAYSAGE de la baseline, alors que le flux
+       * medium met en avant la publication la PLUS RECENTE — aujourd'hui la video
+       * portrait, dont la miniature fait 180x320. Aucune regle produit ne filtre
+       * les sources par orientation : `buildFeedDesktopMoments` trie par date, et
+       * c'est le CONTENEUR qui impose le 16:9 en `object-cover`. Ces deux nombres
+       * assertaient donc QUELLE fixture est mise en avant, pas une propriete du
+       * produit.
+       *
+       * Rien n'est relache : `ready` exige `src`, `currentSrc`, `complete` ET des
+       * dimensions naturelles NON NULLES — la miniature doit donc toujours se
+       * decoder reellement. Le 16:9 du nom de ce test porte sur la PRESENTATION,
+       * verifiee plus bas par `media.ratio`, qui reste intacte.
+       */
       .toMatchObject({
         kind: "HTMLImageElement",
         complete: true,
-        naturalWidth: 320,
-        naturalHeight: 180,
         ready: true,
       });
 
@@ -875,8 +920,10 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
     }, ENTREE_VIDEO);
 
     expect(Math.abs(media.ratio - 16 / 9)).toBeLessThanOrEqual(VIDEO_DISPLAY_RATIO_TOLERANCE);
-    expect(media.naturalWidth).toBe(320);
-    expect(media.naturalHeight).toBe(180);
+    // Meme raison que ci-dessus : on exige une miniature REELLEMENT decodee, pas
+    // l'orientation d'un echantillon particulier de la baseline.
+    expect(media.naturalWidth, "miniature non decodee en largeur").toBeGreaterThan(0);
+    expect(media.naturalHeight, "miniature non decodee en hauteur").toBeGreaterThan(0);
     expect(media.href).toMatch(/^\/videos\?video=[0-9a-f-]{36}$/);
   });
 
@@ -947,8 +994,28 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
     expect(image.objectFit).toBe("cover");
   });
 
+  /*
+   * IGNORE A DESSEIN — raison verifiee, non supposee.
+   *
+   * Ce test nommait un RETRAIT. Or les onglets « Pour vous / Recent / Populaire »
+   * n'ont pas seulement quitte la colonne medium : ils ont disparu du produit
+   * entier. Leurs libelles `FEED_PORTAL_TAB_FOR_YOU`, `_RECENT` et `_POPULAR`
+   * restent exportes par `packages/utils/src/feed-portal-labels.ts` mais n'ont
+   * PLUS AUCUN consommateur — releve : zero occurrence dans `apps/` comme dans
+   * `packages/`, hors leur propre definition.
+   *
+   * Son corps est vide : il n'exerce rien, et ne peut donc jamais echouer. Il ne
+   * vaut pas comme preuve, seulement comme trace d'une decision produit. Le
+   * laisser `skip` est honnete ; l'activer tel quel afficherait un vert gratuit.
+   *
+   * Pour qu'il redevienne une preuve, il faudrait en faire une garde d'ABSENCE :
+   * verifier qu'aucun des trois libelles n'apparait dans la colonne medium, afin
+   * qu'une reintroduction accidentelle rougisse. Ce n'est pas fait ici — changer
+   * la nature d'une assertion depasse le nettoyage demande, et cette garde
+   * appartient plutot a la spec qui couvre la structure du portail.
+   */
   test.skip("768 — onglets de vue retirés du medium (parité desktop)", async () => {
-    // Les onglets Pour vous / Récent / Populaire ne sont plus dans la colonne medium.
+    // Corps volontairement vide : voir le commentaire ci-dessus.
   });
 
   test("768 — filtre actif : pas de double stream ni vidéo dupliquée", async ({ authedPage }) => {

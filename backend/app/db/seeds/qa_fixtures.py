@@ -179,8 +179,21 @@ async def _resolve_basic_tier_id(session: AsyncSession) -> uuid.UUID:
     return tier_id
 
 
-#: Prefixe public du montage `StaticFiles` de `app.main` (`/media`).
-QA_MEDIA_PUBLIC_PREFIX = "/media/qa"
+#: Prefixe public REELLEMENT servi par `app.main`.
+#
+# `app.main` ne monte qu'un seul repertoire public : `/media/local-video`, et ce
+# volontairement — monter la racine exposerait `profiles/` et `stories/` en acces
+# direct, contournant leurs endpoints et leurs regles d'audience.
+#
+# Ce prefixe valait `/media/qa`, qu'AUCUNE route ne sert : les quatre medias
+# d'exemple QA existaient bien sur le disque, mais sous `<racine>/qa`, frere de
+# `local-video/` et donc hors du montage. Toute requete image repondait 404 en
+# `application/json`, que Chromium bloque par ORB sur une image cross-origin en
+# `no-cors` ; la miniature video basculait alors sur son repli `<div>`.
+#
+# Les exemples vivent desormais DANS la racine publique des medias video, ou ils
+# appartiennent, sans ajouter de surface publique.
+QA_MEDIA_PUBLIC_PREFIX = "/media/local-video/qa"
 
 
 def _png_16_9(width: int = 320, height: int = 180) -> bytes:
@@ -222,7 +235,7 @@ def _write_sortir_cover_png(
     base_url = (settings.local_video_public_base_url or "").rstrip("/")
     public_url = f"{base_url}{QA_MEDIA_PUBLIC_PREFIX}/{filename}"
     try:
-        media_dir = Path(settings.media_upload_dir) / "qa"
+        media_dir = Path(settings.media_upload_dir) / "local-video" / "qa"
         media_dir.mkdir(parents=True, exist_ok=True)
         import struct
         import zlib
@@ -274,7 +287,7 @@ def _write_placeholder_video() -> tuple[str, str, str, str]:
     portrait_media = f"{base_url}{QA_MEDIA_PUBLIC_PREFIX}/qa-sample-video-portrait.mp4"
     portrait_thumb = f"{base_url}{QA_MEDIA_PUBLIC_PREFIX}/qa-sample-video-portrait.png"
     try:
-        media_dir = Path(settings.media_upload_dir) / "qa"
+        media_dir = Path(settings.media_upload_dir) / "local-video" / "qa"
         media_dir.mkdir(parents=True, exist_ok=True)
         ensure_qa_sample_video(media_dir / QA_LANDSCAPE_VIDEO_NAME, QA_LANDSCAPE_SPEC)
         ensure_qa_sample_video(media_dir / QA_PORTRAIT_VIDEO_NAME, QA_PORTRAIT_SPEC)
@@ -938,7 +951,10 @@ async def seed_qa_fixtures(
             video_type=LocalVideoType.LIEU.value,
             title="QA Vidéo locale",
             description="Vidéo locale QA paysage (placeholder filesystem).",
-            storage_key="qa/qa-sample-video.mp4",
+            # Aligne sur l'emplacement disque : `_path_for_key` resout
+            # `<racine>/<storage_key>`, et les exemples vivent maintenant sous
+            # `local-video/qa`. Une cle restee a `qa/...` pointerait a cote.
+            storage_key="local-video/qa/qa-sample-video.mp4",
             media_url=landscape_media,
             thumbnail_url=landscape_thumb,
             duration_seconds=12.0,
@@ -971,7 +987,7 @@ async def seed_qa_fixtures(
             video_type=LocalVideoType.BON_PLAN.value,
             title="3 adresses à tester ce week-end à Reims",
             description="Parcours QA portrait pour valider la carte split desktop.",
-            storage_key="qa/qa-sample-video-portrait.mp4",
+            storage_key="local-video/qa/qa-sample-video-portrait.mp4",
             media_url=portrait_media,
             thumbnail_url=portrait_thumb,
             duration_seconds=18.0,

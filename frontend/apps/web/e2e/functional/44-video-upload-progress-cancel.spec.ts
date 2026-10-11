@@ -36,10 +36,16 @@ import path from "node:path";
 
 import { expect, test } from "../fixtures";
 
-/** Vidéo QA réelle du dépôt : H.264, 1920x1080, 12 s — dans les bornes produit. */
+/**
+ * Vidéo QA réelle produite par le seed : H.264, 1920x1080, 12 s — dans les bornes
+ * produit. `backend/uploads/` est gitignoré : ce fichier est une SORTIE de seed,
+ * pas une fixture committée, et son chemin suit donc celui du seed. Les médias
+ * d'exemple vivent désormais sous `local-video/qa`, seule racine réellement
+ * servie publiquement (voir `QA_MEDIA_PUBLIC_PREFIX`).
+ */
 const VIDEO_QA = path.resolve(
   __dirname,
-  "../../../../../backend/uploads/qa/qa-sample-video.mp4",
+  "../../../../../backend/uploads/local-video/qa/qa-sample-video.mp4",
 );
 
 /**
