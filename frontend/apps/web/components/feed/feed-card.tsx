@@ -203,16 +203,23 @@ export function FeedCardWithDependencies({
    * C3-FEED-UNIFIED-PUBLICATION-CARD-R2A : une seule barre sociale. `Signaler`
    * n'y figure plus — il vit dans le menu `…` de l'en-tete, seul chemin de
    * signalement, identique sur les trois bandes.
+   *
+   * Elle est rendue pour les CINQ familles. Une exception
+   * `post.type === "event" ? null` privait les evenements de reaction, de
+   * commentaire et de partage ; le commentaire ci-dessus, qui l'accompagnait,
+   * justifiait tout autre chose — le deplacement de `Signaler`. La zone
+   * `expanded` n'a jamais ete conditionnee au type : la barre ouvre donc une
+   * liste de commentaires et un compositeur deja fonctionnels, sans affordance
+   * orpheline.
    */
-  const footer =
-    post.type === "event" ? null : (
-      <FeedPublicationSocialActions
-        post={post}
-        commentsOpen={commentsOpen}
-        onToggleLike={() => void onToggleLike(post)}
-        onToggleComments={() => void toggleComments()}
-      />
-    );
+  const footer = (
+    <FeedPublicationSocialActions
+      post={post}
+      commentsOpen={commentsOpen}
+      onToggleLike={() => void onToggleLike(post)}
+      onToggleComments={() => void toggleComments()}
+    />
+  );
 
   return (
     <FeedCardShell

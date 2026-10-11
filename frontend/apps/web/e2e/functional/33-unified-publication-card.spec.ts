@@ -21,7 +21,15 @@ import { expect, test, type Page } from "@playwright/test";
 
 const RACINE = "yn-publication-root";
 const CARTE = "article[data-feed-medium-surface='primary']";
-const LARGEURS = [375, 768, 1280] as const;
+/**
+ * Largeurs mesurees.
+ *
+ * 375 / 768 / 1280 sont les bascules de breakpoint. S'y ajoutent 390 / 900 / 1440,
+ * les tailles reellement rencontrees — iPhone 14, tablette, desktop courant : une
+ * bascule juste peut masquer un debordement ou un controle recouvert quelques
+ * pixels plus loin.
+ */
+const LARGEURS = [375, 390, 768, 900, 1280, 1440] as const;
 const FAMILLES = ["text", "image", "video", "event", "offer"] as const;
 
 let bundleCache: string | null = null;
@@ -40,6 +48,18 @@ async function bundleFamilles(): Promise<string> {
     platform: "browser",
     jsx: "automatic",
     tsconfig: "tsconfig.json",
+    // La racine du harnais vit HORS de l'arbre de providers de l'app. La famille
+    // « image » rend `AuthorizedPostImage`, dont le chemin passe par
+    // `useAuthorizedMediaSource` → `useYunicityApi` → `useAuth`, qui levait
+    // « useAuth doit être utilisé dans AuthProvider » et emportait les cinq
+    // familles. Même convention que `media01-*` et `media02-*` : on alias la
+    // SEULE E/S concernée, les composants et le CSS restent ceux du produit.
+    // `next/navigation` : `FeedMediaViewerHost`, monte par le harnais comme
+    // `app/layout.tsx` le fait, lit `usePathname()` hors App Router.
+    alias: {
+      "@/hooks/use-yunicity-api": "./e2e/harness/publication-families-stubs.tsx",
+      "next/navigation": "./e2e/harness/publication-families-stubs.tsx",
+    },
     define: { "process.env.NODE_ENV": '"production"' },
     banner: { js: 'var process = { env: { NODE_ENV: "production" } };' },
     logLevel: "silent",

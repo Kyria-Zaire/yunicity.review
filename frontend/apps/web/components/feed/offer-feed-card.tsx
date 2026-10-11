@@ -4,11 +4,13 @@ import { BadgeCheck } from "lucide-react";
 import Link from "next/link";
 
 import { FlashOfferBadge } from "@/components/feed/flash-offer-badge";
-import { AvatarImage } from "@/components/avatar-image";
+import { FeedAuthorHeader } from "@/components/feed/feed-author-header";
 import { AuthorizedPostImage } from "@/components/feed/authorized-post-image";
 
 export function OfferFeedCard({
   post,
+  currentUserId,
+  onReport,
 }: {
   post: FeedPost;
   currentUserId: string | null;
@@ -20,17 +22,36 @@ export function OfferFeedCard({
       ? PARTNER_OFFER_TYPE_LABELS[offerType as keyof typeof PARTNER_OFFER_TYPE_LABELS]
       : "Avantage";
   const expiry = formatOfferValidUntil(post.offer?.valid_until);
-  const partnerLogo = post.author.logo_url;
 
   return (
     <div data-feed-publication-offer="" className="feed-publication-offer-editorial">
       <div className="flex gap-4">
         <div className="min-w-0 flex-1">
+          {/*
+            Les signaux PROPRES a l'offre restent groupes ici : nature de
+            l'avantage, Passport, echeance, partenaire verifie. Le type et la
+            verification vivaient dans l'identite sur mesure ci-dessous ; les
+            deplacer ici les conserve a l'identique tout en laissant une seule
+            identite sur la carte.
+          */}
           <div className="flex flex-wrap items-center gap-2">
             <FlashOfferBadge offer={post.offer} />
             <span className="rounded-full border border-yunicity-primary/30 bg-white px-2.5 py-0.5 text-xs font-semibold text-yunicity-primary">
               {FEED_PASSPORT_BADGE}
             </span>
+            <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-semibold text-neutral-700">
+              {typeLabel}
+            </span>
+            {/*
+              `aria-hidden` rendait ce marqueur de confiance invisible aux
+              lecteurs d'ecran. Meme motif que `event-create-desktop-preview`,
+              qui le nomme au lieu de le masquer.
+            */}
+            <BadgeCheck
+              className="h-4 w-4 shrink-0 text-yunicity-primary"
+              aria-label="Partenaire vérifié"
+              role="img"
+            />
             {!post.offer?.is_flash && expiry ? (
               <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
                 {expiry}
@@ -38,25 +59,19 @@ export function OfferFeedCard({
             ) : null}
           </div>
 
-          <div className="mt-3 flex items-start gap-3">
-            {partnerLogo ? (
-              <AvatarImage
-                src={partnerLogo}
-                alt=""
-                className="h-10 w-10 shrink-0 rounded-full border border-neutral-200 object-cover"
-              />
-            ) : (
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-yunicity-primary-soft text-sm font-bold text-yunicity-primary">
-                {post.author.display_name.slice(0, 2).toUpperCase()}
-              </span>
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-1.5 text-sm font-semibold text-neutral-900">
-                {post.author.display_name}
-                <BadgeCheck className="h-4 w-4 shrink-0 text-yunicity-primary" aria-hidden />
-              </p>
-              <p className="text-xs text-neutral-500">{typeLabel}</p>
-            </div>
+          {/*
+            Qui publie — l'en-tete PARTAGE. Il porte le logo du partenaire via
+            `author.logo_url`, ses initiales a defaut, le handle, la meta
+            territoriale et temporelle, et le menu « Plus d'actions » : une offre
+            n'etait pas signalable, `currentUserId` et `onReport` etant declares
+            mais jamais utilises.
+
+            La zone de destinations partagee n'est volontairement PAS ajoutee :
+            `FeedPublicationContextualCta` se ferme sur `post.type === "offer"`,
+            car l'unique destination d'une offre est le Passport, porte ci-dessous.
+          */}
+          <div className="mt-3">
+            <FeedAuthorHeader post={post} currentUserId={currentUserId} onReport={onReport} />
           </div>
 
           {post.title ? (
