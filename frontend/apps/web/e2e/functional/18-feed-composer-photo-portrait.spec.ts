@@ -245,9 +245,29 @@ test.describe("C3.1-R1C — Portrait Media Visual Closure", () => {
         await expect(composer).toBeVisible({ timeout: COLD_START_TIMEOUT });
         await expect(composer.locator('input[type="file"]')).toHaveAttribute("accept", ACCEPT);
 
-        // Ouvrir le composer
-        await composer.locator("button").filter({ hasText: /Quoi de neuf|Partagez/ }).first().click();
-        await expect(composer.locator("textarea")).toBeVisible();
+        /*
+         * Le compositeur n'a PAS d'etat replie : rien a ouvrir.
+         *
+         * Ce clic attendait un bouton portant l'espace reserve, affordance de
+         * `FeedMobileComposer` — plus monte nulle part depuis la consolidation
+         * responsive. `/feed` sert `FeedDesktopComposer` a toutes les largeurs,
+         * dont l'espace reserve est le `placeholder` du `textarea` et un `label`
+         * `sr-only`, jamais un bouton.
+         *
+         * Diagnostic du 12/10 : le clic attendait 120 s, le timeout du TEST
+         * expirait, Playwright demontait le contexte, et l'action en attente
+         * rapportait « Target page, context or browser has been closed ». Les six
+         * processus navigateur sortaient en `exitCode=0, signal=null`, sans aucun
+         * marqueur de crash, et l'API repondait 178 fois 200 — l'unique 429
+         * arrivant a la derniere seconde du run, consequence des timeouts.
+         *
+         * La zone de saisie est disponible des le chargement : on le verifie, ce
+         * qui est un fait a prouver, au lieu d'ouvrir ce qui est deja ouvert.
+         */
+        await expect(
+          composer.locator("textarea"),
+          "zone de saisie indisponible sans action prealable",
+        ).toBeVisible();
 
         const fileInput = composer.locator('input[type="file"]');
         const uploadWait = page.waitForResponse(

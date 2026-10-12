@@ -67,6 +67,20 @@ test.describe("C3.1-R1D — Feed composer photo mobile", () => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await gotoFeedReady(page);
 
+      /*
+       * L'origine est RELEVEE sur la page, jamais codee en dur.
+       *
+       * Deux assertions exigeaient `http://localhost:3002`. Or le harnais sert
+       * delibrement `127.0.0.1:3002` : `playwright.config.ts` le dit en commentaire
+       * — « hote IPv4 explicite, `localhost` resout `::1` EN PREMIER ». Ces
+       * assertions contredisaient donc une decision documentee du harnais.
+       *
+       * Ce qu'elles veulent prouver est la MEME ORIGINE, et c'est conserve ici.
+       * L'interdiction d'atteindre l'API en direct reste portee, inchangee, par
+       * `isDirectApiCall`, qui ne depend d'aucun hote.
+       */
+      const origine = new URL(page.url()).origin;
+
       const composer = mobileComposer(page);
       await expect(composer).toBeVisible({ timeout: COLD_START_TIMEOUT });
       await expect(composer.locator('input[type="url"]')).toHaveCount(0);
@@ -76,8 +90,29 @@ test.describe("C3.1-R1D — Feed composer photo mobile", () => {
       await expect(fileInput).toHaveAttribute("accept", ACCEPT);
 
       await expect(composer.getByRole("button", { name: "Photo", exact: true })).toBeVisible();
-      await composer.getByRole("button", { name: /Quoi de neuf/ }).click();
-      await expect(composer.locator("textarea")).toBeVisible();
+      /*
+       * Le compositeur n'a PAS d'etat replie : rien a ouvrir.
+       *
+       * Ce clic attendait un bouton portant l'espace reserve, affordance de
+       * `FeedMobileComposer` — plus monte nulle part depuis la consolidation
+       * responsive. `/feed` sert `FeedDesktopComposer` a toutes les largeurs,
+       * dont l'espace reserve est le `placeholder` du `textarea` et un `label`
+       * `sr-only`, jamais un bouton.
+       *
+       * Diagnostic du 12/10 : le clic attendait 120 s, le timeout du TEST
+       * expirait, Playwright demontait le contexte, et l'action en attente
+       * rapportait « Target page, context or browser has been closed » — message
+       * de demontage, non de crash. Les processus navigateur sortaient en
+       * `exitCode=0, signal=null` et l'API repondait 66 fois 200, sans un seul
+       * code non-2xx.
+       *
+       * La zone de saisie est disponible des le chargement : on le verifie, au
+       * lieu d'ouvrir ce qui est deja ouvert.
+       */
+      await expect(
+        composer.locator("textarea"),
+        "zone de saisie indisponible sans action prealable",
+      ).toBeVisible();
 
       if (viewport.width === 390) {
         const firstUploadWait = page.waitForResponse(
@@ -100,7 +135,7 @@ test.describe("C3.1-R1D — Feed composer photo mobile", () => {
       await fileInput.setInputFiles(QA_PHOTO);
       const upload = await uploadWait;
       const uploadBody = await upload.text();
-      expect(upload.url().startsWith("http://localhost:3002/api/v1/posts/media")).toBe(true);
+      expect(upload.url().startsWith(`${origine}/api/v1/posts/media`)).toBe(true);
       if (upload.status() !== 201) {
         throw new Error(
           `BLOCKED-UPLOAD-CONTRACT: POST /posts/media status=${upload.status()} body=${uploadBody}`,
@@ -143,7 +178,7 @@ test.describe("C3.1-R1D — Feed composer photo mobile", () => {
         `médias via :8010/:8000: ${mediaGets.filter(isDirectApiCall).join(", ")}`,
       ).toEqual([]);
       expect(
-        mediaGets.every((url) => url.startsWith("http://localhost:3002/api/v1/story-media/")),
+        mediaGets.every((url) => url.startsWith(`${origine}/api/v1/story-media/`)),
       ).toBe(true);
     });
   }
