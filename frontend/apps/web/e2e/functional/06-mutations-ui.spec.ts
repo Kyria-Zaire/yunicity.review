@@ -66,10 +66,24 @@ test.describe("Tribu publique UI", () => {
   test("rejoindre (charte) puis quitter via l'UI", async ({ citizenBPage }) => {
     await citizenBPage.goto("/tribes/qa-tribu-publique?city=Reims");
     await citizenBPage.waitForLoadState("networkidle").catch(() => {});
-    // The mobile hero "Rejoindre" opens the charter form (checkbox + confirm). Re-issue the
-    // open-click only while the charter checkbox is absent (hydration-safe, no sleep).
+    // Il n'y a RIEN à ouvrir : `TribeDetailMobileJoinCard` rend la case de la
+    // charte inconditionnellement, et son « Rejoindre » est `disabled` tant que
+    // la case n'est pas cochée.
+    //
+    // Le pas précédent rejouait un clic sur « Rejoindre » tant que la case était
+    // absente. Quand la case était déjà peinte il ne cliquait jamais, et le test
+    // passait ; quand la page était lente, il cliquait un bouton désactivé PAR
+    // CONCEPTION, que Playwright attend jusqu'à épuisement du budget. D'où un
+    // échec corrélé à la lenteur de la page, et non au produit.
+    //
+    // Le flux décrit — « Rejoindre » ouvre un formulaire de charte — est celui
+    // de la branche `showJoinForm` de `TribeDetailMobileMembershipAction`, qui
+    // n'était montée nulle part. Même racine que les trois autres contrats
+    // périmés de cette spec.
     const charter = citizenBPage.locator('input[type="checkbox"]:visible').first();
-    await clickUntil(citizenBPage.getByRole("button", { name: "Rejoindre", exact: true }), charter);
+    await expect(charter, "la carte d'adhésion ne rend pas la charte").toBeVisible({
+      timeout: 15_000,
+    });
     await charter.check({ force: true });
     const confirmJoin = citizenBPage.getByRole("button", { name: "Rejoindre", exact: true }).last();
     await expect(confirmJoin).toBeEnabled({ timeout: 10_000 });
@@ -96,6 +110,18 @@ test.describe("Tribu publique UI", () => {
     await expect(
       citizenBPage.getByRole("button", { name: "Rejoindre", exact: true }).first(),
     ).toBeVisible({ timeout: 15_000 });
+
+    // Persistance : l'état après rechargement vient du serveur, pas du state
+    // client que le départ vient de modifier. Sans ce pas, un retrait purement
+    // optimiste passerait pour un départ réel.
+    await citizenBPage.reload();
+    await citizenBPage.waitForLoadState("networkidle").catch(() => {});
+    await expect(
+      citizenBPage.getByRole("button", { name: "Rejoindre", exact: true }).first(),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(
+      citizenBPage.getByRole("button", { name: "Membre", exact: true }),
+    ).toHaveCount(0);
   });
 });
 

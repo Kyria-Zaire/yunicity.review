@@ -72,11 +72,30 @@ export function TribeDetailMobileMembershipAction({
                 setMenuOpen(false);
                 void onLeave();
               }}
-              className="block w-full px-4 py-2.5 text-left text-sm text-neutral-800 hover:bg-neutral-50"
+              className="block w-full px-4 py-2.5 text-left text-sm text-neutral-800 hover:bg-neutral-50 disabled:opacity-50"
             >
               {TRIBE_LEAVE_CTA}
             </button>
           </div>
+        ) : null}
+        {/*
+         * L'erreur d'action n'était rendue que dans la branche d'adhésion : un
+         * départ refusé restait donc MUET. Et il est bel et bien refusé — le
+         * serveur répond 409 `TRIBE_OWNER_CANNOT_LEAVE` au propriétaire unique,
+         * avec la consigne à suivre (« Transférez la responsabilité ou archivez
+         * la tribu avant de partir. »). C'est cette phrase que le membre doit
+         * lire, et non un menu qui se referme sans rien dire.
+         *
+         * On ne masque pas l'action aux propriétaires par anticipation : le
+         * refus ne dépend pas du rôle seul mais du NOMBRE de propriétaires
+         * actifs, que le client ne connaît pas (`viewer_role` ne le dit pas).
+         * Un propriétaire qui a des co-propriétaires peut partir. Le serveur
+         * fait foi ; l'interface rapporte son verdict.
+         */}
+        {actionError ? (
+          <p role="alert" className="mt-2 max-w-[14rem] text-[11px] leading-snug text-red-700">
+            {actionError}
+          </p>
         ) : null}
       </div>
     );

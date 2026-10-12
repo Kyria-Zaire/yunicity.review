@@ -7,6 +7,7 @@ import {
   TribeDetailMobileHeader,
   TribeDetailMobileHero,
   TribeDetailMobileJoinCard,
+  TribeDetailMobileMembershipAction,
   TribeDetailMobileNextEventSection,
   TribeDetailMobileUtilityLinks,
   TribeDetailMobileVisitorBanner,
@@ -66,8 +67,10 @@ export function TribeDetailMobileView({
   postsPreview,
   isAuthenticated,
   joining,
+  leaving,
   actionError,
   onJoin,
+  onLeave,
   onShare,
 }: TribeDetailMobileViewProps) {
   const joinCardRef = useRef<HTMLDivElement>(null);
@@ -83,6 +86,19 @@ export function TribeDetailMobileView({
   const canSeePosts = canSeeMembers;
   const showJoinCard = showActions && !tribe.viewer_is_member && tribe.visibility === "public";
   const showVisitorBanner = showJoinCard;
+  /*
+   * Symetrique de `showJoinCard` : l'affordance d'adhesion existait pour
+   * ENTRER, pas pour sortir. `TribeDetailMobileJoinCard` ne se rend que tant
+   * qu'on n'est pas membre ; des qu'on l'etait, elle disparaissait et RIEN ne la
+   * remplacait — plus de controle « Membre », plus aucun moyen de quitter. Les
+   * paliers desktop et medium cablaient `isMember` depuis le debut ; celui-ci
+   * recevait bien `leaving` et `onLeave` du parent et les jetait.
+   *
+   * Le montage est borne a l'etat membre, et ne reprend donc PAS le chemin
+   * d'adhesion que le composant sait aussi rendre : deux « Rejoindre » et deux
+   * cases a cocher coexisteraient sur le meme ecran.
+   */
+  const showMembershipAction = showActions && tribe.viewer_is_member;
 
   const tags = useMemo(() => buildTribeDetailTags(tribe), [tribe]);
   const locationMeta = useMemo(() => buildTribeDetailMobileLocationMeta(tribe), [tribe]);
@@ -144,6 +160,20 @@ export function TribeDetailMobileView({
                   isAuthenticated={isAuthenticated}
                   onJoin={onJoin}
                   onReadCharter={scrollToCharter}
+                />
+              </div>
+            ) : null}
+
+            {showMembershipAction ? (
+              <div className="flex justify-end">
+                <TribeDetailMobileMembershipAction
+                  tribe={tribe}
+                  isAuthenticated={isAuthenticated}
+                  joining={joining}
+                  leaving={leaving}
+                  actionError={actionError}
+                  onJoin={onJoin}
+                  onLeave={onLeave}
                 />
               </div>
             ) : null}
