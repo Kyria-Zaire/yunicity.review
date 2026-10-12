@@ -424,8 +424,20 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
     await saisie.fill("Photo accompagnée de son texte.");
     await expect(publier).toBeEnabled();
 
-    // Retrait de la photo.
-    await authedPage.locator(`${COMPOSER} button[aria-label="Retirer la photo"]`).click();
+    /*
+     * Retrait de la photo, cible par son NOM ACCESSIBLE.
+     *
+     * Ce clic visait `button[aria-label="Retirer la photo"]`, sélecteur
+     * d'attribut : il exigeait que le nom soit fourni par `aria-label`
+     * précisément, et cessait de correspondre quand le contrôle porte son
+     * libellé en texte. Les deux autres specs du compositeur n'emploient que
+     * `getByRole`, qui interroge le nom accessible quelle qu'en soit la source.
+     * Même exigence, sans coupler le test à l'implémentation du libellé.
+     */
+    await authedPage
+      .locator(COMPOSER)
+      .getByRole("button", { name: "Retirer la photo" })
+      .click();
     await expect(authedPage.locator(PREVIEW)).toHaveCount(0);
   });
 

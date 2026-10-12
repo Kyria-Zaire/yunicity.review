@@ -2,12 +2,14 @@
 
 import { useComposerMedia } from "@/hooks/use-composer-media";
 import { ComposerMediaResolution } from "@/components/feed/composer-media-resolution";
-import { Loader2, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState, type ReactNode } from "react";
 import { AvatarImage } from "@/components/avatar-image";
 import {
   COMPOSER_MEDIA_ACCEPT_ATTR,
+  COMPOSER_MEDIA_REMOVE_PHOTO_LABEL,
+  COMPOSER_MEDIA_REPLACE_PHOTO_LABEL,
   COMPOSER_MEDIA_UPLOADING_LABEL,
   COMPOSER_TEXT_REQUIRED_HINT,
   homeComposerPlaceholder,
@@ -220,18 +222,37 @@ export function FeedDesktopComposer({
                 alt="Photo jointe"
                 className="mx-auto block h-20 w-full object-contain"
               />
-              {/* La pastille reste visuellement discrète (20 px) ; c'est la zone
-                  cliquable qui atteint 44 px, sans alourdir un aperçu de 12 rem. */}
-              <button
-                type="button"
-                onClick={clearMedia}
-                className="absolute -right-1 -top-1 flex min-h-11 min-w-11 items-center justify-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yunicity-primary"
-                aria-label="Retirer la photo"
-              >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-white shadow">
-                  <X className="h-3 w-3" />
-                </span>
-              </button>
+              {/*
+                Actions SOUS l'image, jamais par-dessus.
+
+                Ce compositeur n'offrait aucun remplacement : il fallait retirer
+                puis rechoisir. Une zone de remplacement superposée à l'aperçu a
+                d'abord été essayée, par souci de compacité — elle est écartée :
+                la spec dédiée au média portrait exige les deux actions SOUS
+                l'image, géométriquement, et un bouton invisible couvrant tout
+                l'aperçu est de toute façon une affordance trouble.
+
+                La barre reste dans le cadre de 12 rem existant, avec des cibles
+                de 44 px. Les deux contrôles sont frères, jamais imbriqués : un
+                `button` dans un `button` est invalide, et le contrat
+                d'accessibilité du compositeur interdit cette imbrication.
+              */}
+              <div className="flex flex-wrap items-center justify-end gap-1 border-t border-neutral-200/90 px-2 py-1">
+                <button
+                  type="button"
+                  onClick={openPicker}
+                  className="min-h-11 rounded-full px-2 text-xs font-medium text-yunicity-primary hover:bg-yunicity-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary/40"
+                >
+                  {COMPOSER_MEDIA_REPLACE_PHOTO_LABEL}
+                </button>
+                <button
+                  type="button"
+                  onClick={clearMedia}
+                  className="min-h-11 rounded-full px-2 text-xs font-medium text-red-600 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/40"
+                >
+                  {COMPOSER_MEDIA_REMOVE_PHOTO_LABEL}
+                </button>
+              </div>
             </div>
           ) : null}
           {mediaError ? (
