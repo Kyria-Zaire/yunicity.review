@@ -32,21 +32,49 @@
  * sans elle les vidéos s'accumulent et ce sont les specs de comptage qui tombent,
  * pour une raison étrangère à leur sujet. Mesuré : 19 vidéos au lieu de 2.
  */
+import fs from "node:fs";
 import path from "node:path";
 
 import { expect, test } from "../fixtures";
 
 /**
- * Vidéo QA réelle produite par le seed : H.264, 1920x1080, 12 s — dans les bornes
- * produit. `backend/uploads/` est gitignoré : ce fichier est une SORTIE de seed,
- * pas une fixture committée, et son chemin suit donc celui du seed. Les médias
- * d'exemple vivent désormais sous `local-video/qa`, seule racine réellement
- * servie publiquement (voir `QA_MEDIA_PUBLIC_PREFIX`).
+ * Racine disque des vidéos QA semées. `backend/uploads/` est gitignoré : ces
+ * fichiers sont une SORTIE de seed, pas des fixtures committées, et leur chemin
+ * suit donc celui du seed.
+ *
+ * Le seed les posait à plat sous `local-video/qa/<nom>.mp4`. Elles suivent
+ * désormais la convention PRODUIT, `local-video/<ville>/<id>/processed.mp4`,
+ * parce qu'une fixture à plat ne prouvait rien du chemin de lecture réel — le
+ * harnais la refusait, et la spec 07 échouait sur `pathname non conforme`.
  */
-const VIDEO_QA = path.resolve(
+const RACINE_VIDEOS_QA = path.resolve(
   __dirname,
-  "../../../../../backend/uploads/local-video/qa/qa-sample-video.mp4",
+  "../../../../../backend/uploads/local-video/reims",
 );
+
+/**
+ * Résout UNE vidéo QA réelle : H.264, dans les bornes produit.
+ *
+ * Les deux tests n'exigent qu'un fichier publiable — la progression et
+ * l'annulation ne dépendent pas de l'orientation. On ne code donc aucun
+ * identifiant : la convention produit en met un dans le chemin, et le figer ici
+ * le ferait mentir au premier changement de seed.
+ *
+ * L'absence est une erreur de chargement du module, volontairement : un test qui
+ * se contenterait de passer sans fichier ne prouverait rien.
+ */
+function resoudreUneVideoQa(): string {
+  const dossiers = fs.existsSync(RACINE_VIDEOS_QA) ? fs.readdirSync(RACINE_VIDEOS_QA).sort() : [];
+  for (const dossier of dossiers) {
+    const candidat = path.join(RACINE_VIDEOS_QA, dossier, "processed.mp4");
+    if (fs.existsSync(candidat)) return candidat;
+  }
+  throw new Error(
+    `aucune vidéo QA semée sous ${RACINE_VIDEOS_QA} — lancer sh scripts/qa-playwright-baseline.sh`,
+  );
+}
+
+const VIDEO_QA = resoudreUneVideoQa();
 
 /**
  * Le transfert binaire vise l'API directement — `MEDIA_PUBLIC_BASE_URL`, pas la

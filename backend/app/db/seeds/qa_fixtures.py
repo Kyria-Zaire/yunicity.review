@@ -54,11 +54,7 @@ from app.core.tribe_constants import TribeCategory, TribeMemberRole, TribeVisibi
 from app.db.seeds.passport_tiers import seed_passport_tiers
 from app.db.seeds.qa_video_media import (
     QA_LANDSCAPE_SPEC,
-    QA_LANDSCAPE_THUMB_NAME,
-    QA_LANDSCAPE_VIDEO_NAME,
     QA_PORTRAIT_SPEC,
-    QA_PORTRAIT_THUMB_NAME,
-    QA_PORTRAIT_VIDEO_NAME,
     ensure_qa_sample_video,
 )
 from app.db.seeds.reims_neighborhoods import seed_reims_neighborhoods
@@ -74,6 +70,8 @@ from app.models.tribe import Tribe, TribeMember
 from app.models.user import User
 from app.models.user_notification import UserNotification
 from app.models.user_profile import ProfileVisibility, UserProfile
+from app.services.local_video.city_slug_resolver import normalize_city_slug
+from app.services.local_video.storage_keys import build_processed_key
 
 logger = logging.getLogger(__name__)
 
@@ -268,10 +266,58 @@ def _tonight_at(now: datetime, hour: int, minute: int = 0) -> datetime:
     return local.replace(hour=hour, minute=minute, second=0, microsecond=0)
 
 
-def _write_placeholder_video() -> tuple[str, str, str, str]:
-    """Write landscape + portrait placeholder media under the temp media dir.
+#: Nom de la miniature, DANS le repertoire par video de la convention produit.
+#
+# La convention produit nomme la miniature `thumbnail.jpg`, parce que le
+# processeur l'extrait avec ffmpeg en JPEG. Le seed, lui, fabrique un PNG avec
+# la seule bibliotheque standard : il n'y a pas de Pillow cote backend, et
+# encoder un JPEG valide a la main n'apporterait rien ici. Servir des octets
+# PNG sous une extension `.jpg` ferait annoncer `image/jpeg` par StaticFiles —
+# un en-tete mensonger, que ce harnais est precisement cense detecter.
+#
+# L'extension reste donc honnete. Aucun contrat ne l'exige : le chemin de la
+# miniature n'est jamais derive d'une cle a la lecture, il est lu tel quel dans
+# la colonne `thumbnail_url` (`local_video_feed_service`, `local_video_service`,
+# `neighborhood_detail_service`). Seule la video porte un contrat de forme.
+QA_THUMBNAIL_NAME = "thumbnail.png"
 
-    Returns (landscape_media, landscape_thumb, portrait_media, portrait_thumb).
+
+def _media_public_url(storage_key: str) -> str:
+    """URL publique d'une cle, selon la MEME composition que le produit.
+
+    `FilesystemLocalVideoStorage.public_url` compose `{base}/media/{cle}`. On ne
+    reutilise pas la methode telle quelle — elle exige un storage instancie et
+    valide le confinement contre la racine disque reelle — mais on en reproduit
+    la composition, a partir de la cle produite par les fonctions produit.
+    """
+    settings = get_settings()
+    base_url = (settings.local_video_public_base_url or "").rstrip("/")
+    return f"{base_url}/media/{storage_key}"
+
+
+@dataclass(frozen=True)
+class _QaVideoMediaRefs:
+    """Cle et URLs d'UNE video d'exemple, produites ensemble.
+
+    Le quadruplet positionnel precedent laissait la ligne `LocalVideo` declarer
+    une `storage_key` ecrite a la main, independamment du fichier reellement
+    pose sur le disque — c'est exactement ainsi que les deux ont diverge. Les trois
+    champs sortent maintenant du meme calcul.
+    """
+
+    storage_key: str
+    media_url: str
+    thumbnail_url: str
+
+
+def _write_placeholder_video(
+    *,
+    landscape_video_id: uuid.UUID,
+    portrait_video_id: uuid.UUID,
+) -> tuple[_QaVideoMediaRefs, _QaVideoMediaRefs]:
+    """Write landscape + portrait placeholder media AT THE PRODUCT KEY.
+
+    Returns the (landscape, portrait) references.
     Best-effort: on failure we still return URLs so the DB rows are created.
 
     C3-FEED-M7 : the URLs used to omit the `/media` segment while the files were
@@ -279,23 +325,47 @@ def _write_placeholder_video() -> tuple[str, str, str, str]:
     StaticFiles(...))` serves. Both the thumbnail and the video answered 404.
     The public prefix now names the mount point, so the fixture can no longer
     describe a route that does not exist.
+
+    Les exemples vivaient ensuite a plat sous `local-video/qa/`, ce qui servait
+    bien les fichiers mais ne reproduisait AUCUNE cle que le produit fabrique.
+    En production une video publiee est servie sous
+    `local-video/<slug-ville>/<id>/processed.mp4` — ce que `build_processed_key`
+    impose et que `processing_service` enregistre dans `media_url` via
+    `public_url`. Une fixture a plat ne pouvait donc rien prouver du chemin de
+    lecture reel, et le harnais la refusait a juste titre : la spec 07 echouait
+    sur `proveMediaUrl: pathname non conforme`.
+    Les cles viennent desormais des fonctions PRODUIT, pour qu'elles ne puissent
+    plus deriver.
     """
     settings = get_settings()
-    base_url = (settings.local_video_public_base_url or "").rstrip("/")
-    landscape_media = f"{base_url}{QA_MEDIA_PUBLIC_PREFIX}/qa-sample-video.mp4"
-    landscape_thumb = f"{base_url}{QA_MEDIA_PUBLIC_PREFIX}/qa-sample-video.png"
-    portrait_media = f"{base_url}{QA_MEDIA_PUBLIC_PREFIX}/qa-sample-video-portrait.mp4"
-    portrait_thumb = f"{base_url}{QA_MEDIA_PUBLIC_PREFIX}/qa-sample-video-portrait.png"
+    city_slug = normalize_city_slug(CITY)
+
+    landscape_key = build_processed_key(city_slug=city_slug, video_id=landscape_video_id)
+    portrait_key = build_processed_key(city_slug=city_slug, video_id=portrait_video_id)
+    landscape_thumb_key = f"{Path(landscape_key).parent.as_posix()}/{QA_THUMBNAIL_NAME}"
+    portrait_thumb_key = f"{Path(portrait_key).parent.as_posix()}/{QA_THUMBNAIL_NAME}"
+
+    landscape = _QaVideoMediaRefs(
+        storage_key=landscape_key,
+        media_url=_media_public_url(landscape_key),
+        thumbnail_url=_media_public_url(landscape_thumb_key),
+    )
+    portrait = _QaVideoMediaRefs(
+        storage_key=portrait_key,
+        media_url=_media_public_url(portrait_key),
+        thumbnail_url=_media_public_url(portrait_thumb_key),
+    )
     try:
-        media_dir = Path(settings.media_upload_dir) / "local-video" / "qa"
-        media_dir.mkdir(parents=True, exist_ok=True)
-        ensure_qa_sample_video(media_dir / QA_LANDSCAPE_VIDEO_NAME, QA_LANDSCAPE_SPEC)
-        ensure_qa_sample_video(media_dir / QA_PORTRAIT_VIDEO_NAME, QA_PORTRAIT_SPEC)
-        (media_dir / QA_LANDSCAPE_THUMB_NAME).write_bytes(_png_16_9(320, 180))
-        (media_dir / QA_PORTRAIT_THUMB_NAME).write_bytes(_png_16_9(180, 320))
+        racine = Path(settings.media_upload_dir)
+        for cle in (landscape_key, portrait_key):
+            (racine / cle).parent.mkdir(parents=True, exist_ok=True)
+        ensure_qa_sample_video(racine / landscape_key, QA_LANDSCAPE_SPEC)
+        ensure_qa_sample_video(racine / portrait_key, QA_PORTRAIT_SPEC)
+        (racine / landscape_thumb_key).write_bytes(_png_16_9(320, 180))
+        (racine / portrait_thumb_key).write_bytes(_png_16_9(180, 320))
     except (OSError, RuntimeError) as exc:  # pragma: no cover - filesystem edge
         logger.warning("qa_video_placeholder_skip", extra={"error": str(exc)})
-    return landscape_media, landscape_thumb, portrait_media, portrait_thumb
+    return landscape, portrait
 
 
 async def seed_qa_fixtures(
@@ -937,8 +1007,15 @@ async def seed_qa_fixtures(
     counts["partner_offers"] = created_offers
 
     # --- Local videos (filesystem placeholders, no external upload) ----------
-    landscape_media, landscape_thumb, portrait_media, portrait_thumb = _write_placeholder_video()
+    # Les identifiants sont calcules AVANT l'ecriture : la cle produit les
+    # contient (`local-video/<ville>/<id>/processed.mp4`), donc les fichiers ne
+    # peuvent pas etre poses sans eux.
     video_id = _uid("local-video")
+    portrait_video_id = _uid("local-video-portrait")
+    landscape_refs, portrait_refs = _write_placeholder_video(
+        landscape_video_id=video_id,
+        portrait_video_id=portrait_video_id,
+    )
     created_video = await _get_or_add(
         session,
         LocalVideo,
@@ -951,12 +1028,11 @@ async def seed_qa_fixtures(
             video_type=LocalVideoType.LIEU.value,
             title="QA Vidéo locale",
             description="Vidéo locale QA paysage (placeholder filesystem).",
-            # Aligne sur l'emplacement disque : `_path_for_key` resout
-            # `<racine>/<storage_key>`, et les exemples vivent maintenant sous
-            # `local-video/qa`. Une cle restee a `qa/...` pointerait a cote.
-            storage_key="local-video/qa/qa-sample-video.mp4",
-            media_url=landscape_media,
-            thumbnail_url=landscape_thumb,
+            # Les trois champs sortent du meme calcul que le fichier ecrit :
+            # ils ne peuvent plus decrire un emplacement different de lui.
+            storage_key=landscape_refs.storage_key,
+            media_url=landscape_refs.media_url,
+            thumbnail_url=landscape_refs.thumbnail_url,
             duration_seconds=12.0,
             media_width=1920,
             media_height=1080,
@@ -971,10 +1047,13 @@ async def seed_qa_fixtures(
     if existing_landscape is not None:
         existing_landscape.media_width = 1920
         existing_landscape.media_height = 1080
-        existing_landscape.media_url = landscape_media
-        existing_landscape.thumbnail_url = landscape_thumb
+        # `storage_key` est resynchronisee elle aussi : un re-seed sans reset
+        # de schema laissait sinon la cle d'un fichier disparu a cote d'une
+        # `media_url` a jour — la divergence meme que ce type doit empecher.
+        existing_landscape.storage_key = landscape_refs.storage_key
+        existing_landscape.media_url = landscape_refs.media_url
+        existing_landscape.thumbnail_url = landscape_refs.thumbnail_url
 
-    portrait_video_id = _uid("local-video-portrait")
     created_portrait = await _get_or_add(
         session,
         LocalVideo,
@@ -987,9 +1066,9 @@ async def seed_qa_fixtures(
             video_type=LocalVideoType.BON_PLAN.value,
             title="3 adresses à tester ce week-end à Reims",
             description="Parcours QA portrait pour valider la carte split desktop.",
-            storage_key="local-video/qa/qa-sample-video-portrait.mp4",
-            media_url=portrait_media,
-            thumbnail_url=portrait_thumb,
+            storage_key=portrait_refs.storage_key,
+            media_url=portrait_refs.media_url,
+            thumbnail_url=portrait_refs.thumbnail_url,
             duration_seconds=18.0,
             media_width=1080,
             media_height=1920,
@@ -1005,8 +1084,9 @@ async def seed_qa_fixtures(
     if existing_portrait is not None:
         existing_portrait.media_width = 1080
         existing_portrait.media_height = 1920
-        existing_portrait.media_url = portrait_media
-        existing_portrait.thumbnail_url = portrait_thumb
+        existing_portrait.storage_key = portrait_refs.storage_key
+        existing_portrait.media_url = portrait_refs.media_url
+        existing_portrait.thumbnail_url = portrait_refs.thumbnail_url
         existing_portrait.title = "3 adresses à tester ce week-end à Reims"
         existing_portrait.description = (
             "Parcours QA portrait pour valider la carte split desktop."

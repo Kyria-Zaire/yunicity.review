@@ -21,11 +21,13 @@ import asyncio
 import os
 import sys
 import uuid
+from pathlib import Path
 from typing import Any, cast
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from app.core.config import get_settings
 from app.db.seeds.qa_fixtures import EXPECTED_VOLUMES, seed_qa_fixtures
 from app.models.local_event import EventInterest, LocalEvent
 from app.models.local_video import LocalVideo
@@ -115,8 +117,43 @@ async def _cmd_verify() -> int:
             if actual != expected:
                 ok = False
             print(f"  {key}: expected={expected} actual={actual} [{status}]")
+        if not await _verify_video_media(session):
+            ok = False
     print("verify PASS" if ok else "verify FAIL")
     return 0 if ok else 1
+
+
+async def _verify_video_media(session: AsyncSession) -> bool:
+    """Prouve que chaque video semee pointe un FICHIER present, et publie ses URLs.
+
+    Les volumes en base ne disent rien des medias. Toute une classe d'incidents
+    de cette campagne venait de la : une ligne `LocalVideo` decrivait une
+    `media_url` qu'aucune route ne servait, le navigateur recevait un 404 en
+    `application/json`, Chromium le bloquait par ORB et la carte basculait sur
+    son repli — sans qu'aucun compteur ne bouge.
+
+    La verification est donc disque, la ou le fichier vit reellement, et les URLs
+    sont imprimees pour que le protocole les sonde ensuite en HTTP : la presence
+    du fichier et le service de la route sont deux faits distincts.
+    """
+    racine = Path(get_settings().media_upload_dir)
+    result = await session.execute(select(LocalVideo).order_by(LocalVideo.storage_key))
+    videos = list(result.scalars())
+    if not videos:
+        print("  media: AUCUNE video semee [MISMATCH]")
+        return False
+
+    ok = True
+    for video in videos:
+        chemin = racine / video.storage_key
+        taille = chemin.stat().st_size if chemin.is_file() else -1
+        etat = "OK" if taille > 0 else "ABSENT"
+        if taille <= 0:
+            ok = False
+        print(f"  media {video.storage_key}: bytes={taille} [{etat}]")
+        print(f"    media_url={video.media_url}")
+        print(f"    thumbnail_url={video.thumbnail_url}")
+    return ok
 
 
 #: Prefixe des compteurs du limiteur. `app.api.v1.auth` et le domaine video

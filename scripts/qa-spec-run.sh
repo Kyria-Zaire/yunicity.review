@@ -115,7 +115,7 @@ set +e
 ( cd "$RACINE" && sh scripts/qa-playwright-baseline.sh ) > "$JOURNAL_BASELINE" 2>&1
 RC_BASE=$?
 set -e
-grep -E 'expected=|verify (PASS|FAIL)|rate-limit reset OK|baseline QA prete' "$JOURNAL_BASELINE" \
+grep -E 'expected=|media .*bytes=|verify (PASS|FAIL)|rate-limit reset OK|baseline QA prete' "$JOURNAL_BASELINE" \
   | sed 's/^/  /'
 if [ "$RC_BASE" -ne 0 ]; then
   echo "ERREUR : baseline en echec (exit=$RC_BASE) — journal : $JOURNAL_BASELINE"
@@ -125,18 +125,33 @@ fi
 echo "  journal baseline : $JOURNAL_BASELINE"
 
 # ── 3. Fixtures dont les specs dependent ─────────────────────────────────────
-#    Le `verify` de la baseline couvre les comptes en base. Il ne dit rien des
-#    MEDIAS servis, dont plusieurs specs dependent — et c'est precisement ce qui
-#    avait manque : les exemples QA etaient adresses sous un prefixe que nulle
-#    route ne servait, et les cartes video basculaient sur leur repli.
+#    Le `verify` de la baseline couvre les comptes en base, et desormais la
+#    PRESENCE sur disque de chaque media seme. Il ne dit rien du SERVICE de la
+#    route, et c'est precisement ce qui avait manque : les exemples QA etaient
+#    adresses sous un prefixe que nulle route ne servait, et les cartes video
+#    basculaient sur leur repli sans qu'aucun compteur ne bouge.
 echo "== 3/5 fixtures servies =="
-for f in qa-sample-video.png qa-sample-video-portrait.png; do
-  rep=$(curl -s -o /dev/null -w '%{http_code} %{content_type}' --max-time 10 \
-    "http://localhost:8010/media/local-video/qa/$f" 2>/dev/null || echo "000 -")
+# Les URLs ne sont PLUS ecrites ici. Elles sont lues dans le journal, ou
+# `verify` les imprime depuis la base -- seule source de verite. Un chemin code
+# en dur dans ce script redeviendrait faux au premier changement de convention
+# de cle : c'est exactement ce qui vient d'arriver, la fixture vivant a plat
+# sous `local-video/qa/` quand le produit sert
+# `local-video/<ville>/<id>/processed.mp4`.
+urls=$(sed -n 's/^ *\(media_url\|thumbnail_url\)=//p' "$JOURNAL_BASELINE" | sort -u)
+if [ -z "$urls" ]; then
+  echo "ERREUR : la baseline n'a publie aucune URL de media -- verify muet ?"
+  exit 1
+fi
+for u in $urls; do
+  attendu="image/png"
+  case "$u" in *.mp4) attendu="video/mp4" ;; esac
+  rep=$(curl -s -o /dev/null -w '%{http_code} %{content_type}' --max-time 10 "$u" \
+    2>/dev/null || echo "000 -")
   case "$rep" in
-    "200 image/png"*) echo "  $f -> $rep" ;;
+    "200 $attendu"*) echo "  servi $rep <- $u" ;;
     *)
-      echo "ERREUR : fixture media non servie — $f -> $rep"
+      echo "ERREUR : media non servi -- attendu 200 $attendu, obtenu $rep"
+      echo "         $u"
       exit 1
       ;;
   esac
