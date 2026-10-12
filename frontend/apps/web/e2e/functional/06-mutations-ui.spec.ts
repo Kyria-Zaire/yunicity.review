@@ -137,35 +137,61 @@ test.describe("Tribu privée UI", () => {
 
 test.describe("Vidéo UI", () => {
   test("like via l'UI (écran détail) + persistance", async ({ citizenAPage, citizenA }) => {
-    // The player opens via ?video={id} (query-param). The detail screen's like control lives
-    // in VideosMobileDetailMeta with aria-label "J'aime" + aria-pressed (NOT the TikTok feed
-    // rail's "Aimer la vidéo" — that label only exists in the fullscreen feed viewport).
+    // L'écran détail s'ouvre par `?video={id}`.
+    //
+    // Le détail mobile EST le flux immersif : `video-detail-screen` ne monte
+    // `VideosMobileDetailMeta`, porteur du libellé « J'aime », que pour le palier
+    // `medium`. Au palier `mobile` — le Pixel 7 de ce projet — il rend
+    // `VideosMobileImmersiveDetail`, dont le contrôle vit dans
+    // `local-video-action-rail`. Le commentaire précédent affirmait l'inverse :
+    // il décrivait le palier voisin.
     const feed = await citizenAPage.request.get(`${API_URL}/api/v1/local-videos/feed?city=Reims`, {
       headers: bearer(citizenA),
     });
     const vid = ((await feed.json()) as { items: Array<{ id: string }> }).items[0];
     if (!vid) throw new Error("seeded local video must exist");
-    await citizenAPage.goto("/videos");
+    // Le pas précédent passait par un clic sur la carte héros de découverte, qui
+    // n'existe plus sur mobile : sous 640 px, `.videos-discovery-mobile-grid-fallback`
+    // est en `display: none !important` dès que le flux immersif est actif, ce
+    // qui est le cas ici. Le lien restait dans le DOM — Playwright le RÉSOLVAIT —
+    // sans jamais obtenir de boîte visible : soixante secondes d'attente, puis le
+    // teardown, qui rapportait « browser has been closed ».
+    await citizenAPage.goto(`/videos?video=${vid.id}`);
     await citizenAPage.waitForLoadState("networkidle").catch(() => {});
-    await citizenAPage.locator(`a[href*="video=${vid.id}"]`).first().click();
-    await citizenAPage.waitForURL(/video=/);
-    await citizenAPage.waitForLoadState("networkidle").catch(() => {});
-    const like = citizenAPage.locator("button[aria-label^=\"J'aime\"]:visible").first();
+
+    // Deux conséquences sur le ciblage du contrôle.
+    //
+    // Le rail fait BASCULER son libellé — « Aimer la vidéo » non aimé, « Retirer
+    // le like » aimé — donc aucun préfixe unique ne suit le contrôle d'un état à
+    // l'autre. `aria-pressed` reste la source d'état ; le libellé n'en est que
+    // la traduction.
+    //
+    // Et le flux monte TOUTES les diapositives, les inactives en `inert` +
+    // `aria-hidden`. On borne donc à la diapositive de la vidéo visée. Sans
+    // cela, un `.first()` pouvait aimer une AUTRE vidéo sans que rien ne le
+    // signale, l'assertion sur le POST ne fixant pas l'identifiant — elle le
+    // fixe maintenant.
+    const slide = citizenAPage.locator(`[data-video-slide-id="${vid.id}"]`);
+    const like = slide
+      .locator('button[aria-label="Aimer la vidéo"], button[aria-label="Retirer le like"]')
+      .first();
     await expect(like).toBeVisible({ timeout: 20_000 });
     await expect(like).toHaveAttribute("aria-pressed", "false");
     const likeResp = citizenAPage.waitForResponse(
-      (r) => /\/local-videos\/[^/]+\/like/.test(r.url()) && r.request().method() === "POST",
+      (r) =>
+        new RegExp(`/local-videos/${vid.id}/like`).test(r.url()) &&
+        r.request().method() === "POST",
     );
-    const pressed = citizenAPage.locator(
-      "button[aria-label^=\"J'aime\"][aria-pressed=\"true\"]:visible",
-    );
+    const pressed = slide.locator('button[aria-label="Retirer le like"][aria-pressed="true"]');
     await clickUntil(like, pressed);
     expect([200, 201, 204]).toContain((await likeResp).status());
     // Persistence: reload and confirm the like held server-side.
     await citizenAPage.reload();
     await citizenAPage.waitForLoadState("networkidle").catch(() => {});
     await expect(
-      citizenAPage.locator("button[aria-label^=\"J'aime\"][aria-pressed=\"true\"]:visible").first(),
+      citizenAPage
+        .locator(`[data-video-slide-id="${vid.id}"]`)
+        .locator('button[aria-label="Retirer le like"][aria-pressed="true"]'),
     ).toBeVisible({ timeout: 20_000 });
   });
 });
