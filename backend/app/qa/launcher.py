@@ -119,21 +119,42 @@ async def _cmd_verify() -> int:
     return 0 if ok else 1
 
 
-async def _cmd_reset_rate_limits() -> int:
-    """Flush the disposable QA Redis (clears rate-limit counters). Guarded, QA-only.
+#: Prefixe des compteurs du limiteur. `app.api.v1.auth` et le domaine video
+#: construisent toutes leurs cles sous `rl:` — register, login, forgot-password,
+#: reset-password, verify-email, resend-verification, local-video.
+_RATE_LIMIT_KEY_PATTERN = "rl:*"
 
-    Never disables the rate limiter — only resets its counters between account-creating
-    E2E groups so the run is not contaminated by prior registrations.
+
+async def _cmd_reset_rate_limits() -> int:
+    """Remet a zero les compteurs du limiteur. Guarde, QA uniquement.
+
+    Ne desactive JAMAIS le limiteur : seuls ses compteurs sont effaces, entre des
+    groupes E2E qui creent des comptes, afin qu'un run ne soit pas contamine par
+    les enregistrements precedents.
+
+    Cette commande faisait un `flushdb()`, donc un effacement GLOBAL de la base
+    Redis QA. Releve au 12/10 : cette base porte aussi
+    `arq:in-progress:cron:publish_scheduled_posts_job:*` et
+    `yunicity-media-video:*`. Un flush detruisait donc l'etat de la file de
+    taches et celui du domaine video, sans aucun rapport avec les quotas — un
+    effet de bord capable de faire rougir une spec pour une raison etrangere a
+    son objet. L'effacement est desormais CIBLE sur le prefixe du limiteur.
     """
     target = ensure_qa_redis_target()
     from redis.asyncio import Redis
 
     client = Redis.from_url(os.environ[REDIS_URL_ENV].strip())
+    effacees = 0
     try:
-        await client.flushdb()
+        async for key in client.scan_iter(match=_RATE_LIMIT_KEY_PATTERN, count=500):
+            await client.delete(key)
+            effacees += 1
     finally:
         await cast(Any, client).aclose()
-    print(f"rate-limit reset OK -> {target.confirmation()}")
+    print(
+        f"rate-limit reset OK -> {target.confirmation()} "
+        f"({effacees} cle(s) {_RATE_LIMIT_KEY_PATTERN})"
+    )
     return 0
 
 
