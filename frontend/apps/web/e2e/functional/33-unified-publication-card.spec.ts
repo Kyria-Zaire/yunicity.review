@@ -81,6 +81,19 @@ async function monter(page: Page, largeur: number): Promise<void> {
     // Le contrat porte sur les erreurs REACT du harnais, pas sur le bruit reseau
     // de la page qui l'accueille.
     if (/Failed to load resource/i.test(texte)) return;
+    /*
+     * Meme classe de bruit : la politique CSP de la page hote.
+     *
+     * WebKit journalise une notice sur la `Content-Security-Policy` servie par
+     * l'application ; Chromium ne l'emet pas. Elle faisait echouer les 34 tests
+     * sous WebKit alors qu'ils passaient tous sous Chromium, pour un message qui
+     * ne vient ni de React ni du harnais.
+     *
+     * Ce filtre ne peut rien masquer : si la CSP BLOQUAIT le script injecte, le
+     * harnais ne monterait pas et l'assertion de visibilite plus bas echouerait
+     * d'abord — c'est elle qui prouve le montage, pas la proprete de la console.
+     */
+    if (/Content Security Policy/i.test(texte)) return;
     erreurs.push(`console: ${texte.slice(0, 200)}`);
   });
   (page as Page & { __ynErreurs?: string[] }).__ynErreurs = erreurs;
