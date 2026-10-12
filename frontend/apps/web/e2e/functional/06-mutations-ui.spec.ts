@@ -26,11 +26,28 @@ test.describe("Publication UI (Create Hub)", () => {
   test("FAB Créer → Publier sur le fil → POST /posts → affiché", async ({ citizenAPage }) => {
     const marker = `E2E UI ${Date.now()}`;
     await citizenAPage.goto("/feed");
-    // Mobile composer trigger is a button carrying the placeholder text; tap it, then the
-    // visible textarea appears (a hidden desktop twin shares the id, so scope to :visible).
-    await citizenAPage.locator('button:has-text("Quoi de neuf")').first().click();
+    /*
+     * Le compositeur n'a PAS d'etat replie : rien a ouvrir.
+     *
+     * Ce clic attendait un bouton portant l'espace reserve, affordance de
+     * `FeedMobileComposer` — plus monte nulle part depuis la consolidation
+     * responsive. `/feed` sert `FeedDesktopComposer` a toutes les largeurs, dont
+     * l'espace reserve est le `placeholder` du `textarea` et un `label`
+     * `sr-only`, jamais un bouton. Quatrieme spec portant ce contrat perime,
+     * apres 17, 18 et 21.
+     *
+     * Il attendait donc 120 s, le timeout du TEST expirait, Playwright demontait
+     * le contexte, et l'action en attente rapportait « Target page, context or
+     * browser has been closed » — message de demontage, non de crash.
+     *
+     * La zone de saisie est disponible des le chargement : l'assertion qui suit
+     * le prouve, et remplace l'ouverture de ce qui est deja ouvert. Le `:visible`
+     * reste utile — un jumeau desktop cache partage le meme identifiant.
+     */
     const box = citizenAPage.locator('textarea[placeholder*="Quoi de neuf"]:visible').first();
-    await expect(box).toBeVisible({ timeout: 15_000 });
+    await expect(box, "zone de saisie indisponible sans action prealable").toBeVisible({
+      timeout: 15_000,
+    });
     await box.fill(marker);
     const [resp] = await Promise.all([
       citizenAPage.waitForResponse(
