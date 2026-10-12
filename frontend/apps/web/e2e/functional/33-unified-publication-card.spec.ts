@@ -19,6 +19,8 @@
 import { build } from "esbuild";
 import { expect, test, type Page } from "@playwright/test";
 
+import { estBruitDePageHote } from "@/lib/qa/console-noise";
+
 const RACINE = "yn-publication-root";
 const CARTE = "article[data-feed-medium-surface='primary']";
 /**
@@ -77,23 +79,22 @@ async function monter(page: Page, largeur: number): Promise<void> {
   page.on("console", (m) => {
     if (m.type() !== "error") return;
     const texte = m.text();
-    // La page hote (`/login`) sonde sa session et journalise ses propres 401/404.
-    // Le contrat porte sur les erreurs REACT du harnais, pas sur le bruit reseau
-    // de la page qui l'accueille.
-    if (/Failed to load resource/i.test(texte)) return;
     /*
-     * Meme classe de bruit : la politique CSP de la page hote.
+     * Le tri du bruit de la page hote vit dans `lib/qa/console-noise`, couvert
+     * par son propre test unitaire.
      *
-     * WebKit journalise une notice sur la `Content-Security-Policy` servie par
-     * l'application ; Chromium ne l'emet pas. Elle faisait echouer les 34 tests
-     * sous WebKit alors qu'ils passaient tous sous Chromium, pour un message qui
-     * ne vient ni de React ni du harnais.
+     * Deux classes y sont ignorees : le bruit reseau de `/login`, qui sonde sa
+     * session, et la notice CSP que WebKit emet sur la politique servie par
+     * l'application — celle-ci faisait echouer les 34 tests sous WebKit alors
+     * qu'ils passaient tous sous Chromium, pour un message venant ni de React
+     * ni du harnais.
      *
-     * Ce filtre ne peut rien masquer : si la CSP BLOQUAIT le script injecte, le
-     * harnais ne monterait pas et l'assertion de visibilite plus bas echouerait
-     * d'abord — c'est elle qui prouve le montage, pas la proprete de la console.
+     * Le motif de la notice est ANCRE sur le debut du message, ce qui le separe
+     * d'un refus bloquant — « Refused to … » mentionne lui aussi la Content
+     * Security Policy et doit rester detecte. Le test unitaire prouve les deux
+     * sens, ainsi que la detection des erreurs React.
      */
-    if (/Content Security Policy/i.test(texte)) return;
+    if (estBruitDePageHote(texte)) return;
     erreurs.push(`console: ${texte.slice(0, 200)}`);
   });
   (page as Page & { __ynErreurs?: string[] }).__ynErreurs = erreurs;
