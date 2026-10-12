@@ -101,6 +101,15 @@ if ! verifier_build_servi; then
   exit 1
 fi
 
+# Le controle precedent prouve que le serveur rend le build du disque. Il ne dit
+# RIEN de la source : un build de onze heures est coherent avec lui-meme. Une
+# correction produit a ete mesuree trois fois sans avoir jamais ete compilee.
+echo "  build / source :"
+if ! verifier_build_a_jour; then
+  echo "ERREUR : aucune mesure ne porte sur du code non compile."
+  exit 1
+fi
+
 $EXEC python -m app.qa.launcher guard-check > /dev/null
 echo "  garde QA fermee (base jetable, hors Railway, sans push)"
 
