@@ -174,6 +174,56 @@ function matchProvenDynamicMediaAbort(
   return true;
 }
 
+/**
+ * QA-RSC-01 — prefetch RSC du routeur Next ANNULE cote client.
+ *
+ * Mesure (spec 07, deux passages identiques) : la barre de navigation prefetche
+ * ses quatre cibles depuis la meme frame, avec le meme hash de build. Le serveur
+ * repond 200 aux quatre. La derniere de la file est annulee quand la page change
+ * d'etat :
+ *
+ *   /feed?_rsc=...                 200   -
+ *   /map?_rsc=...                  200   -
+ *   /sortir?_rsc=...               200   -
+ *   /profile/<handle>?_rsc=...     200   net::ERR_ABORTED
+ *
+ * Un prefetch est une optimisation : annule, il n'a AUCUN effet visible — la
+ * navigation reelle refera la requete. Le produit n'a rien manque de servir, et
+ * le statut 200 le prouve.
+ *
+ * Pourquoi la regle ne contraint pas le chemin : n'importe quelle route de
+ * l'application peut etre prefetchee, et figer les quatre actuelles rendrait la
+ * regle fausse au premier changement de navigation sans rien securiser. Ce qui
+ * la borne, c'est le CANAL : une requete `fetch` de meme origine que
+ * l'application, dont la chaine de requete est EXACTEMENT le marqueur `_rsc` de
+ * Next, annulee par le client.
+ *
+ * Ce qu'elle ne masque pas : une navigation RSC reellement cassee se voit dans
+ * l'interface, et ce sont les assertions d'ecran des memes tests qui la
+ * rattrapent — pas cette politique reseau. Un abandon sur l'API, sur un media,
+ * sur une autre origine, ou sans le marqueur `_rsc`, reste une violation.
+ */
+function matchCancelledRscPrefetch(record: FailedRequestRecord): boolean {
+  if (record.method !== "GET") return false;
+  if (record.errorText !== "net::ERR_ABORTED") return false;
+  if (record.resourceType !== "fetch") return false;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(record.url);
+  } catch {
+    return false;
+  }
+
+  if (!(QA_WEB_ORIGINS as readonly string[]).includes(parsed.origin)) return false;
+
+  // Chaine de requete EXACTEMENT `_rsc=<hash non vide>` : ni parametre en plus,
+  // ni marqueur vide.
+  const cles = Array.from(parsed.searchParams.keys());
+  if (cles.length !== 1 || cles[0] !== "_rsc") return false;
+  return (parsed.searchParams.get("_rsc") ?? "").length > 0;
+}
+
 function sameRequest(messageUrl: string, allowedUrls: readonly string[]): boolean {
   return allowedUrls.some((allowed) => allowed === messageUrl);
 }
@@ -190,6 +240,11 @@ export function evaluateBrowserFailures(input: BrowserFailureInput): BrowserFail
     }
 
     if (input.provenMedia && matchProvenDynamicMediaAbort(request, input.provenMedia)) {
+      allowedUrls.push(request.url);
+      continue;
+    }
+
+    if (matchCancelledRscPrefetch(request)) {
       allowedUrls.push(request.url);
       continue;
     }

@@ -66,6 +66,26 @@ const DYNAMIC_MEDIA_ABORT: FailedRequestRecord = {
   resourceType: "media",
 };
 
+/**
+ * Hash de build Next, synthetique : la regle QA-RSC-01 n'en controle que la
+ * presence et la non-vacuite, jamais la valeur.
+ */
+const RSC_HASH = "kfdbIDKPpsaF5Nd9";
+
+function rscPrefetch(
+  chemin: string,
+  surcharge: Partial<FailedRequestRecord> = {},
+  origine = QA_WEB,
+): FailedRequestRecord {
+  return {
+    url: `${origine}${chemin}?_rsc=${RSC_HASH}`,
+    method: "GET",
+    errorText: "net::ERR_ABORTED",
+    resourceType: "fetch",
+    ...surcharge,
+  };
+}
+
 test.describe("Politique d'échecs navigateur", () => {
   test("autorise la requête notifications QA exacte avec son erreur exacte", () => {
     const verdict = evaluateBrowserFailures({ failedRequests: [NOTIF_FAILURE], consoleErrors: [] });
@@ -366,6 +386,119 @@ test.describe("Politique d'échecs navigateur", () => {
       consoleErrors: [],
       provenMedia: provenContext([`${QA_API}/media/qa/other-sample-video.mp4`]),
     });
+    expect(verdict.ok).toBe(false);
+  });
+
+  /**
+   * QA-RSC-01 — la tolerance du prefetch RSC annule. Mesure : le serveur repond
+   * 200, c'est le client qui annule la derniere requete de la file. Les tests
+   * qui suivent bornent la regle : chacun ne change QU'UN champ par rapport au
+   * cas tolere, et doit redevenir bloquant.
+   */
+  test("autorise un prefetch RSC annule par le client, quel que soit le chemin", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [
+        rscPrefetch("/profile/qa_citizen_a"),
+        rscPrefetch("/feed"),
+        rscPrefetch("/une/route/encore/inconnue"),
+      ],
+      consoleErrors: [],
+    });
+    expect(verdict.violations).toEqual([]);
+    expect(verdict.ok).toBe(true);
+  });
+
+  test("REFUSE un prefetch RSC qui ECHOUE au lieu d'etre annule", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [rscPrefetch("/profile/qa_citizen_a", { errorText: "net::ERR_FAILED" })],
+      consoleErrors: [],
+    });
+    expect(verdict.violations).toHaveLength(1);
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REFUSE un fetch annule de meme origine SANS le marqueur _rsc", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [
+        {
+          url: `${QA_WEB}/profile/qa_citizen_a`,
+          method: "GET",
+          errorText: "net::ERR_ABORTED",
+          resourceType: "fetch",
+        },
+      ],
+      consoleErrors: [],
+    });
+    expect(verdict.violations).toHaveLength(1);
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REFUSE un prefetch RSC portant un parametre SUPPLEMENTAIRE", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [
+        {
+          ...rscPrefetch("/profile/qa_citizen_a"),
+          url: `${QA_WEB}/profile/qa_citizen_a?_rsc=${RSC_HASH}&redirect=http://evil.test`,
+        },
+      ],
+      consoleErrors: [],
+    });
+    expect(verdict.violations).toHaveLength(1);
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REFUSE un marqueur _rsc VIDE", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [
+        { ...rscPrefetch("/feed"), url: `${QA_WEB}/feed?_rsc=` },
+      ],
+      consoleErrors: [],
+    });
+    expect(verdict.violations).toHaveLength(1);
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REFUSE le meme marqueur sur l'origine de l'API", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [rscPrefetch("/api/v1/me", {}, QA_API)],
+      consoleErrors: [],
+    });
+    expect(verdict.violations).toHaveLength(1);
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REFUSE le meme marqueur sur une origine EXTERNE", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [rscPrefetch("/feed", {}, "https://evil.test")],
+      consoleErrors: [],
+    });
+    expect(verdict.violations).toHaveLength(1);
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REFUSE une NAVIGATION document annulee, et non un prefetch", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [rscPrefetch("/feed", { resourceType: "document" })],
+      consoleErrors: [],
+    });
+    expect(verdict.violations).toHaveLength(1);
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REFUSE un media annule qui emprunterait le marqueur _rsc", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [
+        {
+          url: `${dynamicProcessedUrl(QA_WEB)}?_rsc=${RSC_HASH}`,
+          method: "GET",
+          errorText: "net::ERR_ABORTED",
+          resourceType: "media",
+        },
+      ],
+      consoleErrors: [],
+      provenMedia: provenContext([dynamicProcessedUrl(QA_WEB)]),
+    });
+    expect(verdict.violations).toHaveLength(1);
     expect(verdict.ok).toBe(false);
   });
 });
