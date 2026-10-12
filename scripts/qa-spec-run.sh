@@ -156,9 +156,19 @@ set -e
 echo "== 5/5 releve =="
 echo "  PLAYWRIGHT EXIT REEL = $RC"
 grep -oE '[0-9]+ (passed|failed|skipped|flaky)' "$JOURNAL" 2>/dev/null | sed 's/^/    /'
-quota=$(grep -c 'RATE_LIMITED' "$JOURNAL" 2>/dev/null)
-if [ "${quota:-0}" -gt 0 ]; then
+# `grep -c` affiche 0 et sort 1 quand il ne trouve RIEN — c'est-a-dire dans le
+# cas favorable. Sous `set -e`, cette affectation abandonnait donc le script
+# avant le `exit "$RC"` final : le protocole sortait en erreur alors que
+# Playwright avait reussi, et la ligne « journal complet » n'etait jamais
+# imprimee. Le `|| true` rend la substitution reussie sans masquer quoi que ce
+# soit : la valeur affichee par grep, 0 comprise, est conservee.
+quota=$(grep -c 'RATE_LIMITED' "$JOURNAL" 2>/dev/null || true)
+quota=${quota:-0}
+if [ "$quota" -gt 0 ]; then
   echo "    ATTENTION quota atteint pendant la mesure ($quota) — resultat PROVISOIRE"
 fi
 echo "  journal complet : $JOURNAL"
+
+# Le code de sortie du protocole EST celui de Playwright : un echec reste
+# propage, un succes reste un succes.
 exit "$RC"
