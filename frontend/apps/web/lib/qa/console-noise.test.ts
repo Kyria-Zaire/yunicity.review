@@ -10,12 +10,26 @@ import { estBruitDePageHote } from "./console-noise";
  */
 describe("estBruitDePageHote", () => {
   it("ignore la notice CSP de la page hôte, relevée telle quelle sous WebKit", () => {
-    // Texte réel capturé le 12/10 pendant la spec 33 sous WebKit.
+    /*
+     * Texte INTÉGRAL relevé le 12/10 sous WebKit, via la spec 26 dont le bilan
+     * imprimait le message complet là où la spec 33 le tronquait à 200 signes.
+     *
+     * Il dit au passage un fait produit, consigné hors de ce test : la politique
+     * est servie en `report-only` sans `report-to`, donc « the policy will have
+     * no effect ».
+     */
     const notice =
       "The Content Security Policy 'default-src 'self'; base-uri 'self'; " +
       "object-src 'none'; frame-ancestors 'none'; form-action 'self'; " +
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com' " +
-      "was delivered via a <meta> element outside the document's <head>.";
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com " +
+      "https://maps.gstatic.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; " +
+      "img-src 'self' data: blob: https:; media-src 'self' blob: https:; " +
+      "connect-src 'self' https: https://maps.googleapis.com https://maps.gstatic.com; " +
+      "frame-src 'self' https://www.openstreetmap.org https://www.google.com " +
+      "https://calendar.google.com; worker-src 'self' blob:' was delivered in " +
+      "report-only mode, but does not specify a 'report-to'; the policy will have no " +
+      "effect. Please either add a 'report-to' directive, or deliver the policy via " +
+      "the 'Content-Security-Policy' header.";
     expect(estBruitDePageHote(notice)).toBe(true);
   });
 
