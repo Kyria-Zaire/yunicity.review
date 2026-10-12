@@ -17,6 +17,8 @@
  * backend `PostCreateRequest.body min_length=1` est vérifiée par l'état du
  * bouton, jamais par un envoi voué à un 422.
  */
+import { deflateSync } from "node:zlib";
+
 import type { Page } from "@playwright/test";
 
 import { expect, test } from "../fixtures";
@@ -91,7 +93,6 @@ function pngUni(width: number, height: number, rgb: [number, number, number]): B
       ]),
     ),
   );
-  const { deflateSync } = require("node:zlib") as typeof import("node:zlib");
   return Buffer.concat([
     Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     chunk("IHDR", ihdr),
@@ -436,8 +437,13 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
         const region = document.querySelector(sel.region)!;
         const input = region.querySelector(sel.input)!;
         const actions = [...region.querySelectorAll(sel.action)] as HTMLElement[];
-        const submit = region.querySelector(sel.submit);
         const fichier = region.querySelector('input[type="file"]') as HTMLInputElement;
+        /*
+         * Le bouton « Publier » est VOLONTAIREMENT hors des cibles mesurees : il
+         * n'existe pas au repos, le compositeur ne le rendant que lorsque la
+         * publication devient possible. L'inclure rendrait ce releve dependant de
+         * l'etat de saisie. Il etait releve ici, puis jamais lu.
+         */
         const cibles = [input, ...actions].filter(Boolean) as HTMLElement[];
         return {
           tabindexExplicites: cibles.filter((el) => el.hasAttribute("tabindex")).length,
@@ -531,7 +537,12 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
     await authedPage.setViewportSize({ width: 1024, height: 900 });
     const desktop = await authedPage.evaluate(
       (sel) => {
-        const region = document.querySelector(sel.region);
+        /*
+         * Au-dela de 1024 px, ce releve cible le compositeur DESKTOP, retrouve
+         * plus bas sous `.feed-main-column`. La region medium du compositeur
+         * etait recuperee ici sans jamais etre lue, ce qui laissait croire
+         * qu'elle entrait dans la mesure.
+         */
         const mediumHeader = document.querySelector(".feed-medium-header");
         const mediumHeaderVisible = Boolean(
           mediumHeader &&
