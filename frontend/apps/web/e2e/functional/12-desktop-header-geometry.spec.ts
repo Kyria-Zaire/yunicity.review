@@ -3,7 +3,9 @@ import type { Page } from "@playwright/test";
 import { expect, testCitizen as test } from "../fixtures";
 import { COLD_START_TEST_TIMEOUT, COLD_START_TIMEOUT, gotoCold } from "../cold-start";
 import { waitForCitizenRouteReady } from "../landmark-assertions";
+import { NAVIGATION_DESKTOP_MIN_PX } from "../../lib/layout/navigation-surfaces";
 import {
+  DESKTOP_HEADER_ACCEPTANCE_WIDTHS,
   DESKTOP_HEADER_CONTROL_IDS,
   DESKTOP_HEADER_MIN_GAP_PX,
   type DesktopHeaderControlId,
@@ -13,7 +15,24 @@ import {
 const EXPLORER_LABEL = "Explorer Reims";
 const MENU_LABEL = "Menu Yunicity";
 const CREATE_LABEL = "Créer";
-const DESKTOP_HEADER_MIN_WIDTH = 1280;
+/*
+ * Deux seuils DISTINCTS, que cette spec confondait sous une seule constante.
+ *
+ * `NAVIGATION_DESKTOP_MIN_PX` (1024) est le seuil d'APPARITION du top nav : le
+ * produit le montre des cette largeur — `@media (min-width: 1024px)
+ * { .citizen-feed-shell .citizen-top-nav { display: block } }` — et ce seuil est
+ * deja porte par le contrat de navigation, « aligne sur le chrome Feed ».
+ *
+ * `DESKTOP_HEADER_ACCEPTANCE_WIDTHS[0]` (1280) est tout autre chose : la plus
+ * petite largeur a laquelle la GEOMETRIE de l'en-tete est verifiee.
+ *
+ * La spec declarait `HEADER_GEOMETRY_MIN_WIDTH = 1280` et s'en servait pour les
+ * deux. Elle attendait donc le top nav cache a 1279, alors que le produit l'y
+ * montre depuis 1024 — mesure : visible, `display: block` l'emportant sur
+ * l'utilitaire `hidden` porte par la classe.
+ */
+const TOP_NAV_MIN_WIDTH = NAVIGATION_DESKTOP_MIN_PX;
+const HEADER_GEOMETRY_MIN_WIDTH = DESKTOP_HEADER_ACCEPTANCE_WIDTHS[0];
 
 const DESKTOP_WIDTHS = [1280, 1366, 1440, 1536] as const;
 const TRANSITION_WIDTHS = [
@@ -162,7 +181,7 @@ async function gotoFeedDesktop(page: Page, width: number): Promise<void> {
 
 async function expectTopNavVisibility(page: Page, width: number): Promise<void> {
   const topNav = page.locator(".citizen-top-nav");
-  if (width >= DESKTOP_HEADER_MIN_WIDTH) {
+  if (width >= TOP_NAV_MIN_WIDTH) {
     await expect(topNav).toBeVisible({ timeout: COLD_START_TIMEOUT });
   } else {
     await expect(topNav).toBeHidden({ timeout: COLD_START_TIMEOUT });
@@ -252,7 +271,7 @@ test.describe("Desktop header geometry — anti-collision R6", () => {
     test(`transition ${transition.from} → ${transition.to}px`, async ({ citizenAPage: page }) => {
       await gotoFeedDesktop(page, transition.from);
       await expectTopNavVisibility(page, transition.from);
-      if (transition.from >= DESKTOP_HEADER_MIN_WIDTH) {
+      if (transition.from >= HEADER_GEOMETRY_MIN_WIDTH) {
         await assertHeaderGeometry(page, transition.from);
       }
 
@@ -260,7 +279,7 @@ test.describe("Desktop header geometry — anti-collision R6", () => {
       await waitSessionReady(page);
       await expectTopNavVisibility(page, transition.to);
 
-      if (transition.to >= DESKTOP_HEADER_MIN_WIDTH) {
+      if (transition.to >= HEADER_GEOMETRY_MIN_WIDTH) {
         await assertHeaderGeometry(page, transition.to);
       }
 
