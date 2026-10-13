@@ -37,6 +37,7 @@ if [ -z "$SPEC" ]; then
   exit 2
 fi
 MOTEUR="${2:-}"
+PREMIER_ECHEC="${3:-}"
 
 RACINE=$(cd -- "$(dirname -- "$0")/.." && pwd)
 WEB_DIR="$RACINE/frontend/apps/web"
@@ -70,6 +71,26 @@ esac
 # detruisait la preuve du passage precedent a chaque relance — et c'est
 # precisement entre deux passages qu'on compare.
 HORODATAGE=$(date +%Y%m%d-%H%M%S)
+
+# --premier-echec : arrete la mesure des le premier test rouge.
+#
+# Playwright DETRUIT le worker apres un echec et en recree un : les fixtures
+# `scope: "worker"` se rejouent, donc une connexion par echec. Au-dela du
+# seuil, tous les tests suivants rapportent `RATE_LIMITED` et leur vraie cause
+# devient illisible — mesure sur les specs 10 et 19.
+#
+# On ne touche ni aux limites produit ni aux cles Redis : on cesse d'enchainer
+# des echecs dont le premier suffit au diagnostic. Mettre les sessions en cache
+# pour eviter ces connexions a ete essaye et ABANDONNE : le backend fait tourner
+# ses jetons de rafraichissement, donc un `storageState` reutilise est rejete.
+#
+# L'inventaire, lui, tourne SANS cette option : il veut la liste complete.
+OPT_ECHEC=""
+case "$PREMIER_ECHEC" in
+  --premier-echec) OPT_ECHEC="--max-failures=1" ;;
+  "") : ;;
+  *) echo "ERREUR : troisieme argument inconnu — $PREMIER_ECHEC"; exit 2 ;;
+esac
 
 echo "######## PROTOCOLE QA — spec=$SPEC moteur=$NOM_MOTEUR run=$HORODATAGE"
 
@@ -184,7 +205,7 @@ set +e
 ARTEFACTS="${TMPDIR:-/tmp}/yunicity-qa-spec/artefacts/$NOM_MOTEUR-$SPEC-$HORODATAGE"
 mkdir -p "$ARTEFACTS"
 ( cd "$WEB_DIR" && npx playwright test "e2e/functional/$SPEC.spec.ts" \
-    $OPT_MOTEUR --reporter=list --workers=1 --retries=0 \
+    $OPT_MOTEUR $OPT_ECHEC --reporter=list --workers=1 --retries=0 \
     --output="$ARTEFACTS" ) > "$JOURNAL" 2>&1
 RC=$?
 set -e
