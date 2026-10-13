@@ -5673,6 +5673,18 @@ html.local-video-cinema-open body {
  * Le fond neutre n'est pas decoratif : en `contain`, les bandes residuelles
  * doivent se lire comme le cadre, jamais comme un trou dans la carte.
  */
+/*
+ * SEULE source du recadrage. Trois autres le posaient en parallele, et c'est
+ * ainsi qu'elles ont diverge :
+ *   - l'utilitaire `object-cover` ecrit en dur dans la classe de l'image ;
+ *   - `.publication-media-frame--feed[kind=image] { object-fit: cover }`, de
+ *     meme specificite que cette regle-ci mais declaree APRES, donc gagnante a
+ *     l'ordre — c'est elle qui recadrait encore les photos apres correction du
+ *     contrat ET de la classe ;
+ *   - les doublons par variante (vignette, videos), qui redisaient ce que le
+ *     contrat donne deja.
+ * Toutes ont ete retirees. Le cadre declare, le contrat decide.
+ */
 .publication-media-frame[data-publication-media-fit="contain"] .publication-media-frame__media {
   object-fit: contain;
   object-position: center;
@@ -5738,7 +5750,6 @@ html.local-video-cinema-open body {
 }
 
 .publication-media-frame--compact[data-publication-media-kind="video"] .publication-media-frame__media {
-  object-fit: contain;
   background: #0a0a0a;
 }
 
@@ -5749,10 +5760,6 @@ html.local-video-cinema-open body {
   max-height: 6rem;
   flex: none;
   border-radius: 0.75rem;
-}
-
-.publication-media-frame--thumbnail .publication-media-frame__media {
-  object-fit: cover;
 }
 
 .publication-media-frame--viewer {
@@ -5767,14 +5774,13 @@ html.local-video-cinema-open body {
   max-width: 100%;
 }
 
-.publication-media-frame--feed[data-publication-media-kind="image"] .publication-media-frame__media,
-.publication-media-frame--feed[data-publication-media-kind="image"] img[data-authorized-media-state="ready"] {
-  object-fit: cover;
-}
-
+/*
+ * Fond NOIR des videos : il reste une decision de surface, distincte du
+ * recadrage. L'`object-fit` qui l'accompagnait a ete retire — il doublait le
+ * contrat partage, qui donne deja `contain` pour une video.
+ */
 .publication-media-frame--feed[data-publication-media-kind="video"] .publication-media-frame__media,
 .publication-media-frame--composer[data-publication-media-kind="video"] .publication-media-frame__media {
-  object-fit: contain;
   background: #0a0a0a;
 }
 
