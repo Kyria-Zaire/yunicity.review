@@ -43,8 +43,29 @@ async function overlayRoots(page: Page) {
   }));
 }
 
+/**
+ * Déclencheur Explorer, QUEL QUE SOIT le palier.
+ *
+ * Le nom accessible n'est pas unique, et c'est un choix produit : au palier
+ * medium la recherche vit dans le header du feed — « Rechercher à <ville> »,
+ * repérable par `data-feed-medium-header-search` — et la colonne latérale masque
+ * alors son propre déclencheur pour éviter un doublon, ce que
+ * `web-sidebar.tsx` documente en toutes lettres.
+ *
+ * Ce helper exigeait « Explorer Reims » partout : à 900 sur `/feed`, aucun
+ * bouton ne portait ce nom, et le test attendait soixante secondes un élément
+ * qui n'existe pas à ce palier.
+ *
+ * Les deux affordances ouvrent la MÊME primitive, et c'est elle que le test
+ * vérifie ensuite — l'assertion sur le dialogue reste inchangée.
+ */
 async function openExplorer(page: Page) {
-  const trigger = page.getByRole("button", { name: EXPLORER_LABEL }).locator("visible=true").first();
+  const trigger = page
+    .locator(
+      `button[aria-label="${EXPLORER_LABEL}"], button[data-feed-medium-header-search]`,
+    )
+    .locator("visible=true")
+    .first();
   await expect(trigger).toBeVisible({ timeout: COLD_START_TIMEOUT });
   await expect(trigger).toBeEnabled({ timeout: COLD_START_TIMEOUT });
   await trigger.click();
