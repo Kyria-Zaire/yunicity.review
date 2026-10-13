@@ -20,6 +20,7 @@ describe("contrat du rail citoyen medium", () => {
       "videos",
       "map",
       "sortir",
+      "explorer",
       "menu",
       "create",
       "notifications",
@@ -51,12 +52,16 @@ describe("contrat du rail citoyen medium", () => {
     }
   });
 
-  it("expose les huit contrôles dans l'ordre visuel exact", () => {
+  it("expose les neuf contrôles dans l'ordre visuel exact", () => {
     expect([...CITIZEN_MEDIUM_RAIL_CONTROL_ORDER]).toEqual([
       "Accueil",
       "Vidéos",
       "Carte",
       "Sortir",
+      // L'accès Explorer du palier medium : la colonne latérale masque le sien
+      // dès que le rail prend le relais, et le header de recherche n'existe que
+      // sur le fil — les autres routes medium n'en avaient plus aucun.
+      "Explorer Reims",
       "Menu",
       "Créer",
       "Notifications",
