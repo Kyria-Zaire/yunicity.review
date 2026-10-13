@@ -18,7 +18,16 @@ export type NavigationSurfaceCloseReason =
   | "focus-exit"
   | "navigation"
   | "programmatic"
-  | "superseded";
+  | "superseded"
+  /**
+   * Le palier a changé et la surface a changé de nature : le panneau se ferme.
+   *
+   * Distinct de `programmatic` pour une seule raison, mesurée : l'ancre du
+   * panneau n'est alors plus visible — ou plus montée — donc lui rendre le focus
+   * le laisse sur `body`. L'appelant place le focus sur le contrôle équivalent
+   * du nouveau palier.
+   */
+  | "viewport";
 
 export type NavigationOverlayState = {
   activeSurface: NavigationSurfaceId | null;
@@ -104,7 +113,7 @@ export function reduceNavigationOverlayState(
       viewportWidth: action.width,
       ...surfaces,
       activeSurface: surfaceKindChanged ? null : state.activeSurface,
-      lastCloseReason: surfaceKindChanged ? "programmatic" : state.lastCloseReason,
+      lastCloseReason: surfaceKindChanged ? "viewport" : state.lastCloseReason,
     };
   }
 
@@ -144,5 +153,7 @@ export function isNavigationSurfaceOpen(
 }
 
 export function shouldRestoreNavigationFocus(state: NavigationOverlayState): boolean {
-  return state.lastCloseReason !== "superseded";
+  // `viewport` : rendre le focus à l'ancre le poserait sur un élément que le
+  // nouveau palier ne montre plus — mesuré, il atterrissait sur `body`.
+  return state.lastCloseReason !== "superseded" && state.lastCloseReason !== "viewport";
 }

@@ -279,6 +279,47 @@ export function CitizenYunicityMenu({
     openMenu();
   }, [closeMenu, isOpen, openMenu]);
 
+  /*
+   * Fermeture par changement de palier : le focus doit atterrir sur un contrôle
+   * VISIBLE.
+   *
+   * Mesuré sur les quatre bascules où l'ancre disparaît — 639↔640, 1023→1024,
+   * 1024→1023 — le panneau se fermait bien, mais le focus finissait sur `body` :
+   * la restitution visait l'ancre, que le nouveau palier ne montre plus.
+   *
+   * On ne touche pas aux seuils, et on n'observe rien : le réducteur sait déjà
+   * quand la surface change de nature, et le dit par `lastCloseReason`. Il ne
+   * manquait que la reprise du focus.
+   */
+  useEffect(() => {
+    if (!rendersMenuSurface) return;
+    if (isOpen) return;
+    if (surfaces.lastCloseReason !== "viewport") return;
+
+    const visible = (element: HTMLElement) => {
+      const boite = element.getBoundingClientRect();
+      if (boite.width <= 0 || boite.height <= 0) return false;
+      const style = window.getComputedStyle(element);
+      return style.visibility !== "hidden" && style.display !== "none";
+    };
+
+    // Après le rendu du nouveau palier : avant, la cible n'existe pas encore.
+    const image = requestAnimationFrame(() => {
+      const equivalent = Array.from(
+        document.querySelectorAll<HTMLElement>(`[aria-label="${YUNICITY_MENU_LABEL}"]`),
+      ).find(visible);
+      if (equivalent) {
+        equivalent.focus();
+        return;
+      }
+      const destination = Array.from(
+        document.querySelectorAll<HTMLElement>('nav[aria-label="Navigation principale"] a'),
+      ).find(visible);
+      destination?.focus();
+    });
+    return () => cancelAnimationFrame(image);
+  }, [isOpen, rendersMenuSurface, surfaces.lastCloseReason]);
+
   const pathnameRef = useRef(pathname);
   useEffect(() => {
     if (pathnameRef.current === pathname) return;
