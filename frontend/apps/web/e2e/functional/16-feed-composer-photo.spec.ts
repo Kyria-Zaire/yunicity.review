@@ -85,7 +85,24 @@ test.describe("C3.1-R1C — Feed composer photo desktop", () => {
 
     const forbidden = seen.filter(isDirectApiCall);
     expect(forbidden, `appels navigateur directs vers l'API: ${forbidden.join(", ")}`).toEqual([]);
-    expect(upload.url().startsWith("http://localhost:3002/api/v1/posts/media")).toBe(true);
+    /*
+     * L'origine est RELEVEE sur la page, jamais codee en dur.
+     *
+     * Ces assertions exigeaient `http://localhost:3002`. Or le harnais sert
+     * delibrement `127.0.0.1:3002` : `playwright.config.ts` le dit en
+     * commentaire — « hote IPv4 explicite, `localhost` resout `::1` EN PREMIER ».
+     * Elles contredisaient donc une decision documentee du harnais. La spec 17
+     * porte deja ce correctif ; celle-ci l'avait manque.
+     *
+     * Ce qu'elles veulent prouver est la MEME ORIGINE, et c'est conserve :
+     * l'interdiction d'atteindre l'API en direct reste portee, inchangee, par
+     * `isDirectApiCall`, qui ne depend d'aucun hote.
+     */
+    const origine = new URL(page.url()).origin;
+    expect(
+      upload.url().startsWith(`${origine}/api/v1/posts/media`),
+      `televersement hors facade — origine attendue ${origine}, vue : ${upload.url()}`,
+    ).toBe(true);
 
     if (upload.status() !== 201) {
       throw new Error(
@@ -129,7 +146,7 @@ test.describe("C3.1-R1C — Feed composer photo desktop", () => {
       mediaGets.filter(isDirectApiCall),
       `médias via :8010/:8000: ${mediaGets.filter(isDirectApiCall).join(", ")}`,
     ).toEqual([]);
-    expect(mediaGets.every((url) => url.startsWith("http://localhost:3002/api/v1/story-media/"))).toBe(
+    expect(mediaGets.every((url) => url.startsWith(`${origine}/api/v1/story-media/`))).toBe(
       true,
     );
   });
