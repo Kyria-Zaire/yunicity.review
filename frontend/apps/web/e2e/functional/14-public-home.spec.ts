@@ -7,6 +7,7 @@ import type { Page } from "@playwright/test";
 import { CITIZEN_A_EMAIL, expect, test } from "../fixtures";
 import { COLD_START_TEST_TIMEOUT, COLD_START_TIMEOUT, gotoCold } from "../cold-start";
 import { readLandmarkState } from "../landmark-assertions";
+import { PUBLIC_HOME_COPY } from "@/lib/marketing/public-home-contract";
 
 const QA_SEEDED_PASSWORD = "StrongPassword1!";
 
@@ -14,7 +15,15 @@ const QA_SEEDED_PASSWORD = "StrongPassword1!";
  * C3.1-R1B — accueil public `/` : landing visiteur, redirection connecté, pas de diagnostic API.
  */
 
-const HERO_TITLE = "Reims, plus proche de vous.";
+/*
+ * Le titre vient du CONTRAT produit, pas d'une copie. Il valait ici
+ * « Reims, plus proche de vous. » quand la landing affiche « Votre ville, au
+ * même endroit. » depuis un changement de wording : la spec attendait un H1 qui
+ * n'existait plus, échouait au bout de soixante secondes, et le message ne
+ * disait rien du vrai sujet du test. Un littéral recopié se périme en silence ;
+ * une référence au contrat ne compile plus.
+ */
+const HERO_TITLE = PUBLIC_HOME_COPY.heroTitle;
 const VIEWPORTS = [
   { width: 390, height: 844, name: "390" },
   { width: 393, height: 852, name: "393" },
