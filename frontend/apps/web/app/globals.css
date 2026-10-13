@@ -5659,6 +5659,33 @@ html.local-video-cinema-open body {
   object-position: center;
 }
 
+/*
+ * L'ajustement SUIT le contrat partage (`feedObjectFitForKind`), que le cadre
+ * expose deja en `data-publication-media-fit`.
+ *
+ * Il etait auparavant ecrit en dur dans chaque composant d'image — un
+ * `object-cover` de classe utilitaire — pendant que l'attribut annoncait autre
+ * chose. Les deux pouvaient donc diverger sans que rien ne le signale, et c'est
+ * ce qui est arrive : la spec 19 lisait `cover` la ou le contrat disait
+ * autre chose. Une seule source decide desormais, et le selecteur d'attribut
+ * l'emporte sur la classe utilitaire.
+ *
+ * Le fond neutre n'est pas decoratif : en `contain`, les bandes residuelles
+ * doivent se lire comme le cadre, jamais comme un trou dans la carte.
+ */
+.publication-media-frame[data-publication-media-fit="contain"] .publication-media-frame__media {
+  object-fit: contain;
+  object-position: center;
+}
+
+.publication-media-frame[data-publication-media-fit="cover"] .publication-media-frame__media {
+  object-fit: cover;
+}
+
+.publication-media-frame:not(.publication-media-frame--viewer) .publication-media-frame__surface {
+  background-color: rgb(245 245 245);
+}
+
 /* Feed / composer : plafonds viewport — une 9:16 ne reprend jamais sa hauteur native. */
 .publication-media-frame--feed,
 .publication-media-frame--composer {

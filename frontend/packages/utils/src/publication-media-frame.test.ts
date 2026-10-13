@@ -60,8 +60,13 @@ describe("MEDIA-02 — ratios feed", () => {
   });
 
   it("images cover, vidéos contain, viewer contain", () => {
-    expect(feedObjectFitForKind("image")).toBe("cover");
-    expect(feedObjectFitForKind("video")).toBe("contain");
+    // Une publication montre l'image entiere : seule la vignette recadre.
+    expect(feedObjectFitForKind("feed", "image")).toBe("contain");
+    expect(feedObjectFitForKind("feed", "video")).toBe("contain");
+    expect(feedObjectFitForKind("compact", "image")).toBe("contain");
+    expect(feedObjectFitForKind("composer", "image")).toBe("contain");
+    expect(feedObjectFitForKind("thumbnail", "image")).toBe("cover");
+    expect(feedObjectFitForKind("thumbnail", "video")).toBe("cover");
     expect(viewerObjectFit()).toBe("contain");
   });
 });

@@ -123,7 +123,18 @@ export function AuthorizedPublicationImageView({
         onError={onDecodeFailed}
         className={
           framed
-            ? `publication-media-frame__media h-full w-full object-cover object-center ${imgClassName || className}`
+            ? /*
+               * Aucun `object-fit` ici : il appartient au CADRE, qui le tient du
+               * contrat partage (`feedObjectFitForKind`) et l'expose en
+               * `data-publication-media-fit`. Le CSS applique cette valeur a
+               * `.publication-media-frame__media`.
+               *
+               * Cette classe portait `object-cover` en dur pendant que l'attribut
+               * du cadre pouvait annoncer autre chose : les deux ont diverge sans
+               * que rien ne le signale. Une image ne decide pas de son recadrage ;
+               * le cadre le decide pour elle.
+               */
+              `publication-media-frame__media h-full w-full ${imgClassName || className}`
             : imgClassName || className
         }
       />

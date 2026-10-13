@@ -95,7 +95,7 @@ describe("MEDIA-02 — PublicationMediaFrame", () => {
 });
 
 describe("MEDIA-02 — FeedPublicationMedia cadre", () => {
-  it("ready : object-cover dans le cadre, pas object-contain pleine hauteur", async () => {
+  it("ready : le cadre decide du recadrage, jamais la classe de l'image", async () => {
     fetchAuthorizedMediaBlob.mockResolvedValue({ blob: jpegBlob(), contentType: "image/jpeg" });
     const { container } = render(<FeedPublicationMedia mediaUrl={VALID_MEDIA} label="Portrait" />);
 
@@ -116,9 +116,17 @@ describe("MEDIA-02 — FeedPublicationMedia cadre", () => {
     });
 
     const ready = await screen.findByRole("img", { name: "Portrait" });
-    expect(ready.className).toMatch(/object-cover/);
-    expect(ready.className).not.toMatch(/object-contain/);
+    /*
+     * L'image ne porte AUCUN object-fit : il appartient au cadre, qui le tient du
+     * contrat partage. Ce test exigeait auparavant l'utilitaire `object-cover`
+     * dans la classe de l'image, pendant que le cadre annoncait sa propre valeur
+     * dans `data-publication-media-fit`. Deux sources decidaient du meme fait et
+     * pouvaient diverger sans que rien ne le signale. On verifie donc desormais
+     * l'absence de l'une et la valeur de l'autre.
+     */
+    expect(ready.className).not.toMatch(/object-(cover|contain)/);
     const frame = container.querySelector("[data-publication-media-frame='feed']") as HTMLElement;
+    expect(frame.getAttribute("data-publication-media-fit")).toBe("contain");
     expect(frame.getAttribute("data-publication-media-orientation")).toBe("portrait");
     expect(frame.style.aspectRatio.replace(/\s/g, "")).toBe("4/5");
   });
@@ -359,14 +367,16 @@ describe("MEDIA-02 — variantes compact et thumbnail", () => {
     expect(frame.getAttribute("data-publication-media-kind")).toBe("video");
   });
 
-  it("une image secondaire est en cover", () => {
+  it("une image secondaire montre l'image entiere, comme le fil", () => {
     const { container } = render(
       <PublicationMediaFrame variant="compact" kind="image" orientation="landscape">
         <img alt="" />
       </PublicationMediaFrame>,
     );
     const frame = container.querySelector("[data-publication-media-frame='compact']") as HTMLElement;
-    expect(frame.getAttribute("data-publication-media-fit")).toBe("cover");
+    // Une publication compacte est une publication : elle ne recadre pas plus
+    // que le fil. Seule la vignette le fait, sa boite etant carree et bornee.
+    expect(frame.getAttribute("data-publication-media-fit")).toBe("contain");
   });
 
   it("le ratio du cadre vient de la primitive partagée, pas du composant", () => {

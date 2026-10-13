@@ -93,9 +93,27 @@ export function defaultFeedOrientation(): MediaOrientation {
 
 export type PublicationMediaObjectFit = "cover" | "contain";
 
-/** object-fit du média dans le cadre feed (aperçu). */
-export function feedObjectFitForKind(kind: "image" | "video"): PublicationMediaObjectFit {
-  return kind === "video" ? "contain" : "cover";
+/**
+ * object-fit du média dans le cadre d'aperçu.
+ *
+ * Une publication montre l'image ENTIÈRE, sans déformation ni recadrage : le
+ * cadre est déjà adaptatif — `frameAspectRatio` suit l'orientation mesurée, donc
+ * 4/5, 1/1 ou 16/9 — et le letterbox résiduel reste faible, sur fond neutre.
+ * Recadrer en `cover` amputait la photo d'un citoyen sans qu'il l'ait choisi.
+ *
+ * La VIGNETTE garde `cover` : sa boîte est carrée et bornée par construction
+ * (`isThumbnailVariant`), et l'y laisser `contain` ferait flotter chaque image
+ * entre deux bandes dans une grille. Les cartes de découverte, elles, ne passent
+ * pas par ce cadre et ne sont donc pas concernées.
+ *
+ * Le viewer plein écran reste `contain` — voir `viewerObjectFit`.
+ */
+export function feedObjectFitForKind(
+  variant: PublicationMediaFrameVariant,
+  kind: "image" | "video",
+): PublicationMediaObjectFit {
+  void kind;
+  return isThumbnailVariant(variant) ? "cover" : "contain";
 }
 
 /** object-fit du viewer plein écran — toujours contain. */

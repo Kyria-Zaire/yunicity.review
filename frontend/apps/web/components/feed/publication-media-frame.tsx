@@ -56,7 +56,7 @@ export function PublicationMediaFrame({
   applyAspectRatio = true,
 }: PublicationMediaFrameProps) {
   const resolved = resolveOrientation(variant, orientation);
-  const objectFit = feedObjectFitForKind(kind);
+  const objectFit = feedObjectFitForKind(variant, kind);
 
   const style: CSSProperties =
     variant === "viewer"
