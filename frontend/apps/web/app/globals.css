@@ -5279,6 +5279,28 @@ body {
     border-right-width: 0;
   }
 
+  /*
+   * La carte événement échappe au padding comme `.feed-publication-media`, et
+   * pour la même raison : son visuel est pleine largeur.
+   *
+   * Elle le faisait avec l'utilitaire `-mx-5 -mt-5` écrit dans son composant,
+   * soit 1.25rem — la compensation du padding DESKTOP `p-5`. Or la règle
+   * ci-dessus ramène le padding de la carte à `1rem` en mobile : la marge
+   * négative excédait donc le padding réel, et le média sortait de sa carte.
+   * Invisible à l'œil, la carte étant en `overflow: hidden`, mais la boîte
+   * débordait — et c'est elle que mesure la spec 19.
+   *
+   * La compensation suit désormais le padding réel, exactement comme la
+   * publication ordinaire. Seul le débordement HORIZONTAL était démontré par une
+   * assertion ; le vertical procède de la même arithmétique et aurait laissé le
+   * bloc décalé vers le haut.
+   */
+  .feed-publication-event-editorial {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    margin-top: -1rem;
+  }
+
   /* L'image suit le cadre : bord a bord mobile, donc aucun rayon. */
   .feed-publication-media-img {
     border-radius: 0;
