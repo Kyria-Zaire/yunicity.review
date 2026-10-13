@@ -420,10 +420,42 @@ test.describe("Desktop header geometry — anti-collision R6", () => {
       expect(nav.ctrlKRect!.left, `Ctrl K deborde — ${ctx}`).toBeGreaterThanOrEqual(nav.explorerRect!.left);
       expect(nav.ctrlKRect!.right, `Ctrl K deborde — ${ctx}`).toBeLessThanOrEqual(nav.explorerRect!.right);
 
-      // La nav dispose d'une largeur propre, superieure au corps Feed.
-      expect(nav.inner!.width, `nav plafonnee au corps Feed — ${ctx}`).toBeGreaterThan(
-        nav.groupWrapper!.width,
-      );
+      /*
+       * La nav tient sa largeur de SON propre jeton, pas du corps Feed.
+       *
+       * Le contrat de design le fixe deja, et un test unitaire le verrouille :
+       * « gives the top nav its own width based on --web-shell-max »
+       * (`citizen-authenticated-shell.test.ts`). Cette assertion-ci exigeait
+       * `nav.inner > corps Feed`, ce qui est AUTRE CHOSE : `.feed-app-shell-content`
+       * n'est pas plafonne par la coquille, donc il depasse 90rem des 1472px de
+       * large — et la nav, elle, s'y arrete par conception.
+       *
+       * On verifie donc l'independance reelle : la nav vaut `min(fenetre,
+       * --web-shell-max)`, quelle que soit la largeur du corps. Recoupler la nav
+       * au corps Feed ferait echouer ceci, ce que la comparaison precedente ne
+       * garantissait pas — elle passait aussi par accident.
+       */
+      const coquilleMax = await page.evaluate(() => {
+        const sonde = document.createElement("div");
+        sonde.style.width = "var(--web-shell-max)";
+        sonde.style.position = "absolute";
+        sonde.style.visibility = "hidden";
+        document.body.appendChild(sonde);
+        const largeur = sonde.getBoundingClientRect().width;
+        sonde.remove();
+        return largeur;
+      });
+      const attendue = Math.min(width, coquilleMax);
+      expect(
+        Math.abs(nav.inner!.width - attendue),
+        `nav hors de sa largeur propre — attendue ${attendue}, vue ${nav.inner!.width} — ${ctx}`,
+      ).toBeLessThanOrEqual(1);
+
+      // Centree dans la fenetre : les deux gouttieres sont egales.
+      expect(
+        Math.abs(nav.inner!.left - (width - nav.inner!.right)),
+        `nav decentree — ${ctx}`,
+      ).toBeLessThanOrEqual(1);
 
       // Fumee corps Feed : le decouplage n'a pas deplace le contenu.
       await expect(page.locator(".feed-desktop-layout")).toHaveCount(1);
