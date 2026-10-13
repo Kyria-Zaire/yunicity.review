@@ -97,7 +97,32 @@ export function expectExactlyOneMain(
   expect(state.main, `${route} doit rendre exactement un <main>`).toBe(1);
   expect(state.nestedMain, `<main> imbriqué sur ${route}`).toBe(0);
   expect(state.roleMainConcurrent, `role="main" concurrent sur ${route}`).toBe(0);
+
+  /*
+   * Zéro ou une navigation principale visible est une DÉCISION DE SURFACE ; deux
+   * est toujours un défaut d'accessibilité. Relevé sur les six routes concernées,
+   * à 1366 / 900 / 390 :
+   *
+   *   /map                        0 · 1 · 1
+   *   /organizations/request      0 · 0 · 0   (canvas création, sans chrome global)
+   *   /discussions/new            1 · 1 · 0
+   *   /sortir/create              1 · 0 · 0
+   *   /tribes/create              1 · 1 · 0
+   *   /organizations/me/…/new     1 · 1 · 0
+   *
+   * Exiger EXACTEMENT une navigation imposait donc un tableau route × largeur de
+   * dix-huit cases, qui aurait figé chaque choix de maquette et serait devenu
+   * faux au premier ajustement responsive — sans rien protéger de plus. Jamais
+   * aucune route n'en expose deux : c'est cette borne-là qu'on tient.
+   *
+   * `requirePrimaryNav` reste honoré quand un appelant exige explicitement la
+   * présence : la spec 08 en fait son sujet, et ce n'est pas le cas ici.
+   */
+  expect(
+    state.visibleMainNavigation,
+    `navigation principale dupliquée sur ${route} (${state.visibleMainNavigation} visibles)`,
+  ).toBeLessThanOrEqual(1);
   if (requirePrimaryNav) {
-    expect(state.visibleMainNavigation, `navigation principale visible sur ${route}`).toBe(1);
+    expect(state.visibleMainNavigation, `navigation principale absente sur ${route}`).toBe(1);
   }
 }

@@ -211,13 +211,15 @@ test.describe("Navbar V3 — chrome citoyen", () => {
       },
       {
         path: "/map",
-        ready: (page) =>
-          page
-            .getByText("Carte indisponible : configurez NEXT_PUBLIC_GOOGLE_MAPS_API_KEY.", {
-              exact: true,
-            })
-            .filter({ visible: true })
-            .first(),
+        /*
+         * Le marqueur valait le repli de configuration, qui ne paraît que SANS
+         * clé Maps. `.env.local` en porte une : la carte se charge, le repli
+         * n'existe pas, et le test attendait soixante secondes un texte qui ne
+         * viendrait jamais. Un marqueur de disponibilité ne doit pas dépendre
+         * d'une variable d'environnement. Le titre visible, lui, est présent
+         * dans les deux cas.
+         */
+        ready: (page) => page.locator("h1:visible, h2:visible").first(),
       },
       {
         path: "/sortir",
