@@ -659,15 +659,29 @@ test.describe("C3.1-R1D — Feed mobile éditorial unifié", () => {
       "1366 : carte desktop aux angles droits",
     ).toBeGreaterThan(0);
 
-    // Le média desktop garde son propre traitement (rayon non nul) : les règles
-    // bord à bord mobiles n'ont pas fui.
+    /*
+     * Le média desktop garde son traitement arrondi : les règles bord à bord
+     * mobiles n'ont pas fui.
+     *
+     * Le rayon est porté par le CADRE, pas par l'image. Depuis l'unification des
+     * surfaces média (MEDIA-02), `PublicationMediaFrame` porte `rounded-xl` et
+     * `overflow-hidden` ; l'image le remplit sans arrondi propre. Ce test
+     * mesurait l'image et lisait donc 0 — un rayon qui n'a jamais été le sien.
+     *
+     * On vérifie les DEUX faits qui produisent l'arrondi visible : le cadre a un
+     * rayon, et il écrête. Un rayon sans écrêtage laisserait les angles carrés à
+     * l'écran, ce que l'ancienne assertion ne détectait pas.
+     */
     const media = postMedia(card);
     await expect(media).toBeVisible();
-    const mediaRadius = await computed(media, ["border-top-left-radius"]);
+    const cadre = media.locator("xpath=ancestor::*[@data-publication-media-frame][1]");
+    await expect(cadre, "1366 : média hors du cadre partagé").toHaveCount(1);
+    const cadreStyle = await computed(cadre, ["border-top-left-radius", "overflow"]);
     expect(
-      px(mediaRadius["border-top-left-radius"]),
-      "1366 : média desktop aux angles droits",
+      px(cadreStyle["border-top-left-radius"]),
+      "1366 : cadre média desktop aux angles droits",
     ).toBeGreaterThan(0);
+    expect(cadreStyle["overflow"], "1366 : cadre média sans écrêtage").not.toBe("visible");
 
     await expectNoDocumentOverflow(page, "1366");
   });
