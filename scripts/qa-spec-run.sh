@@ -66,7 +66,12 @@ case "$MOTEUR" in
     ;;
 esac
 
-echo "######## PROTOCOLE QA — spec=$SPEC moteur=$NOM_MOTEUR"
+# Identifiant de run : les journaux ne doivent JAMAIS s'ecraser. Un chemin fixe
+# detruisait la preuve du passage precedent a chaque relance — et c'est
+# precisement entre deux passages qu'on compare.
+HORODATAGE=$(date +%Y%m%d-%H%M%S)
+
+echo "######## PROTOCOLE QA — spec=$SPEC moteur=$NOM_MOTEUR run=$HORODATAGE"
 
 # ── 1. Preconditions ─────────────────────────────────────────────────────────
 echo "== 1/5 preconditions =="
@@ -118,7 +123,7 @@ echo "== 2/5 baseline dediee =="
 # Le journal ENTIER est conserve — les migrations y figurent, et c'est la qu'on
 # les cherche en cas d'echec. Seul le relevé final est affiche : noyer le verdict
 # sous soixante lignes de migrations rend le resultat illisible.
-JOURNAL_BASELINE="${TMPDIR:-/tmp}/yunicity-qa-spec/baseline-$SPEC.log"
+JOURNAL_BASELINE="${TMPDIR:-/tmp}/yunicity-qa-spec/baseline-$SPEC-$HORODATAGE.log"
 mkdir -p "$(dirname "$JOURNAL_BASELINE")"
 set +e
 ( cd "$RACINE" && sh scripts/qa-playwright-baseline.sh ) > "$JOURNAL_BASELINE" 2>&1
@@ -168,11 +173,19 @@ done
 
 # ── 4. Mesure ────────────────────────────────────────────────────────────────
 echo "== 4/5 mesure =="
-JOURNAL="${TMPDIR:-/tmp}/yunicity-qa-spec/$NOM_MOTEUR-$SPEC.log"
+JOURNAL="${TMPDIR:-/tmp}/yunicity-qa-spec/$NOM_MOTEUR-$SPEC-$HORODATAGE.log"
 mkdir -p "$(dirname "$JOURNAL")"
 set +e
+# `outputDir` vaut `test-results` dans la config, et Playwright le VIDE au
+# demarrage de chaque run. Enchainer les specs detruisait donc les captures et
+# les traces des precedentes : seul le journal texte survivait, et c'est
+# precisement la capture qui tranche un « element not found ». Chaque run ecrit
+# desormais dans son propre repertoire horodate, comme son journal.
+ARTEFACTS="${TMPDIR:-/tmp}/yunicity-qa-spec/artefacts/$NOM_MOTEUR-$SPEC-$HORODATAGE"
+mkdir -p "$ARTEFACTS"
 ( cd "$WEB_DIR" && npx playwright test "e2e/functional/$SPEC.spec.ts" \
-    $OPT_MOTEUR --reporter=list --workers=1 --retries=0 ) > "$JOURNAL" 2>&1
+    $OPT_MOTEUR --reporter=list --workers=1 --retries=0 \
+    --output="$ARTEFACTS" ) > "$JOURNAL" 2>&1
 RC=$?
 set -e
 
@@ -192,6 +205,11 @@ if [ "$quota" -gt 0 ]; then
   echo "    ATTENTION quota atteint pendant la mesure ($quota) — resultat PROVISOIRE"
 fi
 echo "  journal complet : $JOURNAL"
+if [ -n "$(ls -A "$ARTEFACTS" 2>/dev/null)" ]; then
+  echo "  artefacts (captures, traces) : $ARTEFACTS"
+else
+  rmdir "$ARTEFACTS" 2>/dev/null || true
+fi
 
 # Le code de sortie du protocole EST celui de Playwright : un echec reste
 # propage, un succes reste un succes.
