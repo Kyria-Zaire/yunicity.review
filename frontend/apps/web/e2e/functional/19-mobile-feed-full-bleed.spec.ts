@@ -3,7 +3,7 @@ import type { Locator, Page } from "@playwright/test";
 import { expect, testCitizen as test } from "../fixtures";
 import { COLD_START_TEST_TIMEOUT, COLD_START_TIMEOUT } from "../cold-start";
 import { publishCitizenPostWithMedia } from "../feed-media-fixture";
-import { makeSolidPngDataUri } from "../png-fixture";
+import { makeSolidPngBuffer } from "../png-fixture";
 import { scrollToStableBottom } from "../scroll";
 
 /**
@@ -42,7 +42,24 @@ const MOBILE_VIEWPORTS = [
 
 /** Portrait 9:16 — le format que R1C interdit de recadrer. */
 const PORTRAIT_PNG = { width: 360, height: 640 } as const;
-const PORTRAIT_DATA_URI = makeSolidPngDataUri(
+
+/*
+ * Chemin média CONFORME à l'allowlist produit.
+ *
+ * Ces fixtures portaient une URI `data:`, qu'`useAuthorizedMediaSource` refuse —
+ * et doit refuser. Son contrat est « GET Bearer → Blob → object URL », et
+ * `resolveAuthorizedApiMediaUrl` rejette avant tout fetch tout ce qui n'est pas
+ * un chemin `story-media` allowlisté : `data:` lève `PROTOCOL`, une origine
+ * externe lève aussi, et l'en-tête `Authorization` n'est jamais émis vers elles.
+ * C'est une garde de sécurité, avec ses propres tests.
+ *
+ * Aucune image n'était donc rendue, et le test rapportait « média absent ». La
+ * fixture simule désormais la livraison telle que l'API la fait : un chemin
+ * allowlisté, servi en octets PNG par `stubAuthorizedMedia`.
+ */
+const PORTRAIT_MEDIA_PATH =
+  "/api/v1/story-media/aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa/bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb.png";
+const PORTRAIT_PNG_BUFFER = makeSolidPngBuffer(
   PORTRAIT_PNG.width,
   PORTRAIT_PNG.height,
   0xef,
@@ -114,7 +131,7 @@ function baseFixture(id: string, marker: string, author: FeedAuthorFixture): Fee
     city: "Reims",
     title: null,
     body: marker,
-    media_url: PORTRAIT_DATA_URI,
+    media_url: PORTRAIT_MEDIA_PATH,
     location: null,
     like_count: 3,
     comment_count: 1,
@@ -165,7 +182,25 @@ const CONSUMER_FIXTURES: FeedPostFixture[] = [
   },
 ];
 
+/**
+ * Livraison média authentifiée, simulée fidèlement.
+ *
+ * L'application émet un GET porteur vers le chemin allowlisté puis construit un
+ * object URL depuis le Blob reçu. On sert donc de vrais octets PNG, avec le type
+ * de contenu correspondant — pas une redirection ni une URI embarquée.
+ */
+async function stubAuthorizedMedia(page: Page): Promise<void> {
+  await page.route("**/api/v1/story-media/**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "image/png",
+      body: PORTRAIT_PNG_BUFFER,
+    });
+  });
+}
+
 async function stubFeedWithConsumers(page: Page): Promise<void> {
+  await stubAuthorizedMedia(page);
   await page.route("**/api/v1/feed?*", async (route) => {
     await route.fulfill({
       status: 200,
