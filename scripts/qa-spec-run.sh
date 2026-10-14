@@ -196,6 +196,22 @@ done
 echo "== 4/5 mesure =="
 JOURNAL="${TMPDIR:-/tmp}/yunicity-qa-spec/$NOM_MOTEUR-$SPEC-$HORODATAGE.log"
 mkdir -p "$(dirname "$JOURNAL")"
+
+# ── Provenance de la mesure, ECRITE DANS LE JOURNAL ─────────────────────────
+# Le journal disait ce qui avait ete mesure, jamais SUR QUOI. Reconstituer un
+# bilan obligeait donc a recouper des horodatages avec une memoire externe, et
+# un resultat ne pouvait pas etre verifie seul. Chaque journal porte desormais
+# son commit, son etat d'arbre et le build servi.
+SHA=$(cd "$RACINE" && git rev-parse --short HEAD 2>/dev/null || echo "inconnu")
+SALE=$(cd "$RACINE" && git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+BUILD=$(cat "$WEB_DIR/.next-build/BUILD_ID" 2>/dev/null || echo "inconnu")
+{
+  echo "### PROVENANCE spec=$SPEC moteur=$NOM_MOTEUR"
+  echo "### commit=$SHA arbre_modifie=$SALE build=$BUILD date=$(date '+%Y-%m-%d %H:%M:%S')"
+  echo "###"
+} > "$JOURNAL"
+echo "  provenance : commit=$SHA build=$BUILD arbre_modifie=$SALE"
+
 set +e
 # `outputDir` vaut `test-results` dans la config, et Playwright le VIDE au
 # demarrage de chaque run. Enchainer les specs detruisait donc les captures et
@@ -206,7 +222,7 @@ ARTEFACTS="${TMPDIR:-/tmp}/yunicity-qa-spec/artefacts/$NOM_MOTEUR-$SPEC-$HORODAT
 mkdir -p "$ARTEFACTS"
 ( cd "$WEB_DIR" && npx playwright test "e2e/functional/$SPEC.spec.ts" \
     $OPT_MOTEUR $OPT_ECHEC --reporter=list --workers=1 --retries=0 \
-    --output="$ARTEFACTS" ) > "$JOURNAL" 2>&1
+    --output="$ARTEFACTS" ) >> "$JOURNAL" 2>&1
 RC=$?
 set -e
 
