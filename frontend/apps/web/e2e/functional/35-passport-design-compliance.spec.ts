@@ -1,3 +1,5 @@
+import type { Page } from "@playwright/test";
+
 import { expect, testCitizen as test } from "../fixtures";
 
 /**
@@ -19,6 +21,36 @@ const SHELL_VIEWPORTS = [
   { name: "shell-1920", width: 1920, height: 1080 },
 ] as const;
 
+/**
+ * Attend que /passport ait RENDU son contenu, pas seulement un titre.
+ *
+ * La spec attendait `getByRole("heading", { name: /passport/i })`. Mesuré :
+ * `PassportPage` remplace TOUTE la vue par `PassportLoadingState` tant que les
+ * offres chargent, et l'en-tête éditorial — donc chaque `<section>` — vit à
+ * l'intérieur de ce conditionnel. Les assertions structurelles mesuraient donc
+ * un état transitoire : `section:visible` renvoyait 0 alors que la page allait
+ * en rendre onze.
+ *
+ * Le héros est le bon jalon : il porte un marqueur stable et n'existe que dans
+ * la vue rendue. Attente PLUS stricte, aucune tolérance élargie.
+ */
+async function attendrePassportRendu(page: Page): Promise<void> {
+  /*
+   * Attendre le héros ne suffit pas, et la mesure l'a montré : l'attente
+   * passait, puis `section:visible` renvoyait 0 vingt lignes plus loin. La vue
+   * se démonte ENTRE les deux — `PassportPage` repose tout l'écran sur
+   * `PassportLoadingState` dès que les offres se rechargent.
+   *
+   * On attend donc une vue STABLE, dans cet ordre : plus d'état de chargement
+   * dans le contenu principal, héros visible, sections réellement présentes.
+   */
+  await expect(page.locator("main [role=status]")).toHaveCount(0, { timeout: 30_000 });
+  await expect(page.locator("[data-passport-desktop-hero]")).toBeVisible({ timeout: 30_000 });
+  await expect
+    .poll(() => page.locator("section:visible").count(), { timeout: 30_000 })
+    .toBeGreaterThan(0);
+}
+
 test.describe("Passport design compliance", () => {
   for (const vp of VIEWPORTS) {
     test(`${vp.name}: structural invariants`, async ({ citizenAContext }) => {
@@ -34,7 +66,7 @@ test.describe("Passport design compliance", () => {
       });
 
       await page.goto("/passport");
-      await expect(page.getByRole("heading", { name: /passport/i }).first()).toBeVisible();
+      await attendrePassportRendu(page);
 
       // Single main landmark
       const mains = await page.locator("main").count();
@@ -48,8 +80,18 @@ test.describe("Passport design compliance", () => {
       const heroCount = await heroSections.count();
       expect(heroCount, "exactly one visible hero section").toBeGreaterThanOrEqual(1);
 
-      // No gradient or blur on hero
-      const heroElement = heroSections.first();
+      /*
+       * Le héros est désigné par son MARQUEUR, pas par une heuristique.
+       *
+       * Les assertions de style portaient sur `heroSections.first()`, c'est-à-
+       * dire la première `section:visible` contenant un `h1`, un `h2` ou une
+       * classe « hero ». Relevé : 11 sections candidates à 390 px, et la
+       * première était l'en-tête éditorial (fond transparent) — jamais le
+       * héros. L'assertion « pas de gradient » passait donc à vide, alors que
+       * le héros réel en portait un.
+       */
+      const heroElement = page.locator("[data-passport-desktop-hero]");
+      await expect(heroElement, "héros Passport introuvable").toHaveCount(1);
       const heroStyles = await heroElement.evaluate((el) => {
         const s = getComputedStyle(el);
         return {
@@ -68,12 +110,33 @@ test.describe("Passport design compliance", () => {
       const heroBg = await heroElement.evaluate((el) => getComputedStyle(el).backgroundColor);
       expect(heroBg, "hero uses premium surface #0B1533").toBe("rgb(11, 21, 51)");
 
-      // Single offers section (no duplication)
-      const offersHeadings = await page
-        .locator("h2:visible, h3:visible")
-        .filter({ hasText: /avantage|privilège/i })
-        .count();
-      expect(offersHeadings, "at most one offers heading visible").toBeLessThanOrEqual(1);
+      /*
+       * Et aucun descendant ne doit réintroduire un gradient sur le héros :
+       * c'est un calque enfant qui en portait un, invisible à une mesure
+       * limitée à la racine.
+       */
+      const gradientsDansHero = await heroElement.evaluate(
+        (el) =>
+          [el, ...el.querySelectorAll("*")].filter((node) =>
+            getComputedStyle(node).backgroundImage.includes("gradient"),
+          ).length,
+      );
+      expect(gradientsDansHero, "un gradient subsiste dans le héros Passport").toBe(0);
+
+      /*
+       * Section Offres unique — mesurée sur son ANCRE, pas par correspondance
+       * de texte.
+       *
+       * L'assertion comptait tout `h2`/`h3` visible contenant « avantage » ou
+       * « privilège ». Relevé : deux correspondances, et aucune duplication.
+       * Le `h2` « Avantages à découvrir » est le titre réel de la grille
+       * (`PASSPORT_DESKTOP_OFFERS_TITLE`) ; le `h3` « Débloquez un avantage »
+       * est la troisième étape d'un panneau explicatif — aucun rapport avec les
+       * offres. La règle visée est « la section Offres n'est pas dupliquée »,
+       * et la grille porte pour cela un identifiant stable.
+       */
+      const offersHeadings = await page.locator("#passport-desktop-offers-title:visible").count();
+      expect(offersHeadings, "section Offres dupliquée").toBeLessThanOrEqual(1);
 
       // No duplicate IDs
       const duplicateIds = await page.evaluate(() => {
@@ -116,7 +179,7 @@ test.describe("Passport design compliance", () => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
 
       await page.goto("/passport");
-      await expect(page.getByRole("heading", { name: /passport/i }).first()).toBeVisible();
+      await attendrePassportRendu(page);
 
       // Main exists
       await expect(page.locator("main")).toHaveCount(1);
@@ -136,7 +199,7 @@ test.describe("Passport design compliance", () => {
     await page.setViewportSize({ width: 1366, height: 900 });
 
     await page.goto("/passport");
-    await expect(page.getByRole("heading", { name: /passport/i }).first()).toBeVisible();
+    await attendrePassportRendu(page);
 
     // Wait for initial load to settle
     await page.waitForTimeout(2000);

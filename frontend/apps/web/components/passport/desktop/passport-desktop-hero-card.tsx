@@ -39,18 +39,32 @@ export function PassportDesktopHeroCard({
   const currentLabel = formatPassportDesktopLevelName(levelView.level.label);
 
   return (
+    /*
+     * Surface premium canonique — §0 Brand Identity (306F).
+     *
+     * Ce héros portait `bg-yunicity-primary` (#2A2FFF) ET un `bg-gradient-to-r`.
+     * Deux écarts au canon : le jeton de la carte Passport est
+     * `--yunicity-premium-surface` (#0B1533, « surface navy pleine, validée
+     * DA »), et les gradients sont proscrits. Relevé en navigateur avant
+     * correction : AUCUN élément de /passport ne rendait #0B1533 — les deux
+     * seuls composants qui l'appliquent (`passport-hero`,
+     * `passport-mobile-hero-card`) ne sont montés nulle part.
+     *
+     * Contraste mesuré sur la surface canonique : blanc 100 % -> 17,96:1,
+     * 90 % -> 14,66, 85 % -> 13,08, 80 % -> 11,65, 75 % -> 10,39,
+     * 70 % -> 9,16. Tous au-dessus d'AA, et au-dessus des 7,12:1 que donnait
+     * #2A2FFF. L'image territoriale passe de 25 % à 15 % : le pire cas
+     * théorique (pixel blanc sous le texte le plus faible) tient alors 6,58:1,
+     * contre 4,94:1 auparavant.
+     */
     <section
       id="passport-desktop-overview"
-      className="relative scroll-mt-28 overflow-hidden rounded-[1.35rem] bg-yunicity-primary text-white shadow-[0_18px_40px_rgba(37,99,235,0.22)]"
+      className="relative scroll-mt-28 overflow-hidden rounded-[1.35rem] bg-yunicity-premium text-yunicity-premium-fg shadow-[0_18px_40px_rgba(11,21,51,0.28)]"
       data-passport-desktop-hero=""
     >
       <div
-        className="pointer-events-none absolute inset-y-0 right-0 w-[46%] bg-cover bg-center opacity-25"
+        className="pointer-events-none absolute inset-y-0 right-0 w-[46%] bg-cover bg-center opacity-15"
         style={{ backgroundImage: `url(${HERO_IMAGE_URL})` }}
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-yunicity-primary via-yunicity-primary/92 to-yunicity-primary/70"
         aria-hidden
       />
 
