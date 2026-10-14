@@ -186,7 +186,14 @@ test.describe("C3-FEED-R2B - unified context stream", () => {
       const state = await streamState(authedPage);
       expect(await authedPage.locator(STREAM).count()).toBe(1);
       expect(new Set(state.postIds).size).toBe(state.postIds.length);
-      expect(await authedPage.locator(`${STREAM} article`).count()).toBe(state.postIds.length);
+      // Un article PAR PUBLICATION : le comptage doit être borné aux entrées
+      // « post ». Le teaser vidéo rend lui aussi un <article>
+      // (feed-video-stream-item.tsx), donc `${STREAM} article` valait
+      // publications + 1 et ne pouvait jamais égaler le nombre de posts.
+      expect(
+        await authedPage.locator(`${STREAM} li[data-feed-stream-item="post"] article`).count(),
+        "un article par publication",
+      ).toBe(state.postIds.length);
       expect(state.videos).toBe(1);
       expect(state.contextFamilies).toEqual([...expectedContextFamilies(viewport.width)]);
       expect(state.modulePositions).toEqual([...expectedModulePositions(viewport.width)]);
