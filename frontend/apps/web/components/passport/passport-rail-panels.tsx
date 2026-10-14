@@ -40,6 +40,38 @@ import {
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+/**
+ * Variante de montage d'un panneau de rail. Elle existait déjà pour la mise en
+ * forme ; elle porte désormais aussi la PORTÉE des identifiants.
+ */
+export type PassportPanelVariant = "rail" | "medium";
+
+/**
+ * ── Pourquoi une portée ─────────────────────────────────────────────────────
+ * Ces panneaux sont montés DEUX FOIS : une fois par le rail droit desktop, une
+ * fois par les blocs medium, les deux coexistant dans le DOM sous un portillon
+ * CSS. Leurs identifiants étant écrits en dur, la page rendait dix `id`
+ * dupliqués — mesuré sur /passport. Conséquences réelles : `getElementById`
+ * renvoie le PREMIER nœud, donc la navigation pouvait viser la copie masquée,
+ * et chaque `aria-labelledby` devenait ambigu.
+ *
+ * Le palier desktop garde ses identifiants historiques : toute référence
+ * existante (`#passport-desktop-qr` du héros, cibles de
+ * `passport-nav-contract`) reste valide. Seule la variante medium est
+ * préfixée.
+ */
+function panelId(variant: PassportPanelVariant, nom: string): string {
+  return `${variant === "medium" ? "passport-medium" : "passport-desktop"}-${nom}`;
+}
+
+/**
+ * Nom LOGIQUE du panneau, identique dans les deux variantes. La navigation
+ * s'en sert pour viser le panneau VISIBLE, quelle que soit la portée des `id`.
+ */
+function panelAnchor(nom: string): string {
+  return `passport-desktop-${nom}`;
+}
+
 function ActivityIcon({ tone }: { tone: PassportDesktopActivityItem["tone"] }) {
   const className = "h-4 w-4 shrink-0";
   if (tone === "green") return <CalendarDays className={`${className} text-emerald-600`} aria-hidden />;
@@ -52,7 +84,7 @@ type PassportQrPanelProps = {
   city: string;
   qrPayload: string | null;
   qrLoading: boolean;
-  variant?: "rail" | "medium";
+  variant?: PassportPanelVariant;
 };
 
 export function PassportQrPanel({
@@ -81,12 +113,13 @@ export function PassportQrPanel({
   return (
     <>
       <section
-        id="passport-desktop-qr"
+        id={panelId(variant, "qr")}
+        data-passport-anchor={panelAnchor("qr")}
         className="scroll-mt-28 feed-desktop-surface overflow-hidden"
-        aria-labelledby="passport-desktop-qr-title"
+        aria-labelledby={panelId(variant, "qr-title")}
       >
         <div className="border-b border-neutral-100 px-4 py-3">
-          <h2 id="passport-desktop-qr-title" className="text-sm font-bold text-neutral-900">
+          <h2 id={panelId(variant, "qr-title")} className="text-sm font-bold text-neutral-900">
             {PASSPORT_DESKTOP_QR_TITLE}
           </h2>
         </div>
@@ -166,12 +199,21 @@ export function PassportQrPanel({
 type PassportProgressPanelProps = {
   segmentProgress: PassportDesktopSegmentProgress;
   onOpenProgress: () => void;
+  variant?: PassportPanelVariant;
 };
 
-export function PassportProgressPanel({ segmentProgress, onOpenProgress }: PassportProgressPanelProps) {
+export function PassportProgressPanel({
+  segmentProgress,
+  onOpenProgress,
+  variant = "rail",
+}: PassportProgressPanelProps) {
   return (
-    <section className="feed-desktop-surface p-4" aria-labelledby="passport-desktop-progress-title">
-      <h2 id="passport-desktop-progress-title" className="text-sm font-bold text-neutral-900">
+    <section
+      className="feed-desktop-surface p-4"
+      data-passport-anchor={panelAnchor("progress")}
+      aria-labelledby={panelId(variant, "progress-title")}
+    >
+      <h2 id={panelId(variant, "progress-title")} className="text-sm font-bold text-neutral-900">
         {PASSPORT_DESKTOP_PROGRESS_TITLE}
       </h2>
       <p className="mt-3 text-3xl font-bold tabular-nums text-neutral-900">
@@ -202,17 +244,19 @@ export function PassportProgressPanel({ segmentProgress, onOpenProgress }: Passp
 
 type PassportSavedPanelProps = {
   savedOffers: PartnerOfferPublic[];
+  variant?: PassportPanelVariant;
 };
 
-export function PassportSavedPanel({ savedOffers }: PassportSavedPanelProps) {
+export function PassportSavedPanel({ savedOffers, variant = "rail" }: PassportSavedPanelProps) {
   return (
     <section
-      id="passport-desktop-saved"
+      id={panelId(variant, "saved")}
+      data-passport-anchor={panelAnchor("saved")}
       className="scroll-mt-28 feed-desktop-surface overflow-hidden"
-      aria-labelledby="passport-desktop-saved-title"
+      aria-labelledby={panelId(variant, "saved-title")}
     >
       <div className="border-b border-neutral-100 px-4 py-3">
-        <h2 id="passport-desktop-saved-title" className="text-sm font-bold text-neutral-900">
+        <h2 id={panelId(variant, "saved-title")} className="text-sm font-bold text-neutral-900">
           {PASSPORT_DESKTOP_SAVED_TITLE}
         </h2>
       </div>
@@ -278,17 +322,23 @@ export function PassportSavedPanel({ savedOffers }: PassportSavedPanelProps) {
 type PassportActivityPanelProps = {
   activityItems: PassportDesktopActivityItem[];
   onOpenHistory: () => void;
+  variant?: PassportPanelVariant;
 };
 
-export function PassportActivityPanel({ activityItems, onOpenHistory }: PassportActivityPanelProps) {
+export function PassportActivityPanel({
+  activityItems,
+  onOpenHistory,
+  variant = "rail",
+}: PassportActivityPanelProps) {
   return (
     <section
-      id="passport-desktop-history"
+      id={panelId(variant, "history")}
+      data-passport-anchor={panelAnchor("history")}
       className="scroll-mt-28 feed-desktop-surface overflow-hidden"
-      aria-labelledby="passport-desktop-activity-title"
+      aria-labelledby={panelId(variant, "activity-title")}
     >
       <div className="border-b border-neutral-100 px-4 py-3">
-        <h2 id="passport-desktop-activity-title" className="text-sm font-bold text-neutral-900">
+        <h2 id={panelId(variant, "activity-title")} className="text-sm font-bold text-neutral-900">
           {PASSPORT_DESKTOP_ACTIVITY_TITLE}
         </h2>
       </div>
@@ -328,17 +378,18 @@ export function PassportActivityPanel({ activityItems, onOpenHistory }: Passport
   );
 }
 
-export function PassportRulesPanel() {
+export function PassportRulesPanel({ variant = "rail" }: { variant?: PassportPanelVariant } = {}) {
   return (
     <section
       className="feed-desktop-surface p-4"
-      aria-labelledby="passport-desktop-rules-title"
+      data-passport-anchor={panelAnchor("rules")}
+      aria-labelledby={panelId(variant, "rules-title")}
       data-passport-rules-panel=""
     >
       <div className="flex items-start gap-3">
         <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-yunicity-primary" aria-hidden />
         <div>
-          <h2 id="passport-desktop-rules-title" className="text-sm font-bold text-neutral-900">
+          <h2 id={panelId(variant, "rules-title")} className="text-sm font-bold text-neutral-900">
             {PASSPORT_DESKTOP_RULES_TITLE}
           </h2>
           <p className="mt-2 text-xs leading-relaxed text-neutral-600">{PASSPORT_DESKTOP_RULES_BODY}</p>

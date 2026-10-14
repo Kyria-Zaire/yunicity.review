@@ -55,6 +55,32 @@ type PassportDesktopViewProps = {
   savedEventsCount?: number;
 };
 
+/**
+ * Résout une cible de navigation vers le panneau RÉELLEMENT VISIBLE.
+ *
+ * Les panneaux de rail sont montés deux fois — rail droit desktop et blocs
+ * medium — sous un portillon CSS. `document.getElementById` renvoyait donc le
+ * PREMIER nœud, qui peut être la copie masquée : le CTA « Scanner un QR code »
+ * et « Voir mon historique » pouvaient défiler vers un élément invisible.
+ *
+ * Chaque panneau expose son nom LOGIQUE en `data-passport-anchor`, identique
+ * dans les deux variantes, tandis que ses `id` sont cantonnés. On choisit donc
+ * parmi les candidats celui qui a une boîte, et on retombe sur l'identifiant
+ * direct pour les sections montées une seule fois (`…-how`, `…-offers`,
+ * `…-partners`, `…-overview`).
+ */
+function cibleNavigable(cible: string | undefined): HTMLElement | null {
+  if (!cible) return null;
+  const candidats = [
+    ...document.querySelectorAll<HTMLElement>(`[data-passport-anchor="${cible}"]`),
+  ];
+  const visible = candidats.find((element) => {
+    const rect = element.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  });
+  return visible ?? candidats[0] ?? document.getElementById(cible);
+}
+
 export function PassportDesktopView({
   profile,
   displayName,
@@ -140,8 +166,7 @@ export function PassportDesktopView({
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
-    const element = document.getElementById(targetId ?? "");
-    element?.scrollIntoView({ behavior: "smooth", block: "start" });
+    cibleNavigable(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
   const scrollTo = useCallback((targetId: string, navId: PassportNavId) => {
@@ -230,6 +255,12 @@ export function PassportDesktopView({
               levelView={levelView}
               segmentProgress={segmentProgress}
               onOpenHistory={() => scrollTo("passport-desktop-history", "history")}
+              onOpenQr={() =>
+                cibleNavigable("passport-desktop-qr")?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                })
+              }
             />
 
             <div className="passport-medium-only">
@@ -258,7 +289,7 @@ export function PassportDesktopView({
             <PassportDesktopPartnersRail partners={partners} />
             <PassportDesktopHowItWorks />
             <div className="passport-medium-only">
-              <PassportRulesPanel />
+              <PassportRulesPanel variant="medium" />
             </div>
           </>
         )}

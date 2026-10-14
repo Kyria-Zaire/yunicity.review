@@ -194,6 +194,134 @@ test.describe("Passport design compliance", () => {
     });
   }
 
+  /**
+   * ── Rendu par palier : une seule identité par élément ───────────────────────
+   *
+   * Les panneaux de rail sont montés deux fois — rail droit desktop et blocs
+   * medium — sous un portillon CSS, et leurs identifiants étaient écrits en
+   * dur : /passport rendait dix `id` dupliqués. Conséquences réelles mesurées :
+   * `getElementById` renvoie le PREMIER nœud, donc le CTA « Scanner un QR
+   * code » pouvait défiler vers la copie MASQUÉE, et chaque `aria-labelledby`
+   * devenait ambigu.
+   *
+   * On vérifie les quatre conséquences, aux trois paliers puis à travers les
+   * bascules : identités uniques (y compris masquées), CTA QR vers le panneau
+   * visible, références ARIA sans ambiguïté, et état préservé sans requête
+   * doublée.
+   */
+  for (const vp of VIEWPORTS) {
+    test(`${vp.name}: identités uniques et références ARIA résolues`, async ({
+      citizenAContext,
+    }) => {
+      const page = await citizenAContext.newPage();
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await page.goto("/passport");
+      await attendrePassportRendu(page);
+
+      const identites = await page.evaluate(() => {
+        const compte = new Map<string, number>();
+        for (const element of document.querySelectorAll("[id]")) {
+          compte.set(element.id, (compte.get(element.id) ?? 0) + 1);
+        }
+        const doublons = [...compte.entries()]
+          .filter(([, n]) => n > 1)
+          .map(([id, n]) => `${id} ×${n}`);
+
+        /* Chaque jeton d'une référence ARIA doit désigner UN seul élément. */
+        const ambigues: string[] = [];
+        for (const attribut of ["aria-labelledby", "aria-describedby"]) {
+          for (const element of document.querySelectorAll(`[${attribut}]`)) {
+            const valeur = element.getAttribute(attribut) ?? "";
+            for (const jeton of valeur.split(/\s+/).filter(Boolean)) {
+              const n = document.querySelectorAll(`[id="${jeton}"]`).length;
+              if (n !== 1) ambigues.push(`${attribut}=${jeton} -> ${n} cible(s)`);
+            }
+          }
+        }
+        return { doublons, ambigues };
+      });
+
+      expect(identites.doublons, "identifiants HTML dupliqués").toEqual([]);
+      expect(identites.ambigues, "références ARIA ambiguës").toEqual([]);
+
+      await page.close();
+    });
+
+    test(`${vp.name}: le CTA QR mène au panneau visible`, async ({ citizenAContext }) => {
+      const page = await citizenAContext.newPage();
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await page.goto("/passport");
+      await attendrePassportRendu(page);
+
+      const cta = page.getByRole("link", { name: /scanner un qr/i }).filter({ visible: true });
+      await expect(cta, "CTA QR absent").toHaveCount(1);
+      await cta.first().click();
+
+      /*
+       * La preuve porte sur le panneau VISIBLE, pas sur un identifiant : c'est
+       * exactement ce que l'ancre dupliquée cassait.
+       */
+      const panneau = page.locator('[data-passport-anchor="passport-desktop-qr"]').filter({
+        visible: true,
+      });
+      await expect(panneau, "aucun panneau QR visible").toHaveCount(1);
+      await expect(panneau.first()).toBeInViewport({ ratio: 0.2, timeout: 10_000 });
+
+      await page.close();
+    });
+  }
+
+  test("bascules : identités uniques, état préservé, aucune requête doublée", async ({
+    citizenAContext,
+  }) => {
+    const page = await citizenAContext.newPage();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/passport");
+    await attendrePassportRendu(page);
+    await page.waitForTimeout(1500);
+
+    const appels: string[] = [];
+    page.on("request", (requete) => {
+      const url = requete.url();
+      if (url.includes("/api/v1/")) appels.push(url.replace(/https?:\/\/[^/]+/, ""));
+    });
+
+    /* Un état d'interaction REEL, posé avant les bascules. */
+    const onglet = page.getByRole("button", { name: /^offres$/i }).filter({ visible: true });
+    if ((await onglet.count()) > 0) await onglet.first().click();
+    const recherche = page.getByRole("searchbox").or(page.locator('input[type="search"]'));
+    const aRecherche = (await recherche.count()) > 0;
+    if (aRecherche) await recherche.first().fill("cryptoportique");
+
+    const doublonsParPalier: Record<string, string[]> = {};
+    for (const vp of VIEWPORTS) {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await page.waitForTimeout(600);
+      doublonsParPalier[vp.name] = await page.evaluate(() => {
+        const compte = new Map<string, number>();
+        for (const element of document.querySelectorAll("[id]")) {
+          compte.set(element.id, (compte.get(element.id) ?? 0) + 1);
+        }
+        return [...compte.entries()].filter(([, n]) => n > 1).map(([id]) => id);
+      });
+    }
+
+    for (const [palier, doublons] of Object.entries(doublonsParPalier)) {
+      expect(doublons, `identifiants dupliqués après bascule vers ${palier}`).toEqual([]);
+    }
+
+    if (aRecherche) {
+      await expect(
+        recherche.first(),
+        "la saisie n'a pas survécu aux bascules",
+      ).toHaveValue("cryptoportique");
+    }
+
+    expect(appels, "requêtes relancées par les bascules").toEqual([]);
+
+    await page.close();
+  });
+
   test("network stability: no extra requests on resize", async ({ citizenAContext }) => {
     const page = await citizenAContext.newPage();
     await page.setViewportSize({ width: 1366, height: 900 });

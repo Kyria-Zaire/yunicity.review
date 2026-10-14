@@ -24,6 +24,13 @@ type PassportDesktopHeroCardProps = {
   levelView: PassportLevelView;
   segmentProgress: PassportDesktopSegmentProgress;
   onOpenHistory: () => void;
+  /**
+   * Défilement vers le panneau QR VISIBLE. Le lien garde sa sémantique et son
+   * `href` — il reste la cible de repli — mais `#passport-desktop-qr` ne
+   * désigne que la variante desktop : sous 1024 px, le panneau visible est
+   * celui du bloc medium, et seul le résolveur sait lequel l'est.
+   */
+  onOpenQr?: () => void;
 };
 
 export function PassportDesktopHeroCard({
@@ -32,6 +39,7 @@ export function PassportDesktopHeroCard({
   levelView,
   segmentProgress,
   onOpenHistory,
+  onOpenQr,
 }: PassportDesktopHeroCardProps) {
   const nextLabel = formatPassportDesktopLevelName(
     levelView.nextLevelLabel ?? levelView.nextLevel?.label ?? "",
@@ -119,6 +127,14 @@ export function PassportDesktopHeroCard({
           <div className="flex flex-row gap-2.5">
             <Link
               href="#passport-desktop-qr"
+              onClick={
+                onOpenQr
+                  ? (event) => {
+                      event.preventDefault();
+                      onOpenQr();
+                    }
+                  : undefined
+              }
               className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-3 py-3 text-center text-sm font-semibold text-yunicity-primary transition hover:bg-white/95 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               <QrCode className="h-4 w-4 shrink-0" aria-hidden />

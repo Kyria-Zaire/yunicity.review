@@ -49,7 +49,11 @@ export function PassportMediumSummaryRow({
         qrLoading={qrLoading}
         variant="medium"
       />
-      <PassportProgressPanel segmentProgress={segmentProgress} onOpenProgress={onOpenProgress} />
+      <PassportProgressPanel
+        segmentProgress={segmentProgress}
+        onOpenProgress={onOpenProgress}
+        variant="medium"
+      />
     </div>
   );
 }
@@ -65,8 +69,12 @@ export function PassportMediumDualPanel({
       data-passport-medium-dual-panel=""
       aria-label="Offres enregistrées et activité"
     >
-      <PassportSavedPanel savedOffers={savedOffers} />
-      <PassportActivityPanel activityItems={activityItems} onOpenHistory={onOpenHistory} />
+      <PassportSavedPanel savedOffers={savedOffers} variant="medium" />
+      <PassportActivityPanel
+        activityItems={activityItems}
+        onOpenHistory={onOpenHistory}
+        variant="medium"
+      />
     </div>
   );
 }
