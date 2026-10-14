@@ -37,7 +37,7 @@ import {
   buildPassportLevel,
   buildPassportLevelFromReputation,
 } from "@yunicity/utils";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export type { PassportNavId as PassportDesktopNavId };
 
@@ -188,6 +188,49 @@ export function PassportDesktopView({
     });
   }, []);
 
+  /*
+   * ── Ancres d'URL et historique ─────────────────────────────────────────────
+   *
+   * Cantonner les identifiants par variante a reglé les doublons, mais a créé
+   * un effet que seule une vérification d'ancre révèle : `#passport-desktop-qr`
+   * ne désigne RIEN sous 1024 px, où le panneau visible porte
+   * `passport-medium-qr`. Le défilement natif du navigateur ne peut donc plus
+   * aboutir à ce palier — avant, l'ancre dupliquée visait le premier nœud,
+   * éventuellement masqué : cassée autrement, mais elle visait.
+   *
+   * On résout donc l'ancre côté client, vers le panneau VISIBLE, à l'arrivée
+   * comme à chaque changement d'historique. `popstate` ET `hashchange` sont
+   * écoutés : `history.pushState` ne déclenche pas `hashchange`, et le
+   * précédent/suivant entre deux URL à ancre ne déclenche pas toujours les
+   * deux.
+   */
+  useEffect(() => {
+    const resoudreAncre = () => {
+      const ancre = window.location.hash.replace(/^#/, "");
+      if (!ancre) return;
+      // Laisser le rendu se poser : la visibilité se mesure sur une boîte.
+      requestAnimationFrame(() => {
+        cibleNavigable(ancre)?.scrollIntoView({ behavior: "auto", block: "start" });
+      });
+    };
+    resoudreAncre();
+    window.addEventListener("hashchange", resoudreAncre);
+    window.addEventListener("popstate", resoudreAncre);
+    return () => {
+      window.removeEventListener("hashchange", resoudreAncre);
+      window.removeEventListener("popstate", resoudreAncre);
+    };
+  }, []);
+
+  /** Ouvre une ancre : URL partageable, entrée d'historique, panneau visible. */
+  const ouvrirAncre = useCallback((ancre: string) => {
+    const cible = cibleNavigable(ancre);
+    if (window.location.hash !== `#${ancre}`) {
+      window.history.pushState(null, "", `#${ancre}`);
+    }
+    cible?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
   const isOffers = activeNav === "offers";
 
   return (
@@ -255,12 +298,7 @@ export function PassportDesktopView({
               levelView={levelView}
               segmentProgress={segmentProgress}
               onOpenHistory={() => scrollTo("passport-desktop-history", "history")}
-              onOpenQr={() =>
-                cibleNavigable("passport-desktop-qr")?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "start",
-                })
-              }
+              onOpenQr={() => ouvrirAncre("passport-desktop-qr")}
             />
 
             <div className="passport-medium-only">

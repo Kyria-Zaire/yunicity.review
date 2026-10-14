@@ -19,21 +19,32 @@ export function PublicHomeHeader() {
           wordmarkClassName="text-neutral-950"
         />
 
-        <nav
+        {/*
+          Zone cliquable des deux liens de nav : `inline-flex min-h-11
+          items-center`, l'idiome deja utilise par les liens de connexion et
+          d'inscription de ce meme en-tete. Mesure avant : 103x20 et 131x20 —
+          la hauteur du seul texte.
+
+          La TYPOGRAPHIE est inchangee (`text-sm font-medium`) : seule la boite
+          grandit. Aucun chevauchement possible — la rangee est deja haute de
+          44 px, imposee par les liens de connexion/inscription, et l'ecart
+          horizontal `gap-8` est conserve.
+      */}
+      <nav
           aria-label="Navigation principale"
           className="hidden items-center justify-center gap-8 lg:flex"
         >
           <Link
             href={PUBLIC_HOME_ROUTES.discover}
             data-public-home-control="header-discover"
-            className="text-sm font-medium text-neutral-800 transition hover:text-neutral-950"
+            className="inline-flex min-h-11 items-center text-sm font-medium text-neutral-800 transition hover:text-neutral-950"
           >
             {PUBLIC_HOME_COPY.headerDiscover}
           </Link>
           <Link
             href={PUBLIC_HOME_ROUTES.howItWorks}
             data-public-home-control="header-how-it-works"
-            className="text-sm font-medium text-neutral-800 transition hover:text-neutral-950"
+            className="inline-flex min-h-11 items-center text-sm font-medium text-neutral-800 transition hover:text-neutral-950"
           >
             {PUBLIC_HOME_COPY.headerHowItWorks}
           </Link>

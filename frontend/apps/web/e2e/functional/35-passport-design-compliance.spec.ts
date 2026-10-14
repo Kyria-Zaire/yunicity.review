@@ -322,6 +322,103 @@ test.describe("Passport design compliance", () => {
     await page.close();
   });
 
+  /**
+   * ── Ancres d'URL, historique, et saisie à travers les paliers ──────────────
+   *
+   * Cantonner les identifiants par variante a réglé les doublons, mais a créé
+   * un effet qu'aucune assertion ne couvrait : `#passport-desktop-qr` ne
+   * désigne RIEN sous 1024 px, où le panneau visible porte
+   * `passport-medium-qr`. Le défilement natif ne pouvait donc plus aboutir à ce
+   * palier. Ces quatre vérifications ferment ce trou.
+   */
+  for (const vp of VIEWPORTS) {
+    test(`${vp.name}: une URL à ancre atteint le panneau visible`, async ({ citizenAContext }) => {
+      const page = await citizenAContext.newPage();
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await page.goto("/passport#passport-desktop-qr");
+      await attendrePassportRendu(page);
+
+      const panneau = page
+        .locator('[data-passport-anchor="passport-desktop-qr"]')
+        .filter({ visible: true });
+      await expect(panneau, "aucun panneau QR visible").toHaveCount(1);
+      await expect(
+        panneau.first(),
+        "l'ancre d'URL n'a pas atteint le panneau visible",
+      ).toBeInViewport({ ratio: 0.2, timeout: 15_000 });
+
+      // Rechargement : même URL, même résultat.
+      await page.reload();
+      await attendrePassportRendu(page);
+      await expect(
+        page.locator('[data-passport-anchor="passport-desktop-qr"]').filter({ visible: true }).first(),
+        "l'ancre ne survit pas au rechargement",
+      ).toBeInViewport({ ratio: 0.2, timeout: 15_000 });
+
+      await page.close();
+    });
+  }
+
+  test("précédent / suivant : l'ancre reste résolue", async ({ citizenAContext }) => {
+    const page = await citizenAContext.newPage();
+    await page.setViewportSize({ width: 900, height: 1000 });
+    await page.goto("/passport");
+    await attendrePassportRendu(page);
+
+    const qr = () =>
+      page.locator('[data-passport-anchor="passport-desktop-qr"]').filter({ visible: true }).first();
+
+    // Le CTA pose une URL partageable ET une entrée d'historique.
+    const cta = page.getByRole("link", { name: /scanner un qr/i }).filter({ visible: true });
+    await cta.first().click();
+    await expect(page).toHaveURL(/#passport-desktop-qr$/);
+    await expect(qr()).toBeInViewport({ ratio: 0.2, timeout: 15_000 });
+
+    await page.goBack();
+    await expect(page, "le précédent n'a pas retiré l'ancre").not.toHaveURL(/#passport-desktop-qr$/);
+
+    await page.goForward();
+    await expect(page).toHaveURL(/#passport-desktop-qr$/);
+    await expect(
+      qr(),
+      "le suivant ne réatteint pas le panneau visible",
+    ).toBeInViewport({ ratio: 0.2, timeout: 15_000 });
+
+    await page.close();
+  });
+
+  test("la saisie survit au palier qui change de panneau visible", async ({ citizenAContext }) => {
+    const page = await citizenAContext.newPage();
+    await page.setViewportSize({ width: 1366, height: 900 });
+    await page.goto("/passport");
+    await attendrePassportRendu(page);
+
+    /* L'onglet Offres porte la seule recherche de la page. */
+    const ongletOffres = page.getByRole("button", { name: /^offres$/i }).filter({ visible: true });
+    await expect(ongletOffres, "onglet Offres introuvable").not.toHaveCount(0);
+    await ongletOffres.first().click();
+
+    const recherche = page.locator('input[type="search"]').filter({ visible: true });
+    await expect(recherche, "recherche des offres introuvable").toHaveCount(1);
+    await recherche.first().fill("cryptoportique");
+
+    for (const largeur of [900, 390, 1366]) {
+      await page.setViewportSize({ width: largeur, height: 900 });
+      await page.waitForTimeout(600);
+      const visible = page.locator('input[type="search"]').filter({ visible: true });
+      await expect(
+        visible,
+        `recherche absente du palier ${largeur}`,
+      ).toHaveCount(1);
+      await expect(
+        visible.first(),
+        `saisie perdue au palier ${largeur}`,
+      ).toHaveValue("cryptoportique");
+    }
+
+    await page.close();
+  });
+
   test("network stability: no extra requests on resize", async ({ citizenAContext }) => {
     const page = await citizenAContext.newPage();
     await page.setViewportSize({ width: 1366, height: 900 });
