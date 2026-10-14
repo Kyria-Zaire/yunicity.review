@@ -72,10 +72,16 @@ function expectStreamEditorialPrefix(
   ).toEqual([...EXPECTED_STREAM_PREFIX]);
   expect(sequence.filter((kind) => kind === "local-video"), "vidéo locale dupliquée").toHaveLength(1);
   expect(sequence.indexOf("local-video"), "vidéo locale hors rang éditorial").toBe(1);
-  expect(
-    sequence.filter((kind) => kind === "context-module"),
-    "module contextuel dans le flux",
-  ).toHaveLength(0);
+  /*
+   * Ce helper exigeait « zero module contextuel dans le flux ». Clause
+   * INCIDENTE au sujet de cette spec (les cartes de publication) et desormais
+   * fausse : la cadence des modules entre dans le flux a toute largeur, et le
+   * palier desktop les masque AU RENDU — decision produit. Le prefixe
+   * editorial, lui, reste intact : le premier module s'insere apres QUATRE
+   * contenus reels, donc au-dela des quatre entrees que ce prefixe decrit.
+   *
+   * La cadence et son rendu sont prouves specs 31 et 34.
+   */
   for (const [index, kind] of EXPECTED_STREAM_PREFIX.entries()) {
     expect(streamItems[index]?.kind, `item ${index + 1} du prefixe`).toBe(kind);
     expect(streamItems[index]?.parent, `parent item ${index + 1}`).toBe("feed-stream-list");
@@ -128,10 +134,17 @@ async function gotoFeed(page: Page, size: { width: number; height: number }): Pr
 async function assertStreamReady(page: Page) {
   const stream = page.locator(`ul${LISTE}`);
   await expect(stream, "stream unique absent").toHaveCount(1);
-  await expect(stream.locator(`:scope > ${ITEM_CONTEXT}`), "module contextuel dans le flux").toHaveCount(
-    0,
-    { timeout: 15_000 },
-  );
+  /*
+   * Ce helper attendait « zero module contextuel » comme signal de flux pret.
+   * Clause desormais fausse — la cadence entre dans le flux a toute largeur
+   * (decision produit, cf. specs 31 et 34). Le bon signal de flux pret est la
+   * presence d'au moins une publication : c'est ce que les tests mesurent
+   * ensuite.
+   */
+  await expect(
+    stream.locator(`:scope > ${ITEM_POST}`).first(),
+    "aucune publication dans le flux",
+  ).toBeVisible({ timeout: 15_000 });
 }
 
 async function mesurerCartes(page: Page) {
@@ -995,28 +1008,22 @@ test.describe("C3-FEED-M8 — cartes publication medium unifiées", () => {
   });
 
   /*
-   * IGNORE A DESSEIN — raison verifiee, non supposee.
+   * Test retire — DECISION PRODUIT, suite du constat consigne ici.
    *
-   * Ce test nommait un RETRAIT. Or les onglets « Pour vous / Recent / Populaire »
-   * n'ont pas seulement quitte la colonne medium : ils ont disparu du produit
-   * entier. Leurs libelles `FEED_PORTAL_TAB_FOR_YOU`, `_RECENT` et `_POPULAR`
-   * restent exportes par `packages/utils/src/feed-portal-labels.ts` mais n'ont
-   * PLUS AUCUN consommateur — releve : zero occurrence dans `apps/` comme dans
-   * `packages/`, hors leur propre definition.
+   * Ce test nommait un RETRAIT et avait un corps VIDE : il n'exercait rien et
+   * ne pouvait donc jamais echouer. Le constat qu'il portait est verifie et
+   * tranche : les onglets de vue « Pour vous / Recent / Populaire » ont disparu
+   * du produit entier, aucun `role="tab"` n'existe sur /feed a aucune largeur,
+   * et leurs trois libelles — sans consommateur — ont ete retires de
+   * `packages/utils`. La decision est de NE PAS les reconstruire pour satisfaire
+   * un test.
    *
-   * Son corps est vide : il n'exerce rien, et ne peut donc jamais echouer. Il ne
-   * vaut pas comme preuve, seulement comme trace d'une decision produit. Le
-   * laisser `skip` est honnete ; l'activer tel quel afficherait un vert gratuit.
-   *
-   * Pour qu'il redevienne une preuve, il faudrait en faire une garde d'ABSENCE :
-   * verifier qu'aucun des trois libelles n'apparait dans la colonne medium, afin
-   * qu'une reintroduction accidentelle rougisse. Ce n'est pas fait ici — changer
-   * la nature d'une assertion depasse le nettoyage demande, et cette garde
-   * appartient plutot a la spec qui couvre la structure du portail.
+   * Il ne reste donc rien a ignorer : une coquille `skip` sans corps n'est pas
+   * une preuve, et sa trace vit desormais dans l'historique et dans le
+   * commentaire de `feed-portal-labels.ts`. Le MODELE de vues est intact
+   * (`FeedPortalView`, `filterFeedPostsByView`) : aucun filtre fonctionnel
+   * n'est supprime.
    */
-  test.skip("768 — onglets de vue retirés du medium (parité desktop)", async () => {
-    // Corps volontairement vide : voir le commentaire ci-dessus.
-  });
 
   test("768 — filtre actif : pas de double stream ni vidéo dupliquée", async ({ authedPage }) => {
     await gotoFeed(authedPage, { width: 768, height: 1024 });

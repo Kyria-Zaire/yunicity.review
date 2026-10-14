@@ -43,8 +43,16 @@ test.describe("C3-FEED-R2B - video locale dans le flux medium", () => {
     await expect(citizenAPage.getByRole("tab", { name: "Récent", exact: true })).toHaveCount(0);
     await expect(citizenAPage.getByRole("tab", { name: "Populaire", exact: true })).toHaveCount(0);
     await expect(citizenAPage.locator(VIDEO)).toHaveCount(1);
-    await expect(
-      citizenAPage.locator(`${STREAM} > [data-feed-stream-item="context-module"]`),
-    ).toHaveCount(0);
+    /*
+     * Suivait ici « zero module contextuel dans le flux ». Clause INCIDENTE au
+     * sujet de cette spec (la video locale) et desormais fausse : les modules
+     * entrent dans le flux a toute largeur et sont visibles sous la borne
+     * desktop — decision produit, cadence unique et rendu par palier. Leur
+     * cadence et leur rendu sont prouves la ou ils appartiennent : specs 31 et
+     * 34. Ce qui compte ici reste verifie : la video est unique dans le flux.
+     *
+     * Les deux gardes d'ABSENCE des onglets ci-dessus sont conservees : elles
+     * font rougir une reintroduction accidentelle.
+     */
   });
 });
