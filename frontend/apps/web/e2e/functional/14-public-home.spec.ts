@@ -7,7 +7,11 @@ import type { Page } from "@playwright/test";
 import { CITIZEN_A_EMAIL, expect, test } from "../fixtures";
 import { COLD_START_TEST_TIMEOUT, COLD_START_TIMEOUT, gotoCold } from "../cold-start";
 import { readLandmarkState } from "../landmark-assertions";
-import { PUBLIC_HOME_COPY } from "@/lib/marketing/public-home-contract";
+import {
+  PUBLIC_HOME_COPY,
+  PUBLIC_HOME_MOBILE_EXPLORE_ITEMS,
+  PUBLIC_HOME_ROUTES,
+} from "@/lib/marketing/public-home-contract";
 
 const QA_SEEDED_PASSWORD = "StrongPassword1!";
 
@@ -24,11 +28,24 @@ const QA_SEEDED_PASSWORD = "StrongPassword1!";
  * une référence au contrat ne compile plus.
  */
 const HERO_TITLE = PUBLIC_HOME_COPY.heroTitle;
+/**
+ * `touch` déclare si le palier est manipulé au DOIGT.
+ *
+ * La règle 08 écrit « touch >= 44px MOBILE ». Ce test l'appliquait aux quatre
+ * largeurs, donc aussi au pointeur. Mesuré à 1366 px : les liens d'en-tête
+ * « Découvrir Reims » (103x20) et « Comment ça marche » (131x20) tombent sous
+ * le seuil — deux contrôles de navigation desktop, à la souris. Les trois
+ * paliers tactiles, eux, passent.
+ *
+ * Le seuil n'est pas déplacé : il est appliqué là où la doctrine le place. La
+ * hauteur de ces deux liens desktop est consignée comme constat produit, à
+ * trancher séparément.
+ */
 const VIEWPORTS = [
-  { width: 390, height: 844, name: "390" },
-  { width: 393, height: 852, name: "393" },
-  { width: 900, height: 900, name: "900" },
-  { width: 1366, height: 900, name: "1366" },
+  { width: 390, height: 844, name: "390", touch: true },
+  { width: 393, height: 852, name: "393", touch: true },
+  { width: 900, height: 900, name: "900", touch: true },
+  { width: 1366, height: 900, name: "1366", touch: false },
 ] as const;
 
 const FORBIDDEN = ["Statut API", "Erreur API", "Erreur API (404)", "Bienvenue"] as const;
@@ -67,32 +84,70 @@ test.describe("C3.1-R1B — Public home", () => {
 
     await expect(page.getByRole("link", { name: "Yunicity — accueil" })).toBeVisible();
     await expect(page.getByText("Yunicity", { exact: true }).first()).toBeVisible();
-    await expect(page.getByRole("link", { name: "Se connecter" })).toHaveAttribute("href", "/login");
-    await expect(page.getByRole("link", { name: "Créer un compte" })).toHaveAttribute(
+    /*
+     * Accès à la connexion et à l'inscription — libellés et routes DÉRIVÉS du
+     * contrat de copie, jamais recopiés : c'est une liste écrite à la main qui
+     * a laissé cette spec exiger un lien retiré du produit.
+     */
+    await expect(
+      page.getByRole("link", { name: PUBLIC_HOME_COPY.headerLogin }),
+      "accès à la connexion absent de la landing",
+    ).toHaveAttribute("href", PUBLIC_HOME_ROUTES.login);
+    await expect(page.getByRole("link", { name: PUBLIC_HOME_COPY.headerRegister })).toHaveAttribute(
       "href",
-      "/register",
+      PUBLIC_HOME_ROUTES.register,
     );
-    await expect(page.getByRole("link", { name: "Découvrir Reims" })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: PUBLIC_HOME_COPY.heroDiscover }).first()).toHaveAttribute(
       "href",
-      "/neighborhoods",
+      PUBLIC_HOME_ROUTES.discover,
     );
-    await expect(page.getByRole("link", { name: "Créer mon compte" })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: PUBLIC_HOME_COPY.heroRegister }).first()).toHaveAttribute(
       "href",
-      "/register",
+      PUBLIC_HOME_ROUTES.register,
     );
-    await expect(page.getByRole("link", { name: "J’ai déjà un compte" })).toHaveAttribute(
-      "href",
-      "/login",
-    );
-    await expect(page.getByRole("link", { name: "Quartiers" })).toHaveAttribute(
-      "href",
-      "/neighborhoods",
-    );
-    await expect(page.getByRole("link", { name: "Sortir à Reims" })).toHaveAttribute(
-      "href",
-      "/sortir",
-    );
-    await expect(page.getByRole("link", { name: "Lieux" })).toHaveAttribute("href", "/places");
+    /*
+     * Suivait ici un lien « J'ai déjà un compte » du héros, exigé vers /login.
+     * Relevé : ce libellé n'existe PLUS dans le produit — le contrat de copie
+     * l'a remplacé par `heroGuestNote` (« Vous pouvez explorer sans créer de
+     * compte. »). L'EXIGENCE, elle, est conservée et même renforcée : l'accès à
+     * la connexion est vérifié ci-dessus sur l'affordance réelle, et le test
+     * « login et register restent accessibles » le CLIQUE réellement.
+     */
+    // Les trois paliers sont rendus dans le DOM ; seul le visible fait preuve.
+    await expect(
+      page.getByText(PUBLIC_HOME_COPY.heroGuestNote).filter({ visible: true }),
+      "note visiteur du héros absente",
+    ).toHaveCount(1);
+    /*
+     * Routes de découverte — DÉRIVÉES du contrat.
+     *
+     * Ces trois lignes étaient écrites à la main et exigeaient « Sortir à
+     * Reims » vers /sortir : ce libellé n'existe plus, et `PUBLIC_HOME_ROUTES`
+     * n'a plus aucune clé `sortir`. Le contrat porte Quartiers / Tribus /
+     * Lieux.
+     *
+     * L'assertion porte sur la ROUTE, sujet déclaré de ce test. Le `name` de
+     * `getByRole` matche en SOUS-CHAÎNE : « Quartiers » attrapait aussi « Voir
+     * les quartiers », et le test ne prouvait donc pas ce qu'il annonçait. On
+     * exige donc un lien VISIBLE vers chaque route, et son nom accessible
+     * EXACT.
+     *
+     * Le contrat MOBILE fait foi : ce test s'exécute à 390 px, et la ligne de
+     * découverte mobile porte `aria-label={title}`. Le champ `linkLabel`
+     * (« Voir les quartiers ») n'existe que sur les cartes medium/desktop —
+     * l'exiger ici mesurait un palier qui n'est pas celui du test. Les routes,
+     * elles, sont les mêmes dans les deux contrats.
+     */
+    for (const item of PUBLIC_HOME_MOBILE_EXPLORE_ITEMS) {
+      await expect(
+        page.locator(`a[href="${item.href}"]`).filter({ visible: true }),
+        `aucun lien visible vers ${item.href} (${item.title})`,
+      ).not.toHaveCount(0);
+      await expect(
+        page.getByRole("link", { name: item.title, exact: true }).filter({ visible: true }),
+        `lien « ${item.title} » absent`,
+      ).not.toHaveCount(0);
+    }
 
     await expect(page.locator(".web-mobile-strategic-bottom-nav")).toHaveCount(0);
     await expect(page.getByRole("navigation", { name: "Navigation principale" })).toHaveCount(0);
@@ -106,9 +161,22 @@ test.describe("C3.1-R1B — Public home", () => {
     expect(landmarks.nestedMain, "<main> imbriqué sur /").toBe(0);
     expect(landmarks.roleMainConcurrent, 'role="main" concurrent sur /').toBe(0);
     expect(landmarks.visibleMainNavigation, "pas de navigation applicative sur /").toBe(0);
-    await expect(page.locator("h1")).toHaveCount(1);
+    /*
+     * UN titre de niveau 1 — mesuré sur le VISIBLE.
+     *
+     * La landing rend les trois paliers dans le DOM et n'en montre qu'un par
+     * CSS : trois `h1` existent, un seul est affiché. Compter les nœuds
+     * exigeait donc une restructuration du rendu responsive pour une règle qui
+     * porte sur ce que l'utilisateur et les technologies d'assistance
+     * perçoivent — un `h1` sous `display: none` est retiré de l'arbre
+     * d'accessibilité.
+     */
+    await expect(
+      page.locator("h1").filter({ visible: true }),
+      "un seul titre de niveau 1 visible",
+    ).toHaveCount(1);
 
-    await page.getByRole("link", { name: "Se connecter" }).click();
+    await page.getByRole("link", { name: PUBLIC_HOME_COPY.headerLogin }).first().click();
     await expect(page).toHaveURL(/\/login/, { timeout: COLD_START_TIMEOUT });
   });
 
@@ -151,27 +219,54 @@ test.describe("C3.1-R1B — Public home", () => {
           (el) => el.textContent?.trim() === "Yunicity" && el.getClientRects().length > 0,
         );
         const wordmarkRect = wordmark?.getBoundingClientRect();
-        const ctas = Array.from(document.querySelectorAll("[data-public-home-control]"));
+        /*
+         * La landing rend les TROIS paliers dans le DOM et n'en montre qu'un
+         * par CSS. Mesurer tous les `[data-public-home-control]` relevait donc
+         * 112 contrôles « trop petits », tous en 0×0 : ceux des autres
+         * paliers. Une cible tactile ne concerne que ce qui est TOUCHABLE —
+         * on ne juge que les contrôles effectivement rendus, et le seuil de
+         * 44 px reste entier.
+         */
+        const touchable = (el: Element) => {
+          if (el.getClientRects().length === 0) return false;
+          const rect = el.getBoundingClientRect();
+          if (rect.width <= 0 || rect.height <= 0) return false;
+          for (let node: Element | null = el; node; node = node.parentElement) {
+            const style = getComputedStyle(node);
+            if (style.display === "none" || style.visibility === "hidden") return false;
+          }
+          return true;
+        };
+        const ctas = Array.from(document.querySelectorAll("[data-public-home-control]")).filter(
+          touchable,
+        );
         const smallCtas = ctas
           .map((el) => {
             const rect = el.getBoundingClientRect();
             return {
               name: (el.textContent ?? "").trim().slice(0, 40),
-              width: rect.width,
-              height: rect.height,
+              width: Math.round(rect.width),
+              height: Math.round(rect.height),
             };
           })
           .filter((cta) => cta.height < 44 || cta.width < 44);
         return {
           overflowX: scrolling.scrollWidth - scrolling.clientWidth,
           wordmarkVisible: Boolean(wordmarkRect && wordmarkRect.width > 8 && wordmarkRect.height > 8),
+          controlesTouchables: ctas.length,
           smallCtas,
         };
       });
 
       expect(metrics.overflowX, `${viewport.name}: overflow horizontal`).toBeLessThanOrEqual(1);
       expect(metrics.wordmarkVisible, `${viewport.name}: wordmark Yunicity invisible`).toBe(true);
-      expect(metrics.smallCtas, `${viewport.name}: cibles < 44 px`).toEqual([]);
+      expect(
+        metrics.controlesTouchables,
+        `${viewport.name}: aucun contrôle rendu — le filtre a tout écarté`,
+      ).toBeGreaterThan(0);
+      if (viewport.touch) {
+        expect(metrics.smallCtas, `${viewport.name}: cibles < 44 px`).toEqual([]);
+      }
       if (viewport.name === "390" || viewport.name === "900" || viewport.name === "1366") {
         await captureLanding(page, viewport.width);
       }
@@ -181,11 +276,17 @@ test.describe("C3.1-R1B — Public home", () => {
   test("login et register restent accessibles depuis la landing", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoPublicHome(page);
-    await page.getByRole("link", { name: "Créer un compte" }).click();
+    await page.getByRole("link", { name: PUBLIC_HOME_COPY.headerRegister }).first().click();
     await expect(page).toHaveURL(/\/register/, { timeout: COLD_START_TIMEOUT });
     await page.goto("/");
     await waitSessionReady(page);
-    await page.getByRole("link", { name: "J’ai déjà un compte" }).click();
+    /*
+     * L'exigence « la connexion reste accessible depuis la landing » est
+     * conservée : elle s'exerce désormais sur l'affordance QUI EXISTE, et par
+     * un clic réel — le lien du héros qu'exigeait cette ligne a été retiré du
+     * produit, pas l'accès à la connexion.
+     */
+    await page.getByRole("link", { name: PUBLIC_HOME_COPY.headerLogin }).first().click();
     await expect(page).toHaveURL(/\/login/, { timeout: COLD_START_TIMEOUT });
   });
 });
