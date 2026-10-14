@@ -1,11 +1,26 @@
 /**
- * C3-FEED-M10 — expérience de filtre Feed medium (640 → 1279,98).
+ * C3-FEED-M10 — expérience de filtre Feed medium (640 → 1023,98).
  *
  * Contrat réel : unique dimension « centres d'intérêt du profil », application
  * immédiate à l'ouverture de la Sheet, réinitialisation explicite.
+ *
+ * ── Borne haute ──────────────────────────────────────────────────────────────
+ * Cette spec visait 1279,98 px, borne d'AVANT R4B. `feed-breakpoints.ts` fait
+ * foi : `FEED_VIEWPORT_MEDIUM_MAX_PX = 1023` et `FEED_VIEWPORT_DESKTOP_MIN_PX
+ * = 1024` — « la frontière Desktop passe de 1280 à 1024 ». Le header medium
+ * qui PORTE le filtre est borné à la même valeur dans `globals.css` : « le
+ * desktop >= 1024 conserve son propre header ».
+ *
+ * Au-delà de la borne, le filtre n'est donc pas une perte : c'est le palier
+ * suivant. Les largeurs 1024 → 1280 restent mesurées, mais sur la règle vraie
+ * — header desktop présent, header medium absent — plutôt que supprimées.
  */
 import type { Page } from "@playwright/test";
 
+import {
+  FEED_VIEWPORT_DESKTOP_MIN_PX,
+  FEED_VIEWPORT_MEDIUM_MAX_PX,
+} from "@/lib/layout/feed-breakpoints";
 import {
   FEED_MEDIUM_FILTER_CRITERION_IDS,
   FEED_MEDIUM_FILTER_PANEL_TITLE,
@@ -16,14 +31,24 @@ const MEDIUM = [
   { label: "640x900", width: 640, height: 900 },
   { label: "768x1024", width: 768, height: 1024 },
   { label: "834x1112", width: 834, height: 1112 },
-  { label: "1024x900", width: 1024, height: 900 },
+  { label: `${FEED_VIEWPORT_MEDIUM_MAX_PX}x900`, width: FEED_VIEWPORT_MEDIUM_MAX_PX, height: 900 },
+] as const;
+
+/** Largeurs du palier suivant — le filtre M10 n'y appartient pas. */
+const AU_DELA_DU_PALIER = [
+  { label: `${FEED_VIEWPORT_DESKTOP_MIN_PX}x900`, width: FEED_VIEWPORT_DESKTOP_MIN_PX, height: 900 },
   { label: "1279x900", width: 1279, height: 900 },
+  { label: "1280x900", width: 1280, height: 900 },
 ] as const;
 
 const FILTER = "[data-feed-medium-header-filter]";
 const PANEL = "[data-feed-medium-filter-panel]";
 const RESET = "[data-feed-medium-filter-reset]";
 const LIST = "[data-feed-stream-list]";
+/** Header du palier medium — hôte du filtre. */
+const HEADER_MEDIUM = ".feed-medium-header";
+/** Header du palier suivant — celui que le desktop conserve (cf. spec 12). */
+const HEADER_DESKTOP = "header.citizen-top-nav";
 
 async function gotoFeed(page: Page, size: { width: number; height: number }) {
   await page.setViewportSize(size);
@@ -68,6 +93,37 @@ test.describe("C3-FEED-M10 — filtre Feed medium", () => {
         await authedPage.evaluate(
           () => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
         ),
+      ).toBe(true);
+    });
+  }
+
+  for (const vp of AU_DELA_DU_PALIER) {
+    test(`${vp.label} — palier suivant : header desktop, pas de filtre medium`, async ({
+      authedPage,
+    }) => {
+      await gotoFeed(authedPage, vp);
+
+      // Le header medium n'est pas « perdu » : il est borné. Son successeur
+      // doit donc être là — sans quoi la largeur n'aurait aucun header.
+      await expect(
+        authedPage.locator(HEADER_DESKTOP).filter({ visible: true }),
+        "header du palier suivant absent",
+      ).toHaveCount(1);
+      await expect(
+        authedPage.locator(HEADER_MEDIUM).filter({ visible: true }),
+        "header medium débordant sur le palier suivant",
+      ).toHaveCount(0);
+
+      // Le filtre vit DANS le header medium : il suit sa borne, et sa Sheet
+      // ne doit subsister nulle part.
+      await expect(authedPage.locator(FILTER).filter({ visible: true })).toHaveCount(0);
+      await expect(authedPage.locator(PANEL)).toHaveCount(0);
+
+      expect(
+        await authedPage.evaluate(
+          () => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+        ),
+        "débordement horizontal",
       ).toBe(true);
     });
   }
@@ -330,15 +386,25 @@ test.describe("C3-FEED-M10 — filtre Feed medium", () => {
     await openFilter(authedPage);
   });
 
-  test("bascule 1279 / 1280 — desktop hors Sheet M10", async ({ authedPage }) => {
-    await gotoFeed(authedPage, { width: 1279, height: 900 });
+  test(`bascule ${FEED_VIEWPORT_MEDIUM_MAX_PX} / ${FEED_VIEWPORT_DESKTOP_MIN_PX} — palier suivant hors Sheet M10`, async ({
+    authedPage,
+  }) => {
+    await gotoFeed(authedPage, { width: FEED_VIEWPORT_MEDIUM_MAX_PX, height: 900 });
     await openFilter(authedPage);
     await expect(authedPage.locator(PANEL)).toBeVisible();
     await authedPage.keyboard.press("Escape");
 
-    await authedPage.setViewportSize({ width: 1280, height: 900 });
+    await authedPage.setViewportSize({ width: FEED_VIEWPORT_DESKTOP_MIN_PX, height: 900 });
+
+    // Franchir la borne remplace un header par l'autre — ce n'est pas une
+    // disparition du chrome.
     await expect(authedPage.locator(FILTER).filter({ visible: true })).toHaveCount(0);
     await expect(authedPage.locator(PANEL)).toHaveCount(0);
+    await expect(authedPage.locator(HEADER_MEDIUM).filter({ visible: true })).toHaveCount(0);
+    await expect(
+      authedPage.locator(HEADER_DESKTOP).filter({ visible: true }),
+      "header du palier suivant absent après la bascule",
+    ).toHaveCount(1);
   });
 
   for (const route of [
