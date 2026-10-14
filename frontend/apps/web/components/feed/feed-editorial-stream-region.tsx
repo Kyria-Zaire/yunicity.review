@@ -17,6 +17,8 @@ export type FeedEditorialStreamRegionProps = {
   streamLoading: boolean;
   streamError: string | null;
   highlights: readonly FeedHighlightEvent[];
+  /** Offre mise en avant — contenu de la famille `local-privilege` du flux. */
+  highlightOffer: Parameters<typeof FeedDesktopStream>[0]["highlightOffer"];
   savedEvents: Parameters<typeof FeedSavedEventsPanel>[0]["events"];
   showSaved: boolean;
   onToggleLike: (post: FeedPost) => Promise<void>;
@@ -42,6 +44,7 @@ export function FeedEditorialStreamRegion({
   streamLoading,
   streamError,
   highlights,
+  highlightOffer,
   savedEvents,
   showSaved,
   onToggleLike,
@@ -101,6 +104,8 @@ export function FeedEditorialStreamRegion({
         <FeedDesktopStream
           stream={stream}
           city={city}
+          highlights={highlights}
+          highlightOffer={highlightOffer}
           trends={[]}
           onToggleLike={onToggleLike}
           onReport={onReport}

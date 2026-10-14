@@ -110,6 +110,10 @@ export function FeedResponsiveShell({
           {...column}
           passport={passport}
           interestFilterActive={filterActive}
+          /* Destructure par nom pour le rail droit : `column` ne le porte pas,
+             et la colonne centrale en a besoin pour la famille
+             `local-privilege` du flux. */
+          highlightOffer={highlightOffer}
         />
       </div>
 

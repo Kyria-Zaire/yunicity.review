@@ -436,6 +436,19 @@ body {
     display: none;
   }
 
+  /* C3-FEED-R2B — cadence UNIQUE, rendu par palier.
+     `feed-context-stream.ts` pose la cadence des modules contextuels et
+     l'ecrit noir sur blanc : « les trois bandes partageront cette meme cadence
+     et ne feront varier que le RENDU ». Le flux est donc identique partout, et
+     c'est ici — au rendu — que le palier desktop retire les modules : son
+     volet droit porte deja agenda, offres et tribus, exactement le motif de
+     non-duplication de la regle ci-dessus.
+     `display: none` et non `visibility`/`opacity` : l'entree quitte le flux ET
+     le parcours clavier, donc ni espace residuel ni controle atteignable. */
+  [data-feed-stream-item="context-module"] {
+    display: none;
+  }
+
   .citizen-feed-shell {
     background-color: var(--yunicity-surface, #f7f8fa);
   }

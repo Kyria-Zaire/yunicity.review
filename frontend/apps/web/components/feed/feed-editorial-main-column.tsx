@@ -56,6 +56,7 @@ export function FeedEditorialMainColumn({
   streamLoading,
   streamError,
   highlights,
+  highlightOffer,
   savedEvents,
   onToggleLike,
   onReport,
@@ -137,6 +138,7 @@ export function FeedEditorialMainColumn({
         streamLoading={streamLoading}
         streamError={streamError}
         highlights={highlights}
+        highlightOffer={highlightOffer}
         savedEvents={savedEvents}
         showSaved={showSaved}
         onToggleLike={onToggleLike}

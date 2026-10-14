@@ -31,10 +31,7 @@ import {
   feedEnrichmentForScope,
   resolveFeedEnrichmentSnapshot,
 } from "@/lib/feed/feed-enrichment-snapshot";
-import {
-  buildFeedStream,
-  filterFeedContextFamiliesForDesktop,
-} from "@/lib/feed/feed-stream";
+import { buildFeedStream } from "@/lib/feed/feed-stream";
 import {
   isFeedMediumInterestFilterActive,
   resetFeedMediumFilterActivation,
@@ -259,9 +256,7 @@ export function FeedDataController() {
         activeView,
         {
           availableContextFamilies: streamIsContextual
-            ? filterFeedContextFamiliesForDesktop(
-                renderedEnrichment?.families ?? [],
-              )
+            ? (renderedEnrichment?.families ?? [])
             : [],
         },
       ),
