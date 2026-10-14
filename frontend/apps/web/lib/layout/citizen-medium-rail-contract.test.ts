@@ -58,10 +58,19 @@ describe("contrat du rail citoyen medium", () => {
       "Vidéos",
       "Carte",
       "Sortir",
-      // L'accès Explorer du palier medium : la colonne latérale masque le sien
-      // dès que le rail prend le relais, et le header de recherche n'existe que
-      // sur le fil — les autres routes medium n'en avaient plus aucun.
-      "Explorer Reims",
+      /*
+       * L'accès Explorer du palier medium : la colonne latérale masque le sien
+       * dès que le rail prend le relais, et le header de recherche n'existe que
+       * sur le fil — les autres routes medium n'en avaient plus aucun.
+       *
+       * Ce test figeait « Explorer Reims », valeur que le contrat annonçait
+       * mais que le rail n'a JAMAIS rendue : il codait « Explorer » en dur, et
+       * les preuves E2E comparant les identités, la divergence est restée
+       * invisible. Le rail est une bande étroite et porte un libellé COURT ;
+       * le NOM ACCESSIBLE du bouton reste « Explorer Reims », porté par
+       * `ExplorerTriggerButton` et verrouillé par les specs 10 et 12.
+       */
+      "Explorer",
       "Menu",
       "Créer",
       "Notifications",

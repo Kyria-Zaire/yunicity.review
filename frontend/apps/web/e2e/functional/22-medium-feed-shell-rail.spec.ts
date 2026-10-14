@@ -13,6 +13,12 @@
  */
 import type { Page } from "@playwright/test";
 
+import {
+  CITIZEN_MEDIUM_RAIL_CONTROLS,
+  CITIZEN_MEDIUM_RAIL_DESTINATIONS,
+  type CitizenMediumRailControlId,
+} from "@/lib/layout/citizen-medium-rail-contract";
+
 import { expect, test } from "../fixtures";
 
 const MEDIUM = [
@@ -22,21 +28,33 @@ const MEDIUM = [
   { label: "1023x900", width: 1023, height: 900 },
 ] as const;
 
-/** Navigation medium arrêtée par le CTO (C3-FEED-M2.3) — ordre significatif. */
-const RAIL_DESTINATIONS = [
-  "Accueil",
-  "Vidéos",
-  "Carte",
-  "Sortir",
-  "Menu",
-] as const;
+/**
+ * Navigation du rail medium — DÉRIVÉE du contrat, jamais recopiée.
+ *
+ * Cette liste était écrite à la main et a dérivé en silence : l'accès Explorer
+ * ajouté au rail (décision produit) ne s'y est jamais propagé, et la spec n'a
+ * rougi qu'au rejeu suivant, bien plus tard. Le contrat lui-même met en garde
+ * contre cette seconde source. On la dérive donc, et la dérive redevient
+ * impossible.
+ *
+ * Le pied (Créer / Notifications / Profil) ne fait pas partie de la nav : les
+ * six entrées mesurées ici sont les destinations, puis Explorer, puis Menu.
+ */
+const RAIL_NAV_IDS: readonly CitizenMediumRailControlId[] = [
+  ...CITIZEN_MEDIUM_RAIL_DESTINATIONS.map((destination) => destination.id),
+  "explorer",
+  "menu",
+];
 
-const OVERLAY_ENTERED = '[data-yunicity-overlay][data-yunicity-overlay-state="entered"]';
+const RAIL_DESTINATIONS: readonly string[] = RAIL_NAV_IDS.map((id) => {
+  const controle = CITIZEN_MEDIUM_RAIL_CONTROLS.find((candidat) => candidat.id === id);
+  if (!controle) throw new Error(`contrat du rail : contrôle « ${id} » absent`);
+  return controle.label;
+});
 
 /** Ratios maximaux du rail — la maquette exige un rail compact, pas une colonne. */
 const MAX_RAIL_RATIO: Record<number, number> = { 640: 0.18, 768: 0.14, 834: 0.14, 1023: 0.12 };
 
-const FEED_FAMILY = /\/feed(\?|$)/;
 const RAIL = ".citizen-medium-rail";
 const DESKTOP_SIDEBAR = ".web-sidebar-aside";
 const BOTTOM_NAV = ".web-mobile-strategic-bottom-nav";

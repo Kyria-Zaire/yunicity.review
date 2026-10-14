@@ -11,6 +11,7 @@ import { CitizenYunicityMenu } from "@/components/layout/citizen-yunicity-menu";
 import { useNotificationUnread } from "@/hooks/use-citizen-chrome";
 import {
   CITIZEN_MEDIUM_RAIL_DESTINATIONS,
+  CITIZEN_MEDIUM_RAIL_EXPLORER_LABEL,
   isCitizenMediumRailDestinationActive,
   type CitizenMediumRailDestination,
 } from "@/lib/layout/citizen-medium-rail-contract";
@@ -120,7 +121,7 @@ export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps)
             `--web-sidebar-icon-hit`, soit 52 px, au-delà des 44 px exigés.
         */}
         <div
-          data-rail-label="Explorer"
+          data-rail-label={CITIZEN_MEDIUM_RAIL_EXPLORER_LABEL}
           data-citizen-medium-rail-control="explorer"
           className="flex flex-col items-center gap-1 rounded-xl py-1.5"
         >

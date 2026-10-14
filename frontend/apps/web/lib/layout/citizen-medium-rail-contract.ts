@@ -1,6 +1,5 @@
 import {
   WEB_CITIZEN_NOTIFICATIONS_NAV,
-  WEB_CITIZEN_SEARCH_ACCESS,
   type WebNavItem,
 } from "@/lib/layout/web-layout-config";
 
@@ -33,6 +32,12 @@ export const CITIZEN_MEDIUM_RAIL_DESTINATIONS: readonly (WebNavItem & {
  * fondée sur le texte. Une identité portée par l'élément interactif réel rend
  * ce genre d'amputation impossible à manquer.
  */
+/**
+ * Libellé COURT de l'accès Explorer dans le rail. Le nom accessible du bouton
+ * est distinct — voir le commentaire du contrôle `explorer` ci-dessous.
+ */
+export const CITIZEN_MEDIUM_RAIL_EXPLORER_LABEL = "Explorer";
+
 export type CitizenMediumRailControlId =
   | CitizenMediumRailDestination
   | "explorer"
@@ -55,10 +60,20 @@ export const CITIZEN_MEDIUM_RAIL_CONTROLS: readonly {
    * Sur toute autre route medium, `/neighborhoods` par exemple, plus aucun accès
    * n'était offert, ni au visiteur ni au connecté.
    *
-   * Le libellé vient de `WEB_CITIZEN_SEARCH_ACCESS`, source déjà utilisée par le
-   * déclencheur lui-même : aucune seconde source à faire diverger.
+   * ── Deux libellés, et c'est voulu ──────────────────────────────────────────
+   * Ce contrat annonçait `WEB_CITIZEN_SEARCH_ACCESS.label` (« Explorer Reims »)
+   * en affirmant qu'aucune seconde source ne pouvait diverger. Le rail rendait
+   * pourtant « Explorer », codé en dur : la divergence existait, invisible,
+   * parce que les preuves E2E comparaient les IDENTITÉS et non les libellés.
+   *
+   * Les deux valeurs sont légitimes, mais ce ne sont pas les mêmes choses : le
+   * rail est une bande étroite et affiche un libellé COURT, tandis que le NOM
+   * ACCESSIBLE du bouton reste `WEB_CITIZEN_SEARCH_ACCESS.label` — porté par
+   * `ExplorerTriggerButton` et verrouillé par les specs 10 et 12. Ce champ
+   * décrit le libellé du rail ; le composant le consomme d'ici, et il n'y a
+   * donc plus qu'une source pour chacun des deux.
    */
-  { id: "explorer", label: WEB_CITIZEN_SEARCH_ACCESS.label },
+  { id: "explorer", label: CITIZEN_MEDIUM_RAIL_EXPLORER_LABEL },
   { id: "menu", label: "Menu" },
   { id: "create", label: "Créer" },
   { id: "notifications", label: WEB_CITIZEN_NOTIFICATIONS_NAV.label },
