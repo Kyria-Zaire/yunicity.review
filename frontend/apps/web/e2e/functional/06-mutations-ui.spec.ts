@@ -129,28 +129,61 @@ test.describe("Tribu privée UI", () => {
   test("demande d'adhésion via l'UI → état en attente + persiste", async ({ citizenAPage, citizenA }) => {
     await citizenAPage.goto("/tribes/qa-tribu-privee?city=Reims");
     await citizenAPage.waitForLoadState("networkidle").catch(() => {});
-    // The private gate renders "Demander à rejoindre"; the join-request POST has no optimistic
-    // UI, so gate the retry on the network: once a terminal POST response is observed we NEVER
-    // click again (no double mutation), and a missed pre-hydration click simply retries.
+    /*
+     * ── Pourquoi une écoute PERSISTANTE ────────────────────────────────────
+     *
+     * La preuve réseau était armée par une fenêtre `waitForResponse` de 2,5 s
+     * POSÉE AVANT CHAQUE CLIC. Mesuré : quand la réponse dépasse ce délai, la
+     * boucle réessaie — mais le bouton a déjà cédé la place au message
+     * d'attente, donc plus aucun POST n'est observable et l'assertion échoue
+     * sur une action RÉUSSIE (capture : « Votre demande a été envoyée — elle
+     * est en attente de validation »).
+     *
+     * L'écoute est donc installée UNE FOIS, avant toute action, et survit à
+     * toute la séquence. L'état « en attente » ARRÊTE les clics — il ne
+     * remplace pas la preuve réseau, qui reste exigée séparément ci-dessous.
+     */
+    const postsJoin: { chemin: string; statut: number }[] = [];
+    const surReponse = (r: Response) => {
+      if (r.request().method() !== "POST") return;
+      if (!/\/tribes\/qa-tribu-privee\/join-requests(\?|$)/.test(r.url())) return;
+      postsJoin.push({ chemin: new URL(r.url()).pathname, statut: r.status() });
+    };
+    citizenAPage.on("response", surReponse);
+
     const reqBtn = citizenAPage.getByRole("button", { name: "Demander à rejoindre", exact: true });
-    let jrResp: Response | null = null;
-    await expect(async () => {
-      if (jrResp) return; // terminal response already seen → do not click again
-      const respP = citizenAPage
-        .waitForResponse(
-          (r) =>
-            /\/tribes\/qa-tribu-privee\/join-requests(\?|$)/.test(r.url()) &&
-            r.request().method() === "POST",
-          { timeout: 2_500 },
-        )
-        .catch(() => null);
-      await reqBtn.first().click();
-      jrResp = await respP;
-      expect(jrResp, "join-request POST must fire").not.toBeNull();
-    }).toPass({ timeout: 15_000 });
-    // 201 created, or 409 if a prior attempt already registered the (unique-indexed) request.
-    expect([201, 409]).toContain((jrResp as unknown as Response).status());
     const pending = citizenAPage.getByText(/en attente de validation/i);
+
+    await expect(async () => {
+      // Un POST observé OU l'état « en attente » : dans les deux cas on ne
+      // reclique pas — aucune double mutation possible.
+      if (postsJoin.length > 0 || (await pending.count()) > 0) return;
+      await reqBtn.first().click();
+      expect(
+        postsJoin.length + (await pending.count()),
+        "ni POST join-request ni état « en attente » après le clic",
+      ).toBeGreaterThan(0);
+    }).toPass({ timeout: 20_000 });
+
+    // La preuve RÉSEAU reste exigée, même si l'UI a déjà basculé.
+    await expect
+      .poll(() => postsJoin.length, {
+        message: "aucun POST join-request observé",
+        timeout: 15_000,
+      })
+      .toBeGreaterThan(0);
+    citizenAPage.off("response", surReponse);
+
+    // La bonne tribu, et une réponse réussie.
+    for (const post of postsJoin) {
+      expect(post.chemin, "POST vers une autre tribu").toMatch(
+        /\/tribes\/qa-tribu-privee\/join-requests$/,
+      );
+    }
+    // 201 created, or 409 if a prior attempt already registered the (unique-indexed) request.
+    expect([201, 409], `statuts observés : ${postsJoin.map((p) => p.statut).join(", ")}`).toContain(
+      postsJoin[0]!.statut,
+    );
     await expect(pending.first()).toBeVisible({ timeout: 15_000 });
     // Persistence proven server-side (the viewer field the UI reads on next load). API is proof
     // here, not a replacement — the state was produced by the real UI click above.
