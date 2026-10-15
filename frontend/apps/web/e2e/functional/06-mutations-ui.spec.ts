@@ -143,6 +143,25 @@ test.describe("Tribu privée UI", () => {
      * toute la séquence. L'état « en attente » ARRÊTE les clics — il ne
      * remplace pas la preuve réseau, qui reste exigée séparément ci-dessous.
      */
+    /*
+     * Deux signaux distincts, et c'est la clé : la REQUÊTE partie interdit un
+     * second clic, la RÉPONSE revenue fait la preuve.
+     *
+     * Mesuré par sonde instrumentée : la réponse du POST met 1,4 à 2,8 s. Un
+     * garde fondé sur la seule réponse laissait donc la boucle recliquer toutes
+     * les ~100 ms pendant toute la latence — des dizaines de POST pour une
+     * intention unique. Le garde porte désormais sur la requête ÉMISE : un clic
+     * qui a produit une requête n'est jamais répété, un clic resté sans effet
+     * (handler React pas encore attaché) l'est.
+     */
+    const requetesJoin: number[] = [];
+    const surRequete = (r: { method: () => string; url: () => string }) => {
+      if (r.method() !== "POST") return;
+      if (!/\/tribes\/qa-tribu-privee\/join-requests(\?|$)/.test(r.url())) return;
+      requetesJoin.push(Date.now());
+    };
+    citizenAPage.on("request", surRequete);
+
     const postsJoin: { chemin: string; statut: number; code: string | null }[] = [];
     const surReponse = (r: Response) => {
       if (r.request().method() !== "POST") return;
@@ -167,13 +186,13 @@ test.describe("Tribu privée UI", () => {
     const pending = citizenAPage.getByText(/en attente de validation/i);
 
     await expect(async () => {
-      // Un POST observé OU l'état « en attente » : dans les deux cas on ne
-      // reclique pas — aucune double mutation possible.
-      if (postsJoin.length > 0 || (await pending.count()) > 0) return;
-      await reqBtn.first().click();
+      // Une requête déjà partie, ou l'état « en attente » : on ne reclique pas.
+      if (requetesJoin.length === 0 && (await pending.count()) === 0) {
+        await reqBtn.first().click();
+      }
       expect(
-        postsJoin.length + (await pending.count()),
-        "ni POST join-request ni état « en attente » après le clic",
+        requetesJoin.length + (await pending.count()),
+        "le clic n'a produit ni requête join-request ni état « en attente »",
       ).toBeGreaterThan(0);
     }).toPass({ timeout: 20_000 });
 
@@ -185,6 +204,7 @@ test.describe("Tribu privée UI", () => {
       })
       .toBeGreaterThan(0);
     citizenAPage.off("response", surReponse);
+    citizenAPage.off("request", surRequete);
 
     // La bonne tribu, et une réponse réussie.
     for (const post of postsJoin) {
@@ -286,12 +306,26 @@ test.describe("Notifications UI", () => {
   test("read-all via l'UI → non-lu = 0 + persiste", async ({ citizenAPage, citizenA }) => {
     await citizenAPage.goto("/notifications");
     await citizenAPage.waitForLoadState("networkidle").catch(() => {});
-    // Mobile: read-all lives behind the "Actions notifications" menu — a client toggle, so
-    // re-issue the open-click only while "Tout marquer comme lu" is absent (hydration-safe).
-    const actionsMenu = citizenAPage.locator('button[aria-label="Actions notifications"]:visible');
+    /*
+     * Ce test ouvrait d'abord un menu « Actions notifications » censé abriter
+     * le bouton. Mesuré par sonde instrumentée, cinq chargements successifs :
+     * ce déclencheur n'existe PAS à ce palier — zéro occurrence à chaque essai —
+     * tandis que « Tout marquer comme lu » est rendu directement dans la
+     * bannière, visible.
+     *
+     * `clickUntil` n'avait donc aucun chemin de reprise : son seul recours,
+     * quand le bouton attendu n'est pas visible à l'instant du test, est de
+     * cliquer un déclencheur absent, ce qui lève. Or la page refetch à chaque
+     * chargement (deux `GET /notifications` relevés), et un re-rendu fait
+     * vaciller la bannière — d'où un échec intermittent sur une UI saine.
+     *
+     * On attend donc le bouton RÉEL, avec l'attente automatique de Playwright,
+     * qui tolère un re-rendu. Même budget, aucune assertion affaiblie.
+     */
     const markAll = citizenAPage.locator('button:has-text("Tout marquer comme lu"):visible');
-    await clickUntil(actionsMenu, markAll);
-    await expect(markAll.first()).toBeVisible({ timeout: 15_000 });
+    await expect(markAll.first(), "bouton « Tout marquer comme lu » absent").toBeVisible({
+      timeout: 15_000,
+    });
     const [resp] = await Promise.all([
       citizenAPage.waitForResponse((r) => r.url().includes("/notifications/read-all")),
       markAll.first().click(),
