@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+import uuid
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -98,9 +99,24 @@ def test_qa_fixture_regeneration_is_idempotent(qa_media_dir: Path) -> None:
 
 
 def test_write_placeholder_video_uses_contract(qa_media_dir: Path) -> None:
-    _write_placeholder_video()
-    landscape = qa_media_dir / QA_LANDSCAPE_VIDEO_NAME
-    portrait = qa_media_dir / QA_PORTRAIT_VIDEO_NAME
+    """Les placeholders respectent leur spec, a la CLE PRODUIT.
+
+    `_write_placeholder_video` ecrivait autrefois a plat sous `local-video/qa/`
+    et ne prenait aucun argument. Il ecrit desormais sous la cle que le produit
+    fabrique — `local-video/<slug-ville>/<id>/processed.mp4` — donc il exige les
+    identifiants des deux videos.
+
+    Les chemins attendus sont DERIVES de ce que la fonction retourne, jamais
+    recopies : une cle recopiee ici pourrait diverger de `build_processed_key`
+    sans que rien ne le signale. Les deux assertions d'origine sont conservees.
+    """
+    landscape_refs, portrait_refs = _write_placeholder_video(
+        landscape_video_id=uuid.uuid4(),
+        portrait_video_id=uuid.uuid4(),
+    )
+    racine = qa_media_dir.parent  # MEDIA_UPLOAD_DIR, pose par la fixture
+    landscape = racine / landscape_refs.storage_key
+    portrait = racine / portrait_refs.storage_key
     assert media_matches_spec(landscape, QA_LANDSCAPE_SPEC)
     assert media_matches_spec(portrait, QA_PORTRAIT_SPEC)
 
