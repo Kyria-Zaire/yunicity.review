@@ -143,11 +143,23 @@ test.describe("Tribu privée UI", () => {
      * toute la séquence. L'état « en attente » ARRÊTE les clics — il ne
      * remplace pas la preuve réseau, qui reste exigée séparément ci-dessous.
      */
-    const postsJoin: { chemin: string; statut: number }[] = [];
+    const postsJoin: { chemin: string; statut: number; code: string | null }[] = [];
     const surReponse = (r: Response) => {
       if (r.request().method() !== "POST") return;
       if (!/\/tribes\/qa-tribu-privee\/join-requests(\?|$)/.test(r.url())) return;
-      postsJoin.push({ chemin: new URL(r.url()).pathname, statut: r.status() });
+      // Le code métier est lu ICI : le corps n'est plus accessible après coup.
+      void r
+        .json()
+        .then((corps: unknown) => {
+          const code =
+            corps && typeof corps === "object" && "code" in corps
+              ? String((corps as { code: unknown }).code)
+              : null;
+          postsJoin.push({ chemin: new URL(r.url()).pathname, statut: r.status(), code });
+        })
+        .catch(() => {
+          postsJoin.push({ chemin: new URL(r.url()).pathname, statut: r.status(), code: null });
+        });
     };
     citizenAPage.on("response", surReponse);
 
@@ -180,10 +192,25 @@ test.describe("Tribu privée UI", () => {
         /\/tribes\/qa-tribu-privee\/join-requests$/,
       );
     }
-    // 201 created, or 409 if a prior attempt already registered the (unique-indexed) request.
-    expect([201, 409], `statuts observés : ${postsJoin.map((p) => p.statut).join(", ")}`).toContain(
-      postsJoin[0]!.statut,
-    );
+    /*
+     * 201 créé, ou 409 SI ET SEULEMENT SI le code métier est
+     * `TRIBE_REQUEST_PENDING` — une tentative antérieure a déjà enregistré la
+     * demande (index unique).
+     *
+     * Accepter un 409 quelconque laissait passer deux états qui CONTREDISENT
+     * ce test : `TRIBE_ALREADY_MEMBER` (déjà membre, donc aucune demande en
+     * attente) et `TRIBE_REJOIN_COOLDOWN` (délai de ré-adhésion, demande
+     * refusée). Les trois sont levés par le même service
+     * (`tribe_service.create_join_request`) avec le même statut.
+     */
+    const premier = postsJoin[0]!;
+    const resume = postsJoin.map((p) => `${p.statut}/${p.code ?? "sans code"}`).join(", ");
+    expect([201, 409], `réponses observées : ${resume}`).toContain(premier.statut);
+    if (premier.statut === 409) {
+      expect(premier.code, `409 hors contrat — réponses observées : ${resume}`).toBe(
+        "TRIBE_REQUEST_PENDING",
+      );
+    }
     await expect(pending.first()).toBeVisible({ timeout: 15_000 });
     // Persistence proven server-side (the viewer field the UI reads on next load). API is proof
     // here, not a replacement — the state was produced by the real UI click above.
