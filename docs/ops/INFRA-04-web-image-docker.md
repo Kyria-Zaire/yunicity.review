@@ -287,23 +287,71 @@ d'origine, retire `output: "standalone"` et supprime `Dockerfile.web` /
 
 Un **autre** service du même dépôt est enraciné sur `frontend/` : `yunicity.review`
 du projet `miraculous-patience`, branche `main`, domaines
-`yunicityreview-production.up.railway.app` et **`yunicity.city`**.
+`yunicityreview-production.up.railway.app` et **`yunicity.city`** — le site
+public, pas la Preview.
 
-Mesure en lecture seule : sa `buildCommand` vivante est `pnpm --filter web build`,
-alors que `frontend/railway.toml` porte, sur `main` depuis le 2026-07-03,
-`pnpm install --frozen-lockfile && pnpm --filter web build`. Son dernier
-déploiement réussi date du **2026-09-02**, donc **postérieur** à l'apparition du
-fichier. Les deux valeurs diffèrent : **ce service n'applique pas
-`/frontend/railway.toml`**, et le présent changement ne l'atteint pas.
+### 9.1 Ce qui a été mesuré
 
-Le réglage « config path » d'un service n'est pas lisible par les outils
-disponibles : la cause exacte n'est donc pas démontrée, seul l'écart l'est.
-**Avant tout merge vers `main`, vérifier dans le dashboard que le config path de
-ce service n'est pas `/frontend/railway.toml`.** S'il l'était, le prochain
-déploiement de `yunicity.city` basculerait sur le builder Dockerfile. Avec le
-`startCommand` déclaré et le nom `Dockerfile.web`, il construirait et démarrerait
-la même image — mais ce serait un changement de builder **non voulu** sur le site
-public.
+Sa configuration de service renvoie `build.buildCommand = "pnpm --filter web build"`,
+alors que `frontend/railway.toml` porte sur `main`, depuis le 2026-07-03,
+`pnpm install --frozen-lockfile && pnpm --filter web build`.
+
+Mais le **journal de build** de son dernier déploiement réussi
+(`d1e93713-2e25-4e67-aaee-d3ecec7e59fe`, 2026-09-02) montre la commande
+réellement exécutée :
+
+```
+pnpm install --frozen-lockfile && pnpm --filter web build
+```
+
+c'est-à-dire la valeur **du fichier**, pas celle de la configuration de service.
+Le journal du service Preview, dont le config path pointe sur ce fichier, produit
+une étiquette de vertex identique.
+
+### 9.2 Conclusion précédente retirée
+
+Une version antérieure de cette note concluait de l'écart de `buildCommand` que
+ce service n'appliquait pas `/frontend/railway.toml`. **Cette conclusion est
+retirée.** Un écart de configuration n'établit qu'une différence : l'API expose
+le réglage du service, pas le fichier appliqué au build, et la règle rappelée
+dans `backend/railway.api.toml` veut précisément qu'un champ déclaré dans le
+fichier écrase celui du dashboard. L'écart était donc le symptôme attendu d'un
+fichier appliqué, non d'un fichier ignoré.
+
+La commande exécutée rend **probable** que ce service applique
+`/frontend/railway.toml`. Ce n'est pas une preuve absolue : la valeur du
+dashboard pouvait être identique à celle du fichier en septembre et avoir changé
+depuis. Le réglage « config path » n'étant pas lisible par les outils
+disponibles, l'incertitude subsiste et doit être levée par lecture directe.
+
+### 9.3 Portée réelle, et le point de contrôle
+
+| Action | Service touché | Risque |
+|--------|----------------|--------|
+| Pousser la branche `feat/c3-videos-refonte-final` | Preview (`preview.yunicity.city`) uniquement — c'est la branche que ce service suit | celui de ce candidat, avec retour arrière §8 |
+| **Merger vers `main`** | Preview **et**, selon §9.1, le site public `yunicity.city` au prochain déploiement | **changement de builder non voulu sur le site public** |
+
+**GATE BLOQUANT avant tout merge vers `main`** : lire, dans le dashboard Railway,
+le config path du service `yunicity.review` de `miraculous-patience`.
+
+- S'il ne pointe **pas** sur `/frontend/railway.toml` : le merge est sans effet
+  sur `yunicity.city`.
+- S'il pointe dessus : **ne pas merger en l'état.** Déplacer la configuration
+  Dockerfile dans un fichier dédié — par exemple `frontend/railway.web-docker.toml`,
+  avec le config path du service Preview pointé dessus — et laisser
+  `frontend/railway.toml` inchangé en RAILPACK. C'est le patron que ce dépôt a
+  déjà retenu deux fois (`railway.api.toml`, `railway.admin.toml`) contre
+  exactement cette classe d'héritage implicite.
+
+Ce second montage est, dans l'absolu, le plus sûr : il rend le site public
+structurellement insensible au changement. Il n'a pas été retenu d'emblée parce
+qu'il exige de modifier le config path du service Preview côté dashboard, soit
+une mutation Railway hors du périmètre de ce ticket. Le choix revient à la revue.
+
+### 9.4 Donnée annexe
+
+Les images RAILPACK poussées par ces déploiements pèsent 452 Mo (site public,
+2026-09-02) et 496 Mo (Preview, 2026-10-15). L'image candidate pèse **294 Mo**.
 
 ---
 
