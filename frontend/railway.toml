@@ -3,10 +3,30 @@
 # Config path absolu dans Railway : /frontend/railway.toml
 
 [build]
-builder = "RAILPACK"
-buildCommand = "pnpm install --frozen-lockfile && pnpm --filter web build"
+# Image multi-étapes : seul l'artefact `standalone` de Next part en production.
+#
+# Nom NON auto-détectable, volontairement : un fichier nommé `Dockerfile` à la
+# racine de `frontend/` serait détecté par TOUT service ayant ce répertoire
+# racine — dont le service admin — qui construirait alors l'app web. Même
+# classe de bug qu'OPS-02 et que celle décrite dans `railway.admin.toml`. Le
+# chemin est donc désigné explicitement ici.
+#
+# Les variables de service ne sont PAS visibles d'un build Dockerfile sans
+# `ARG` : celles dont le build a besoin sont déclarées dans le Dockerfile.
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.web"
 
 [deploy]
-startCommand = "pnpm --filter web start"
+# `startCommand` DÉCLARÉ, et non omis.
+#
+# Règle Railway rappelée dans `backend/railway.api.toml` : un champ déclaré ici
+# écrase le réglage du dashboard, un champ omis le CONSERVE. Le service porte
+# aujourd'hui `pnpm --filter web start`, qui ne peut pas fonctionner dans
+# l'image finale — ni pnpm, ni les manifestes du workspace n'y sont. L'omettre
+# laisserait donc cette valeur en place : échec de démarrage certain.
+#
+# La valeur reproduit exactement le `CMD` de `Dockerfile.web`. Les deux doivent
+# rester identiques ; si l'un change, changer l'autre.
+startCommand = "node apps/web/server.js"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
