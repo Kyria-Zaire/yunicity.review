@@ -23,6 +23,8 @@ type LoginFormFieldsProps = {
   /** Lien inscription avec paramètre next préservé. */
   registerHref?: string;
   compact?: boolean;
+  /** Affiche le lien inscription sous le formulaire (désactivé quand le footer portail le gère). */
+  showRegisterPrompt?: boolean;
 };
 
 /** Champs formulaire connexion — partagé desktop / mobile. */
@@ -33,6 +35,7 @@ export function LoginFormFields({
   onSubmit,
   registerHref = "/register",
   compact = false,
+  showRegisterPrompt = false,
 }: LoginFormFieldsProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -128,18 +131,21 @@ export function LoginFormFields({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-full bg-yunicity-primary py-3 text-sm font-semibold text-white transition hover:bg-yunicity-primary-hover disabled:opacity-60"
+          data-login-control="submit"
+          className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-yunicity-primary px-6 text-sm font-semibold text-white transition hover:bg-yunicity-primary-hover disabled:opacity-60"
         >
           {isSubmitting ? LOGIN_SUBMITTING : LOGIN_SUBMIT}
         </button>
       </form>
 
-      <p className={`text-center text-sm text-neutral-600 ${compact ? "mt-5" : "mt-6"}`}>
-        {LOGIN_NO_ACCOUNT}{" "}
-        <Link href={registerHref} className="font-semibold text-yunicity-primary hover:underline">
-          {LOGIN_REGISTER_LINK}
-        </Link>
-      </p>
+      {showRegisterPrompt ? (
+        <p className={`text-center text-sm text-neutral-600 ${compact ? "mt-5" : "mt-6"}`}>
+          {LOGIN_NO_ACCOUNT}{" "}
+          <Link href={registerHref} className="font-semibold text-yunicity-primary hover:underline">
+            {LOGIN_REGISTER_LINK}
+          </Link>
+        </p>
+      ) : null}
     </>
   );
 }

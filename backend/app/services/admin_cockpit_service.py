@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.territory_agenda_health import territory_agenda_health
 from app.integrations.cache import (
     COCKPIT_SUMMARY_TTL_SECONDS,
     get_cached_model,
@@ -14,6 +15,7 @@ from app.integrations.cache import (
 from app.repositories.admin_cockpit_repository import AdminCockpitRepository
 from app.schemas.admin_cockpit import (
     DEFAULT_COCKPIT_CITY,
+    AdminCockpitAgendaHealth,
     AdminCockpitAttentionMetrics,
     AdminCockpitExecutiveMetrics,
     AdminCockpitPartnersMetrics,
@@ -22,6 +24,18 @@ from app.schemas.admin_cockpit import (
     AdminCockpitSummaryResponse,
     AdminCockpitTopStampPartner,
 )
+
+
+def _agenda_health_payload(events_upcoming: int) -> AdminCockpitAgendaHealth:
+    """Projette la sante d'agenda du domaine vers le contrat cockpit."""
+    health = territory_agenda_health(events_upcoming)
+    return AdminCockpitAgendaHealth(
+        status=health.status.value,
+        upcoming_count=health.upcoming_count,
+        threshold=health.threshold,
+        label=health.label,
+        is_alerting=health.is_alerting,
+    )
 
 
 class AdminCockpitService:
@@ -81,6 +95,9 @@ class AdminCockpitService:
                 redemptions_today=counts.redemptions_today,
                 passports_last_7_days=counts.passports_last_7_days,
                 events_upcoming=counts.events_upcoming,
+                # RF-03B — derive du compteur deja calcule : aucune requete
+                # supplementaire, donc aucun N+1 introduit.
+                agenda_health=_agenda_health_payload(counts.events_upcoming),
                 top_stamp_partner=AdminCockpitTopStampPartner(
                     organization_id=counts.top_stamp_partner_org_id,
                     name=counts.top_stamp_partner_name,

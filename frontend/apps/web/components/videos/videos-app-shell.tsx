@@ -1,18 +1,28 @@
 "use client";
 
+import { FeedMobileBottomNav } from "@/components/feed/mobile/feed-mobile-bottom-nav";
 import { CitizenTopNav } from "@/components/layout/citizen-top-nav";
 import { WebSidebar } from "@/components/layout/web-sidebar";
-import { WebMobileFooter, WebMobileHeader } from "@/components/layout/web-mobile-chrome";
-import { WebMobileStrategicBottomNav } from "@/components/layout/web-mobile-strategic-bottom-nav";
+import { WebMobileFooter } from "@/components/layout/web-mobile-chrome";
 import { CITIZEN_MOBILE_BOTTOM_NAV_PADDING } from "@/lib/layout/feed-mobile-refonte";
 import type { ReactNode } from "react";
 
 /** Shell Vidéos — mobile refonte MOBILE-VIDEOS-01 + desktop portail existant. */
-export function VideosAppShell({ children }: { children: ReactNode }) {
+export function VideosAppShell({
+  children,
+  detailMode = false,
+  immersiveMode = false,
+}: {
+  children: ReactNode;
+  detailMode?: boolean;
+  immersiveMode?: boolean;
+}) {
   return (
-    <div className="web-shell-page videos-mobile-shell min-h-dvh bg-[#F4F5F7]">
-      <WebMobileHeader />
-
+    <div
+      className={`web-shell-page videos-mobile-shell min-h-dvh bg-[#F4F5F7] ${
+        detailMode ? "videos-detail-mode" : ""
+      } ${immersiveMode ? "videos-immersive-mode" : ""}`}
+    >
       <div className="web-three-col places-shell-grid">
         <WebSidebar />
 
@@ -29,7 +39,7 @@ export function VideosAppShell({ children }: { children: ReactNode }) {
       </div>
 
       <WebMobileFooter />
-      <WebMobileStrategicBottomNav />
+      <FeedMobileBottomNav />
     </div>
   );
 }

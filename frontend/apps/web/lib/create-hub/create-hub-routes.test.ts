@@ -14,6 +14,7 @@ describe("create-hub-routes — politique par route", () => {
     expect(isCreateHubVisiblePath("/videos/new")).toBe(false);
     expect(isCreateHubVisiblePath("/feed/new")).toBe(false);
     expect(isCreateHubVisiblePath("/stories/new")).toBe(false);
+    expect(isCreateHubVisiblePath("/sortir/create")).toBe(false);
   });
 
   it("masque Créer sur les routes d'authentification", () => {
@@ -34,9 +35,10 @@ describe("create-hub-routes — politique par route", () => {
    */
   it("n'inscrit que des écrans de création ou d'authentification", () => {
     const auth = ["/login", "/register"];
+    const creationSuffixes = ["/new", "/create"];
     for (const prefixe of CREATE_HUB_HIDDEN_PATH_PREFIXES) {
       if (auth.includes(prefixe)) continue;
-      expect(prefixe.endsWith("/new")).toBe(true);
+      expect(creationSuffixes.some((suffix) => prefixe.endsWith(suffix))).toBe(true);
     }
   });
 });
@@ -68,7 +70,7 @@ describe("create-hub-routes — politique par surface (R1E)", () => {
 
   it("les parcours de création restent masqués sur toutes les surfaces", () => {
     for (const surface of CREATE_HUB_SURFACES) {
-      for (const route of ["/feed/new", "/stories/new", "/login", "/register"]) {
+      for (const route of ["/feed/new", "/stories/new", "/sortir/create", "/login", "/register"]) {
         expect(resolveCreateHubVisibility({ pathname: route, surface })).toBe(false);
       }
     }

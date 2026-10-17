@@ -120,9 +120,9 @@ describe("État actif", () => {
     expect(isWebNavActive("/mapping", map!)).toBe(false);
   });
 
-  it("ne rend pas Sortir actif sur le détail événement (/events/[id] n'est pas canonique)", () => {
-    expect(isWebNavActive("/events/42", sortir!)).toBe(false);
-    expect(isWebNavActive("/events", sortir!)).toBe(false);
+  it("rend Sortir actif sur le détail événement", () => {
+    expect(isWebNavActive("/events/42", sortir!)).toBe(true);
+    expect(isWebNavActive("/events", sortir!)).toBe(true);
   });
 
   it("n'active aucune destination sur la recherche", () => {

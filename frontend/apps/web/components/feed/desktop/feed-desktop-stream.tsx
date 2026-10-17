@@ -12,6 +12,14 @@ import type { FeedStreamItem } from "@/lib/feed/feed-stream";
 type FeedDesktopStreamProps = {
   stream: readonly FeedStreamItem[];
   city: string;
+  /*
+   * Contenu des modules contextuels. Ces trois props etaient des LITTERAUX
+   * VIDES a l'appel : `FeedContextStreamItem` rend `null` quand sa famille n'a
+   * pas de contenu, donc aucun module n'apparaissait jamais — quelle que soit
+   * la cadence calculee en amont.
+   */
+  highlights: Parameters<typeof FeedContextStreamItem>[0]["highlights"];
+  highlightOffer: Parameters<typeof FeedContextStreamItem>[0]["highlightOffer"];
   trends: Parameters<typeof FeedContextStreamItem>[0]["trends"];
   onToggleLike: Parameters<typeof FeedCard>[0]["onToggleLike"];
   onReport: (postId: string, reason: FeedReportReason) => Promise<void>;
@@ -24,6 +32,8 @@ type FeedDesktopStreamProps = {
 export function FeedDesktopStream({
   stream,
   city,
+  highlights,
+  highlightOffer,
   trends,
   onToggleLike,
   onReport,
@@ -73,8 +83,11 @@ export function FeedDesktopStream({
               key={item.key}
               family={item.family}
               city={city}
-              highlights={[]}
-              highlightOffer={null}
+              highlights={highlights}
+              highlightOffer={highlightOffer}
+              /* Les familles `tribes` et `local-now` n'entrent pas dans la
+                 cadence : le controleur ne les declare jamais disponibles.
+                 Leur cabler des donnees mortes n'ajouterait rien. */
               tribes={[]}
               trends={trends}
               layout="desktop"
@@ -85,7 +98,11 @@ export function FeedDesktopStream({
 
       {hasNextPage ? (
         <div className="mt-6 flex flex-col items-center gap-3">
-          <div ref={sentinelRef} aria-hidden="true" />
+          {/* Marqueur de contrat : le sentinel EXISTE depuis toujours
+              (IntersectionObserver ci-dessus) mais n'etait pas adressable, et
+              les specs l'attendaient sous ce nom. Convention du depot : la
+              surface de contrat est un `data-*`. Aucun comportement change. */}
+          <div ref={sentinelRef} data-feed-stream-sentinel="" aria-hidden="true" />
           {appendError ? (
             <div
               role="alert"

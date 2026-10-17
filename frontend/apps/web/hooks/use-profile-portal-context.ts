@@ -245,12 +245,14 @@ export function useProfilePortalContext() {
     journeyCtas,
     neighborhoodCards,
     tribeCards,
+    tribes,
     badges,
     badgesPreview,
     userPosts: useMemo(
       () => (profile ? filterProfileUserFeedPosts(feedPosts, profile) : []),
       [feedPosts, profile],
     ),
+    savedEvents,
     savedEventsCount: savedEvents.length,
     interestedEventsCount: useMemo(
       () => events.filter((event) => event.interested_by_me).length,

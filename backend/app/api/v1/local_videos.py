@@ -15,6 +15,7 @@ from app.core.local_video_constants import (
     LOCAL_VIDEO_COMMENT_PAGE_MAX,
     LOCAL_VIDEO_DEFAULT_CITY,
 )
+from app.core.local_video_duration_policy import resolve_duration_policy
 from app.core.rate_limit import enforce_rate_limit
 from app.db.session import get_db
 from app.models.user import User
@@ -22,6 +23,7 @@ from app.schemas.local_video import (
     LocalVideoCommentCreateRequest,
     LocalVideoCommentListResponse,
     LocalVideoCommentResponse,
+    LocalVideoDurationPolicyResponse,
     LocalVideoFeedResponse,
     LocalVideoItem,
     LocalVideoLikeResponse,
@@ -44,6 +46,7 @@ from app.services.local_video_service import (
     publish_rate_limit_key,
     upload_rate_limit_key,
 )
+from app.services.rbac_service import RbacService
 
 router = APIRouter(prefix="/local-videos", tags=["local-videos"])
 
@@ -83,8 +86,31 @@ async def upload_local_video_binary(
             code="LOCAL_VIDEO_BINARY_ENDPOINT_UNAVAILABLE",
             detail="Endpoint d'upload binaire indisponible.",
         )
-    body = await request.body()
-    await LocalVideoService(session, settings).store_binary_upload(upload_id, body)
+    # Lecture PAR BLOCS : `await request.body()` allouait le corps entier avant
+    # meme de le comparer a la limite. Un client pouvait donc faire allouer 2 Go
+    # a l'API pour se voir refuser 200 Mo.
+    await LocalVideoService(session, settings).store_streamed_upload(
+        upload_id,
+        request.stream(),
+        declared_length=_declared_content_length(request),
+    )
+
+
+def _declared_content_length(request: Request) -> int | None:
+    """`Content-Length` annonce, s'il est exploitable.
+
+    Indicatif seulement : il peut manquer (`Transfer-Encoding: chunked`) ou
+    mentir. Il sert a refuser tot, jamais a autoriser — le compteur reel reste
+    l'autorite.
+    """
+    brut = request.headers.get("content-length")
+    if brut is None:
+        return None
+    try:
+        valeur = int(brut)
+    except ValueError:
+        return None
+    return valeur if valeur >= 0 else None
 
 
 @router.post(
@@ -104,6 +130,26 @@ async def publish_local_video(
         window_seconds=PUBLISH_RATE_WINDOW,
     )
     return await LocalVideoService(session, settings).publish(current_user.id, payload)
+
+
+@router.get("/policy", response_model=LocalVideoDurationPolicyResponse)
+async def get_local_video_duration_policy(
+    current_user: Annotated[User, Depends(require_authenticated_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> LocalVideoDurationPolicyResponse:
+    """Politique de duree du createur authentifie (VIDEO-04D).
+
+    Resolue exclusivement depuis les roles persistes de l'utilisateur courant.
+    Aucun parametre client n'est accepte : le tier ne peut pas etre choisi.
+    """
+    rbac = await RbacService(session).get_user_rbac_context(current_user.id)
+    policy = resolve_duration_policy(rbac.roles)
+    return LocalVideoDurationPolicyResponse(
+        tier=policy.tier.value,
+        max_duration_seconds=policy.max_duration_seconds,
+        max_bytes=policy.max_bytes,
+        label=policy.label,
+    )
 
 
 @router.get("/feed", response_model=LocalVideoFeedResponse)

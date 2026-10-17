@@ -19,6 +19,7 @@ const activation = read("../../hooks/use-visible-activation.ts");
 const weatherCard = read("../../components/feed/portal/feed-weather-card.tsx");
 const leftRail = read("../../components/feed/desktop/feed-desktop-left-rail.tsx");
 const rightRail = read("../../components/feed/desktop/feed-desktop-right-rail.tsx");
+const passportModule = read("../../components/feed/feed-passport-module.tsx");
 const passportHook = read("../../hooks/use-passport-feed-rail.ts");
 const controller = read("../../components/feed/portal/feed-data-controller.tsx");
 const globalsCSS = read("../../app/globals.css");
@@ -55,6 +56,8 @@ describe("R1 — lazy mounting contract", () => {
   it("keeps the passport hook out of the views — le contrôleur seul fetch", () => {
     expect(rightRail).not.toContain("usePassportFeedRail");
     expect(rightRail).not.toContain("useVisibleActivation");
+    expect(passportModule).not.toContain("usePassportFeedRail");
+    expect(passportModule).not.toContain("useVisibleActivation");
     expect(leftRail).not.toContain("usePassportFeedRail");
     expect(controller).toContain("usePassportFeedRail");
   });
@@ -64,7 +67,12 @@ describe("R1 — lazy mounting contract", () => {
     // où il est `display: none` et n'intersecte pas.
     expect(controller).toContain("useVisibleActivation");
     expect(controller).toMatch(/activated: desktopRailsEnabled/);
-    expect(controller).toContain("usePassportFeedRail(desktopRailsEnabled)");
+    // FEED-MAIN-LAYOUT-UIUX-01 §7 : le Passeport a maintenant DEUX emplacements
+    // (volet droit >= 1024px, colonne centrale en deca). Chacun porte sa sonde ;
+    // la requete part des que l'un des deux est reellement visible.
+    expect(controller).toMatch(
+      /usePassportFeedRail\(\s*desktopRailsEnabled\s*\|\|\s*compactPassportEnabled\s*\)/,
+    );
     // …et jamais désarmés : l'activation du hook est définitive (cf. son test).
     expect(code(controller)).not.toMatch(/setDesktopRailsSeen|matchMedia|innerWidth/);
   });
@@ -76,7 +84,7 @@ describe("R1 — lazy mounting contract", () => {
   });
 
   it("uses no breakpoint JavaScript anywhere in the new modules", () => {
-    for (const source of [weatherCard, rightRail, passportHook, leftRail]) {
+    for (const source of [weatherCard, rightRail, passportModule, passportHook, leftRail]) {
       expect(code(source)).not.toMatch(/matchMedia|innerWidth|useIsDesktop/);
     }
   });
@@ -91,7 +99,7 @@ describe("R1 — lazy mounting contract", () => {
   });
 
   it("introduces no new endpoint", () => {
-    for (const source of [weatherCard, rightRail, passportHook]) {
+    for (const source of [weatherCard, rightRail, passportModule, passportHook]) {
       expect(code(source)).not.toMatch(/\/api\/v1/);
       expect(code(source)).not.toContain("fetch(");
     }
@@ -119,41 +127,44 @@ describe("R1 — weather provenance is enforced", () => {
 
 describe("R1 — passport shows only contract data", () => {
   it("derives progress from an active challenge when available", () => {
-    expect(rightRail).toContain("primaryChallenge.progress");
-    expect(rightRail).toContain("primaryChallenge.target");
-    expect(code(rightRail)).toMatch(/hasChallengeProgress/);
+    expect(passportModule).toContain("primaryChallenge.progress");
+    expect(passportModule).toContain("primaryChallenge.target");
+    expect(code(passportModule)).toMatch(/hasChallengeProgress/);
   });
 
   it("translates the tier through the canonical mapping, never a raw code", () => {
-    expect(rightRail).toContain("PASSPORT_TIER_LABELS");
-    expect(code(rightRail)).toMatch(/tierCode in PASSPORT_TIER_LABELS/);
+    expect(passportModule).toContain("PASSPORT_TIER_LABELS");
+    expect(code(passportModule)).toMatch(/tierCode in PASSPORT_TIER_LABELS/);
   });
 
   it("links to the canonical passport route", () => {
-    expect(rightRail).toContain('href="/passport"');
+    expect(passportModule).toContain('href="/passport"');
     expect(existsSync(`${here}../../app/passport/page.tsx`)).toBe(true);
   });
 
   it("isolates its failure from the other rail modules", () => {
-    expect(rightRail).toMatch(/error \|\| !overview/);
+    expect(passportModule).toMatch(/error \|\| !overview/);
   });
 });
 
 describe("R1 — right rail order and layout", () => {
-  it("orders the rail: tonight, passport, privilege, footer", () => {
+  // FEED-MAIN-LAYOUT-UIUX-01 §2 et §4 inversent l'ordre R1 : le Passeport
+  // ouvre le volet droit, les Evenements viennent IMMEDIATEMENT sous lui.
+  // L'ordre exact est verrouille par `feed-main-layout-rails.test.ts`.
+  it("orders the rail: passport, tonight, privilege, footer", () => {
+    const passport = rightRail.indexOf("<FeedPassportModule");
     const tonight = rightRail.indexOf("<TonightModule");
-    const passport = rightRail.indexOf("<PassportModule");
     const privilege = rightRail.indexOf("<LocalPrivilegeModule");
     const footer = rightRail.indexOf("<RailFooter");
-    expect(tonight).toBeGreaterThan(-1);
-    expect(passport).toBeGreaterThan(tonight);
-    expect(privilege).toBeGreaterThan(passport);
+    expect(passport).toBeGreaterThan(-1);
+    expect(tonight).toBeGreaterThan(passport);
+    expect(privilege).toBeGreaterThan(tonight);
     expect(footer).toBeGreaterThan(privilege);
   });
 
   it("mounts weather and passport modules exactly once", () => {
     expect((leftRail.match(/<FeedWeatherCard/g) || []).length).toBe(1);
-    expect((rightRail.match(/<PassportModule/g) || []).length).toBe(1);
+    expect((rightRail.match(/<FeedPassportModule/g) || []).length).toBe(1);
   });
 
   it("uses the new 3-column desktop layout classes", () => {

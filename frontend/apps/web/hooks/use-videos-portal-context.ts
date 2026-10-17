@@ -30,7 +30,9 @@ export function useVideosPortalContext({ items }: UseVideosPortalContextOptions)
     DEFAULT_VIDEOS_PORTAL_SIDEBAR_FILTERS,
   );
   const [tab, setTab] = useState<VideosPortalTabId>("all");
-  const [sort, setSort] = useState<VideosPortalSortId>("recent");
+  // VIDEO-03 — par defaut on rend le classement territorial du serveur.
+  // « Les plus recents » reste disponible, mais comme choix explicite.
+  const [sort, setSort] = useState<VideosPortalSortId>("relevance");
   const [searchQuery, setSearchQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(VIDEOS_PORTAL_PAGE_SIZE);
 

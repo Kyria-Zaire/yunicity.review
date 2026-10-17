@@ -5,6 +5,8 @@ import type { FeedStoryShortcut } from "@yunicity/utils";
 import { buildStoryRingDisplay, FEED_PORTAL_STORY_PUBLISH } from "@yunicity/utils";
 import Link from "next/link";
 
+import { StoryRingMedia } from "@/components/stories/authorized-story-media";
+
 const STORY_RING_GRADIENT = [
   "bg-gradient-to-tr from-violet-500 via-fuchsia-500 to-orange-400",
   "bg-gradient-to-tr from-orange-400 via-amber-500 to-yellow-400",
@@ -132,8 +134,10 @@ export function FeedMobileStoriesRail({
             ? `${STORY_RING_GRADIENT[index % STORY_RING_GRADIENT.length]} p-[2.5px]`
             : "bg-neutral-200 p-[2.5px]";
           const inner = item.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={item.imageUrl} alt="" className="h-full w-full rounded-full object-cover" />
+            <StoryRingMedia
+              src={item.imageUrl}
+              className="h-full w-full rounded-full object-cover"
+            />
           ) : (
             <span className="flex h-full w-full items-center justify-center rounded-full bg-yunicity-primary-soft text-sm font-bold text-yunicity-primary">
               {item.name.slice(0, 1).toUpperCase()}

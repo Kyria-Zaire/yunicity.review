@@ -210,6 +210,10 @@ class NeighborhoodDetailService:
     ) -> NeighborhoodDetailVideoItem:
         author = video.author
         profile = author.profile if author is not None else None
+        # Le lieu est charge en lot par le repository (selectinload) : lire son slug
+        # ici n'ajoute aucune requete. L'evenement n'a besoin que de son id, la
+        # route etant /events/{id} — inutile de charger la relation.
+        place = video.cultural_place
         return NeighborhoodDetailVideoItem(
             id=video.id,
             title=video.title,
@@ -218,6 +222,9 @@ class NeighborhoodDetailService:
             neighborhood_slug=neighborhood_slug,
             published_at=video.published_at,
             video_type=video.video_type,
+            cultural_place_slug=place.slug if place is not None else None,
+            cultural_place_name=place.name if place is not None else None,
+            local_event_id=video.local_event_id,
             author=NeighborhoodDetailVideoAuthor(
                 id=video.author_user_id,
                 username=profile.username if profile is not None else None,

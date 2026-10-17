@@ -1,6 +1,7 @@
 /** Map portal micro-copy (WEB-MAP-02). */
 
 export const MAP_PORTAL_TITLE = "Carte";
+export const MAP_DESKTOP_EXPLORER_TITLE = "Explorer Reims";
 export const MAP_PORTAL_CITY_LABEL = "Ville";
 
 export const MAP_PORTAL_CATEGORY_ALL = "Tout";
@@ -65,6 +66,8 @@ export const MAP_PORTAL_CHIP_PARTNERS = "Partenaires";
 export const MAP_PORTAL_CHIP_PASSPORT = "Passport";
 
 export const MAP_PORTAL_AROUND_TITLE = "Autour de vous";
+export const MAP_DESKTOP_SEARCH_IN_ZONE = "Rechercher dans cette zone";
+export const MAP_RAIL_NEIGHBORHOOD_AMBIANCE_TITLE = "Ambiance des quartiers";
 export const MAP_PORTAL_AROUND_SEE_ALL = "Voir tout";
 export const MAP_PORTAL_AROUND_EMPTY =
   "Déplacez la carte ou activez votre position pour voir ce qui est proche.";

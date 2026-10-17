@@ -29,6 +29,10 @@ from app.repositories.user_repository import UserRepository
 from app.schemas.auth import LoginRequest, RefreshTokenResponse, RegisterRequest
 from app.schemas.passport import PassportActivateRequest
 from app.schemas.user import UserPublic
+from app.services.email_verification_service import (
+    EmailVerificationService,
+    email_verification_required_for,
+)
 from app.services.passport_service import PassportService
 from app.services.profile_service import ProfileService
 from app.services.refresh_rotation_grace import RefreshRotationGrace
@@ -54,6 +58,22 @@ class AuthSessionBundle:
     user: UserPublic
 
 
+@dataclass(frozen=True)
+class RegistrationResult:
+    """Issue d'une inscription.
+
+    `session is None` signifie : le compte est cree, mais aucune session n'est
+    ouverte tant que l'adresse n'est pas confirmee. Ce cas ne survient que pour
+    les comptes soumis a `EMAIL_VERIFICATION_ENFORCED_FROM` (AUTH-01).
+    """
+
+    user: UserPublic
+    session: AuthSessionBundle | None
+    #: Faux quand l'e-mail de verification n'a PAS pu partir. Aucune file ne le
+    #: renverra : l'interface doit proposer un renvoi au lieu d'annoncer un envoi.
+    verification_email_sent: bool = True
+
+
 class AuthService:
     def __init__(self, session: AsyncSession, settings: Settings | None = None) -> None:
         self._session = session
@@ -63,7 +83,7 @@ class AuthService:
         self._refresh_tokens = RefreshTokenRepository(session)
         self._rotation_grace = RefreshRotationGrace(self._settings)
 
-    async def register(self, payload: RegisterRequest) -> AuthSessionBundle:
+    async def register(self, payload: RegisterRequest) -> RegistrationResult:
         email = normalize_email(str(payload.email))
         validate_password_strength(payload.password)
 
@@ -121,7 +141,21 @@ class AuthService:
         await self._try_activate_passport(user, city)
 
         await self._session.refresh(user)
-        return await self._issue_session(user, new_family=True)
+
+        # Apres le refresh : `created_at` est alimente par la base et conditionne
+        # `email_verification_required_for`.
+        envoye = await EmailVerificationService(self._session, self._settings).issue_and_send(user)
+        await self._session.commit()
+
+        if email_verification_required_for(user, self._settings):
+            return RegistrationResult(
+                user=await self._build_user_public(user),
+                session=None,
+                verification_email_sent=envoye,
+            )
+
+        bundle = await self._issue_session(user, new_family=True)
+        return RegistrationResult(user=bundle.user, session=bundle, verification_email_sent=envoye)
 
     async def login(self, payload: LoginRequest) -> AuthSessionBundle:
         email = normalize_email(str(payload.email))
@@ -138,7 +172,7 @@ class AuthService:
                 code="INVALID_CREDENTIALS",
                 detail=_INVALID_CREDENTIALS_MSG,
             )
-        self._ensure_active(user)
+        self._ensure_session_allowed(user)
         await self._ensure_passport_active(user)
         return await self._issue_session(user, new_family=True)
 
@@ -199,7 +233,7 @@ class AuthService:
                 code="INVALID_REFRESH_TOKEN",
                 detail="Session invalide ou expirée.",
             )
-        self._ensure_active(user)
+        self._ensure_session_allowed(user)
 
         new_raw = generate_opaque_token()
         new_hash = hash_refresh_token(new_raw, self._settings.refresh_token_pepper)
@@ -250,7 +284,7 @@ class AuthService:
                 code="INVALID_REFRESH_TOKEN",
                 detail="Session invalide ou expiree.",
             )
-        self._ensure_active(user)
+        self._ensure_session_allowed(user)
 
         # Le jeton d'acces est reemis (le client n'a jamais recu le precedent),
         # mais l'expiration ABSOLUE du refresh reste celle de la rotation initiale.
@@ -280,7 +314,7 @@ class AuthService:
                 code="UNAUTHORIZED",
                 detail="Utilisateur introuvable.",
             )
-        self._ensure_active(user)
+        self._ensure_session_allowed(user)
         return await self._build_user_public(user)
 
     async def _issue_session(self, user: User, *, new_family: bool) -> AuthSessionBundle:
@@ -322,12 +356,44 @@ class AuthService:
             updated_at=user.updated_at,
         )
 
-    def _ensure_active(self, user: User) -> None:
+    def _ensure_session_allowed(self, user: User) -> None:
+        """Porte UNIQUE des sessions : suspension, puis verification d'adresse.
+
+        Un seul point de controle plutot qu'un test disperse route par route :
+        connexion, rotation du refresh, rejeu de rotation et `/me` passent tous
+        par ici. Une route ajoutee plus tard qui ouvrirait une session sans
+        passer par cette methode serait un contournement visible en revue.
+
+        La verification n'est exigee que des comptes vises par
+        `email_verification_required_for` : sans date configuree, aucun compte
+        existant ne peut etre bloque.
+        """
         if not user.is_active:
             raise AppError(
                 status_code=403,
                 code="ACCOUNT_SUSPENDED",
                 detail="Ce compte est suspendu.",
+            )
+        if user.deletion_requested_at is not None:
+            # Une connexion normale ne doit PAS reactiver le compte : seul le lien
+            # d'annulation le fait. Se reconnecter par inadvertance annulerait
+            # sinon une decision explicite.
+            raise AppError(
+                status_code=403,
+                code="ACCOUNT_PENDING_DELETION",
+                detail=(
+                    "La suppression de ce compte a été demandée. "
+                    "Utilisez le lien d'annulation reçu par e-mail pour le réactiver."
+                ),
+            )
+        if not user.is_verified and email_verification_required_for(user, self._settings):
+            raise AppError(
+                status_code=403,
+                code="EMAIL_NOT_VERIFIED",
+                detail=(
+                    "Confirmez votre adresse e-mail pour accéder à votre compte. "
+                    "Vérifiez votre boîte de réception."
+                ),
             )
 
     async def _ensure_passport_active(self, user: User) -> None:

@@ -1,13 +1,14 @@
 "use client";
 
-import type { LocalVideoFeedItem } from "@yunicity/types";
+import type { LocalVideoTeaserView } from "@yunicity/utils";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 import { LocalVideoTeaserCard } from "@/components/videos/local-video-teaser-card";
 
 type LocalVideoTeaserRailProps = {
-  items: LocalVideoFeedItem[];
+  /** Vue commune : le rail ne connait plus la forme du contrat serveur. */
+  views: LocalVideoTeaserView[];
   title: string;
   seeAllHref?: string;
   layout?: "stack" | "scroll";
@@ -16,13 +17,13 @@ type LocalVideoTeaserRailProps = {
 };
 
 export function LocalVideoTeaserRail({
-  items,
+  views,
   title,
   seeAllHref = "/videos",
   layout = "stack",
   embedded = false,
 }: LocalVideoTeaserRailProps) {
-  if (items.length === 0) return null;
+  if (views.length === 0) return null;
 
   const listClass =
     layout === "scroll"
@@ -52,13 +53,13 @@ export function LocalVideoTeaserRail({
         }
       >
         <ul className={listClass}>
-          {items.map((item) => (
+          {views.map((view) => (
             <li
-              key={item.id}
+              key={view.id}
               data-feed-video-item=""
               className={layout === "scroll" ? "w-[min(100%,18rem)] shrink-0" : undefined}
             >
-              <LocalVideoTeaserCard item={item} />
+              <LocalVideoTeaserCard view={view} />
             </li>
           ))}
         </ul>

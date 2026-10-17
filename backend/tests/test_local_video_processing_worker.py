@@ -32,6 +32,7 @@ from tests.conftest_passport import auth_header, register_user
 from tests.test_local_videos_api import (
     BASE,
     BOULINGRIN_ID,
+    MP4_MINIMAL,
     _init_upload,
     _publish_video,
 )
@@ -49,10 +50,21 @@ async def _local_video_env(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[Non
 
 @pytest.fixture
 def mock_processor(monkeypatch: pytest.MonkeyPatch) -> None:
-    def _fake_process(self, *, source_storage_key, city_slug, video_id, content_type):  # type: ignore[no-untyped-def]
-        del self, content_type, source_storage_key
+    def _fake_process(  # type: ignore[no-untyped-def]
+        self,
+        *,
+        source_storage_key,
+        city_slug,
+        video_id,
+        content_type,
+        max_duration_seconds=None,
+    ):
+        # VIDEO-04D — accepte le snapshot de duree passe par le service reel.
+        del self, content_type, source_storage_key, max_duration_seconds
         return LocalVideoProcessResult(
             duration_seconds=12.5,
+            media_width=1080,
+            media_height=1920,
             source_storage_key=f"local-video/{city_slug}/{video_id}/processed.mp4",
             thumbnail_storage_key=f"local-video/{city_slug}/{video_id}/thumbnail.jpg",
             mime_type="video/mp4",
@@ -141,7 +153,7 @@ async def test_publish_returns_202_accepted(
     init_body = await _init_upload(auth_client, user["access_token"])
     await auth_client.put(
         init_body["presigned_url"],
-        content=b"fake-mp4-bytes-for-test",
+        content=MP4_MINIMAL,
         headers={"Content-Type": "video/mp4"},
     )
     response = await auth_client.post(
@@ -172,7 +184,7 @@ async def test_video_invisible_in_feed_during_processing(
     init_body = await _init_upload(auth_client, token)
     await auth_client.put(
         init_body["presigned_url"],
-        content=b"fake-mp4-bytes-for-test",
+        content=MP4_MINIMAL,
         headers={"Content-Type": "video/mp4"},
     )
     publish = await auth_client.post(
@@ -295,6 +307,8 @@ async def test_worker_skips_already_ready(
         city_slug = kwargs["city_slug"]
         return LocalVideoProcessResult(
             duration_seconds=1.0,
+            media_width=1920,
+            media_height=1080,
             source_storage_key=f"local-video/{city_slug}/{video_id}/processed.mp4",
             thumbnail_storage_key=f"local-video/{city_slug}/{video_id}/thumbnail.jpg",
             mime_type="video/mp4",
@@ -378,9 +392,7 @@ async def test_worker_idempotent_when_derivatives_exist(
     video_id = await _create_processing_video(author_user_id=author_id)
     settings = get_settings()
     storage = build_local_video_storage(settings)
-    video_path = (
-        Path(__file__).resolve().parents[1] / "data" / "e2e-test-video.mp4"
-    )
+    video_path = Path(__file__).resolve().parents[1] / "data" / "e2e-test-video.mp4"
     if not video_path.is_file():
         pytest.skip("e2e-test-video.mp4 missing")
 

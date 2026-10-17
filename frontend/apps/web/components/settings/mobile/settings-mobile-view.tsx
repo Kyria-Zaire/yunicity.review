@@ -1,14 +1,16 @@
 "use client";
 
 import { SettingsMobileAccountCard } from "@/components/settings/mobile/settings-mobile-account-card";
+import { SettingsMobileCategoryPicker } from "@/components/settings/mobile/settings-mobile-category-picker";
 import { SettingsMobileHeader } from "@/components/settings/mobile/settings-mobile-header";
-import { SettingsMobileHubList } from "@/components/settings/mobile/settings-mobile-hub-list";
+import { SettingsMobileHub } from "@/components/settings/mobile/settings-mobile-hub";
 import { SettingsMobileSectionHeader } from "@/components/settings/mobile/settings-mobile-section-header";
 import { SettingsSections } from "@/components/settings/settings-sections";
 import type { AuthUser, ProfileMe, PushSubscription, UserNotificationPreferences } from "@yunicity/types";
 import type {
   SettingsAccountStatus,
   SettingsHubGroup,
+  SettingsMobileCategoryId,
   SettingsSectionId,
   SettingsVerificationView,
 } from "@yunicity/utils";
@@ -19,9 +21,9 @@ import {
   SETTINGS_DISPLAY_TITLE,
   SETTINGS_EXPORT_TITLE,
   SETTINGS_HELP_TITLE,
+  SETTINGS_MOBILE_SUBTITLE,
   SETTINGS_PERSONAL_TITLE,
   SETTINGS_PERSONALIZATION_TITLE,
-  SETTINGS_PORTAL_SUBTITLE,
   SETTINGS_PRIVACY_TITLE,
   SETTINGS_SECURITY_TITLE,
   SETTINGS_VERIFICATION_TITLE,
@@ -63,13 +65,13 @@ type SettingsMobileViewProps = {
   onLogout: () => void;
 };
 
-/** Vue mobile complète Paramètres (MOBILE-SETTINGS-01). */
+/** Vue mobile Paramètres (MOBILE-SETTINGS-02). */
 export function SettingsMobileView({
   user,
   profile,
   preferences,
   pushDevices,
-  hubGroups,
+  hubGroups: _hubGroups,
   displayName,
   verification,
   accountStatus,
@@ -82,9 +84,11 @@ export function SettingsMobileView({
   onLogout,
 }: SettingsMobileViewProps) {
   const [activeSection, setActiveSection] = useState<SettingsSectionId | null>(null);
+  const [activeCategoryId, setActiveCategoryId] =
+    useState<SettingsMobileCategoryId>("general");
 
   const sectionTitle = useMemo(
-    () => (activeSection ? SECTION_LABELS[activeSection] : SETTINGS_PORTAL_SUBTITLE),
+    () => (activeSection ? SECTION_LABELS[activeSection] : SETTINGS_MOBILE_SUBTITLE),
     [activeSection],
   );
 
@@ -121,19 +125,24 @@ export function SettingsMobileView({
     <div className="web-mobile-settings-only min-w-0 bg-[#F4F5F7] pb-24">
       <SettingsMobileHeader />
 
-      <div className="space-y-4 px-4 pt-3">
-        <p className="text-sm leading-relaxed text-neutral-600">{SETTINGS_PORTAL_SUBTITLE}</p>
+      <div className="space-y-3 px-4 pt-3">
+        <p className="text-sm leading-relaxed text-neutral-500">{SETTINGS_MOBILE_SUBTITLE}</p>
 
-        <SettingsMobileAccountCard
-          user={user}
-          displayName={displayName}
-          verification={verification}
-          accountStatus={accountStatus}
+        <SettingsMobileAccountCard profile={profile} displayName={displayName} />
+
+        <SettingsMobileCategoryPicker
+          activeCategoryId={activeCategoryId}
+          onCategoryChange={setActiveCategoryId}
         />
 
-        <SettingsMobileHubList
-          groups={hubGroups}
+        <SettingsMobileHub
+          user={user}
+          profile={profile}
+          preferences={preferences}
+          accountStatus={accountStatus}
+          isSavingPrefs={isSavingPrefs}
           onNavigate={setActiveSection}
+          onPreferenceChange={onPreferenceChange}
           onLogout={onLogout}
         />
       </div>

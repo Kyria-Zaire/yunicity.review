@@ -8,11 +8,18 @@ import {
   readLandmarkState,
   waitForCitizenRouteReady,
 } from "../landmark-assertions";
-import { API_URL, bearer, expect, test, type QaUser } from "../fixtures";
+import { API_URL, bearer, expect, testCitizen as test, type QaUser } from "../fixtures";
 import { COLD_START_TEST_TIMEOUT } from "../cold-start";
 
 type ShellRoute = {
-  shell: string;
+  /*
+   * Absent quand la route n'est rendue par AUCUN fichier `*-app-shell.tsx` :
+   * `/feed` est dans ce cas depuis la suppression de `feed-app-shell.tsx`. La
+   * matrice garde alors la route pour la couverture LANDMARK, sans prétendre
+   * désigner un fichier qui n'existe pas — ce que le test de couverture
+   * signalait à juste titre.
+   */
+  shell?: string;
   path: string;
   expectedUrl: RegExp;
   ready: (page: Page) => Locator;
@@ -31,7 +38,6 @@ const feedContent = (page: Page) =>
 
 const SHELL_ROUTES: readonly ShellRoute[] = [
   {
-    shell: "components/feed/portal/feed-app-shell.tsx",
     path: "/feed",
     expectedUrl: /\/feed(?:\?|$)/,
     ready: feedContent,
@@ -45,11 +51,19 @@ const SHELL_ROUTES: readonly ShellRoute[] = [
   {
     shell: "components/map/map-app-shell.tsx",
     path: "/map",
-    expectedUrl: /\/map(?:\?|$)/,
-    ready: (page) =>
-      page.getByText("Carte indisponible : configurez NEXT_PUBLIC_GOOGLE_MAPS_API_KEY.", {
-        exact: true,
-      }).filter({ visible: true }).first(),
+    expectedUrl: /\/map(?:$|\?)/,
+    /*
+     * Le marqueur valait le repli de configuration, « Carte indisponible :
+     * configurez NEXT_PUBLIC_GOOGLE_MAPS_API_KEY. ». Il ne paraît que SANS clé.
+     * `.env.local` en porte une depuis le 05/09/2026 : la carte se charge, le
+     * repli n'existe pas, et le test attendait soixante secondes un texte qui ne
+     * viendrait jamais. Un marqueur de disponibilité ne doit pas dépendre d'une
+     * variable d'environnement.
+     *
+     * Le titre visible, lui, est présent dans les deux cas — relevé « Explorer
+     * Reims » à 1366, « Autour de vous » à 900, « Carte » à 390.
+     */
+    ready: visibleHeading,
   },
   {
     shell: "components/events/sortir/sortir-app-shell.tsx",
@@ -144,17 +158,61 @@ const SHELL_ROUTES: readonly ShellRoute[] = [
   },
 ] as const;
 
+/*
+ * Tunnels de création, découverts par le test de couverture et absents de la
+ * matrice. Leurs marqueurs sont RELEVÉS, pas supposés — titre visible à chacune
+ * des trois largeurs :
+ *
+ *   /discussions/new                      « Nouvelle discussion » · « 1.Choisissez un sujet »
+ *   /sortir/create                        « Créer un événement » · « Informations essentielles »
+ *   /tribes/create                        « Créer une tribu » · « Identité »
+ *   /organizations/me/partner/offers/new  « Espace partenaire »
+ *
+ * Les quatre rendent un `<main>` unique, sans imbrication ni `role="main"`
+ * concurrent, aux trois largeurs. La dernière est bien atteignable par un
+ * citoyen seedé : elle ne redirige pas.
+ */
+const CREATION_FLOW_ROUTES: readonly ShellRoute[] = [
+  {
+    shell: "components/discussions/new/new-discussion-app-shell.tsx",
+    path: "/discussions/new",
+    expectedUrl: /\/discussions\/new(?:\?|$)/,
+    ready: visibleHeading,
+  },
+  {
+    shell: "components/events/create/event-create-app-shell.tsx",
+    path: "/sortir/create",
+    expectedUrl: /\/sortir\/create(?:\?|$)/,
+    ready: visibleHeading,
+  },
+  {
+    shell: "components/tribes/create/tribe-create-app-shell.tsx",
+    path: "/tribes/create",
+    expectedUrl: /\/tribes\/create(?:\?|$)/,
+    ready: visibleHeading,
+  },
+  {
+    shell: "components/partner-portal/offer-create/passport-offer-create-app-shell.tsx",
+    path: "/organizations/me/partner/offers/new",
+    expectedUrl: /\/organizations\/me\/partner\/offers\/new(?:\?|$)/,
+    ready: visibleHeading,
+  },
+] as const;
+
 const STRATEGIC_ROUTES = new Set([
   "/feed",
   "/videos",
   "/map",
   "/sortir",
 ]);
+const ALL_ROUTES: readonly ShellRoute[] = [...SHELL_ROUTES, ...CREATION_FLOW_ROUTES];
+
 const SHELL_ROUTE_GROUPS = [
-  SHELL_ROUTES.slice(0, 5),
-  SHELL_ROUTES.slice(5, 10),
-  SHELL_ROUTES.slice(10, 14),
-  SHELL_ROUTES.slice(14),
+  ALL_ROUTES.slice(0, 5),
+  ALL_ROUTES.slice(5, 10),
+  ALL_ROUTES.slice(10, 14),
+  ALL_ROUTES.slice(14, 18),
+  ALL_ROUTES.slice(18),
 ] as const;
 
 function listAppShellFiles(directory: string, root = directory): string[] {
@@ -192,9 +250,32 @@ async function verifyCitizenLandmarks(
   page: Page,
   route: ShellRoute,
   pathToVisit: string,
+  viewportWidth: number,
 ): Promise<void> {
-  await waitForCitizenRouteReady(page, pathToVisit, route.expectedUrl, route.ready(page));
-  expectExactlyOneMain(await readLandmarkState(page), pathToVisit);
+  /*
+   * Le sujet de cette spec est le landmark `<main>` : un seul, jamais imbriqué,
+   * jamais doublé d'un `role="main"`. La PRÉSENCE d'une navigation globale n'en
+   * fait pas partie, et le relevé explique pourquoi — elle vaut 0 ou 1 selon la
+   * surface ET la largeur, sans règle simple : `/organizations/request` à 0
+   * partout, `/sortir/create` à 1 en 1366 seulement, les tunnels à 0 en 390.
+   * L'exiger imposait un tableau route × largeur de dix-huit cases, qui aurait
+   * gelé chaque choix de maquette.
+   *
+   * Ce qui reste garanti ici, par `expectExactlyOneMain` et sans condition :
+   * jamais DEUX navigations principales visibles. La présence, elle, est le
+   * sujet propre de la spec 08, sur ses routes représentatives.
+   *
+   * `viewportWidth` est conservé : il documente la largeur réellement mesurée et
+   * sert aux assertions qui en dépendent encore.
+   */
+  await waitForCitizenRouteReady(page, pathToVisit, route.expectedUrl, route.ready(page), {
+    viewportWidth,
+    requirePrimaryNav: false,
+  });
+  expectExactlyOneMain(await readLandmarkState(page), pathToVisit, {
+    viewportWidth,
+    requirePrimaryNav: false,
+  });
 }
 
 test.describe("Landmarks des shells applicatifs", () => {
@@ -205,7 +286,9 @@ test.describe("Landmarks des shells applicatifs", () => {
   test("la matrice couvre automatiquement chaque fichier *-app-shell.tsx", () => {
     const componentsRoot = path.resolve(process.cwd(), "components");
     const discovered = listAppShellFiles(componentsRoot).sort();
-    const covered = SHELL_ROUTES.map((route) => route.shell).sort();
+    const covered = ALL_ROUTES.map((route) => route.shell)
+      .filter((shell): shell is string => Boolean(shell))
+      .sort();
 
     expect(discovered).toEqual(covered);
   });
@@ -219,12 +302,12 @@ test.describe("Landmarks des shells applicatifs", () => {
       await citizenAPage.setViewportSize(desktop);
       for (const route of routes) {
         const pathToVisit = await resolveRoute(route, api, citizenA);
-        await verifyCitizenLandmarks(citizenAPage, route, pathToVisit);
+        await verifyCitizenLandmarks(citizenAPage, route, pathToVisit, desktop.width);
       }
     });
   }
 
-  for (const route of SHELL_ROUTES.filter((candidate) => STRATEGIC_ROUTES.has(candidate.path))) {
+  for (const route of ALL_ROUTES.filter((candidate) => STRATEGIC_ROUTES.has(candidate.path))) {
     test(`${route.path} rend un unique main à 390 et 900`, async ({
       citizenAPage,
       api,
@@ -233,7 +316,7 @@ test.describe("Landmarks des shells applicatifs", () => {
       const pathToVisit = await resolveRoute(route, api, citizenA);
       for (const viewport of additionalViewports) {
         await citizenAPage.setViewportSize(viewport);
-        await verifyCitizenLandmarks(citizenAPage, route, pathToVisit);
+        await verifyCitizenLandmarks(citizenAPage, route, pathToVisit, viewport.width);
       }
     });
   }

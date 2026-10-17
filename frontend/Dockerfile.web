@@ -1,0 +1,97 @@
+# Image Web — construction multi-étapes, artefact standalone Next.
+#
+# ── Contexte ─────────────────────────────────────────────────────────────────
+# Le service Railway a `frontend/` comme répertoire racine : le contexte de
+# construction est donc CE répertoire. Le nom n'est PAS `Dockerfile` à dessein
+# — un fichier ainsi nommé serait auto-détecté par tout service partageant ce
+# répertoire racine (cf. `railway.admin.toml`). `railway.web-docker.toml`
+# désigne ce chemin explicitement — et `railway.toml` aussi, le temps de la
+# transition en deux temps. Voir `.dockerignore` à côté.
+#
+# ── Pourquoi deux étapes ─────────────────────────────────────────────────────
+# L'étape de construction a besoin du workspace complet : dépendances de
+# développement, outils de build, sources des paquets partagés. L'image FINALE
+# n'en a besoin d'aucun — le mode `standalone` de Next trace les modules
+# réellement requis depuis le `node_modules` déjà installé et GELÉ, et les
+# recopie. Rien d'autre n'est embarqué.
+#
+# ── Prérequis de configuration ───────────────────────────────────────────────
+# `apps/web/next.config.ts` doit porter `output: "standalone"`. Sans cette
+# ligne, `next build` ne produit aucun répertoire `standalone` ; l'étape de
+# copie échoue alors avec un message explicite plutôt que silencieusement.
+
+# ─────────────────────────────── construction ───────────────────────────────
+FROM node:20-bookworm-slim AS build
+
+# Railway n'expose AUCUNE variable de service à un build Dockerfile sans `ARG`
+# explicite, dans l'étape qui en a besoin (documentation Railway, « Using
+# variables at build time »).
+#
+# Les `NEXT_PUBLIC_*` sont INLINÉES dans le bundle client au build : elles
+# doivent être connues ICI, pas au démarrage. Aucune n'est un secret — toutes
+# finissent lisibles dans le JavaScript servi au navigateur, ce qui est leur
+# raison d'être.
+#
+# Aucun secret ne doit passer par un `ARG`. Le découpage en deux étapes garde
+# ces valeurs hors de l'image finale (vérifié : aucune `NEXT_PUBLIC_*` dans sa
+# configuration ni son historique de couches), mais elles restent visibles dans
+# les journaux du constructeur et dans son cache — et, pour une `NEXT_PUBLIC_*`,
+# dans le bundle servi à tout visiteur.
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_WEB_APP_URL
+ARG NEXT_PUBLIC_SITE_URL
+ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+ARG NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID
+ARG NEXT_PUBLIC_MAPBOX_TOKEN
+# Garde-fou issue #132 / PROD-BUG-03 : `next.config.ts` refuse un build déployé
+# sans URL de site, mais SEULEMENT si `RAILWAY_ENVIRONMENT` est visible. Sans ce
+# `ARG`, le passage au builder Dockerfile perdrait silencieusement la
+# protection, et un bundle pointant vers localhost repartirait en production.
+ARG RAILWAY_ENVIRONMENT
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
+    NEXT_PUBLIC_WEB_APP_URL=${NEXT_PUBLIC_WEB_APP_URL} \
+    NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL} \
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY} \
+    NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=${NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID} \
+    NEXT_PUBLIC_MAPBOX_TOKEN=${NEXT_PUBLIC_MAPBOX_TOKEN} \
+    RAILWAY_ENVIRONMENT=${RAILWAY_ENVIRONMENT}
+
+# `packageManager` de `package.json` reste la SEULE source de vérité pour la
+# version de pnpm : corepack la lit au premier appel, après le COPY. Épingler
+# une version ici en ferait une seconde, libre de diverger en silence.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
+WORKDIR /build
+
+COPY . ./
+RUN pnpm install --frozen-lockfile
+RUN pnpm --filter web build
+
+# Next ne copie NI `static` NI `public` dans le standalone : c'est son contrat.
+# `mkdir -p` parce que le standalone ne crée pas `apps/web/.next-build/` tant
+# qu'il n'a rien à y mettre.
+RUN set -eu; \
+    SA=apps/web/.next-build/standalone/apps/web; \
+    test -f "$SA/server.js" || { echo "standalone absent — 'output: \"standalone\"' manque dans apps/web/next.config.ts" >&2; exit 1; }; \
+    mkdir -p "$SA/.next-build"; \
+    cp -r apps/web/.next-build/static "$SA/.next-build/static"; \
+    cp -r apps/web/public "$SA/public"
+
+# ──────────────────────────────── exécution ─────────────────────────────────
+FROM node:20-bookworm-slim AS runtime
+
+ENV NODE_ENV=production \
+    HOSTNAME=0.0.0.0
+# Railway fournit `PORT` ; cette valeur n'est qu'un repli local.
+ENV PORT=3000
+
+WORKDIR /app
+# SEUL le standalone est copié — ni le workspace installé, ni les outils de test.
+COPY --from=build --chown=node:node /build/apps/web/.next-build/standalone ./
+
+USER node
+EXPOSE 3000
+# Doit rester identique au `startCommand` des fichiers `railway*.toml` qui
+# désignent cette image, et qui l'écrasent côté
+# plateforme : si l'un change, changer l'autre.
+CMD ["node", "apps/web/server.js"]

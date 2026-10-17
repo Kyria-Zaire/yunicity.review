@@ -1,23 +1,34 @@
 "use client";
 
-import { NotificationBellLink } from "@/components/layout/notification-bell-link";
-
 import { YunicityLogo } from "@/components/brand";
-import { useNotificationUnread } from "@/hooks/use-citizen-chrome";
-import { SORTIR_PORTAL_PAGE_TITLE } from "@yunicity/utils";
+import { CitizenMobileHeaderActions } from "@/components/layout/citizen-mobile-header-actions";
 
-/** Header mobile Sortir — logo · titre · cloche (MOBILE-SORTIR-01). */
+/**
+ * Header mobile Sortir — même chrome que le hero Feed mobile :
+ * logo Yunicity + Explorer + Menu + CTA Profil (MOBILE-SORTIR-01).
+ */
 export function SortirMobileHeader() {
-  const unread = useNotificationUnread();
-
   return (
-    <header className="sticky top-0 z-[var(--z-chrome)] border-b border-neutral-200/80 bg-white pt-[env(safe-area-inset-top)]">
-      <div className="relative flex items-center justify-between gap-3 px-4 py-3">
-        <YunicityLogo href="/feed" size="sm" priority />
-        <h1 className="pointer-events-none absolute left-1/2 max-w-[50%] -translate-x-1/2 truncate text-base font-bold text-neutral-900">
-          {SORTIR_PORTAL_PAGE_TITLE}
-        </h1>
-        <NotificationBellLink unreadCount={unread} />
+    <header
+      className="sticky top-0 z-[var(--z-chrome)] border-b border-neutral-200/80 bg-white pt-[env(safe-area-inset-top)]"
+      data-sortir-mobile-header=""
+    >
+      <div className="flex items-center gap-2 px-4 py-3">
+        <div className="min-w-0 flex-1">
+          <span
+            className="inline-flex min-h-11 min-w-0 max-w-full items-center"
+            data-yunicity-mobile-header-control="logo"
+          >
+            <YunicityLogo
+              href="/feed"
+              size="xs"
+              showWordmark
+              priority
+              wordmarkClassName="text-base sm:text-xl"
+            />
+          </span>
+        </div>
+        <CitizenMobileHeaderActions />
       </div>
     </header>
   );

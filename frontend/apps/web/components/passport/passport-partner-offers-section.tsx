@@ -20,9 +20,17 @@ import Link from "next/link";
 
 type PassportPartnerOffersSectionProps = {
   offers: PartnerOfferPublic[];
+  message?: string | null;
+  redeemingId?: string | null;
+  onRedeem?: (offerId: string) => void;
 };
 
-export function PassportPartnerOffersSection({ offers }: PassportPartnerOffersSectionProps) {
+export function PassportPartnerOffersSection({
+  offers,
+  message,
+  redeemingId,
+  onRedeem,
+}: PassportPartnerOffersSectionProps) {
   if (offers.length === 0) {
     return (
       <section className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-6 py-8 text-center">
@@ -38,6 +46,7 @@ export function PassportPartnerOffersSection({ offers }: PassportPartnerOffersSe
     >
       <h2 className="text-lg font-bold text-neutral-900">{PASSPORT_OFFERS_SECTION_TITLE}</h2>
       <p className="mt-1 text-sm text-neutral-600">{PASSPORT_OFFERS_SECTION_SUBTITLE}</p>
+      {message ? <p className="mt-2 text-sm text-emerald-700">{message}</p> : null}
       <ul className="mt-4 grid gap-4 sm:grid-cols-2">
         {offers.map((offer) => (
           <li key={offer.id}>
@@ -83,9 +92,19 @@ export function PassportPartnerOffersSection({ offers }: PassportPartnerOffersSe
                 </p>
               ) : null}
               <div className="mt-4 flex flex-wrap gap-2">
+                {onRedeem ? (
+                  <button
+                    type="button"
+                    onClick={() => onRedeem(offer.id)}
+                    disabled={redeemingId === offer.id}
+                    className="inline-flex rounded-full bg-yunicity-primary px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                  >
+                    {redeemingId === offer.id ? "…" : "Utiliser"}
+                  </button>
+                ) : null}
                 <Link
                   href={buildPartnerOfferHref(offer)}
-                  className="inline-flex rounded-full bg-yunicity-primary px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90"
+                  className="inline-flex rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:border-yunicity-primary/30"
                 >
                   {PASSPORT_OFFERS_CTA_CONDITIONS}
                 </Link>

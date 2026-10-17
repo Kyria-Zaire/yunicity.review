@@ -1,6 +1,7 @@
 "use client";
 
 import { ProfileAvatar } from "@/components/profile-avatar";
+import { ComposerMediaResolution } from "@/components/feed/composer-media-resolution";
 import { useComposerMedia } from "@/hooks/use-composer-media";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -25,8 +26,21 @@ export function FeedMobileComposer({ city, onSubmit }: FeedMobileComposerProps) 
   const publishHintId = useId();
   const { user } = useAuth();
   const api = useYunicityApi();
-  const { fileInputRef, mediaUrl, uploading, mediaError, openPicker, onFileChange, clearMedia } =
-    useComposerMedia();
+  const {
+    fileInputRef,
+    mediaUrl,
+    displayUrl,
+    uploading,
+    mediaError,
+    mediaReadyForPublish,
+    mediaRejected,
+    continueWithoutMedia,
+    openPicker,
+    onFileChange,
+    clearMedia,
+    beginPublishing,
+    finishPublishing,
+  } = useComposerMedia();
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [body, setBody] = useState("");
@@ -35,12 +49,12 @@ export function FeedMobileComposer({ city, onSubmit }: FeedMobileComposerProps) 
 
   const placeholder = homeComposerPlaceholder(city);
   const authorLabel = displayName ?? user?.email?.split("@")[0] ?? "Vous";
-  const canPublish = Boolean(body.trim()) && !isSubmitting && !uploading;
+  const canPublish = Boolean(body.trim()) && !isSubmitting && mediaReadyForPublish;
   // C3.1-R1L : `PostCreateRequest.body` est `min_length=1` cote API — le texte
   // est reellement obligatoire, on ne contourne donc pas le contrat. Mais le
   // bouton restait desactive sans un mot d'explication apres l'ajout d'une
   // photo : l'utilisateur ne pouvait pas savoir ce qui manquait.
-  const missingBodyForMedia = Boolean(mediaUrl) && !body.trim() && !uploading;
+  const missingBodyForMedia = Boolean(displayUrl) && !body.trim() && !uploading;
 
   useEffect(() => {
     void api
@@ -55,16 +69,19 @@ export function FeedMobileComposer({ city, onSubmit }: FeedMobileComposerProps) 
 
   async function handleSubmit() {
     const trimmed = body.trim();
-    if (!trimmed || isSubmitting || uploading) return;
+    if (!trimmed || isSubmitting || !mediaReadyForPublish) return;
+    if (!beginPublishing()) return;
     setIsSubmitting(true);
     setError(null);
     try {
       await onSubmit(trimmed, mediaUrl);
+      finishPublishing(true);
       setBody("");
       clearMedia();
       setExpanded(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Publication impossible pour le moment.");
+    } catch (erreur) {
+      finishPublishing(false, erreur);
+      setError(null);
     } finally {
       setIsSubmitting(false);
     }
@@ -125,7 +142,7 @@ export function FeedMobileComposer({ city, onSubmit }: FeedMobileComposerProps) 
           <button
             type="button"
             onClick={openPhotoPicker}
-            className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-yunicity-primary hover:text-yunicity-primary-hover"
+            className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1 text-sm font-semibold text-yunicity-primary hover:text-yunicity-primary-hover"
           >
             <Camera className="h-[18px] w-[18px]" aria-hidden />
             Photo
@@ -134,13 +151,15 @@ export function FeedMobileComposer({ city, onSubmit }: FeedMobileComposerProps) 
       </div>
 
       {expanded && uploading ? (
-        <p className="mt-3 text-sm text-neutral-500">{COMPOSER_MEDIA_UPLOADING_LABEL}</p>
+        <p className="mt-3 text-sm text-neutral-500" aria-live="polite">
+          {COMPOSER_MEDIA_UPLOADING_LABEL}
+        </p>
       ) : null}
-      {expanded && mediaUrl ? (
+      {expanded && displayUrl ? (
         <div className="mt-3 w-full overflow-hidden rounded-xl border border-neutral-200/90 bg-neutral-100">
           {/* eslint-disable-next-line @next/next/no-img-element -- aperçu média filesystem/R2, hors next/image */}
           <img
-            src={mediaUrl}
+            src={displayUrl}
             alt=""
             className="mx-auto block max-h-72 w-full object-contain"
           />
@@ -168,7 +187,7 @@ export function FeedMobileComposer({ city, onSubmit }: FeedMobileComposerProps) 
           <button
             type="button"
             onClick={openPicker}
-            className="inline-flex items-center gap-1 text-sm font-medium text-yunicity-primary hover:text-yunicity-primary-hover"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 text-sm font-medium text-yunicity-primary hover:text-yunicity-primary-hover"
           >
             <Camera className="h-4 w-4" aria-hidden />
             Photo
@@ -177,7 +196,7 @@ export function FeedMobileComposer({ city, onSubmit }: FeedMobileComposerProps) 
             <button
               type="button"
               onClick={resetComposer}
-              className="rounded-full px-3 py-1.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full px-3 py-1.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100"
             >
               Annuler
             </button>
@@ -186,7 +205,7 @@ export function FeedMobileComposer({ city, onSubmit }: FeedMobileComposerProps) 
               disabled={!canPublish}
               aria-describedby={missingBodyForMedia ? publishHintId : undefined}
               onClick={() => void handleSubmit()}
-              className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
+              className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
                 canPublish
                   ? "bg-yunicity-primary text-white hover:bg-yunicity-primary-hover"
                   : "cursor-not-allowed bg-yunicity-primary/40 text-white/90"
@@ -208,6 +227,13 @@ export function FeedMobileComposer({ city, onSubmit }: FeedMobileComposerProps) 
         <p className="mt-2 pl-12 text-sm text-red-600" role="alert">
           {error ?? mediaError}
         </p>
+      ) : null}
+      {mediaRejected ? (
+        <ComposerMediaResolution
+          onChooseAnother={openPicker}
+          onContinueWithout={continueWithoutMedia}
+          className="pl-12"
+        />
       ) : null}
     </section>
   );

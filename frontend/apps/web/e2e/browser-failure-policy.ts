@@ -9,19 +9,28 @@
  * texte d'un message console. Il n'existe donc aucune règle générale sur `net::ERR_FAILED` :
  * la même erreur, sur une autre URL, est refusée.
  *
- * Les messages console génériques (sans URL) ne sont jamais autorisés seuls : ils ne sont
- * tolérés que dans la limite du nombre de requêtes échouées déjà reconnues — correspondance
- * bornée, un message consommant exactement un crédit.
+ * C3-VIDEO-E2E-DYNAMIC-MEDIA-CLOSE-06 : les médias local-video dynamiques (uploads réels QA)
+ * ne sont tolérés en ERR_ABORTED que s'ils figurent dans PROVEN-SUCCESSFUL-MEDIA-URLS
+ * (registre par exécution, alimenté par une sonde Range préalable).
  */
 export type FailedRequestRecord = {
   url: string;
   method: string;
   errorText: string;
+  /** Playwright `request.resourceType()` — requis pour QA-MEDIA-03 dynamique. */
+  resourceType?: string;
+};
+
+export type ProvenMediaContext = {
+  provenSuccessfulMediaUrls: ReadonlySet<string>;
+  knownHttpErrorMediaUrls: ReadonlySet<string>;
 };
 
 export type BrowserFailureInput = {
   failedRequests: readonly FailedRequestRecord[];
   consoleErrors: readonly string[];
+  /** Registre par exécution — médias local-video prouvés avant interruption lecteur. */
+  provenMedia?: ProvenMediaContext;
 };
 
 export type BrowserFailureVerdict = {
@@ -30,8 +39,9 @@ export type BrowserFailureVerdict = {
 };
 
 /** Origines locales de la stack QA — tout le reste est externe, donc refusé. */
-const QA_API_ORIGIN = "http://localhost:8010";
-const QA_WEB_ORIGIN = "http://localhost:3002";
+const QA_API_ORIGINS = ["http://localhost:8010", "http://127.0.0.1:8010"] as const;
+const QA_WEB_ORIGINS = ["http://localhost:3002", "http://127.0.0.1:3002"] as const;
+const QA_MEDIA_ORIGINS = [...QA_API_ORIGINS, ...QA_WEB_ORIGINS] as const;
 
 type AllowedSignature = {
   id: string;
@@ -48,22 +58,17 @@ type AllowedSignature = {
  * même d'un seul champ, rend la requête bloquante.
  */
 const ALLOWED_SIGNATURES: readonly AllowedSignature[] = [
-  // QA-NOTIF-01 — requête de notifications annulée au bootstrap de la stack QA.
-  // Le sondage produit exactement `?limit=1` : toute autre valeur, l'absence du paramètre
-  // ou un paramètre supplémentaire décrivent une AUTRE requête, donc bloquante.
   {
     id: "QA-NOTIF-01",
-    origins: [QA_API_ORIGIN],
+    origins: [...QA_API_ORIGINS],
     pathname: "/api/v1/notifications",
     method: "GET",
     errorText: "net::ERR_FAILED",
     searchParams: { limit: "1" },
   },
-  // QA-MEDIA-01 — média placeholder seedé, refusé par l'Opaque Response Blocking de Chromium.
-  // Servi sans query : une URL paramétrée n'est pas cette requête.
   {
     id: "QA-MEDIA-01",
-    origins: [QA_API_ORIGIN, QA_WEB_ORIGIN],
+    origins: [...QA_MEDIA_ORIGINS],
     pathname: "/qa/qa-sample-video.mp4",
     method: "GET",
     errorText: "net::ERR_BLOCKED_BY_ORB",
@@ -71,13 +76,35 @@ const ALLOWED_SIGNATURES: readonly AllowedSignature[] = [
   },
   {
     id: "QA-MEDIA-01",
-    origins: [QA_API_ORIGIN, QA_WEB_ORIGIN],
+    origins: [...QA_MEDIA_ORIGINS],
     pathname: "/qa/qa-sample-video.jpg",
     method: "GET",
     errorText: "net::ERR_BLOCKED_BY_ORB",
     searchParams: {},
   },
+  {
+    id: "QA-MEDIA-02",
+    origins: [...QA_MEDIA_ORIGINS],
+    pathname: "/media/qa/qa-sample-video.mp4",
+    method: "GET",
+    errorText: "net::ERR_ABORTED",
+    searchParams: {},
+  },
+  {
+    id: "QA-MEDIA-02",
+    origins: [...QA_MEDIA_ORIGINS],
+    pathname: "/media/qa/qa-sample-video-portrait.mp4",
+    method: "GET",
+    errorText: "net::ERR_ABORTED",
+    searchParams: {},
+  },
 ];
+
+const LOCAL_VIDEO_PROCESSED_PATH_RE =
+  /^\/media\/local-video\/reims\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/processed\.mp4$/i;
+
+const UUID_V4_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /** Égalité EXHAUSTIVE des paramètres de recherche : même ensemble de clés, mêmes valeurs. */
 function hasExactSearchParams(url: URL, expected: Readonly<Record<string, string>>): boolean {
@@ -114,6 +141,89 @@ function matchSignature(record: FailedRequestRecord): AllowedSignature | null {
   );
 }
 
+function isDynamicLocalVideoProcessedPath(pathname: string): boolean {
+  if (!LOCAL_VIDEO_PROCESSED_PATH_RE.test(pathname)) return false;
+  const uuidSegment = pathname.split("/")[4] ?? "";
+  return UUID_V4_RE.test(uuidSegment);
+}
+
+/**
+ * QA-MEDIA-03 — média local-video dynamique prouvé avant interruption lecteur (drawer/navigation).
+ */
+function matchProvenDynamicMediaAbort(
+  record: FailedRequestRecord,
+  provenMedia: ProvenMediaContext,
+): boolean {
+  if (record.method !== "GET") return false;
+  if (record.errorText !== "net::ERR_ABORTED") return false;
+  if (record.resourceType !== "media") return false;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(record.url);
+  } catch {
+    return false;
+  }
+
+  if (!(QA_MEDIA_ORIGINS as readonly string[]).includes(parsed.origin)) return false;
+  if (!isDynamicLocalVideoProcessedPath(parsed.pathname)) return false;
+  if (parsed.searchParams.toString().length > 0) return false;
+  if (provenMedia.knownHttpErrorMediaUrls.has(record.url)) return false;
+  if (!provenMedia.provenSuccessfulMediaUrls.has(record.url)) return false;
+
+  return true;
+}
+
+/**
+ * QA-RSC-01 — prefetch RSC du routeur Next ANNULE cote client.
+ *
+ * Mesure (spec 07, deux passages identiques) : la barre de navigation prefetche
+ * ses quatre cibles depuis la meme frame, avec le meme hash de build. Le serveur
+ * repond 200 aux quatre. La derniere de la file est annulee quand la page change
+ * d'etat :
+ *
+ *   /feed?_rsc=...                 200   -
+ *   /map?_rsc=...                  200   -
+ *   /sortir?_rsc=...               200   -
+ *   /profile/<handle>?_rsc=...     200   net::ERR_ABORTED
+ *
+ * Un prefetch est une optimisation : annule, il n'a AUCUN effet visible — la
+ * navigation reelle refera la requete. Le produit n'a rien manque de servir, et
+ * le statut 200 le prouve.
+ *
+ * Pourquoi la regle ne contraint pas le chemin : n'importe quelle route de
+ * l'application peut etre prefetchee, et figer les quatre actuelles rendrait la
+ * regle fausse au premier changement de navigation sans rien securiser. Ce qui
+ * la borne, c'est le CANAL : une requete `fetch` de meme origine que
+ * l'application, dont la chaine de requete est EXACTEMENT le marqueur `_rsc` de
+ * Next, annulee par le client.
+ *
+ * Ce qu'elle ne masque pas : une navigation RSC reellement cassee se voit dans
+ * l'interface, et ce sont les assertions d'ecran des memes tests qui la
+ * rattrapent — pas cette politique reseau. Un abandon sur l'API, sur un media,
+ * sur une autre origine, ou sans le marqueur `_rsc`, reste une violation.
+ */
+function matchCancelledRscPrefetch(record: FailedRequestRecord): boolean {
+  if (record.method !== "GET") return false;
+  if (record.errorText !== "net::ERR_ABORTED") return false;
+  if (record.resourceType !== "fetch") return false;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(record.url);
+  } catch {
+    return false;
+  }
+
+  if (!(QA_WEB_ORIGINS as readonly string[]).includes(parsed.origin)) return false;
+
+  // Chaine de requete EXACTEMENT `_rsc=<hash non vide>` : ni parametre en plus,
+  // ni marqueur vide.
+  const cles = Array.from(parsed.searchParams.keys());
+  if (cles.length !== 1 || cles[0] !== "_rsc") return false;
+  return (parsed.searchParams.get("_rsc") ?? "").length > 0;
+}
+
 function sameRequest(messageUrl: string, allowedUrls: readonly string[]): boolean {
   return allowedUrls.some((allowed) => allowed === messageUrl);
 }
@@ -128,12 +238,22 @@ export function evaluateBrowserFailures(input: BrowserFailureInput): BrowserFail
       allowedUrls.push(request.url);
       continue;
     }
+
+    if (input.provenMedia && matchProvenDynamicMediaAbort(request, input.provenMedia)) {
+      allowedUrls.push(request.url);
+      continue;
+    }
+
+    if (matchCancelledRscPrefetch(request)) {
+      allowedUrls.push(request.url);
+      continue;
+    }
+
     violations.push(
       `requête échouée hors signature autorisée : ${request.method} ${request.url} -> ${request.errorText}`,
     );
   }
 
-  // Une requête échouée reconnue = un crédit, et un seul, pour un message console.
   let credits = allowedUrls.length;
 
   for (const message of input.consoleErrors) {
@@ -143,7 +263,7 @@ export function evaluateBrowserFailures(input: BrowserFailureInput): BrowserFail
       const external = urls.filter((url) => {
         try {
           const origin = new URL(url).origin;
-          return origin !== QA_API_ORIGIN && origin !== QA_WEB_ORIGIN;
+          return !(QA_MEDIA_ORIGINS as readonly string[]).includes(origin);
         } catch {
           return true;
         }

@@ -27,6 +27,8 @@ const SIDEBAR = ".web-sidebar-aside";
 const NAV = "[data-citizen-medium-rail-nav]";
 const FOOTER = "[data-citizen-medium-rail-footer]";
 const CONTROLE = "[data-citizen-medium-rail-control]";
+/** Libellé du déclencheur de création — identique sur toutes les surfaces. */
+const CREATE_LABEL = "Créer";
 
 /** Routes citoyennes avec destination principale attendue. */
 const ROUTES_PRINCIPALES = [
@@ -64,6 +66,42 @@ async function aller(page: Page, route: string, largeur = 768, hauteur = 1024): 
   await page.setViewportSize({ width: largeur, height: hauteur });
   await page.goto(route);
   await expect(page.locator("main").first()).toBeVisible();
+}
+
+/**
+ * Ouvre le menu de création depuis son déclencheur RÉELLEMENT visible et rend
+ * le dialogue. Un seul déclencheur par palier : bottom-nav en mobile, rail en
+ * medium — mesuré, pas supposé.
+ */
+async function ouvrirMenuCreation(page: Page) {
+  const declencheur = page.locator(`button[aria-label="${CREATE_LABEL}"]`).filter({ visible: true });
+  await expect(declencheur, "aucun déclencheur de création visible").toHaveCount(1);
+  await declencheur.first().click();
+  const dialogue = page.getByRole("dialog", { name: CREATE_LABEL });
+  await expect(dialogue).toBeVisible();
+  return dialogue;
+}
+
+/**
+ * L'accès « Publier une vidéo » est une ENTRÉE DU MENU, donc un `button` qui
+ * route — pas un lien. Un `getByRole("link")` ne peut pas le voir.
+ */
+function entreeVideo(dialogue: ReturnType<Page["getByRole"]>) {
+  return dialogue.getByRole("button", { name: /publier une vidéo/i });
+}
+
+/**
+ * Compte les parcours vidéo CONCURRENTS : tout lien visible vers la
+ * destination de publication posé AILLEURS que dans le menu de création.
+ * Garde la décision « pas de second parcours » vérifiable.
+ */
+async function parcoursVideoConcurrents(page: Page): Promise<number> {
+  return page.evaluate(() =>
+    [...document.querySelectorAll('a[href="/videos/new"]')].filter((el) => {
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    }).length,
+  );
 }
 
 async function mesurer(page: Page) {
@@ -534,7 +572,16 @@ test.describe("C3-CITIZEN-MEDIUM-SHELL — rail citoyen global", () => {
         "surface Menu dupliquee",
       ).toHaveCount(1);
 
-      const url = authedPage.url();
+      /*
+       * Le contrat est « le Menu ne NAVIGUE pas », donc il porte sur la route.
+       * Comparer l'URL ENTIÈRE y mêlait un effet étranger : `/search` pose
+       * `?city=Reims` par `router.replace` dès que la ville se résout
+       * (search-screen.tsx), de façon asynchrone. Mesuré : la query apparaît
+       * entre la capture et la comparaison, et le test rougissait pour une
+       * navigation qui n'a pas eu lieu. Le test Créer de ce même fichier
+       * compare déjà le `pathname` pour cette raison exacte.
+       */
+      const routeAvant = new URL(authedPage.url()).pathname;
       await authedPage.keyboard.press("Escape");
       await expect(menu, "la surface Menu ne s'est pas fermee").toHaveAttribute(
         "aria-expanded",
@@ -543,7 +590,10 @@ test.describe("C3-CITIZEN-MEDIUM-SHELL — rail citoyen global", () => {
       // Le focus revient au declencheur VISIBLE du rail, jamais a celui de
       // l'aside masque.
       await expect(menu, "focus non restitue au Menu du rail").toBeFocused();
-      expect(authedPage.url(), "l'ouverture du Menu a modifie l'URL").toBe(url);
+      expect(
+        new URL(authedPage.url()).pathname,
+        "le Menu a change de route",
+      ).toBe(routeAvant);
     });
   }
 
@@ -660,9 +710,9 @@ test.describe("C3-CITIZEN-MEDIUM-SHELL — rail citoyen global", () => {
    * Preuve FONCTIONNELLE du contrôle Créer (C3-CITIZEN-MEDIUM-SHELL-R1D §7).
    *
    * Le clic est réel et la surface ouverte est celle du contrat Create Hub —
-   * pas une quelconque surface. Le CTA « Publier une vidéo » de la page Vidéos
-   * n'est jamais cliqué : il vit dans le contenu, le rail porte l'action
-   * globale, et les deux coexistent.
+   * pas une quelconque surface. Sur `/videos`, l'accès « Publier une vidéo »
+   * vit DANS ce menu (décision produit) : le rail porte l'action globale, et
+   * aucun second parcours ne la double en mobile ni en medium.
    */
   for (const route of ["/feed", "/videos", "/search"] as const) {
     test(`768 — ${route} : Créer s'ouvre, se ferme et rend le focus`, async ({ authedPage }) => {
@@ -712,31 +762,39 @@ test.describe("C3-CITIZEN-MEDIUM-SHELL — rail citoyen global", () => {
   }
 
   /**
-   * Les deux actions coexistent sur `/videos` : le rail porte « Créer », le
-   * contenu garde son CTA « Publier une vidéo ». L'un ne remplace pas l'autre.
+   * Accès « Publier une vidéo » sur `/videos` en medium — DÉCISION PRODUIT.
+   *
+   * Ce test exigeait deux affordances coexistantes : le « Créer » du rail ET
+   * un CTA dans le contenu. La décision a tranché autrement — l'accès vit dans
+   * le MENU DE CRÉATION existant, avec la destination existante, « pas de
+   * bouton flottant supplémentaire ni de second parcours ».
+   *
+   * Le CTA de contenu est d'ailleurs masqué par CSS à ce palier
+   * (`.videos-discovery-mobile-only { display: none }` entre 640 et 1023,98) :
+   * l'exiger visible revenait à demander un parcours que le design a retiré.
    */
-  test("768 — /videos : Créer du rail et « Publier une vidéo » coexistent", async ({
-    authedPage,
-  }) => {
+  test("768 — /videos : l'accès vidéo passe par le menu de création", async ({ authedPage }) => {
     await aller(authedPage, "/videos");
 
     const creer = authedPage.locator(`${RAIL} [data-citizen-medium-rail-control="create"] button`);
-    await expect(creer).toBeVisible();
+    await expect(creer, "le rail ne porte pas Créer").toBeVisible();
 
-    // Le portail rend plusieurs CTA identiques selon le format ; seul celui
-    // réellement affiché à 768 fait preuve.
-    const publier = authedPage
-      .getByRole("link", { name: /publier une vidéo/i })
-      .filter({ visible: true })
-      .first();
-    await expect(publier, "CTA « Publier une vidéo » perdu").toBeVisible();
-    await expect(publier).toHaveAttribute("href", "/videos/new");
+    const dialogue = await ouvrirMenuCreation(authedPage);
+    const video = entreeVideo(dialogue);
+    await expect(video, "entrée « Publier une vidéo » absente du menu").toHaveCount(1);
 
-    // Le CTA de contenu n'est pas dans le rail : deux affordances distinctes.
+    // Destination : celle du parcours existant, prouvée par la navigation.
+    await video.click();
+    await expect(authedPage).toHaveURL(/\/videos\/new$/);
+  });
+
+  /** « Pas de second parcours » : aucun autre accès visible à la publication. */
+  test("768 — /videos : aucun parcours vidéo concurrent", async ({ authedPage }) => {
+    await aller(authedPage, "/videos");
     expect(
-      await publier.evaluate((el, sel) => el.closest(sel) !== null, RAIL),
-      "le CTA de la page a été absorbé par le rail",
-    ).toBe(false);
+      await parcoursVideoConcurrents(authedPage),
+      "un second parcours vers /videos/new est visible hors du menu",
+    ).toBe(0);
   });
 });
 
@@ -764,23 +822,57 @@ test.describe("C3-CITIZEN-MEDIUM-SHELL-R1E — Create par surface", () => {
     return page.getByRole("link", { name: /publier une vidéo/i }).filter({ visible: true }).first();
   }
 
-  test("375 — /videos : mobile gelé, aucun Create global, CTA intact", async ({ authedPage }) => {
+  /**
+   * Mobile — DÉCISION PRODUIT. Ce test exigeait « aucun Create global » et un
+   * CTA de page visible. Les deux clauses sont tombées :
+   *
+   *   · le déclencheur du bottom-nav n'est pas un FAB surnuméraire, c'est le
+   *     MENU DE CRÉATION EXISTANT — `variant="bottom-nav"` s'affiche dès que la
+   *     route rend le hub ouvrable (`isCreateHubAvailableOnRoute`), et c'est
+   *     par lui que la décision fait passer l'accès vidéo ;
+   *   · le CTA de contenu est masqué par CSS en mobile, donc inexigible.
+   *
+   * Ce qui reste vrai et doit le rester : PAS de rail medium, PAS de second
+   * déclencheur, et le bottom-nav historique intact.
+   */
+  test("375 — /videos : l'accès vidéo passe par le menu du bottom-nav", async ({ authedPage }) => {
     await aller(authedPage, "/videos", 375, 812);
 
     // Le rail existe dans le DOM a toutes les largeurs (il est masque par CSS
-    // hors 640–1279,98) : seule la VISIBILITE fait preuve ici.
+    // hors 640–1023,98) : seule la VISIBILITE fait preuve ici.
     expect((await mesurer(authedPage)).railsVisibles, "rail medium visible en mobile").toBe(0);
-    expect(await creeVisibles(authedPage), "FAB Créer réapparu sur /videos mobile").toBe(0);
 
-    // Bottom-nav historique toujours en place et actionnable.
+    // Un seul déclencheur, et il est ANCRÉ dans la barre — pas flottant.
+    expect(await creeVisibles(authedPage), "déclencheur de création dupliqué").toBe(1);
     const bottomNav = authedPage.locator(".web-mobile-strategic-bottom-nav");
     await expect(bottomNav, "bottom-nav mobile perdue").toBeVisible();
+    expect(
+      await authedPage
+        .locator(`.web-mobile-strategic-bottom-nav button[aria-label="${CREATE_LABEL}"]`)
+        .count(),
+      "le déclencheur de création n'est pas ancré dans la barre",
+    ).toBe(1);
     expect(
       await bottomNav.locator("a[href]").count(),
       "bottom-nav mobile amputée",
     ).toBeGreaterThan(0);
 
-    await expect(await ctaPublier(authedPage), "CTA « Publier une vidéo » perdu").toBeVisible();
+    const dialogue = await ouvrirMenuCreation(authedPage);
+    await expect(
+      entreeVideo(dialogue),
+      "entrée « Publier une vidéo » absente du menu mobile",
+    ).toHaveCount(1);
+    await entreeVideo(dialogue).click();
+    await expect(authedPage).toHaveURL(/\/videos\/new$/);
+  });
+
+  /** Mobile : « pas de second parcours » non plus. */
+  test("375 — /videos : aucun parcours vidéo concurrent", async ({ authedPage }) => {
+    await aller(authedPage, "/videos", 375, 812);
+    expect(
+      await parcoursVideoConcurrents(authedPage),
+      "un second parcours vers /videos/new est visible hors du menu",
+    ).toBe(0);
   });
 
   test("768 — /videos : rail complet et Créer au design gelé", async ({ authedPage }) => {
@@ -799,7 +891,9 @@ test.describe("C3-CITIZEN-MEDIUM-SHELL-R1E — Create par surface", () => {
     // Un seul déclencheur Create visible : celui du rail, pas de jumeau.
     expect(await creeVisibles(authedPage)).toBe(1);
 
-    await expect(await ctaPublier(authedPage), "CTA de page perdu").toBeVisible();
+    // Et il porte l'accès vidéo décidé.
+    const dialogue = await ouvrirMenuCreation(authedPage);
+    await expect(entreeVideo(dialogue), "entrée vidéo absente du menu du rail").toHaveCount(1);
   });
 
   test("1280 — /videos : desktop gelé, aucun Create global, CTA intact", async ({ authedPage }) => {
@@ -931,11 +1025,10 @@ test.describe("C3-CITIZEN-MEDIUM-SHELL-R1F — canvas creation-flow", () => {
     const creer = authedPage.locator(`${RAIL} [data-citizen-medium-rail-control="create"] button`);
     await expect(creer).toBeVisible();
 
-    const publier = authedPage
-      .getByRole("link", { name: /publier une vidéo/i })
-      .filter({ visible: true })
-      .first();
-    await expect(publier).toBeVisible();
+    // L'accès vidéo décidé reste atteignable après R1F : par le menu, pas par
+    // un CTA de page que le design masque à ce palier.
+    const dialogue = await ouvrirMenuCreation(authedPage);
+    await expect(entreeVideo(dialogue), "entrée vidéo perdue après R1F").toHaveCount(1);
   });
 
   test("639 — /videos/new : comportement mobile historique inchange", async ({ authedPage }) => {

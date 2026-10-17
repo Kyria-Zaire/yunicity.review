@@ -50,7 +50,7 @@ export function NewPostMobileView({
           <button
             type="button"
             onClick={() => router.back()}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 hover:bg-neutral-100"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-neutral-600 transition hover:bg-neutral-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yunicity-primary"
             aria-label={POST_NEW_CLOSE}
           >
             <X className="h-5 w-5" />
@@ -61,7 +61,7 @@ export function NewPostMobileView({
             type="button"
             disabled={!canPublish}
             onClick={onPublish}
-            className="rounded-lg bg-yunicity-primary px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg bg-yunicity-primary px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40"
           >
             {POST_NEW_PUBLISH}
           </button>
@@ -71,7 +71,7 @@ export function NewPostMobileView({
           <button
             type="button"
             onClick={() => onStepChange(step === "options" ? "media" : "compose")}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 hover:bg-neutral-100"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-neutral-600 transition hover:bg-neutral-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yunicity-primary"
             aria-label="Retour"
           >
             <ChevronDown className="h-5 w-5 rotate-90" />
@@ -103,7 +103,7 @@ export function NewPostMobileView({
               <p className="text-sm font-semibold text-neutral-900">{authorLabel}</p>
               <button
                 type="button"
-                className="mt-0.5 inline-flex items-center gap-1 rounded-md bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-700"
+                className="mt-0.5 inline-flex min-h-11 items-center gap-1 rounded-md bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-700"
               >
                 <Globe2 className="h-3 w-3" />
                 Public
@@ -131,7 +131,7 @@ export function NewPostMobileView({
             <button
               type="button"
               onClick={() => onStepChange("media")}
-              className="flex w-full items-center justify-between py-2 text-sm text-neutral-800"
+              className="flex min-h-11 w-full items-center justify-between py-2 text-sm text-neutral-800"
             >
               {POST_NEW_TAG_PEOPLE}
               <ChevronRight className="h-4 w-4 text-neutral-400" />
@@ -258,7 +258,7 @@ export function NewPostMobileView({
           <button
             type="button"
             onClick={() => onStepChange("media")}
-            className="w-full rounded-xl border border-neutral-200 py-2.5 text-sm font-medium text-neutral-800"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-neutral-200 py-2.5 text-sm font-medium text-neutral-800"
           >
             {POST_NEW_NEXT} — {POST_NEW_SELECT_MEDIA}
           </button>

@@ -3,10 +3,13 @@
 import type { AuthUser, LoginRequest, RegisterRequest } from "@yunicity/types";
 import {
   MemoryTokenStorage,
+  clearAuthorizedMediaSession,
   createAuthClient,
   createYunicityApi,
   getWebApiBaseUrl,
   humanizeAuthFailure,
+  isRegistrationPending,
+  rememberPendingVerificationEmail,
   syncPassportSessionUser,
   type YunicityApi,
 } from "@yunicity/utils";
@@ -16,9 +19,22 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+
+/**
+ * Issue d'une inscription (AUTH-01).
+ *
+ * `verification_required` n'est PAS un échec : le compte existe, mais aucune
+ * session n'est ouverte tant que l'adresse n'est pas confirmée. Un simple
+ * booléen ne saurait pas distinguer ce cas d'une inscription refusée.
+ */
+export type RegisterOutcome =
+  | { status: "authenticated" }
+  | { status: "verification_required" }
+  | { status: "failed" };
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -27,7 +43,7 @@ interface AuthContextValue {
   error: string | null;
   yunicityApi: YunicityApi;
   login: (payload: LoginRequest) => Promise<boolean>;
-  register: (payload: RegisterRequest) => Promise<boolean>;
+  register: (payload: RegisterRequest) => Promise<RegisterOutcome>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   clearError: () => void;
@@ -51,6 +67,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         platform: "web",
         storage,
         onSessionCleared: () => {
+          // Point central : logout, 401 final, refresh refusé, session révoquée.
+          try {
+            clearAuthorizedMediaSession();
+          } catch {
+            /* ne jamais bloquer la déconnexion */
+          }
           syncPassportSessionUser(null);
           setUser(null);
         },
@@ -93,8 +115,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [client]);
 
+  /**
+   * Restauration depuis le cache arrière/avant (bfcache) : le JS reprend avec un
+   * access token en mémoire parfois expiré. On force un refresh cookie avant que
+   * les hooks métier (profil, chrome citoyen) ne partent en 401.
+   */
+  useEffect(() => {
+    async function recoverSessionFromBFCache() {
+      try {
+        await client.refreshAccessToken();
+        const me = await client.me();
+        setUser(me);
+      } catch {
+        setUser(null);
+      }
+    }
+
+    function onPageShow(event: PageTransitionEvent) {
+      if (event.persisted) {
+        void recoverSessionFromBFCache();
+      }
+    }
+
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, [client]);
+
   useEffect(() => {
     syncPassportSessionUser(user?.id ?? null);
+  }, [user?.id]);
+
+  /** Switch de compte A→B sans passer par clearSession (ex. login direct). */
+  const previousUserIdRef = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    const previous = previousUserIdRef.current;
+    const next = user?.id ?? null;
+    if (previous === undefined) {
+      previousUserIdRef.current = next;
+      return;
+    }
+    if (previous && next && previous !== next) {
+      try {
+        clearAuthorizedMediaSession();
+      } catch {
+        /* ignore */
+      }
+    }
+    previousUserIdRef.current = next;
   }, [user?.id]);
 
   const login = useCallback(
@@ -102,6 +169,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null);
       try {
         const response = await client.login(payload);
+        // Connexion (y compris A→B) : nouvelle génération média, pas de Blob hérité.
+        try {
+          clearAuthorizedMediaSession();
+        } catch {
+          /* ignore */
+        }
         setUser(response.user);
         return true;
       } catch (err) {
@@ -113,15 +186,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const register = useCallback(
-    async (payload: RegisterRequest) => {
+    async (payload: RegisterRequest): Promise<RegisterOutcome> => {
       setError(null);
       try {
         const response = await client.register(payload);
+        if (isRegistrationPending(response)) {
+          // Aucun jeton n'a ete emis : renseigner `user` ici rendrait
+          // `isAuthenticated` vrai sans session, et toute requete authentifiee
+          // echouerait ensuite en 401.
+          rememberPendingVerificationEmail(response.user.email);
+          return { status: "verification_required" };
+        }
+        try {
+          clearAuthorizedMediaSession();
+        } catch {
+          /* ignore */
+        }
         setUser(response.user);
-        return true;
+        return { status: "authenticated" };
       } catch (err) {
         setError(humanizeAuthFailure(err, "Inscription impossible."));
-        return false;
+        return { status: "failed" };
       }
     },
     [client],
@@ -129,6 +214,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     setError(null);
+    // Même primitive que onSessionCleared (idempotente) — avant credentials.
+    try {
+      clearAuthorizedMediaSession();
+    } catch {
+      /* ne jamais bloquer la déconnexion */
+    }
     await client.logout();
     setUser(null);
   }, [client]);

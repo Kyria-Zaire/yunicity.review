@@ -1,5 +1,7 @@
 import type { LocalVideoFeedItem } from "@yunicity/types";
 
+import type { MapTerritorySelection } from "./map-living-territory";
+
 export const LOCAL_VIDEO_TEASER_MAX = 3;
 export const LOCAL_VIDEO_TEASER_FETCH_LIMIT = 20;
 
@@ -9,11 +11,43 @@ export const LOCAL_VIDEO_TEASER_SECTION_PLACE = "Vidéos de ce lieu";
 export const LOCAL_VIDEO_TEASER_SECTION_NEIGHBORHOOD = "Vidéos du quartier";
 export const LOCAL_VIDEO_TEASER_SECTION_EVENT = "Vidéos de l'événement";
 
+// Etat vide de la fiche quartier : un quartier sans vidéo n'est pas une
+// erreur, c'est une invitation.
+export const LOCAL_VIDEO_TEASER_NEIGHBORHOOD_EMPTY =
+  "Aucune vidéo de ce quartier pour le moment.";
+
 export type LocalVideoTeaserFilter =
   | { kind: "city" }
   | { kind: "place"; culturalPlaceSlug: string }
   | { kind: "neighborhood"; neighborhoodSlug: string }
   | { kind: "event"; localEventId: string };
+
+/**
+ * Sélection de la carte → filtre de teaser (VIDEO-03-TEASERS-03).
+ *
+ * La carte tient déjà une sélection servie par le backend : ce n'est qu'un
+ * changement de vocabulaire, aucun slug n'est deviné et aucune géographie n'est
+ * reconstruite côté client.
+ *
+ * Une tribu ne porte pas de vidéo : plutôt qu'un filtre qui renverrait un
+ * résultat arbitraire, on ne produit rien et le teaser reste masqué.
+ */
+export function buildLocalVideoTeaserFilterFromMapSelection(
+  selection: MapTerritorySelection | null,
+): LocalVideoTeaserFilter | null {
+  if (!selection) return null;
+  switch (selection.kind) {
+    case "place":
+      return { kind: "place", culturalPlaceSlug: selection.slug };
+    case "neighborhood":
+      return { kind: "neighborhood", neighborhoodSlug: selection.slug };
+    case "event":
+      return { kind: "event", localEventId: selection.id };
+    case "tribe":
+    default:
+      return null;
+  }
+}
 
 export function buildLocalVideoTeaserHref(videoId: string): string {
   return `/videos?video=${encodeURIComponent(videoId)}`;

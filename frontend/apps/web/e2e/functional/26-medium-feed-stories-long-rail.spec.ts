@@ -25,6 +25,7 @@
  */
 import { build } from "esbuild";
 import { expect, test } from "@playwright/test";
+import { estBruitDePageHote } from "@/lib/qa/console-noise";
 
 /** Largeur de colonne mesurée sur le vrai `/feed` à 640 px (relevé C3-FEED-M5). */
 const COLONNE_640_PX = 552;
@@ -102,9 +103,16 @@ test.describe("C3-FEED-M5.1 — rail Stories long (débordement)", () => {
     const erreurs: string[] = [];
     page.on("pageerror", (e) => erreurs.push(String(e)));
     page.on("console", (msg) => {
-      // Le bruit reseau de la page publique (401 sur les appels de session) n'est
-      // pas une erreur de montage : seules les exceptions JS comptent ici.
-      if (msg.type() === "error" && !msg.text().includes("Failed to load resource")) {
+      /*
+       * Le bruit de la page hote n'est pas une erreur de montage : seules les
+       * exceptions JS comptent ici. Le tri vit dans `lib/qa/console-noise`, avec
+       * son test unitaire — le filtre en ligne ne couvrait que les 401 reseau.
+       *
+       * Il manquait la notice CSP que WebKit emet et Chromium non : elle faisait
+       * echouer ce test sous WebKit, le releve attendu « erreurs : aucune » se
+       * retrouvant charge du texte de la politique.
+       */
+      if (msg.type() === "error" && !estBruitDePageHote(msg.text())) {
         erreurs.push(msg.text());
       }
     });

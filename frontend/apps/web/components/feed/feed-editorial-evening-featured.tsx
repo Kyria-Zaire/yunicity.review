@@ -11,20 +11,28 @@ type FeedEditorialEveningFeaturedProps = {
   city: string;
   markPrimarySurface?: boolean;
   className?: string;
+  loading?: boolean;
+  error?: boolean;
+  onRetry?: () => void;
 };
 
 /**
- * Bandeau « Ce soir » + carte événement éditoriale — partagé aux trois paliers.
+ * Bandeau « Ce soir » + carte événement éditoriale de la colonne centrale.
  *
- * L'écart entre les deux blocs est nul sous 1280px (rendu mobile/medium validé)
- * et vaut 20px au-delà, comme la colonne Desktop d'origine : porté par
- * `.feed-editorial-evening-featured` dans `globals.css`, pas ici.
+ * FEED-MAIN-LAYOUT-UIUX-01 §5 : à partir de 1024px le volet droit devient la
+ * position principale de l'agenda, et ce bloc est masqué par
+ * `.feed-editorial-evening-featured` dans `globals.css` — sans quoi les mêmes
+ * événements seraient affichés deux fois sur le même écran. Il ne subsiste donc
+ * qu'en mobile et medium, où l'écart entre bandeau et carte est nul.
  */
 export function FeedEditorialEveningFeatured({
   events,
   city,
   markPrimarySurface = false,
   className,
+  loading = false,
+  error = false,
+  onRetry,
 }: FeedEditorialEveningFeaturedProps) {
   const featuredEvent = selectFeedFeaturedEvent(events);
 
@@ -36,6 +44,9 @@ export function FeedEditorialEveningFeatured({
           city={city}
           markPrimarySurface={markPrimarySurface}
           excludeEventId={featuredEvent?.id ?? null}
+          loading={loading}
+          error={error}
+          onRetry={onRetry}
         />
       </div>
       {featuredEvent ? (

@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Boolean, ForeignKey, String, Text, Uuid, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, Uuid, text
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -59,5 +60,20 @@ class UserProfile(TimestampMixin, Base):
         nullable=False,
         server_default=text("''::tsvector"),
     )
+    username_changed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     user: Mapped[User] = relationship("User", back_populates="profile")
+
+
+class UserProfileUsernameHistory(Base):
+    """Previously used handles retained to prevent identity impersonation."""
+
+    __tablename__ = "user_profile_username_history"
+
+    username: Mapped[str] = mapped_column(String(30), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    retired_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

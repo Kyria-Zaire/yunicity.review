@@ -25,6 +25,7 @@ import {
   DISCUSSION_TAGS_MAX,
   DISCUSSION_TITLE_MAX,
   DISCUSSION_NEW_CATEGORY_CARDS,
+  insertTextAtSelection,
   prefixEditorLines,
   wrapEditorSelection,
 } from "@yunicity/utils";
@@ -50,6 +51,8 @@ import {
   Footprints,
 } from "lucide-react";
 import { useRef, useState } from "react";
+
+import { DiscussionsEmojiPicker } from "@/components/discussions/discussions-emoji-picker";
 
 const CATEGORY_ICONS: Record<DiscussionCategoryId, typeof Globe> = {
   all: Globe,
@@ -100,7 +103,7 @@ export function NewDiscussionForm({
     setTagInput("");
   }
 
-  function applyEditorAction(action: "bold" | "italic" | "underline" | "ul" | "ol" | "link" | "emoji") {
+  function applyEditorAction(action: "bold" | "italic" | "underline" | "ul" | "ol" | "link") {
     const el = bodyRef.current;
     if (!el) return;
     const start = el.selectionStart;
@@ -124,13 +127,23 @@ export function NewDiscussionForm({
         return;
       }
     }
-    if (action === "emoji") {
-      result = {
-        next: `${body.slice(0, start)}🙂${body.slice(end)}`,
-        cursor: start + 2,
-      };
-    }
 
+    setBody(result.next);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(result.cursor, result.cursor);
+    });
+  }
+
+  function insertEmoji(emoji: string) {
+    const el = bodyRef.current;
+    if (!el) {
+      setBody((prev) => `${prev}${emoji}`);
+      return;
+    }
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const result = insertTextAtSelection(body, start, end, emoji);
     setBody(result.next);
     requestAnimationFrame(() => {
       el.focus();
@@ -235,9 +248,21 @@ export function NewDiscussionForm({
             >
               <ImageIcon className="h-4 w-4" />
             </EditorTool>
-            <EditorTool label="Emoji" onClick={() => applyEditorAction("emoji")}>
-              <Smile className="h-4 w-4" />
-            </EditorTool>
+            <DiscussionsEmojiPicker
+              onSelect={insertEmoji}
+              placement="bottom-start"
+              renderTrigger={(props) => (
+                <button
+                  {...props}
+                  type="button"
+                  aria-label="Emoji"
+                  title="Emoji"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-600 transition hover:bg-white hover:text-yunicity-primary"
+                >
+                  <Smile className="h-4 w-4" />
+                </button>
+              )}
+            />
           </div>
           <textarea
             ref={bodyRef}

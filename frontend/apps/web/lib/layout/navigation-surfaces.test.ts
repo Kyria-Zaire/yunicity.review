@@ -130,7 +130,10 @@ describe("reduceNavigationOverlayState — initialisation responsive client", ()
     state = reduceNavigationOverlayState(state, { type: "set-viewport", width: 1366 });
     expect(state.explorerSurface).toBe("dialog");
     expect(state.activeSurface).toBeNull();
-    expect(state.lastCloseReason).toBe("programmatic");
+    // `viewport` et non `programmatic` : la distinction porte une conséquence
+    // mesuree — la restitution automatique du focus viserait une ancre que le
+    // nouveau palier ne montre plus, et le focus finissait sur `body`.
+    expect(state.lastCloseReason).toBe("viewport");
   });
 
   it("explorer actif + dialog → drawer = fermeture breakpoint", () => {
@@ -140,7 +143,10 @@ describe("reduceNavigationOverlayState — initialisation responsive client", ()
     state = reduceNavigationOverlayState(state, { type: "set-viewport", width: 390 });
     expect(state.explorerSurface).toBe("drawer");
     expect(state.activeSurface).toBeNull();
-    expect(state.lastCloseReason).toBe("programmatic");
+    // `viewport` et non `programmatic` : la distinction porte une conséquence
+    // mesuree — la restitution automatique du focus viserait une ancre que le
+    // nouveau palier ne montre plus, et le focus finissait sur `body`.
+    expect(state.lastCloseReason).toBe("viewport");
   });
 
   it("simule l'ancien bug SSR 1366→390 : ouverture avant init ne doit pas être perdue", () => {

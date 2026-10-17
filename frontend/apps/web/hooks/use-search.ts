@@ -49,6 +49,8 @@ export function useSearch(
     options?.initialTypeFilter ?? "all",
   );
   const [city, setCity] = useState(options?.initialCity ?? defaultCity);
+  const [neighborhoodSlug, setNeighborhoodSlug] = useState("");
+  const [period, setPeriod] = useState<"all" | "upcoming" | "past">("all");
   const [groups, setGroups] = useState<SearchGroups>(emptySearchGroups());
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -94,6 +96,8 @@ export function useSearch(
           type: activeType,
           page: activePage,
           limit,
+          neighborhood_slug: neighborhoodSlug || undefined,
+          period,
         });
         if (id !== requestId.current) return;
 
@@ -121,13 +125,13 @@ export function useSearch(
         if (id === requestId.current) setLoading(false);
       }
     },
-    [api, city, debouncedQuery, page, typeFilter],
+    [api, city, debouncedQuery, neighborhoodSlug, page, period, typeFilter],
   );
 
   useEffect(() => {
     setPage(1);
     void runSearch({ page: 1, append: false });
-  }, [debouncedQuery, typeFilter, city]);
+  }, [debouncedQuery, typeFilter, city, neighborhoodSlug, period]);
 
   const loadMoreForGroup = useCallback(
     (groupKey: SearchGroupKey) => {
@@ -161,6 +165,10 @@ export function useSearch(
     setTypeFilter,
     city,
     setCity,
+    neighborhoodSlug,
+    setNeighborhoodSlug,
+    period,
+    setPeriod,
     groups,
     loading,
     error,

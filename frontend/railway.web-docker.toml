@@ -1,0 +1,59 @@
+# Config Railway — app web Next.js, image Docker (artefact standalone).
+# Root directory du service : frontend/
+# Config path absolu à renseigner dans Railway : /frontend/railway.web-docker.toml
+#
+# POURQUOI CE NOM, ET PAS railway.toml
+#
+# Plusieurs services sont enracinés sur `frontend/` : la Preview
+# (preview.yunicity.city) et le site public (yunicity.city). Railway auto-détecte
+# un fichier nommé `railway.toml` à cet endroit — un changement de builder écrit
+# dans ce fichier peut donc atteindre le site public sans que personne l'ait
+# voulu. Une fois le temps 2 accompli, plus aucun fichier de ce nom ne portera
+# la configuration Docker, et cet héritage implicite deviendra impossible :
+# chaque service lira uniquement le chemin explicitement configuré. Jusque-là,
+# `railway.toml` porte la même configuration que ce fichier — voir ci-dessous.
+# Même raisonnement que `railway.api.toml` et `railway.admin.toml`. Ne pas
+# renommer ce fichier en `railway.toml`.
+#
+# TRANSITION EN DEUX TEMPS
+#
+# TEMPS 1 — ce fichier est ajouté, et `railway.toml` conserve provisoirement la
+#           MÊME configuration Docker. Les deux chemins produisent donc la même
+#           image, compatible avec les domaines de la Preview sur 8080 : aucun
+#           état intermédiaire ne peut réintroduire le désalignement 3000/8080.
+# TEMPS 2 — le config path du service Preview est repointé sur CE fichier, le
+#           déploiement est vérifié, puis `railway.toml` est restauré en
+#           RAILPACK dans un commit distinct.
+#
+# Détail, ordre et retour arrière : `docs/ops/INFRA-04-web-image-docker.md`
+# §6 quinquies.
+
+[build]
+# Image multi-étapes : seul l'artefact `standalone` de Next part en production.
+#
+# Nom NON auto-détectable pour le Dockerfile aussi : un fichier nommé
+# `Dockerfile` à la racine de `frontend/` serait détecté par tout service ayant
+# ce répertoire racine.
+#
+# Les variables de service ne sont PAS visibles d'un build Dockerfile sans
+# `ARG` : celles dont le build a besoin sont déclarées dans le Dockerfile.
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.web"
+
+[deploy]
+# `startCommand` DÉCLARÉ, et non omis.
+#
+# Règle Railway rappelée dans `backend/railway.api.toml` : un champ déclaré ici
+# écrase le réglage du dashboard, un champ omis le CONSERVE. Le service porte
+# `pnpm --filter web start`, qui ne peut pas fonctionner dans l'image finale —
+# ni pnpm, ni les manifestes du workspace n'y sont. L'omettre laisserait donc
+# cette valeur en place : échec de démarrage certain.
+#
+# La valeur reproduit exactement le `CMD` de `Dockerfile.web`. Les deux doivent
+# rester identiques ; si l'un change, changer l'autre.
+#
+# Le serveur honore `PORT`, que Railway injecte à 8080 sur ce service. Les deux
+# domaines de la Preview sont alignés sur 8080 depuis le 2026-10-17.
+startCommand = "node apps/web/server.js"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

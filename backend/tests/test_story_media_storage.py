@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -49,13 +50,38 @@ class TestStoryMediaPolicy:
 
 
 class TestStoryMediaR2Storage:
-    def test_public_url_uses_cdn_base(self) -> None:
+    def test_public_url_goes_through_the_protected_api_route(self) -> None:
+        """Plus jamais l'URL CDN absolue : elle contournait l'autorisation d'audience."""
         with patch("app.services.story_media.r2_storage.boto3.client", return_value=MagicMock()):
             storage = StoryMediaR2Storage(_settings())
         user_id = uuid.uuid4()
         media_id = uuid.uuid4()
         key = build_story_media_key(user_id, media_id, ".jpg")
-        assert storage.public_url(key) == f"https://media.recette.yunicity.city/{key}"
+
+        url = storage.public_url(key)
+
+        assert url == f"/api/v1/story-media/{user_id}/{media_id}.jpg"
+        assert not url.startswith("http"), "aucune URL absolue"
+        assert "media.recette.yunicity.city" not in url
+        assert "media.yunicity.city" not in url
+
+    def test_both_backends_produce_the_same_protected_url(self, tmp_path: Path) -> None:
+        """Contrat partage : aucun backend ne peut reintroduire un acces direct."""
+        from app.services.story_media.filesystem_storage import StoryMediaFilesystemStorage
+
+        user_id, media_id = uuid.uuid4(), uuid.uuid4()
+        key = build_story_media_key(user_id, media_id, ".jpg")
+        with patch("app.services.story_media.r2_storage.boto3.client", return_value=MagicMock()):
+            r2_url = StoryMediaR2Storage(_settings()).public_url(key)
+        fs_url = StoryMediaFilesystemStorage(
+            _settings(
+                app_env="dev",
+                story_media_storage_backend="filesystem",
+                story_media_upload_dir=str(tmp_path),
+            )
+        ).public_url(key)
+
+        assert r2_url == fs_url == f"/api/v1/story-media/{user_id}/{media_id}.jpg"
 
     def test_put_object(self) -> None:
         mock_client = MagicMock()

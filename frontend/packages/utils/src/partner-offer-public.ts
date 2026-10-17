@@ -5,7 +5,6 @@ import type {
   PartnerOfferType,
 } from "@yunicity/types";
 
-import { partnerPublicHref } from "./partner-detail";
 import { PARTNER_OFFER_TYPE_LABELS } from "./passport-labels";
 import { PLACES_PARTNERS_BADGE } from "./partner-portal-labels";
 
@@ -61,12 +60,12 @@ export function formatPartnerOfferValidity(
   })}`;
 }
 
+export function buildPassportOfferDetailHref(offerId: string): string {
+  return `/passport/offre/${encodeURIComponent(offerId)}`;
+}
+
 export function buildPartnerOfferHref(offer: PartnerOfferPublic): string {
-  const slug = offer.partner.slug;
-  const city = offer.partner.city;
-  const base = partnerPublicHref({ slug, city });
-  if (!offer.slug) return base;
-  return `${base}#passport-offer-${encodeURIComponent(offer.slug)}`;
+  return buildPassportOfferDetailHref(offer.id);
 }
 
 export function buildPartnerOfferMapHref(offer: PartnerOfferPublic): string {

@@ -17,6 +17,8 @@
  * backend `PostCreateRequest.body min_length=1` est vérifiée par l'état du
  * bouton, jamais par un envoi voué à un 422.
  */
+import { deflateSync } from "node:zlib";
+
 import type { Page } from "@playwright/test";
 
 import { expect, test } from "../fixtures";
@@ -91,7 +93,6 @@ function pngUni(width: number, height: number, rgb: [number, number, number]): B
       ]),
     ),
   );
-  const { deflateSync } = require("node:zlib") as typeof import("node:zlib");
   return Buffer.concat([
     Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     chunk("IHDR", ihdr),
@@ -127,9 +128,28 @@ async function mesurer(page: Page) {
       const fieldRect = field?.getBoundingClientRect() ?? sr;
       const br = submit?.getBoundingClientRect() ?? { width: 0, height: 0, top: 0, right: 0 };
       const stories = document.querySelector('[data-feed-medium-region="stories"]');
-      // C3-FEED-M7-R2 : la region `discovery` a quitte la bande medium ; la
-      // voisine basse du compositeur est desormais `evening-events`.
-      const suivante = document.querySelector('[data-feed-medium-region="evening-events"]');
+      /*
+       * La voisine basse est relevee, plus jamais nommee en dur.
+       *
+       * Ce selecteur a deja ete corrige une fois (`discovery` -> `evening-events`)
+       * et l'etait redevenu faux : une region `passport` de 210 px s'est depuis
+       * intercalee, et l'ecart mesure valait 20 + 210 + 20 = 250 px pour 20
+       * attendus. Le rythme n'etait pas rompu — c'est le voisinage suppose qui
+       * avait change. Nommer une region fait echouer cette assertion a chaque
+       * reordonnancement de la bande, sans qu'aucun defaut n'existe.
+       *
+       * Le rythme a prouver est celui de la GRILLE editoriale, dont le parent du
+       * compositeur porte le `row-gap`. On mesure donc jusqu'a la region
+       * immediatement suivante DANS CETTE GRILLE, ce qui est exactement ce que
+       * l'assertion veut dire, et le reste quel que soit l'ordre des regions.
+       */
+      const suivante = (() => {
+        let n = region.nextElementSibling;
+        while (n && !(n instanceof HTMLElement && n.hasAttribute("data-feed-medium-region"))) {
+          n = n.nextElementSibling;
+        }
+        return n;
+      })();
       const rr = region.getBoundingClientRect();
 
       return {
@@ -383,14 +403,41 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
       return { largeur: r.width, hauteur: r.height, fit: getComputedStyle(img).objectFit };
     }, PREVIEW);
     expect(apercu.largeur, "aperçu sans largeur").toBeGreaterThan(0);
-    expect(apercu.fit, "aperçu déformé").toBe("cover");
+    /*
+     * `contain`, et non `cover` — contrat perime corrige.
+     *
+     * Cette assertion exigeait `cover` sous le libelle « apercu deforme », deux
+     * lignes apres avoir charge une image PORTRAIT « sans deformation ». Or
+     * `cover` remplit en ROGNANT : dans une boite `h-20 w-full`, un portrait y
+     * perd l'essentiel de sa hauteur. Et aucune des deux valeurs ne deforme —
+     * seule `fill` le fait — donc le libelle ne decrivait pas son assertion.
+     *
+     * La spec 18 (`Portrait Media Visual Closure`) enonce la regle inverse dans
+     * son propre en-tete : « object-contain avec background neutre », et « avec
+     * object-cover le ratio naturel ne serait pas respecte ». Le produit
+     * l'applique depuis `8f98c219`. On tient donc la regle documentee, qui est
+     * aussi la plus stricte sur la preservation du ratio.
+     */
+    expect(apercu.fit, "aperçu rogné au lieu d'être contenu").toBe("contain");
 
     // Photo + texte : autorisé.
     await saisie.fill("Photo accompagnée de son texte.");
     await expect(publier).toBeEnabled();
 
-    // Retrait de la photo.
-    await authedPage.locator(`${COMPOSER} button[aria-label="Retirer la photo"]`).click();
+    /*
+     * Retrait de la photo, cible par son NOM ACCESSIBLE.
+     *
+     * Ce clic visait `button[aria-label="Retirer la photo"]`, sélecteur
+     * d'attribut : il exigeait que le nom soit fourni par `aria-label`
+     * précisément, et cessait de correspondre quand le contrôle porte son
+     * libellé en texte. Les deux autres specs du compositeur n'emploient que
+     * `getByRole`, qui interroge le nom accessible quelle qu'en soit la source.
+     * Même exigence, sans coupler le test à l'implémentation du libellé.
+     */
+    await authedPage
+      .locator(COMPOSER)
+      .getByRole("button", { name: "Retirer la photo" })
+      .click();
     await expect(authedPage.locator(PREVIEW)).toHaveCount(0);
   });
 
@@ -402,8 +449,13 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
         const region = document.querySelector(sel.region)!;
         const input = region.querySelector(sel.input)!;
         const actions = [...region.querySelectorAll(sel.action)] as HTMLElement[];
-        const submit = region.querySelector(sel.submit);
         const fichier = region.querySelector('input[type="file"]') as HTMLInputElement;
+        /*
+         * Le bouton « Publier » est VOLONTAIREMENT hors des cibles mesurees : il
+         * n'existe pas au repos, le compositeur ne le rendant que lorsque la
+         * publication devient possible. L'inclure rendrait ce releve dependant de
+         * l'etat de saisie. Il etait releve ici, puis jamais lu.
+         */
         const cibles = [input, ...actions].filter(Boolean) as HTMLElement[];
         return {
           tabindexExplicites: cibles.filter((el) => el.hasAttribute("tabindex")).length,
@@ -497,7 +549,12 @@ test.describe("C3-FEED-M6 — compositeur du Feed medium", () => {
     await authedPage.setViewportSize({ width: 1024, height: 900 });
     const desktop = await authedPage.evaluate(
       (sel) => {
-        const region = document.querySelector(sel.region);
+        /*
+         * Au-dela de 1024 px, ce releve cible le compositeur DESKTOP, retrouve
+         * plus bas sous `.feed-main-column`. La region medium du compositeur
+         * etait recuperee ici sans jamais etre lue, ce qui laissait croire
+         * qu'elle entrait dans la mesure.
+         */
         const mediumHeader = document.querySelector(".feed-medium-header");
         const mediumHeaderVisible = Boolean(
           mediumHeader &&

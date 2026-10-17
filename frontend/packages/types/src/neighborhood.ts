@@ -164,6 +164,11 @@ export interface NeighborhoodDetailVideoItem {
   neighborhood_slug: string;
   published_at: string | null;
   video_type: string;
+  // VIDEO-03 — rattachement reel, servi par l'API : il alimente le CTA
+  // « Y aller ». Le slug (et non le nom seul) est ce qui donne une route.
+  cultural_place_slug: string | null;
+  cultural_place_name: string | null;
+  local_event_id: string | null;
   author: NeighborhoodDetailVideoAuthor;
 }
 

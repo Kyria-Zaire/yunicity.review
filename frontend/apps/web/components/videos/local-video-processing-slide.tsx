@@ -12,23 +12,39 @@ import {
 } from "@yunicity/utils";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 
 type LocalVideoProcessingSlideProps = {
   item: LocalVideoFeedItem;
   errorMessage?: string | null;
   onDismiss?: () => void;
+  isActive?: boolean;
 };
 
 export function LocalVideoProcessingSlide({
   item,
   errorMessage,
   onDismiss,
+  isActive = true,
 }: LocalVideoProcessingSlideProps) {
+  const articleRef = useRef<HTMLElement>(null);
   const isFailed = Boolean(errorMessage) || item.status === "failed";
   const isPublished = !isFailed && isLocalVideoFeedItemPlayable(item);
 
+  useEffect(() => {
+    const element = articleRef.current;
+    if (!element) return;
+    element.inert = !isActive;
+    if (isActive) {
+      element.removeAttribute("aria-hidden");
+    } else {
+      element.setAttribute("aria-hidden", "true");
+    }
+  }, [isActive]);
+
   return (
     <article
+      ref={articleRef}
       data-video-slide-id={item.id}
       className="relative flex h-[100dvh] w-full snap-start snap-always flex-col items-center justify-center bg-neutral-950 px-6 text-center md:h-[calc(100dvh-6rem)] md:rounded-2xl"
     >
@@ -38,7 +54,7 @@ export function LocalVideoProcessingSlide({
         ) : isPublished ? (
           <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-400" aria-hidden />
         ) : (
-          <Loader2 className="mx-auto h-10 w-10 animate-spin text-yunicity-primary" aria-hidden />
+          <Loader2 className="mx-auto h-10 w-10 animate-spin text-yunicity-primary motion-reduce:animate-none" aria-hidden />
         )}
 
         <h2 className="mt-4 text-lg font-semibold text-white">

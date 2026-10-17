@@ -2,7 +2,7 @@
 
 import type { PartnerOfferPublic } from "@yunicity/types";
 import { CulturalImage } from "@/components/culture/cultural-image";
-import { HOME_PRIVILEGE_TITLE } from "@yunicity/utils";
+import { HOME_PRIVILEGE_TITLE, buildPartnerOfferHref } from "@yunicity/utils";
 import Link from "next/link";
 
 type SearchExplorerOfferHighlightProps = {
@@ -34,7 +34,7 @@ export function SearchExplorerOfferHighlight({ offer }: SearchExplorerOfferHighl
         </div>
       </div>
       <Link
-        href="/passport"
+        href={buildPartnerOfferHref(offer)}
         className="mt-3 inline-flex text-sm font-semibold text-yunicity-primary hover:underline"
       >
         Voir l&apos;avantage

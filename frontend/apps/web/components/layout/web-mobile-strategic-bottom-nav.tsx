@@ -1,7 +1,6 @@
 "use client";
 
 import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
-import { CITIZEN_MOBILE_FLOATING_NAV_BOTTOM_GAP } from "@/lib/layout/feed-mobile-refonte";
 import {
   WEB_CITIZEN_MOBILE_BOTTOM_NAV,
   isWebNavActive,
@@ -48,10 +47,10 @@ function BottomNavLink({ item, pathname }: { item: WebNavItem; pathname: string 
 }
 
 /**
- * Bottom nav mobile flottante — Navbar V3 (C3.1-T2, viewport strictement sous 640px).
+ * Bottom nav mobile ancrée — Navbar V3 (viewport strictement sous 640px).
  *
- * Visibilité portée par globals.css (media query width inférieure à 640px).
- * QUATRE destinations + CTA Créer au centre (Accueil · Video · + · Carte · Sortir).
+ * Barre pleine largeur collée au bas de l'écran (safe area incluse), sans pill flottante.
+ * Quatre destinations + CTA Créer au centre (Accueil · Video · + · Carte · Sortir).
  */
 export function WebMobileStrategicBottomNav() {
   const pathname = usePathname();
@@ -62,19 +61,16 @@ export function WebMobileStrategicBottomNav() {
 
   return (
     <nav
-      className="web-mobile-strategic-bottom-nav pointer-events-none fixed inset-x-0 bottom-0 z-[var(--z-chrome,40)] block min-[640px]:hidden px-3"
-      style={{
-        paddingBottom: `max(${CITIZEN_MOBILE_FLOATING_NAV_BOTTOM_GAP}, env(safe-area-inset-bottom))`,
-      }}
+      className="web-mobile-strategic-bottom-nav web-mobile-docked-bottom-nav fixed inset-x-0 bottom-0 z-[var(--z-chrome,40)] block min-[640px]:hidden border-t border-neutral-200/90 bg-white pb-[env(safe-area-inset-bottom)]"
       aria-label="Navigation principale"
     >
-      <div className="pointer-events-auto mx-auto max-w-lg overflow-hidden rounded-2xl border border-yunicity-primary/25 bg-white/95 shadow-[0_10px_40px_rgba(15,23,42,0.12)] backdrop-blur-md supports-[backdrop-filter]:bg-white/90">
-        <ul className="flex items-stretch justify-around gap-0.5 px-0.5 py-0.5">
+      <div className="pointer-events-auto w-full max-w-none">
+        <ul className="flex items-stretch justify-around gap-0.5 px-0.5">
           {left.map((item) => (
             <BottomNavLink key={item.href} item={item} pathname={pathname} />
           ))}
-          <li className="flex shrink-0 items-center justify-center px-1">
-            <CreateHubTriggerButton variant="bottom-nav" />
+          <li className="web-mobile-docked-bottom-nav-create relative z-10 flex w-12 shrink-0 items-end justify-center self-end pb-0.5">
+            <CreateHubTriggerButton variant="bottom-nav" className="-translate-y-2 shadow-md ring-2 ring-white" />
           </li>
           {right.map((item) => (
             <BottomNavLink key={item.href} item={item} pathname={pathname} />

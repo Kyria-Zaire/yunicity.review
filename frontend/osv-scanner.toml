@@ -7,28 +7,37 @@
 # so they resurface and force re-triage. Runtime-reachable findings are NEVER ignored
 # (sharp is fixed via override, not waived). New vulnerabilities are NOT covered here
 # and will fail CI.
+#
+# There are currently NO ignored advisories. Both former entries were resolved by
+# removing the vulnerable package from the tree, not by waiving it. Keep it that way:
+# an exception is a last resort, and each one below would have to state why no
+# remediation exists at all.
 
-# uuid@7.0.3 (transitive, BUILD-ONLY): apps/mobile → expo → @expo/config-plugins →
-# xcode → uuid. The advisory affects uuid.v3/v5/v6 when given a buffer/offset that is not
-# correctly validated (NOT a randomness weakness). Used only by the Expo/Xcode iOS prebuild
-# tooling; web/admin do not import uuid at all and no app code calls v3/v5/v6. Fixed in uuid
-# 11.1.1, but that is a major bump incompatible with xcode@3.0.1's CommonJS v4 API — not
-# forced here. Follow-up: SEC-FE-04.
-[[IgnoredVulns]]
-id = "GHSA-w5hq-g745-h8pq"
-ignoreUntil = 2026-09-15T00:00:00Z
-reason = "BUILD-ONLY uuid@7.0.3 (Expo/Xcode prebuild); no app v3/v5/v6 usage; fix is a risky major 7→11. Owner: frontend. Tracked in SEC-FE-04."
+# image-size — RESOLVED, no exception (SEC-FE-04A).
+# GHSA-5p2g-fcmc-qvqq (JXL/HEIF) and GHSA-w3rx-r6r6-pgpr (ICNS), CVSS 8.7 each, came
+# from image-size@1.2.1 pulled by metro@0.83.3. No release of image-size fixes them.
+# Metro inlined its own image parsers and dropped the dependency, backported into the
+# 0.83 line at 0.83.8. Range-bounded overrides `metro-*@<0.83.8 -> 0.83.8` align the
+# 0.83 family with what Expo itself ships in @expo/metro@55.1.2, leaving the 0.84
+# family used elsewhere untouched.
+# Locked by `apps/web/lib/metro-image-size-contract.test.ts`.
 
-# image-size@1.2.1 (transitive, BUILD-ONLY): apps/mobile → expo → metro / metro-config.
-# Used only by the Metro bundler on the app's OWN bundled assets at build time; no
-# untrusted input, no web/admin runtime path. No upstream fix exists (all versions
-# ≤ 2.0.2 affected). DoS (infinite loop) on crafted JXL/HEIF/ICNS. Follow-up: SEC-FE-04.
-[[IgnoredVulns]]
-id = "GHSA-5p2g-fcmc-qvqq"
-ignoreUntil = 2026-09-15T00:00:00Z
-reason = "BUILD-ONLY image-size@1.2.1 (Expo/Metro bundler, own assets); no upstream fix (all ≤2.0.2 affected). Owner: frontend. Tracked in SEC-FE-04."
-
-[[IgnoredVulns]]
-id = "GHSA-w3rx-r6r6-pgpr"
-ignoreUntil = 2026-09-15T00:00:00Z
-reason = "BUILD-ONLY image-size@1.2.1 (Expo/Metro bundler, own assets); no upstream fix (all ≤2.0.2 affected). Owner: frontend. Tracked in SEC-FE-04."
+# uuid — RESOLVED, no exception (SEC-FE-04B).
+# GHSA-w5hq-g745-h8pq came from uuid@7.0.3, pulled solely by xcode@3.0.1 (Expo iOS
+# prebuild tooling). The advisory affects v3/v5/v6 when a `buf` is supplied; xcode
+# calls only `v4()`, with no argument, once, in pbxProject.generateUuid().
+# No official upgrade exists: xcode@3.0.1 is the latest published release and every
+# @expo/config-plugins line, up to 58, pins `xcode: ^3.0.1`. A parent-scoped override
+# `xcode@3.0.1>uuid -> 11.1.1` therefore carries the fix.
+#
+# The previous note here claimed uuid 11 was "incompatible with xcode@3.0.1's CommonJS
+# v4 API". That was wrong: uuid@11.1.1 declares exports["."].node.require pointing at
+# ./dist/cjs/index.js, and `require('uuid').v4()` resolves and runs from xcode.
+# (uuid@13 would genuinely break it — no `require` condition, no `main`.)
+#
+# On severity: the published CVSS v3.1 vector scores integrity as I:H and yields 7.5;
+# the CVSS v4.0 vector scores it VI:L with AT:P and yields a lower severity; GitHub
+# labels the advisory Moderate. osv-scanner reports max_severity 7.5, so the gate
+# correctly applied its 7.0 threshold. The threshold was not lowered — the dependency
+# was replaced instead.
+# Locked by `apps/web/lib/xcode-uuid-contract.test.ts`.

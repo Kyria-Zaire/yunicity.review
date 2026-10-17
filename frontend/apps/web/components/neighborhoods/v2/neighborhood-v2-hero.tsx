@@ -4,6 +4,7 @@ import { CulturalImage } from "@/components/culture/cultural-image";
 import { LocalVideoTeaserRail } from "@/components/videos/local-video-teaser-rail";
 import type { NeighborhoodDetail } from "@yunicity/types";
 import {
+  buildLocalVideoTeaserViewFromFeedItem,
   NEIGHBORHOOD_V2_OFFICIAL_BADGE,
   NEIGHBORHOOD_V2_VIDEOS_TITLE,
   formatNeighborhoodV2AliasLine,
@@ -95,7 +96,7 @@ export function NeighborhoodV2Hero({ detail }: NeighborhoodV2HeroProps) {
 
         {videoItems.length > 0 ? (
           <LocalVideoTeaserRail
-            items={videoItems}
+            views={videoItems.map(buildLocalVideoTeaserViewFromFeedItem)}
             title={NEIGHBORHOOD_V2_VIDEOS_TITLE}
             seeAllHref={`/videos?city=${encodeURIComponent(detail.city)}`}
             layout="scroll"

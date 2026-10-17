@@ -3,8 +3,8 @@ import type { LocalVideoFeedItem, LocalVideoTypeId } from "@yunicity/types";
 import { isLocalVideoFeedItemPlayable } from "./local-video-processing-presenter";
 import { LOCAL_VIDEO_TYPE_LABELS } from "./local-video-presenter";
 
-export type VideosPortalTabId = "all" | "trending" | "new" | "subscriptions" | "mine";
-export type VideosPortalSortId = "recent" | "popular";
+export type VideosPortalTabId = "all" | "trending" | "new" | "subscriptions" | "mine" | "nearby";
+export type VideosPortalSortId = "relevance" | "recent" | "popular";
 
 export type VideosDurationFilterId = "all" | "short" | "medium" | "long";
 export type VideosDateFilterId = "all" | "today" | "week" | "month";
@@ -84,6 +84,8 @@ function matchesTab(
     }
     case "subscriptions":
       return false;
+    case "nearby":
+      return item.distance_meters != null;
     case "mine":
       return Boolean(currentUserId && item.author_user_id === currentUserId);
     default:
@@ -122,7 +124,27 @@ export function sortVideosPortalItems(
       return videoTimestamp(b) - videoTimestamp(a);
     });
   }
-  if (tab === "new" || sort === "recent") {
+  if (tab === "nearby") {
+    return next.sort((a, b) => {
+      const da = a.distance_meters ?? Number.POSITIVE_INFINITY;
+      const db = b.distance_meters ?? Number.POSITIVE_INFINITY;
+      if (da !== db) return da - db;
+      return videoTimestamp(b) - videoTimestamp(a);
+    });
+  }
+  if (tab === "new") {
+    return next.sort((a, b) => videoTimestamp(b) - videoTimestamp(a));
+  }
+  // VIDEO-03 — le backend a deja classe le feed par pertinence territoriale
+  // (quartier du spectateur, puis ville, puis repli), et lui seul connait ce
+  // quartier. Retrier ici ferait repasser une video de l'autre bout de la ville
+  // devant celle du quartier au seul motif qu'elle est plus recente : on rend
+  // donc l'ordre recu tel quel. Les autres valeurs restent des choix explicites
+  // du spectateur, qui priment alors sur le classement du serveur.
+  if (sort === "relevance") {
+    return next;
+  }
+  if (sort === "recent") {
     return next.sort((a, b) => videoTimestamp(b) - videoTimestamp(a));
   }
   return next.sort((a, b) => {

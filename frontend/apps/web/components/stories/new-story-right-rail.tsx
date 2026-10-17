@@ -27,6 +27,7 @@ import {
   Coffee,
 } from "lucide-react";
 import Link from "next/link";
+import { AvatarImage } from "@/components/avatar-image";
 
 const IDEA_ICONS = {
   sunset: Sun,
@@ -84,8 +85,7 @@ export function NewStoryRightRail({
             <header className="relative z-10 flex items-center gap-2 p-3">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-xs font-bold text-white">
                 {profile?.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <AvatarImage
                     src={profile.avatar_url}
                     alt=""
                     className="h-full w-full rounded-full object-cover"

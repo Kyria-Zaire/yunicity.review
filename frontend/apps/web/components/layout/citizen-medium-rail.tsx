@@ -4,12 +4,14 @@ import Link from "next/link";
 
 import { YunicityLogo } from "@/components/brand";
 import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
+import { ExplorerTriggerButton } from "@/components/explorer";
 import { NotificationBellIcon } from "@/components/layout/notification-bell-icon";
 import { CitizenAccountMenu } from "@/components/layout/citizen-account-menu";
 import { CitizenYunicityMenu } from "@/components/layout/citizen-yunicity-menu";
 import { useNotificationUnread } from "@/hooks/use-citizen-chrome";
 import {
   CITIZEN_MEDIUM_RAIL_DESTINATIONS,
+  CITIZEN_MEDIUM_RAIL_EXPLORER_LABEL,
   isCitizenMediumRailDestinationActive,
   type CitizenMediumRailDestination,
 } from "@/lib/layout/citizen-medium-rail-contract";
@@ -104,6 +106,27 @@ export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps)
             </Link>
           );
         })}
+
+        {/*
+            Accès Explorer du palier medium.
+
+            Le MÊME déclencheur et le MÊME provider que partout ailleurs :
+            `ExplorerTriggerButton` lit `useExplorerOptional`, donc le panneau
+            ouvert ici est celui du reste de l'application. Aucun second panneau,
+            aucune logique parallèle — la recherche du header du fil reste en
+            place et ouvre la même primitive.
+
+            La variante `medium-rail` existait déjà pour la colonne latérale, qui
+            la masque quand le rail prend le relais ; elle porte une cible de
+            `--web-sidebar-icon-hit`, soit 52 px, au-delà des 44 px exigés.
+        */}
+        <div
+          data-rail-label={CITIZEN_MEDIUM_RAIL_EXPLORER_LABEL}
+          data-citizen-medium-rail-control="explorer"
+          className="flex flex-col items-center gap-1 rounded-xl py-1.5"
+        >
+          <ExplorerTriggerButton variant="medium-rail" />
+        </div>
 
         <div
           data-rail-label="Menu"

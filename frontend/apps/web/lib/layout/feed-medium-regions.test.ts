@@ -8,14 +8,24 @@ import {
 } from "@/lib/layout/feed-medium-regions";
 
 describe("régions éditoriales du Feed medium", () => {
-  it("expose exactement cinq régions, dans l'ordre éditorial", () => {
+  it("expose exactement six régions, dans l'ordre éditorial", () => {
     expect([...FEED_MEDIUM_REGIONS]).toEqual([
       "stories",
       "composer",
+      "passport",
       "evening-events",
       "featured-event",
       "stream",
     ]);
+  });
+
+  it("place le Passeport avant les Événements — FEED-MAIN-LAYOUT-UIUX-01 §7", () => {
+    expect(feedMediumRegionOrder("passport")).toBeLessThan(
+      feedMediumRegionOrder("evening-events"),
+    );
+    expect(feedMediumRegionOrder("passport")).toBeLessThan(
+      feedMediumRegionOrder("featured-event"),
+    );
   });
 
   it("n'expose aucun doublon ni région mobile/desktop inventée", () => {
@@ -34,7 +44,7 @@ describe("régions éditoriales du Feed medium", () => {
 
   it("ordonne les régions de manière stricte et croissante", () => {
     const rangs = FEED_MEDIUM_REGIONS.map((r) => feedMediumRegionOrder(r));
-    expect(rangs).toEqual([0, 1, 2, 3, 4]);
+    expect(rangs).toEqual([0, 1, 2, 3, 4, 5]);
   });
 
   it("valide la séquence attendue et rejette toute autre", () => {

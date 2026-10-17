@@ -1,0 +1,7 @@
+# Faux positifs historiques : empreintes commit+fichier+regle+ligne uniquement.
+# Portee volontairement minimale — ni fichier entier, ni repertoire, ni regle affaiblie.
+
+# 47ecffc : libelle de test "r2-legacy-other" (identifiant de compte factice) classe
+# generic-api-key a cause du mot-cle `_key` sur la ligne precedente. Corrige a la source
+# dans le commit suivant ; l'empreinte ne couvre que cette ligne de ce commit.
+47ecffcbda8d90ccc1f2e93906f342501b6fa623:backend/tests/test_story_media_r2_authorization.py:generic-api-key:196

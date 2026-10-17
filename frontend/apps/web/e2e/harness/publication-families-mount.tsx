@@ -5,6 +5,7 @@ import {
   FeedCardWithDependencies,
   type FeedCardDependencies,
 } from "@/components/feed/feed-card";
+import { FeedMediaViewerHost } from "@/components/feed/feed-media-viewer-host";
 import { PUBLICATION_IMAGE_FIXTURE_DATA_URL } from "@/e2e/harness/publication-image-fixture";
 
 /**
@@ -199,5 +200,15 @@ createRoot(document.getElementById("yn-publication-root")!).render(
         />
       </div>
     ))}
+    {/*
+      Hote de la visionneuse, monte ICI comme `app/layout.tsx` le monte dans
+      l'application.
+
+      « Agrandir l'image » n'ouvre rien par lui-meme : il appelle
+      `openFeedMediaViewer()`, qui publie dans une session. C'est cet hote qui
+      s'y abonne et rend l'overlay. Sans lui, le clic publiait dans le vide, et
+      la spec cherchait un overlay qui n'avait jamais eu de quoi exister.
+    */}
+    <FeedMediaViewerHost />
   </div>,
 );

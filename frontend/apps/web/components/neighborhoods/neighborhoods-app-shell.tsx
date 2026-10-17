@@ -11,17 +11,17 @@ type NeighborhoodsAppShellProps = {
   children: ReactNode;
 };
 
-/** Shell Quartiers — mobile refonte MOBILE-QUARTIERS-01 + desktop portail existant. */
+/** Shell Quartiers — mobile MOBILE-QUARTIERS-01 + medium MEDIUM-QUARTIERS-01 + desktop DESKTOP-QUARTIERS-01. */
 export function NeighborhoodsAppShell({ children }: NeighborhoodsAppShellProps) {
   return (
     <div className="web-shell-page neighborhoods-mobile-shell min-h-dvh bg-[#F4F5F7]">
       <WebMobileHeader />
 
-      <div className="web-three-col places-shell-grid">
+      <div className="web-three-col neighborhoods-shell-grid">
         <WebSidebar />
 
         <main className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
-          <div className="web-desktop-neighborhoods-only">
+          <div className="web-neighborhoods-chrome-only">
             <CitizenTopNav />
           </div>
           <div className={CITIZEN_MOBILE_BOTTOM_NAV_PADDING}>{children}</div>

@@ -25,6 +25,7 @@ import {
 import { BadgeCheck, Calendar, MapPin, Music2, Ticket, Users } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { AvatarImage } from "@/components/avatar-image";
 
 const TAB_OPTIONS: { id: EventDetailTabId; label: string }[] = [
   { id: "about", label: EVENT_DETAIL_TAB_ABOUT },
@@ -170,8 +171,7 @@ export function EventDetailMainTabs({ event, context, venuePlace }: EventDetailM
           <h2 className="text-lg font-bold text-neutral-900">{EVENT_DETAIL_ORGANIZER_TITLE}</h2>
           <div className="mt-4 flex flex-wrap items-start gap-4">
             {event.organization.logo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <AvatarImage
                 src={event.organization.logo_url}
                 alt=""
                 className="h-14 w-14 rounded-full border border-neutral-100 object-cover"

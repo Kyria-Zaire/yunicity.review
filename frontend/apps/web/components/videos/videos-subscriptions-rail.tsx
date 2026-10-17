@@ -10,6 +10,7 @@ import {
 } from "@yunicity/utils";
 import { ChevronRight, Play } from "lucide-react";
 import Link from "next/link";
+import { AvatarImage } from "@/components/avatar-image";
 
 type VideosSubscriptionsRailProps = {
   creators: VideoPortalCreator[];
@@ -53,8 +54,7 @@ export function VideosSubscriptionsRail({ creators }: VideosSubscriptionsRailPro
               <Link href={href} className="group block">
                 <div className="relative mx-auto h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem]">
                   {creator.avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <AvatarImage
                       src={creator.avatarUrl}
                       alt=""
                       className="h-full w-full rounded-full object-cover ring-2 ring-white"

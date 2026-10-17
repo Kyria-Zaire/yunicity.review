@@ -8,7 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.tribe_constants import TribeVisibility
-from app.models.tribe import Tribe
+from app.models.tribe import Tribe, TribeMember
 
 
 class TribeRepository:
@@ -79,3 +79,24 @@ class TribeRepository:
             base.order_by(Tribe.name.asc()).offset(offset).limit(limit)
         )
         return list(rows.scalars().all()), total
+
+    async def list_public_for_user(
+        self,
+        user_id: uuid.UUID,
+        *,
+        limit: int,
+    ) -> list[Tribe]:
+        """Tribus publiques actives dont l'utilisateur est membre."""
+        stmt = (
+            select(Tribe)
+            .join(TribeMember, TribeMember.tribe_id == Tribe.id)
+            .where(
+                TribeMember.user_id == user_id,
+                TribeMember.left_at.is_(None),
+                Tribe.archived_at.is_(None),
+                Tribe.visibility == TribeVisibility.PUBLIC.value,
+            )
+            .order_by(TribeMember.joined_at.desc())
+            .limit(max(1, limit))
+        )
+        return list((await self._session.execute(stmt)).scalars().all())

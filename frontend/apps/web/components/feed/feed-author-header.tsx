@@ -5,6 +5,7 @@ import { authorInitials, buildFeedAuthorProfileHref, formatFeedRelativeTime } fr
 
 import { FeedPostOptionsMenu } from "@/components/feed/feed-post-options-menu";
 import Link from "next/link";
+import { AvatarImage } from "@/components/avatar-image";
 
 function authorHandle(post: FeedPost): string {
   const { author } = post;
@@ -41,8 +42,7 @@ function AuthorAvatar({ post }: { post: FeedPost }) {
 
   if (author.logo_url) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <AvatarImage
         src={author.logo_url}
         alt=""
         loading="lazy"

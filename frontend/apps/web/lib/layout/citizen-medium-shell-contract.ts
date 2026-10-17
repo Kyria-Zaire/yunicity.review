@@ -31,7 +31,13 @@ import type { CitizenMediumRailDestination } from "@/lib/layout/citizen-medium-r
  * (`create-hub-routes`). Un rail qui annonce neuf contrôles y apparaîtrait
  * structurellement amputé de son action « Créer ». Il n'y apparaît donc pas.
  */
-const PREFIXES_PARCOURS_CREATION = ["/feed/new", "/stories/new", "/videos/new"] as const;
+const PREFIXES_PARCOURS_CREATION = [
+  "/feed/new",
+  "/stories/new",
+  "/videos/new",
+  "/sortir/create",
+  "/organizations/request",
+] as const;
 
 /** Exclusions — elles gagnent toujours sur les inclusions. */
 const PREFIXES_EXCLUS = [
@@ -54,12 +60,13 @@ const DESTINATIONS: ReadonlyArray<{
   { prefixe: "/videos", destination: "videos" },
   { prefixe: "/map", destination: "map" },
   { prefixe: "/sortir", destination: "sortir" },
+  { prefixe: "/events", destination: "sortir" },
 ];
 
 /**
  * Familles citoyennes SECONDAIRES : le rail est présent, aucune destination
- * principale n'est active. Déclarer `sortir` sur `/events` ou `map` sur
- * `/neighborhoods` supposerait une taxonomie que le produit ne démontre pas.
+ * principale n'est active. `/events` appartient à Sortir (listing redirige,
+ * le détail `/events/[id]` reste dans la famille).
  */
 const PREFIXES_CITOYENS_SECONDAIRES = [
   "/search",
@@ -71,7 +78,6 @@ const PREFIXES_CITOYENS_SECONDAIRES = [
   "/notifications",
   "/profile",
   "/neighborhoods",
-  "/events",
   "/places",
   "/settings",
   "/user",

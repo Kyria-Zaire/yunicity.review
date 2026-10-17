@@ -126,7 +126,9 @@ class CommentService:
         return "moderation.manage" in ctx.permissions or "system.admin" in ctx.permissions
 
     async def _to_response(self, comment: Comment) -> CommentResponse:
-        profile = await self._profiles.get_by_user_id(comment.user_id)
+        # Identite PUBLIQUE : meme regle que les auteurs du feed. Le commentaire
+        # reste, son auteur devient neutre si sa suppression est demandee.
+        profile = await self._profiles.get_public_identity(comment.user_id)
         display = profile.display_name if profile and profile.display_name else "Citoyen"
         return CommentResponse(
             id=comment.id,

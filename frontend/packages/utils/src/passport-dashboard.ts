@@ -129,16 +129,18 @@ export function formatPassportPoints(points: number | null | undefined): string 
   return `${safe} pts`;
 }
 
-export function buildPassportLevel(passport: PassportMe): PassportLevelView {
-  const points =
-    passport.progression?.reputation_score ??
-    passport.reputation_score ??
-    0;
+function buildPassportLevelView(
+  points: number,
+  options: {
+    pointsToNext?: number | null;
+    nextLevelLabel?: string | null;
+    backendTierLabel: string;
+  },
+): PassportLevelView {
   const level = resolveJourneyLevel(points);
   const nextLevel = resolveNextJourneyLevel(points);
   const pointsToNext =
-    passport.progression?.points_to_next ??
-    (nextLevel ? Math.max(0, nextLevel.threshold - points) : null);
+    options.pointsToNext ?? (nextLevel ? Math.max(0, nextLevel.threshold - points) : null);
 
   let progressPercent = 100;
   if (nextLevel) {
@@ -146,10 +148,7 @@ export function buildPassportLevel(passport: PassportMe): PassportLevelView {
     progressPercent = span > 0 ? Math.min(100, Math.round(((points - level.threshold) / span) * 100)) : 0;
   }
 
-  const nextLevelLabel =
-    passport.progression?.next_tier_label?.trim() ||
-    nextLevel?.label ||
-    null;
+  const nextLevelLabel = options.nextLevelLabel?.trim() || nextLevel?.label || null;
 
   return {
     level,
@@ -158,8 +157,28 @@ export function buildPassportLevel(passport: PassportMe): PassportLevelView {
     nextLevelLabel,
     pointsToNext,
     progressPercent,
-    backendTierLabel: PASSPORT_TIER_LABELS[passport.tier.code] ?? passport.tier.name,
+    backendTierLabel: options.backendTierLabel,
   };
+}
+
+export function buildPassportLevelFromReputation(
+  points: number,
+  backendTierLabel = PASSPORT_TIER_LABELS.neo_arrivant,
+): PassportLevelView {
+  return buildPassportLevelView(points, { backendTierLabel });
+}
+
+export function buildPassportLevel(passport: PassportMe): PassportLevelView {
+  const points =
+    passport.progression?.reputation_score ??
+    passport.reputation_score ??
+    0;
+
+  return buildPassportLevelView(points, {
+    pointsToNext: passport.progression?.points_to_next ?? null,
+    nextLevelLabel: passport.progression?.next_tier_label ?? null,
+    backendTierLabel: PASSPORT_TIER_LABELS[passport.tier.code] ?? passport.tier.name,
+  });
 }
 
 function countUniqueNeighborhoodSlugs(stamps: PassportStamp[]): number {

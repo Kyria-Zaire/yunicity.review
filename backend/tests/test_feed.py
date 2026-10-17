@@ -65,6 +65,35 @@ async def test_create_citizen_post(auth_client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
+async def test_feed_citizen_author_includes_avatar(auth_client: AsyncClient) -> None:
+    user = await _register(auth_client, suffix="-avatar", city="Reims")
+    avatar_url = "https://cdn.example.com/freeway-avatar.jpg"
+    profile_patch = await auth_client.patch(
+        "/api/v1/profile/me",
+        json={"avatar_url": avatar_url},
+        headers=auth_header(user["access_token"]),
+    )
+    assert profile_patch.status_code == 200, profile_patch.text
+
+    create = await auth_client.post(
+        "/api/v1/posts",
+        json={"author_type": "citizen", "body": "Post avec avatar"},
+        headers=auth_header(user["access_token"]),
+    )
+    assert create.status_code == 201, create.text
+    assert create.json()["author"]["logo_url"] == avatar_url
+
+    feed = await auth_client.get(
+        "/api/v1/feed",
+        headers=auth_header(user["access_token"]),
+    )
+    assert feed.status_code == 200, feed.text
+    items = feed.json()["items"]
+    assert items
+    assert items[0]["author"]["logo_url"] == avatar_url
+
+
+@pytest.mark.asyncio
 async def test_create_citizen_post_with_composer_metadata(auth_client: AsyncClient) -> None:
     user = await _register(auth_client, suffix="-composer", city="Reims")
     response = await auth_client.post(

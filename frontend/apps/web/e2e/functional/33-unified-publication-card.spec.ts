@@ -19,9 +19,19 @@
 import { build } from "esbuild";
 import { expect, test, type Page } from "@playwright/test";
 
+import { estBruitDePageHote } from "@/lib/qa/console-noise";
+
 const RACINE = "yn-publication-root";
 const CARTE = "article[data-feed-medium-surface='primary']";
-const LARGEURS = [375, 768, 1280] as const;
+/**
+ * Largeurs mesurees.
+ *
+ * 375 / 768 / 1280 sont les bascules de breakpoint. S'y ajoutent 390 / 900 / 1440,
+ * les tailles reellement rencontrees — iPhone 14, tablette, desktop courant : une
+ * bascule juste peut masquer un debordement ou un controle recouvert quelques
+ * pixels plus loin.
+ */
+const LARGEURS = [375, 390, 768, 900, 1280, 1440] as const;
 const FAMILLES = ["text", "image", "video", "event", "offer"] as const;
 
 let bundleCache: string | null = null;
@@ -40,6 +50,18 @@ async function bundleFamilles(): Promise<string> {
     platform: "browser",
     jsx: "automatic",
     tsconfig: "tsconfig.json",
+    // La racine du harnais vit HORS de l'arbre de providers de l'app. La famille
+    // « image » rend `AuthorizedPostImage`, dont le chemin passe par
+    // `useAuthorizedMediaSource` → `useYunicityApi` → `useAuth`, qui levait
+    // « useAuth doit être utilisé dans AuthProvider » et emportait les cinq
+    // familles. Même convention que `media01-*` et `media02-*` : on alias la
+    // SEULE E/S concernée, les composants et le CSS restent ceux du produit.
+    // `next/navigation` : `FeedMediaViewerHost`, monte par le harnais comme
+    // `app/layout.tsx` le fait, lit `usePathname()` hors App Router.
+    alias: {
+      "@/hooks/use-yunicity-api": "./e2e/harness/publication-families-stubs.tsx",
+      "next/navigation": "./e2e/harness/publication-families-stubs.tsx",
+    },
     define: { "process.env.NODE_ENV": '"production"' },
     banner: { js: 'var process = { env: { NODE_ENV: "production" } };' },
     logLevel: "silent",
@@ -57,10 +79,22 @@ async function monter(page: Page, largeur: number): Promise<void> {
   page.on("console", (m) => {
     if (m.type() !== "error") return;
     const texte = m.text();
-    // La page hote (`/login`) sonde sa session et journalise ses propres 401/404.
-    // Le contrat porte sur les erreurs REACT du harnais, pas sur le bruit reseau
-    // de la page qui l'accueille.
-    if (/Failed to load resource/i.test(texte)) return;
+    /*
+     * Le tri du bruit de la page hote vit dans `lib/qa/console-noise`, couvert
+     * par son propre test unitaire.
+     *
+     * Deux classes y sont ignorees : le bruit reseau de `/login`, qui sonde sa
+     * session, et la notice CSP que WebKit emet sur la politique servie par
+     * l'application — celle-ci faisait echouer les 34 tests sous WebKit alors
+     * qu'ils passaient tous sous Chromium, pour un message venant ni de React
+     * ni du harnais.
+     *
+     * Le motif de la notice est ANCRE sur le debut du message, ce qui le separe
+     * d'un refus bloquant — « Refused to … » mentionne lui aussi la Content
+     * Security Policy et doit rester detecte. Le test unitaire prouve les deux
+     * sens, ainsi que la detection des erreurs React.
+     */
+    if (estBruitDePageHote(texte)) return;
     erreurs.push(`console: ${texte.slice(0, 200)}`);
   });
   (page as Page & { __ynErreurs?: string[] }).__ynErreurs = erreurs;

@@ -2,11 +2,15 @@
 
 export const SEARCH_MOBILE_PAGE_TITLE = "Rechercher";
 export const SEARCH_MOBILE_PAGE_SUBTITLE =
-  "Trouvez des lieux, événements, stories et plus encore à";
+  "Retrouvez les sorties, publications et acteurs de votre ville.";
 export const SEARCH_MOBILE_PLACEHOLDER =
-  "Rechercher un lieu, un événement, une tribu…";
+  "Rechercher à Reims…";
 export const SEARCH_MOBILE_FILTERS_ARIA = "Filtres de recherche";
+export const SEARCH_MOBILE_FILTERS_LABEL = "Filtres";
 export const SEARCH_MOBILE_FILTERS_SOON = "Filtres avancés — bientôt disponible";
+export const SEARCH_MOBILE_BACK_ARIA = "Retour";
+export const SEARCH_MOBILE_MORE_BELOW = "Plus de résultats ci-dessous";
+export const SEARCH_MOBILE_VIEW_CTA = "Voir";
 export const SEARCH_MOBILE_CATEGORY_ALL = "Tout";
 export const SEARCH_MOBILE_CATEGORY_PLACES = "Lieux";
 export const SEARCH_MOBILE_CATEGORY_EVENTS = "Événements";

@@ -18,6 +18,8 @@ export interface ProfileMe {
   has_active_passport: boolean;
   created_at: string;
   updated_at: string;
+  username_changed_at?: string | null;
+  username_next_change_at?: string | null;
 }
 
 export interface ProfilePublic {
@@ -44,6 +46,12 @@ export interface ProfileUpdateRequest {
 export interface ProfileCompleteRequest {
   city?: string | null;
   interests?: string[];
+}
+
+export interface UsernameAvailability {
+  username: string;
+  available: boolean;
+  unchanged: boolean;
 }
 
 /** Alias produit — profil connecté. */

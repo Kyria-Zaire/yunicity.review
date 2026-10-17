@@ -36,6 +36,8 @@ def _apply_process_result(
     video.media_url = storage.public_url(result.source_storage_key)
     video.thumbnail_url = storage.public_url(result.thumbnail_storage_key)
     video.duration_seconds = result.duration_seconds
+    video.media_width = result.media_width
+    video.media_height = result.media_height
     video.file_size_bytes = result.file_size_bytes
     video.mime_type = result.mime_type
     video.processing_error = None
@@ -127,6 +129,7 @@ async def run_local_video_processing(
     video_id: uuid.UUID,
     *,
     job_try: int = 1,
+    max_duration_seconds: int | None = None,
     settings: Settings | None = None,
 ) -> None:
     """Execute FFmpeg pipeline for one video (worker entrypoint)."""
@@ -207,6 +210,7 @@ async def run_local_video_processing(
                 city_slug=city_slug,
                 video_id=video_id,
                 content_type=video.mime_type,
+                max_duration_seconds=max_duration_seconds,
             )
         except AppError as exc:
             retryable = exc.code not in LOCAL_VIDEO_PROCESSING_NON_RETRYABLE_CODES

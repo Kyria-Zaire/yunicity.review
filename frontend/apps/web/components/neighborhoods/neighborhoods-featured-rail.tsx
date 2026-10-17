@@ -16,8 +16,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 const THEME_BADGE: Record<NeighborhoodPortalThemeSlug, string> = {
   "saint-remi": "bg-blue-600/95",
   "centre-ville": "bg-pink-600/95",
-  boulingrin: "bg-emerald-600/95",
-  cernay: "bg-violet-600/95",
+  "cernay-jean-jaures": "bg-emerald-600/95",
   clairmarais: "bg-teal-600/95",
   "croix-rouge": "bg-orange-600/95",
 };
@@ -25,8 +24,7 @@ const THEME_BADGE: Record<NeighborhoodPortalThemeSlug, string> = {
 const THEME_BUTTON: Record<NeighborhoodPortalThemeSlug, string> = {
   "saint-remi": "bg-blue-600 hover:bg-blue-700",
   "centre-ville": "bg-pink-600 hover:bg-pink-700",
-  boulingrin: "bg-emerald-600 hover:bg-emerald-700",
-  cernay: "bg-violet-600 hover:bg-violet-700",
+  "cernay-jean-jaures": "bg-emerald-600 hover:bg-emerald-700",
   clairmarais: "bg-teal-600 hover:bg-teal-700",
   "croix-rouge": "bg-orange-600 hover:bg-orange-700",
 };

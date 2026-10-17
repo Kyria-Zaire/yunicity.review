@@ -4,11 +4,10 @@ export { NeighborhoodsMobileHeader } from "./neighborhoods-mobile-header";
 export { NeighborhoodsMobileMyNeighborhoodsRail } from "./neighborhoods-mobile-my-neighborhoods-rail";
 export { NeighborhoodsMobileRecommendedRail } from "./neighborhoods-mobile-recommended-rail";
 export { NeighborhoodsMobileSearchBar } from "./neighborhoods-mobile-search-bar";
-export { NeighborhoodMobileDetailActivityList } from "./neighborhood-mobile-detail-activity-list";
-export { NeighborhoodMobileDetailFeaturedRail } from "./neighborhood-mobile-detail-featured-rail";
-export { NeighborhoodMobileDetailHeader } from "./neighborhood-mobile-detail-header";
-export { NeighborhoodMobileDetailHero } from "./neighborhood-mobile-detail-hero";
-export { NeighborhoodMobileDetailJoinBanner } from "./neighborhood-mobile-detail-join-banner";
-export { NeighborhoodMobileDetailStatsGrid } from "./neighborhood-mobile-detail-stats-grid";
-export { NeighborhoodMobileDetailTabs } from "./neighborhood-mobile-detail-tabs";
-export { NeighborhoodMobileDetailView } from "./neighborhood-mobile-detail-view";
+export { NeighborhoodsMobileScreen } from "./neighborhoods-mobile-screen";
+export {
+  NeighborhoodsMobileExploreRail,
+  NeighborhoodsMobileFeatured,
+  NeighborhoodsMobilePageHeader,
+  NeighborhoodsMobileYourHood,
+} from "./neighborhoods-mobile-hub-sections";

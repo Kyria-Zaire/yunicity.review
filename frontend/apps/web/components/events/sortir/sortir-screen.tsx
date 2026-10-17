@@ -1,145 +1,58 @@
 "use client";
 
-import { SortirFeaturedToday } from "@/components/events/sortir/sortir-featured-today";
+import { SortirResponsiveShell } from "@/components/events/sortir/sortir-responsive-shell";
+import { SortirMediumShell } from "@/components/events/sortir/medium";
 import { SortirActiveNeighborhoodsGrid } from "@/components/events/sortir/sortir-active-neighborhoods-grid";
 import { SortirAppShell } from "@/components/events/sortir/sortir-app-shell";
-import { SortirCategoryChips } from "@/components/events/sortir/sortir-category-chips";
 import { SortirForYouPanel } from "@/components/events/sortir/sortir-for-you-panel";
-import { SortirHeroBanner } from "@/components/events/sortir/sortir-hero-banner";
-import { SortirLiveEventsRail } from "@/components/events/sortir/sortir-live-events-rail";
 import { SortirLivePlacesRail } from "@/components/events/sortir/sortir-live-places-rail";
 import {
-  SortirMobileCategoryPills,
-  SortirMobileFeaturedCarousel,
   SortirMobileHeader,
-  SortirMobilePopularPlacesRail,
-  SortirMobileSearchBar,
-  SortirMobileUpcomingList,
+  SortirMobileShell,
 } from "@/components/events/sortir/mobile";
 import { SortirTribesTonightPanel } from "@/components/events/sortir/sortir-tribes-tonight-panel";
 import { SearchExplorerOfferHighlight } from "@/components/search/search-explorer-offer-highlight";
 import { useEventsAgendaContext } from "@/hooks/use-events-agenda-context";
 import { useAuth } from "@/lib/auth/auth-provider";
-import { GeoProvider } from "@/providers/geo-provider";
-import type { SortirCategoryId, SortirMobileCategoryId } from "@yunicity/utils";
+import { GeoProvider, useGeo } from "@/providers/geo-provider";
+import type { SortirCategoryId, SortirDesktopCategoryId, SortirDesktopWhenId } from "@yunicity/utils";
 import {
   SORTIR_ERROR,
   SORTIR_LOADING,
   SORTIR_RETRY,
   buildSortirActiveNeighborhoodCards,
+  buildSortirDesktopAgendaRows,
+  buildSortirDesktopSoonCard,
+  buildSortirDesktopWeekendSpotlight,
   buildSortirFeaturedToday,
   buildSortirForYouCard,
-  buildSortirHeroStats,
   buildSortirLiveEventCards,
   buildSortirLivePlaceCards,
-  buildSortirMobilePopularPlaceCards,
-  buildSortirMobileUpcomingRows,
   buildSortirTribeTonightItems,
+  filterSortirEventsByWhen,
+  filterSortirEventsByDesktopToggles,
   filterSortirLiveEventCardsByQuery,
-  isNewLocalUserContext,
-  mapSortirMobileCategoryToPortal,
-  resolveSortirPortalHeroImage,
+  mapSortirDesktopCategoryToPortal,
+  resolveCityMapCenter,
+  resolveSortirDesktopEditorialMoment,
   sortirNeighborhoodsHref,
 } from "@yunicity/utils";
 import { useMemo, useState } from "react";
 
 function SortirScreenInner() {
   const { user } = useAuth();
+  const geo = useGeo();
   const agenda = useEventsAgendaContext(user?.city ?? "Reims");
-  const [category, setCategory] = useState<SortirCategoryId>("");
-  const [mobileCategory, setMobileCategory] = useState<SortirMobileCategoryId>("all");
-  const [mobileSearchQuery, setMobileSearchQuery] = useState("");
-  const [filterOpen, setFilterOpen] = useState(false);
-
-  const mobilePortalCategory = mapSortirMobileCategoryToPortal(mobileCategory);
-
-  const heroStats = useMemo(
-    () =>
-      buildSortirHeroStats({
-        neighborhoods: agenda.neighborhoods,
-        culturalPlaces: agenda.culturalPlaces,
-        tribes: agenda.tribes,
-        events: agenda.events,
-      }),
-    [agenda.culturalPlaces, agenda.events, agenda.neighborhoods, agenda.tribes],
-  );
-
-  const featuredToday = useMemo(
-    () =>
-      buildSortirFeaturedToday({
-        city: agenda.city,
-        events: agenda.events,
-        culturalPlaces: agenda.culturalPlaces,
-        maxItems: 5,
-      }),
-    [agenda.city, agenda.culturalPlaces, agenda.events],
-  );
-
-  const featuredCarouselItems = useMemo(() => {
-    if (featuredToday.kind !== "events") return [];
-    return filterSortirLiveEventCardsByQuery(featuredToday.items, mobileSearchQuery);
-  }, [featuredToday, mobileSearchQuery]);
-
-  const isNewUser = useMemo(
-    () =>
-      isNewLocalUserContext({
-        savedEventCount: agenda.savedEvents.length,
-        joinedTribeCount: agenda.tribes.filter(
-          (tribe) => !tribe.is_archived && tribe.viewer_is_member,
-        ).length,
-        interestCount: agenda.interests.length,
-        passportStampsCount: agenda.passportStampsCount,
-      }),
-    [agenda.interests.length, agenda.passportStampsCount, agenda.savedEvents.length, agenda.tribes],
-  );
-
-  const heroImageUrl = useMemo(
-    () =>
-      resolveSortirPortalHeroImage({
-        events: agenda.events,
-        culturalPlaces: agenda.culturalPlaces,
-      }),
-    [agenda.culturalPlaces, agenda.events],
-  );
-
-  const liveEvents = useMemo(
-    () =>
-      buildSortirLiveEventCards({
-        city: agenda.city,
-        events: agenda.events,
-        culturalPlaces: agenda.culturalPlaces,
-        categoryId: category,
-      }),
-    [agenda.city, agenda.culturalPlaces, agenda.events, category],
-  );
-
-  const mobileUpcoming = useMemo(() => {
-    const rows = buildSortirMobileUpcomingRows({
-      city: agenda.city,
-      events: agenda.events,
-      culturalPlaces: agenda.culturalPlaces,
-      categoryId: mobilePortalCategory,
-      maxItems: 12,
-    });
-    return filterSortirLiveEventCardsByQuery(rows, mobileSearchQuery) as typeof rows;
-  }, [
-    agenda.city,
-    agenda.culturalPlaces,
-    agenda.events,
-    mobilePortalCategory,
-    mobileSearchQuery,
-  ]);
-
-  const mobilePopularPlaces = useMemo(
-    () =>
-      buildSortirMobilePopularPlaceCards({
-        city: agenda.city,
-        events: agenda.events,
-        culturalPlaces: agenda.culturalPlaces,
-        maxItems: 8,
-      }),
-    [agenda.city, agenda.culturalPlaces, agenda.events],
-  );
+  const [desktopWhen, setDesktopWhen] = useState<SortirDesktopWhenId>("today");
+  const [desktopCategory, setDesktopCategory] = useState<SortirDesktopCategoryId>("");
+  const [desktopSearchQuery, setDesktopSearchQuery] = useState("");
+  const [desktopMood, setDesktopMood] = useState("tonight");
+  const [desktopToggles, setDesktopToggles] = useState({
+    free: false,
+    nearby: false,
+    accessible: false,
+    indoor: false,
+  });
 
   const livePlaces = useMemo(
     () =>
@@ -183,23 +96,145 @@ function SortirScreenInner() {
     [agenda.city, agenda.events, agenda.tribes],
   );
 
-  const desktopContent = (
-    <div className="mx-auto w-full max-w-[1400px] space-y-6 px-3 py-2 pb-12 sm:px-4 lg:px-6">
-      <SortirHeroBanner
-        city={agenda.city}
-        heroImageUrl={heroImageUrl}
-        stats={heroStats}
-        isNewUser={isNewUser}
-      />
+  const desktopPortalCategory = useMemo(() => {
+    if (desktopMood === "tonight") return "tonight" as SortirCategoryId;
+    return mapSortirDesktopCategoryToPortal(desktopCategory);
+  }, [desktopCategory, desktopMood]);
 
-      <SortirFeaturedToday featured={featuredToday} />
+  const desktopGeoOrigin = useMemo(() => {
+    if (geo.currentPosition) {
+      return {
+        latitude: geo.currentPosition.latitude,
+        longitude: geo.currentPosition.longitude,
+      };
+    }
+    const center = resolveCityMapCenter(agenda.city);
+    return { latitude: center.latitude, longitude: center.longitude };
+  }, [agenda.city, geo.currentPosition]);
 
-      <SortirCategoryChips activeCategory={category} onSelect={setCategory} />
+  const desktopFilteredEvents = useMemo(() => {
+    const byWhen = filterSortirEventsByWhen(agenda.events, desktopWhen);
+    return filterSortirEventsByDesktopToggles(byWhen, desktopToggles, desktopGeoOrigin);
+  }, [agenda.events, desktopGeoOrigin, desktopToggles, desktopWhen]);
 
+  const desktopFeatured = useMemo(
+    () =>
+      buildSortirFeaturedToday({
+        city: agenda.city,
+        events: desktopFilteredEvents,
+        culturalPlaces: agenda.culturalPlaces,
+        maxItems: 5,
+      }),
+    [agenda.city, agenda.culturalPlaces, desktopFilteredEvents],
+  );
+
+  const desktopTonightItems = useMemo(() => {
+    const featuredId =
+      desktopFeatured.kind === "events" ? desktopFeatured.items[0]?.id : undefined;
+    const cards = buildSortirLiveEventCards({
+      city: agenda.city,
+      events: desktopFilteredEvents,
+      culturalPlaces: agenda.culturalPlaces,
+      categoryId: desktopPortalCategory,
+      maxItems: 12,
+    });
+    return filterSortirLiveEventCardsByQuery(cards, desktopSearchQuery)
+      .filter((card) => card.id !== featuredId)
+      .slice(0, 3);
+  }, [
+    agenda.city,
+    agenda.culturalPlaces,
+    desktopFeatured,
+    desktopFilteredEvents,
+    desktopPortalCategory,
+    desktopSearchQuery,
+  ]);
+
+  const desktopAgendaRows = useMemo(
+    () => buildSortirDesktopAgendaRows(agenda.savedEvents, agenda.city, 2),
+    [agenda.city, agenda.savedEvents],
+  );
+
+  const desktopSoonCard = useMemo(
+    () =>
+      buildSortirDesktopSoonCard({
+        city: agenda.city,
+        events: agenda.events,
+        culturalPlaces: agenda.culturalPlaces,
+      }),
+    [agenda.city, agenda.culturalPlaces, agenda.events],
+  );
+
+  const desktopWeekendCard = useMemo(
+    () =>
+      buildSortirDesktopWeekendSpotlight({
+        city: agenda.city,
+        events: agenda.events,
+        culturalPlaces: agenda.culturalPlaces,
+      }),
+    [agenda.city, agenda.culturalPlaces, agenda.events],
+  );
+
+  const editorialMoment = useMemo(() => resolveSortirDesktopEditorialMoment(), []);
+
+  const mediumShellContent = (
+    <>
+      {agenda.error ? (
+        <div className="mx-auto w-full max-w-[960px] space-y-3 px-3 py-2 sm:px-4">
+          <p className="text-sm text-red-600">{SORTIR_ERROR}</p>
+          <button
+            type="button"
+            onClick={() => agenda.reload()}
+            className="rounded-full bg-yunicity-primary px-4 py-2 text-sm font-medium text-white"
+          >
+            {SORTIR_RETRY}
+          </button>
+        </div>
+      ) : (
+        <SortirMediumShell
+          city={agenda.city}
+          editorialMoment={editorialMoment}
+          searchQuery={desktopSearchQuery}
+          onSearchChange={setDesktopSearchQuery}
+          activeMood={desktopMood}
+          onMoodChange={setDesktopMood}
+          activeWhen={desktopWhen}
+          activeCategory={desktopCategory}
+          toggles={desktopToggles}
+          onWhenChange={setDesktopWhen}
+          onCategoryChange={setDesktopCategory}
+          onToggleChange={(key, value) =>
+            setDesktopToggles((current) => ({ ...current, [key]: value }))
+          }
+          featured={desktopFeatured}
+          tonightItems={desktopTonightItems}
+          agendaRows={desktopAgendaRows}
+          savedCount={agenda.savedEvents.length}
+          soonCard={desktopSoonCard}
+        />
+      )}
+    </>
+  );
+
+  const desktopShellSecondary = (
+    <>
       {agenda.passportOffers[0] ? (
         <SearchExplorerOfferHighlight offer={agenda.passportOffers[0]} />
       ) : null}
+      <SortirLivePlacesRail items={livePlaces} />
+      <SortirActiveNeighborhoodsGrid
+        items={activeNeighborhoods}
+        seeAllHref={sortirNeighborhoodsHref(agenda.city)}
+      />
+      <div className="grid gap-6 xl:grid-cols-2">
+        <SortirForYouPanel card={forYou} />
+        <SortirTribesTonightPanel items={tribeTonight} />
+      </div>
+    </>
+  );
 
+  const desktopShellContent = (
+    <div className="mx-auto w-full max-w-[1400px] px-3 py-2 pb-12 sm:px-4 lg:px-6">
       {agenda.error ? (
         <div className="space-y-3">
           <p className="text-sm text-red-600">{SORTIR_ERROR}</p>
@@ -211,27 +246,31 @@ function SortirScreenInner() {
             {SORTIR_RETRY}
           </button>
         </div>
-      ) : null}
-
-      {!agenda.error ? (
-        <>
-          <SortirLiveEventsRail
-            items={liveEvents}
-            categoryFilterActive={category !== ""}
-            onClearCategory={() => setCategory("")}
-          />
-          <SortirLivePlacesRail items={livePlaces} />
-          <SortirActiveNeighborhoodsGrid
-            items={activeNeighborhoods}
-            seeAllHref={sortirNeighborhoodsHref(agenda.city)}
-          />
-
-          <div className="grid gap-6 xl:grid-cols-2">
-            <SortirForYouPanel card={forYou} />
-            <SortirTribesTonightPanel items={tribeTonight} />
-          </div>
-        </>
-      ) : null}
+      ) : (
+        <SortirResponsiveShell
+          city={agenda.city}
+          editorialMoment={editorialMoment}
+          searchQuery={desktopSearchQuery}
+          onSearchChange={setDesktopSearchQuery}
+          activeMood={desktopMood}
+          onMoodChange={setDesktopMood}
+          activeWhen={desktopWhen}
+          activeCategory={desktopCategory}
+          toggles={desktopToggles}
+          onWhenChange={setDesktopWhen}
+          onCategoryChange={setDesktopCategory}
+          onToggleChange={(key, value) =>
+            setDesktopToggles((current) => ({ ...current, [key]: value }))
+          }
+          featured={desktopFeatured}
+          tonightItems={desktopTonightItems}
+          agendaRows={desktopAgendaRows}
+          savedCount={agenda.savedEvents.length}
+          soonCard={desktopSoonCard}
+          weekendCard={desktopWeekendCard}
+          secondaryContent={desktopShellSecondary}
+        />
+      )}
     </div>
   );
 
@@ -241,7 +280,10 @@ function SortirScreenInner() {
         <p className="web-mobile-sortir-only px-4 py-12 text-center text-sm text-neutral-500" role="status">
           {SORTIR_LOADING}
         </p>
-        <p className="web-desktop-sortir-only px-4 py-12 text-center text-sm text-neutral-500" role="status">
+        <p className="sortir-tablet-desktop-only px-4 py-12 text-center text-sm text-neutral-500" role="status">
+          {SORTIR_LOADING}
+        </p>
+        <p className="sortir-desktop-shell-only px-4 py-12 text-center text-sm text-neutral-500" role="status">
           {SORTIR_LOADING}
         </p>
       </SortirAppShell>
@@ -250,26 +292,10 @@ function SortirScreenInner() {
 
   return (
     <SortirAppShell>
-      <div className="web-mobile-sortir-only min-w-0 space-y-5 bg-white px-4 pb-4 pt-1">
+      <div className="web-mobile-sortir-only min-w-0 bg-white" data-sortir-mobile-root="">
         <SortirMobileHeader />
-        <SortirMobileSearchBar
-          filterOpen={filterOpen}
-          onToggleFilter={() => setFilterOpen((open) => !open)}
-          query={mobileSearchQuery}
-          onQueryChange={setMobileSearchQuery}
-        />
-        {filterOpen ? (
-          <p className="rounded-xl bg-neutral-50 px-3 py-2.5 text-xs text-neutral-500 ring-1 ring-neutral-200/90">
-            Utilisez les catégories ci-dessous pour affiner votre agenda local.
-          </p>
-        ) : null}
-        <SortirMobileCategoryPills
-          activeCategory={mobileCategory}
-          onSelectCategory={setMobileCategory}
-        />
-
         {agenda.error ? (
-          <div className="space-y-3">
+          <div className="space-y-3 px-4 py-6">
             <p className="text-sm text-red-600">{SORTIR_ERROR}</p>
             <button
               type="button"
@@ -280,15 +306,35 @@ function SortirScreenInner() {
             </button>
           </div>
         ) : (
-          <>
-            <SortirMobileFeaturedCarousel items={featuredCarouselItems} />
-            <SortirMobileUpcomingList items={mobileUpcoming} />
-            <SortirMobilePopularPlacesRail items={mobilePopularPlaces} />
-          </>
+          <SortirMobileShell
+            city={agenda.city}
+            editorialMoment={editorialMoment}
+            searchQuery={desktopSearchQuery}
+            onSearchChange={setDesktopSearchQuery}
+            activeMood={desktopMood}
+            onMoodChange={setDesktopMood}
+            activeWhen={desktopWhen}
+            activeCategory={desktopCategory}
+            toggles={desktopToggles}
+            onWhenChange={setDesktopWhen}
+            onCategoryChange={setDesktopCategory}
+            onToggleChange={(key, value) =>
+              setDesktopToggles((current) => ({ ...current, [key]: value }))
+            }
+            featured={desktopFeatured}
+            tonightItems={desktopTonightItems}
+            savedCount={agenda.savedEvents.length}
+            soonCard={desktopSoonCard}
+          />
         )}
       </div>
 
-      <div className="web-desktop-sortir-only">{desktopContent}</div>
+      <div className="sortir-tablet-desktop-only" data-sortir-tablet-desktop="">
+        {mediumShellContent}
+      </div>
+      <div className="sortir-desktop-shell-only" data-sortir-desktop-shell="">
+        {desktopShellContent}
+      </div>
     </SortirAppShell>
   );
 }

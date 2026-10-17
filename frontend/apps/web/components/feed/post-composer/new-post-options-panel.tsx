@@ -40,7 +40,7 @@ function ToggleRow({
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative h-6 w-11 shrink-0 rounded-full transition ${checked ? "bg-yunicity-primary" : "bg-neutral-300"}`}
+        className={`relative h-6 min-h-11 w-11 min-w-11 shrink-0 rounded-full bg-clip-content py-2.5 transition ${checked ? "bg-yunicity-primary" : "bg-neutral-300"}`}
       >
         <span
           className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${checked ? "left-5" : "left-0.5"}`}
@@ -63,7 +63,7 @@ function OptionRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-xl px-1 py-2.5 text-left transition hover:bg-neutral-50"
+      className="flex min-h-11 w-full items-center gap-3 rounded-xl px-1 py-2.5 text-left transition hover:bg-neutral-50"
     >
       <span className="flex h-9 w-9 items-center justify-center rounded-full bg-yunicity-primary-soft text-yunicity-primary">
         {icon}
@@ -188,7 +188,7 @@ export function NewPostFormatTabs({
             key={tab.id}
             type="button"
             onClick={() => onChange(tab.id)}
-            className={`shrink-0 px-3 pb-2 text-sm font-medium transition ${
+            className={`inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center px-3 pb-2 text-sm font-medium transition ${
               selected
                 ? "border-b-2 border-yunicity-primary text-yunicity-primary"
                 : "text-neutral-500 hover:text-neutral-800"

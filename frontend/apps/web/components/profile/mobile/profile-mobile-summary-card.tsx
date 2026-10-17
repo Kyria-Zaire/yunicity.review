@@ -11,6 +11,7 @@ import {
 } from "@yunicity/utils";
 import { Camera, MapPin } from "lucide-react";
 import Link from "next/link";
+import { AvatarImage } from "@/components/avatar-image";
 
 type ProfileMobileSummaryCardProps = {
   profile: ProfileMe;
@@ -38,8 +39,7 @@ export function ProfileMobileSummaryCard({
         <div className="flex min-w-0 flex-1 items-start gap-3">
           <Link href="/profile/me/edit" className="relative shrink-0">
             {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <AvatarImage
                 src={avatarUrl}
                 alt={displayName}
                 className="h-20 w-20 rounded-full border-4 border-white object-cover shadow-md"

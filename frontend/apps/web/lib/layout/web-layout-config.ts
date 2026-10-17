@@ -174,6 +174,12 @@ export function isWebNavActive(pathname: string, item: WebNavItem): boolean {
   if (item.match === "exact") {
     return pathname === item.href;
   }
+  if (
+    item.href === "/sortir" &&
+    (pathname === "/events" || pathname.startsWith("/events/"))
+  ) {
+    return true;
+  }
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 

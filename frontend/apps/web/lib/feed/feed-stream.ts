@@ -47,19 +47,20 @@ export type BuildFeedStreamOptions = {
   availableContextFamilies?: readonly FeedContextModuleFamily[];
 };
 
-/** Modules contextuels retirés du flux desktop (≥1024px). */
-export const FEED_DESKTOP_EXCLUDED_CONTEXT_FAMILIES: readonly FeedContextModuleFamily[] = [
-  "must-see",
-  "local-privilege",
-  "tribes",
-  "local-now",
-];
-
-export function filterFeedContextFamiliesForDesktop(
-  families: readonly FeedContextModuleFamily[],
-): FeedContextModuleFamily[] {
-  return families.filter((family) => !FEED_DESKTOP_EXCLUDED_CONTEXT_FAMILIES.includes(family));
-}
+/*
+ * Aucune exclusion par palier ici — et c'est volontaire.
+ *
+ * Une liste d'exclusion retirait les QUATRE familles « du flux desktop ». Mais
+ * elle etait appliquee SANS condition de largeur, au flux UNIQUE que le shell
+ * responsive rend pour les trois bandes : mesure sous protocole, aucun module
+ * contextuel n'apparaissait a AUCUNE largeur. Une decision desktop amputait
+ * mobile et medium.
+ *
+ * `feed-context-stream` tranche la question : la cadence est commune aux trois
+ * bandes et « seul le RENDU varie ». Le retrait desktop vit donc au rendu, pas
+ * ici — ce calque reste pur et ne connait aucun palier, ce que ses propres
+ * gardes verifient.
+ */
 
 /** Un contenu REEL : publication ou video locale. Un module n'en est jamais un. */
 function estContenuReel(item: FeedStreamItem): boolean {

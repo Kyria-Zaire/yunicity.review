@@ -9,6 +9,7 @@ import {
   PROFILE_EDIT_AVATAR_CHANGE,
   PROFILE_EDIT_AVATAR_REMOVE,
   PROFILE_EDIT_AVATAR_TIP,
+  PROFILE_EDIT_MEDIA_AUTO_SAVE,
   PROFILE_EDIT_AVATAR_TITLE,
   PROFILE_EDIT_BANNER_CHANGE,
   PROFILE_EDIT_BANNER_TIP,
@@ -33,6 +34,7 @@ import {
 import { Camera, Loader2, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useRef, type ChangeEvent, type FormEvent } from "react";
+import { AvatarImage } from "@/components/avatar-image";
 
 type ProfileEditFormProps = {
   profile: ProfileMe;
@@ -97,8 +99,7 @@ export function ProfileEditForm({
         <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start">
           <div className="relative h-24 w-24 shrink-0">
             {profile.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <AvatarImage
                 src={profile.avatar_url}
                 alt=""
                 className="size-full rounded-full object-cover ring-2 ring-neutral-100"
@@ -137,6 +138,7 @@ export function ProfileEditForm({
               ) : null}
             </div>
             <p className="text-sm leading-relaxed text-neutral-500">{PROFILE_EDIT_AVATAR_TIP}</p>
+            <p className="text-xs font-medium text-emerald-700">{PROFILE_EDIT_MEDIA_AUTO_SAVE}</p>
           </div>
         </div>
         <input
@@ -154,8 +156,7 @@ export function ProfileEditForm({
         </h2>
         <div className="relative min-h-[140px] bg-neutral-900">
           {bannerUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <AvatarImage
               key={bannerUrl}
               src={bannerUrl}
               alt=""

@@ -35,7 +35,9 @@ export const CREATE_HUB_HIDDEN_PATH_PREFIXES: readonly string[] = [
   "/register",
   "/videos/new",
   "/stories/new",
+  "/discussions/new",
   "/feed/new",
+  "/sortir/create",
 ];
 
 /**

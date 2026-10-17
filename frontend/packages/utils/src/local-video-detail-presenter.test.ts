@@ -29,6 +29,8 @@ function makeItem(overrides: Partial<LocalVideoFeedItem> = {}): LocalVideoFeedIt
     media_url: "https://media.example/v.mp4",
     thumbnail_url: "https://media.example/t.jpg",
     duration_seconds: 168,
+    media_width: null,
+    media_height: null,
     mime_type: "video/mp4",
     latitude: null,
     longitude: null,

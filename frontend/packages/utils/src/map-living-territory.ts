@@ -10,6 +10,7 @@ import { resolveCityMapCenter } from "./map-city-defaults";
 import { buildMapEventUrl, buildMapNeighborhoodUrl, buildMapPlaceUrl } from "./explorer-links";
 import { tribeCategoryLabel, tribeHref } from "./tribe-labels";
 import { neighborhoodHref } from "./neighborhood-labels";
+import { isMergedNeighborhoodSlug } from "./neighborhood-sectors";
 import { mapEventPopupDate, mapEventPopupLocation } from "./map-labels";
 import { resolveMapPlaceImageUrl } from "./map-media-url";
 
@@ -229,6 +230,7 @@ export function buildNeighborhoodMapMarkers(
 ): MapNeighborhoodMarker[] {
   return neighborhoods
     .filter((hood) => hood.is_active)
+    .filter((hood) => !isMergedNeighborhoodSlug(hood.slug))
     .filter((hood) => isRealMapCoordinate(hood.latitude, hood.longitude))
     .map((hood) => ({
       id: hood.id,

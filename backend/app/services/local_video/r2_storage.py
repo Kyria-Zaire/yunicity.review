@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import boto3  # type: ignore[import-untyped]
 from botocore.client import Config  # type: ignore[import-untyped]
@@ -120,6 +121,18 @@ class R2LocalVideoStorage:
         body = response["Body"].read()
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(body)
+
+    def promote_file(self, temp_path: Path, storage_key: str) -> None:
+        """Envoie le temporaire vers R2 puis le retire.
+
+        Ce chemin n'est pas emprunte en exploitation — en R2 le navigateur
+        televerse directement via l'URL presignee, sans passer par l'API.
+        Il existe pour que le contrat de stockage reste un seul contrat.
+        """
+        try:
+            self.upload_file(temp_path, storage_key, "video/mp4")
+        finally:
+            temp_path.unlink(missing_ok=True)
 
     def upload_file(self, local_path, storage_key: str, content_type: str) -> None:  # type: ignore[no-untyped-def]
         self._client.upload_file(

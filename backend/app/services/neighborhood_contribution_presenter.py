@@ -66,6 +66,17 @@ def to_me_item(contribution: NeighborhoodContribution) -> NeighborhoodContributi
     )
 
 
+def to_public_item(contribution: NeighborhoodContribution) -> NeighborhoodContributionMeItem:
+    """Approved contribution for public profile — no rejection metadata."""
+    item = to_me_item(contribution)
+    return item.model_copy(
+        update={
+            "rejection_reason_code": None,
+            "rejection_message": None,
+        },
+    )
+
+
 def to_moderation_response(
     contribution: NeighborhoodContribution,
 ) -> NeighborhoodContributionModerationResponse:

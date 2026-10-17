@@ -22,6 +22,7 @@ import {
 import Link from "next/link";
 
 import { VideoDetailRelatedCard } from "@/components/videos/video-detail-related-card";
+import { VIDEO_CANVAS_FOCUS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
 
 type VideoDetailSidebarProps = {
   video: LocalVideoFeedItem;
@@ -55,21 +56,26 @@ export function VideoDetailSidebar({
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-base font-bold text-neutral-900">{VIDEO_DETAIL_SIDEBAR_TITLE}</h2>
           <label className="inline-flex items-center gap-2 text-xs font-semibold text-neutral-600">
-            <span>{VIDEO_DETAIL_AUTOPLAY}</span>
+            <span id="video-detail-autoplay-label">{VIDEO_DETAIL_AUTOPLAY}</span>
             <button
               type="button"
               role="switch"
               aria-checked={autoplayEnabled}
+              aria-labelledby="video-detail-autoplay-label"
               onClick={() => onAutoplayChange(!autoplayEnabled)}
-              className={`relative h-6 w-11 rounded-full transition ${
-                autoplayEnabled ? "bg-yunicity-primary" : "bg-neutral-300"
-              }`}
+              className={`${VIDEO_TOUCH_TARGET} rounded-full ${VIDEO_CANVAS_FOCUS}`}
             >
               <span
-                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${
-                  autoplayEnabled ? "left-[1.35rem]" : "left-0.5"
+                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition motion-reduce:transition-none ${
+                  autoplayEnabled ? "bg-yunicity-primary" : "bg-neutral-300"
                 }`}
-              />
+              >
+                <span
+                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition motion-reduce:transition-none ${
+                    autoplayEnabled ? "left-[1.35rem]" : "left-0.5"
+                  }`}
+                />
+              </span>
             </button>
           </label>
         </div>
@@ -106,7 +112,8 @@ export function VideoDetailSidebar({
         <button
           type="button"
           onClick={onOpenReport}
-          className="mt-4 text-sm font-semibold text-yunicity-primary hover:underline"
+          aria-label={VIDEO_DETAIL_REPORT}
+          className={`mt-4 text-sm font-semibold text-yunicity-primary hover:underline ${VIDEO_CANVAS_FOCUS}`}
         >
           {VIDEO_DETAIL_REPORT}
         </button>

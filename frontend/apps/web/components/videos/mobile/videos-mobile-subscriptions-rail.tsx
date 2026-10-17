@@ -12,6 +12,7 @@ import {
 } from "@yunicity/utils";
 import { ChevronRight, Play, Video } from "lucide-react";
 import Link from "next/link";
+import { AvatarImage } from "@/components/avatar-image";
 
 const STORY_RING_GRADIENT = [
   "bg-gradient-to-tr from-violet-500 via-fuchsia-500 to-orange-400",
@@ -104,8 +105,7 @@ export function VideosMobileSubscriptionsRail({ creators }: VideosMobileSubscrip
                   <div className={`relative rounded-full ${RING_SIZE} bg-gradient-to-tr p-[2.5px] ${ringClass}`}>
                     <div className="relative h-full w-full overflow-hidden rounded-full bg-white p-[3px]">
                       {creator.avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
+                        <AvatarImage
                           src={creator.avatarUrl}
                           alt=""
                           className="h-full w-full rounded-full object-cover"
