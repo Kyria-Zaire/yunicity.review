@@ -8,17 +8,25 @@
 # (preview.yunicity.city) et le site public (yunicity.city). Railway auto-détecte
 # un fichier nommé `railway.toml` à cet endroit — un changement de builder écrit
 # dans ce fichier peut donc atteindre le site public sans que personne l'ait
-# voulu. Aucun fichier de ce nom ne portant la configuration Docker, cet
-# héritage implicite n'est plus possible : chaque service lit uniquement le
-# chemin explicitement configuré. Même raisonnement que `railway.api.toml` et
-# `railway.admin.toml`. Ne pas renommer ce fichier en `railway.toml`.
+# voulu. Une fois le temps 2 accompli, plus aucun fichier de ce nom ne portera
+# la configuration Docker, et cet héritage implicite deviendra impossible :
+# chaque service lira uniquement le chemin explicitement configuré. Jusque-là,
+# `railway.toml` porte la même configuration que ce fichier — voir ci-dessous.
+# Même raisonnement que `railway.api.toml` et `railway.admin.toml`. Ne pas
+# renommer ce fichier en `railway.toml`.
 #
-# PRÉREQUIS AVANT DE POUSSER
+# TRANSITION EN DEUX TEMPS
 #
-# Le config path du service Preview doit déjà pointer sur CE fichier. Sinon le
-# service relit `railway.toml`, reconstruit en RAILPACK — donc une image qui
-# écoute sur 3000 — alors que ses domaines visent 8080 : 502. Détail et retour
-# arrière : `docs/ops/INFRA-04-web-image-docker.md` §6 quinquies.
+# TEMPS 1 — ce fichier est ajouté, et `railway.toml` conserve provisoirement la
+#           MÊME configuration Docker. Les deux chemins produisent donc la même
+#           image, compatible avec les domaines de la Preview sur 8080 : aucun
+#           état intermédiaire ne peut réintroduire le désalignement 3000/8080.
+# TEMPS 2 — le config path du service Preview est repointé sur CE fichier, le
+#           déploiement est vérifié, puis `railway.toml` est restauré en
+#           RAILPACK dans un commit distinct.
+#
+# Détail, ordre et retour arrière : `docs/ops/INFRA-04-web-image-docker.md`
+# §6 quinquies.
 
 [build]
 # Image multi-étapes : seul l'artefact `standalone` de Next part en production.

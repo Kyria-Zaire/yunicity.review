@@ -170,9 +170,9 @@ chargements réels.
 
 | Paquet | Répertoire dans l'image | Chargé à l'exécution |
 |--------|-------------------------|----------------------|
-| `node-forge` | **0** (3 empreintes textuelles à 0) | non observé |
-| `braces` | **0** comme paquet | non observé |
-| `micromatch` | **0** | non observé |
+| `node-forge` | **paquet installé absent** — 0 répertoire, 0 occurrence sur 3 empreintes textuelles | non observé |
+| `braces` | **paquet installé absent**, mais une **copie embarquée dans Next subsiste**, de version indéterminée (§5.1) | non observé |
+| `micromatch` | **paquet installé absent**, même copie embarquée que `braces` | non observé |
 | `@vercel/nft` | bundlé dans un fichier de Next | non observé |
 | outils de test (`playwright`, `vitest`, `jest`, `@testing-library`, `msw`, `turbo`, `eslint`, `prettier`, `tsx`, `pnpm`, `tailwindcss`) | **0**, aucun binaire de navigateur | — |
 | `typescript@5.9.3` (8,8 Mo) | **présent** dans `/app/node_modules` | **oui — requis** |
@@ -555,53 +555,69 @@ toute promotion.
 
 ---
 
-## 6 quinquies. Séparation des configurations — préparée localement
+## 6 quinquies. Séparation des configurations — transition en deux temps
 
-**Préparée, non poussée.** Objectif : que le passage au builder Dockerfile
-n'atteigne pas le site public **implicitement**, par héritage du fichier de
-configuration partagé.
+**Objectif** : que le passage au builder Dockerfile n'atteigne pas le site
+public **implicitement**, par héritage du `railway.toml` partagé entre les
+services enracinés sur `frontend/`.
 
-### Ce qui est préparé
+C'est le patron déjà appliqué deux fois dans ce dépôt — `railway.api.toml`,
+`railway.admin.toml` — contre cette classe exacte d'héritage.
+
+### Pourquoi deux temps, et non un seul commit
+
+Une séparation en un seul commit — fichier dédié ajouté **et** `railway.toml`
+restauré en RAILPACK — crée un état intermédiaire dangereux : tant que le config
+path du service Preview pointe encore sur `railway.toml`, un déploiement
+reconstruirait en RAILPACK, donc un serveur qui écoute sur **3000**, alors que
+les domaines de la Preview visent désormais **8080**. Le 502 du §6 bis
+reviendrait.
+
+La transition en deux temps supprime cet état : à aucun moment un chemin de
+configuration n'est incompatible avec les domaines.
+
+### Temps 1 — ajouter seulement le fichier dédié
 
 | Fichier | État |
 |---------|------|
-| `frontend/railway.web-docker.toml` | **nouveau** — porte la configuration Dockerfile (builder, `dockerfilePath`, `startCommand`) |
-| `frontend/railway.toml` | **restauré** à l'identique de `953246fc` : RAILPACK, `buildCommand`, `startCommand` d'origine |
+| `frontend/railway.web-docker.toml` | **nouveau** — configuration Docker |
+| `frontend/railway.toml` | **conservé dans son état Docker**, avec une note transitoire |
 
-C'est le patron déjà appliqué deux fois dans ce dépôt — `railway.api.toml`,
-`railway.admin.toml` — précisément contre l'héritage implicite d'un
-`railway.toml` partagé par plusieurs services enracinés au même endroit.
+Les deux chemins produisent la même image, compatible avec les domaines sur
+8080. Le service Preview peut donc être déployé par l'un ou l'autre sans risque.
 
-### Étape dashboard indispensable, et son ordre
+Aucun merge vers `main` pendant toute la transition : le site public lit
+`railway.toml`, qui porte provisoirement la configuration Docker alors que ses
+domaines visent 3000.
 
-Le service Preview lit aujourd'hui `/frontend/railway.toml`. Après cette
-séparation, son config path doit devenir
-**`/frontend/railway.web-docker.toml`**.
+### Temps 2 — repointer, vérifier, puis restaurer
 
-> **Danger d'ordonnancement.** Pousser cette séparation **avant** d'avoir
-> repointé le config path ferait reconstruire la Preview en RAILPACK, donc une
-> image qui écoute sur 3000, alors que ses domaines visent désormais 8080 :
-> le 502 du §6 bis reviendrait. Le config path doit être changé **avant** la
-> poussée, ou dans la même fenêtre.
+1. Repointer le config path du service Preview sur
+   **`/frontend/railway.web-docker.toml`** (action dashboard).
+2. Déclencher un déploiement et le **vérifier** : builder Dockerfile, chemin
+   `Dockerfile.web`, port d'écoute 8080, puis la surface publique du §6 quater.
+3. Seulement ensuite, restaurer `railway.toml` en **RAILPACK** — identique à
+   `953246fc` — dans un **commit distinct**.
 
-### État final visé, cohérent pour les deux services
+À l'issue du temps 2, le site public retrouve son builder d'origine et ne peut
+plus basculer par héritage.
+
+### État final visé, cohérent pour chaque service isolément
 
 | Service | Config | Builder | Port image | `targetPort` domaines |
 |---------|--------|---------|------------|------------------------|
 | Preview (`preview.yunicity.city`) | `railway.web-docker.toml` | Dockerfile | 8080 (`PORT` honoré) | 8080 |
 | Public (`yunicity.city`) | `railway.toml` | RAILPACK | 3000 (figé par le script `start`) | 3000 |
 
-Chaque service devient cohérent isolément, et le site public ne peut plus
-changer de builder par héritage.
+### Retour arrière
 
-### Retour arrière de cette séparation
+**Pendant le temps 1** : supprimer `railway.web-docker.toml`. `railway.toml`
+porte déjà la configuration Docker en service, rien d'autre à faire.
 
-1. Repointer le config path du service Preview sur `/frontend/railway.toml`.
-2. Rétablir dans `railway.toml` la configuration Dockerfile et supprimer
-   `railway.web-docker.toml`.
-
-Aucune action sur les domaines : ils restent sur 8080, ce que la configuration
-Dockerfile attend.
+**Après le temps 2** : repointer le config path du service Preview sur
+`/frontend/railway.toml`, puis y rétablir la configuration Docker. Les domaines
+restent sur 8080 dans les deux cas — c'est ce que la configuration Docker
+attend.
 
 ---
 
@@ -740,8 +756,10 @@ Les images RAILPACK poussées par ces déploiements pèsent 452 Mo (site public,
 
 ## 10. Limites et dette
 
-1. **L'audit du lockfile reste rouge.** Ce candidat retire `braces` et
-   `node-forge` de l'**image d'exécution**, pas de l'arbre de dépendances :
+1. **L'audit du lockfile reste rouge.** Ce candidat retire les **paquets
+   installés** `braces` et `node-forge` de l'**image d'exécution**, pas de
+   l'arbre de dépendances — et, pour `braces`, une copie embarquée dans Next
+   subsiste, de version indéterminée (§5.1) :
    `frontend/pnpm-lock.yaml` porte toujours `braces@3.0.3`, `micromatch@4.0.8` et
    `node-forge@1.4.0`. C'est une **mitigation de l'image runtime**, pas une
    remédiation. Elle n'appartient pas à la même classe que les deux précédents
