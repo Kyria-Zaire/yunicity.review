@@ -1,9 +1,11 @@
 # INFRA-04 — Image Docker du service web (candidat, non déployé)
 
-> **Statut** : candidat validé localement, **mis en échec en Preview le
-> 2026-10-17** par un désalignement de port (§6 bis), puis retour arrière
-> appliqué. Aucune variable modifiée, aucune action sur Production ni sur
-> l'admin. Ce document sert à la revue.
+> **Statut** : candidat **en service sur la Preview** depuis le 2026-10-17
+> 10:38:48Z, après alignement des deux domaines du service sur le port 8080
+> (§6 quater). Première tentative en échec le matin même (§6 bis), cause racine
+> identifiée puis corrigée. Surface publique vérifiée ; **connexion authentifiée
+> NON VÉRIFIÉE**. Aucune variable modifiée, aucune action sur Production, l'API
+> ou l'admin.
 
 Service visé : `yunicity.review` du projet Railway `dazzling-wisdom`, domaine
 `preview.yunicity.city`, branche `feat/c3-videos-refonte-final`, répertoire
@@ -431,6 +433,106 @@ compte de recette autorisé n'est pas fourni.
 
 ---
 
+## 6 quater. Bascule exécutée le 2026-10-17 — succès
+
+Autorisée explicitement : alignement des deux domaines du service Preview sur
+8080, réutilisation de l'image du déploiement `67522420`, échéance de quatre
+minutes, retour arrière image + ports prêt.
+
+### Précondition vérifiée avant de toucher aux domaines
+
+Déploiement actif `efec096f`, dont le journal donne la commande et le port :
+
+```
+> cross-env NEXT_BUILD_DIR=.next-build next start --port 3000
+- Local:  http://localhost:3000
+```
+
+Le port figé par le script `start` est donc confirmé sur l'image en service, ce
+qui scelle le diagnostic du §6 bis.
+
+### Déroulé et chronologie
+
+| Heure (Z) | Événement |
+|-----------|-----------|
+| 10:37:47 | référence : 200, inscriptions `open=true mode=pilot closes_at=2026-10-19T16:46:25.405000Z` |
+| 10:37:56 | `redeploy` de `67522420` → déploiement `542fd68b` |
+| 10:38:07 | la nouvelle image démarre : `Ready in 67ms`, écoute `0.0.0.0:8080` |
+| 10:38:15 | 502 détecté |
+| ~10:38:30 | les deux domaines passés à `targetPort: 8080` |
+| 10:38:48 | **200** |
+
+**Indisponibilité : environ 33 secondes**, contre 36 minutes le matin.
+
+### Une hypothèse de la séquence s'est révélée fausse
+
+Le §6 ter prévoyait que l'ancienne image servirait jusqu'au relais, et donc
+d'attendre le 502 comme signal de basculement. Mesure : le 502 est apparu
+**1 seconde** après le déclenchement du redéploiement. Railway arrête l'ancien
+conteneur dès le début du redéploiement — il n'y a aucun recouvrement.
+
+Décision prise sur le moment : basculer les ports **immédiatement**, plutôt que
+d'attendre un relais déjà survenu. La fenêtre d'indisponibilité est donc celle
+du redéploiement, pas celle de la bascule des ports. Pour une prochaine fois :
+basculer les ports dès le déclenchement du redéploiement, sans attendre aucun
+signal.
+
+### Identification de l'image servie — attention au faux discriminant
+
+Le hash du chunk webpack est resté **identique** entre les deux images
+(`webpack-b55f57aca273e799.js`). Ce n'est pas une anomalie : ce hash dérive du
+contenu du bundle **client**, que `output: "standalone"` ne change pas. Les deux
+builds produisent donc le même hash, et il ne peut pas identifier l'image
+servie. La boucle de surveillance du matin reposait sur ce même discriminant —
+seconde raison de l'avoir abandonnée.
+
+Discriminants valides, tous concordants :
+
+- déploiement actif `542fd68b`, commit `b190529f`, seul en SUCCESS ;
+- journal de démarrage **sans bannière pnpm** — l'image lance
+  `node apps/web/server.js` directement — là où `efec096f` affichait
+  `> web@0.0.0 start` ;
+- écoute sur **8080**, et le service répond alors que les domaines visent 8080 :
+  l'image RAILPACK, qui n'écoute que sur 3000, ne pourrait pas répondre ;
+- démarrage en **67 ms** contre 414 ms pour l'image RAILPACK.
+
+### Surface publique vérifiée
+
+| Contrôle | Résultat |
+|----------|----------|
+| `/`, `/login`, `/register`, `/neighborhoods`, `/places`, `/map`, `/sortir`, `/aide`, `/legal/confidentialite` | 200 |
+| `/events` | 307 vers `/sortir`, comportement produit |
+| Chunk JS · CSS | 200 `application/javascript` · 200 `text/css` |
+| `public/brand/yunicity-mascot.png` | 200, 112 802 o — prouve le `cp` explicite du Dockerfile |
+| `/_next/image?w=256` | 200, PNG 256×256, 9 943 o — `sharp` opère dans l'image slim |
+| Origine API inlinée | `https://api-preview.yunicity.city` |
+| Proxy de développement `/api/v1/health` | 404, inerte |
+| En-têtes de sécurité | CSP report-only, Permissions-Policy, Referrer-Policy, HSTS, `X-Content-Type-Options`, `X-Frame-Options: DENY` — tous émis |
+| Rendu serveur d'une route dynamique | `/neighborhoods/cernay-jean-jaures` → 200, 63 kO, titre `Cernay – Jean-Jaurès — quartier à Reims`, `"name":"Cernay – Jean-Jaurès"` dans la charge, 23 occurrences de « Reims » |
+| Inscriptions | **octet pour octet identiques** à la référence |
+
+Le rendu serveur d'une route dynamique est précisément le contrôle que la
+validation locale ne pouvait obtenir qu'au moyen d'un relais TCP : il établit
+que le conteneur atteint l'API depuis l'intérieur, en environnement réel.
+
+### Connexion authentifiée — NON VÉRIFIÉE
+
+Aucun compte de recette autorisé n'est disponible : les identifiants du compte
+pilote sont hors dépôt (`docs/qa/PILOT-SMOKE-02`), et aucun fichier
+d'environnement local ni variable de session ne les porte. Création de compte
+sur Preview exclue. **Cette ligne reste NON VÉRIFIÉE** et devra l'être avant
+toute promotion.
+
+### État final
+
+- Déploiement actif : `542fd68b` — image Dockerfile, commit `b190529f`
+- `preview.yunicity.city` → `targetPort: 8080`
+- `yunicityreview-production-97c7.up.railway.app` → `targetPort: 8080`
+- Retour arrière disponible et inchangé : §8, complété par la remise des deux
+  domaines sur 3000.
+
+---
+
 ## 7. Procédure de bascule
 
 1. Revue et merge du diff. **Avant tout merge vers `main`**, vérifier le point
@@ -527,8 +629,21 @@ disponibles, l'incertitude subsiste et doit être levée par lecture directe.
 | Pousser la branche `feat/c3-videos-refonte-final` | Preview (`preview.yunicity.city`) uniquement — c'est la branche que ce service suit | celui de ce candidat, avec retour arrière §8 |
 | **Merger vers `main`** | Preview **et**, selon §9.1, le site public `yunicity.city` au prochain déploiement | **changement de builder non voulu sur le site public** |
 
-**GATE BLOQUANT avant tout merge vers `main`** : lire, dans le dashboard Railway,
-le config path du service `yunicity.review` de `miraculous-patience`.
+**Le site public porte le même désalignement de port.** Mesuré en lecture
+seule : ses deux domaines — `yunicity.city`
+(`87bc0537-871e-41a0-be46-d53cc938918f`) et
+`yunicityreview-production.up.railway.app`
+(`c136db04-f180-4d70-83cc-daa987fdfbf1`) — visent `targetPort: 3000`. Si un
+merge basculait ce service sur le builder Dockerfile, il subirait **exactement
+le 502 du §6 bis**, sur le domaine public.
+
+**GATE BLOQUANT avant tout merge vers `main`**, désormais en deux volets :
+
+1. lire, dans le dashboard Railway, le config path du service `yunicity.review`
+   de `miraculous-patience` ;
+2. s'il applique `/frontend/railway.toml`, aligner d'abord ses deux domaines sur
+   8080 — ou isoler la configuration Dockerfile dans un fichier dédié, de sorte
+   que le site public ne bascule pas du tout.
 
 - S'il ne pointe **pas** sur `/frontend/railway.toml` : le merge est sans effet
   sur `yunicity.city`.
