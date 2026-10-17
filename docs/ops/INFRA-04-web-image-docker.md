@@ -5,7 +5,7 @@
 > (§6 quater). Première tentative en échec le matin même (§6 bis), cause racine
 > identifiée puis corrigée. Surface publique vérifiée ; **connexion authentifiée
 > NON VÉRIFIÉE**. Aucune variable modifiée, aucune action sur Production, l'API
-> ou l'admin.
+> ou l'admin. **Temps 1 de la séparation des configurations poussé et vérifié** le 2026-10-17 (§6 quinquies) ; temps 2 en attente du repointage du config path.
 
 Service visé : `yunicity.review` du projet Railway `dazzling-wisdom`, domaine
 `preview.yunicity.city`, branche `feat/c3-videos-refonte-final`, répertoire
@@ -589,6 +589,41 @@ Les deux chemins produisent la même image, compatible avec les domaines sur
 Aucun merge vers `main` pendant toute la transition : le site public lit
 `railway.toml`, qui porte provisoirement la configuration Docker alors que ses
 domaines visent 3000.
+
+### Temps 1 — EXÉCUTÉ le 2026-10-17
+
+Poussé à 11:46:28Z (`b190529f..42dc6bf1`, avance rapide, sans force).
+
+Le diff est **inerte pour le build** : `Dockerfile.web` et `railway.toml` ne
+reçoivent que des commentaires, les valeurs `[build]`/`[deploy]` sont intactes,
+et le fichier dédié n'est lu par aucun service tant que le config path n'est pas
+repointé. Le déploiement déclenché reconstruit donc la même image.
+
+| Mesure | Résultat |
+|--------|----------|
+| Déploiement | `73d694cf-fd8a-4b14-a5e6-5a0b92bd63d5`, SUCCESS, commit `42dc6bf1` |
+| Durée de build | 11:46:40Z → 11:49:22Z, soit 2 min 42 s |
+| Démarrage | 11:49:19Z, `Ready in 65ms`, écoute `0.0.0.0:8080`, **sans bannière pnpm** |
+| **Indisponibilité** | **aucune observée** — 97 passes à 5 s d'intervalle, de 11:46:11Z à 11:54Z, toutes en 200 |
+| Surface publique | identique au §6 quater, contrôle par contrôle |
+| Inscriptions | **octet pour octet identiques** à la référence |
+
+La sonde était armée **avant** le déclenchement, conformément à la leçon du
+§6 quater : la fenêtre est donc mesurée, non supposée. Réserve d'échantillonnage :
+une coupure plus brève que 5 secondes ne serait pas détectée.
+
+### Ce que le temps 1 apprend sur le 502 du matin
+
+Ce déploiement a échangé les conteneurs **sans aucune coupure visible**, alors
+que celui du matin avait produit un 502. La différence tient aux domaines : ce
+matin ils visaient 3000 face à une image qui écoute sur 8080 ; ils visent
+maintenant 8080.
+
+Le 502 du matin était donc bien le **désalignement de port**, et non une coupure
+de déploiement. Cela achève d'invalider l'inférence retirée au §6 quater
+(« Railway arrête l'ancien conteneur dès le début, sans recouvrement ») : les
+mesures s'expliquent sans elle. Deux observations ne font toujours pas une règle
+sur le comportement de Railway, mais elles suffisent à écarter celle-là.
 
 ### Temps 2 — repointer, vérifier, puis restaurer
 
