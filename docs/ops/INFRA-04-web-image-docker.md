@@ -453,29 +453,46 @@ qui scelle le diagnostic du §6 bis.
 
 ### Déroulé et chronologie
 
-| Heure (Z) | Événement |
-|-----------|-----------|
-| 10:37:47 | référence : 200, inscriptions `open=true mode=pilot closes_at=2026-10-19T16:46:25.405000Z` |
-| 10:37:56 | `redeploy` de `67522420` → déploiement `542fd68b` |
-| 10:38:07 | la nouvelle image démarre : `Ready in 67ms`, écoute `0.0.0.0:8080` |
-| 10:38:15 | 502 détecté |
-| ~10:38:30 | les deux domaines passés à `targetPort: 8080` |
-| 10:38:48 | **200** |
+| Heure (Z) | Événement | Source |
+|-----------|-----------|--------|
+| 10:37:47 | référence : 200, inscriptions `open=true mode=pilot closes_at=2026-10-19T16:46:25.405000Z` | mesure |
+| 10:37:56 | `redeploy` de `67522420` → déploiement `542fd68b` | `createdAt` |
+| *10:37:56 → 10:38:14* | **aucune observation** — 18 secondes sans sonde | — |
+| 10:38:07 | la nouvelle image démarre : `Ready in 67ms`, écoute `0.0.0.0:8080` | journal |
+| 10:38:15 | premier 502 **observé**, soit **+19 s** après le déclenchement | sonde |
+| ~10:38:30 | les deux domaines passés à `targetPort: 8080` | réponse API |
+| 10:38:48 | **200** | sonde |
 
-**Indisponibilité : environ 33 secondes**, contre 36 minutes le matin.
+**Indisponibilité observée : 33 secondes** (10:38:15 → 10:38:48). Son début réel
+n'est pas établi : il se situe quelque part dans la fenêtre non observée. Borne
+supérieure, en prenant le déclenchement du redéploiement : **52 secondes**. À
+comparer aux 36 minutes du matin.
 
-### Une hypothèse de la séquence s'est révélée fausse
+### Ce que la bascule n'a PAS démontré
 
-Le §6 ter prévoyait que l'ancienne image servirait jusqu'au relais, et donc
-d'attendre le 502 comme signal de basculement. Mesure : le 502 est apparu
-**1 seconde** après le déclenchement du redéploiement. Railway arrête l'ancien
-conteneur dès le début du redéploiement — il n'y a aucun recouvrement.
+Sur le moment, j'ai lu « 502 après 1 seconde » et conclu que Railway arrêtait
+l'ancien conteneur dès le début du redéploiement, sans recouvrement. **Les deux
+affirmations sont retirées.**
 
-Décision prise sur le moment : basculer les ports **immédiatement**, plutôt que
-d'attendre un relais déjà survenu. La fenêtre d'indisponibilité est donc celle
-du redéploiement, pas celle de la bascule des ports. Pour une prochaine fois :
-basculer les ports dès le déclenchement du redéploiement, sans attendre aucun
-signal.
+- Le « 1 seconde » était le temps écoulé **de la sonde**, pas depuis le
+  déclenchement. Le premier 502 a été observé à **+19 s**.
+- Entre le déclenchement (10:37:56) et le démarrage de la sonde (10:38:14),
+  **rien n'a été observé**. L'instant où l'ancien conteneur a cessé de servir
+  reste donc inconnu.
+- L'explication ordinaire suffit d'ailleurs à rendre compte des mesures : la
+  nouvelle image, réutilisée sans reconstruction, était prête à 10:38:07, soit
+  **11 secondes** après le déclenchement. Un relais normal à cet instant, avec
+  des domaines encore sur 3000, produit exactement le 502 observé ensuite.
+
+Aucune règle générale n'est tirée de cet essai unique. En particulier,
+« basculer les ports dès le déclenchement » **n'est pas** une consigne : un seul
+déploiement, dont la durée dépendait de la réutilisation de l'image, ne permet
+pas de régler l'ordre des opérations pour les suivants. Ce qui reste acquis est
+seulement que la bascule des ports, elle, est immédiate — le reste de la fenêtre
+appartient au redéploiement.
+
+Pour une prochaine bascule : instrumenter la sonde **avant** de déclencher le
+redéploiement, de sorte que l'instant de la coupure soit mesuré et non supposé.
 
 ### Identification de l'image servie — attention au faux discriminant
 
@@ -486,15 +503,20 @@ builds produisent donc le même hash, et il ne peut pas identifier l'image
 servie. La boucle de surveillance du matin reposait sur ce même discriminant —
 seconde raison de l'avoir abandonnée.
 
-Discriminants valides, tous concordants :
+Références utiles pour savoir quelle image sert — dans cet ordre :
 
-- déploiement actif `542fd68b`, commit `b190529f`, seul en SUCCESS ;
-- journal de démarrage **sans bannière pnpm** — l'image lance
-  `node apps/web/server.js` directement — là où `efec096f` affichait
-  `> web@0.0.0 start` ;
-- écoute sur **8080**, et le service répond alors que les domaines visent 8080 :
-  l'image RAILPACK, qui n'écoute que sur 3000, ne pourrait pas répondre ;
-- démarrage en **67 ms** contre 414 ms pour l'image RAILPACK.
+1. **le déploiement actif et sa configuration** : `542fd68b`, commit
+   `b190529f`, seul en SUCCESS, builder Dockerfile ;
+2. **la commande de démarrage effective**, lue au journal : l'image lance
+   `node apps/web/server.js`, **sans bannière pnpm**, là où `efec096f`
+   affichait `> web@0.0.0 start` puis `next start --port 3000` ;
+3. **le port d'écoute** : 8080, et le service répond alors que les domaines
+   visent 8080 — l'image RAILPACK, qui n'écoute que sur 3000, ne pourrait pas
+   répondre.
+
+La **durée de démarrage** (67 ms contre 414 ms) n'est pas un discriminant : elle
+varie avec la charge de l'hôte et ne caractérise pas une image. Elle est
+mentionnée pour mémoire, non comme preuve.
 
 ### Surface publique vérifiée
 
@@ -530,6 +552,56 @@ toute promotion.
 - `yunicityreview-production-97c7.up.railway.app` → `targetPort: 8080`
 - Retour arrière disponible et inchangé : §8, complété par la remise des deux
   domaines sur 3000.
+
+---
+
+## 6 quinquies. Séparation des configurations — préparée localement
+
+**Préparée, non poussée.** Objectif : que le passage au builder Dockerfile
+n'atteigne pas le site public **implicitement**, par héritage du fichier de
+configuration partagé.
+
+### Ce qui est préparé
+
+| Fichier | État |
+|---------|------|
+| `frontend/railway.web-docker.toml` | **nouveau** — porte la configuration Dockerfile (builder, `dockerfilePath`, `startCommand`) |
+| `frontend/railway.toml` | **restauré** à l'identique de `953246fc` : RAILPACK, `buildCommand`, `startCommand` d'origine |
+
+C'est le patron déjà appliqué deux fois dans ce dépôt — `railway.api.toml`,
+`railway.admin.toml` — précisément contre l'héritage implicite d'un
+`railway.toml` partagé par plusieurs services enracinés au même endroit.
+
+### Étape dashboard indispensable, et son ordre
+
+Le service Preview lit aujourd'hui `/frontend/railway.toml`. Après cette
+séparation, son config path doit devenir
+**`/frontend/railway.web-docker.toml`**.
+
+> **Danger d'ordonnancement.** Pousser cette séparation **avant** d'avoir
+> repointé le config path ferait reconstruire la Preview en RAILPACK, donc une
+> image qui écoute sur 3000, alors que ses domaines visent désormais 8080 :
+> le 502 du §6 bis reviendrait. Le config path doit être changé **avant** la
+> poussée, ou dans la même fenêtre.
+
+### État final visé, cohérent pour les deux services
+
+| Service | Config | Builder | Port image | `targetPort` domaines |
+|---------|--------|---------|------------|------------------------|
+| Preview (`preview.yunicity.city`) | `railway.web-docker.toml` | Dockerfile | 8080 (`PORT` honoré) | 8080 |
+| Public (`yunicity.city`) | `railway.toml` | RAILPACK | 3000 (figé par le script `start`) | 3000 |
+
+Chaque service devient cohérent isolément, et le site public ne peut plus
+changer de builder par héritage.
+
+### Retour arrière de cette séparation
+
+1. Repointer le config path du service Preview sur `/frontend/railway.toml`.
+2. Rétablir dans `railway.toml` la configuration Dockerfile et supprimer
+   `railway.web-docker.toml`.
+
+Aucune action sur les domaines : ils restent sur 8080, ce que la configuration
+Dockerfile attend.
 
 ---
 

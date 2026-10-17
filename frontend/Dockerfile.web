@@ -4,8 +4,8 @@
 # Le service Railway a `frontend/` comme répertoire racine : le contexte de
 # construction est donc CE répertoire. Le nom n'est PAS `Dockerfile` à dessein
 # — un fichier ainsi nommé serait auto-détecté par tout service partageant ce
-# répertoire racine (cf. `railway.admin.toml`). `railway.toml` désigne ce
-# chemin explicitement. Voir `.dockerignore` à côté.
+# répertoire racine (cf. `railway.admin.toml`). `railway.web-docker.toml`
+# désigne ce chemin explicitement. Voir `.dockerignore` à côté.
 #
 # ── Pourquoi deux étapes ─────────────────────────────────────────────────────
 # L'étape de construction a besoin du workspace complet : dépendances de
@@ -90,6 +90,7 @@ COPY --from=build --chown=node:node /build/apps/web/.next-build/standalone ./
 
 USER node
 EXPOSE 3000
-# Doit rester identique au `startCommand` de `railway.toml`, qui l'écrase côté
+# Doit rester identique au `startCommand` de `railway.web-docker.toml`, qui
+# l'écrase côté
 # plateforme : si l'un change, changer l'autre.
 CMD ["node", "apps/web/server.js"]
