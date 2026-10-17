@@ -1,7 +1,9 @@
 # INFRA-04 — Image Docker du service web (candidat, non déployé)
 
-> **Statut** : candidat validé **localement**. Aucun déploiement, aucune mutation
-> Railway, aucune modification de variable. Ce document sert à la revue.
+> **Statut** : candidat validé localement, **mis en échec en Preview le
+> 2026-10-17** par un désalignement de port (§6 bis), puis retour arrière
+> appliqué. Aucune variable modifiée, aucune action sur Production ni sur
+> l'admin. Ce document sert à la revue.
 
 Service visé : `yunicity.review` du projet Railway `dazzling-wisdom`, domaine
 `preview.yunicity.city`, branche `feat/c3-videos-refonte-final`, répertoire
@@ -60,15 +62,15 @@ basculerait alors sur le builder Dockerfile et construirait l'app web. C'est la
 classe de bug déjà documentée deux fois dans ce dépôt (`railway.api.toml`,
 `railway.admin.toml`). `railway.toml` désigne donc le chemin explicitement.
 
-**Résolution du chemin.** `dockerfilePath = "Dockerfile.web"` est relatif au
-répertoire racine du service, soit `frontend/Dockerfile.web`. Appuis :
-la documentation Railway indique que la détection se fait « in the root
-directory » et que le renommage se déclare par un nom nu
-(`RAILWAY_DOCKERFILE_PATH=Dockerfile.origin`), la forme absolue
-(`/build/Dockerfile`) étant réservée à un autre répertoire ; et le dépôt
-applique déjà ce patron avec `backend/Dockerfile` sous un répertoire racine
-`backend/`. **Non vérifié par déploiement** : si Railway refusait le chemin, le
-repli documenté est la variable de service `RAILWAY_DOCKERFILE_PATH`.
+**Résolution du chemin — VÉRIFIÉE par déploiement.** `dockerfilePath =
+"Dockerfile.web"` est bien résolu relativement au répertoire racine du service.
+Le journal de build du déploiement `67522420` le dit littéralement :
+
+```
+[internal] load build definition from frontend/Dockerfile.web
+```
+
+Le repli `RAILWAY_DOCKERFILE_PATH` n'est donc pas nécessaire.
 
 ### 3.2 `ARG RAILWAY_ENVIRONMENT` obligatoire
 
@@ -241,16 +243,115 @@ La même réserve s'applique mot pour mot à `braces` et à `@vercel/nft`.
 
 ---
 
+## 6 bis. Déploiement Preview du 2026-10-17 — ÉCHEC, cause racine identifiée
+
+Déploiement `67522420-ccc8-4b23-86c9-fc42086ba13f`, commit `b190529f`, poussé à
+08:42:28Z.
+
+### Ce qui a fonctionné
+
+| Contrôle | Résultat |
+|----------|----------|
+| Builder utilisé | Dockerfile, chargé depuis `frontend/Dockerfile.web` |
+| Sept étapes de l'étape `build` | présentes, dans l'ordre |
+| Version de pnpm | `Done in 6.6s using pnpm v9.15.9`, résolue depuis `packageManager` |
+| Garde `test -f server.js` | franchi — le standalone a bien été produit |
+| Démarrage du conteneur | `▲ Next.js 15.5.25` · `✓ Ready in 117ms` |
+| Statut du déploiement | SUCCESS |
+
+### Ce qui a échoué
+
+Le service a renvoyé **502 « Application failed to respond »**
+(`x-railway-fallback: true`) de 08:44:52Z à 09:21:09Z, soit **36 minutes
+d'indisponibilité de la Preview**. L'API Preview est restée saine (200) sur
+toute la période.
+
+### Cause racine — un couplage masqué entre le port et le domaine
+
+Le journal d'exécution donne la réponse en une ligne :
+
+```
+- Network:      http://0.0.0.0:8080
+```
+
+Railway injecte `PORT=8080`. L'image honore `PORT`, donc elle écoute sur 8080.
+Mais les deux domaines du service ciblent **le port 3000**
+(`preview.yunicity.city → targetPort 3000`). Le bord route vers 3000, où plus
+rien n'écoute.
+
+Pourquoi RAILPACK ne montrait pas le problème : le script `start` de `apps/web`
+**fige le port** —
+
+```json
+"start": "cross-env NEXT_BUILD_DIR=.next-build next start --port 3000"
+```
+
+L'application ignorait donc `PORT` et tombait toujours sur 3000, ce qui
+correspondait par accident au `targetPort` du domaine. En rendant le port
+dynamique, l'image n'a pas introduit le défaut : elle l'a **révélé**.
+
+Le dépôt connaissait déjà ce piège, mais seulement pour l'admin —
+`frontend/railway.admin.toml` :
+
+> `exec next start` (pas le script `start` du package, qui fige `--port 3001`) :
+> Next se cale sur $PORT injecté par Railway, aligné sur le domaine admin
+> (port 8080).
+
+Le service admin a donc un domaine sur 8080 et évite délibérément le script qui
+fige le port. Le service web avait conservé **les deux** incohérences.
+
+### Retour arrière appliqué
+
+Rollback autorisé vers le build `8ad26ace` par réutilisation de son image
+(`redeploy` du déploiement, sans reconstruction), déploiement
+`efec096f-950e-4bce-b16a-11d043a7d51f`. Rétabli à 09:21:09Z. Vérifié après coup :
+
+- `/`, `/login`, `/register`, `/neighborhoods`, `/sortir` → 200
+- build servi `webpack-b55f57aca273e799.js`, **identique** à la référence d'avant push
+- statut des inscriptions **octet pour octet identique** à la référence
+  (`open=true`, `mode=pilot`, `closes_at=2026-10-19T16:46:25.405000Z`)
+- API Preview 200
+
+### Correctif à décider avant toute nouvelle tentative
+
+Aucun n'est appliqué : chacun est une mutation Railway hors du périmètre.
+
+1. **Aligner le domaine sur le port injecté** — porter le `targetPort` des deux
+   domaines du service web de 3000 à 8080, comme c'est déjà le cas pour l'admin.
+   C'est la convention interne, et elle laisse l'image dynamique.
+2. **Déclarer `PORT=3000` en variable de service** — Railway injecte alors 3000,
+   l'image écoute sur 3000, le domaine correspond. Une seule variable, aucun
+   domaine touché, mais cela fige un port par configuration.
+
+À écarter : faire ignorer `PORT` par l'image. Ce serait reproduire dans
+l'artefact le défaut que ce déploiement vient de révéler.
+
+### Risque résiduel immédiat
+
+La branche `feat/c3-videos-refonte-final` porte toujours `b190529f`. Le rollback
+a rétabli l'**image servie**, pas l'état de la branche : **toute nouvelle poussée
+sur cette branche reconstruirait la configuration défaillante** et casserait de
+nouveau la Preview. À traiter avant la prochaine poussée — correctif de port, ou
+retour arrière du code.
+
+---
+
 ## 7. Procédure de bascule
 
 1. Revue et merge du diff. **Avant tout merge vers `main`**, vérifier le point
    de rayon d'impact du §9.
-2. Sur le service `yunicity.review` de `dazzling-wisdom` : **aucune variable à
-   modifier**. Le `startCommand` est écrasé par `railway.toml`, donc rien à
-   vider côté dashboard.
-3. Déployer. Le journal de build doit montrer l'usage du Dockerfile puis les
+2. **GATE BLOQUANT — le port.** Railway injecte `PORT=8080` sur ce service,
+   tandis que ses deux domaines ciblent 3000. Appliquer d'abord l'un des deux
+   correctifs du §6 bis, sans quoi le déploiement renvoie 502 malgré un
+   conteneur sain. C'est la cause de l'échec du 2026-10-17.
+3. Sur le service `yunicity.review` de `dazzling-wisdom` : **aucune variable à
+   modifier** pour le reste. Le `startCommand` est écrasé par `railway.toml`,
+   donc rien à vider côté dashboard.
+4. Déployer. Le journal de build doit montrer l'usage du Dockerfile puis les
    sept étapes de l'étape `build`, et `pnpm v9.15.9`.
-4. Rejouer les mesures du §6 contre `preview.yunicity.city`.
+5. Vérifier dans le journal d'exécution que le port annoncé par Next
+   correspond au `targetPort` des domaines.
+6. Rejouer les mesures du §6 contre `preview.yunicity.city`.
 
 ---
 
