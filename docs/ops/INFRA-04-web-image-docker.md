@@ -336,6 +336,101 @@ retour arrière du code.
 
 ---
 
+## 6 ter. Intervention préparée — alignement des domaines sur le port 8080
+
+**Préparée, non exécutée.** Modifier un domaine est une mutation Railway qui
+demande un accord explicite.
+
+Option retenue en revue : garder l'image qui respecte `PORT` et aligner les
+domaines, comme le fait déjà le service admin.
+
+### Les deux domaines concernés
+
+| Rôle | Domaine | Identifiant | `targetPort` actuel | Cible |
+|------|---------|-------------|---------------------|-------|
+| Domaine public | `preview.yunicity.city` | `843fc6f6-63a1-4c5d-a660-1d2a277c055c` | 3000 | **8080** |
+| Domaine Railway | `yunicityreview-production-97c7.up.railway.app` | `b773fd82-0164-4d53-a36c-1b76e1e1c14f` | 3000 | **8080** |
+
+Aucun proxy TCP sur ce service. Aucun autre domaine. Les domaines de
+`yunicity.city`, de l'API et de l'admin ne sont pas touchés.
+
+### La contrainte de coordination
+
+L'image actuellement servie est le build RAILPACK `efec096f`, qui écoute sur
+**3000** à cause du `--port 3000` figé dans le script `start`. Changer les ports
+maintenant casserait donc aussi cette image. Une fenêtre d'indisponibilité est
+inévitable ; l'ordre choisi la réduit à quelques secondes au lieu de quelques
+minutes.
+
+**L'ordre importe.** Basculer les ports d'abord rendrait le service indisponible
+pendant toute la durée du redéploiement (~4 min 30 mesurées). Redéployer
+d'abord ne coûte rien : l'ancienne image continue de servir sur 3000 jusqu'à la
+seconde où la nouvelle prend le relais.
+
+L'image Dockerfile du déploiement `67522420` est **encore réutilisable**
+(`canRedeploy: true`) : la bascule ne demande aucune reconstruction.
+
+### Séquence
+
+1. **Référence** — relire les deux `targetPort`, le déploiement vivant, le hash
+   du chunk servi et le statut des inscriptions.
+2. **Redéployer l'image Dockerfile sans reconstruire** — `redeploy` du
+   déploiement `67522420` sur le service `8ce52277` / environnement `fe15407b`.
+   Pendant ce temps le site reste **en ligne** sur l'ancienne image.
+3. **Attendre le signal de bascule** — `preview-watch.sh 502 420 5`. L'apparition
+   du 502 est la signature exacte du moment où la nouvelle image prend le
+   relais : elle écoute sur 8080 alors que les domaines visent encore 3000.
+4. **Basculer les deux domaines, dans la seconde** — `update-domain` avec
+   `targetPort: 8080`, **le domaine public d'abord**, puis le domaine Railway.
+5. **Contrôler le retour en ligne** — `preview-watch.sh 200 240 5`. Échéance
+   **4 minutes**. Au-delà, le retour arrière est déclenché sans délibération
+   supplémentaire : c'est la leçon des 36 minutes du matin.
+6. **Smoke public** — pages, chunk JS, CSS, fichier de `public/`, `/_next/image`,
+   origine API inlinée, en-têtes de sécurité, proxy de développement en 404.
+7. **Invariance** — statut des inscriptions comparé **octet pour octet** à la
+   référence.
+
+### Retour arrière complet — image ET ports
+
+Deux scénarios, car ils n'ont pas le même coût.
+
+**Scénario A — l'étape 5 n'atteint pas 200 dans les 4 minutes.** Le site est
+déjà indisponible, le retour arrière n'ajoute donc aucune indisponibilité.
+
+1. Remettre les deux domaines sur `targetPort: 3000` (effet immédiat).
+2. `redeploy` du déploiement `efec096f` (image RAILPACK, aucune reconstruction).
+3. `preview-watch.sh 200 420 5`.
+
+**Scénario B — le site répond 200 mais le smoke révèle un défaut fonctionnel.**
+Le service fonctionne : on ne le coupe pas pour le réparer.
+
+1. `redeploy` du déploiement `efec096f` — l'image à 8080 continue de servir
+   correctement pendant ce temps, puisque les ports sont déjà sur 8080.
+2. `preview-watch.sh 502 420 5` — le 502 signale que l'image qui écoute sur 3000
+   a pris le relais.
+3. Dans la seconde, remettre les deux domaines sur `targetPort: 3000`.
+4. `preview-watch.sh 200 240 5`.
+
+Dans les deux cas, l'état final obtenu est **exactement** celui d'avant
+l'intervention : image `efec096f`, deux domaines sur 3000.
+
+### Dispositif de surveillance
+
+`preview-watch.sh` sonde le **code HTTP**, jamais le contenu de la page, et sort
+en code 1 à l'échéance. C'est la correction directe de l'erreur du matin : la
+boucle précédente attendait un changement de hash de chunk, or un 502 ne renvoie
+aucun chunk — la condition ne pouvait pas se réaliser, et l'indisponibilité a
+duré 36 minutes sans alerte alors que le retour arrière lui-même prend 4 min 30.
+
+### Ce que cette intervention ne vérifiera pas
+
+La **connexion authentifiée**. Les identifiants du compte pilote sont hors dépôt
+(`docs/qa/PILOT-SMOKE-02`), aucun n'est disponible localement, et un compte
+jetable est exclu. Cette ligne restera **NON VÉRIFIÉE** au bilan tant qu'un
+compte de recette autorisé n'est pas fourni.
+
+---
+
 ## 7. Procédure de bascule
 
 1. Revue et merge du diff. **Avant tout merge vers `main`**, vérifier le point
