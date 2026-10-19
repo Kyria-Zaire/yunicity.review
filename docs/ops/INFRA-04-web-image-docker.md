@@ -703,7 +703,7 @@ donc aussi le test décisif** : si la Preview continue de construire avec le
 Dockerfile après cette restauration, le nouveau chemin est prouvé utilisé. Elle
 n'a pas été exécutée, conformément à la consigne.
 
-### Temps 2, seconde moitié — PRÉPARÉE, non poussée
+### Temps 2, seconde moitié — EXÉCUTÉE le 2026-10-19
 
 `frontend/railway.toml` est restauré **à l'identique de `953246fc`** : builder
 RAILPACK, `buildCommand` et `startCommand` d'origine. `railway.web-docker.toml`
@@ -720,17 +720,49 @@ n'ayant jamais été vérifié, c'est l'hypothèse prudente. Ce fichier redevena
 RAILPACK, un merge vers `main` ne peut plus faire basculer son builder. C'est
 tout l'objet de la séparation.
 
-#### La poussée suivante est le test décisif de l'isolation
+#### Le test décisif — ISOLATION PROUVÉE
 
-Après cette poussée, la Preview reconstruira. Deux issues, et elles sont
-discernables — ce qui n'était pas le cas jusqu'ici :
+Poussé à 16:45:57Z (`42dc6bf1..bf008a87`, avance rapide, sans force).
 
-| Issue | Signification |
-|-------|---------------|
-| build **Dockerfile**, serveur sur 8080, service en ligne | le config path explicite est bien honoré : **isolation prouvée** |
-| build **Railpack**, serveur sur 3000, **502** sur des domaines en 8080 | le chemin explicite n'était pas honoré ; la Preview lisait `railway.toml` |
+Deux issues étaient possibles, et pour la première fois discernables. C'est la
+première qui s'est produite :
 
-C'est donc cette poussée qui lève la réserve du §« Ce qui n'est pas démontré ».
+| Issue | Signification | Observé |
+|-------|---------------|---------|
+| build **Dockerfile**, serveur sur 8080 | le config path explicite est honoré : **isolation prouvée** | **oui** |
+| build **Railpack**, serveur sur 3000, **502** | le chemin n'était pas honoré ; la Preview lisait `railway.toml` | non |
+
+La preuve tient en deux faits conjoints : sur le commit poussé,
+`frontend/railway.toml` porte `builder = "RAILPACK"` ; et le journal de build dit
+
+```
+[internal] load build definition from frontend/Dockerfile.web
+```
+
+Le seul fichier qui désigne ce Dockerfile étant `railway.web-docker.toml`, c'est
+bien lui que Railway a lu. **La réserve du § « Ce qui n'est pas démontré » est
+levée.**
+
+| Mesure | Résultat |
+|--------|----------|
+| Déploiement | `14c4094a-adf6-404d-bfa7-f28097338dd7`, SUCCESS, créé 16:46:04Z |
+| Build | sept étapes, garde `test -f server.js` franchi, `[runtime 2/3]` et `[runtime 3/3]`, export de l'image ; 16:46:04Z → 16:50:17Z |
+| Durée | 4 min 13 s, dont 2 min 42 s de `pnpm --filter web build` pour 54 pages statiques |
+| Démarrage | 16:50:49Z, `Ready in 68ms`, écoute `0.0.0.0:8080`, **sans bannière pnpm** |
+| Indisponibilité | **aucune observée** — sonde armée avant la poussée, 16:45:46Z → 16:52:27Z, toutes les passes en 200 |
+| Surface publique | identique contrôle par contrôle : neuf pages 200, `/events` 307 → `/sortir`, JS et CSS, `public/` 112 802 o, `/_next/image` PNG 256×256 9 943 o, origine API inlinée, proxy dev 404, en-têtes de sécurité |
+| Rendu serveur dynamique | `/neighborhoods/cernay-jean-jaures` 200, 63 259 o, 23 occurrences de « Reims » |
+
+#### Inscriptions : un changement attendu, et non une régression
+
+La référence prise à 16:45:57Z donnait `open=true`. Le relevé après déploiement
+donne `open=false`. **Le pilote s'est fermé à sa propre échéance**, 28 secondes
+après la poussée : `closes_at` vaut toujours `2026-10-19T16:46:25.405000Z`, et
+tous les autres champs sont identiques. Aucune action de ce chantier n'a touché
+la configuration d'inscription. `/register` reste servi en 200.
+
+Conséquence pour les prochains smokes : la valeur de référence du statut
+d'inscription est désormais `open=false`. Ce n'est pas une régression.
 
 #### Retour arrière, si la seconde issue se produit
 
