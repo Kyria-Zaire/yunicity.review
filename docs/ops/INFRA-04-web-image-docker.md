@@ -703,6 +703,46 @@ donc aussi le test décisif** : si la Preview continue de construire avec le
 Dockerfile après cette restauration, le nouveau chemin est prouvé utilisé. Elle
 n'a pas été exécutée, conformément à la consigne.
 
+### Temps 2, seconde moitié — PRÉPARÉE, non poussée
+
+`frontend/railway.toml` est restauré **à l'identique de `953246fc`** : builder
+RAILPACK, `buildCommand` et `startCommand` d'origine. `railway.web-docker.toml`
+et le config path du service Preview sont inchangés.
+
+Les mentions devenues fausses ont été corrigées dans le même commit :
+`Dockerfile.web` ne dit plus que `railway.toml` désigne l'image, et l'en-tête de
+`railway.web-docker.toml` décrit l'état final au lieu de la transition.
+
+#### Pourquoi cette restauration protège le site public
+
+Le site public lit `railway.toml`, par auto-détection — son propre config path
+n'ayant jamais été vérifié, c'est l'hypothèse prudente. Ce fichier redevenant
+RAILPACK, un merge vers `main` ne peut plus faire basculer son builder. C'est
+tout l'objet de la séparation.
+
+#### La poussée suivante est le test décisif de l'isolation
+
+Après cette poussée, la Preview reconstruira. Deux issues, et elles sont
+discernables — ce qui n'était pas le cas jusqu'ici :
+
+| Issue | Signification |
+|-------|---------------|
+| build **Dockerfile**, serveur sur 8080, service en ligne | le config path explicite est bien honoré : **isolation prouvée** |
+| build **Railpack**, serveur sur 3000, **502** sur des domaines en 8080 | le chemin explicite n'était pas honoré ; la Preview lisait `railway.toml` |
+
+C'est donc cette poussée qui lève la réserve du §« Ce qui n'est pas démontré ».
+
+#### Retour arrière, si la seconde issue se produit
+
+1. `redeploy` du déploiement `28173cab-da4a-4b27-827d-5e19c13c917a` — dernier
+   build Docker connu, réutilisé sans reconstruction : le service repart sur
+   8080 en quelques secondes.
+2. Puis, au choix : revenir sur le commit de restauration, ou laisser
+   `railway.toml` en RAILPACK et traiter la cause du config path non honoré.
+
+Les domaines restent sur 8080 dans tous les cas. Sonde armée **avant** la
+poussée, échéance dure, comme au §6 quater.
+
 ### État final visé, cohérent pour chaque service isolément
 
 | Service | Config | Builder | Port image | `targetPort` domaines |
