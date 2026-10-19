@@ -637,6 +637,72 @@ sur le comportement de Railway, mais elles suffisent à écarter celle-là.
 À l'issue du temps 2, le site public retrouve son builder d'origine et ne peut
 plus basculer par héritage.
 
+### Temps 2, première moitié — config path repointé le 2026-10-19
+
+Réglage appliqué par l'API Railway (`update-service`, champ `railwayConfigFile`),
+scopé à l'environnement `fe15407b` du seul service Preview. Aucun navigateur ni
+accès dashboard n'a été nécessaire.
+
+Le compte rendu distingue deux classes de preuve, qui ne se substituent pas.
+
+#### Chemin configuré, puis relu
+
+| Mesure | Résultat |
+|--------|----------|
+| Écriture | `updatedFields: ["railwayConfigFile"]`, `staged: null` — appliqué en direct |
+| Relecture | `config.configFile = "/frontend/railway.web-docker.toml"` |
+
+La relecture par l'API tient le rôle de la capture dashboard, et elle a
+l'avantage d'être exploitable automatiquement.
+
+**Constat de valeur** : ce champ était **absent** de toutes les lectures
+antérieures du service. La Preview ne portait donc **aucun config path
+explicite** — Railway auto-détectait `frontend/railway.toml`. Cela confirme que
+le mécanisme d'auto-détection est bien actif sur ce dépôt, et rend plus concret
+le risque du §9 pour le site public, qui partage le même répertoire racine.
+
+Conséquence pour le retour arrière : l'état antérieur était **vide**, et non
+`/frontend/railway.toml`. Un retour à l'identique suppose donc de **vider** le
+champ, pas d'y écrire l'ancien chemin.
+
+#### Fonctionnement observé
+
+| Contrôle | Résultat |
+|----------|----------|
+| Déploiement | `28173cab-da4a-4b27-827d-5e19c13c917a`, SUCCESS, 12:34:45Z → 12:37:26Z (2 min 41 s) |
+| Commit | `42dc6bf1` — inchangé, aucun changement étranger inclus |
+| Build | **reconstruction réelle**, `load build definition from frontend/Dockerfile.web`, sept étapes, `pnpm v9.15.9` |
+| Démarrage | `Ready in 64ms`, écoute `0.0.0.0:8080`, **sans bannière pnpm** |
+| Indisponibilité | **aucune observée** — 37 passes à 5 s, sonde armée avant l'intervention |
+| Surface publique | neuf pages 200, `/events` 307 → `/sortir`, JS et CSS 200, `public/` 200 (112 802 o), `/_next/image` 200 (PNG 256×256, 9 943 o), origine API inlinée, proxy dev 404, en-têtes de sécurité émis |
+| Rendu serveur dynamique | `/neighborhoods/cernay-jean-jaures` 200, 63 259 o, titre piloté par les données, 23 occurrences de « Reims » |
+| Inscriptions | **octet pour octet identiques** |
+
+Ce redéploiement a **reconstruit** — contrairement à un `redeploy` ciblant un
+déploiement précis, qui réutilise son image. Le chemin configuré a donc été
+exercé au build, et pas seulement au démarrage.
+
+#### Ce qui n'est pas démontré
+
+Les journaux **ne nomment pas** le `railway*.toml` appliqué : vérifié en
+filtrant le journal de build sur `config`, `toml` et `railway`, où les seules
+correspondances sont `tsconfig.typecheck.json`, `next.config.ts` et
+`containerimage.config.digest`.
+
+Les deux fichiers portant une configuration identique hors commentaires, un
+build Dockerfile réussi **ne départage pas** lequel a été lu. Ce que
+l'observation établit, c'est que la branche d'échec franc est écartée : si le
+chemin explicite n'avait pas résolu, le repli serait les réglages du dashboard —
+RAILPACK et `pnpm --filter web start` — dont la signature serait un build
+Railpack puis un serveur sur 3000 face à des domaines sur 8080. Rien de tel.
+Mais un repli silencieux sur l'auto-détection de `railway.toml` reste
+indiscernable.
+
+**La restauration de `railway.toml` en RAILPACK (seconde moitié du temps 2) est
+donc aussi le test décisif** : si la Preview continue de construire avec le
+Dockerfile après cette restauration, le nouveau chemin est prouvé utilisé. Elle
+n'a pas été exécutée, conformément à la consigne.
+
 ### État final visé, cohérent pour chaque service isolément
 
 | Service | Config | Builder | Port image | `targetPort` domaines |
