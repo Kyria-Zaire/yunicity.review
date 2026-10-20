@@ -36,7 +36,7 @@ devient pas une validation du déploiement actuel.**
 | **E1** | Campagne 44 specs Playwright, 44/44 vertes, 542 tests | `769c7c6e` | **QA locale**, build gelé `X3FL69EhNItJMOfS-7lkv` | le comportement navigateur des trois paliers sur ce build | rien sur Preview, ni sur l'image Docker |
 | **E2** | CI GitHub Actions | `bf008a87` | runners GitHub | backend 2012 passés / 19 ignorés ; lint, typecheck, build, secrets | **la surface navigateur** — la suite Playwright n'est exécutée par aucun workflow |
 | **E3** | Smoke public Preview | `bf008a87` | **Preview**, image Docker | pages publiques, JS/CSS, fichier de `public/`, optimisation d'image, rendu serveur d'une route dynamique, en-têtes | tout ce qui exige une session |
-| **E4** | **Validation manuelle déclarée par Kyria, 20/10/2026** | `bf008a87` | **Preview** | fil connecté avec contenu affiché ; session conservée après rechargement ; accès au profil puis retour au fil | **déclaration d'usage** — ni mesure automatisée, ni relevé réseau, ni capture |
+| **E4** | **Validation manuelle déclarée par Kyria, 20/10/2026** | `bf008a87` | **Preview** | fil connecté avec contenu affiché ; session conservée après rechargement ; accès au profil puis retour au fil | **déclaration d'usage** — ni mesure automatisée, ni relevé réseau, ni capture. Porte le code **Vd**, jamais **V** |
 | **E5** | Tests unitaires et d'intégration front | `953246fc` | poste local | utils 1258 · web 919 · ui 163 · admin 37 = **2377** | le rendu réel en navigateur |
 
 ### 2.1 Portée de E1 sur le déploiement actuel
@@ -65,7 +65,8 @@ premier à en consigner la synthèse ; le détail par spec reste hors dépôt.
 
 | Code | Signification |
 |------|---------------|
-| **V** | Corrigé **et** vérifié — correction livrée et validation mesurée, source de preuve citée |
+| **V** | Corrigé **et vérifié par mesure** — correction livrée, validation mesurée, source de preuve citée |
+| **Vd** | Corrigé **et vérifié par déclaration d'usage** — un usage réel l'atteste, sans mesure ni relevé. Ne vaut pas **V** et n'en tient pas lieu |
 | **I** | Implémenté, **validation incomplète** — code livré, preuve partielle, d'un autre SHA ou d'un autre environnement |
 | **O** | **Ouvert** — défaut connu, non corrigé |
 | **D** | **Différé** explicitement — décision prise de ne pas traiter maintenant |
@@ -137,7 +138,7 @@ dans `bf008a87`, donc déployé ; `vérifié` signifie qu'une preuve a été obt
 | **Les modules de contexte n'étaient rendus à aucune largeur** | Modules rendus, puis masqués au seul palier desktop par CSS | `bf71e017` | E1 (specs 31, 34) — QA locale | code oui · vérifié non | **I** |
 | Contrats du flux désalignés, onglets fantômes attendus par les tests | Contrats alignés sur la règle tranchée, attentes périmées retirées | `65b5ca49`, `427ebcda`, `8f810024` | E1 — QA locale | code oui · vérifié non | **I** |
 | Pages fil et vidéos sans titre sous 1024 px | Titre ajouté sous 1024 px | `35ef6427` | E1 (spec 09) — QA locale | code oui · vérifié non | **I** |
-| **Fil connecté et affichage du contenu** | — | — | **E4 — déclaration de Kyria, Preview, 20/10/2026** | **vérifié par déclaration** | **V (déclaratif)** |
+| **Fil connecté et affichage du contenu** | — | — | **E4 — déclaration de Kyria, Preview, 20/10/2026** | **vérifié par déclaration** | **Vd** |
 
 ### 4.7 Cartes et quartiers
 
@@ -163,7 +164,7 @@ dans `bf008a87`, donc déployé ; `vérifié` signifie qu'une preuve a été obt
 | Le rail medium n'offrait aucun accès à Explorer | Accès Explorer ajouté au rail medium, libellé issu d'une source unique | `805fd8e3`, `671cbf92` | E1 (specs 11, 22, 29) — QA locale | code oui · vérifié non | **I** |
 | Un changement de largeur fermait le Menu en laissant le focus nulle part | Focus remis à un contrôle visible ; raison de fermeture alignée sur la règle | `cfb5fbaa`, `bd1d8667` | E1 (specs 10, 20) + E5 | code oui · vérifié non | **I** |
 | Seuil d'apparition de la navigation haute confondu avec des largeurs de géométrie | Seuil et géométrie séparés ; largeur propre de la barre assertée | `760066cc`, `3e15101b` | E1 (spec 12) — QA locale | code oui · vérifié non | **I** |
-| **Accès au profil puis retour au fil** | — | — | **E4 — déclaration de Kyria, Preview, 20/10/2026** | **vérifié par déclaration** | **V (déclaratif)** |
+| **Accès au profil puis retour au fil** | — | — | **E4 — déclaration de Kyria, Preview, 20/10/2026** | **vérifié par déclaration** | **Vd** |
 
 ### 4.10 Passport
 
@@ -178,7 +179,19 @@ dans `bf008a87`, donc déployé ; `vérifié` signifie qu'une preuve a été obt
 |---|---|---|---|---|---|
 | Cibles tactiles sous 44 px (déclencheur de création, liens d'en-tête public) | Cibles portées à 44 px | `769c7c6e` | E1 — QA locale | code oui · vérifié non | **I** |
 | Le focus d'un champ provoquait un zoom involontaire sur iOS | Zoom au focus neutralisé | `60ee3ae8` | E1 (spec 13, WebKit) — QA locale | code oui · **vérifié non, et non vérifiable hors vrai iPhone** | **I** |
-| **À 1366 px, les liens d'en-tête « Découvrir Reims » (103×20) et « Comment ça marche » (131×20) font 20 px de haut — sous le plancher 24×24 de WCAG 2.2 (2.5.8, AA)** | **aucune** | constat relevé dans `769c7c6e` | mesure géométrique — QA locale | défaut présent | **O — à trancher** |
+| À 1366 px, les liens d'en-tête « Découvrir Reims » et « Comment ça marche » mesuraient 20 px de haut | **Zone cliquable portée à 44 px** : les deux liens reçoivent `inline-flex min-h-11 items-center` | `769c7c6e` | lecture du code — `public-home-header.tsx` lignes 40 et 47 portent `min-h-11` dans `bf008a87` | code oui · vérifié non | **I** |
+
+> **Reconciliation du 2026-10-20.** Une version antérieure de ce bilan classait
+> les liens d'en-tête en **O** (ouvert) et affirmait une violation de WCAG 2.2
+> AA. Les deux points étaient faux.
+>
+> D'une part la correction a été livrée **dans le commit même qui relevait le
+> constat**, `769c7c6e` : les deux liens portent `inline-flex min-h-11
+> items-center`, et `bf008a87` le conserve. D'autre part une hauteur de 20 px
+> n'établit pas à elle seule une violation de 2.5.8 — l'espacement entre cibles
+> et les exceptions de la règle entrent dans son évaluation, et ni l'un ni
+> l'autre n'a été mesuré. La ligne est donc reclassée en **I** sur preuve de
+> code, et l'affirmation de violation est retirée.
 
 ### 4.12 Déploiement
 
@@ -206,7 +219,7 @@ correctif du chantier ne disparaisse du bilan. Tous ces commits sont dans
 | Échéance du pilote d'inscription appliquée | `2ef42bba`, `c1ab2a08` | **V** — le pilote s'est fermé à son échéance le 2026-10-19 à 16:46:25Z, observé sur Preview |
 | Plans payants retirés tant que le paiement est coupé | `a80d052a` | **I** |
 | Changement de nom d'utilisateur tous les 14 jours | `4a2eb911`, `56300b93` | **I** |
-| **Session conservée après rechargement** | — | **V (déclaratif)** — E4, Preview, 20/10/2026 |
+| **Session conservée après rechargement** | — | **Vd** — E4, Preview, 20/10/2026 |
 
 ---
 
@@ -218,19 +231,18 @@ Chaque dette signalée pendant le chantier, dédoublonnée, avec son état actue
 | Dette | Impact utilisateur | Priorité | Bloque la livraison ? | État |
 |-------|--------------------|----------|-----------------------|------|
 | **Audit des dépendances rouge** — `braces@3.0.3`, `micromatch@4.0.8`, `node-forge@1.4.0` dans `pnpm-lock.yaml`, sans correctif amont | aucun effet observable par l'utilisateur | haute (sécurité) | **non bloquant pour la recette** ; à trancher avant promotion Production | **ouverte**. L'image servie ne contient **plus les paquets installés** ; une copie **embarquée** de braces, de **version indéterminée**, subsiste dans `next/dist/compiled/@vercel/nft/index.js` et n'a pas été observée chargée sur les chemins instrumentés. **Mitigation de l'image d'exécution, pas remédiation de l'arbre.** Aucune exception OSV, aucune acceptation de risque |
-| **Adhésion à une tribu : état « en attente » perdu après rechargement** | l'utilisateur croit pouvoir redemander ; confusion, double demande | moyenne | non bloquant | **ouverte** (§4.8) |
-| **Liens d'en-tête à 20 px de haut à 1366 px** | cible difficile à viser au pointeur ; sous le plancher WCAG 2.2 AA | basse à moyenne | non bloquant | **ouverte, à trancher** (§4.11) |
+| **Adhésion à une tribu : état « en attente » perdu après rechargement** | l'utilisateur croit pouvoir redemander ; confusion, double demande | moyenne | non bloquant | **ouverte** (§4.8). Non-correction vérifiée : aucun commit postérieur à `05c05a7c` ne touche `tribe_service.py` ni `components/tribes` |
 | **CSP inerte** — report-only sans `report-to` | aucune protection réelle là où elle paraît exister | haute (sécurité) | non bloquant pour la recette | **différée** vers un audit de sécurité dédié (`AUDIT-CSP-01`) |
 | **Dimensions intrinsèques des médias non servies par l'API** — `MEDIA-METADATA-01` et `MEDIA-03-INTRINSIC-DIMENSIONS` | décalage de mise en page possible avant chargement de l'image | moyenne | non bloquant | **ouverte**. **Doublon réconcilié** : les deux identifiants, introduits par `808673e0` et `8d661210` le même jour, désignent le même sujet — les dimensions servies par l'API. À fusionner en un seul ticket |
 | **`LOCAL-VIDEO-ORG-AUTHZ-P1`** — appartenance organisationnelle non vérifiée pour les paliers de durée vidéo | toute identité absente, inconnue ou non canonique retombe sur le palier pilote 90 s | moyenne | non bloquant | **ouverte**, repli sûr en place (`3f93a4d8`) |
 | **Archivage de tribu à sens unique** — aucun désarchivage, ni propriétaire ni staff | une tribu archivée par erreur n'est pas récupérable en autonomie | moyenne | non bloquant | **différée** explicitement (`tribe_service.py:253`) |
-| **Pas de délai d'attente après un refus d'adhésion** | un utilisateur refusé peut redemander immédiatement | basse | non bloquant | **différée** — assumée à ~15 utilisateurs (`tribe_service.py:631`) |
+| **Pas de délai d'attente après un refus d'adhésion** | un utilisateur refusé peut redemander immédiatement | basse | non bloquant | **différée** — assumée à ~15 utilisateurs, à reprendre « si un pattern » apparaît (`tribe_service.py:631`) |
 | **Fan-out de notifications synchrone** | lenteur si une tribu devient volumineuse | basse aujourd'hui | non bloquant | **différée** — assumée à ~15 utilisateurs (`social_notification_service.py:122`) |
 | **Ville codée en dur** (`WEB-PARTNERS-05A`) | aucun impact mono-ville ; bloquant au passage multi-ville | basse aujourd'hui | non bloquant | **différée** (`local_event_service.py:430`) |
-| **Fenêtre de carte fixe** | une ville plus étendue que ~0,4° serait tronquée | basse aujourd'hui | non bloquant | **différée** (`map-city-defaults.ts:12`) |
+| **Fenêtre de carte fixe** | une ville plus étendue que ~0,4° serait tronquée | basse aujourd'hui | non bloquant | **différée** avec déclencheur explicite : « à revisiter en multi-ville / gros volumes » (`map-city-defaults.ts:12`) |
 | **Passport : `/passport/me` + QR hérités** | aucun impact visible ; niveau et XP non migrés en V2 | basse | non bloquant | **différée** en R2 (`use-passport-mobile-extras.ts:8`) |
 | **Règle CSS globale restant un piège pour d'autres routes** | risque de régression visuelle sur une route future | basse | non bloquant | **ouverte** (`globals.css:88`) |
-| **Verrous consultatifs Alembic au niveau session** | migrations concurrentes mal sérialisées | basse | non bloquant | **différée** (`alembic/env.py:30`) |
+| **Verrous consultatifs Alembic au niveau session** | migrations concurrentes mal sérialisées | basse | non bloquant | **différée** avec déclencheur explicite : « revisit if PgBouncer lands » (`alembic/env.py:30`) |
 | **Bouton du design system non injectable pour la navigation client** | aucun impact utilisateur | basse | non bloquant | **différée** (`button.tsx:181`) |
 | **Divergence SQLAlchemy entre environnements** — conteneur QA en 2.1.1, manifeste `>=2.0.36,<2.1`, CI en 2.0.54 | aucun impact utilisateur ; faussait 50 des 70 erreurs mypy locales | moyenne (fiabilité des mesures) | non bloquant | **ouverte** — constat de la campagne, non traité |
 | **Suite Playwright non exécutée par la CI** | aucune régression navigateur ne peut être détectée automatiquement | **haute (fiabilité)** | non bloquant, mais c'est la cause structurelle du besoin de recette manuelle | **ouverte** — vérifié : aucune mention de Playwright dans `.github/workflows/` |
@@ -262,14 +274,23 @@ Chaque dette signalée pendant le chantier, dédoublonnée, avec son état actue
 
 ## 7. Synthèse
 
-| Catégorie | Nombre |
-|-----------|--------|
-| **V** — corrigé et vérifié | 6 dont **3 déclaratifs** (E4) |
-| **I** — implémenté, validation incomplète | 34 |
-| **O** — ouvert | 5 |
-| **D** — différé explicitement | 9 |
-| **N** — non établi | 2 |
+Décompte **mesuré sur le fichier**, et non estimé — 60 lignes dans la matrice §4.
+
+| Code | Lignes | Lecture |
+|------|--------|---------|
+| **V** — vérifié par mesure | 5 | les quatre lignes de déploiement, vérifiées **sur Preview**, plus l'échéance du pilote d'inscription |
+| **Vd** — vérifié par déclaration | 3 | les trois points de la recette manuelle de Kyria du 20/10/2026 |
+| **I** — implémenté, validation incomplète | 49 | code déployé, preuve obtenue sur un **autre environnement** (QA locale) ou par tests unitaires |
+| **O** — ouvert | 1 | l'état « en attente » d'une adhésion, perdu après rechargement |
+| **D** — différé explicitement | 1 | la CSP inerte, vers un audit de sécurité dédié |
+| **N** — non établi | 1 | les médias vidéo d'exemple, absents de Preview |
+
+Les dettes du §5 ont leur propre colonne d'état et ne sont pas recomptées ici.
 
 La masse du chantier est en **I** : le code est déployé, et la preuve existe —
 mais sur un autre environnement que celui qui sera livré. C'est exactement ce
 que la recette manuelle doit convertir en **V**.
+
+Une version antérieure de cette synthèse annonçait « 6 V dont 3 déclaratifs,
+34 I, 5 O, 9 D, 2 N ». Ces chiffres étaient écrits à la main et faux ; ils sont
+remplacés par le décompte ci-dessus.

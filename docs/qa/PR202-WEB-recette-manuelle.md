@@ -381,17 +381,20 @@ largeur courante.
 44 × 44 px — en pratique, il ne doit pas paraître plus petit que les autres
 icônes de la barre.
 
-### H-2 · Liens d'en-tête public à 1366 px — **défaut connu à confirmer** · desktop
+### H-2 · Liens d'en-tête public à 1366 px · desktop
 
-> Ce scénario documente le défaut ouvert §4.11.
+> Vérifie le correctif `769c7c6e`, qui a porté la zone cliquable de ces deux
+> liens à 44 px. §4.11.
 
 1. **Déconnectez-vous.** Réglez la fenêtre à environ **1366 px** de large.
 2. Sur la page d'accueil publique, visez les liens **« Découvrir Reims »** et
    **« Comment ça marche »**.
 
-**Attendu conforme** : zone cliquable confortable.
-**Défaut connu** : ces liens font **20 px de haut**, sous le plancher de
-24 × 24 px de WCAG 2.2 AA. Dites si vous trouvez la cible difficile à viser.
+**Attendu** : la zone cliquable est confortable — vous atteignez le lien sans
+viser précisément. Le survol doit réagir un peu au-dessus et un peu en dessous
+du texte, signe que la zone dépasse la hauteur des lettres.
+
+Dites si la cible vous paraît encore difficile à viser.
 
 ### H-3 · Navigation entièrement au clavier · desktop
 
@@ -494,11 +497,15 @@ n'est pas perdue.
 | E — Tribus | 2 dont **1 défaut à confirmer** | §4.8 |
 | F — Cartes et quartiers | 4 | §4.7 |
 | G — Passport | 3 | §4.10 |
-| H — Accessibilité | 3 dont **1 défaut à confirmer** | §4.11 |
+| H — Accessibilité | 3 | §4.11 |
 | I — Vidéo | 4 + 1 préalable, **probablement non jouables** | §4.4 |
 | J — Vrai iPhone | 4 | §4.11, §4.4 |
 | **Total** | **42 scénarios** | |
 
-Deux scénarios — E-2 et H-2 — sont écrits pour **confirmer un défaut connu**.
-Les voir échouer est le résultat attendu, et ne doit pas être traité comme une
+Un seul scénario — **E-2** — est écrit pour **confirmer un défaut connu**. Le
+voir échouer est le résultat attendu, et ne doit pas être traité comme une
 découverte.
+
+> **Reconciliation du 2026-10-20.** H-2 confirmait auparavant un défaut sur les
+> liens d'en-tête. Vérification faite, ce défaut avait été corrigé dans le
+> commit qui le relevait : le scénario vérifie désormais le correctif.

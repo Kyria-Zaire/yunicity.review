@@ -122,3 +122,4 @@ Skills design (`.agents/skills/`) : `emil-design-eng`, `impeccable`, `design-tas
 @.claude/rules/12-bmad.md
 @.claude/rules/13-official-workflow.md
 @.claude/rules/14-frontend-design-system.md
+@.claude/rules/15-passation.md
