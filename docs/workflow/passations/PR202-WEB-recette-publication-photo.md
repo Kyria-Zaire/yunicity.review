@@ -1,9 +1,10 @@
 # Passation — Recette fonctionnelle de la publication photo
 
-> **Ticket candidat**, non ouvert. Index :
+> **Ticket ACTIF** depuis le 2026-10-20. Index :
 > [`../TICKETS-INDEX.md`](../TICKETS-INDEX.md)
 >
-> Ouvrir ce ticket suppose d'avoir **fermé ou suspendu** le ticket actif.
+> Ticket précédent clos :
+> [`PR202-WEB-etat-des-lieux.md`](PR202-WEB-etat-des-lieux.md)
 
 ---
 
@@ -60,7 +61,13 @@ reviendrait à réimplémenter à l'aveugle.
 
 ## 4. Préconditions
 
-- Un **compte de recette autorisé**. **Ne pas créer de compte sur Preview.**
+- Un **compte de recette autorisé**. **Ne pas créer de compte sur Preview**, et
+  ne rien publier à la place de Kyria.
+- **La connexion n'est pas à rejouer systématiquement** : elle a été **validée
+  manuellement par Kyria** le 20/10/2026 sur Preview, sur le parcours et le
+  format déclarés. On démarre directement sur la publication photo. Si une
+  session se révélait expirée en cours de recette, se reconnecter simplement,
+  sans en faire un scénario.
 - Une photo **paysage** et une photo **portrait** sur l'appareil de test.
 - Preview en ligne sur `bf008a87` ou postérieur.
 
@@ -100,7 +107,13 @@ qualifié.
 
 ---
 
-## 8. Prochaine action si ce ticket est ouvert
+## 8. Prochaine action
 
-Jouer **C-1 · Publier une photo paysage, en mobile**, sur Preview, avec un
-compte de recette autorisé — puis supprimer la publication.
+**Jouer C-1 · Publier une photo paysage, au format mobile**, sur Preview, avec
+le compte de recette autorisé — puis supprimer la publication.
+
+C'est Kyria qui exécute et rapporte ; l'agent présente le scénario, consigne le
+résultat, et **ne crée aucun contenu**. En cas de défaut : le consigner et
+**établir sa cause avant** de proposer une correction.
+
+État d'avancement des six comportements du §2 : **aucun joué à ce jour**.

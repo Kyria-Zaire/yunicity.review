@@ -13,15 +13,19 @@ conserve l'état entre deux sessions de travail.
 
 | Ticket | Phase | Passation |
 |--------|-------|-----------|
-| **État des lieux PR202 WEB et préparation de la recette** | VERIFY | [`passations/PR202-WEB-etat-des-lieux.md`](passations/PR202-WEB-etat-des-lieux.md) |
+| **Recette fonctionnelle de la publication photo** | VERIFY | [`passations/PR202-WEB-recette-publication-photo.md`](passations/PR202-WEB-recette-publication-photo.md) |
+
+Prochaine action : **C-1 · Publier une photo paysage, format mobile**, sur
+Preview. La connexion a été validée manuellement par Kyria le 2026-10-20 et
+n'est pas à rejouer systématiquement.
 
 ---
 
 ## Candidat suivant
 
-| Ticket | Phase | Passation |
-|--------|-------|-----------|
-| **Recette fonctionnelle de la publication photo** | VERIFY | [`passations/PR202-WEB-recette-publication-photo.md`](passations/PR202-WEB-recette-publication-photo.md) |
+Aucun candidat retenu. Les blocs restants de la checklist — Stories, tribus,
+cartes, Passport, accessibilité, vidéo, vrai iPhone — feront chacun l'objet d'un
+ticket borné, ouvert après celui-ci.
 
 ---
 
@@ -29,6 +33,7 @@ conserve l'état entre deux sessions de travail.
 
 | Ticket | Clos le | Trace |
 |--------|---------|-------|
+| **État des lieux PR202 WEB et préparation de la recette** | 2026-10-20 | [`../qa/PR202-WEB-bilan-consolide.md`](../qa/PR202-WEB-bilan-consolide.md) et [`../qa/PR202-WEB-recette-manuelle.md`](../qa/PR202-WEB-recette-manuelle.md) |
 | **Isolation du déploiement Preview (image Docker)** | 2026-10-20 | [`../ops/INFRA-04-web-image-docker.md`](../ops/INFRA-04-web-image-docker.md) |
 
 ---

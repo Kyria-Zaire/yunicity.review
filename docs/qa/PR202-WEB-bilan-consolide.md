@@ -36,7 +36,7 @@ devient pas une validation du déploiement actuel.**
 | **E1** | Campagne 44 specs Playwright, 44/44 vertes, 542 tests | `769c7c6e` | **QA locale**, build gelé `X3FL69EhNItJMOfS-7lkv` | le comportement navigateur des trois paliers sur ce build | rien sur Preview, ni sur l'image Docker |
 | **E2** | CI GitHub Actions | `bf008a87` | runners GitHub | backend 2012 passés / 19 ignorés ; lint, typecheck, build, secrets | **la surface navigateur** — la suite Playwright n'est exécutée par aucun workflow |
 | **E3** | Smoke public Preview | `bf008a87` | **Preview**, image Docker | pages publiques, JS/CSS, fichier de `public/`, optimisation d'image, rendu serveur d'une route dynamique, en-têtes | tout ce qui exige une session |
-| **E4** | **Validation manuelle déclarée par Kyria, 20/10/2026** | `bf008a87` | **Preview** | fil connecté avec contenu affiché ; session conservée après rechargement ; accès au profil puis retour au fil | **déclaration d'usage** — ni mesure automatisée, ni relevé réseau, ni capture. Porte le code **Vd**, jamais **V** |
+| **E4** | **Validation manuelle déclarée par Kyria, 20/10/2026** | `bf008a87` | **Preview** | fil connecté avec contenu affiché ; session conservée après rechargement ; accès au profil puis retour au fil | **validation manuelle** sur le parcours et le format déclarés — ni mesure automatisée, ni relevé réseau. Porte le code **Vd** ; les autres formats restent non vérifiés |
 | **E5** | Tests unitaires et d'intégration front | `953246fc` | poste local | utils 1258 · web 919 · ui 163 · admin 37 = **2377** | le rendu réel en navigateur |
 
 ### 2.1 Portée de E1 sur le déploiement actuel
@@ -66,7 +66,7 @@ premier à en consigner la synthèse ; le détail par spec reste hors dépôt.
 | Code | Signification |
 |------|---------------|
 | **V** | Corrigé **et vérifié par mesure** — correction livrée, validation mesurée, source de preuve citée |
-| **Vd** | Corrigé **et vérifié par déclaration d'usage** — un usage réel l'atteste, sans mesure ni relevé. Ne vaut pas **V** et n'en tient pas lieu |
+| **Vd** | **Validé manuellement par Kyria**, sur le parcours et le format déclarés. Les autres formats restent non vérifiés |
 | **I** | Implémenté, **validation incomplète** — code livré, preuve partielle, d'un autre SHA ou d'un autre environnement |
 | **O** | **Ouvert** — défaut connu, non corrigé |
 | **D** | **Différé** explicitement — décision prise de ne pas traiter maintenant |
@@ -138,7 +138,7 @@ dans `bf008a87`, donc déployé ; `vérifié` signifie qu'une preuve a été obt
 | **Les modules de contexte n'étaient rendus à aucune largeur** | Modules rendus, puis masqués au seul palier desktop par CSS | `bf71e017` | E1 (specs 31, 34) — QA locale | code oui · vérifié non | **I** |
 | Contrats du flux désalignés, onglets fantômes attendus par les tests | Contrats alignés sur la règle tranchée, attentes périmées retirées | `65b5ca49`, `427ebcda`, `8f810024` | E1 — QA locale | code oui · vérifié non | **I** |
 | Pages fil et vidéos sans titre sous 1024 px | Titre ajouté sous 1024 px | `35ef6427` | E1 (spec 09) — QA locale | code oui · vérifié non | **I** |
-| **Fil connecté et affichage du contenu** | — | — | **E4 — déclaration de Kyria, Preview, 20/10/2026** | **vérifié par déclaration** | **Vd** |
+| **Fil connecté et affichage du contenu** | — | — | **E4 — validation manuelle de Kyria, Preview, 20/10/2026** | **validé manuellement, format déclaré** | **Vd** |
 
 ### 4.7 Cartes et quartiers
 
@@ -164,7 +164,7 @@ dans `bf008a87`, donc déployé ; `vérifié` signifie qu'une preuve a été obt
 | Le rail medium n'offrait aucun accès à Explorer | Accès Explorer ajouté au rail medium, libellé issu d'une source unique | `805fd8e3`, `671cbf92` | E1 (specs 11, 22, 29) — QA locale | code oui · vérifié non | **I** |
 | Un changement de largeur fermait le Menu en laissant le focus nulle part | Focus remis à un contrôle visible ; raison de fermeture alignée sur la règle | `cfb5fbaa`, `bd1d8667` | E1 (specs 10, 20) + E5 | code oui · vérifié non | **I** |
 | Seuil d'apparition de la navigation haute confondu avec des largeurs de géométrie | Seuil et géométrie séparés ; largeur propre de la barre assertée | `760066cc`, `3e15101b` | E1 (spec 12) — QA locale | code oui · vérifié non | **I** |
-| **Accès au profil puis retour au fil** | — | — | **E4 — déclaration de Kyria, Preview, 20/10/2026** | **vérifié par déclaration** | **Vd** |
+| **Accès au profil puis retour au fil** | — | — | **E4 — validation manuelle de Kyria, Preview, 20/10/2026** | **validé manuellement, format déclaré** | **Vd** |
 
 ### 4.10 Passport
 
@@ -279,7 +279,7 @@ Décompte **mesuré sur le fichier**, et non estimé — 60 lignes dans la matri
 | Code | Lignes | Lecture |
 |------|--------|---------|
 | **V** — vérifié par mesure | 5 | les quatre lignes de déploiement, vérifiées **sur Preview**, plus l'échéance du pilote d'inscription |
-| **Vd** — vérifié par déclaration | 3 | les trois points de la recette manuelle de Kyria du 20/10/2026 |
+| **Vd** — validé manuellement par Kyria | 3 | les trois points de sa recette du 20/10/2026, sur le parcours et le format déclarés |
 | **I** — implémenté, validation incomplète | 49 | code déployé, preuve obtenue sur un **autre environnement** (QA locale) ou par tests unitaires |
 | **O** — ouvert | 1 | l'état « en attente » d'une adhésion, perdu après rechargement |
 | **D** — différé explicitement | 1 | la CSP inerte, vers un audit de sécurité dédié |

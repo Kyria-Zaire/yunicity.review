@@ -1,7 +1,10 @@
 # Passation — État des lieux PR202 WEB et préparation de la recette
 
-> **Ticket actif** au 2026-10-20. Index :
+> **Ticket CLOS** le 2026-10-20. Index :
 > [`../TICKETS-INDEX.md`](../TICKETS-INDEX.md)
+>
+> Ticket actif désormais : **Recette fonctionnelle de la publication photo** —
+> [`PR202-WEB-recette-publication-photo.md`](PR202-WEB-recette-publication-photo.md)
 
 ---
 
@@ -54,7 +57,7 @@ déploiement actuel.**
 | **E1** | 44 specs Playwright vertes, 542 tests | `769c7c6e` | **QA locale**, build gelé `X3FL69EhNItJMOfS-7lkv` |
 | **E2** | CI : backend 2012 passés / 19 ignorés, lint, typecheck, build, secrets | `bf008a87` | runners GitHub |
 | **E3** | Smoke public Preview : pages, JS/CSS, `public/`, optimisation d'image, rendu serveur dynamique, en-têtes | `bf008a87` | **Preview**, image Docker |
-| **E4** | Fil connecté avec contenu ; session après rechargement ; profil puis retour au fil | `bf008a87` | **Preview** — **déclaration d'usage de Kyria**, 20/10/2026 |
+| **E4** | Fil connecté avec contenu ; session après rechargement ; profil puis retour au fil | `bf008a87` | **Preview** — **validation manuelle de Kyria**, 20/10/2026, sur le parcours et le format déclarés |
 | **E5** | 2377 tests front unitaires et d'intégration | `953246fc` | poste local |
 
 **Mesure qui cadre la portée de E1** : entre `769c7c6e` et `bf008a87`, **aucun
@@ -74,7 +77,7 @@ Toutes corrigées **sur preuve**, pas sur impression.
 | Les liens d'en-tête public étaient classés **ouverts**, avec affirmation d'une violation WCAG 2.2 AA | `769c7c6e` a porté leur zone cliquable à 44 px — `public-home-header.tsx` lignes 40 et 47 portent `inline-flex min-h-11 items-center` dans `bf008a87`. Et une hauteur de 20 px n'établit pas à elle seule une violation de 2.5.8 : l'espacement et les exceptions entrent dans son évaluation, et aucun des deux n'a été mesuré. Reclassé **I**, affirmation retirée |
 | Deux dettes étaient en passe d'être requalifiées en « limite consignée » faute de décision explicite | Lecture complète du code : `alembic/env.py` porte « revisit if PgBouncer lands », `map-city-defaults.ts` porte « à revisiter en multi-ville ». Ce sont des **différés avec déclencheur**. Classement **D** maintenu, déclencheur ajouté |
 | La synthèse annonçait « 6 V, 34 I, 5 O, 9 D, 2 N » | Chiffres écrits à la main, faux. Décompte **mesuré sur le fichier** : V 5 · Vd 3 · I 49 · O 1 · D 1 · N 1, sur 60 lignes |
-| La recette de Kyria risquait d'être lue comme une validation mesurée | Code d'état **Vd** créé, distinct de **V**, et explicitement « ne vaut pas V et n'en tient pas lieu » |
+| La recette de Kyria risquait d'être lue comme une mesure automatisée | Code d'état **Vd** créé : « validé manuellement par Kyria, sur le parcours et le format déclarés ». Une première rédaction ajoutait « ne vaut pas V », ce qui dévalorisait une validation réelle au lieu d'en borner la portée — retiré. Les autres formats restent non vérifiés |
 | « Aucune régression » affirmé après comparaison des statuts CI | Remplacé par « aucune régression **nouvelle détectée par ces contrôles** ». Vérifié : **la suite Playwright n'est exécutée par aucun workflow** |
 
 ---
@@ -123,9 +126,9 @@ Toutes corrigées **sur preuve**, pas sur impression.
 | 2 | Checklist de recette adossée au bilan | **fait** |
 | 3 | Réconciliation des classements sur preuve | **fait** |
 | 4 | Protocole d'index + passation installé | **fait** |
-| 5 | **Jouer la recette manuelle, bloc par bloc** | **à faire** — commence par A-1 |
-| 6 | Fournir un compte de recette autorisé | **à faire** — bloque A-1 à A-3 et tout le reste |
-| 7 | Trancher les deux réserves avant promotion | **à faire** |
+| 5 | Protocole d'index + passation **contrôlé par le linter** | **fait** — `15-passation` ajouté à `PARITY_PAIRS` |
+| 6 | Jouer la recette manuelle, bloc par bloc | **transféré** au ticket de recette publication photo |
+| 7 | Trancher les deux réserves avant promotion | **reste ouvert**, hors de ce ticket |
 
 ---
 
@@ -142,14 +145,12 @@ Aucun push n'a été autorisé pour ces commits.
 
 ---
 
-## 10. Prochaine action
+## 10. Clôture
 
-**Jouer le scénario A-1 · Connexion**, aux trois formats, sur
-`https://preview.yunicity.city`, avec un compte de recette autorisé.
+Ce ticket est **clos**. Ses livrables sont le bilan consolidé et la checklist de
+recette, tous deux dans `docs/qa/`, plus le protocole d'index et de passation.
 
-Il est premier pour deux raisons : rien d'autre n'est testable sans session, et
-c'est la seule réserve que E4 couvre déjà — le rejouer format par format la fait
-passer de **Vd** à **V**.
-
-**Prérequis** : un compte de recette autorisé. Sans lui, la recette ne démarre
-pas. **Ne pas créer de compte sur Preview.**
+La suite appartient au ticket **Recette fonctionnelle de la publication photo**,
+désormais actif. La connexion sur Preview ayant été **validée manuellement par
+Kyria** le 20/10/2026, elle n'est pas à rejouer systématiquement : le ticket
+suivant démarre directement sur la publication photo.
