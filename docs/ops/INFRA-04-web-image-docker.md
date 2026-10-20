@@ -794,6 +794,85 @@ attend.
 
 ---
 
+## 6 sexies. CI sur `bf008a87`, et ce qu'elle établit
+
+| État | Contrôle |
+|------|----------|
+| ✅ | `compose · health · pytest (disposable db)` |
+| ✅ | `lint · typecheck · build` |
+| ✅ | `ruff · mypy · pytest` |
+| ✅ | `Forbidden paths & artifacts` |
+| ✅ | `Gitleaks` |
+| ❌ | `Dependency audit` |
+
+Le contrôle Docker, longtemps en cours, n'était pas bloqué : son étape active
+était `Pytest on a disposable database`, démarrée à 16:47:36Z, sur un budget de
+`timeout-minutes: 75`. Issue `success` à 17:03:51Z, durée totale **17 min 38 s**
+dont 16 min 11 s de pytest.
+
+```
+2012 passed, 19 skipped, 24 warnings in 955.97s (0:15:55)
+```
+
+Aucun `FAILED`, aucun `ERROR` dans les 2 567 lignes de journal.
+
+L'unique échec, `Dependency audit`, est celui déjà consigné au §10 : `braces` et
+`node-forge` sans correctif amont dans le lockfile, sans exception OSV ni
+acceptation de risque.
+
+### Ce que ces statuts établissent, et ce qu'ils n'établissent pas
+
+Les statuts sont **identiques** à ceux du commit précédent `42dc6bf1`. Cela
+établit qu'**aucune régression nouvelle n'a été détectée par ces contrôles** —
+et non une absence absolue de régression.
+
+La distinction n'est pas rhétorique, car le périmètre a une lacune connue et
+documentée : **la suite Playwright des 44 specs n'est pas exécutée par la CI**.
+La surface navigateur n'est donc couverte par aucun de ces six contrôles. Ce qui
+a été vérifié sur la Preview l'a été par le smoke public et le rendu serveur du
+§6 quater, pas par cette CI.
+
+---
+
+## 6 septies. Clôture du chantier
+
+Le chantier d'isolation du déploiement Preview est terminé.
+
+| Élément | État final |
+|---------|------------|
+| Service Preview | construit l'image Docker via `/frontend/railway.web-docker.toml` |
+| `frontend/railway.toml` | restauré en RAILPACK, identique à `953246fc` |
+| Site public | ne peut plus changer de builder par héritage |
+| Domaines Preview | `preview.yunicity.city` et le domaine Railway sur `targetPort: 8080` |
+| Déploiement actif | `14c4094a`, commit `bf008a87` |
+| PR 202 | **Draft**, aucun merge, aucune promotion Production |
+
+### Deux réserves ouvertes avant livraison
+
+1. **Connexion Preview — NON VÉRIFIÉE.** Aucun compte de recette autorisé n'a
+   été disponible pendant tout le chantier ; les identifiants du compte pilote
+   sont hors dépôt (`docs/qa/PILOT-SMOKE-02`), et la création de compte sur
+   Preview a été exclue. La fermeture du pilote d'inscriptions, survenue le
+   2026-10-19 à 16:46:25Z, **ne bloque pas** cette vérification : se connecter à
+   un compte existant ne dépend pas de l'ouverture des inscriptions.
+2. **Audit des dépendances — ROUGE.** Les **paquets installés** `braces`,
+   `micromatch` et `node-forge` sont absents de l'image servie, mais une copie
+   embarquée de braces, de **version indéterminée**, subsiste dans Next (§5.1).
+   C'est une mitigation de l'image d'exécution, pas une remédiation de l'arbre :
+   le lockfile porte toujours les trois paquets. Aucune exception OSV, aucune
+   acceptation de risque.
+
+Ces deux réserves sont **indépendantes** : aucune ne compense l'autre, et lever
+l'une ne lève pas l'autre.
+
+### Référence de smoke à mettre à jour
+
+Le statut d'inscription de référence est désormais `open=false`, le pilote
+s'étant fermé à son échéance. Un prochain smoke qui relèverait `open=false` ne
+constate donc pas une régression.
+
+---
+
 ## 7. Procédure de bascule
 
 1. Revue et merge du diff. **Avant tout merge vers `main`**, vérifier le point
