@@ -89,6 +89,7 @@ export function ProfileCompactScreen({ ctx, variant }: ProfileCompactScreenProps
           posts={ctx.userPosts}
           displayName={displayName}
           avatarUrl={avatarUrl}
+          onDeletePost={ctx.deleteUserPost}
           timeline={ctx.activityTimeline}
           contributions={memories.items}
           contributionsLoading={memories.loading}
@@ -102,6 +103,7 @@ export function ProfileCompactScreen({ ctx, variant }: ProfileCompactScreenProps
               displayName={displayName}
               avatarUrl={avatarUrl}
               maxItems={12}
+              onDeletePost={ctx.deleteUserPost}
             />
           ) : null}
 

@@ -36,14 +36,21 @@ export function CitizenPostCard({
   post,
   currentUserId,
   onReport,
+  onDelete,
 }: {
   post: FeedPost;
   currentUserId: string | null;
   onReport?: (reason: FeedReportReason) => Promise<void>;
+  onDelete?: () => void;
 }) {
   return (
     <>
-      <FeedAuthorHeader post={post} currentUserId={currentUserId} onReport={onReport} />
+      <FeedAuthorHeader
+        post={post}
+        currentUserId={currentUserId}
+        onReport={onReport}
+        onDelete={onDelete}
+      />
       {post.body ? (
         <p
           data-feed-publication-body=""

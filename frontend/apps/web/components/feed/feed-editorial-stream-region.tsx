@@ -2,7 +2,7 @@
 
 import type { FeedPost, FeedReportReason } from "@yunicity/types";
 import type { FeedHighlightEvent } from "@yunicity/utils";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import { FeedDesktopStream } from "@/components/feed/desktop/feed-desktop-stream";
 import { FeedEmptyState } from "@/components/feed/feed-empty-state";
@@ -23,6 +23,8 @@ export type FeedEditorialStreamRegionProps = {
   showSaved: boolean;
   onToggleLike: (post: FeedPost) => Promise<void>;
   onReport: (postId: string, reason: FeedReportReason) => Promise<void>;
+  /** Suppression de SA publication (PROFILE-POST-MENU-01). */
+  onDeletePost?: (postId: string) => Promise<void>;
   onRefresh: () => void;
   hasNextPage: boolean;
   isLoadingMore: boolean;
@@ -30,6 +32,8 @@ export type FeedEditorialStreamRegionProps = {
   onLoadMore: () => Promise<void>;
   viewHint?: ReactNode;
   reportMessage?: string | null;
+  /** Confirmation de suppression, annoncée par le flux lui-même. */
+  deleteMessage?: string | null;
   interestFilterActive?: boolean;
   interestFilterBlockedCount?: number;
   onDisableInterestFilter?: () => void;
@@ -49,6 +53,7 @@ export function FeedEditorialStreamRegion({
   showSaved,
   onToggleLike,
   onReport,
+  onDeletePost,
   onRefresh,
   hasNextPage,
   isLoadingMore,
@@ -56,20 +61,54 @@ export function FeedEditorialStreamRegion({
   onLoadMore,
   viewHint,
   reportMessage,
+  deleteMessage,
   interestFilterActive = false,
   interestFilterBlockedCount = 0,
   onDisableInterestFilter,
   streamRegionProps,
   className = "feed-stream-region",
 }: FeedEditorialStreamRegionProps) {
+  const regionRef = useRef<HTMLDivElement>(null);
+
+  /*
+   * Focus après une suppression réussie (PROFILE-POST-MENU-01).
+   *
+   * La carte supprimée EMPORTE le déclencheur du menu qui a ouvert la
+   * confirmation : il n'existe plus au moment où la modale se ferme, donc le
+   * focus retombe sur `<body>` et la navigation clavier repart du haut de la
+   * page. Il est déplacé ici, sur la RÉGION DU FLUX — un ancrage STABLE, qui
+   * contient les publications restantes et ne disparaît pas.
+   *
+   * L'ANNONCE, elle, ne dépend pas du focus : c'est la zone `role="status"`
+   * ci-dessous qui la porte, et un lecteur d'écran la restitue sans que rien
+   * ne soit focalisé. Les deux mécanismes sont séparés à dessein — le message
+   * s'effacera au bout de quelques secondes, le focus doit survivre.
+   *
+   * `tabIndex={-1}` rend la région focalisable PAR PROGRAMME seulement :
+   * l'ordre de tabulation de la page n'est pas modifié.
+   */
+  useEffect(() => {
+    if (!deleteMessage) return;
+    regionRef.current?.focus();
+  }, [deleteMessage]);
+
   return (
-    <div className={className} {...streamRegionProps}>
+    <div ref={regionRef} tabIndex={-1} className={className} {...streamRegionProps}>
       {viewHint ? (
         <p className="feed-stream-hint text-xs leading-relaxed text-neutral-500">{viewHint}</p>
       ) : null}
       {reportMessage ? (
         <p className="feed-stream-notice rounded-xl bg-yunicity-primary-soft px-4 py-3 text-sm text-yunicity-primary">
           {reportMessage}
+        </p>
+      ) : null}
+      {deleteMessage ? (
+        <p
+          role="status"
+          data-feed-publication-deleted=""
+          className="feed-stream-notice rounded-xl bg-yunicity-primary-soft px-4 py-3 text-sm text-yunicity-primary"
+        >
+          {deleteMessage}
         </p>
       ) : null}
       {streamLoading ? <FeedLoadingState /> : null}
@@ -109,6 +148,7 @@ export function FeedEditorialStreamRegion({
           trends={[]}
           onToggleLike={onToggleLike}
           onReport={onReport}
+          onDeletePost={onDeletePost}
           hasNextPage={hasNextPage}
           isLoadingMore={isLoadingMore}
           appendError={appendError}

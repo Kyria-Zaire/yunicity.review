@@ -106,6 +106,7 @@ export function ProfileDesktopOwnerScreen({ ctx }: { ctx: ProfilePortalCtx }) {
                   avatarUrl={avatarUrl}
                   maxItems={12}
                   sharedOuting={nextOuting}
+                  onDeletePost={ctx.deleteUserPost}
                 />
               ) : null}
 

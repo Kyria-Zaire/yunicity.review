@@ -27,6 +27,8 @@ type ProfileMediumOverviewProps = {
   contributions: NeighborhoodContributionMeItem[];
   contributionsLoading: boolean;
   onOpenActivity: () => void;
+  /** Suppression d'une de SES publications — profil propriétaire seulement. */
+  onDeletePost?: (postId: string) => Promise<void>;
 };
 
 /**
@@ -46,6 +48,7 @@ export function ProfileMediumOverview({
   contributions,
   contributionsLoading,
   onOpenActivity,
+  onDeletePost,
 }: ProfileMediumOverviewProps) {
   return (
     <div className="profile-medium-overview space-y-5 sm:space-y-6" data-profile-medium-overview="">
@@ -61,6 +64,7 @@ export function ProfileMediumOverview({
 
       <ProfileDesktopPublications
         posts={posts}
+        onDeletePost={onDeletePost}
         displayName={displayName}
         avatarUrl={avatarUrl}
         compact={false}

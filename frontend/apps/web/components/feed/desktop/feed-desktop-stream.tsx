@@ -23,6 +23,8 @@ type FeedDesktopStreamProps = {
   trends: Parameters<typeof FeedContextStreamItem>[0]["trends"];
   onToggleLike: Parameters<typeof FeedCard>[0]["onToggleLike"];
   onReport: (postId: string, reason: FeedReportReason) => Promise<void>;
+  /** Suppression de SA publication — non fourni : aucune action offerte. */
+  onDeletePost?: (postId: string) => Promise<void>;
   hasNextPage: boolean;
   isLoadingMore: boolean;
   appendError: string | null;
@@ -37,6 +39,7 @@ export function FeedDesktopStream({
   trends,
   onToggleLike,
   onReport,
+  onDeletePost,
   hasNextPage,
   isLoadingMore,
   appendError,
@@ -65,7 +68,12 @@ export function FeedDesktopStream({
           if (item.kind === "post") {
             return (
               <li key={item.key} data-feed-stream-item="post" data-feed-post-id={item.post.id}>
-                <FeedCard post={item.post} onToggleLike={onToggleLike} onReport={onReport} />
+                <FeedCard
+                  post={item.post}
+                  onToggleLike={onToggleLike}
+                  onReport={onReport}
+                  onDeletePost={onDeletePost}
+                />
               </li>
             );
           }

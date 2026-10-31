@@ -525,7 +525,20 @@ test.describe("carte de publication unifiée", () => {
     await expect(propre.locator(CARTE)).toHaveCount(1);
     await expect(propre.locator("[data-feed-publication-social]")).toHaveCount(1);
 
-    // …mais le menu de débordement, et donc tout chemin de signalement, est absent.
+    /*
+     * …mais le menu de débordement est absent, et avec lui tout chemin de
+     * signalement.
+     *
+     * PROFILE-POST-MENU-01 — pourquoi cette assertion reste VRAIE ici, alors
+     * que le fil RÉEL rend désormais ce menu sur sa propre publication.
+     *
+     * Le harnais monte `FeedCardWithDependencies` SANS `onDeletePost` : aucune
+     * action propriétaire n'est câblée, donc le menu n'est pas rendu — c'est
+     * exactement la garde `viewerIsAuthor && !onDelete` qui est éprouvée ici.
+     * Le contrat du fil réel (déclencheur présent, menu SANS motif de
+     * signalement, action « Supprimer » à la place) est éprouvé par la spec 21.
+     * Les deux ne se contredisent pas : elles verrouillent les deux branches.
+     */
     await expect(
       propre.locator("[data-feed-publication-overflow]"),
       "un utilisateur peut signaler sa propre publication",

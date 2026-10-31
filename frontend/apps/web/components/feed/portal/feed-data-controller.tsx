@@ -6,6 +6,7 @@ import {
   FEED_PORTAL_FOR_YOU_HINT,
   FEED_PORTAL_POPULAR_HINT,
   PROFILE_INTERESTS,
+  PUBLICATION_DELETE_DONE,
   buildFeedDesktopMoments,
   buildFeedHighlightEvents,
   filterFeedPostsByView,
@@ -79,6 +80,7 @@ export function FeedDataController() {
   const [interestFilterActive, setInterestFilterActive] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [reportMessage, setReportMessage] = useState<string | null>(null);
+  const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
   const filterTriggerRef = useRef<HTMLButtonElement | null>(null);
   const feed = useFeed({
     scopeKey: `${activeView}:${leftNav ?? "main"}:${interestFilterActive}`,
@@ -96,6 +98,7 @@ export function FeedDataController() {
     isLoadingMore,
     createPost,
     toggleLike,
+    deletePost,
   } = feed;
 
   useEffect(() => {
@@ -316,6 +319,19 @@ export function FeedDataController() {
     await createPost(body, mediaUrl);
   }
 
+  /**
+   * Suppression de SA publication (PROFILE-POST-MENU-01).
+   *
+   * L'erreur est VOLONTAIREMENT laissée remonter : c'est la confirmation
+   * ouverte dans la carte qui l'affiche et autorise un nouvel essai. L'avaler
+   * ici fermerait la modale sans rien supprimer.
+   */
+  async function handleDeletePost(postId: string) {
+    await deletePost(postId);
+    setDeleteMessage(PUBLICATION_DELETE_DONE);
+    setTimeout(() => setDeleteMessage(null), 4000);
+  }
+
   async function handleReport(postId: string, reason: FeedReportReason) {
     await api.reportFeedPost(postId, { reason });
     setReportMessage("Merci, votre signalement a été transmis à l'équipe.");
@@ -373,6 +389,7 @@ export function FeedDataController() {
           savedEvents={portal.savedEvents}
           onToggleLike={toggleLike}
           onReport={handleReport}
+          onDeletePost={handleDeletePost}
           onRefresh={() => void refresh()}
           hasNextPage={hasNextPage}
           isLoadingMore={isLoadingMore}
@@ -380,6 +397,7 @@ export function FeedDataController() {
           onLoadMore={loadMore}
           viewHint={viewHint}
           reportMessage={reportMessage}
+          deleteMessage={deleteMessage}
           interestFilterBlockedCount={items.length}
           onDisableInterestFilter={() => setInterestFilterActive(false)}
         />

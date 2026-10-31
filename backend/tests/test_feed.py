@@ -361,6 +361,40 @@ async def test_soft_delete_post_author_and_moderator(
 
 
 @pytest.mark.asyncio
+async def test_soft_delete_post_rejects_other_citizen(
+    auth_client: AsyncClient,
+) -> None:
+    """Un tiers sans droit de moderation ne supprime PAS la publication d'autrui.
+
+    Cette branche est la frontiere de securite du bouton « Supprimer » cable
+    cote web (PROFILE-POST-MENU-01) : le rendu client ne fait que cacher
+    l'action, c'est l'API qui la refuse. Le `403` et la SURVIE de la
+    publication sont donc tous deux verifies.
+    """
+    author = await _register(auth_client, suffix="-delowner", city="Reims")
+    outsider = await _register(auth_client, suffix="-delintruder", city="Reims")
+    created = await auth_client.post(
+        "/api/v1/posts",
+        json={"author_type": "citizen", "body": "Publication d'un autre"},
+        headers=auth_header(author["access_token"]),
+    )
+    assert created.status_code == 201, created.text
+    post_id = created.json()["id"]
+
+    forbidden = await auth_client.delete(
+        f"/api/v1/posts/{post_id}",
+        headers=auth_header(outsider["access_token"]),
+    )
+    assert forbidden.status_code == 403, forbidden.text
+
+    still_there = await auth_client.get(
+        f"/api/v1/posts/{post_id}",
+        headers=auth_header(author["access_token"]),
+    )
+    assert still_there.status_code == 200, still_there.text
+
+
+@pytest.mark.asyncio
 async def test_non_public_post_hidden_from_other_users_feed_and_detail(
     auth_client: AsyncClient,
 ) -> None:

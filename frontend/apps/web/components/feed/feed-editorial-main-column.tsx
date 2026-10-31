@@ -60,6 +60,7 @@ export function FeedEditorialMainColumn({
   savedEvents,
   onToggleLike,
   onReport,
+  onDeletePost,
   onRefresh,
   hasNextPage,
   isLoadingMore,
@@ -67,6 +68,7 @@ export function FeedEditorialMainColumn({
   onLoadMore,
   viewHint,
   reportMessage,
+  deleteMessage,
   interestFilterBlockedCount = 0,
   onDisableInterestFilter,
 }: FeedEditorialMainColumnProps) {
@@ -143,6 +145,7 @@ export function FeedEditorialMainColumn({
         showSaved={showSaved}
         onToggleLike={onToggleLike}
         onReport={onReport}
+        onDeletePost={onDeletePost}
         onRefresh={onRefresh}
         hasNextPage={hasNextPage}
         isLoadingMore={isLoadingMore}
@@ -150,6 +153,7 @@ export function FeedEditorialMainColumn({
         onLoadMore={onLoadMore}
         viewHint={viewHint}
         reportMessage={reportMessage}
+        deleteMessage={deleteMessage}
         interestFilterActive={interestFilterActive}
         interestFilterBlockedCount={interestFilterBlockedCount}
         onDisableInterestFilter={onDisableInterestFilter}

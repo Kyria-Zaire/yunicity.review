@@ -101,10 +101,13 @@ export function FeedAuthorHeader({
   post,
   currentUserId,
   onReport,
+  onDelete,
 }: {
   post: FeedPost;
   currentUserId: string | null;
   onReport?: (reason: FeedReportReason) => Promise<void>;
+  /** Ouvre la confirmation de suppression de SA publication (PROFILE-POST-MENU-01). */
+  onDelete?: () => void;
 }) {
   const profileHref = buildFeedAuthorProfileHref(post.author);
   const identityBlock = (
@@ -136,6 +139,7 @@ export function FeedAuthorHeader({
       {onReport ? (
         <FeedPostOptionsMenu
           onReport={onReport}
+          onDelete={onDelete}
           currentUserId={currentUserId}
           authorUserId={post.author.type === "citizen" ? post.author.id : null}
         />

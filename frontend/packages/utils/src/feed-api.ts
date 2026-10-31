@@ -66,6 +66,15 @@ export class FeedApi extends ApiClientBase {
     return this.postFormData<PostMediaUploadResponse>("/posts/media", form, { signal });
   }
 
+  /**
+   * Suppression DOUCE d'une publication — `204`, réservée à l'auteur ou à un
+   * modérateur côté serveur (`post_service.soft_delete_post`). La ligne et les
+   * fichiers médias restent en base : voir `publication-delete.ts`.
+   */
+  deletePost(postId: string): Promise<void> {
+    return this.deleteVoid(`/posts/${encodeURIComponent(postId)}`);
+  }
+
   likePost(postId: string): Promise<void> {
     return this.postVoid(`/posts/${encodeURIComponent(postId)}/like`);
   }

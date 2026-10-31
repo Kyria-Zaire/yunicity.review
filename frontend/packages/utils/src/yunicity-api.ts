@@ -552,6 +552,11 @@ export class YunicityApi {
     });
   }
 
+  /** Suppression douce de SA publication (PROFILE-POST-MENU-01). */
+  deleteFeedPost(postId: string): Promise<void> {
+    return this.feed.deletePost(postId);
+  }
+
   likeFeedPost(postId: string): Promise<void> {
     return this.feed.likePost(postId);
   }

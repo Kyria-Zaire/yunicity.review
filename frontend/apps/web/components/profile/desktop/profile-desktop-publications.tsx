@@ -1,10 +1,13 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
 import { ProfileAvatar } from "@/components/profile-avatar";
 import type { FeedPost } from "@yunicity/types";
 import type { ProfileDesktopGlanceOuting } from "@yunicity/utils";
 import {
   formatProfileActivityTimestamp,
+  PUBLICATION_DELETE_DONE,
   PROFILE_DESKTOP_PUBLICATIONS_CTA,
   PROFILE_DESKTOP_PUBLICATIONS_EMPTY,
   PROFILE_DESKTOP_PUBLICATIONS_TITLE,
@@ -17,6 +20,9 @@ import { ArrowRight, Bookmark, MoreHorizontal, Share2 } from "lucide-react";
 import Link from "next/link";
 import { AvatarImage } from "@/components/avatar-image";
 import { AuthorizedPostImage } from "@/components/feed/authorized-post-image";
+import { PublicationDeleteDialog } from "@/components/feed/publication-delete-dialog";
+import { ProfilePublicationOptionsMenu } from "@/components/profile/profile-publication-options-menu";
+import { usePublicationDeletion } from "@/hooks/use-publication-deletion";
 
 type ProfileDesktopPublicationsProps = {
   posts: FeedPost[];
@@ -33,6 +39,16 @@ type ProfileDesktopPublicationsProps = {
   sharedOuting?: ProfileDesktopGlanceOuting | null;
   /** Ouvre l’onglet Publications au lieu de renvoyer vers le fil. */
   onViewAll?: () => void;
+  /**
+   * Suppression douce d'une de SES publications (PROFILE-POST-MENU-01).
+   *
+   * Fourni UNIQUEMENT par les surfaces du profil PROPRIÉTAIRE. Les profils
+   * publics montent le même composant : sans ce prop, aucune action de
+   * suppression n'est rendue — la frontière n'est pas une condition d'affichage
+   * calculée ici, c'est l'appelant qui la porte, et le serveur qui la tient
+   * (`DELETE /posts/{id}` n'est ouvert qu'à l'auteur).
+   */
+  onDeletePost?: (postId: string) => Promise<void>;
 };
 
 export function ProfileDesktopPublications({
@@ -46,13 +62,50 @@ export function ProfileDesktopPublications({
   seeAllLabel,
   sharedOuting = null,
   onViewAll,
+  onDeletePost,
 }: ProfileDesktopPublicationsProps) {
   const visible = posts.slice(0, maxItems);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const [deletedNotice, setDeletedNotice] = useState<string | null>(null);
+
+  const deletion = usePublicationDeletion({
+    deletePost: async (postId) => {
+      await onDeletePost?.(postId);
+    },
+    onDeleted: () => setDeletedNotice(PUBLICATION_DELETE_DONE),
+  });
+
+  /*
+   * Annonce et focus après une suppression réussie (PROFILE-POST-MENU-01).
+   *
+   * Le fil annonçait déjà le succès ; le profil ne disait RIEN — pour un
+   * lecteur d'écran, la publication disparaissait en silence. Et le
+   * déclencheur « Options » étant EMPORTÉ avec la carte, le focus retombait
+   * sur `<body>`.
+   *
+   * Les deux manques sont traités séparément, comme au fil : la zone
+   * `role="status"` porte l'ANNONCE sans avoir besoin du focus, et le focus va
+   * sur le TITRE de la section — un ancrage STABLE, qui survit au retrait de
+   * la carte et situe le lecteur là où la publication se trouvait.
+   *
+   * La minuterie est NETTOYÉE au démontage : un composant monté trois fois
+   * (un par palier) ne doit pas laisser traîner de rappels.
+   */
+  useEffect(() => {
+    if (!deletedNotice) return;
+    titleRef.current?.focus();
+    const timer = setTimeout(() => setDeletedNotice(null), 6000);
+    return () => clearTimeout(timer);
+  }, [deletedNotice]);
 
   const body = (
     <>
       <div className="flex items-center justify-between gap-3">
         <h2
+          ref={titleRef}
+          /* Focalisable PAR PROGRAMME seulement : l'ordre de tabulation de la
+             page n'est pas modifié. */
+          tabIndex={-1}
           className={`font-bold text-neutral-900 ${embedded ? "text-sm" : "text-base"}`}
         >
           {PROFILE_DESKTOP_PUBLICATIONS_TITLE}
@@ -66,6 +119,19 @@ export function ProfileDesktopPublications({
           </Link>
         ) : null}
       </div>
+
+      {/* Annonce du succès — `role="status"` : restituée par les technologies
+          d'assistance sans qu'elle ait besoin du focus. Même libellé que le
+          fil, parce qu'il vient de la même constante. */}
+      {deletedNotice ? (
+        <p
+          role="status"
+          data-profile-publication-deleted=""
+          className="mt-3 rounded-xl bg-yunicity-primary-soft px-3 py-2 text-sm text-yunicity-primary"
+        >
+          {deletedNotice}
+        </p>
+      ) : null}
 
       {visible.length === 0 ? (
         <p className="mt-3 text-sm text-neutral-500">{PROFILE_DESKTOP_PUBLICATIONS_EMPTY}</p>
@@ -136,14 +202,21 @@ export function ProfileDesktopPublications({
                         <p className="text-xs text-neutral-500">{timestamp}</p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      disabled
-                      aria-label="Options"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-400"
-                    >
-                      <MoreHorizontal className="h-4 w-4" aria-hidden />
-                    </button>
+                    {onDeletePost ? (
+                      <ProfilePublicationOptionsMenu
+                        onDelete={() => deletion.request(post)}
+                      />
+                    ) : (
+                      /* Profil public : aucune action propriétaire à offrir. */
+                      <button
+                        type="button"
+                        disabled
+                        aria-label="Options"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-400"
+                      >
+                        <MoreHorizontal className="h-4 w-4" aria-hidden />
+                      </button>
+                    )}
                   </div>
 
                   {text ? (
@@ -241,6 +314,10 @@ export function ProfileDesktopPublications({
           </Link>
         )
       ) : null}
+
+      {/* Confirmation partagée avec la carte du fil : un seul libellé, un seul
+          comportement, quel que soit le palier. */}
+      <PublicationDeleteDialog deletion={deletion} />
     </>
   );
 

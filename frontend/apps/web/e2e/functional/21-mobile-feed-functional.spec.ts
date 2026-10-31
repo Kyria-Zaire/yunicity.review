@@ -133,7 +133,7 @@ test.describe("C3.1-R1L — Feed mobile fonctionnel", () => {
       });
 
       // ── Rouge 3 : propriétaire vs tiers ────────────────────────────────────
-      test(`${viewport.label} — impossible de signaler sa propre publication`, async ({
+      test(`${viewport.label} — sa propre publication : supprimable, jamais signalable`, async ({
         authedPage,
       }) => {
         await gotoFeed(authedPage);
@@ -146,13 +146,62 @@ test.describe("C3.1-R1L — Feed mobile fonctionnel", () => {
          * avait change, pas parce que le signalement etait interdit — vraie par
          * construction. On vise desormais le DECLENCHEUR, dans l'article de la
          * publication concernee, jamais par recherche globale.
+         *
+         * PROFILE-POST-MENU-01 — ASSERTION MISE A JOUR, INTENTION INCHANGEE.
+         *
+         * Ce test exigeait l'ABSENCE du declencheur (`toHaveCount(0)`) : c'etait
+         * la seule facon d'interdire le self-signalement tant qu'AUCUNE action
+         * proprietaire n'existait. Une action proprietaire existe desormais —
+         * « Supprimer » —, donc le declencheur EST rendu, et l'ancienne
+         * assertion serait rouge sans qu'aucun chemin de signalement n'ait
+         * reapparu.
+         *
+         * L'intention verrouillee reste donc la meme, exprimee sur le CONTENU du
+         * menu : aucun motif de signalement, et l'action proprietaire a la place.
          */
         const own = cardWithMarker(authedPage, OWN_MARKER);
         await expect(own).toBeVisible();
+
+        const declencheur = own.locator(
+          "[data-feed-publication-header] [data-feed-publication-overflow]",
+        );
         await expect(
-          own.locator("[data-feed-publication-overflow]"),
-          "menu de signalement offert sur sa propre publication",
-        ).toHaveCount(0);
+          declencheur,
+          "sa propre publication doit porter le menu proprietaire",
+        ).toHaveCount(1);
+        // Menu ferme : rien n'est rendu avant le clic.
+        await expect(own.locator('[role="menu"]')).toHaveCount(0);
+
+        await declencheur.click();
+        const menu = own.locator('[role="menu"]');
+        await expect(menu).toHaveCount(1);
+
+        /*
+         * ⛔ AUCUN CLIC SUR « Supprimer ».
+         *
+         * La publication de support (`OWN_MARKER`) est la matiere de plusieurs
+         * tests de ce fichier : la supprimer les rendrait tous rouges, et la
+         * suppression est DOUCE cote serveur (aucun retablissement par l'UI).
+         * On lit le menu, on ne l'actionne pas.
+         */
+        await expect(
+          menu.locator("[data-feed-publication-delete]"),
+          "l'action proprietaire doit etre offerte",
+        ).toHaveCount(1);
+        await expect(menu).toContainText("Supprimer");
+        await expect(menu).toContainText("Ma publication");
+
+        // Le self-signalement reste INTERDIT : aucun motif, aucun titre « Signaler ».
+        for (const motif of ["Spam", "Contenu inapproprié", "Autre"]) {
+          await expect(
+            menu.getByRole("menuitem", { name: motif, exact: true }),
+            `motif de signalement offert sur sa propre publication : ${motif}`,
+          ).toHaveCount(0);
+        }
+        await expect(menu).not.toContainText("Signaler");
+
+        // On referme sans rien declencher.
+        await authedPage.keyboard.press("Escape");
         await expect(own.locator('[role="menu"]')).toHaveCount(0);
       });
 
