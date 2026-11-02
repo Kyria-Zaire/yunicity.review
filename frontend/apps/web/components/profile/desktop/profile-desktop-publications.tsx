@@ -20,6 +20,7 @@ import { ArrowRight, Bookmark, MoreHorizontal, Share2 } from "lucide-react";
 import Link from "next/link";
 import { AvatarImage } from "@/components/avatar-image";
 import { AuthorizedPostImage } from "@/components/feed/authorized-post-image";
+import { FeedPublicationMedia, isVideoMediaUrl } from "@/components/feed/feed-publication-media";
 import { PublicationDeleteDialog } from "@/components/feed/publication-delete-dialog";
 import { ProfilePublicationOptionsMenu } from "@/components/profile/profile-publication-options-menu";
 import { usePublicationDeletion } from "@/hooks/use-publication-deletion";
@@ -180,6 +181,29 @@ export function ProfileDesktopPublications({
             const timestamp = formatProfileActivityTimestamp(post.created_at);
             const isFeatured = index === 0 && Boolean(post.media_url);
 
+            /**
+             * MEDIA-MULTI-PHOTO-01 — la grille est réservée aux lots de PHOTOS
+             * SEULES.
+             *
+             * La présentation d'origine du profil ne rendait JAMAIS de vidéo :
+             * elle passait par `AuthorizedPostImage`. Monter la grille du fil
+             * sur un lot mixte y introduirait une tuile `<video src={URL
+             * brute}>` — hors résolution autorisée, donc incapable de se
+             * charger derrière la route authentifiée. Un lot mixte garde donc
+             * le comportement ANTÉRIEUR, et cette limite ne gagne pas une
+             * surface de plus.
+             *
+             * Le `media_type` du contrat est le signal premier ; l'URL est
+             * contrôlée en second, pour ne pas faire une confiance aveugle à
+             * un type qui contredirait son fichier.
+             */
+            const medias = post.media_urls ?? [];
+            const isPhotoLot =
+              medias.length > 1 &&
+              medias.every(
+                (media) => media.media_type === "image" && !isVideoMediaUrl(media.url),
+              );
+
             return (
               <article
                 key={post.id}
@@ -229,23 +253,38 @@ export function ProfileDesktopPublications({
                     </p>
                   ) : null}
 
-                  {isFeatured && post.media_url ? (
-                    <AuthorizedPostImage
-                      mediaUrl={post.media_url}
-                      alt=""
-                      variant="compact"
-                      className="mt-3"
+                  {/* La grille n'apparaît QUE sur un lot de photos seules. À une
+                      seule photo — comme sur un lot mixte —, le profil garde sa
+                      présentation d'origine : vignette carrée pour les
+                      publications courantes, cadre compact pour la mise en
+                      avant. C'est la contrainte « aucun changement global de
+                      présentation mono-photo ». */}
+                  {isPhotoLot ? (
+                    <FeedPublicationMedia
+                      mediaUrls={medias.map((media) => media.url)}
+                      label={text || undefined}
                     />
-                  ) : null}
+                  ) : (
+                    <>
+                      {isFeatured && post.media_url ? (
+                        <AuthorizedPostImage
+                          mediaUrl={post.media_url}
+                          alt=""
+                          variant="compact"
+                          className="mt-3"
+                        />
+                      ) : null}
 
-                  {!isFeatured && post.media_url ? (
-                    <AuthorizedPostImage
-                      mediaUrl={post.media_url}
-                      alt=""
-                      variant="thumbnail"
-                      className="mt-3"
-                    />
-                  ) : null}
+                      {!isFeatured && post.media_url ? (
+                        <AuthorizedPostImage
+                          mediaUrl={post.media_url}
+                          alt=""
+                          variant="thumbnail"
+                          className="mt-3"
+                        />
+                      ) : null}
+                    </>
+                  )}
 
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <button

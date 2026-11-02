@@ -580,3 +580,121 @@ async def test_published_offer_appears_in_feed(
     assert feed.status_code == 200
     offers = [item for item in feed.json()["items"] if item["type"] == "offer"]
     assert any(item["title"] == "Brunch offert" for item in offers)
+
+@pytest.mark.asyncio
+async def test_feed_returns_every_media_url_in_order(auth_client: AsyncClient) -> None:
+    """Le fil restitue TOUS les medias d'une publication, dans l'ordre publie.
+
+    C'est la rupture de MEDIA-MULTI-PHOTO-01 : les photos etaient bien
+    STOCKEES (colonne `media_urls`), mais le contrat du fil n'exposait que
+    `media_url`, la premiere. Les autres ne quittaient jamais le serveur, et
+    aucune grille cote client ne pouvait les rendre.
+
+    L'ORDRE est verifie, pas seulement la presence : c'est celui que l'auteur
+    a choisi en selectionnant ses fichiers.
+    """
+    user = await _register(auth_client, suffix="-multimedia", city="Reims")
+    urls = [
+        "https://cdn.example.com/recette/photo-1.jpg",
+        "https://cdn.example.com/recette/photo-2.jpg",
+        "https://cdn.example.com/recette/photo-3.jpg",
+    ]
+    created = await auth_client.post(
+        "/api/v1/posts",
+        json={
+            "author_type": "citizen",
+            "body": "Trois photos de Reims",
+            "media_url": urls[0],
+            "media_urls": [{"url": url, "media_type": "image"} for url in urls],
+        },
+        headers=auth_header(user["access_token"]),
+    )
+    assert created.status_code == 201, created.text
+    post_id = created.json()["id"]
+
+    feed = await auth_client.get(
+        "/api/v1/feed",
+        headers=auth_header(user["access_token"]),
+    )
+    assert feed.status_code == 200, feed.text
+    item = next(entry for entry in feed.json()["items"] if entry["id"] == post_id)
+
+    assert [media["url"] for media in item["media_urls"]] == urls
+    assert [media["media_type"] for media in item["media_urls"]] == ["image"] * 3
+    # Non-regression : `media_url` reste la PREMIERE, pour les clients qui ne
+    # lisent pas encore la liste.
+    assert item["media_url"] == urls[0]
+
+
+@pytest.mark.asyncio
+async def test_feed_media_urls_preserves_video_entries_and_skips_duplicates(
+    auth_client: AsyncClient,
+) -> None:
+    """Un media video garde son type, et une URL repetee n'est rendue qu'une fois.
+
+    Le type est CONSERVE tel quel : la carte web decide du rendu, et ce test
+    garantit qu'elle recoit l'information au lieu de la deviner.
+
+    Le dedoublonnage n'est pas cosmetique : chaque media affiche declenche sa
+    propre resolution autorisee cote client, et deux tuiles pour un meme
+    fichier paieraient deux fois le meme appel.
+    """
+    user = await _register(auth_client, suffix="-mixedmedia", city="Reims")
+    photo = "https://cdn.example.com/recette/mixte-1.jpg"
+    video = "https://cdn.example.com/recette/mixte-2.mp4"
+    created = await auth_client.post(
+        "/api/v1/posts",
+        json={
+            "author_type": "citizen",
+            "body": "Une photo et une video",
+            "media_url": photo,
+            "media_urls": [
+                {"url": photo, "media_type": "image"},
+                {"url": video, "media_type": "video"},
+                {"url": photo, "media_type": "image"},
+            ],
+        },
+        headers=auth_header(user["access_token"]),
+    )
+    assert created.status_code == 201, created.text
+    post_id = created.json()["id"]
+
+    feed = await auth_client.get(
+        "/api/v1/feed",
+        headers=auth_header(user["access_token"]),
+    )
+    assert feed.status_code == 200, feed.text
+    item = next(entry for entry in feed.json()["items"] if entry["id"] == post_id)
+
+    assert [media["url"] for media in item["media_urls"]] == [photo, video]
+    assert [media["media_type"] for media in item["media_urls"]] == ["image", "video"]
+
+
+@pytest.mark.asyncio
+async def test_feed_media_urls_is_empty_when_column_never_written(
+    auth_client: AsyncClient,
+) -> None:
+    """Une publication sans liste rend une liste VIDE — aucun repli fabrique.
+
+    Deviner le `media_type` d'un media historique reviendrait a inventer une
+    donnee. Le client retombe sur `media_url`, exactement comme avant ce
+    ticket : c'est la non-regression des publications a une seule photo.
+    """
+    user = await _register(auth_client, suffix="-nomedialist", city="Reims")
+    created = await auth_client.post(
+        "/api/v1/posts",
+        json={"author_type": "citizen", "body": "Publication sans media"},
+        headers=auth_header(user["access_token"]),
+    )
+    assert created.status_code == 201, created.text
+    post_id = created.json()["id"]
+
+    feed = await auth_client.get(
+        "/api/v1/feed",
+        headers=auth_header(user["access_token"]),
+    )
+    assert feed.status_code == 200, feed.text
+    item = next(entry for entry in feed.json()["items"] if entry["id"] == post_id)
+
+    assert item["media_urls"] == []
+    assert item["media_url"] is None

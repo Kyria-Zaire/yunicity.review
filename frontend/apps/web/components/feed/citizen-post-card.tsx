@@ -62,8 +62,16 @@ export function CitizenPostCard({
       {/* Tags rendus UNE fois : leur visibilite par bande appartient au CSS,
           jamais au JSX (C3-FEED-UNIFIED-PUBLICATION-CARD-R2A). */}
       <FeedTerritoryTags post={post} />
-      {post.media_url ? (
-        <FeedPublicationMedia mediaUrl={post.media_url} label={post.body ?? undefined} />
+      {/* MEDIA-MULTI-PHOTO-01 — la liste ORDONNÉE prime, `media_url` reste le
+          repli des publications qui n'en portent pas. `FeedPublicationMedia`
+          rend exactement comme avant à un seul média : la présentation
+          mono-photo n'est pas touchée. */}
+      {post.media_urls?.length || post.media_url ? (
+        <FeedPublicationMedia
+          mediaUrl={post.media_url}
+          mediaUrls={post.media_urls?.map((media) => media.url)}
+          label={post.body ?? undefined}
+        />
       ) : null}
       <FeedPublicationContextualCta post={post} />
     </>
