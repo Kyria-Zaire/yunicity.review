@@ -6,6 +6,7 @@ import {
   AuthorizedPublicationImageView,
   type MediaIntrinsicSize,
 } from "@/components/feed/authorized-publication-image";
+import { FeedPublicationCarousel } from "@/components/feed/feed-publication-carousel";
 import { PublicationMediaFrame } from "@/components/feed/publication-media-frame";
 import { PublicationMediaGrid, slicePublicationMediaForGrid } from "@/components/feed/publication-media-grid";
 import type { FeedMediaViewerItem } from "@/lib/feed/feed-media-viewer-session";
@@ -299,6 +300,22 @@ export function FeedPublicationMedia({
       return <SinglePublicationVideo mediaUrl={url} />;
     }
     return <SinglePublicationImage mediaUrl={url} label={alt} />;
+  }
+
+  /**
+   * Au-delà d'une photo : CARROUSEL (MEDIA-MULTI-PHOTO-01).
+   *
+   * Il remplace la mosaïque sur les DEUX surfaces à la fois — fil et profil —
+   * parce que les deux montent ce composant. La mosaïque plafonnait à quatre
+   * vignettes et laissait les suivantes hors d'atteinte ; elle portait aussi
+   * le voile gris et le double « +N » observés en recette.
+   *
+   * ⛔ Les VIDÉOS n'entrent pas dans le carrousel : un lot mixte garde le
+   * rendu existant, mosaïque comprise. Le périmètre vidéo ne bouge pas.
+   */
+  const hasVideo = urls.some((url) => isVideoMediaUrl(url));
+  if (!hasVideo) {
+    return <FeedPublicationCarousel urls={urls} label={alt} />;
   }
 
   const { visible, overflowCount } = slicePublicationMediaForGrid(urls);

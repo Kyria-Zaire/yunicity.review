@@ -167,7 +167,21 @@ describe("MEDIA-02 — grille multi-médias", () => {
     );
     expect(container.querySelector("[data-publication-media-grid='quad']")).not.toBeNull();
     expect(container.querySelector("[data-publication-media-overflow='1']")).not.toBeNull();
-    expect(screen.getByLabelText("1 médias supplémentaires").textContent).toBe("+1");
+    /**
+     * ⚠️ CHANGÉ par MEDIA-MULTI-PHOTO-01, et volontairement.
+     *
+     * Le niveau grille portait un badge `position: absolute; inset: 0` sur
+     * fond noir à 45 % : il couvrait TOUTE la mosaïque d'un voile gris et y
+     * doublait le « +N » de la quatrième tuile — les deux défauts observés en
+     * recette. Le « +N » VISIBLE appartient désormais à la tuile seule.
+     *
+     * Ce que ce test continue de verrouiller : le débordement reste ANNONCÉ.
+     * Le badge de tuile est `aria-hidden` ; sans cette annonce, un lecteur
+     * d'écran n'aurait aucune mention des médias non affichés.
+     */
+    const annonce = screen.getByLabelText("1 médias supplémentaires");
+    expect(annonce.className).toContain("sr-only");
+    expect(annonce.textContent).toBe("1 médias supplémentaires");
   });
 
   it("2 / 3 / 4 dispositions", () => {

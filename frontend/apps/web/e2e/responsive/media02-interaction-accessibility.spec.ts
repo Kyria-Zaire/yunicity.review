@@ -17,6 +17,18 @@ import tailwindConfig from "../../tailwind.config";
  * Elles ne disaient rien de ce qui compte pour l'utilisateur : la tuile cliquée
  * ouvre-t-elle SON média, Escape referme-t-il, et le focus revient-il là où il
  * était ? C'est ce que ce fichier mesure, dans un vrai moteur de rendu.
+ *
+ * ## Lots MIXTES depuis MEDIA-MULTI-PHOTO-01
+ *
+ * La mosaïque n'est plus le rendu des lots de photos — ceux-là passent au
+ * carrousel. Elle reste celui des lots MIXTES photo + vidéo, et c'est donc sur
+ * eux que ce fichier l'éprouve. Le harnais place la VIDÉO en DERNIÈRE
+ * position : les quatre premières tuiles restent des photos, et les assertions
+ * de disposition, d'ordre et de débordement gardent exactement leur sens.
+ *
+ * ⚠️ Une tuile VIDÉO n'a pas de bouton « Agrandir » — elle n'entre pas dans la
+ * visionneuse. Les comptes de boutons ci-dessous en tiennent compte : ce n'est
+ * pas un assouplissement, c'est la description exacte d'un lot mixte.
  */
 
 const VIEWPORTS = [
@@ -116,13 +128,14 @@ test.describe("MEDIA-02 — grille multi-médias et visionneuse", () => {
         await ouvrir(page, largeur, hauteur);
 
         const attendu: Array<[number, string, string | null, number]> = [
-          // taille, disposition, badge, tuiles visibles
-          [1, "", null, 0],
-          [2, "pair", null, 2],
-          [3, "triple", null, 3],
-          [4, "quad", null, 4],
-          [5, "quad", "+1", 4],
-          [10, "quad", "+6", 4],
+          // taille, disposition, badge, boutons « Agrandir » attendus
+          // La VIDÉO est en dernière position et ne porte pas de bouton.
+          [1, "", null, 0], // une vidéo seule : cadre simple
+          [2, "pair", null, 1], // photo + vidéo
+          [3, "triple", null, 2], // 2 photos + vidéo
+          [4, "quad", null, 3], // 3 photos + vidéo
+          [5, "quad", "+1", 4], // 4 photos visibles, vidéo au débordement
+          [10, "quad", "+6", 4], // 4 photos visibles, 6 au débordement
         ];
 
         const releve: string[] = [];
@@ -150,14 +163,42 @@ test.describe("MEDIA-02 — grille multi-médias et visionneuse", () => {
             );
           }
 
+          /**
+           * Le débordement se lit désormais en DEUX endroits, et le test
+           * vérifie les deux — c'est plus strict qu'avant, pas moins.
+           *
+           * 1. l'ANNONCE, au niveau de la grille, SANS surface (`sr-only`).
+           *    Elle portait auparavant un fond noir à 45 % en `inset: 0` : ce
+           *    voile couvrait toute la mosaïque, et doublait le « +N » de la
+           *    quatrième tuile. Les deux défauts observés en recette.
+           * 2. le « +N » VISIBLE, qui doit se trouver DANS une tuile — jamais
+           *    en enfant direct de la grille.
+           */
           const badgeLoc = hote.locator("[data-publication-media-overflow-badge]");
+          const voileLoc = hote.locator(".publication-media-grid__overflow");
           if (badge) {
-            await expect(badgeLoc, `${taille} médias : badge attendu`).toHaveCount(1);
-            expect((await badgeLoc.textContent())?.trim()).toBe(badge);
+            await expect(badgeLoc, `${taille} médias : annonce attendue`).toHaveCount(1);
+            const compte = badge.replace("+", "");
+            expect((await badgeLoc.textContent())?.trim()).toBe(
+              `${compte} médias supplémentaires`,
+            );
+            expect(await badgeLoc.evaluate((n) => n.className)).toContain("sr-only");
+
+            // Un SEUL « +N » visible, et il est DANS une tuile.
+            await expect(voileLoc, `${taille} médias : « +N » visible unique`).toHaveCount(1);
+            expect((await voileLoc.textContent())?.trim()).toBe(badge);
+            expect(
+              await voileLoc.evaluate(
+                (n) => n.closest(".publication-media-grid__tile") !== null,
+              ),
+              `${taille} médias : le « +N » déborde de sa tuile`,
+            ).toBe(true);
+
             // Jamais de cinquième tuile rendue sous la grille.
             await expect(hote.locator("[aria-label^='Agrandir']")).toHaveCount(4);
           } else {
-            await expect(badgeLoc, `${taille} médias : badge inattendu`).toHaveCount(0);
+            await expect(badgeLoc, `${taille} médias : annonce inattendue`).toHaveCount(0);
+            await expect(voileLoc, `${taille} médias : « +N » inattendu`).toHaveCount(0);
           }
           releve.push(`${taille} medias : ${disposition}, ${tuiles} tuiles, badge ${badge ?? "aucun"}`);
         }

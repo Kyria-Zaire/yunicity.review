@@ -56,7 +56,14 @@ export function FeedMobileMediaViewer({
   onNavigate?: (delta: number) => void;
 }) {
   const needsFallback = open && !objectUrl;
-  const fallback = useAuthorizedMediaSource(needsFallback ? mediaUrl : null);
+  /**
+   * Variante `viewer` (2048 px) et non l'original : la visionneuse veut du
+   * détail, pas les 8 Mo du capteur. Le blob partagé par la tuile touchée
+   * reste prioritaire — c'est `objectUrl`, et il n'est pas redemandé.
+   */
+  const fallback = useAuthorizedMediaSource(needsFallback ? mediaUrl : null, {
+    variant: "viewer",
+  });
   const activeUrl = objectUrl ?? fallback.objectUrl;
 
   const canBrowse = total > 1 && Boolean(onNavigate);

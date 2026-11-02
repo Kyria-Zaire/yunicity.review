@@ -87,19 +87,27 @@ function publication(overrides: Partial<FeedPost> = {}): FeedPost {
 const grid = (container: HTMLElement) =>
   container.querySelector('[data-feed-publication-media-kind="grid"]');
 
+const carousel = (container: HTMLElement) =>
+  container.querySelector('[data-feed-publication-media-kind="carousel"]');
+
 describe("grille — ordre, plafond et résolutions", () => {
-  it("1 — trois photos rendent une grille, et les demandes suivent l'ORDRE publié", () => {
+  it("1 — trois photos rendent un CARROUSEL, et SEULE la première est demandée", () => {
+    // Priorité au média courant : les voisines n'entrent dans la fenêtre de
+    // préchargement qu'une fois la photo courante AFFICHÉE. Au premier rendu,
+    // rien n'est affiché, donc rien d'autre n'est payé.
     const urls = [photo(1), photo(2), photo(3)];
     const { container } = render(<FeedPublicationMedia mediaUrls={urls} label="Reims" />);
 
-    expect(grid(container)).not.toBeNull();
-    expect(requestedUrls()).toEqual(urls);
+    expect(carousel(container)).not.toBeNull();
+    expect(grid(container)).toBeNull();
+    expect(requestedUrls()).toEqual([photo(1)]);
   });
 
-  it("2 — UNE photo garde la présentation mono d'origine, sans grille", () => {
+  it("2 — UNE photo garde la présentation mono d'origine, sans carrousel", () => {
     const { container } = render(<FeedPublicationMedia mediaUrls={[photo(1)]} label="Reims" />);
 
     expect(grid(container)).toBeNull();
+    expect(carousel(container)).toBeNull();
     expect(requestedUrls()).toEqual([photo(1)]);
   });
 
@@ -111,20 +119,99 @@ describe("grille — ordre, plafond et résolutions", () => {
     );
 
     expect(grid(container)).toBeNull();
+    expect(carousel(container)).toBeNull();
     expect(requestedUrls()).toEqual([photo(9)]);
   });
 
-  it("4 — au-delà de QUATRE, le plafond visible tient et rien d'invisible n'est résolu", () => {
-    const urls = [photo(1), photo(2), photo(3), photo(4), photo(5), photo(6)];
+  it("4 — DIX photos ne coûtent qu'UNE résolution au premier rendu", () => {
+    // L'ancienne mosaïque en résolvait quatre d'emblée et laissait les six
+    // autres hors d'atteinte. Le carrousel les rend TOUTES atteignables, et
+    // n'en paie qu'une.
+    const urls = Array.from({ length: 10 }, (_, i) => photo(i + 1));
     const { container } = render(<FeedPublicationMedia mediaUrls={urls} label="Reims" />);
 
-    // Le plafond de la grille est CONSERVÉ : quatre tuiles, puis « +2 ».
-    const overflowBadge = container.querySelector("[data-publication-media-overflow]");
-    expect(overflowBadge?.getAttribute("data-publication-media-overflow")).toBe("2");
+    expect(carousel(container)).not.toBeNull();
+    expect(requestedUrls()).toEqual([photo(1)]);
+    expect(
+      container.querySelectorAll("[data-publication-carousel-slide]").length,
+    ).toBe(10);
+  });
 
-    // Et surtout : les deux médias NON affichés ne déclenchent AUCUN appel.
-    // Les résoudre paierait un aller-retour authentifié pour rien.
-    expect(requestedUrls()).toEqual([photo(1), photo(2), photo(3), photo(4)]);
+  it("4b — le compteur et les indicateurs portent le total", () => {
+    const urls = Array.from({ length: 5 }, (_, i) => photo(i + 1));
+    const { container } = render(<FeedPublicationMedia mediaUrls={urls} label="Reims" />);
+
+    const counter = container.querySelector("[data-publication-carousel-counter]");
+    expect(counter?.textContent?.replace(/\s+/g, " ").trim()).toBe("1 / 5");
+    expect(counter?.getAttribute("role")).toBe("status");
+    expect(
+      container.querySelectorAll("[data-publication-carousel-dot]").length,
+    ).toBe(5);
+  });
+
+  it("4c — AUCUN voile ni badge de débordement ne subsiste", () => {
+    // Les deux défauts observés en recette — voile gris sur toute la mosaïque
+    // et « +N » en double — avaient la même cause : le badge de niveau grille.
+    // Le carrousel ne rend ni l'un ni l'autre.
+    const urls = Array.from({ length: 5 }, (_, i) => photo(i + 1));
+    const { container } = render(<FeedPublicationMedia mediaUrls={urls} label="Reims" />);
+
+    expect(container.querySelector("[data-publication-media-overflow]")).toBeNull();
+    expect(
+      container.querySelectorAll("[data-publication-media-overflow-badge]").length,
+    ).toBe(0);
+    expect(container.querySelector(".publication-media-grid__overflow")).toBeNull();
+  });
+
+  it("4e — sur un lot MIXTE, le voile et le « +N » en double ont disparu aussi", () => {
+    /**
+     * Les deux défauts naissaient du badge de NIVEAU GRILLE, qui couvrait
+     * toute la mosaïque. Un lot mixte garde la mosaïque : il faut donc l'y
+     * vérifier aussi, sinon la correction ne vaudrait que pour les lots de
+     * photos seules.
+     *
+     * ⚠️ L'ANNONCE accessible, elle, subsiste — sans surface.
+     */
+    const urls = [photo(1), photo(2), photo(3), photo(4), video(5)];
+    const { container } = render(<FeedPublicationMedia mediaUrls={urls} label="Reims" />);
+
+    expect(grid(container)).not.toBeNull();
+
+    /**
+     * Ce que cette assertion verrouille : plus AUCUN élément à voile n'est
+     * enfant direct de la grille. La classe `publication-media-grid__overflow`
+     * est `position: absolute; inset: 0` — rendue à ce niveau, elle couvrait
+     * toute la mosaïque ; rendue dans une tuile, elle ne couvre que la tuile.
+     */
+    const grille = grid(container)!;
+    for (const voile of Array.from(
+      grille.querySelectorAll(".publication-media-grid__overflow"),
+    )) {
+      expect(voile.closest(".publication-media-grid__tile")).not.toBeNull();
+    }
+
+    /**
+     * Et l'annonce accessible DEMEURE, sans surface. Le badge de tuile est
+     * `aria-hidden` : sans cet élément, un lecteur d'écran n'aurait aucune
+     * mention des médias non affichés.
+     *
+     * ⚠️ La PRÉSENCE du « +N » visible n'est pas vérifiée ici : le mock de ce
+     * fichier ne résout jamais, donc aucune tuile n'atteint `ready` — et le
+     * badge de tuile n'est rendu QUE dans cette branche (défaut PRÉEXISTANT,
+     * relevé en revue, non corrigé dans cette passe).
+     */
+    const annonce = container.querySelector("[data-publication-media-overflow-badge]");
+    expect(annonce?.className).toContain("sr-only");
+  });
+
+  it("4d — un lot MIXTE photo+vidéo garde la mosaïque, et la vidéo son rendu", () => {
+    // ⛔ Le périmètre vidéo ne bouge pas : le carrousel est réservé aux photos.
+    const urls = [photo(1), video(2), photo(3)];
+    const { container } = render(<FeedPublicationMedia mediaUrls={urls} label="Reims" />);
+
+    expect(carousel(container)).toBeNull();
+    expect(grid(container)).not.toBeNull();
+    expect(container.querySelector("video")).not.toBeNull();
   });
 
   it("5 — une VIDÉO de la liste garde son comportement actuel : aucune résolution autorisée", () => {
@@ -150,17 +237,17 @@ describe("grille — ordre, plafond et résolutions", () => {
   it("6 — un nouveau rendu ne redemande PAS les mêmes médias", () => {
     const urls = [photo(1), photo(2)];
     const { rerender } = render(<FeedPublicationMedia mediaUrls={urls} label="Reims" />);
-    expect(requestedUrls()).toEqual(urls);
+    expect(requestedUrls()).toEqual([photo(1)]);
 
     // Une nouvelle liste, de contenu IDENTIQUE : les URL ne changent pas, donc
     // aucune résolution ne doit repartir.
     rerender(<FeedPublicationMedia mediaUrls={[photo(1), photo(2)]} label="Reims" />);
-    expect(requestedUrls()).toEqual(urls);
+    expect(requestedUrls()).toEqual([photo(1)]);
   });
 });
 
 describe("câblage des surfaces citoyennes", () => {
-  it("7 — la carte du FIL passe la liste à la grille", () => {
+  it("7 — la carte du FIL passe la liste au carrousel", () => {
     const { container } = render(
       <CitizenPostCard
         currentUserId={null}
@@ -174,8 +261,8 @@ describe("câblage des surfaces citoyennes", () => {
       />,
     );
 
-    expect(grid(container)).not.toBeNull();
-    expect(requestedUrls()).toEqual([photo(1), photo(2)]);
+    expect(carousel(container)).not.toBeNull();
+    expect(requestedUrls()).toEqual([photo(1)]);
   });
 
   it("8 — la carte du FIL sans média ne rend aucun cadre", () => {
@@ -185,7 +272,7 @@ describe("câblage des surfaces citoyennes", () => {
     expect(requestedUrls()).toEqual([]);
   });
 
-  it("9 — le PROFIL rend la grille sur un lot de PHOTOS SEULES", () => {
+  it("9 — le PROFIL rend le CARROUSEL sur un lot de PHOTOS SEULES", () => {
     const { container } = render(
       <ProfileDesktopPublications
         posts={[
@@ -202,8 +289,8 @@ describe("câblage des surfaces citoyennes", () => {
       />,
     );
 
-    expect(grid(container)).not.toBeNull();
-    expect(requestedUrls()).toEqual([photo(1), photo(2), photo(3)]);
+    expect(carousel(container)).not.toBeNull();
+    expect(requestedUrls()).toEqual([photo(1)]);
   });
 
   it("10 — le PROFIL garde sa présentation d'origine à UNE seule photo", () => {
@@ -252,6 +339,7 @@ describe("câblage des surfaces citoyennes", () => {
     );
 
     expect(grid(container)).toBeNull();
+    expect(carousel(container)).toBeNull();
     expect(container.querySelector("video")).toBeNull();
     expect(requestedUrls()).toEqual([photo(1)]);
   });

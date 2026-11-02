@@ -78,7 +78,16 @@ afterEach(() => {
  * jsdom ne déclenche jamais `load` sur une `<img>` : sans ce coup de pouce,
  * la tuile resterait en `decoding` et son bouton n'existerait pas.
  */
-async function renderAndOpenTiles(urls: string[], expectedTiles: number) {
+/**
+ * Rend le carrousel, affiche la photo COURANTE, puis ouvre la visionneuse.
+ *
+ * jsdom ne declenche jamais `load` sur une `<img>` : sans ce coup de pouce, la
+ * diapositive resterait en `decoding` et son bouton n'existerait pas.
+ *
+ * Seule la diapositive courante est chargee — c'est la priorite au media
+ * courant —, donc UNE seule image est a declencher ici, quel que soit le lot.
+ */
+async function renderCarouselAndOpen(urls: string[], at = 0) {
   const rendered = render(
     <>
       <FeedPublicationMedia mediaUrls={urls} label="Reims" />
@@ -88,18 +97,18 @@ async function renderAndOpenTiles(urls: string[], expectedTiles: number) {
 
   await waitFor(() => {
     expect(
-      rendered.container.querySelectorAll('[data-authorized-media-state="decoding"] img').length,
-    ).toBe(expectedTiles);
+      rendered.container.querySelector('[data-authorized-media-state="decoding"] img'),
+    ).not.toBeNull();
   });
   for (const img of Array.from(
     rendered.container.querySelectorAll('[data-authorized-media-state="decoding"] img'),
   )) {
     fireEvent.load(img);
   }
-  await waitFor(() => {
-    expect(screen.getAllByRole("button", { name: /Agrandir/ }).length).toBe(expectedTiles);
-  });
-  return rendered;
+
+  const trigger = await screen.findByRole("button", { name: `Agrandir l’image ${at + 1}` });
+  fireEvent.click(trigger);
+  return { ...rendered, trigger };
 }
 
 const counterText = (): string | null =>
@@ -109,59 +118,70 @@ const nextButton = () => screen.getByRole("button", { name: "Photo suivante" });
 const previousButton = () => screen.getByRole("button", { name: "Photo précédente" });
 
 describe("lot de DIX photos", () => {
-  it("1 — quatre tuiles, badge « +6 », et SIX photos jamais chargées", async () => {
-    const rendered = await renderAndOpenTiles(batch(10), 4);
+  it("1 — la visionneuse s'ouvre sur la photo regardée, et UNE seule a été payée", async () => {
+    await renderCarouselAndOpen(batch(10));
 
-    const badge = rendered.container.querySelector("[data-publication-media-overflow]");
-    expect(badge?.getAttribute("data-publication-media-overflow")).toBe("6");
-
-    // Le plafond visible tient, ET rien d'invisible n'est payé.
-    expect(requestedUrls()).toEqual([photo(1), photo(2), photo(3), photo(4)]);
+    await waitFor(() => expect(counterText()).toBe("1 / 10"));
+    /**
+     * ⛔ Le préchargement est BORNÉ : la photo courante, puis UNE voisine —
+     * jamais les dix. L'ancienne mosaïque en payait quatre d'emblée et
+     * laissait les six autres hors d'atteinte.
+     *
+     * La voisine n'entre qu'APRÈS l'affichage de la courante : c'est pour
+     * cela qu'elle est là, le helper ayant déclenché son `load`.
+     */
+    expect(requestedUrls()).toEqual([photo(1), photo(2)]);
   });
 
-  it("2 — la CINQUIÈME est atteinte depuis la quatrième tuile, et résolue À CE MOMENT", async () => {
-    await renderAndOpenTiles(batch(10), 4);
+  it("2 — la CINQUIÈME est atteinte, et résolue À CE MOMENT seulement", async () => {
+    await renderCarouselAndOpen(batch(10));
 
-    // La quatrième tuile est celle qui porte le badge : c'est par elle que
-    // passe le seul chemin vers la suite.
-    fireEvent.click(screen.getAllByRole("button", { name: /Agrandir/ })[3]!);
-    await waitFor(() => expect(counterText()).toBe("4 / 10"));
-    expect(requestedUrls()).toEqual([photo(1), photo(2), photo(3), photo(4)]);
-
+    await waitFor(() => expect(counterText()).toBe("1 / 10"));
+    for (let rank = 2; rank <= 4; rank += 1) {
+      fireEvent.click(nextButton());
+      await waitFor(() => expect(counterText()).toBe(`${rank} / 10`));
+    }
     fireEvent.click(nextButton());
     await waitFor(() => expect(counterText()).toBe("5 / 10"));
-    // La cinquième n'est demandée QU'ICI — pas à l'ouverture de la grille.
+    // La cinquième n'est demandée QU'ICI — pas à l'ouverture du carrousel.
     await waitFor(() => expect(requestedUrls()).toContain(photo(5)));
     expect(requestedUrls().filter((url) => url === photo(5))).toHaveLength(1);
   });
 
   it("3 — la DERNIÈRE est atteinte, et l'ordre de parcours est respecté", async () => {
-    await renderAndOpenTiles(batch(10), 4);
-    fireEvent.click(screen.getAllByRole("button", { name: /Agrandir/ })[3]!);
-    await waitFor(() => expect(counterText()).toBe("4 / 10"));
+    await renderCarouselAndOpen(batch(10));
+    await waitFor(() => expect(counterText()).toBe("1 / 10"));
+    for (let rank = 2; rank <= 4; rank += 1) {
+      fireEvent.click(nextButton());
+      await waitFor(() => expect(counterText()).toBe(`${rank} / 10`));
+    }
 
     for (let rank = 5; rank <= 10; rank += 1) {
       fireEvent.keyDown(document, { key: "ArrowRight" });
       await waitFor(() => expect(counterText()).toBe(`${rank} / 10`));
     }
 
-    // Les six photos cachées ont été résolues DANS L'ORDRE, et une seule fois.
-    const afterOpening = requestedUrls().slice(4);
-    expect(afterOpening).toEqual([photo(5), photo(6), photo(7), photo(8), photo(9), photo(10)]);
+    // Les photos 5 a 10 sont resolues une seule fois chacune, et dans l'ordre.
+    const afterOpening = requestedUrls();
+    for (const rank of [5, 6, 7, 8, 9, 10]) {
+      expect(afterOpening.filter((url) => url === photo(rank))).toHaveLength(1);
+    }
+    expect(afterOpening.indexOf(photo(10))).toBeGreaterThan(afterOpening.indexOf(photo(5)));
 
     // Borne haute : « suivant » est annoncé inactif, reste atteignable, et son
     // clic ne déborde pas de la liste.
     const next = nextButton();
     expect(next.getAttribute("aria-disabled")).toBe("true");
     expect(next.hasAttribute("disabled")).toBe(false);
+    const before = requestedUrls().length;
     fireEvent.click(next);
     await waitFor(() => expect(counterText()).toBe("10 / 10"));
-    expect(requestedUrls().slice(4)).toEqual(afterOpening);
+    // Le clic a la borne ne demande RIEN de plus.
+    expect(requestedUrls()).toHaveLength(before);
   });
 
   it("4 — le parcours revient en arrière, et ne déborde pas de ses bornes", async () => {
-    await renderAndOpenTiles(batch(10), 4);
-    fireEvent.click(screen.getAllByRole("button", { name: /Agrandir/ })[0]!);
+    await renderCarouselAndOpen(batch(10));
     await waitFor(() => expect(counterText()).toBe("1 / 10"));
 
     /**
@@ -201,8 +221,7 @@ describe("lot de DIX photos", () => {
   });
 
   it("5 — le compteur est ANNONCÉ sans voler le focus", async () => {
-    await renderAndOpenTiles(batch(10), 4);
-    fireEvent.click(screen.getAllByRole("button", { name: /Agrandir/ })[0]!);
+    await renderCarouselAndOpen(batch(10));
     await waitFor(() => expect(counterText()).toBe("1 / 10"));
 
     const region = document.querySelector("[data-feed-media-viewer-counter]");
@@ -286,20 +305,18 @@ describe("bornes du parcours et non-régressions", () => {
     expect(requestedUrls()).toEqual([photo(1), photo(2), photo(2)]);
   });
 
-  it("8 — la fermeture rend le focus à la tuile touchée", async () => {
-    await renderAndOpenTiles(batch(10), 4);
-    const tile = screen.getAllByRole("button", { name: /Agrandir/ })[1]!;
-    fireEvent.click(tile);
-    await waitFor(() => expect(counterText()).toBe("2 / 10"));
+  it("8 — la fermeture rend le focus au déclencheur", async () => {
+    const { trigger } = await renderCarouselAndOpen(batch(10));
+    await waitFor(() => expect(counterText()).toBe("1 / 10"));
 
     fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() => {
       expect(document.querySelector("[data-feed-media-viewer]")).toBeNull();
     });
-    await waitFor(() => expect(document.activeElement).toBe(tile));
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
   });
 
-  it("11 — deux tuiles d'un MÊME fichier ouvrent chacune son PROPRE rang", async () => {
+  it("11 — deux occurrences d'un MÊME fichier gardent chacune leur rang", async () => {
     /**
      * Le rang est pris à la POSITION du média dans la liste, et non par
      * recherche de son URL : une recherche rendrait le rang de la PREMIÈRE
@@ -309,9 +326,11 @@ describe("bornes du parcours et non-régressions", () => {
      * Le fil dédoublonne côté serveur, donc ce cas ne vient pas de l'API ;
      * il vient du harnais E2E, qui alimente le composant en direct.
      */
-    await renderAndOpenTiles([photo(1), photo(1), photo(2)], 3);
+    await renderCarouselAndOpen([photo(1), photo(1), photo(2)]);
+    await waitFor(() => expect(counterText()).toBe("1 / 3"));
 
-    fireEvent.click(screen.getAllByRole("button", { name: /Agrandir/ })[1]!);
+    // Le rang suit la POSITION, pas l'URL : la seconde occurrence est bien 2/3.
+    fireEvent.click(nextButton());
     await waitFor(() => expect(counterText()).toBe("2 / 3"));
 
     fireEvent.click(nextButton());
@@ -356,25 +375,30 @@ describe("échec de chargement et navigation rapide", () => {
       </>,
     );
 
-    // Les quatre tuiles aboutissent normalement.
-    await waitFor(() => expect(pending.size).toBe(4));
-    for (const rank of [1, 2, 3, 4]) {
-      pending.get(photo(rank))!.resolve({ blob: new Blob(["ok"]) });
-    }
+    // SEULE la photo courante est chargee : c'est la priorite au media courant.
+    await waitFor(() => expect(pending.has(photo(1))).toBe(true));
+    pending.get(photo(1))!.resolve({ blob: new Blob(["ok"]) });
     await waitFor(() => {
       expect(
-        rendered.container.querySelectorAll('[data-authorized-media-state="decoding"] img').length,
-      ).toBe(4);
+        rendered.container.querySelector('[data-authorized-media-state="decoding"] img'),
+      ).not.toBeNull();
     });
     for (const img of Array.from(
       rendered.container.querySelectorAll('[data-authorized-media-state="decoding"] img'),
     )) {
       fireEvent.load(img);
     }
-    const triggers = await screen.findAllByRole("button", { name: /Agrandir/ });
+    const trigger = await screen.findByRole("button", { name: "Agrandir l’image 1" });
 
-    fireEvent.click(triggers[3]!);
-    await waitFor(() => expect(counterText()).toBe("4 / 10"));
+    fireEvent.click(trigger);
+    await waitFor(() => expect(counterText()).toBe("1 / 10"));
+    for (let rank = 2; rank <= 4; rank += 1) {
+      fireEvent.click(nextButton());
+      await waitFor(() => expect(counterText()).toBe(`${rank} / 10`));
+      if (pending.has(photo(rank))) {
+        pending.get(photo(rank))!.resolve({ blob: new Blob(["ok"]) });
+      }
+    }
 
     // La cinquième est demandée… et refusée.
     fireEvent.click(nextButton());
@@ -411,25 +435,35 @@ describe("échec de chargement et navigation rapide", () => {
         <FeedMediaViewerHost />
       </>,
     );
-    await waitFor(() => expect(pending.size).toBe(4));
+    // Une seule photo est chargee au depart : la courante.
+    await waitFor(() => expect(pending.has(photo(1))).toBe(true));
     for (const rank of [1, 2, 3, 4]) {
-      pending.get(photo(rank))!.resolve({ blob: new Blob(["ok"]) });
+      if (pending.has(photo(rank))) {
+        pending.get(photo(rank))!.resolve({ blob: new Blob(["ok"]) });
+      }
     }
     await waitFor(() => {
       expect(
-        rendered.container.querySelectorAll('[data-authorized-media-state="decoding"] img').length,
-      ).toBe(4);
+        rendered.container.querySelector('[data-authorized-media-state="decoding"] img'),
+      ).not.toBeNull();
     });
     for (const img of Array.from(
       rendered.container.querySelectorAll('[data-authorized-media-state="decoding"] img'),
     )) {
       fireEvent.load(img);
     }
-    const triggers = await screen.findAllByRole("button", { name: /Agrandir/ });
-    fireEvent.click(triggers[3]!);
-    await waitFor(() => expect(counterText()).toBe("4 / 10"));
+    const trigger = await screen.findByRole("button", { name: "Agrandir l’image 1" });
+    fireEvent.click(trigger);
+    await waitFor(() => expect(counterText()).toBe("1 / 10"));
+    for (let rank = 2; rank <= 4; rank += 1) {
+      fireEvent.click(nextButton());
+      await waitFor(() => expect(counterText()).toBe(`${rank} / 10`));
+      if (pending.has(photo(rank))) {
+        pending.get(photo(rank))!.resolve({ blob: new Blob(["ok"]) });
+      }
+    }
 
-    // Trois déplacements d'affilée, sans attendre aucune réponse.
+    // Trois déplacements d'affilée depuis le rang 4, sans attendre de réponse.
     fireEvent.keyDown(document, { key: "ArrowRight" });
     fireEvent.keyDown(document, { key: "ArrowRight" });
     fireEvent.keyDown(document, { key: "ArrowRight" });

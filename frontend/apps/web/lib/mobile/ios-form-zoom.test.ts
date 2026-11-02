@@ -62,7 +62,36 @@ describe("PR202-MOBILE-P0 — les champs n'entraînent plus de zoom iOS", () => 
     }
   });
 
-  it("le zoom manuel d'accessibilité reste autorisé dans toute l'application", () => {
+  /**
+   * Délai PROPRE à ce test — le délai global reste à sa valeur par défaut.
+   *
+   * ## Pourquoi, mesures à l'appui
+   *
+   * Ce test BALAIE le disque : 1252 fichiers `.ts/.tsx/.css` sous `app/` et
+   * `components/`, soit 4,38 Mo lus et passés à trois expressions régulières.
+   * Mesuré sur ce poste :
+   *
+   *   - exécuté SEUL ............... 774 ms
+   *   - dans la suite complète ..... 5157 ms et 5356 ms (deux relevés)
+   *
+   * Le défaut de vitest est 5000 ms : la suite complète passe donc DE PEU
+   * au-dessus, et l'échec est intermittent — observé une fois sur trois
+   * exécutions. Ce n'est pas un défaut du code éprouvé, c'est un balayage de
+   * disque mis en concurrence avec 97 autres fichiers de test.
+   *
+   * ⚠️ Son indépendance au diff MEDIA-MULTI-PHOTO-01 n'est PAS démontrée : le
+   * balayage parcourt `components/`, où ce ticket ajoute
+   * `feed-publication-carousel.tsx`. La contribution est d'un fichier sur
+   * 1252 — marginale, mais NON NULLE. Le dépassement préexistait
+   * vraisemblablement ; ce commentaire ne prétend pas le prouver.
+   *
+   * 20 s laisse quatre fois la marge du pire relevé, sans masquer une dérive
+   * réelle : si ce balayage venait à dépasser 20 s, il y aurait un vrai sujet.
+   */
+  it(
+    "le zoom manuel d'accessibilité reste autorisé dans toute l'application",
+    { timeout: 20_000 },
+    () => {
     const interdits = [/user-scalable\s*=\s*no/i, /user-scalable\s*:\s*no/i, /maximum-scale/i];
 
     const fichiers: string[] = [];
