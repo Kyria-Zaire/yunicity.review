@@ -8,6 +8,7 @@ import {
 } from "@/components/feed/authorized-publication-image";
 import { PublicationMediaFrame } from "@/components/feed/publication-media-frame";
 import { PublicationMediaGrid, slicePublicationMediaForGrid } from "@/components/feed/publication-media-grid";
+import type { FeedMediaViewerItem } from "@/lib/feed/feed-media-viewer-session";
 import { useAuthorizedMediaSource } from "@/hooks/use-authorized-media-source";
 import { openFeedMediaViewer } from "@/lib/feed/feed-media-viewer-session";
 import {
@@ -22,7 +23,15 @@ import {
  * Cadre (MEDIA-02) : PublicationMediaFrame — ratio adaptatif + plafond viewport.
  */
 
-function isVideoMediaUrl(url: string): boolean {
+/**
+ * Un média est-il une vidéo, d'après son URL ?
+ *
+ * Exporté pour les surfaces qui doivent ÉCARTER un lot mixte avant de monter
+ * la grille — le profil, dont la présentation d'origine ne rendait jamais de
+ * vidéo. Le `media_type` du contrat du fil reste le signal premier ; cette
+ * heuristique ne sert qu'à ne pas lui faire une confiance aveugle.
+ */
+export function isVideoMediaUrl(url: string): boolean {
   const normalized = url.toLowerCase();
   return (
     /\.(mp4|webm|mov|m4v)(\?|$)/.test(normalized) ||
@@ -147,12 +156,18 @@ function MultiPublicationMediaTile({
   index,
   showOverflow,
   overflowCount,
+  viewerItems,
+  viewerIndex,
 }: {
   mediaUrl: string;
   label: string;
   index: number;
   showOverflow: boolean;
   overflowCount: number;
+  /** Liste PHOTO complète de la publication — le parcours de la visionneuse. */
+  viewerItems: FeedMediaViewerItem[];
+  /** Rang PHOTO de CETTE tuile dans cette liste (`-1` pour une vidéo). */
+  viewerIndex: number;
 }) {
   const isVideo = isVideoMediaUrl(mediaUrl);
   const { status, objectUrl, retry, markDisplayed, markDecodeFailed } = useAuthorizedMediaSource(
@@ -222,7 +237,11 @@ function MultiPublicationMediaTile({
             openFeedMediaViewer({
               mediaUrl,
               objectUrl,
-              label: `${label} (${index + 1})`,
+              // Le rang étant exact, l'entrée existe toujours ici ; le repli
+              // ne porte donc PAS de numéro, qui serait faux s'il servait.
+              label: viewerItems[viewerIndex]?.label ?? label,
+              items: viewerItems,
+              index: viewerIndex,
             });
           }}
           aria-label={`Agrandir l’image ${index + 1}`}
@@ -284,6 +303,32 @@ export function FeedPublicationMedia({
 
   const { visible, overflowCount } = slicePublicationMediaForGrid(urls);
 
+  /**
+   * Le parcours de la visionneuse porte TOUTES les photos — y compris celles
+   * que le plafond de quatre tuiles n'affiche pas. C'est ce qui les rend
+   * atteignables sans toucher au plafond.
+   *
+   * ⛔ Les VIDÉOS en sont exclues : leur rendu passe par l'URL brute, hors
+   * résolution autorisée, et cette limite reste documentée plutôt que
+   * présentée comme fonctionnelle.
+   */
+  const photoUrls: string[] = [];
+  /**
+   * Rang PHOTO de chaque média, pris à sa POSITION dans la liste — jamais par
+   * recherche de son URL : deux tuiles d'un même fichier partageraient alors
+   * le même rang, et la seconde ouvrirait le parcours au mauvais endroit.
+   * `-1` marque une vidéo, dont le rang n'est jamais lu (tuile sans bouton).
+   */
+  const photoRankAt: number[] = urls.map((url) => {
+    if (isVideoMediaUrl(url)) return -1;
+    photoUrls.push(url);
+    return photoUrls.length - 1;
+  });
+  const viewerItems: FeedMediaViewerItem[] = photoUrls.map((url, rank) => ({
+    mediaUrl: url,
+    label: `${alt} (${rank + 1})`,
+  }));
+
   return (
     <div
       data-feed-publication-media=""
@@ -297,6 +342,8 @@ export function FeedPublicationMedia({
             mediaUrl={url}
             label={alt}
             index={index}
+            viewerItems={viewerItems}
+            viewerIndex={photoRankAt[index] ?? -1}
             showOverflow={overflowCount > 0 && index === visible.length - 1}
             overflowCount={overflowCount}
           />

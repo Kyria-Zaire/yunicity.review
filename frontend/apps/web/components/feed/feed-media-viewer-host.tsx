@@ -7,6 +7,7 @@ import { FeedMobileMediaViewer } from "@/components/feed/mobile/feed-mobile-medi
 import {
   closeFeedMediaViewer,
   getFeedMediaViewerSession,
+  goToFeedMediaViewerIndex,
   subscribeFeedMediaViewer,
 } from "@/lib/feed/feed-media-viewer-session";
 
@@ -39,6 +40,13 @@ export function FeedMediaViewerHost() {
     if (!open) closeFeedMediaViewer();
   }, []);
 
+  // Le rang courant est relu dans le magasin plutôt que capturé : ce rappel
+  // survit aux rendus, et une fermeture concurrente ne peut pas le rendre
+  // obsolète.
+  const onNavigate = useCallback((delta: number) => {
+    goToFeedMediaViewerIndex(getFeedMediaViewerSession().index + delta);
+  }, []);
+
   if (!session.open && !session.mediaUrl) return null;
 
   return (
@@ -48,6 +56,9 @@ export function FeedMediaViewerHost() {
       objectUrl={session.objectUrl}
       mediaUrl={session.mediaUrl}
       label={session.label}
+      position={session.index + 1}
+      total={session.items.length}
+      onNavigate={onNavigate}
     />
   );
 }
