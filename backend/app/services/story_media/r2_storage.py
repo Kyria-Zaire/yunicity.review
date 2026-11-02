@@ -14,6 +14,7 @@ from app.services.story_media.filesystem_storage import StoryMediaFilesystemStor
 from app.services.story_media.storage_keys import (
     CONTENT_TYPE_BY_EXT,
     assert_valid_story_media_key,
+    assert_valid_story_media_variant_key,
     story_media_api_url,
 )
 from botocore.client import Config  # type: ignore[import-untyped]
@@ -126,6 +127,54 @@ class StoryMediaR2Storage:
             Body=data,
             ContentType=content_type,
         )
+
+    # ── Espace DERIVE (MEDIA-MULTI-PHOTO-01) ────────────────────────────────
+    # Cles `derived/...`, validees par leur propre garde-fou. Aucune de ces
+    # methodes ne sait construire une cle `stories/...` : l'original est hors
+    # de leur portee.
+
+    def read_variant(self, variant_key: str) -> bytes | None:
+        """Variante deja calculee, ou `None` si elle n'existe pas encore.
+
+        L'absence est un etat NORMAL — la premiere consultation d'un media —,
+        pas une erreur : elle ne doit ni journaliser ni lever.
+        """
+        key = assert_valid_story_media_variant_key(variant_key)
+        try:
+            response = self._client.get_object(Bucket=self._bucket, Key=key)
+        except ClientError as exc:
+            code = exc.response.get("Error", {}).get("Code", "")
+            if code in ("NoSuchKey", "404", "NotFound"):
+                return None
+            # La cle et les identifiants ne doivent jamais atterrir dans les logs.
+            logger.warning("story_media_variant_read_failed code=%s", code)
+            return None
+        body: bytes = response["Body"].read()
+        return body
+
+    def write_variant(self, variant_key: str, data: bytes, content_type: str) -> None:
+        """Ecrit la variante. Un echec d'ecriture n'est PAS fatal : la reponse
+        peut etre servie depuis les octets en memoire, et la derivation sera
+        simplement rejouee a la prochaine consultation."""
+        key = assert_valid_story_media_variant_key(variant_key)
+        try:
+            self._client.put_object(
+                Bucket=self._bucket, Key=key, Body=data, ContentType=content_type
+            )
+        except ClientError as exc:
+            code = exc.response.get("Error", {}).get("Code", "")
+            logger.warning("story_media_variant_write_failed code=%s", code)
+
+    def read_original_bytes(self, storage_key: str) -> bytes:
+        """Octets de l'original, pour alimenter une derivation."""
+        obj = self.open_object(storage_key)
+        try:
+            data: bytes = obj.body.read()
+            return data
+        finally:
+            close = getattr(obj.body, "close", None)
+            if callable(close):
+                close()
 
 
 def build_story_media_storage(

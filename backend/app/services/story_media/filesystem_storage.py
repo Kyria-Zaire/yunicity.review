@@ -17,6 +17,7 @@ from app.services.story_media.storage_keys import (
 )
 from app.services.story_media.storage_keys import (
     assert_valid_story_media_key,
+    assert_valid_story_media_variant_key,
     story_media_api_url,
 )
 
@@ -56,6 +57,51 @@ class StoryMediaFilesystemStorage:
             if tmp.exists():
                 tmp.unlink()
             raise
+
+    # ── Espace DERIVE (MEDIA-MULTI-PHOTO-01) ────────────────────────────────
+    # Cles `derived/...`, validees par leur propre garde-fou. Les originaux
+    # restent hors d'atteinte de ces trois methodes : aucune ne sait construire
+    # une cle `stories/...`.
+
+    def _dest_for_variant_key(self, variant_key: str) -> Path:
+        key = assert_valid_story_media_variant_key(variant_key)
+        dest = (self._root / key).resolve()
+        try:
+            dest.relative_to(self._root.resolve())
+        except ValueError as exc:
+            raise AppError(
+                status_code=400,
+                code="STORY_MEDIA_INVALID_STORAGE_KEY",
+                detail="Clé de stockage média invalide.",
+            ) from exc
+        return dest
+
+    def read_variant(self, variant_key: str) -> bytes | None:
+        """Variante deja calculee, ou `None` si elle n'existe pas encore."""
+        dest = self._dest_for_variant_key(variant_key)
+        if not dest.is_file():
+            return None
+        return dest.read_bytes()
+
+    def write_variant(self, variant_key: str, data: bytes) -> None:
+        """Ecrit la variante. Remplacement ATOMIQUE : deux derivations
+        concurrentes du meme fichier ne peuvent pas produire un fichier
+        tronque, meme si le verrou applicatif est contourne."""
+        dest = self._dest_for_variant_key(variant_key)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_name(f".{dest.name}.{uuid.uuid4().hex}.tmp")
+        try:
+            tmp.write_bytes(data)
+            os.replace(tmp, dest)
+        except Exception:
+            if tmp.exists():
+                tmp.unlink()
+            raise
+
+    def read_original_bytes(self, user_id: uuid.UUID, filename: str) -> bytes:
+        """Octets de l'original, pour alimenter une derivation."""
+        path, _content_type = self.resolve_public_file(user_id, filename)
+        return path.read_bytes()
 
     def resolve_public_file(self, user_id: uuid.UUID, filename: str) -> tuple[Path, str]:
         key = f"stories/{user_id}/{filename}"

@@ -29,6 +29,74 @@ CONTENT_TYPE_BY_EXT = {
     ".webm": "video/webm",
 }
 
+#: Variantes d'affichage derivees (MEDIA-MULTI-PHOTO-01). Le nom est un ENUM
+#: ferme : il entre dans une cle de stockage, et une valeur libre venue du
+#: client ouvrirait cette cle a l'injection.
+STORY_MEDIA_VARIANTS = ("card", "viewer")
+
+_VARIANT_KEY_RE = re.compile(
+    r"^derived/(card|viewer)/"
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/"
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+    r"\.(jpg|webp)$",
+    re.IGNORECASE,
+)
+
+#: Extension de la variante, deduite de celle de la SOURCE — donc connue sans
+#: decoder l'image, ce qui rend la cle derivee deterministe et permet de
+#: chercher la variante deja calculee en UN seul acces au stockage.
+#:
+#: Une source PNG ou WebP peut etre transparente : sa variante est en WebP, qui
+#: conserve l'alpha. Une source JPEG, qui ne peut pas l'etre, reste en JPEG.
+_VARIANT_EXT_BY_SOURCE_EXT = {
+    ".jpg": ".jpg",
+    ".png": ".webp",
+    ".webp": ".webp",
+}
+
+
+def assert_valid_story_media_variant_key(storage_key: str) -> str:
+    """Valide une cle DERIVEE, dans son espace de noms propre.
+
+    Les originaux gardent `stories/...`, intact et inchange : une variante ne
+    peut donc jamais ecraser l'original, meme sur une erreur de construction.
+    """
+    normalized = storage_key.replace("\\", "/").lstrip("/")
+    if ".." in normalized.split("/") or not _VARIANT_KEY_RE.fullmatch(normalized):
+        raise AppError(
+            status_code=400,
+            code="STORY_MEDIA_INVALID_STORAGE_KEY",
+            detail="Clé de stockage média invalide.",
+        )
+    return normalized
+
+
+def story_media_variant_key(storage_key: str, variant: str) -> str:
+    """Cle de la variante derivee d'un media original.
+
+    Leve 415 pour une source non derivable — une video, notamment : elle n'a
+    pas de variante, et ne doit pas en avoir.
+    """
+    if variant not in STORY_MEDIA_VARIANTS:
+        raise AppError(
+            status_code=400,
+            code="STORY_MEDIA_INVALID_VARIANT",
+            detail="Variante média inconnue.",
+        )
+    key = assert_valid_story_media_key(storage_key)
+    _prefix, user_id, filename = key.split("/")
+    media_id, _, source_ext = filename.rpartition(".")
+    variant_ext = _VARIANT_EXT_BY_SOURCE_EXT.get(f".{source_ext.lower()}")
+    if variant_ext is None:
+        raise AppError(
+            status_code=415,
+            code="STORY_MEDIA_NOT_DERIVABLE",
+            detail="Média non redimensionnable.",
+        )
+    return assert_valid_story_media_variant_key(
+        f"derived/{variant}/{user_id}/{media_id}{variant_ext}"
+    )
+
 
 def build_story_media_key(user_id: uuid.UUID, media_id: uuid.UUID, ext: str) -> str:
     normalized_ext = ext if ext.startswith(".") else f".{ext}"

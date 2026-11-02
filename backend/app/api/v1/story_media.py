@@ -16,9 +16,9 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Iterator
-from typing import Annotated
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request, Response
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,6 +31,7 @@ from app.repositories.post_repository import PostRepository
 from app.repositories.post_visibility import can_view_post
 from app.services.story_media.filesystem_storage import StoryMediaFilesystemStorage
 from app.services.story_media.storage_keys import story_media_api_url, story_media_key_for
+from app.services.story_media.variant_service import get_or_derive_variant
 
 router = APIRouter(tags=["story-media"])
 
@@ -90,7 +91,11 @@ async def get_story_media_file(
     request: Request,
     viewer: Annotated[User, Depends(require_authenticated_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
-) -> FileResponse | StreamingResponse:
+    variant: Annotated[
+        Literal["card", "viewer"] | None,
+        Query(description="Variante d'affichage. Absente : l'original, inchangé."),
+    ] = None,
+) -> FileResponse | StreamingResponse | Response:
     settings = get_settings()
 
     # Normalisation : aucun separateur, aucun fichier cache. Le confinement est verifie
@@ -107,6 +112,35 @@ async def get_story_media_file(
         )
         if post is None or not can_view_post(post, viewer.id):
             raise _not_found()
+
+    # ── Variante d'affichage (MEDIA-MULTI-PHOTO-01) ─────────────────────────
+    # APRES le controle d'autorisation, et uniquement apres : une variante deja
+    # calculee est donc protegee EXACTEMENT comme l'original. Elle n'ouvre
+    # aucun chemin d'acces nouveau.
+    #
+    # `Range` et `variant` ne se combinent pas : une variante est une image
+    # entiere, de quelques centaines de Ko. La plage reste reservee aux videos,
+    # qui ne sont jamais derivees.
+    if variant is not None and request.headers.get("range") is None:
+        # Import differe, comme plus bas : `r2_storage` tire `boto3`, qui n'a
+        # rien a faire au chargement du module quand le stockage est local.
+        from app.services.story_media.r2_storage import StoryMediaR2Storage
+
+        store = (
+            StoryMediaFilesystemStorage(settings)
+            if settings.story_media_storage_backend == "filesystem"
+            else StoryMediaR2Storage(settings)
+        )
+        derived = await get_or_derive_variant(settings, store, user_id, filename, variant)
+        if derived is not None:
+            return Response(
+                content=derived.data,
+                media_type=derived.content_type,
+                headers=_PRIVATE_MEDIA_HEADERS,
+            )
+        # `None` : source non derivable, animee, deja legere, ou derivation
+        # indisponible. On POURSUIT vers l'original — la variante est une
+        # optimisation, jamais une dependance.
 
     if settings.story_media_storage_backend == "filesystem":
         path, content_type = StoryMediaFilesystemStorage(settings).resolve_public_file(

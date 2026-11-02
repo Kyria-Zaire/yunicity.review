@@ -25,6 +25,12 @@ dependencies = [
     "boto3>=1.35.0",
     "arq>=0.26.0",
     "sentry-sdk[fastapi]>=2.0.0",
+    # Variantes d'affichage des photos de publication (MEDIA-MULTI-PHOTO-01).
+    # Seule dependance d'IMAGE de l'API : la route servait jusqu'ici l'original
+    # du telephone, jusqu'a 20 Mo. Borne basse a 10.3 pour `Image.Resampling`
+    # et les correctifs de decodage de 10.x ; aucune borne haute, la surface
+    # utilisee (`open`, `thumbnail`, `save`, `exif_transpose`) est stable.
+    "pillow>=10.3.0",
 ]
 
 [project.optional-dependencies]
