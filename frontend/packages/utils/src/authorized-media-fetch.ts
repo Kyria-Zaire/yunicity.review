@@ -62,10 +62,18 @@ function parseAllowedContentType(value: string | null): AuthorizedMediaContentTy
   return mime as AuthorizedMediaContentType;
 }
 
+/** Variantes d'affichage servies par la route média (MEDIA-MULTI-PHOTO-01). */
+export type AuthorizedMediaVariant = "card" | "viewer";
+
 export async function fetchAuthorizedMediaBlob(
   client: AuthClient,
   mediaUrl: string,
-  options?: { signal?: AbortSignal; publicApiUrl?: string; maxBytes?: number },
+  options?: {
+    signal?: AbortSignal;
+    publicApiUrl?: string;
+    maxBytes?: number;
+    variant?: AuthorizedMediaVariant;
+  },
 ): Promise<AuthorizedMediaBlob> {
   const maxBytes = options?.maxBytes ?? COMPOSER_MEDIA_MAX_BYTES;
   // Validation d'origine/chemin AVANT tout appel authentifié (donc avant Bearer).
@@ -73,9 +81,21 @@ export async function fetchAuthorizedMediaBlob(
     publicApiUrl: options?.publicApiUrl,
   });
 
+  /**
+   * La variante est ajoutée APRÈS la résolution, jamais passée à travers elle.
+   *
+   * `resolveAuthorizedApiMediaUrl` reconstruit l'URL **sans search ni hash**,
+   * précisément pour qu'aucun paramètre venu de l'appelant ne survive — c'est
+   * ce qui empêche d'y glisser un jeton. Faire transiter `?variant=` par cette
+   * fonction aurait demandé d'y rouvrir la query, donc de défaire cette
+   * garantie. On la laisse intacte, et on appose ici un paramètre issu d'un
+   * ENUM FERMÉ, que le backend revalide de son côté (`Literal`).
+   */
+  const requestUrl = options?.variant ? `${target}?variant=${options.variant}` : target;
+
   let response: Response;
   try {
-    response = await client.fetch(target, {
+    response = await client.fetch(requestUrl, {
       method: "GET",
       signal: options?.signal,
       redirect: "error",

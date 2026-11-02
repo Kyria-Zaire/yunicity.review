@@ -32,6 +32,7 @@ export {
   fetchAuthorizedMediaBlob,
   type AuthorizedMediaBlob,
   type AuthorizedMediaFetchErrorCode,
+  type AuthorizedMediaVariant,
 } from "./authorized-media-fetch";
 export {
   __authorizedMediaActiveFetchCountForTests,
@@ -45,6 +46,14 @@ export {
   releaseAuthorizedObjectUrl,
   retainAuthorizedObjectUrl,
 } from "./authorized-media-object-url";
+export {
+  __authorizedMediaCacheStateForTests,
+  authorizedMediaCacheKey,
+  clearAuthorizedMediaCache,
+  dropCachedAuthorizedMedia,
+  putCachedAuthorizedMedia,
+  takeCachedAuthorizedMedia,
+} from "./authorized-media-cache";
 export {
   AUTHORIZED_STORY_MEDIA_PATH,
   AuthorizedMediaUrlError,

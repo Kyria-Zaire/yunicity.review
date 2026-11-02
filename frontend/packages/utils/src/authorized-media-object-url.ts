@@ -145,9 +145,21 @@ export function __authorizedMediaActiveFetchCountForTests(): number {
   return activeFetches.size;
 }
 
-/** Test-only — remet epoch/registre (aprèsEach). */
+/** Test-only — remet epoch/registre (aprèsEach).
+ *
+ * Prévient aussi les abonnés de la purge : sans cela, l'état qu'ils portent
+ * — la session visionneuse, le cache mémoire des médias — survivrait d'un test
+ * à l'autre, et un test lirait le Blob laissé par le précédent.
+ */
 export function __resetAuthorizedMediaSessionForTests(): void {
   epoch = 0;
+  for (const listener of [...clearListeners]) {
+    try {
+      listener();
+    } catch {
+      /* ignore */
+    }
+  }
   for (const controller of [...activeFetches]) {
     try {
       if (!controller.signal.aborted) controller.abort();

@@ -4,6 +4,8 @@ import type { StoryItem } from "@yunicity/types";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { __resetAuthorizedMediaSessionForTests } from "@yunicity/utils";
+
 import { StoryCard } from "@/components/stories/story-card";
 import { AuthorizedStoryMedia } from "@/components/stories/authorized-story-media";
 
@@ -56,6 +58,16 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  /**
+   * Purge la session média entre deux tests (MEDIA-MULTI-PHOTO-01).
+   *
+   * Depuis que l'application CONSERVE le Blob d'un média dans la session
+   * autorisée, un test lirait sinon celui que le precedent a obtenu : ni
+   * `createObjectURL` ni la requete ne repartiraient, et l'assertion
+   * porterait sur l'etat laisse par le voisin. Meme convention que les tests
+   * du fil.
+   */
+  __resetAuthorizedMediaSessionForTests();
   vi.restoreAllMocks();
 });
 
@@ -91,10 +103,25 @@ describe("Story media delivery", () => {
     expect(video?.getAttribute("data-story-media-state")).toBe("ready");
   });
 
-  it("révoque l'object URL au démontage", async () => {
+  it("au démontage, relâche sa part — et le Blob part avec la session", async () => {
+    /**
+     * ⚠️ COMPORTEMENT CHANGÉ par MEDIA-MULTI-PHOTO-01, et assumé.
+     *
+     * Le démontage ne RÉVOQUE plus à lui seul : la session autorisée conserve
+     * le Blob pour pouvoir le resservir sans repayer le transfert — la route
+     * étant `no-store`, c'est le seul endroit où la réutilisation peut vivre.
+     * Le composant relâche sa part, le cache garde la sienne.
+     *
+     * Ce que ce test verrouille reste donc l'absence de fuite : à la purge de
+     * session — déconnexion, changement de compte, 401 — le Blob EST révoqué,
+     * exactement une fois.
+     */
     const view = render(<StoryCard story={story()} city="Reims" />);
     await waitFor(() => expect(URL.createObjectURL).toHaveBeenCalledOnce());
+
     view.unmount();
+
+    __resetAuthorizedMediaSessionForTests();
     expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:story-authenticated");
   });
 

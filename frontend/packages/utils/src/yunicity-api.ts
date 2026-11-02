@@ -122,6 +122,7 @@ import { CreatorPublicApi, createCreatorPublicApi } from "./creator-public-api";
 import { PartnersApi, createPartnersApi, fetchPublicPartnerOffers } from "./partners-api";
 import {
   fetchAuthorizedMediaBlob as fetchAuthorizedMediaBlobRequest,
+  type AuthorizedMediaVariant,
   type AuthorizedMediaBlob,
 } from "./authorized-media-fetch";
 
@@ -545,10 +546,19 @@ export class YunicityApi {
    * Charge un média de publication via GET Bearer vers l'origine API (MEDIA-01B).
    * Retourne un Blob image — jamais une URL relative WEB ni un token dans le src.
    */
-  fetchAuthorizedMediaBlob(mediaUrl: string, signal?: AbortSignal): Promise<AuthorizedMediaBlob> {
+  /**
+   * @param variant Variante d'affichage. Absente : l'original, inchangé — c'est
+   *   le comportement de tous les appelants antérieurs à MEDIA-MULTI-PHOTO-01.
+   */
+  fetchAuthorizedMediaBlob(
+    mediaUrl: string,
+    signal?: AbortSignal,
+    variant?: AuthorizedMediaVariant,
+  ): Promise<AuthorizedMediaBlob> {
     return fetchAuthorizedMediaBlobRequest(this.auth, mediaUrl, {
       signal,
       publicApiUrl: this.apiBaseUrl || undefined,
+      ...(variant ? { variant } : {}),
     });
   }
 

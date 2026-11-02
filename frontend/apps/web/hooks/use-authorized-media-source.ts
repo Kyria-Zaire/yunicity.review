@@ -4,12 +4,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import {
+  type AuthorizedMediaVariant,
   beginAuthorizedMediaFetch,
   getAuthorizedMediaEpoch,
   isComposerAbortError,
+  dropCachedAuthorizedMedia,
   onAuthorizedMediaSessionClear,
+  putCachedAuthorizedMedia,
   releaseAuthorizedObjectUrl,
   retainAuthorizedObjectUrl,
+  takeCachedAuthorizedMedia,
 } from "@yunicity/utils";
 
 /**
@@ -52,14 +56,22 @@ function combineAbortSignals(a: AbortSignal, b: AbortSignal): AbortSignal {
  */
 export function useAuthorizedMediaSource(
   mediaUrl: string | null | undefined,
+  options?: { variant?: AuthorizedMediaVariant },
 ): AuthorizedMediaSource {
+  const variant = options?.variant;
   const api = useYunicityApi();
   // Ne jamais détacher `api.fetchAuthorizedMediaBlob` : la méthode d'instance
   // lit `this.auth` / `this.apiBaseUrl`. Un appel sans bind lève avant le réseau
   // (MEDIA-01C — CLIENT_PRE_NETWORK_FAILURE sur Preview Safari).
   const fetchBlob = useCallback(
-    (url: string, signal?: AbortSignal) => api.fetchAuthorizedMediaBlob(url, signal),
-    [api],
+    (url: string, signal?: AbortSignal) =>
+      // Sans variante, l'appel garde EXACTEMENT sa forme d'avant : deux
+      // arguments. Ajouter un troisieme `undefined` changerait la signature
+      // observee par tous les appelants anterieurs.
+      variant
+        ? api.fetchAuthorizedMediaBlob(url, signal, variant)
+        : api.fetchAuthorizedMediaBlob(url, signal),
+    [api, variant],
   );
   const [status, setStatus] = useState<AuthorizedMediaStatus>("idle");
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
@@ -75,8 +87,12 @@ export function useAuthorizedMediaSource(
   }, []);
 
   const retry = useCallback(() => {
+    // Reessayer, c'est repartir du RESEAU : on jette l'entree conservee, sinon
+    // le cache resservirait l'echec.
+    const current = mediaUrl?.trim();
+    if (current) dropCachedAuthorizedMedia(current, variant ?? "");
     setAttempt((n) => n + 1);
-  }, []);
+  }, [mediaUrl, variant]);
 
   const markDisplayed = useCallback(() => {
     if (objectUrlRef.current && epochRef.current === getAuthorizedMediaEpoch()) {
@@ -85,10 +101,14 @@ export function useAuthorizedMediaSource(
   }, []);
 
   const markDecodeFailed = useCallback(() => {
+    // Le Blob est declare image mais ne se decode pas : le retirer du cache,
+    // sinon un reessai reprendrait le meme et n'aboutirait jamais.
+    const current = mediaUrl?.trim();
+    if (current) dropCachedAuthorizedMedia(current, variant ?? "");
     dropCurrent();
     setObjectUrl(null);
     setStatus("error");
-  }, [dropCurrent]);
+  }, [dropCurrent, mediaUrl, variant]);
 
   useEffect(() => {
     const trimmed = mediaUrl?.trim() ?? "";
@@ -101,6 +121,29 @@ export function useAuthorizedMediaSource(
     }
 
     const generation = ++generationRef.current;
+
+    /**
+     * Blob déjà obtenu dans CETTE session autorisée ? On repart de lui.
+     *
+     * ⛔ Ce n'est pas un cache HTTP : la route reste `no-store`, et rien n'est
+     * relu du réseau. C'est le Blob que l'application tient encore en mémoire.
+     * `take` échoue si l'epoch a changé — donc jamais de réutilisation d'un
+     * média appartenant à un autre compte, même sur une URL identique.
+     */
+    const cached = takeCachedAuthorizedMedia(trimmed, variant ?? "");
+    if (cached) {
+      epochRef.current = getAuthorizedMediaEpoch();
+      dropCurrent();
+      objectUrlRef.current = cached;
+      setObjectUrl(cached);
+      // `decoding` et non `ready` : un nouvel `<img>` doit encore décoder. Mais
+      // il n'y a plus ni aller-retour réseau ni transfert à payer.
+      setStatus("decoding");
+      return () => {
+        generationRef.current += 1;
+      };
+    }
+
     const fetchHandle = beginAuthorizedMediaFetch();
     epochRef.current = fetchHandle.epoch;
     const localController = new AbortController();
@@ -128,6 +171,9 @@ export function useAuthorizedMediaSource(
         }
         dropCurrent();
         objectUrlRef.current = next;
+        // Le cache prend SA PROPRE part : la nôtre reste à nous, et c'est
+        // `dropCurrent` qui la relâchera au démontage.
+        putCachedAuthorizedMedia(trimmed, variant ?? "", next, blob.size);
         setObjectUrl(next);
         setStatus("decoding");
       } catch (error) {
@@ -146,7 +192,7 @@ export function useAuthorizedMediaSource(
       localController.abort();
       fetchHandle.finish();
     };
-  }, [fetchBlob, mediaUrl, attempt, dropCurrent]);
+  }, [fetchBlob, mediaUrl, variant, attempt, dropCurrent]);
 
   useEffect(() => {
     return onAuthorizedMediaSessionClear(() => {
