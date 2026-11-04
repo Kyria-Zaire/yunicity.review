@@ -925,7 +925,8 @@ test.describe("C3-CITIZEN-MEDIUM-SHELL-R1E — Create par surface", () => {
    * Un rail qui annonce neuf contrôles ne doit jamais apparaître avec son
    * action « Créer » retirée : sur un parcours de création, il n'apparaît pas.
    */
-  for (const parcours of ["/videos/new", "/feed/new", "/stories/new"] as const) {
+  // `/feed/new` en est sorti (FEED-NEW-UX-01, exception à R1E) : rail et Créer y sont attendus.
+  for (const parcours of ["/videos/new", "/stories/new"] as const) {
     test(`768 — ${parcours} : parcours de création, aucun rail ni Create`, async ({
       authedPage,
     }) => {
@@ -959,7 +960,8 @@ test.describe("C3-CITIZEN-MEDIUM-SHELL-R1E — Create par surface", () => {
  * historique compacte ne doit plus reapparaitre sous forme d'icones flottantes.
  */
 test.describe("C3-CITIZEN-MEDIUM-SHELL-R1F — canvas creation-flow", () => {
-  const PARCOURS = ["/videos/new", "/feed/new", "/stories/new"] as const;
+  // `/feed/new` exclu : il porte le rail (FEED-NEW-UX-01, exception à R1E).
+  const PARCOURS = ["/videos/new", "/stories/new"] as const;
   const MARQUEUR = "[data-citizen-medium-creation-flow]";
 
   async function mesurerCanvas(page: Page) {

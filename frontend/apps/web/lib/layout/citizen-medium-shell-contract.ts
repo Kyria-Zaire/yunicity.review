@@ -30,9 +30,16 @@ import type { CitizenMediumRailDestination } from "@/lib/layout/citizen-medium-r
  * Motif : sur ces écrans le Create Hub est masqué sur toutes les surfaces
  * (`create-hub-routes`). Un rail qui annonce neuf contrôles y apparaîtrait
  * structurellement amputé de son action « Créer ». Il n'y apparaît donc pas.
+ *
+ * ⚠️ EXCEPTION `/feed/new` (FEED-NEW-UX-01, décision de Kyria du 2026-11-03) :
+ * les deux planches validées montrent le rail medium AVEC « Créer », et la
+ * décision n°10 exige le chrome réel. `/feed/new` redevient donc une route de
+ * la famille `/feed` — rail présent, Create Hub visible (voir
+ * `create-hub-routes`). La perte du brouillon est gardée par la confirmation
+ * de sortie de l'écran (`lib/navigation/leave-guard`), pas par l'absence de
+ * chrome. Les autres parcours de création gardent la règle R1E.
  */
 const PREFIXES_PARCOURS_CREATION = [
-  "/feed/new",
   "/stories/new",
   "/videos/new",
   "/sortir/create",
@@ -89,7 +96,19 @@ export type CitizenMediumPresentation = "rail" | "creation-flow" | "legacy";
 export type CitizenMediumRouteResolution = {
   presentation: CitizenMediumPresentation;
   activeDestination?: CitizenMediumRailDestination;
+  /**
+   * L'écran courant EST la création : le rail met « Créer » en avant, et
+   * aucune destination principale n'est active.
+   */
+  createActive?: true;
 };
+
+/**
+ * Écrans de création qui portent le rail (exception à R1E) — « Créer » y est
+ * l'élément actif. FEED-NEW-UX-01 : « Accueil » ne doit pas paraître actif
+ * sur `/feed/new` (décision de Kyria du 2026-11-04).
+ */
+const ROUTES_CREATION_AVEC_RAIL = ["/feed/new"] as const;
 
 /** Normalise : retire query, hash et slash final (sauf la racine). */
 function normaliser(pathname: string): string {
@@ -103,11 +122,28 @@ function dansLaFamille(route: string, prefixe: string): boolean {
   return route === prefixe || route.startsWith(`${prefixe}/`);
 }
 
+/**
+ * L'écran courant est-il une création qui porte le chrome (`/feed/new`) ?
+ *
+ * Source UNIQUE de l'état actif « Créer » : le rail medium et la barre basse
+ * mobile la consultent tous deux, pour qu'aucune destination (Accueil) n'y
+ * paraisse active pendant qu'on rédige.
+ */
+export function isCreationRouteWithChrome(pathname: string | null | undefined): boolean {
+  if (!pathname) return false;
+  const route = normaliser(pathname);
+  return ROUTES_CREATION_AVEC_RAIL.some((prefixe) => dansLaFamille(route, prefixe));
+}
+
 export function resolveCitizenMediumRoute(
   pathname: string | null | undefined,
 ): CitizenMediumRouteResolution {
   if (!pathname) return { presentation: "legacy" };
   const route = normaliser(pathname);
+
+  if (isCreationRouteWithChrome(route)) {
+    return { presentation: "rail", createActive: true };
+  }
 
   // Un parcours de création prime sur sa famille d'origine.
   if (PREFIXES_PARCOURS_CREATION.some((prefixe) => dansLaFamille(route, prefixe))) {

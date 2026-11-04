@@ -1,6 +1,7 @@
 "use client";
 
 import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
+import { isCreationRouteWithChrome } from "@/lib/layout/citizen-medium-shell-contract";
 import {
   WEB_CITIZEN_MOBILE_BOTTOM_NAV,
   isWebNavActive,
@@ -23,8 +24,17 @@ function ActiveFeedIcon({ className }: { className?: string }) {
   );
 }
 
-function BottomNavLink({ item, pathname }: { item: WebNavItem; pathname: string }) {
-  const active = isWebNavActive(pathname, item);
+function BottomNavLink({
+  item,
+  pathname,
+  creationActive,
+}: {
+  item: WebNavItem;
+  pathname: string;
+  /** Écran de création (`/feed/new`) : aucune destination n'est active. */
+  creationActive: boolean;
+}) {
+  const active = !creationActive && isWebNavActive(pathname, item);
 
   return (
     <li className="min-w-0 flex-1">
@@ -54,6 +64,7 @@ function BottomNavLink({ item, pathname }: { item: WebNavItem; pathname: string 
  */
 export function WebMobileStrategicBottomNav() {
   const pathname = usePathname();
+  const creationActive = isCreationRouteWithChrome(pathname);
   const destinations = WEB_CITIZEN_MOBILE_BOTTOM_NAV;
   const half = Math.ceil(destinations.length / 2);
   const left = destinations.slice(0, half);
@@ -67,13 +78,34 @@ export function WebMobileStrategicBottomNav() {
       <div className="pointer-events-auto w-full max-w-none">
         <ul className="flex items-stretch justify-around gap-0.5 px-0.5">
           {left.map((item) => (
-            <BottomNavLink key={item.href} item={item} pathname={pathname} />
+            <BottomNavLink
+              key={item.href}
+              item={item}
+              pathname={pathname}
+              creationActive={creationActive}
+            />
           ))}
-          <li className="web-mobile-docked-bottom-nav-create relative z-10 flex w-12 shrink-0 items-end justify-center self-end pb-0.5">
-            <CreateHubTriggerButton variant="bottom-nav" className="-translate-y-2 shadow-md ring-2 ring-white" />
+          <li
+            className="web-mobile-docked-bottom-nav-create relative z-10 flex w-12 shrink-0 items-end justify-center self-end pb-0.5"
+            data-active={creationActive ? "" : undefined}
+          >
+            {/* Sur un écran de création, « + » est l'élément actif : anneau de
+                marque au lieu de l'anneau blanc, et annonce « page actuelle ». */}
+            <CreateHubTriggerButton
+              variant="bottom-nav"
+              className={`-translate-y-2 shadow-md ring-2 ${
+                creationActive ? "ring-yunicity-primary ring-offset-2" : "ring-white"
+              }`}
+            />
+            {creationActive ? <span className="sr-only">Page actuelle : créer</span> : null}
           </li>
           {right.map((item) => (
-            <BottomNavLink key={item.href} item={item} pathname={pathname} />
+            <BottomNavLink
+              key={item.href}
+              item={item}
+              pathname={pathname}
+              creationActive={creationActive}
+            />
           ))}
         </ul>
       </div>

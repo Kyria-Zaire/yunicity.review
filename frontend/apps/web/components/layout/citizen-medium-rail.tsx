@@ -67,9 +67,11 @@ export type CitizenMediumRailProps = {
    * Passport…).
    */
   activeDestination?: CitizenMediumRailDestination;
+  /** L'écran courant est une création (`/feed/new`) : « Créer » est actif. */
+  createActive?: boolean;
 };
 
-export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps) {
+export function CitizenMediumRail({ activeDestination, createActive = false }: CitizenMediumRailProps) {
   const unreadCount = Number(useNotificationUnread());
 
   return (
@@ -157,7 +159,10 @@ export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps)
         <div
           data-rail-label="Créer"
           data-citizen-medium-rail-control="create"
-          className="flex flex-col items-center gap-1"
+          data-active={createActive ? "" : undefined}
+          className={`flex flex-col items-center gap-1 ${
+            createActive ? "w-full rounded-xl bg-yunicity-primary-soft py-2" : ""
+          }`}
         >
           {/* C3-CITIZEN-MEDIUM-SHELL-R1E : le rail DECLARE sa surface. Sur
               `/videos`, elle seule expose « Créer » — mobile et desktop y
@@ -167,9 +172,13 @@ export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps)
             visibilitySurface="citizen-medium-rail"
             className="!h-11 !w-11"
           />
-          <span aria-hidden className={ACTION_LABEL}>
+          <span
+            aria-hidden
+            className={createActive ? `${ACTION_LABEL} !font-semibold !text-yunicity-primary` : ACTION_LABEL}
+          >
             Créer
           </span>
+          {createActive ? <span className="sr-only">Page actuelle</span> : null}
         </div>
 
         <Link

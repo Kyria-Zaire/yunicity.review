@@ -12,7 +12,6 @@ import {
 describe("create-hub-routes — politique par route", () => {
   it("masque Créer sur les parcours de création", () => {
     expect(isCreateHubVisiblePath("/videos/new")).toBe(false);
-    expect(isCreateHubVisiblePath("/feed/new")).toBe(false);
     expect(isCreateHubVisiblePath("/stories/new")).toBe(false);
     expect(isCreateHubVisiblePath("/sortir/create")).toBe(false);
   });
@@ -70,7 +69,7 @@ describe("create-hub-routes — politique par surface (R1E)", () => {
 
   it("les parcours de création restent masqués sur toutes les surfaces", () => {
     for (const surface of CREATE_HUB_SURFACES) {
-      for (const route of ["/feed/new", "/stories/new", "/sortir/create", "/login", "/register"]) {
+      for (const route of ["/stories/new", "/sortir/create", "/login", "/register"]) {
         expect(resolveCreateHubVisibility({ pathname: route, surface })).toBe(false);
       }
     }
@@ -127,5 +126,24 @@ describe("create-hub-routes — politique par surface (R1E)", () => {
     for (const interdit of ["window", "document", "matchMedia", "innerWidth"]) {
       expect(source.includes(interdit), `contrat impur : ${interdit}`).toBe(false);
     }
+  });
+
+  /*
+   * FEED-NEW-UX-01 — exception à R1E, décidée par Kyria le 2026-11-03 : les
+   * planches validées montrent « Créer » au rail medium et le « + » mobile sur
+   * `/feed/new`. Le brouillon est protégé par la garde de sortie de l'écran.
+   */
+  it("/feed/new : Créer au rail medium et en barre basse, pas dans la top nav desktop", () => {
+    // Barre basse mobile (surface par défaut) et rail medium : planches validées.
+    expect(isCreateHubVisiblePath("/feed/new")).toBe(true);
+    expect(
+      resolveCreateHubVisibility({ pathname: "/feed/new", surface: "citizen-medium-rail" }),
+    ).toBe(true);
+    // Top nav desktop : la planche n'en porte pas.
+    expect(resolveCreateHubVisibility({ pathname: "/feed/new", surface: "citizen-top-nav" })).toBe(
+      false,
+    );
+    // Le hub reste donc atteignable sur la route.
+    expect(isCreateHubAvailableOnRoute("/feed/new")).toBe(true);
   });
 });

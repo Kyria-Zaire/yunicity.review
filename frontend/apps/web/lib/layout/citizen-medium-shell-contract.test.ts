@@ -183,7 +183,6 @@ describe("resolveCitizenMediumRoute — contrat de module pur", () => {
 describe("parcours de création — presentation creation-flow (R1E / R1F)", () => {
   it("derive les parcours de creation depuis la liste existante", () => {
     for (const route of [
-      "/feed/new",
       "/stories/new",
       "/videos/new",
       "/sortir/create",
@@ -197,7 +196,12 @@ describe("parcours de création — presentation creation-flow (R1E / R1F)", () 
     expect(resolveCitizenMediumRoute("/videos").presentation).toBe("rail");
     expect(resolveCitizenMediumRoute("/feed").presentation).toBe("rail");
     expect(resolveCitizenMediumRoute("/videos/new")).toEqual({ presentation: "creation-flow" });
-    expect(resolveCitizenMediumRoute("/feed/new")).toEqual({ presentation: "creation-flow" });
+    // FEED-NEW-UX-01 — exception à R1E : `/feed/new` porte le rail, « Créer »
+    // actif, et AUCUNE destination principale (Accueil ne paraît pas actif).
+    expect(resolveCitizenMediumRoute("/feed/new")).toEqual({
+      presentation: "rail",
+      createActive: true,
+    });
     expect(resolveCitizenMediumRoute("/stories").presentation).toBe("rail");
     expect(resolveCitizenMediumRoute("/stories/new")).toEqual({ presentation: "creation-flow" });
   });
