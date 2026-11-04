@@ -534,8 +534,8 @@ export class YunicityApi {
     return this.feed.getPost(postId);
   }
 
-  createFeedPost(payload: PostCreatePayload): Promise<FeedPost> {
-    return this.feed.createPost(payload);
+  createFeedPost(payload: PostCreatePayload, signal?: AbortSignal): Promise<FeedPost> {
+    return this.feed.createPost(payload, signal);
   }
 
   uploadPostMedia(file: File, signal?: AbortSignal): Promise<PostMediaUploadResponse> {

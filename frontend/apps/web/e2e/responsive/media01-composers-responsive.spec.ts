@@ -100,6 +100,8 @@ async function pageHarnais(): Promise<string> {
       "next/navigation": "./e2e/harness/media01-stubs.tsx",
       "@/components/layout/citizen-top-nav": "./e2e/harness/media01-stubs.tsx",
       "@/components/layout/web-sidebar": "./e2e/harness/media01-stubs.tsx",
+      "@/components/feed/post-composer/new-post-shell": "./e2e/harness/media01-stubs.tsx",
+      "@/components/feed/portal/feed-medium-header": "./e2e/harness/media01-stubs.tsx",
       "@/components/brand": "./e2e/harness/media01-stubs.tsx",
       "next/image": "./e2e/harness/media01-stubs.tsx",
       "next/link": "./e2e/harness/media01-stubs.tsx",
@@ -274,7 +276,12 @@ test.describe("GATE 9 — rendu responsive des composers actifs", () => {
             buffer: Buffer.from("%PDF-1.4", "utf8"),
           });
 
-          const alerte = section.locator('[role="alert"]').first();
+          // `/feed/new` (FEED-NEW-UX-01, spec §7) : un refus À LA SÉLECTION est
+          // une décision à prendre, pas une erreur — encart `role="status"`.
+          // Les autres composers gardent `role="alert"`.
+          const alerte = section
+            .locator(cle === "new-post" ? 'section[role="status"]' : '[role="alert"]')
+            .first();
           await expect(alerte).toBeVisible({ timeout: 10_000 });
           const boiteAlerte = (await alerte.boundingBox())!;
           const boiteSection = (await section.boundingBox())!;
@@ -390,21 +397,22 @@ test.describe("GATE 9 — rendu responsive des composers actifs", () => {
         }
 
         // Parcours multi-médias : un média valide reste attaché, donc le
-        // libellé doit parler d'ignorer les refusés, jamais de « sans image ».
+        // libellé parle des fichiers refusés, jamais de « sans image ».
+        // Libellés du contrat FEED-NEW-UX-01 (spec §7, encart ambre).
         const newPost = page.locator('[data-media01-composer="new-post"]');
         await newPost.locator('input[type="file"]').setInputFiles([
           { name: "ok.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgo=", "base64") },
           { name: "refuse.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4", "utf8") },
         ]);
-        const ignorer = newPost.getByRole("button", { name: /Ignorer les médias refusés/i });
+        const ignorer = newPost.getByRole("button", { name: /^Continuer sans eux$/i });
         await expect(ignorer).toHaveCount(1);
         await expect(newPost.getByRole("button", { name: /Continuer sans image/i })).toHaveCount(0);
-        await expect(
-          newPost.getByText(/Les autres médias valides et votre texte seront conservés/i),
-        ).toHaveCount(1);
+        await expect(newPost.getByText(/Rien n'a été retiré de votre brouillon/i)).toHaveCount(1);
+        // Le fichier refusé est NOMMÉ, avec son motif.
+        await expect(newPost.getByText("refuse.pdf")).toHaveCount(1);
 
-        // Une seule annonce : le message de refus, pas les boutons.
-        await expect(newPost.locator('[role="alert"]')).toHaveCount(1);
+        // Une seule annonce : l'encart de refus, pas les boutons.
+        await expect(newPost.locator('section[role="status"]')).toHaveCount(1);
 
         const boiteIgnorer = (await ignorer.boundingBox())!;
         expect(boiteIgnorer.height).toBeGreaterThanOrEqual(CIBLE_TACTILE_MIN);

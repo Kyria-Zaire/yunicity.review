@@ -4,13 +4,21 @@
  * MEDIA-01 — cinquième parcours de publication : `/feed/new`.
  *
  * Route active (`app/feed/new/page.tsx`, exposée par le hub de création), donc
- * dans le périmètre MEDIA-01. Son architecture diffère des quatre autres
- * composers — multi-médias, envoi au moment de publier — mais les garanties
- * exigées sont les mêmes : abandon, budget de temps, verrou synchrone, cycle de
- * vie des object URL, contrat MIME et mapping d'erreurs.
+ * dans le périmètre MEDIA-01. Les garanties exigées sont les mêmes que pour les
+ * quatre autres composers : abandon, budget de temps, verrou synchrone, cycle
+ * de vie des object URL, contrat MIME et mapping d'erreurs.
+ *
+ * ⚠️ **Adapté par FEED-NEW-UX-01 (tâche 9).** L'écran a basculé sur
+ * `useNewPostDraft` + `useNewPostPublication`, et sa composition unique a
+ * remplacé les deux vues départagées par CSS. Chaque acquis listé ci-dessus est
+ * **conservé**, avec de nouveaux sélecteurs et de nouveaux libellés.
+ *
+ * **Un seul comportement change volontairement** : le réessai après un échec
+ * d'envoi ne renvoie plus tout le lot, mais seulement ce qui manque. C'est
+ * l'objet de la tâche 4 ; le test correspondant le dit explicitement.
  */
 
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import {
   AuthError,
   COMPOSER_MEDIA_HEIC_NOT_SUPPORTED,
@@ -19,10 +27,10 @@ import {
   composerMediaUploadTimeoutMs,
 } from "@yunicity/utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ReactNode } from "react";
 
 import { NewPostScreen } from "@/components/feed/post-composer/new-post-screen";
 import { useNewPostDraft } from "@/hooks/use-new-post-draft";
-import { renderHook } from "@testing-library/react";
 
 const uploadPostMedia = vi.fn();
 const createFeedPost = vi.fn();
@@ -33,7 +41,7 @@ vi.mock("@/hooks/use-yunicity-api", () => ({
 }));
 
 vi.mock("@/lib/auth/auth-provider", () => ({
-  useAuth: () => ({ user: { email: "citoyen@exemple.test" } }),
+  useAuth: () => ({ user: { id: "compte-a", email: "citoyen@exemple.test" } }),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -42,11 +50,10 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/feed/new",
 }));
 
-vi.mock("next/image", () => ({ default: () => null }));
-vi.mock("next/link", () => ({ default: ({ children }: { children: unknown }) => children }));
-vi.mock("@/components/brand", () => ({ YunicityLogo: () => null }));
-vi.mock("@/components/layout/citizen-top-nav", () => ({ CitizenTopNav: () => null }));
-vi.mock("@/components/layout/web-sidebar", () => ({ WebSidebar: () => null }));
+vi.mock("@/components/feed/post-composer/new-post-shell", () => ({
+  NewPostShell: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+}));
+vi.mock("@/components/profile-avatar", () => ({ ProfileAvatar: () => null }));
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -62,6 +69,10 @@ function image(name = "photo.jpg", type = "image/jpeg", size = 3): File {
   return new File([new Uint8Array(size)], name, { type });
 }
 
+function video(name = "clip.mp4", type = "video/mp4", size = 3): File {
+  return new File([new Uint8Array(size)], name, { type });
+}
+
 const createObjectURL = vi.fn((file: Blob) => `blob:${(file as File).name}-${Math.random()}`);
 const revokeObjectURL = vi.fn();
 
@@ -73,6 +84,7 @@ beforeEach(() => {
   getProfileMe.mockResolvedValue({ display_name: "Citoyen", username: "citoyen", city: "Reims" });
   createObjectURL.mockClear();
   revokeObjectURL.mockClear();
+  window.sessionStorage.clear();
   vi.stubGlobal("URL", { ...URL, createObjectURL, revokeObjectURL });
 });
 
@@ -82,31 +94,36 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-/**
- * Saisit le texte et joint un fichier, puis rend la main.
- *
- * L'écran monte SES DEUX vues — mobile et desktop — et les départage par CSS.
- * En jsdom les deux existent : on renseigne donc les deux zones de saisie.
- */
+/** Saisit le texte et joint des fichiers, puis rend la main. */
 async function preparer(fichiers: File[] = [image()]): Promise<void> {
   render(<NewPostScreen />);
-  const zones = await screen.findAllByPlaceholderText(/Quoi de neuf à/i);
-  for (const zone of zones) {
-    fireEvent.change(zone, { target: { value: "Bonjour Reims" } });
-  }
+  // Une SEULE zone de saisie désormais : la composition est unique.
+  const zone = await screen.findByLabelText(/Quoi de neuf à/i);
+  fireEvent.change(zone, { target: { value: "Bonjour Reims" } });
+  await selectionner(fichiers);
+}
+
+async function monterAvecTexte(): Promise<void> {
+  render(<NewPostScreen />);
+  const zone = await screen.findByLabelText(/Quoi de neuf à/i);
+  fireEvent.change(zone, { target: { value: "Bonjour Reims" } });
+}
+
+async function selectionner(fichiers: File[]): Promise<void> {
   const entree = document.querySelector('input[type="file"]') as HTMLInputElement;
   await act(async () => {
     fireEvent.change(entree, { target: { files: fichiers } });
   });
 }
 
-/** Premier bouton « Publier » réellement actionnable. */
+/** L'unique bouton « Publier », qui doit être actionnable. */
 function boutonPublier(): HTMLElement {
-  const boutons = screen.getAllByRole("button", { name: /^Publier$/i });
-  const actif = boutons.find((b) => !(b as HTMLButtonElement).disabled);
-  expect(actif, "aucun bouton Publier actionnable").toBeDefined();
-  return actif!;
+  const bouton = screen.getByRole("button", { name: /^Publier$/i });
+  expect((bouton as HTMLButtonElement).disabled, "bouton Publier désactivé").toBe(false);
+  return bouton;
 }
+
+// ───────────── Acquis testés sur le HOOK : inchangés par la tâche 9
 
 describe("cycle de vie des object URL (multi-médias)", () => {
   it("ajouter un second média ne révoque pas l'aperçu du premier", async () => {
@@ -129,7 +146,10 @@ describe("cycle de vie des object URL (multi-médias)", () => {
   it("retirer un média révoque exactement son aperçu, une seule fois", async () => {
     const { result } = renderHook(() => useNewPostDraft("Reims"));
     await act(async () => {
-      await result.current.handleSelectedFiles([image("a.jpg"), image("b.jpg")] as unknown as FileList);
+      await result.current.handleSelectedFiles([
+        image("a.jpg"),
+        image("b.jpg"),
+      ] as unknown as FileList);
     });
     const [a, b] = result.current.selectedMedia;
     revokeObjectURL.mockClear();
@@ -188,18 +208,15 @@ describe("contrat de métadonnées, aligné sur les quatre autres composers", ()
 
   it("accepte toujours les vidéos du parcours", async () => {
     const { result } = renderHook(() => useNewPostDraft("Reims"));
-    act(() => {
-      result.current.setFormat("video");
-    });
     await act(async () => {
-      await result.current.handleSelectedFiles([
-        new File([new Uint8Array(3)], "clip.mp4", { type: "video/mp4" }),
-      ] as unknown as FileList);
+      await result.current.handleSelectedFiles([video()] as unknown as FileList);
     });
     expect(result.current.selectedMedia).toHaveLength(1);
     expect(result.current.selectedMedia[0]!.mediaType).toBe("video");
   });
 });
+
+// ───────────── Acquis testés sur l'ÉCRAN : sélecteurs adaptés à la tâche 9
 
 describe("envoi : abandon et budget de temps", () => {
   it("transmet un AbortSignal à chaque envoi", async () => {
@@ -294,9 +311,12 @@ describe("verrou de publication", () => {
     });
     await waitFor(() => expect(createFeedPost).toHaveBeenCalledTimes(1));
 
+    // Un 500 laisse l'issue INDÉTERMINÉE (§3.4 bis) : l'action primaire est le
+    // rejeu, sous la même clé. Deux clics ne produisent qu'une tentative.
+    const reessayer = await screen.findByRole("button", { name: "Réessayer l'envoi" });
     await act(async () => {
-      fireEvent.click(boutonPublier());
-      fireEvent.click(boutonPublier());
+      fireEvent.click(reessayer);
+      fireEvent.click(reessayer);
     });
     await waitFor(() => expect(createFeedPost).toHaveBeenCalledTimes(2));
     expect(createFeedPost).toHaveBeenCalledTimes(2);
@@ -310,8 +330,8 @@ describe("mapping d'erreurs, aligné sur les quatre autres composers", () => {
     await act(async () => {
       fireEvent.click(boutonPublier());
     });
-    const [alerte] = await screen.findAllByRole("alert");
-    expect(alerte!.textContent).toBe(COMPOSER_MEDIA_RATE_LIMITED);
+    const alerte = await screen.findByRole("alert");
+    expect(alerte.textContent).toContain(COMPOSER_MEDIA_RATE_LIMITED);
   });
 
   it("5xx annonce une indisponibilité de service", async () => {
@@ -320,8 +340,8 @@ describe("mapping d'erreurs, aligné sur les quatre autres composers", () => {
     await act(async () => {
       fireEvent.click(boutonPublier());
     });
-    const [alerte] = await screen.findAllByRole("alert");
-    expect(alerte!.textContent).toBe(COMPOSER_MEDIA_SERVER_FAILED);
+    const alerte = await screen.findByRole("alert");
+    expect(alerte.textContent).toContain(COMPOSER_MEDIA_SERVER_FAILED);
   });
 
   it("n'expose jamais la réponse brute", async () => {
@@ -331,62 +351,53 @@ describe("mapping d'erreurs, aligné sur les quatre autres composers", () => {
     await act(async () => {
       fireEvent.click(boutonPublier());
     });
-    const [alerte] = await screen.findAllByRole("alert");
-    expect(alerte!.textContent?.length ?? 0).toBeGreaterThan(0);
-    expect(alerte!.textContent).not.toContain("bucket");
-    expect(alerte!.textContent).not.toContain("X-Amz-Signature");
+    const alerte = await screen.findByRole("alert");
+    expect(alerte.textContent?.length ?? 0).toBeGreaterThan(0);
+    expect(alerte.textContent).not.toContain("bucket");
+    expect(alerte.textContent).not.toContain("X-Amz-Signature");
   });
 });
 
 describe("média refusé : décision explicite exigée ici aussi", () => {
-  it("le refus est ANNONCÉ, pas silencieux", async () => {
-    render(<NewPostScreen />);
-    const zones = await screen.findAllByPlaceholderText(/Quoi de neuf à/i);
-    for (const zone of zones) fireEvent.change(zone, { target: { value: "Bonjour Reims" } });
-    const entree = document.querySelector('input[type="file"]') as HTMLInputElement;
-    await act(async () => {
-      fireEvent.change(entree, { target: { files: [image("IMG.HEIC", "image/heic")] } });
-    });
+  it("le refus est ANNONCÉ, nommé, pas silencieux", async () => {
+    await monterAvecTexte();
+    await selectionner([image("IMG.HEIC", "image/heic")]);
 
-    const [alerte] = await screen.findAllByRole("alert");
-    expect(alerte!.textContent).toBe(COMPOSER_MEDIA_HEIC_NOT_SUPPORTED);
+    // Désormais chaque fichier est nommé avec SON motif, au lieu d'un message
+    // unique qui écrasait les précédents.
+    expect(await screen.findByText("1 fichier n'a pas été ajouté")).toBeTruthy();
+    expect(screen.getByText(/IMG\.HEIC/)).toBeTruthy();
+    expect(screen.getByText(new RegExp(COMPOSER_MEDIA_HEIC_NOT_SUPPORTED.slice(0, 20)))).toBeTruthy();
   });
 
   it("bloque la publication tant que le refus n'est pas arbitré", async () => {
-    const onSubmitSpy = uploadPostMedia;
-    render(<NewPostScreen />);
-    const zones = await screen.findAllByPlaceholderText(/Quoi de neuf à/i);
-    for (const zone of zones) fireEvent.change(zone, { target: { value: "Bonjour Reims" } });
-    const entree = document.querySelector('input[type="file"]') as HTMLInputElement;
-    await act(async () => {
-      fireEvent.change(entree, { target: { files: [image("IMG.HEIC", "image/heic")] } });
-    });
+    await monterAvecTexte();
+    await selectionner([image("IMG.HEIC", "image/heic")]);
 
-    const boutons = screen.getAllByRole("button", { name: /^Publier$/i });
-    await act(async () => {
-      for (const b of boutons) if (!(b as HTMLButtonElement).disabled) fireEvent.click(b);
-    });
+    expect(
+      (screen.getByRole("button", { name: /^Publier$/i }) as HTMLButtonElement).disabled,
+    ).toBe(true);
 
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /^Publier$/i }));
+    });
     expect(createFeedPost).not.toHaveBeenCalled();
-    expect(onSubmitSpy).not.toHaveBeenCalled();
+    expect(uploadPostMedia).not.toHaveBeenCalled();
   });
 
-  it("« Continuer sans média » débloque et conserve le texte", async () => {
-    render(<NewPostScreen />);
-    const zones = await screen.findAllByPlaceholderText(/Quoi de neuf à/i);
-    for (const zone of zones) fireEvent.change(zone, { target: { value: "Bonjour Reims" } });
-    const entree = document.querySelector('input[type="file"]') as HTMLInputElement;
-    await act(async () => {
-      fireEvent.change(entree, { target: { files: [image("IMG.HEIC", "image/heic")] } });
-    });
+  it("« Continuer sans eux » débloque et conserve le texte", async () => {
+    await monterAvecTexte();
+    await selectionner([image("IMG.HEIC", "image/heic")]);
 
     await act(async () => {
-      fireEvent.click(await screen.findByRole("button", { name: /Continuer sans média/i }));
+      fireEvent.click(await screen.findByRole("button", { name: /Continuer sans eux/i }));
     });
+    // L'arbitrage seul ne publie rien.
     expect(createFeedPost).not.toHaveBeenCalled();
 
-    const zonesApres = screen.getAllByPlaceholderText(/Quoi de neuf à/i);
-    expect((zonesApres[0] as HTMLTextAreaElement).value).toBe("Bonjour Reims");
+    expect((screen.getByLabelText(/Quoi de neuf à/i) as HTMLTextAreaElement).value).toBe(
+      "Bonjour Reims",
+    );
 
     await act(async () => {
       fireEvent.click(boutonPublier());
@@ -397,19 +408,12 @@ describe("média refusé : décision explicite exigée ici aussi", () => {
 
   it("choisir une image valide lève le blocage et efface l'annonce", async () => {
     uploadPostMedia.mockResolvedValue({ url: "/m/ok.jpg", media_type: "image" });
-    render(<NewPostScreen />);
-    const zones = await screen.findAllByPlaceholderText(/Quoi de neuf à/i);
-    for (const zone of zones) fireEvent.change(zone, { target: { value: "Bonjour Reims" } });
-    const entree = document.querySelector('input[type="file"]') as HTMLInputElement;
-    await act(async () => {
-      fireEvent.change(entree, { target: { files: [image("IMG.HEIC", "image/heic")] } });
-    });
-    await screen.findAllByRole("alert");
+    await monterAvecTexte();
+    await selectionner([image("IMG.HEIC", "image/heic")]);
+    await screen.findByText("1 fichier n'a pas été ajouté");
 
-    await act(async () => {
-      fireEvent.change(entree, { target: { files: [image("ok.jpg")] } });
-    });
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    await selectionner([image("ok.jpg")]);
+    expect(screen.queryByText(/n'a pas été ajouté/)).toBeNull();
 
     await act(async () => {
       fireEvent.click(boutonPublier());
@@ -419,47 +423,22 @@ describe("média refusé : décision explicite exigée ici aussi", () => {
   });
 });
 
-// ───────────── MEDIA-01-SEMANTIC-CORRECTION-01 — libellés véridiques
-
-/** Joint une sélection de fichiers en une seule fois. */
-async function selectionner(fichiers: File[]): Promise<void> {
-  const entree = document.querySelector('input[type="file"]') as HTMLInputElement;
-  await act(async () => {
-    fireEvent.change(entree, { target: { files: fichiers } });
-  });
-}
-
-async function monterAvecTexte(): Promise<void> {
-  render(<NewPostScreen />);
-  const zones = await screen.findAllByPlaceholderText(/Quoi de neuf à/i);
-  for (const zone of zones) fireEvent.change(zone, { target: { value: "Bonjour Reims" } });
-}
-
-function video(name = "clip.mp4", type = "video/mp4", size = 3): File {
-  return new File([new Uint8Array(size)], name, { type });
-}
-
 describe("arbitrage d'une sélection multiple — libellé conforme au comportement", () => {
-  it("image valide + HEIC : la valide est conservée, le libellé parle d'ignorer les refusés", async () => {
+  it("image valide + HEIC : la valide est conservée, l'arbitrage reste exigé", async () => {
     uploadPostMedia.mockResolvedValue({ url: "/m/ok.jpg", media_type: "image" });
     await monterAvecTexte();
     await selectionner([image("ok.jpg"), image("IMG.HEIC", "image/heic")]);
 
-    expect(await screen.findByRole("button", { name: /Ignorer les médias refusés/i })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Continuer sans image/i })).toBeNull();
-
+    expect(await screen.findByRole("button", { name: /Continuer sans eux/i })).toBeTruthy();
     // Rien ne part avant arbitrage.
     await act(async () => {
-      for (const b of screen.getAllByRole("button", { name: /^Publier$/i })) {
-        if (!(b as HTMLButtonElement).disabled) fireEvent.click(b);
-      }
+      fireEvent.click(screen.getByRole("button", { name: /^Publier$/i }));
     });
     expect(createFeedPost).not.toHaveBeenCalled();
 
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /Ignorer les médias refusés/i }));
+      fireEvent.click(screen.getByRole("button", { name: /Continuer sans eux/i }));
     });
-    // L'arbitrage seul ne publie rien.
     expect(createFeedPost).not.toHaveBeenCalled();
 
     await act(async () => {
@@ -479,11 +458,11 @@ describe("arbitrage d'une sélection multiple — libellé conforme au comportem
     ]);
 
     expect(
-      await screen.findByText(/Les autres médias valides et votre texte seront conservés/i),
+      await screen.findByText(/Les médias déjà sélectionnés restent attachés/i),
     ).toBeTruthy();
 
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /Ignorer les médias refusés/i }));
+      fireEvent.click(screen.getByRole("button", { name: /Continuer sans eux/i }));
     });
     await act(async () => {
       fireEvent.click(boutonPublier());
@@ -492,20 +471,13 @@ describe("arbitrage d'une sélection multiple — libellé conforme au comportem
     expect(uploadPostMedia).toHaveBeenCalledTimes(2);
   });
 
-  it("vidéo valide + image invalide : la vidéo est conservée, le libellé dit « médias »", async () => {
+  it("vidéo valide + fichier invalide : la vidéo est conservée, sans onglet de format", async () => {
     uploadPostMedia.mockResolvedValue({ url: "/m/clip.mp4", media_type: "video" });
     await monterAvecTexte();
-    // Le format décide de ce qui est accepté — contrat historique, inchangé.
-    await act(async () => {
-      fireEvent.click(screen.getAllByRole("button", { name: /^Vidéo$/i })[0]!);
-    });
+    // Plus aucun onglet ne décide : le format se DÉDUIT du lot joint.
     await selectionner([video(), image("doc.pdf", "application/pdf")]);
 
-    const bouton = await screen.findByRole("button", { name: /Ignorer les médias refusés/i });
-    expect(bouton.textContent).not.toMatch(/\bimage\b/i);
-    expect(screen.queryByRole("button", { name: /Continuer sans image/i })).toBeNull();
-
-    // La vidéo est bien restée : l'arbitrage puis la publication l'envoient.
+    const bouton = await screen.findByRole("button", { name: /Continuer sans eux/i });
     await act(async () => {
       fireEvent.click(bouton);
     });
@@ -515,6 +487,7 @@ describe("arbitrage d'une sélection multiple — libellé conforme au comportem
     await waitFor(() => expect(createFeedPost).toHaveBeenCalledTimes(1));
     expect(uploadPostMedia).toHaveBeenCalledTimes(1);
     expect((uploadPostMedia.mock.calls[0]![0] as File).name).toBe("clip.mp4");
+    expect(createFeedPost.mock.calls[0]![0]).toMatchObject({ post_format: "video" });
   });
 
   it("plusieurs fichiers refusés : le pluriel reste vrai et aucun n'est attaché", async () => {
@@ -526,8 +499,10 @@ describe("arbitrage d'une sélection multiple — libellé conforme au comportem
       image("doc.pdf", "application/pdf"),
     ]);
 
+    expect(await screen.findByText("2 fichiers n'ont pas été ajoutés")).toBeTruthy();
+
     await act(async () => {
-      fireEvent.click(await screen.findByRole("button", { name: /Ignorer les médias refusés/i }));
+      fireEvent.click(screen.getByRole("button", { name: /Continuer sans eux/i }));
     });
     await act(async () => {
       fireEvent.click(boutonPublier());
@@ -536,16 +511,15 @@ describe("arbitrage d'une sélection multiple — libellé conforme au comportem
     expect(uploadPostMedia).toHaveBeenCalledTimes(1);
   });
 
-  it("aucun média valide restant : « Continuer sans média », texte conservé", async () => {
+  it("aucun média valide restant : le texte est conservé et publiable", async () => {
     await monterAvecTexte();
     await selectionner([image("IMG.HEIC", "image/heic")]);
 
-    expect(await screen.findByRole("button", { name: /Continuer sans média/i })).toBeTruthy();
-    expect(await screen.findByText(/Votre texte sera conservé/i)).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Ignorer les médias refusés/i })).toBeNull();
+    expect(await screen.findByRole("button", { name: /Continuer sans eux/i })).toBeTruthy();
+    expect(screen.getByText(/Rien n'a été retiré de votre brouillon/i)).toBeTruthy();
 
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /Continuer sans média/i }));
+      fireEvent.click(screen.getByRole("button", { name: /Continuer sans eux/i }));
     });
     expect(createFeedPost).not.toHaveBeenCalled();
 
@@ -558,7 +532,7 @@ describe("arbitrage d'une sélection multiple — libellé conforme au comportem
 });
 
 describe("échec d'envoi distinct d'un fichier refusé", () => {
-  it("le deuxième envoi échoue : sélection entière conservée, aucun post, retry possible", async () => {
+  it("le deuxième envoi échoue : sélection conservée, aucun post, et la REPRISE ne renvoie que ce qui manque", async () => {
     uploadPostMedia
       .mockResolvedValueOnce({ url: "/m/a.jpg", media_type: "image" })
       .mockRejectedValueOnce(new AuthError("UNKNOWN_ERROR", "brut", 503))
@@ -569,22 +543,30 @@ describe("échec d'envoi distinct d'un fichier refusé", () => {
     await act(async () => {
       fireEvent.click(boutonPublier());
     });
-    const [alerte] = await screen.findAllByRole("alert");
-    expect(alerte!.textContent).toBe(COMPOSER_MEDIA_SERVER_FAILED);
+    const alerte = await screen.findByRole("alert");
+    expect(alerte.textContent).toContain(COMPOSER_MEDIA_SERVER_FAILED);
     // Ce n'est PAS une validation : aucun arbitrage ne doit apparaître.
-    expect(screen.queryByRole("button", { name: /Ignorer les médias refusés/i })).toBeNull();
-    expect(screen.queryByRole("button", { name: /Continuer sans média/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Continuer sans eux/i })).toBeNull();
     expect(createFeedPost).not.toHaveBeenCalled();
+    // La sélection entière est intacte : les deux aperçus restent affichés.
+    expect(screen.getAllByRole("presentation")).toHaveLength(2);
 
     uploadPostMedia.mockClear();
     await act(async () => {
-      fireEvent.click(boutonPublier());
+      fireEvent.click(screen.getByRole("button", { name: "Réessayer l'envoi" }));
     });
     await waitFor(() => expect(createFeedPost).toHaveBeenCalledTimes(1));
-    // La sélection entière est intacte : les deux repartent, dans l'ordre.
-    expect(uploadPostMedia).toHaveBeenCalledTimes(2);
-    expect((uploadPostMedia.mock.calls[0]![0] as File).name).toBe("a.jpg");
-    expect((uploadPostMedia.mock.calls[1]![0] as File).name).toBe("b.jpg");
+
+    /**
+     * ⚠️ **Comportement volontairement changé par FEED-NEW-UX-01 (tâche 4).**
+     * L'ancien écran renvoyait les DEUX fichiers, y compris `a.jpg` déjà
+     * transféré — une facture réseau doublée et un risque de doublon côté
+     * stockage. La reprise n'envoie plus que `b.jpg`.
+     */
+    expect(uploadPostMedia).toHaveBeenCalledTimes(1);
+    expect((uploadPostMedia.mock.calls[0]![0] as File).name).toBe("b.jpg");
+    const payload = createFeedPost.mock.calls[0]![0] as { media_urls: { url: string }[] };
+    expect(payload.media_urls).toHaveLength(2);
   });
 
   it("après un retry réussi, aucune erreur obsolète ne subsiste", async () => {
@@ -597,10 +579,10 @@ describe("échec d'envoi distinct d'un fichier refusé", () => {
     await act(async () => {
       fireEvent.click(boutonPublier());
     });
-    await screen.findAllByRole("alert");
+    await screen.findByRole("alert");
 
     await act(async () => {
-      fireEvent.click(boutonPublier());
+      fireEvent.click(screen.getByRole("button", { name: "Réessayer l'envoi" }));
     });
     await waitFor(() => expect(createFeedPost).toHaveBeenCalledTimes(1));
     expect(screen.queryAllByRole("alert")).toHaveLength(0);
@@ -673,7 +655,7 @@ describe("contrôleur de lot — une tentative, un contrôleur", () => {
     const [, premier] = uploadPostMedia.mock.calls[0]! as [File, AbortSignal];
 
     await act(async () => {
-      fireEvent.click(boutonPublier());
+      fireEvent.click(await screen.findByRole("button", { name: "Réessayer l'envoi" }));
     });
     await waitFor(() => expect(createFeedPost).toHaveBeenCalledTimes(1));
     const [, second] = uploadPostMedia.mock.calls[1]! as [File, AbortSignal];
@@ -708,7 +690,7 @@ describe("contrôleur de lot — une tentative, un contrôleur", () => {
     vi.useRealTimers();
 
     await act(async () => {
-      fireEvent.click(boutonPublier());
+      fireEvent.click(await screen.findByRole("button", { name: "Réessayer l'envoi" }));
     });
     await waitFor(() => expect(createFeedPost).toHaveBeenCalledTimes(1));
     const [, nouveau] = uploadPostMedia.mock.calls[1]! as [File, AbortSignal];

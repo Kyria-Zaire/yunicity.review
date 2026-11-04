@@ -91,6 +91,57 @@
   overflow-x: visible;
 }
 
+/* FEED-NEW-UX-01 — planches validées : carte blanche du composeur sur fond de
+   page neutre. `.web-shell-page` impose le fond blanc ; une classe utilitaire
+   posée sur le même élément perdait selon l'ordre de la feuille. */
+.web-shell-page.new-post-shell {
+  background: var(--yunicity-surface);
+}
+
+/* Palier mobile : réserve sous le contenu = hauteur MESURÉE de la barre basse
+   (`useMobileChromeInsets`), puis les 24 px du conteneur de l'écran.
+   ⚠️ `CITIZEN_MOBILE_BOTTOM_NAV_PADDING` n'est PAS fiable ici : sa classe
+   Tailwind est assemblée par interpolation et n'est jamais générée (0
+   occurrence dans le CSS de production) — défaut partagé par 16 autres
+   shells, hors périmètre de ce ticket.
+   TODO(debt): corriger la constante partagée — ticket séparé à ouvrir (voir
+   passation FEED-NEW-UX-01). */
+@media (max-width: 639.98px) {
+  .new-post-shell .web-three-col {
+    padding-bottom: 0;
+  }
+
+  .new-post-shell .new-post-content {
+    padding-bottom: var(--new-post-chrome-bottom, 3.25rem);
+  }
+}
+
+/* Encart d'échec révélé automatiquement : il doit tenir ENTIER entre l'en-tête
+   Yunicity, l'en-tête collant du composeur et la barre basse. Hauteurs mesurées
+   à l'exécution (`useMobileChromeInsets`), 0 au-delà du palier mobile. */
+.new-post-failure-zone {
+  scroll-margin-top: calc(var(--new-post-chrome-top, 0px) + var(--new-post-header-h, 0px) + 12px);
+  scroll-margin-bottom: calc(var(--new-post-chrome-bottom, 0px) + 12px);
+}
+
+/* Palier medium : la barre de contenu colle au haut de la colonne, comme sur la
+   planche et comme sur le fil — sans le retrait hérité de la grille. */
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .new-post-shell .web-three-col,
+  .new-post-shell .web-main-column {
+    padding-top: 0;
+  }
+
+  /* La grille du shell rail ne pose aucune marge latérale : chaque écran porte
+     sa gouttière, comme le fil. Sans elle, la carte touchait le rail et le bord
+     droit. Le même jeton règle l'en-tête medium pleine largeur, qui retombe
+     ainsi exactement sur les bords de la colonne. */
+  .new-post-shell .new-post-content {
+    padding-left: var(--feed-medium-content-gutter);
+    padding-right: var(--feed-medium-content-gutter);
+  }
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
@@ -5107,52 +5158,6 @@ body {
     display: block;
   }
 }
-
-/* ——— Feed new post (FEED-POST-COMPOSER-01) ——— */
-.web-mobile-feed-new-only {
-  display: block;
-}
-
-.web-desktop-feed-new-only {
-  display: none;
-}
-
-.feed-new-mobile-shell .web-three-col {
-  padding-left: 0;
-  padding-right: 0;
-}
-
-@media (max-width: 639.98px) {
-  .feed-new-mobile-shell .web-sidebar-aside {
-    display: none !important;
-  }
-
-  .feed-new-mobile-shell .web-three-col {
-    display: block !important;
-    grid-template-columns: unset !important;
-  }
-
-  .feed-new-mobile-shell .web-mobile-chrome-only,
-  .feed-new-mobile-shell .citizen-top-nav {
-    display: none !important;
-  }
-}
-
-@media (min-width: 640px) {
-  .web-mobile-feed-new-only {
-    display: none !important;
-  }
-
-  .web-desktop-feed-new-only {
-    display: block;
-  }
-
-  .feed-new-mobile-shell .web-three-col {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-}
-
 
 /* ==========================================================================
    C3-CITIZEN-MEDIUM-SHELL-R1A — contrat global du rail citoyen medium.

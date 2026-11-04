@@ -81,6 +81,21 @@ export function WebSidebar() {
   return null;
 }
 
+/**
+ * Shell de `/feed/new` (FEED-NEW-UX-01) : il monte l'en-tête et la barre basse
+ * mobiles réels, dont le menu exige le coordinateur de navigation de
+ * l'application. Comme la top nav et la sidebar ci-dessus, ce chrome est hors
+ * sujet ici : seul le composeur est mesuré.
+ */
+export function NewPostShell({ children }: { children: ReactNode }) {
+  return <>{children}</>;
+}
+
+/** Barre de contenu medium, empruntée au fil : chrome lui aussi. */
+export function FeedMediumHeader() {
+  return null;
+}
+
 export function YunicityLogo() {
   return null;
 }
