@@ -362,3 +362,52 @@ describe("revue finale — à l'écran", () => {
   });
 });
 
+/**
+ * Défaut signalé en recette Safari iPhone (Preview 91d44e70) : cinq photos
+ * choisies d'un coup n'étaient pas ajoutées, une par une si. ⚠️ NON REPRODUIT,
+ * cause non établie : ces tests gardent la chaîne contre une régression, ils
+ * ne prouvent pas une correction (ils passaient aussi sur l'ancien code).
+ */
+describe("sélection multiple en un seul événement", () => {
+  it("cinq fichiers livrés d'un coup donnent cinq vignettes, texte et médias existants préservés", async () => {
+    await monter();
+    fireEvent.change(zoneDeTexte(), { target: { value: "Texte déjà saisi" } });
+    await selectionner([image("deja.jpg")]);
+    expect(screen.getAllByRole("presentation")).toHaveLength(1);
+
+    // iOS nomme souvent « image.jpg » CHAQUE photo convertie : mêmes noms.
+    await selectionner([
+      image("image.jpg"),
+      image("image.jpg"),
+      image("image.jpg"),
+      image("image.jpg"),
+      image("image.jpg"),
+    ]);
+
+    expect(screen.getAllByRole("presentation")).toHaveLength(6);
+    expect(screen.getByText(/6 médias sur 10/)).toBeTruthy();
+    expect((zoneDeTexte() as HTMLTextAreaElement).value).toBe("Texte déjà saisi");
+    expect(screen.queryByText(/Aucun fichier n'a été reçu/)).toBeNull();
+  });
+
+  it("une livraison VIDE du sélecteur est annoncée, sans rien retirer", async () => {
+    await monter();
+    fireEvent.change(zoneDeTexte(), { target: { value: "Texte déjà saisi" } });
+    await selectionner([image("a.jpg"), image("b.jpg")]);
+
+    await selectionner([]);
+
+    expect(screen.getByText(/Aucun fichier n'a été reçu/)).toBeTruthy();
+    expect(screen.getAllByRole("presentation")).toHaveLength(2);
+    expect((zoneDeTexte() as HTMLTextAreaElement).value).toBe("Texte déjà saisi");
+  });
+
+  it("l'annonce de livraison vide disparaît à la sélection suivante", async () => {
+    await monter();
+    await selectionner([]);
+    expect(screen.getByText(/Aucun fichier n'a été reçu/)).toBeTruthy();
+    await selectionner([image("c.jpg")]);
+    expect(screen.queryByText(/Aucun fichier n'a été reçu/)).toBeNull();
+  });
+});
+

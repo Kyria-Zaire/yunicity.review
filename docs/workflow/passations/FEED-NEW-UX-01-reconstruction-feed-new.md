@@ -583,31 +583,246 @@ captures `v5` postérieures à toutes les corrections.
   Cause **non établie** — disque à ~560 Mo libres = **hypothèse**.
 - ⛔ **À arrêter après le test** : `sh scripts/qa-web-server.sh --stop`.
 
-## 9. ▶️ PROCHAINE ACTION — *mise à jour le 2026-11-04*
+## 8 quinquies. 🚀 COMMITS, CI ET DÉPLOIEMENT PREVIEW — *2026-11-04*
 
-> ⚠️ **La version précédente de cette section est PÉRIMÉE** : elle annonçait
-> la « revue indépendante finale EN COURS » et une tâche 10 que « aucun agent »
-> ne pouvait conduire faute d'avoir vu les planches. La revue a rendu
-> **REQUEST CHANGES** (`revue-finale-verdict.md`) et la session du §8 bis l'a
-> traitée **planches en main** (retrouvées dans le transcript de la session de
-> cadrage). Restent, de l'ancienne tâche 10 : le **clavier sur appareil réel**
-> et les **specs Playwright QA**.
+**Autorisé par Kyria** : commits, poussée de la branche de travail, CI, puis
+déploiement **Preview uniquement**. ⛔ **Aucune fusion vers `main`.**
 
-**1.** **Recette visuelle de Kyria** sur la page de comparaison
-(`https://claude.ai/artifact/MdWUTthkg5Wy3aGy1TudjR`) et en navigateur réel.
+### Commits — `dd7c22e1..91d44e70`
 
-**2.** ⛔ **Toujours manuel** : **clavier sur appareil réel** (Android Chrome
-**et** iOS Safari, 390 px).
+| SHA | Contenu |
+|---|---|
+| `8c623461` | idempotence backend (service, dépôt, route, migration 0066, tests) |
+| `252be779` | chrome réel sur `/feed/new` (rail, « Créer », barre basse, top nav) + garde de sortie |
+| `fe55877c` | reconstruction du composeur (front, libellés, tests, harnais media01) |
+| `91d44e70` | spec, plan, passation |
 
-**3.** *(Recommandé)* une spec QA pour la garde de sortie, le gel et
-« Précédent », aujourd'hui prouvés hors suite.
+**Hors commit, volontairement** : `TICKETS-INDEX.md` (diff de 1 837 lignes,
+majoritairement d'autres tickets), documents des autres tickets (PR202-*,
+PROFILE-POST-MENU-01, MEDIA-MULTI-PHOTO-01, PASSPORT…), `next-env.d.ts`
+(artefact de build, restauré). Aucun secret dans le diff (balayage).
 
-**4.** **Puis**, et **sur décision de Kyria seule** : commits, PR, promotion.
+### CI — PR #203 (brouillon), sur `91d44e70`
 
-*(Sujet séparé, hors ce ticket : contrôles requis sur `main` — I6.)*
+| Contrôle | Résultat |
+|---|---|
+| Backend CI (ruff · mypy · pytest) | ✅ 1 min 39 |
+| Frontend CI (lint · typecheck · build) | ✅ 4 min 51 |
+| Docker CI (pytest, base jetable) | ✅ **2060 passed**, 19 skipped — **test de migration 0066 inclus** |
+| Gitleaks · chemins interdits · lint-agent-rules | ✅ |
+| **Dependency audit** | ❌ **INCHANGÉ** : 56 vulnérabilités dont **21 High/Critical** (`next` CVSS 9.5) — **identique au run de `dd7c22e1`**, aucun manifeste modifié. Réserve **assumée** pour la Preview, ⛔ **non levée**. |
 
-⛔ **Aucun commit. Aucune fusion vers `main`. Aucun déploiement.**
-**La publication de test reste conservée.**
+### Preview — **`91d44e70` EN LIGNE**
+
+Poussée **en avance rapide vérifiée** (`merge-base --is-ancestor`, sans
+`--force`) : `dd7c22e1..91d44e70 → feat/c3-videos-refonte-final`.
+`main` **intouchée** (`3e0b27ba`).
+
+Relevé `railway status --json`, projet `dazzling-wisdom`, env. `production` :
+
+| Service | Statut | SHA actif | Déploiement |
+|---|---|---|---|
+| `yunicity.review` (web, `preview.yunicity.city`) | ✅ SUCCESS | **`91d44e70`** | `65d89da2-42fc-4eb3-9c0f-a0427401296c` |
+| `unified-media-preview` (API, `api-preview.yunicity.city`) | ✅ SUCCESS | **`91d44e70`** | `8ce855b9-656c-4efd-8523-208c87f60c6f` |
+
+Un seul déploiement actif par service ; `dd7c22e1` a quitté la liste.
+**Migration** : journal de pré-déploiement → `Running upgrade 20260923_0065 ->
+20261103_0066`. **Domaines** (relus par `railway domain list` par service) :
+HTTP 200 sur `/api/v1/health` (`environment: prod`), `/`, `/feed/new`,
+`/login`. **Code servi vérifié** : « Quitter et perdre le brouillon » et « Le
+contenu est figé » présents dans le chunk servi de `/feed/new`.
+
+**Serveur de test local arrêté** (ports 3002, 3003, 3012 libres).
+
+⚠️ **Non vérifié sur Preview** : aucune publication de test n'a été faite ;
+le clavier sur iPhone reste à conduire — désormais **sur Preview**.
+
+## 8 sexies. 🐞 DÉFAUT DE RECETTE — sélection multiple sur Safari iPhone *(Preview `91d44e70`)*
+
+**Constat de Kyria** : cinq photos choisies d'un coup dans la galerie puis
+« Ajouter » → **rien n'est ajouté** ; une par une → fonctionne.
+
+### Chaîne vérifiée — lecture de code
+
+| Étape | Constat |
+|---|---|
+| Sélecteur → `onChange` | `addFiles(event.target.files)` puis remise à zéro du champ ; la liste est **copiée synchroniquement** avant la remise à zéro |
+| `addFiles` | ⚠️ **seul chemin silencieux** : liste vide → `return` sans message |
+| `collectMediaDrafts` | chaque fichier **accepté ou refusé avec motif nommé** — aucun écart silencieux ; même traitement pour 1 ou 5 fichiers |
+| Classification du type | identique pour 1 ou 5 fichiers |
+| Aperçus / état | `createObjectURL` + `commitMedias` — identique pour 1 ou 5 |
+| Démontage de l'écran pendant le sélecteur | **écarté** : aucune revalidation de session au retour de visibilité ; `pageshow` n'agit qu'en restauration bfcache |
+
+⚠️ **CAUSE NON ÉTABLIE.** Le code ne distingue pas 1 et 5 fichiers ; Safari iOS
+n'est pas reproductible sur ce poste. Comportements **rapportés** (non
+officiels) compatibles : `change` très tardif quand beaucoup de photos sont
+préparées ; chaque ouverture du sélecteur **remplace** la liste en attente.
+
+### Fait
+
+- **Livraison vide annoncée** (« Aucun fichier n'a été reçu… votre texte et vos
+  médias sont conservés »), brouillon et refus intacts — plus de chemin muet.
+- **Tests** : cinq fichiers **en un seul événement** (noms identiques
+  « image.jpg » comme sous iOS) → 6 vignettes avec le média existant, texte
+  préservé ; livraison vide annoncée sans rien retirer ; annonce levée à la
+  sélection suivante. ⚠️ Ce test passe **aussi sur l'ancien code** : il garde
+  la chaîne, il **ne reproduit pas** le défaut iOS.
+- **Page de diagnostic** autonome (`http://172.20.10.3:3020`), même `accept` et
+  `multiple` que l'écran : journalise délai de `change`, nombre / noms / types /
+  tailles, `cancel`, focus, visibilité, rechargement.
+- **Vérification iPhone préparée** : build de production de l'arbre corrigé,
+  façade LAN `http://172.20.10.3:3002/feed/new` (réseau = partage de connexion
+  « iPhone 4 »), correctif **présent** dans le chunk servi.
+- **Disque** : 98 Mo libres avant build → caches régénérables supprimés
+  (`.next`, `test-results`) → ~396 Mo.
+
+⛔ **Non commité, non déployé.**
+
+### Preuve iPhone — page de diagnostic *(Kyria, iOS 18.5, 2026-11-04)*
+
+Même `accept` et `multiple` que l'écran → **un seul `change` avec les 5
+fichiers** (`IMG_4619…4623.png`, `image/png`, ~4 Mo), aperçus **rapides**,
+**aucun** `blur` / `pagehide` / changement de visibilité pendant le sélecteur.
+⇒ **Safari livre bien les fichiers ; la cause est dans l'application.**
+🔁 **Hypothèse « délai de livraison » ÉCARTÉE** (décision de Kyria, sur cette
+preuve) — ne pas la reprendre sans preuve nouvelle.
+
+### En cours — composeur instrumenté
+
+Build LAN `http://172.20.10.3:3002/feed/new?diag-selecteur` : journal
+persistant (session) de `change` natif, `onChange` React, état du brouillon,
+montage / démontage de l'écran, URL, erreurs. ⚠️ **Code de diagnostic
+TEMPORAIRE** (`new-post-selection-diag.tsx` + branchement dans l'écran) —
+⛔ **à retirer avant tout commit.**
+
+### Preuve iPhone — VRAI composeur instrumenté *(Kyria, iOS 18.5, Safari)*
+
+**Environnement** : build LAN de production = `91d44e70` + annonce de
+livraison vide + diagnostic temporaire, façade `172.20.10.3:3002`, API **QA**,
+compte `qa.citizen.b`, URL `/feed/new?diag-selecteur`.
+
+| Point de mesure | Observé |
+|---|---|
+| `input` natif | **5 fichiers** |
+| `change` natif | **5 fichiers** |
+| `onChange` React | **5 fichiers** |
+| État du brouillon | **5 médias, 0 refusé** |
+| Écran | 5 miniatures numérotées, « 5 médias sur 10 » |
+
+⇒ **Le défaut NE SE REPRODUIT PAS dans cet environnement.** Toute la chaîne
+livre les 5 fichiers jusqu'au brouillon.
+
+### Réévaluation des hypothèses
+
+| Hypothèse | Statut | Preuve |
+|---|---|---|
+| Safari ne livre pas les fichiers | ❌ **écartée** | diagnostic isolé + composeur : 5 fichiers |
+| Délai de livraison | ❌ **écartée** | aperçus rapides (Kyria) |
+| Branchement React / champ détaché | ❌ **écartée** | `onChange` React = 5 |
+| Rejet par validation | ❌ **écartée** | 0 refusé |
+| Démontage de l'écran | ❌ **écartée** | lecture de code + écran resté monté |
+| **Environnement Preview** (HTTPS, API Preview, compte réel) | ⚠️ **OUVERTE** | jamais rejoué |
+| **Jeu de photos** (test initial : photos de l'appareil, HEIC/Live ? diagnostic : captures PNG de 4 Mo) | ⚠️ **OUVERTE** | non comparé |
+| **État initial du brouillon** au moment du test d'origine | ⚠️ **OUVERTE** | inconnu |
+| **Intermittence** / premier essai après chargement | ⚠️ **OUVERTE** | un seul essai mesuré |
+
+### Écart entre le build en échec et le build mesuré
+
+`git diff 91d44e70 -- frontend/` : **annonce de livraison vide** (n'agit que si
+la liste est VIDE — sans effet sur une livraison de 5) + **diagnostic** (inerte
+sans `?diag-selecteur` : écouteurs non posés, journal muet, panneau absent).
+⇒ **Aucun changement de code n'explique un comportement différent pour 5
+fichiers** ; l'écart probable est d'**environnement ou de données**.
+
+### Vérifications automatisées — WebKit, profil iPhone 13, parcours NORMAL
+
+Build LAN, sans paramètre de diagnostic, API QA, compte `qa.citizen.a` :
+**16 / 16 OK** — 5 photos en un événement · retrait (rangs recalculés) ·
+réajout de 2 · 7 de plus → plafond **10**, **3 refus nommés** « Limite de 10
+médias atteinte » · Publier bloqué puis débloqué par « Continuer sans eux » ·
+ajout masqué à 10, rétabli à 9 · texte préservé · **0 requête de
+publication** · 0 erreur. ⚠️ WebKit de bureau ≠ Safari iOS.
+
+### Éléments TEMPORAIRES à retirer avant livraison
+
+1. `frontend/apps/web/components/feed/post-composer/new-post-selection-diag.tsx` (non suivi).
+2. Dans `new-post-screen.tsx` : l'import marqué `TODO(debt)`, l'appel
+   `useSelectionDiag(...)`, les deux `diagLog(...)` (bouton d'ajout,
+   `onChange`), `<SelectionDiagPanel />`.
+3. Serveurs locaux : façade LAN 3002/3003 (build **instrumenté**) et page de
+   diagnostic 3020.
+4. `.next-build` actuel = build instrumenté → **à reconstruire** avant toute
+   nouvelle mesure locale.
+5. Hors dépôt : `scratchpad/diag-ios/`, `diag-server.cjs`, scripts de parcours ;
+   clé `sessionStorage` `diag-selecteur-journal` sur l'iPhone (origine LAN).
+
+**À CONSERVER, sous réserve de validation** : annonce de livraison vide
+(`POST_NEW_SELECTION_EMPTY`, `selectionEmpty`) + 3 tests de sélection
+multiple — changement produit minimal.
+
+## 8 septies. ✅ RECETTE SUR PREVIEW `91d44e70` — Safari iPhone *(Kyria, 2026-11-04)*
+
+| Parcours | Résultat |
+|---|---|
+| Sélection de **5 photos d'un coup** | ✅ |
+| Réorganisation | ✅ |
+| Retrait | ✅ |
+| **Publication unique**, **4 photos dans le bon ordre** | ✅ |
+| Suppression de la publication | ✅ |
+| **Clavier ouvert** | ✅ validé |
+| **Retour de la barre basse** | ✅ validé |
+
+### 🐞 Défaut initial « 5 photos d'un coup ne s'ajoutent pas »
+
+⛔ **NON REPRODUIT — CAUSE NON ÉTABLIE. Ne PAS le présenter comme corrigé.**
+Non reproduit ni sur la Preview (même SHA que le constat), ni en local
+instrumenté. Les hypothèses encore ouvertes (environnement, jeu de photos,
+état du brouillon, intermittence) **n'ont pas été tranchées** — elles sont
+**suspendues faute de reproduction**, pas réfutées. Une réapparition rouvre
+l'enquête avec le protocole du §8 sexies.
+
+**Ce qui a changé dans le code à cette occasion** — une **mitigation, pas une
+résolution** : une livraison VIDE du sélecteur est désormais annoncée (plus de
+retour muet) + 3 tests de sélection multiple. ⚠️ Ces tests passaient aussi sur
+l'ancien code : ils gardent la chaîne, ils ne prouvent pas une correction.
+
+### Nettoyage
+
+- **Diagnostic temporaire RETIRÉ** : `new-post-selection-diag.tsx` supprimé,
+  branchement retiré de `new-post-screen.tsx` ; aucune trace (`grep`). Contrôle
+  du retrait : typecheck **0**, `new-post-screen.test.tsx` **25/25** — suites
+  déjà validées **non relancées** (consigne de Kyria).
+- **Serveurs locaux arrêtés** : 3002, 3003, 3012, 3020 **libres**.
+- `.next-build` local = build **instrumenté** → à reconstruire avant toute
+  nouvelle mesure locale (hors livraison : Railway rebâtit depuis la source).
+
+## 9. ▶️ CE QU'IL RESTE À LIVRER — *2026-11-04, fin*
+
+### Sur la branche, non commité
+
+| Changement | Nature | Décision attendue |
+|---|---|---|
+| Annonce de livraison vide (`POST_NEW_SELECTION_EMPTY`, `selectionEmpty`, encart dans l'écran) | produit, minimal | commit + poussée + CI + Preview |
+| 3 tests de sélection multiple (`new-post-screen.test.tsx`) | tests | idem |
+| Passation (§8 quinquies → §9) | doc | idem |
+
+⚠️ Ce reliquat n'est **pas sur la Preview** : la recette ci-dessus porte sur
+`91d44e70`, **sans** l'annonce de livraison vide.
+
+### Hors de ce ticket, ouverts
+
+- ⛔ **Fusion vers `main`** : non faite — décision de Kyria seule.
+- **Audit des dépendances ROUGE** (21 High/Critical, `next` CVSS 9.5) — zone
+  rouge, sujet séparé, **assumé** pour la Preview, **non levé**.
+- **Contrôles requis sur `main`** absents (I6) — sujet séparé.
+- 🐞 **`CITIZEN_MOBILE_BOTTOM_NAV_PADDING` jamais générée** — 16 shells — ticket
+  à ouvrir.
+- **Incident `video-worker-qa` unhealthy** — origine non établie.
+- **Docker de nouveau dégradé** (CLI sans réponse) et **disque C: très bas**
+  (~300 Mo) — sur la machine de Kyria.
+- **Spec QA automatisée** sortie / contenu figé / « Précédent » — amélioration.
+- **`TICKETS-INDEX.md`** : diff hors commit, mêlant d'autres tickets — à
+  réconcilier par son propriétaire.
 
 ### 🧹 Effet de bord à nettoyer en fin de ticket
 

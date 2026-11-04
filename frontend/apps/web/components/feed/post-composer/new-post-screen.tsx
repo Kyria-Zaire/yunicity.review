@@ -23,6 +23,7 @@ import { useAuth } from "@/lib/auth/auth-provider";
 import {
   POST_MEDIA_MAX_COUNT,
   POST_NEW_PENDING_KEY_NOTICE,
+  POST_NEW_SELECTION_EMPTY,
   POST_NEW_UPLOAD_PROGRESS,
 } from "@yunicity/utils";
 import { useRouter } from "next/navigation";
@@ -155,6 +156,15 @@ export function NewPostScreen() {
                 className="mx-4 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-xs leading-5 text-neutral-600"
               >
                 {POST_NEW_PENDING_KEY_NOTICE}
+              </p>
+            ) : null}
+
+            {draft.selectionEmpty ? (
+              <p
+                role="status"
+                className="mx-4 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm leading-5 text-neutral-700"
+              >
+                {POST_NEW_SELECTION_EMPTY}
               </p>
             ) : null}
 

@@ -37,6 +37,8 @@ export function useNewPostDraft(city: string) {
     options;
   const [medias, setMedias] = useState<MediaDraft[]>([]);
   const [rejectedFiles, setRejectedFiles] = useState<RejectedFile[]>([]);
+  /** Le dernier passage du sélecteur n'a livré AUCUN fichier — dit, jamais tu. */
+  const [selectionEmpty, setSelectionEmpty] = useState(false);
 
   const charCount = body.length;
   const trimmedBody = body.trim();
@@ -114,10 +116,16 @@ export function useNewPostDraft(city: string) {
 
   const addFiles = useCallback(
     (files: FileList | null) => {
-      if (!files || files.length === 0) return;
+      // ⛔ Plus de retour muet : une livraison vide (annulation, ou sélection
+      // perdue par le navigateur) est annoncée. Brouillon et refus en cours
+      // sont laissés intacts — rien n'est retiré.
+      if (!files || files.length === 0) {
+        setSelectionEmpty(true);
+        return;
+      }
+      setSelectionEmpty(false);
       // Une NOUVELLE sélection remplace l'annonce précédente : les fichiers
       // refusés au tour d'avant ne sont plus ceux que l'utilisateur regarde.
-      // Un picker annulé (liste vide) ne l'efface pas, lui.
       setRejectedFiles([]);
       const { accepted, rejected } = collectMediaDrafts(
         Array.from(files),
@@ -261,6 +269,7 @@ export function useNewPostDraft(city: string) {
     /** Compatibilité : nom historique du même tableau. */
     selectedMedia: medias,
     rejectedFiles,
+    selectionEmpty,
     dismissRejectedFiles,
     /** Compatibilité : nom historique de `dismissRejectedFiles`. */
     dismissRejectedMedia: dismissRejectedFiles,

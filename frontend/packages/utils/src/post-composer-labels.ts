@@ -75,6 +75,14 @@ export const POST_NEW_MEDIA_MOVED = (index: number) => `Média déplacé en posi
 export const POST_NEW_REJECTED_TITLE = (count: number) =>
   count > 1 ? `${count} fichiers n'ont pas été ajoutés` : "1 fichier n'a pas été ajouté";
 export const POST_NEW_REJECTED_CHOOSE_OTHERS = "Choisir d'autres fichiers";
+/**
+ * Le sélecteur a rendu la main SANS aucun fichier. Annulation volontaire ou
+ * sélection perdue en route (perte signalée sur Safari iPhone, jamais
+ * reproduite) : les deux sont indiscernables, le message couvre les deux sans
+ * rien affirmer.
+ */
+export const POST_NEW_SELECTION_EMPTY =
+  "Aucun fichier n'a été reçu. Si vous en aviez choisi, réessayez : votre texte et vos médias sont conservés.";
 export const POST_NEW_REJECTED_CONTINUE = "Continuer sans eux";
 export const POST_NEW_REJECTED_KEEP_HINT =
   "Les médias déjà sélectionnés restent attachés. Rien n'a été retiré de votre brouillon.";
