@@ -83,6 +83,35 @@ class PostRepository:
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_by_client_request(
+        self,
+        *,
+        author_id: uuid.UUID,
+        client_request_id: uuid.UUID,
+    ) -> Post | None:
+        """Retrouve la tentative de publication deja enregistree sous cette cle.
+
+        Le filtre `author_id` est celui de l'index unique : la cle appartient a SON
+        auteur, celle d'un tiers ne resout jamais. Les `selectinload` reprennent ceux
+        de `get_by_id` -- la ligne relue est serialisee comme une creation, et une
+        relation chargee paresseusement echouerait en contexte async.
+        """
+        stmt = (
+            select(Post)
+            .where(
+                Post.author_id == author_id,
+                Post.client_request_id == client_request_id,
+            )
+            .options(
+                selectinload(Post.partner_offer).selectinload(PartnerOffer.neighborhood),
+                selectinload(Post.partner_creator_content),
+                selectinload(Post.local_event).selectinload(LocalEvent.neighborhood),
+                selectinload(Post.neighborhood),
+            )
+        )
+        result = await self._session.execute(stmt)
+        return result.scalars().first()
+
     async def get_by_local_event_id(self, event_id: uuid.UUID) -> Post | None:
         result = await self._session.execute(select(Post).where(Post.local_event_id == event_id))
         return result.scalar_one_or_none()
