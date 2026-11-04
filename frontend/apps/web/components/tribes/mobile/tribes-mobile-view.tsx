@@ -1,127 +1,243 @@
 "use client";
 
-import { TribesMobileCategoryPills } from "@/components/tribes/mobile/tribes-mobile-category-pills";
-import { TribesMobileFeaturedCarousel } from "@/components/tribes/mobile/tribes-mobile-featured-carousel";
-import { TribesMobileHeader } from "@/components/tribes/mobile/tribes-mobile-header";
-import { TribesMobileMyTribesList } from "@/components/tribes/mobile/tribes-mobile-my-tribes-list";
-import { TribesMobileSearchBar } from "@/components/tribes/mobile/tribes-mobile-search-bar";
-import { TribesMobileSuggestionsRail } from "@/components/tribes/mobile/tribes-mobile-suggestions-rail";
-import type { LocalEvent, Tribe } from "@yunicity/types";
-import type { TribesMobileCategoryId } from "@yunicity/utils";
+import { TribesMediumCategoryChips } from "@/components/tribes/medium/tribes-medium-category-chips";
+import { TribesMediumFilterSheet } from "@/components/tribes/medium/tribes-medium-filter-sheet";
+import { TribesMobileActivitySection } from "@/components/tribes/mobile/tribes-mobile-activity-section";
+import { TribesMobileCreateBanner } from "@/components/tribes/mobile/tribes-mobile-create-banner";
+import { TribesMobileEditorial } from "@/components/tribes/mobile/tribes-mobile-editorial";
+import { TribesMobileInvitationCard } from "@/components/tribes/mobile/tribes-mobile-invitation-card";
+import { TribesMobileMyTribesRail } from "@/components/tribes/mobile/tribes-mobile-my-tribes-rail";
+import { TribesMobileNavTabs } from "@/components/tribes/mobile/tribes-mobile-nav-tabs";
+import { TribesMobileNearbyStarted } from "@/components/tribes/mobile/tribes-mobile-nearby-started";
+import { TribesMobileRecommendedList } from "@/components/tribes/mobile/tribes-mobile-recommended-list";
+import { TribesMobileSearchFilters } from "@/components/tribes/mobile/tribes-mobile-search-filters";
+import { TribesMobileSpotlight } from "@/components/tribes/mobile/tribes-mobile-spotlight";
+import type { LocalEvent, Neighborhood, Tribe, TribeInvitationPending } from "@yunicity/types";
+import type { TribesDesktopCategoryId, TribesDesktopNavId, TribesDesktopVisibilityId } from "@yunicity/utils";
 import {
-  TRIBES_EMPTY,
-  TRIBES_ERROR,
-  TRIBES_LOADING,
-  TRIBES_RETRY,
-  buildTribesMobileFeaturedCards,
-  buildTribesMobileMemberRows,
-  buildTribesMobileSuggestionCards,
-  filterTribesByMobileCategory,
-  filterTribesByMobileSearch,
+  TRIBES_DESKTOP_ERROR,
+  TRIBES_DESKTOP_LOADING,
+  TRIBES_DESKTOP_RETRY,
+  buildTribesDesktopActivityItems,
+  buildTribesDesktopInvitationCards,
+  buildTribesDesktopMyTribeRows,
+  buildTribesDesktopNearbyRows,
+  buildTribesDesktopRecommendedCards,
+  buildTribesDesktopSpotlight,
+  filterTribesForDesktopPortal,
+  resolveTribesDesktopFeaturedNeighborhoodLabel,
 } from "@yunicity/utils";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 type TribesMobileViewProps = {
   city: string;
-  loading: boolean;
-  error: boolean;
   tribes: Tribe[];
   events: LocalEvent[];
-  onRetry: () => void;
+  neighborhoods: Neighborhood[];
+  invitations: TribeInvitationPending[];
+  loading: boolean;
+  error: boolean;
+  searchQuery: string;
+  activeNav: TribesDesktopNavId;
+  activeVisibility: TribesDesktopVisibilityId;
+  activeCategory: TribesDesktopCategoryId;
+  activeNeighborhood: string;
+  onSearchChange: (query: string) => void;
+  onNavChange: (navId: TribesDesktopNavId) => void;
+  onVisibilityChange: (visibilityId: TribesDesktopVisibilityId) => void;
+  onCategoryChange: (categoryId: TribesDesktopCategoryId) => void;
+  onNeighborhoodChange: (slug: string) => void;
+  onResetFilters: () => void;
+  onReload: () => void;
 };
 
-/** Vue mobile Tribus — layout MOBILE-TRIBES-01. */
+function countActiveMobileFilters(
+  activeVisibility: TribesDesktopVisibilityId,
+  activeCategory: TribesDesktopCategoryId,
+  activeNeighborhood: string,
+): number {
+  let count = 0;
+  if (activeVisibility !== "all") count += 1;
+  if (activeCategory !== "for_you") count += 1;
+  if (activeNeighborhood && activeNeighborhood !== "all") count += 1;
+  return count;
+}
+
+/**
+ * Vue mobile Tribus — maquette MOBILE-TRIBUS-02 (&lt;640 px).
+ * Réutilise les presenters desktop / filtres URL partagés.
+ */
 export function TribesMobileView({
   city,
-  loading,
-  error,
   tribes,
   events,
-  onRetry,
+  neighborhoods,
+  invitations,
+  loading,
+  error,
+  searchQuery,
+  activeNav,
+  activeVisibility,
+  activeCategory,
+  activeNeighborhood,
+  onSearchChange,
+  onNavChange,
+  onVisibilityChange,
+  onCategoryChange,
+  onNeighborhoodChange,
+  onResetFilters,
+  onReload,
 }: TribesMobileViewProps) {
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<TribesMobileCategoryId>("all");
-  const [filterActive, setFilterActive] = useState(false);
-  const [showAllSuggestions, setShowAllSuggestions] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterButtonRef = useRef<HTMLButtonElement>(null);
+  const activeFilterCount = countActiveMobileFilters(activeVisibility, activeCategory, activeNeighborhood);
 
-  const hasActiveFilters = category !== "all" || query.trim().length > 0;
+  const invitationSlugs = useMemo(
+    () => invitations.map((invitation) => invitation.tribe_slug),
+    [invitations],
+  );
 
-  const filteredTribes = useMemo(() => {
-    const bySearch = filterTribesByMobileSearch(tribes, query);
-    return filterTribesByMobileCategory(bySearch, category);
-  }, [category, query, tribes]);
+  const filteredTribes = useMemo(
+    () =>
+      filterTribesForDesktopPortal({
+        tribes,
+        navId: activeNav,
+        visibilityId: activeVisibility,
+        categoryId: activeCategory,
+        neighborhoodSlug: activeNeighborhood,
+        neighborhoods,
+        searchQuery,
+        invitationSlugs,
+      }),
+    [
+      activeCategory,
+      activeNav,
+      activeNeighborhood,
+      activeVisibility,
+      invitationSlugs,
+      neighborhoods,
+      searchQuery,
+      tribes,
+    ],
+  );
 
-  const featuredCards = useMemo(
-    () => buildTribesMobileFeaturedCards({ city, tribes: filteredTribes, events }),
+  const spotlight = useMemo(
+    () => buildTribesDesktopSpotlight({ city, tribes: filteredTribes, events }),
     [city, events, filteredTribes],
   );
 
-  const memberRows = useMemo(
-    () => buildTribesMobileMemberRows({ city, tribes: filteredTribes }),
-    [city, filteredTribes],
+  const recommended = useMemo(
+    () =>
+      buildTribesDesktopRecommendedCards({
+        city,
+        tribes: filteredTribes,
+        events,
+        excludeId: spotlight?.id,
+        limit: 4,
+      }),
+    [city, events, filteredTribes, spotlight?.id],
   );
 
-  const suggestionCards = useMemo(
-    () => buildTribesMobileSuggestionCards({ city, tribes: filteredTribes, events }),
-    [city, events, filteredTribes],
+  const activityItems = useMemo(
+    () => buildTribesDesktopActivityItems({ city, tribes, events, limit: 3 }),
+    [city, events, tribes],
+  );
+
+  const myTribes = useMemo(
+    () => buildTribesDesktopMyTribeRows({ city, tribes, events, maxItems: 6 }),
+    [city, events, tribes],
+  );
+
+  const nearbyRows = useMemo(
+    () =>
+      buildTribesDesktopNearbyRows({
+        city,
+        tribes,
+        neighborhoods,
+        neighborhoodSlug: activeNeighborhood === "all" ? undefined : activeNeighborhood,
+        maxItems: 2,
+      }),
+    [activeNeighborhood, city, neighborhoods, tribes],
+  );
+
+  const invitationCards = useMemo(
+    () => buildTribesDesktopInvitationCards({ city, invitations, maxItems: 1 }),
+    [city, invitations],
+  );
+
+  const neighborhoodLabel = useMemo(
+    () =>
+      resolveTribesDesktopFeaturedNeighborhoodLabel(
+        neighborhoods,
+        activeNeighborhood === "all" ? undefined : activeNeighborhood,
+      ),
+    [activeNeighborhood, neighborhoods],
   );
 
   return (
-    <div className="web-mobile-tribes-only min-w-0 bg-[#F4F5F7] pb-24">
-      <TribesMobileHeader />
+    <div className="web-mobile-tribes-only min-w-0 bg-[#F4F5F7] pb-24" data-tribes-mobile-root="">
+      <div className="space-y-4 px-4 pb-4 pt-3">
+        <TribesMobileEditorial city={city} />
 
-      <div className="space-y-4 px-4 pt-3">
-        <TribesMobileSearchBar
-          query={query}
-          onQueryChange={setQuery}
-          filterActive={filterActive || hasActiveFilters}
-          onToggleFilter={() => {
-            setFilterActive((current) => !current);
-            document.getElementById("tribes-mobile-categories")?.scrollIntoView({
-              behavior: "smooth",
-              block: "nearest",
-            });
-          }}
+        <TribesMobileSearchFilters
+          searchQuery={searchQuery}
+          onSearchChange={onSearchChange}
+          activeFilterCount={activeFilterCount}
+          filterPanelOpen={filterOpen}
+          onOpenFilters={() => setFilterOpen(true)}
+          filterButtonRef={filterButtonRef}
         />
 
-        <TribesMobileCategoryPills activeCategory={category} onSelectCategory={setCategory} />
+        <TribesMobileNavTabs activeNav={activeNav} onNavChange={onNavChange} />
+
+        <TribesMediumCategoryChips activeCategory={activeCategory} onCategoryChange={onCategoryChange} />
+
+        <TribesMediumFilterSheet
+          open={filterOpen}
+          onOpenChange={setFilterOpen}
+          city={city}
+          activeVisibility={activeVisibility}
+          activeNeighborhood={activeNeighborhood}
+          neighborhoods={neighborhoods}
+          onVisibilityChange={onVisibilityChange}
+          onNeighborhoodChange={onNeighborhoodChange}
+          onResetFilters={onResetFilters}
+          returnFocusRef={filterButtonRef}
+        />
 
         {loading ? (
-          <p className="py-10 text-center text-sm text-neutral-500" role="status">
-            {TRIBES_LOADING}
-          </p>
-        ) : null}
-
-        {error ? (
+          <>
+            <TribesMobileSpotlight city={city} spotlight={null} onReload={onReload} />
+            <p className="py-6 text-center text-sm text-neutral-500" role="status">
+              {TRIBES_DESKTOP_LOADING}
+            </p>
+          </>
+        ) : error ? (
           <div className="space-y-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-8 text-center">
-            <p className="text-sm text-red-800">{TRIBES_ERROR}</p>
+            <p className="text-sm text-red-800">{TRIBES_DESKTOP_ERROR}</p>
             <button
               type="button"
-              onClick={onRetry}
+              onClick={() => void onReload()}
               className="rounded-full bg-yunicity-primary px-4 py-2 text-sm font-semibold text-white"
             >
-              {TRIBES_RETRY}
+              {TRIBES_DESKTOP_RETRY}
             </button>
           </div>
-        ) : null}
-
-        {!loading && !error && tribes.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-8 text-center text-sm text-neutral-600">
-            {TRIBES_EMPTY}
-          </p>
-        ) : null}
-
-        {!loading && !error && tribes.length > 0 ? (
+        ) : (
           <>
-            <TribesMobileFeaturedCarousel cards={featuredCards} />
-            <TribesMobileMyTribesList rows={memberRows} />
-            <TribesMobileSuggestionsRail
-              cards={suggestionCards}
-              showAll={showAllSuggestions}
-              onShowAll={() => setShowAllSuggestions(true)}
+            <TribesMobileSpotlight city={city} spotlight={spotlight} onReload={onReload} />
+            <TribesMobileMyTribesRail city={city} myTribes={myTribes} />
+            <TribesMobileInvitationCard invitation={invitationCards[0] ?? null} onDeclined={onReload} />
+            <TribesMobileRecommendedList city={city} items={recommended} onReload={onReload} />
+            <TribesMobileActivitySection items={activityItems} />
+            <TribesMobileNearbyStarted
+              city={city}
+              neighborhoodLabel={neighborhoodLabel}
+              nearbyRows={nearbyRows}
             />
+            <TribesMobileCreateBanner city={city} />
           </>
-        ) : null}
+        )}
       </div>
     </div>
   );

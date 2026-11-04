@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 
 import type { Locator, Page, Response } from "@playwright/test";
 
-import { expect, test } from "../fixtures";
+import { expect, testCitizen as test } from "../fixtures";
 import { COLD_START_TEST_TIMEOUT, COLD_START_TIMEOUT } from "../cold-start";
 
 /**
@@ -39,10 +39,12 @@ function isDirectApiCall(url: string): boolean {
   return /:(8010|8000)\/api\//.test(url);
 }
 
-async function expectLoadedSameOriginImage(image: Locator): Promise<void> {
+async function expectLoadedAuthorizedImage(image: Locator): Promise<void> {
   await expect(image).toBeVisible();
   const src = await image.getAttribute("src");
-  expect(src).toMatch(/^\/api\/v1\/story-media\//);
+  // MEDIA-01B : object URL locale (aperçu composer ou Blob authentifié du feed).
+  // L'URL relative /api/v1/story-media n'est plus un src — elle casserait hors proxy.
+  expect(src).toMatch(/^blob:/);
   await expect
     .poll(async () => image.evaluate((node) => (node as HTMLImageElement).naturalWidth))
     .toBeGreaterThan(1);
@@ -83,7 +85,24 @@ test.describe("C3.1-R1C — Feed composer photo desktop", () => {
 
     const forbidden = seen.filter(isDirectApiCall);
     expect(forbidden, `appels navigateur directs vers l'API: ${forbidden.join(", ")}`).toEqual([]);
-    expect(upload.url().startsWith("http://localhost:3002/api/v1/posts/media")).toBe(true);
+    /*
+     * L'origine est RELEVEE sur la page, jamais codee en dur.
+     *
+     * Ces assertions exigeaient `http://localhost:3002`. Or le harnais sert
+     * delibrement `127.0.0.1:3002` : `playwright.config.ts` le dit en
+     * commentaire — « hote IPv4 explicite, `localhost` resout `::1` EN PREMIER ».
+     * Elles contredisaient donc une decision documentee du harnais. La spec 17
+     * porte deja ce correctif ; celle-ci l'avait manque.
+     *
+     * Ce qu'elles veulent prouver est la MEME ORIGINE, et c'est conserve :
+     * l'interdiction d'atteindre l'API en direct reste portee, inchangee, par
+     * `isDirectApiCall`, qui ne depend d'aucun hote.
+     */
+    const origine = new URL(page.url()).origin;
+    expect(
+      upload.url().startsWith(`${origine}/api/v1/posts/media`),
+      `televersement hors facade — origine attendue ${origine}, vue : ${upload.url()}`,
+    ).toBe(true);
 
     if (upload.status() !== 201) {
       throw new Error(
@@ -93,7 +112,7 @@ test.describe("C3.1-R1C — Feed composer photo desktop", () => {
 
     const preview = composer.locator("img").first();
     await expect(preview).toBeVisible({ timeout: COLD_START_TIMEOUT });
-    await expectLoadedSameOriginImage(preview);
+    await expectLoadedAuthorizedImage(preview);
 
     const marker = `QA photo desktop ${Date.now()}`;
     await composer.locator("textarea").fill(marker);
@@ -113,13 +132,13 @@ test.describe("C3.1-R1C — Feed composer photo desktop", () => {
     await expect(card).toBeVisible({ timeout: COLD_START_TIMEOUT });
     const feedImg = card.locator("img").first();
     await expect(feedImg).toBeVisible();
-    await expectLoadedSameOriginImage(feedImg);
+    await expectLoadedAuthorizedImage(feedImg);
 
     await page.reload({ waitUntil: "domcontentloaded" });
     await waitSessionReady(page);
     const reloaded = visibleFeedArticle(page, marker);
     await expect(reloaded).toBeVisible({ timeout: COLD_START_TIMEOUT });
-    await expectLoadedSameOriginImage(reloaded.locator("img").first());
+    await expectLoadedAuthorizedImage(reloaded.locator("img").first());
 
     const mediaGets = seen.filter((url) => url.includes("/api/v1/story-media/"));
     expect(mediaGets.length).toBeGreaterThan(0);
@@ -127,7 +146,7 @@ test.describe("C3.1-R1C — Feed composer photo desktop", () => {
       mediaGets.filter(isDirectApiCall),
       `médias via :8010/:8000: ${mediaGets.filter(isDirectApiCall).join(", ")}`,
     ).toEqual([]);
-    expect(mediaGets.every((url) => url.startsWith("http://localhost:3002/api/v1/story-media/"))).toBe(
+    expect(mediaGets.every((url) => url.startsWith(`${origine}/api/v1/story-media/`))).toBe(
       true,
     );
   });

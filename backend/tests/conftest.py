@@ -7,6 +7,7 @@ pytest_plugins = [
 
 import os  # noqa: E402
 from collections.abc import AsyncGenerator, Iterator  # noqa: E402
+from typing import Any, cast  # noqa: E402
 
 import pytest  # noqa: E402
 from app.core.config import get_settings  # noqa: E402
@@ -59,7 +60,7 @@ async def reset_async_runtime_state() -> AsyncGenerator[None, None]:
         try:
             await flush_client.flushdb()
         finally:
-            await flush_client.aclose()
+            await cast(Any, flush_client).aclose()
     yield
     await close_redis()
     await dispose_db()

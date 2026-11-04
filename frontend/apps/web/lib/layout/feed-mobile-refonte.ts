@@ -9,11 +9,15 @@ export {
 
 export const FEED_MOBILE_REFONTE_CLASS = "max-[639px]" as const;
 
-/** Padding bas contenu — barre flottante + marge + safe area (MOBILE-REFONDE-01). */
-export const CITIZEN_MOBILE_FLOATING_NAV_BOTTOM_GAP = "1.75rem";
+/** Hauteur barre mobile ancrée (hors safe area). */
+export const CITIZEN_MOBILE_DOCKED_NAV_HEIGHT = "3.25rem";
+
+/** Marge au-dessus de la barre ancrée — FAB et éléments fixed. */
+export const CITIZEN_MOBILE_FLOATING_NAV_BOTTOM_GAP = "0.75rem";
 
 /** Breakpoint CSS mobile : visible strictement avant 640px (dernier px mobile = 639). */
 export const CITIZEN_MOBILE_BOTTOM_NAV_MEDIA = "(width < 640px)" as const;
 
+/** Padding bas contenu — barre ancrée + safe area (sans marge flottante). */
 export const CITIZEN_MOBILE_BOTTOM_NAV_PADDING =
-  "max-[639px]:pb-[calc(6rem+env(safe-area-inset-bottom))]" as const;
+  `max-[639px]:pb-[calc(${CITIZEN_MOBILE_DOCKED_NAV_HEIGHT}+env(safe-area-inset-bottom))]` as const;

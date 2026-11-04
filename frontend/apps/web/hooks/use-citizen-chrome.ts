@@ -7,12 +7,14 @@ import { useCallback, useEffect, useSyncExternalStore } from "react";
 type CitizenChromeSnapshot = {
   unreadCount: number;
   displayName: string | null;
+  avatarUrl: string | null;
   isReady: boolean;
 };
 
 const INITIAL: CitizenChromeSnapshot = {
   unreadCount: 0,
   displayName: null,
+  avatarUrl: null,
   isReady: false,
 };
 
@@ -86,16 +88,22 @@ export function useCitizenChromeBootstrap() {
                 fallbackName
               : fallbackName;
 
+          const avatarUrl =
+            profileRes.status === "fulfilled"
+              ? profileRes.value.avatar_url?.trim() || null
+              : null;
+
           const unreadCount =
             inboxRes.status === "fulfilled" ? inboxRes.value.unread_count : 0;
 
           loadedForUserId = user.id;
-          setSnapshot({ unreadCount, displayName, isReady: true });
+          setSnapshot({ unreadCount, displayName, avatarUrl, isReady: true });
         } catch {
           loadedForUserId = user.id;
           setSnapshot({
             unreadCount: 0,
             displayName: fallbackName,
+            avatarUrl: null,
             isReady: true,
           });
         } finally {
@@ -111,6 +119,16 @@ export function useCitizenChromeBootstrap() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    function onPageShow(event: PageTransitionEvent) {
+      if (event.persisted && user) {
+        void load(true);
+      }
+    }
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, [load, user]);
 
   const refresh = useCallback(() => load(true), [load]);
 

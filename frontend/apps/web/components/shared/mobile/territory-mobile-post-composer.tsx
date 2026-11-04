@@ -1,6 +1,7 @@
 "use client";
 
 import { ProfileAvatar } from "@/components/profile-avatar";
+import { ComposerMediaResolution } from "@/components/feed/composer-media-resolution";
 import { useComposerMedia } from "@/hooks/use-composer-media";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
@@ -14,7 +15,6 @@ import {
   TERRITORY_MOBILE_COMPOSER_ACTION_VIDEO,
   TERRITORY_MOBILE_COMPOSER_ARIA,
   TERRITORY_MOBILE_COMPOSER_CANCEL,
-  TERRITORY_MOBILE_COMPOSER_ERROR,
   TERRITORY_MOBILE_COMPOSER_PLACE_SOON,
   TERRITORY_MOBILE_COMPOSER_PLACEHOLDER,
   TERRITORY_MOBILE_COMPOSER_POLL_SOON,
@@ -35,8 +35,21 @@ export function TerritoryMobilePostComposer({ onSubmit }: TerritoryMobilePostCom
   const router = useRouter();
   const { user } = useAuth();
   const api = useYunicityApi();
-  const { fileInputRef, mediaUrl, uploading, mediaError, openPicker, onFileChange, clearMedia } =
-    useComposerMedia();
+  const {
+    fileInputRef,
+    mediaUrl,
+    displayUrl,
+    uploading,
+    mediaError,
+    mediaReadyForPublish,
+    mediaRejected,
+    continueWithoutMedia,
+    openPicker,
+    onFileChange,
+    clearMedia,
+    beginPublishing,
+    finishPublishing,
+  } = useComposerMedia();
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [body, setBody] = useState("");
@@ -44,7 +57,7 @@ export function TerritoryMobilePostComposer({ onSubmit }: TerritoryMobilePostCom
   const [error, setError] = useState<string | null>(null);
 
   const authorLabel = displayName ?? user?.email?.split("@")[0] ?? "Vous";
-  const canPublish = Boolean(body.trim()) && !isSubmitting && !uploading;
+  const canPublish = Boolean(body.trim()) && !isSubmitting && mediaReadyForPublish;
 
   useEffect(() => {
     if (!user) return;
@@ -60,16 +73,18 @@ export function TerritoryMobilePostComposer({ onSubmit }: TerritoryMobilePostCom
 
   async function handleSubmit() {
     const trimmed = body.trim();
-    if (!trimmed || isSubmitting) return;
+    if (!trimmed || isSubmitting || !mediaReadyForPublish || !beginPublishing()) return;
     setIsSubmitting(true);
     setError(null);
     try {
       await onSubmit(trimmed, mediaUrl);
+      finishPublishing(true);
       setBody("");
       clearMedia();
       setExpanded(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : TERRITORY_MOBILE_COMPOSER_ERROR);
+    } catch (erreur) {
+      finishPublishing(false, erreur);
+      setError(null);
     } finally {
       setIsSubmitting(false);
     }
@@ -120,7 +135,7 @@ export function TerritoryMobilePostComposer({ onSubmit }: TerritoryMobilePostCom
             type="button"
             disabled={!canPublish}
             onClick={() => requireAuth(() => void handleSubmit())}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition ${
+            className={`inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full px-4 py-2 text-sm font-bold transition ${
               canPublish
                 ? "bg-yunicity-primary text-white hover:bg-yunicity-primary-hover"
                 : "cursor-not-allowed bg-yunicity-primary/40 text-white/90"
@@ -138,19 +153,22 @@ export function TerritoryMobilePostComposer({ onSubmit }: TerritoryMobilePostCom
           onChange={(event) => void onFileChange(event.target.files?.[0] ?? null)}
         />
         {expanded && uploading ? (
-          <p className="mt-3 text-sm text-neutral-500">{COMPOSER_MEDIA_UPLOADING_LABEL}</p>
-        ) : expanded && mediaUrl ? (
-          <div className="relative mt-3 inline-block">
-            {/* eslint-disable-next-line @next/next/no-img-element -- aperçu média R2, hors next/image */}
+          <p className="mt-3 text-sm text-neutral-500" aria-live="polite">
+            {COMPOSER_MEDIA_UPLOADING_LABEL}
+          </p>
+        ) : null}
+        {expanded && displayUrl ? (
+          <div className="relative mt-3 w-full overflow-hidden rounded-xl border border-neutral-200/90 bg-neutral-100">
+            {/* eslint-disable-next-line @next/next/no-img-element -- aperçu média local/R2, hors next/image */}
             <img
-              src={mediaUrl}
+              src={displayUrl}
               alt=""
-              className="max-h-48 rounded-xl border border-neutral-200/90 object-cover"
+              className="mx-auto block max-h-48 w-full object-contain"
             />
             <button
               type="button"
               onClick={clearMedia}
-              className="absolute right-2 top-2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white"
+              className="absolute right-1 top-1 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white"
             >
               {COMPOSER_MEDIA_REMOVE_LABEL}
             </button>
@@ -167,7 +185,7 @@ export function TerritoryMobilePostComposer({ onSubmit }: TerritoryMobilePostCom
                 clearMedia();
                 setError(null);
               }}
-              className="rounded-full px-3 py-1.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full px-3 py-1.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100"
             >
               {TERRITORY_MOBILE_COMPOSER_CANCEL}
             </button>
@@ -179,6 +197,13 @@ export function TerritoryMobilePostComposer({ onSubmit }: TerritoryMobilePostCom
             {error ?? mediaError}
           </p>
         ) : null}
+      {mediaRejected ? (
+        <ComposerMediaResolution
+          onChooseAnother={openPicker}
+          onContinueWithout={continueWithoutMedia}
+          className="px-0"
+        />
+      ) : null}
       </div>
 
       <div className="grid grid-cols-4 divide-x divide-neutral-200/90 border-t border-neutral-200/90">
@@ -190,7 +215,7 @@ export function TerritoryMobilePostComposer({ onSubmit }: TerritoryMobilePostCom
               openPicker();
             })
           }
-          className="flex flex-col items-center gap-1 px-2 py-2.5 text-[11px] font-semibold text-neutral-600 transition hover:bg-neutral-50 hover:text-yunicity-primary"
+          className="flex min-h-11 min-w-11 flex-col items-center justify-center gap-1 px-2 py-2.5 text-[11px] font-semibold text-neutral-600 transition hover:bg-neutral-50 hover:text-yunicity-primary"
         >
           <ImageIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
           {TERRITORY_MOBILE_COMPOSER_ACTION_PHOTO}

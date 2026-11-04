@@ -1,48 +1,42 @@
 "use client";
 
+import { TribesDesktopScreen } from "@/components/tribes/desktop";
+import { TribesMediumShell } from "@/components/tribes/medium";
 import { TribesAppShell } from "@/components/tribes/tribes-app-shell";
 import { TribesMobileView } from "@/components/tribes/mobile";
-import { TribesFeaturedRail } from "@/components/tribes/tribes-featured-rail";
-import { TribesHeroBanner } from "@/components/tribes/tribes-hero-banner";
-import {
-  TribesInternalSidebar,
-  TribesPortalCompactNav,
-} from "@/components/tribes/tribes-internal-sidebar";
-import { TribesListSection } from "@/components/tribes/tribes-list-section";
-import { TribesMeetupsRail } from "@/components/tribes/tribes-meetups-rail";
-import { TribesPortalEmpty } from "@/components/tribes/tribes-portal-empty";
 import { useTribesPortalContext } from "@/hooks/use-tribes-portal-context";
-import type { TribePortalCategoryId, TribesPortalView } from "@yunicity/utils";
+import type { TribesDesktopCategoryId, TribesDesktopNavId, TribesDesktopVisibilityId } from "@yunicity/utils";
 import {
-  TRIBES_EMPTY,
-  TRIBES_ERROR,
-  TRIBES_LOADING,
-  TRIBES_RETRY,
-  TRIBES_PORTAL_CATEGORY_IDS,
-  TRIBES_PORTAL_VIEWS,
-  buildTribePortalCards,
-  buildTribesFeaturedCards,
-  buildTribesMeetupCards,
-  buildTribesPortalStats,
-  filterTribesForPortalCategory,
-  filterTribesForPortalView,
-  resolveTribesPortalHeroImage,
+  TRIBES_DESKTOP_CATEGORY_IDS,
+  TRIBES_DESKTOP_NAV_IDS,
+  TRIBES_DESKTOP_VISIBILITY_IDS,
 } from "@yunicity/utils";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { useCallback, useState } from "react";
 
-function parsePortalView(value: string | null): TribesPortalView {
-  if (value && (TRIBES_PORTAL_VIEWS as readonly string[]).includes(value)) {
-    return value as TribesPortalView;
+function parseDesktopNav(value: string | null): TribesDesktopNavId {
+  if (value === "mine") return "mine";
+  if (value === "invitations") return "invitations";
+  if (value === "sent_requests") return "sent_requests";
+  if (value === "saved") return "saved";
+  if (value && (TRIBES_DESKTOP_NAV_IDS as readonly string[]).includes(value)) {
+    return value as TribesDesktopNavId;
+  }
+  return "discover";
+}
+
+function parseDesktopVisibility(value: string | null): TribesDesktopVisibilityId {
+  if (value && (TRIBES_DESKTOP_VISIBILITY_IDS as readonly string[]).includes(value)) {
+    return value as TribesDesktopVisibilityId;
   }
   return "all";
 }
 
-function parsePortalCategory(value: string | null): TribePortalCategoryId | "" {
-  if (value && (TRIBES_PORTAL_CATEGORY_IDS as readonly string[]).includes(value)) {
-    return value as TribePortalCategoryId;
+function parseDesktopCategory(value: string | null): TribesDesktopCategoryId {
+  if (value && (TRIBES_DESKTOP_CATEGORY_IDS as readonly string[]).includes(value)) {
+    return value as TribesDesktopCategoryId;
   }
-  return "";
+  return "for_you";
 }
 
 export function TribesScreen() {
@@ -52,150 +46,117 @@ export function TribesScreen() {
   const cityParam = searchParams.get("city")?.trim() ?? "";
   const context = useTribesPortalContext(cityParam);
 
-  const activeView = parsePortalView(searchParams.get("view"));
-  const activeCategory = parsePortalCategory(searchParams.get("category"));
-
-  const stats = useMemo(
-    () => buildTribesPortalStats(context.tribes, context.events),
-    [context.events, context.tribes],
+  const [desktopNav, setDesktopNav] = useState<TribesDesktopNavId>(() =>
+    parseDesktopNav(searchParams.get("view")),
   );
-
-  const heroImageUrl = useMemo(
-    () => resolveTribesPortalHeroImage(context.tribes),
-    [context.tribes],
+  const [desktopVisibility, setDesktopVisibility] = useState<TribesDesktopVisibilityId>(() =>
+    parseDesktopVisibility(searchParams.get("visibility")),
   );
-
-  const featuredCards = useMemo(
-    () =>
-      buildTribesFeaturedCards({
-        city: context.city,
-        tribes: context.tribes,
-        events: context.events,
-      }),
-    [context.city, context.events, context.tribes],
+  const [desktopCategory, setDesktopCategory] = useState<TribesDesktopCategoryId>(() =>
+    parseDesktopCategory(searchParams.get("tribeCategory")),
   );
-
-  const meetups = useMemo(
-    () =>
-      buildTribesMeetupCards({
-        city: context.city,
-        tribes: context.tribes,
-        events: context.events,
-        culturalPlaces: context.culturalPlaces,
-      }),
-    [context.city, context.culturalPlaces, context.events, context.tribes],
+  const [desktopNeighborhood, setDesktopNeighborhood] = useState(
+    () => searchParams.get("neighborhood")?.trim() || "all",
   );
+  const [desktopSearch, setDesktopSearch] = useState(() => searchParams.get("q")?.trim() ?? "");
 
-  const filteredTribes = useMemo(() => {
-    const byView = filterTribesForPortalView(context.tribes, activeView, context.events);
-    return filterTribesForPortalCategory(byView, activeCategory);
-  }, [activeCategory, activeView, context.events, context.tribes]);
-
-  const listCards = useMemo(
-    () =>
-      buildTribePortalCards({
-        city: context.city,
-        tribes: filteredTribes,
-        neighborhoods: context.neighborhoods,
-      }),
-    [context.city, context.neighborhoods, filteredTribes],
-  );
-
-  const replaceFilters = useCallback(
-    (nextView: TribesPortalView, nextCategory: TribePortalCategoryId | "") => {
+  const replaceDesktopFilters = useCallback(
+    (next: {
+      nav?: TribesDesktopNavId;
+      visibility?: TribesDesktopVisibilityId;
+      category?: TribesDesktopCategoryId;
+      neighborhood?: string;
+      search?: string;
+    }) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (nextView === "all") {
-        params.delete("view");
-      } else {
-        params.set("view", nextView);
-      }
-      if (nextCategory) {
-        params.set("category", nextCategory);
-      } else {
-        params.delete("category");
-      }
-      if (!params.get("city")) {
-        params.set("city", context.city);
-      }
+
+      const nav = next.nav ?? desktopNav;
+      const visibility = next.visibility ?? desktopVisibility;
+      const category = next.category ?? desktopCategory;
+      const neighborhood = next.neighborhood ?? desktopNeighborhood;
+      const search = next.search ?? desktopSearch;
+
+      if (nav === "discover") params.delete("view");
+      else params.set("view", nav);
+
+      if (visibility === "all") params.delete("visibility");
+      else params.set("visibility", visibility);
+
+      if (category === "for_you") params.delete("tribeCategory");
+      else params.set("tribeCategory", category);
+
+      if (!neighborhood || neighborhood === "all") params.delete("neighborhood");
+      else params.set("neighborhood", neighborhood);
+
+      if (!search.trim()) params.delete("q");
+      else params.set("q", search.trim());
+
+      if (!params.get("city")) params.set("city", context.city);
+
+      setDesktopNav(nav);
+      setDesktopVisibility(visibility);
+      setDesktopCategory(category);
+      setDesktopNeighborhood(neighborhood);
+      setDesktopSearch(search);
+
       const query = params.toString();
       router.replace(query ? `${pathname}?${query}` : pathname);
     },
-    [context.city, pathname, router, searchParams],
+    [
+      context.city,
+      desktopCategory,
+      desktopNav,
+      desktopNeighborhood,
+      desktopSearch,
+      desktopVisibility,
+      pathname,
+      router,
+      searchParams,
+    ],
   );
 
-  const scrollToMeetups = useCallback(() => {
-    document.getElementById("tribes-meetups")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
+  const handleDesktopReset = useCallback(() => {
+    setDesktopSearch("");
+    replaceDesktopFilters({
+      nav: "discover",
+      visibility: "all",
+      category: "for_you",
+      neighborhood: "all",
+      search: "",
+    });
+  }, [replaceDesktopFilters]);
 
-  const listEmptyVariant =
-    activeView === "mine" ? "mine" : activeCategory || activeView !== "all" ? "filter" : "default";
-
-  const sidebarProps = {
-    activeView,
-    activeCategory,
-    onViewChange: (view: TribesPortalView) => replaceFilters(view, activeCategory),
-    onCategoryChange: (category: TribePortalCategoryId | "") => replaceFilters("all", category),
-    onScrollToMeetups: scrollToMeetups,
+  const desktopSharedProps = {
+    city: context.city,
+    tribes: context.tribes,
+    events: context.events,
+    neighborhoods: context.neighborhoods,
+    invitations: context.invitations,
+    loading: context.loading,
+    error: context.error,
+    searchQuery: desktopSearch,
+    activeNav: desktopNav,
+    activeVisibility: desktopVisibility,
+    activeCategory: desktopCategory,
+    activeNeighborhood: desktopNeighborhood,
+    onSearchChange: (query: string) => replaceDesktopFilters({ search: query }),
+    onNavChange: (nav: TribesDesktopNavId) => replaceDesktopFilters({ nav }),
+    onVisibilityChange: (visibility: TribesDesktopVisibilityId) =>
+      replaceDesktopFilters({ visibility }),
+    onCategoryChange: (category: TribesDesktopCategoryId) => replaceDesktopFilters({ category }),
+    onNeighborhoodChange: (slug: string) => replaceDesktopFilters({ neighborhood: slug }),
+    onResetFilters: handleDesktopReset,
+    onReload: () => void context.reload(),
   };
 
   return (
     <TribesAppShell>
-      <TribesMobileView
-        city={context.city}
-        loading={context.loading}
-        error={context.error}
-        tribes={context.tribes}
-        events={context.events}
-        onRetry={() => void context.reload()}
-      />
+      <TribesMobileView {...desktopSharedProps} />
 
-      <div className="web-desktop-tribes-only mx-auto w-full max-w-[1400px] px-3 pb-12 sm:px-4 lg:px-6">
-        <div className="grid gap-8 xl:grid-cols-[15rem_minmax(0,1fr)] xl:gap-10">
-          <TribesInternalSidebar {...sidebarProps} />
+      <TribesMediumShell {...desktopSharedProps} />
 
-          <div className="min-w-0 space-y-8">
-            <TribesHeroBanner city={context.city} heroImageUrl={heroImageUrl} stats={stats} />
-            <TribesPortalCompactNav {...sidebarProps} />
-
-          {context.loading ? (
-            <p className="text-center text-sm text-neutral-500" role="status">
-              {TRIBES_LOADING}
-            </p>
-          ) : null}
-
-          {context.error ? (
-            <div className="space-y-3 text-center">
-              <p className="text-sm text-neutral-700">{TRIBES_ERROR}</p>
-              <button
-                type="button"
-                onClick={() => void context.reload()}
-                className="rounded-full bg-yunicity-primary px-4 py-2 text-sm font-medium text-white"
-              >
-                {TRIBES_RETRY}
-              </button>
-            </div>
-          ) : null}
-
-          {!context.loading && !context.error && context.tribes.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-6 py-10 text-center text-sm text-neutral-600">
-              {TRIBES_EMPTY}
-            </p>
-          ) : null}
-
-          {!context.loading && !context.error && context.tribes.length > 0 ? (
-            <>
-              <TribesFeaturedRail cards={featuredCards} city={context.city} />
-              <TribesMeetupsRail meetups={meetups} city={context.city} />
-
-              {listCards.length === 0 ? (
-                <TribesPortalEmpty variant={listEmptyVariant} city={context.city} />
-              ) : (
-                <TribesListSection cards={listCards} />
-              )}
-            </>
-          ) : null}
-          </div>
-        </div>
+      <div className="tribes-desktop-shell-only mx-auto w-full max-w-[1400px] px-3 py-2 sm:px-4 sm:py-4">
+        <TribesDesktopScreen {...desktopSharedProps} />
       </div>
     </TribesAppShell>
   );

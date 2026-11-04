@@ -10,24 +10,27 @@
     "start": "cross-env NEXT_BUILD_DIR=.next-build next start --port 3000",
     "lint": "next lint",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:media01-responsive": "playwright test --config=playwright.media01.config.ts"
   },
   "dependencies": {
     "@googlemaps/markerclusterer": "^2.6.2",
     "@yunicity/types": "workspace:*",
     "@yunicity/ui": "workspace:*",
     "@yunicity/utils": "workspace:*",
-    "next": "^15.5.21",
+    "next": "^15.5.25",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@playwright/test": "^1.62.1",
+    "@testing-library/react": "16.3.2",
     "@types/google.maps": "^3.58.1",
     "@types/node": "^22.15.21",
     "eslint": "^9.27.0",
     "eslint-config-next": "^15.5.21",
+    "jsdom": "29.1.1",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",

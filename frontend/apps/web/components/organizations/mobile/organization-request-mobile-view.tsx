@@ -1,22 +1,19 @@
 "use client";
 
-import { OrganizationRequestMobileContextPanel } from "@/components/organizations/mobile/organization-request-mobile-context-panel";
+import { OrganizationRequestMobileActionBar } from "@/components/organizations/mobile/organization-request-mobile-action-bar";
+import { OrganizationRequestMobileAfterSubmit } from "@/components/organizations/mobile/organization-request-mobile-after-submit";
+import { OrganizationRequestMobileDuplicateCheck } from "@/components/organizations/mobile/organization-request-mobile-duplicate-check";
 import { OrganizationRequestMobileHeader } from "@/components/organizations/mobile/organization-request-mobile-header";
+import { OrganizationRequestMobilePreview } from "@/components/organizations/mobile/organization-request-mobile-preview";
 import { OrganizationRequestMobileStepper } from "@/components/organizations/mobile/organization-request-mobile-stepper";
-import { OrganizationRequestWizard } from "@/components/organizations/organization-request-wizard";
+import { OrganizationRequestMobileWizard } from "@/components/organizations/mobile/organization-request-mobile-wizard";
 import type { Neighborhood } from "@yunicity/types";
 import type {
   OrganizationRequestCategoryOption,
   OrganizationRequestDraft,
   OrganizationRequestStepId,
 } from "@yunicity/utils";
-import {
-  ORG_REQUEST_ERROR,
-  ORG_REQUEST_PORTAL_SUBTITLE,
-  ORG_REQUEST_TRUST_BODY,
-  ORG_REQUEST_TRUST_TITLE,
-} from "@yunicity/utils";
-import { ShieldCheck } from "lucide-react";
+import { ORG_REQUEST_ERROR } from "@yunicity/utils";
 
 type OrganizationRequestMobileViewProps = {
   step: OrganizationRequestStepId;
@@ -28,8 +25,8 @@ type OrganizationRequestMobileViewProps = {
   error: string | null;
   isSubmitting: boolean;
   onChange: (patch: Partial<OrganizationRequestDraft>) => void;
-  onBack: () => void;
   onNext: () => void;
+  onSaveDraft: () => void;
   onSubmit: () => void;
 };
 
@@ -44,17 +41,15 @@ export function OrganizationRequestMobileView({
   error,
   isSubmitting,
   onChange,
-  onBack,
   onNext,
+  onSaveDraft,
   onSubmit,
 }: OrganizationRequestMobileViewProps) {
   return (
-    <div className="web-mobile-org-request-only min-w-0 bg-[#F4F5F7] pb-24">
+    <div className="web-mobile-org-request-only min-w-0 bg-[#F4F5F7] pb-28" data-org-request-mobile="">
       <OrganizationRequestMobileHeader />
 
       <div className="space-y-4 px-4 pt-3">
-        <p className="text-sm leading-relaxed text-neutral-600">{ORG_REQUEST_PORTAL_SUBTITLE}</p>
-
         <OrganizationRequestMobileStepper activeStep={step} />
 
         {error ? (
@@ -63,35 +58,29 @@ export function OrganizationRequestMobileView({
           </p>
         ) : null}
 
-        <OrganizationRequestWizard
-          variant="mobile"
+        {step === "identity" ? <OrganizationRequestMobileDuplicateCheck /> : null}
+
+        <OrganizationRequestMobileWizard
           step={step}
           draft={draft}
           neighborhoods={neighborhoods}
           selectedCategory={selectedCategory}
           selectedNeighborhood={selectedNeighborhood}
           validationMessage={validationMessage}
-          isSubmitting={isSubmitting}
           onChange={onChange}
-          onBack={onBack}
-          onNext={onNext}
-          onSubmit={onSubmit}
         />
 
-        {step !== "publish" ? (
-          <div className="rounded-xl bg-[#EEF0FF] p-4">
-            <div className="flex items-start gap-3">
-              <ShieldCheck className="h-5 w-5 shrink-0 text-yunicity-primary" aria-hidden />
-              <div>
-                <p className="text-sm font-semibold text-neutral-900">{ORG_REQUEST_TRUST_TITLE}</p>
-                <p className="mt-1 text-xs leading-relaxed text-neutral-600">{ORG_REQUEST_TRUST_BODY}</p>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {step === "info" ? <OrganizationRequestMobileContextPanel /> : null}
+        <OrganizationRequestMobilePreview draft={draft} selectedCategory={selectedCategory} />
+        <OrganizationRequestMobileAfterSubmit />
       </div>
+
+      <OrganizationRequestMobileActionBar
+        step={step}
+        isSubmitting={isSubmitting}
+        onSaveDraft={onSaveDraft}
+        onNext={onNext}
+        onSubmit={onSubmit}
+      />
     </div>
   );
 }

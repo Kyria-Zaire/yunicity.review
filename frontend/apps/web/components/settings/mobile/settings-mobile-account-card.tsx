@@ -1,54 +1,48 @@
 "use client";
 
 import { ProfileAvatar } from "@/components/profile-avatar";
-import type { AuthUser } from "@yunicity/types";
-import type { SettingsAccountStatus, SettingsVerificationView } from "@yunicity/utils";
+import type { ProfileMe } from "@yunicity/types";
 import {
-  SETTINGS_RAIL_MEMBER_SINCE,
-  SETTINGS_RAIL_STATUS,
+  SETTINGS_MOBILE_BADGE_YUNICIZEN,
+  SETTINGS_MOBILE_VIEW_PROFILE,
+  settingsDesktopUsername,
 } from "@yunicity/utils";
-import { BadgeCheck } from "lucide-react";
+import { ExternalLink } from "lucide-react";
+import Link from "next/link";
 
 type SettingsMobileAccountCardProps = {
-  user: AuthUser | null;
+  profile: ProfileMe;
   displayName: string;
-  verification: SettingsVerificationView;
-  accountStatus: SettingsAccountStatus | null;
 };
 
-/** Carte compte mobile (MOBILE-SETTINGS-01). */
+/** Carte profil résumé mobile (MOBILE-SETTINGS-02). */
 export function SettingsMobileAccountCard({
-  user,
+  profile,
   displayName,
-  verification,
-  accountStatus,
 }: SettingsMobileAccountCardProps) {
+  const username = settingsDesktopUsername(profile);
+
   return (
     <section className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm">
       <div className="flex items-center gap-3">
-        <ProfileAvatar name={displayName} size="md" />
+        <ProfileAvatar name={displayName} src={profile.avatar_url} size="md" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-base font-bold text-neutral-900">{displayName}</p>
-          <p className="truncate text-sm text-neutral-500">{user?.email}</p>
-          {verification.verified ? (
-            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-yunicity-primary-soft px-2.5 py-0.5 text-[11px] font-semibold text-yunicity-primary">
-              <BadgeCheck className="h-3 w-3" aria-hidden />
-              {verification.verifiedLabel}
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <span className="truncate text-sm text-neutral-500">{username}</span>
+            <span className="inline-flex rounded-full bg-yunicity-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+              {SETTINGS_MOBILE_BADGE_YUNICIZEN}
             </span>
-          ) : null}
+          </div>
         </div>
+        <Link
+          href="/profile/me"
+          className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-yunicity-primary/35 px-2.5 py-2 text-xs font-semibold text-yunicity-primary"
+        >
+          {SETTINGS_MOBILE_VIEW_PROFILE}
+          <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+        </Link>
       </div>
-
-      {accountStatus ? (
-        <div className="mt-4 border-t border-neutral-100 pt-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-400">
-            {SETTINGS_RAIL_STATUS}
-          </p>
-          <p className="mt-1 text-sm text-neutral-700">
-            {SETTINGS_RAIL_MEMBER_SINCE} : {accountStatus.memberSinceLabel}
-          </p>
-        </div>
-      ) : null}
     </section>
   );
 }

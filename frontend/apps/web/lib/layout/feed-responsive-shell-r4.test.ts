@@ -91,9 +91,9 @@ describe("C3-FEED-RESPONSIVE-SHELL-R4 — squelette responsive", () => {
     );
   });
 
-  it("monte la navbar basse hors de tout conteneur du fil", () => {
-    // Sœur directe du shell racine : aucun ancêtre de la colonne Feed.
+  it("monte la navbar basse ancrée hors de tout conteneur du fil", () => {
     expect(appShell).toMatch(/<FeedMobileBottomNav \/>/);
+    expect(bottomNav).toContain("web-mobile-docked-bottom-nav");
     expect(bottomNav).toContain("fixed inset-x-0 bottom-0");
     expect(bottomNav).toContain("min-[640px]:hidden");
     expect(globalsCSS).toMatch(

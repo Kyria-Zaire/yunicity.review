@@ -1,6 +1,11 @@
 export { SortirMobileCategoryPills } from "@/components/events/sortir/mobile/sortir-mobile-category-pills";
+export { SortirMobileEditorialControls } from "@/components/events/sortir/mobile/sortir-mobile-editorial-controls";
+export { SortirMobileExploreCards } from "@/components/events/sortir/mobile/sortir-mobile-explore-cards";
 export { SortirMobileFeaturedCarousel } from "@/components/events/sortir/mobile/sortir-mobile-featured-carousel";
+export { SortirMobileFeaturedSpotlight } from "@/components/events/sortir/mobile/sortir-mobile-featured-spotlight";
 export { SortirMobileHeader } from "@/components/events/sortir/mobile/sortir-mobile-header";
 export { SortirMobilePopularPlacesRail } from "@/components/events/sortir/mobile/sortir-mobile-popular-places-rail";
 export { SortirMobileSearchBar } from "@/components/events/sortir/mobile/sortir-mobile-search-bar";
+export { SortirMobileShell } from "@/components/events/sortir/mobile/sortir-mobile-shell";
+export { SortirMobileTonightList } from "@/components/events/sortir/mobile/sortir-mobile-tonight-list";
 export { SortirMobileUpcomingList } from "@/components/events/sortir/mobile/sortir-mobile-upcoming-list";

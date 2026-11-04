@@ -111,6 +111,10 @@ class PostCreateRequest(BaseModel):
     poll: PostPollInput | None = None
     cross_post_targets: PostCrossPostTargetsInput | None = None
     use_media_caption: bool = False
+    # Client-generated idempotency key (FEED-NEW-UX-01). Not content: it identifies the
+    # ATTEMPT, so a lost response can be replayed without creating a duplicate post.
+    # Optional on purpose — a request without a key keeps the historical behaviour.
+    client_request_id: uuid.UUID | None = None
 
     @field_validator("body")
     @classmethod

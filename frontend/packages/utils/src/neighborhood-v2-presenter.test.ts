@@ -63,6 +63,9 @@ const BASE_DETAIL: NeighborhoodDetail = {
       neighborhood_slug: "boulingrin",
       published_at: "2026-02-01T10:00:00Z",
       video_type: "quartier",
+      cultural_place_slug: null,
+      cultural_place_name: null,
+      local_event_id: null,
       author: {
         id: "user-1",
         username: "camille",

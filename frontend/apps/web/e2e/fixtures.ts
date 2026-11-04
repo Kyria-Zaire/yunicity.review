@@ -24,18 +24,10 @@ import {
  * its session from the httpOnly refresh cookie on load, so injecting that cookie via
  * storageState yields a genuinely authenticated context.
  *
- * IMPORTANT: the API rate-limits registration to 5/IP/hour. All tests share one IP,
- * so we register a SINGLE user per worker and reuse its storageState everywhere.
- *
- * C3.1-T3-R1: at most one API login per seeded actor per worker. Browser contexts
- * stay live for the worker lifetime so refresh-token rotation remains valid.
+ * C3-QA-AUTH-HARNESS-STABILIZE-01 : deux exports distincts —
+ * - `test` / `authedPage` : register worker-scoped uniquement ;
+ * - `testCitizen` / `citizenAPage` : login seedé à la demande (import explicite).
  */
-// C3.1-R1M : hote IPv4 explicite. `localhost` resout `::1` EN PREMIER (mesure
-// node dns.lookup), or depuis le durcissement loopback QA les services ne sont
-// lies qu'en IPv4. WebKit n'a alors emis AUCUNE requete /api/v1/* : la page
-// restait bloquee 60 s sur « Chargement de la session… », chaque echec faisait
-// recreer le worker par Playwright, donc un login de plus — 6 logins pour un
-// budget produit de 5. Le 429 etait la CONSEQUENCE des echecs, pas leur cause.
 export const API_URL = process.env.E2E_API_URL ?? "http://127.0.0.1:8010";
 
 export type QaUser = {
@@ -50,11 +42,8 @@ export function bearer(user: QaUser): { Authorization: string } {
   return { Authorization: `Bearer ${user.accessToken}` };
 }
 
-export { readAuthTelemetry, resetAuthTelemetry, type AuthTelemetry };
+export { readAuthTelemetry, resetAuthTelemetry, type AuthTelemetry, expect };
 
-// Seeded, loginnable QA actors (C3-F0-T3-R4). Emails are @example.com (accepted by EmailStr)
-// and the password is the deterministic QA-only seed password. citizen_a owns the public
-// tribe and holds unread notifications; citizen_b owns the private tribe.
 export const CITIZEN_A_EMAIL = "qa.citizen.a@example.com";
 export const CITIZEN_B_EMAIL = "qa.citizen.b@example.com";
 const QA_PASSWORD = "StrongPassword1!";
@@ -80,7 +69,6 @@ async function loginActor(email: string): Promise<QaUser> {
 
 async function registerAndComplete(): Promise<QaUser> {
   const api = await request.newContext();
-  // `.test` TLD is rejected by the API email validator; use reserved-for-tests example.com.
   const email = `e2e.${Date.now()}.${Math.floor(Math.random() * 1e6)}@example.com`;
   const password = "StrongPassword1!";
   const register = await api.post(`${API_URL}/api/v1/auth/register`, {
@@ -108,24 +96,19 @@ async function createLiveAuthedContext(
   return context;
 }
 
-type WorkerFixtures = {
+type AuthedWorkerFixtures = {
   sharedUser: QaUser;
   authedContext: BrowserContext;
-  citizenA: QaUser;
-  citizenB: QaUser;
-  citizenAContext: BrowserContext;
-  citizenBContext: BrowserContext;
   authTelemetryDump: void;
 };
 
-type TestFixtures = {
+type AuthedTestFixtures = {
   api: APIRequestContext;
   authedPage: Page;
-  citizenAPage: Page;
-  citizenBPage: Page;
 };
 
-export const test = base.extend<TestFixtures, WorkerFixtures>({
+/** Specs `authedPage`-only : zéro login seedé. */
+export const test = base.extend<AuthedTestFixtures, AuthedWorkerFixtures>({
   authTelemetryDump: [
     async ({}, use) => {
       await use();
@@ -133,22 +116,16 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
       const outDir = resolve(process.cwd(), "test-results");
       mkdirSync(outDir, { recursive: true });
       writeFileSync(resolve(outDir, "auth-telemetry.json"), `${JSON.stringify(telemetry, null, 2)}\n`);
-      // eslint-disable-next-line no-console
       console.log(`[e2e] auth telemetry login=${telemetry.login} register=${telemetry.register} refresh=${telemetry.refresh}`);
     },
     { scope: "worker", auto: true },
   ],
   sharedUser: [
-    async ({ browser: _browser }, use) => {
-      const user = await registerAndComplete();
-      await use(user);
+    async ({}, use) => {
+      await use(await registerAndComplete());
     },
     { scope: "worker" },
   ],
-  // Worker-scoped: ONE live authenticated context per worker. The refresh token rotates
-  // single-use; sharing a storageState snapshot across contexts triggers REFRESH_TOKEN_REUSE
-  // (401). Keeping one context lets its cookie jar hold the rotated cookie. Tests are serial
-  // (workers:1, fullyParallel:false) so no concurrent refresh.
   authedContext: [
     async ({ browser, sharedUser }, use) => {
       const context = await createLiveAuthedContext(browser, sharedUser.storageState);
@@ -167,15 +144,30 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     await use(page);
     await page.close();
   },
-  // Seeded loginnable actors — no registration, so they never consume the register limit.
+});
+
+type CitizenWorkerFixtures = {
+  citizenA: QaUser;
+  citizenB: QaUser;
+  citizenAContext: BrowserContext;
+  citizenBContext: BrowserContext;
+};
+
+type CitizenTestFixtures = {
+  citizenAPage: Page;
+  citizenBPage: Page;
+};
+
+/** Specs acteur seedé QA : login worker-scoped à la demande. */
+export const testCitizen = test.extend<CitizenTestFixtures, CitizenWorkerFixtures>({
   citizenA: [
-    async ({ browser: _browser }, use) => {
+    async ({}, use) => {
       await use(await loginActor(CITIZEN_A_EMAIL));
     },
     { scope: "worker" },
   ],
   citizenB: [
-    async ({ browser: _browser }, use) => {
+    async ({}, use) => {
       await use(await loginActor(CITIZEN_B_EMAIL));
     },
     { scope: "worker" },
@@ -208,4 +200,8 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
   },
 });
 
-export { expect };
+/**
+ * Compat legacy : specs historiques important `test` + `citizenAPage`.
+ * Préférer `testCitizen` pour les nouveaux tests afin de ne pas mélanger les pools.
+ */
+export const testLegacyCitizen = testCitizen;

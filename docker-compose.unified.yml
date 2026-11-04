@@ -1,0 +1,95 @@
+# Compose production-like du SERVICE UNIFIÉ (RAILWAY-UNIFIED-MEDIA-IMPLEMENT-01).
+#
+# Reproduit localement ce que Railway exécutera : UN conteneur applicatif portant l'API
+# et le worker, PostgreSQL et Redis séparés, et un volume média persistant. Sert à
+# prouver la persistance avant tout déploiement.
+#
+#   docker compose -f docker-compose.unified.yml up -d --build
+#   docker compose -f docker-compose.unified.yml up -d --force-recreate app   # média conservé
+#   docker compose -f docker-compose.unified.yml down                          # volume conservé
+#   docker compose -f docker-compose.unified.yml down -v                       # volume DÉTRUIT
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-yunicity_unified}
+      POSTGRES_USER: ${POSTGRES_USER:-yunicity}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-yunicity_unified_password}
+    volumes:
+      - yunicity_unified_postgres:/var/lib/postgresql/data
+      - ./infra/docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-yunicity}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - yunicity_unified_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  # UN service applicatif : le superviseur démarre uvicorn ET le worker ARQ.
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: python -m app.runtime.unified_process
+    ports:
+      - "${UNIFIED_PORT:-8020}:8000"
+    environment:
+      # preprod : le chemin deploye est reellement exerce. La posture C3.1-R1D n'est
+      # levee que par l'opt-in ci-dessous, et seulement pour la racine canonique.
+      APP_ENV: ${APP_ENV:-preprod}
+      DEBUG: "false"
+      PORT: "8000"
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-yunicity}:${POSTGRES_PASSWORD:-yunicity_unified_password}@postgres:5432/${POSTGRES_DB:-yunicity_unified}
+      REDIS_URL: redis://redis:6379/0
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY required}
+      REFRESH_TOKEN_PEPPER: ${REFRESH_TOKEN_PEPPER:?REFRESH_TOKEN_PEPPER required}
+      REFRESH_COOKIE_SECURE: ${REFRESH_COOKIE_SECURE:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS required}
+      WEB_FRONTEND_URL: ${WEB_FRONTEND_URL:?WEB_FRONTEND_URL required}
+      MEDIA_PUBLIC_BASE_URL: ${MEDIA_PUBLIC_BASE_URL:?MEDIA_PUBLIC_BASE_URL required}
+      # Opt-in EXPLICITE du volume persistant. Sans lui, le service refuse de demarrer
+      # avec le backend filesystem sur un environnement deploye.
+      MANAGED_PERSISTENT_MEDIA_ENABLED: "true"
+      # Racine canonique unique : les cles portent deja local-video/, profiles/, stories/.
+      MEDIA_UPLOAD_DIR: /data/media
+      PROFILE_MEDIA_UPLOAD_DIR: /data/media
+      STORY_MEDIA_UPLOAD_DIR: /data/media
+      LOCAL_VIDEO_STORAGE_BACKEND: filesystem
+      PROFILE_MEDIA_STORAGE_BACKEND: filesystem
+      STORY_MEDIA_STORAGE_BACKEND: filesystem
+    volumes:
+      - yunicity_unified_media:/data/media
+    tmpfs:
+      # Travail ffmpeg (TemporaryDirectory) hors du volume persistant : jamais sauvegardé,
+      # jamais conservé d'un redémarrage à l'autre.
+      - /tmp:size=2g
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    restart: unless-stopped
+
+volumes:
+  yunicity_unified_postgres:
+  yunicity_unified_redis:
+  yunicity_unified_media:

@@ -4,12 +4,14 @@ import Link from "next/link";
 
 import { YunicityLogo } from "@/components/brand";
 import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
+import { ExplorerTriggerButton } from "@/components/explorer";
 import { NotificationBellIcon } from "@/components/layout/notification-bell-icon";
 import { CitizenAccountMenu } from "@/components/layout/citizen-account-menu";
 import { CitizenYunicityMenu } from "@/components/layout/citizen-yunicity-menu";
 import { useNotificationUnread } from "@/hooks/use-citizen-chrome";
 import {
   CITIZEN_MEDIUM_RAIL_DESTINATIONS,
+  CITIZEN_MEDIUM_RAIL_EXPLORER_LABEL,
   isCitizenMediumRailDestinationActive,
   type CitizenMediumRailDestination,
 } from "@/lib/layout/citizen-medium-rail-contract";
@@ -65,9 +67,11 @@ export type CitizenMediumRailProps = {
    * Passport…).
    */
   activeDestination?: CitizenMediumRailDestination;
+  /** L'écran courant est une création (`/feed/new`) : « Créer » est actif. */
+  createActive?: boolean;
 };
 
-export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps) {
+export function CitizenMediumRail({ activeDestination, createActive = false }: CitizenMediumRailProps) {
   const unreadCount = Number(useNotificationUnread());
 
   return (
@@ -105,6 +109,27 @@ export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps)
           );
         })}
 
+        {/*
+            Accès Explorer du palier medium.
+
+            Le MÊME déclencheur et le MÊME provider que partout ailleurs :
+            `ExplorerTriggerButton` lit `useExplorerOptional`, donc le panneau
+            ouvert ici est celui du reste de l'application. Aucun second panneau,
+            aucune logique parallèle — la recherche du header du fil reste en
+            place et ouvre la même primitive.
+
+            La variante `medium-rail` existait déjà pour la colonne latérale, qui
+            la masque quand le rail prend le relais ; elle porte une cible de
+            `--web-sidebar-icon-hit`, soit 52 px, au-delà des 44 px exigés.
+        */}
+        <div
+          data-rail-label={CITIZEN_MEDIUM_RAIL_EXPLORER_LABEL}
+          data-citizen-medium-rail-control="explorer"
+          className="flex flex-col items-center gap-1 rounded-xl py-1.5"
+        >
+          <ExplorerTriggerButton variant="medium-rail" />
+        </div>
+
         <div
           data-rail-label="Menu"
           data-citizen-medium-rail-control="menu"
@@ -134,7 +159,10 @@ export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps)
         <div
           data-rail-label="Créer"
           data-citizen-medium-rail-control="create"
-          className="flex flex-col items-center gap-1"
+          data-active={createActive ? "" : undefined}
+          className={`flex flex-col items-center gap-1 ${
+            createActive ? "w-full rounded-xl bg-yunicity-primary-soft py-2" : ""
+          }`}
         >
           {/* C3-CITIZEN-MEDIUM-SHELL-R1E : le rail DECLARE sa surface. Sur
               `/videos`, elle seule expose « Créer » — mobile et desktop y
@@ -144,9 +172,13 @@ export function CitizenMediumRail({ activeDestination }: CitizenMediumRailProps)
             visibilitySurface="citizen-medium-rail"
             className="!h-11 !w-11"
           />
-          <span aria-hidden className={ACTION_LABEL}>
+          <span
+            aria-hidden
+            className={createActive ? `${ACTION_LABEL} !font-semibold !text-yunicity-primary` : ACTION_LABEL}
+          >
             Créer
           </span>
+          {createActive ? <span className="sr-only">Page actuelle</span> : null}
         </div>
 
         <Link

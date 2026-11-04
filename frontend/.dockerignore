@@ -1,0 +1,78 @@
+# Le service Railway a `frontend/` comme répertoire racine : le contexte de
+# construction est CE répertoire, et tous les motifs ci-dessous lui sont
+# relatifs. Le reste du dépôt (backend, docs, infra, médias locaux, .git)
+# n'entre jamais dans le contexte.
+#
+# Règle de conception : on exclut les secrets et les produits de build, jamais
+# les sources. Les sources de test (`e2e/`, `*.test.ts`) RESTENT dans le
+# contexte : elles participent au périmètre TypeScript du build, les exclure
+# changerait ce que `next build` vérifie. Seuls leurs ARTEFACTS sont exclus.
+
+# ── Secrets et configuration locale ─────────────────────────────────────────
+# Next charge automatiquement `.env`, `.env.local`, `.env.production` depuis le
+# répertoire de l'app au build : un fichier oublié dans le contexte injecterait
+# des valeurs non auditées dans le bundle client. Aucun n'est nécessaire — les
+# variables publiques arrivent par `--build-arg`.
+.env
+.env.*
+**/.env
+**/.env.*
+# Prefixe `**/` obligatoire : mesure faite, `*.key` ne capte QUE la racine du
+# contexte — un fichier imbriqué passait.
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/secrets/
+**/*.secret
+**/.npmrc.local
+**/.aws/
+**/gha-creds-*.json
+
+# ── Données locales d'exécution ─────────────────────────────────────────────
+# Médias déposés pendant les parcours locaux : aucune donnée utilisateur ne
+# doit entrer dans une couche de build.
+**/uploads/
+**/media/
+
+# ── Dépendances installées ──────────────────────────────────────────────────
+# `pnpm install --frozen-lockfile` les réinstalle dans l'image. Les copier
+# depuis l'hôte casserait la reproductibilité (binaires d'une autre plateforme).
+**/node_modules/
+**/.pnpm-store/
+**/.yarn/
+
+# ── Anciens builds et caches ────────────────────────────────────────────────
+**/.next/
+**/.next-build/
+**/.turbo/
+**/dist/
+**/build/
+**/out/
+**/.expo/
+**/.cache/
+**/__pycache__/
+**/*.pyc
+**/.venv/
+**/.mypy_cache/
+**/.pytest_cache/
+**/.ruff_cache/
+
+# ── Artefacts de tests (les SOURCES de test restent) ────────────────────────
+**/playwright-report/
+**/blob-report/
+**/test-results/
+**/playwright/.cache/
+**/coverage/
+**/.nyc_output/
+**/*.lcov
+**/snapshots-diff/
+
+# ── Historique, outillage local, journaux ───────────────────────────────────
+**/*.log
+**/npm-debug.log*
+**/pnpm-debug.log*
+.vscode/
+.idea/
+**/.DS_Store
+**/Thumbs.db

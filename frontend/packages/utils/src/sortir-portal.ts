@@ -6,22 +6,24 @@ import type {
 } from "@yunicity/types";
 
 import { INTEREST_LABELS } from "./domain-labels";
-import { eventTypeLabel } from "./event-labels";
+import { eventTypeLabel, formatEventLocation } from "./event-labels";
 import { resolveFeaturedCarouselEventImage, resolveEventHeroImage } from "./event-hero-image";
 import { resolveCulturalPlaceHeroUrl } from "./cultural-place-media";
 import { resolveCulturalPlaceImageOverride } from "./event-hero-image";
 import {
   eventCalendarDayKey,
+  filterAgendaUpcomingEvents,
   formatEventClockTime,
   formatEventDurationLabel,
 } from "./events-agenda";
 import { buildMapPlaceUrl } from "./explorer-links";
+import { haversineMeters } from "./map-portal";
 import {
   buildNeighborhoodFeaturedCards,
   type NeighborhoodFeaturedCard,
 } from "./neighborhood-portal";
 import { eventBelongsToNeighborhood } from "./neighborhood-atmosphere";
-import { neighborhoodAmbianceLabel } from "./neighborhood-labels";
+import { neighborhoodAmbianceLabel, formatTerritorialLine } from "./neighborhood-labels";
 import {
   SORTIR_CATEGORY_CAFE,
   SORTIR_CATEGORY_CONCERTS,
@@ -39,6 +41,10 @@ import {
   SORTIR_HERO_STAT_NEIGHBORHOODS,
   SORTIR_HERO_STAT_PLACES,
   SORTIR_HERO_STAT_TRIBES,
+  SORTIR_CARD_BADGE_CULTURE,
+  SORTIR_CARD_BADGE_FOOD,
+  SORTIR_CARD_BADGE_LOCAL,
+  SORTIR_CARD_BADGE_MUSIC,
   SORTIR_FEATURED_LINK_MAP,
   SORTIR_FEATURED_LINK_NEIGHBORHOODS,
   SORTIR_FEATURED_LINK_PLACES,
@@ -66,7 +72,7 @@ export type SortirLiveEventCard = {
   title: string;
   subtitle: string;
   badge: string;
-  badgeTone: "concert" | "tasting" | "exhibition" | "default";
+  badgeTone: "concert" | "tasting" | "exhibition" | "local" | "default";
   timeLabel: string;
   metaLine: string;
   locationLine: string;
@@ -177,13 +183,26 @@ function isCafePlace(place: CulturalPlaceListItem): boolean {
 }
 const EVENING_HOUR = 18;
 const TREND_HOURS = 48;
+const DEFAULT_EVENT_TIMEZONE = "Europe/Paris";
+
+function localHourInTimezone(iso: string, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    hour: "numeric",
+    hour12: false,
+  }).formatToParts(new Date(iso));
+  const hour = parts.find((part) => part.type === "hour")?.value;
+  return hour ? Number(hour) : Number.NaN;
+}
 
 export function isEventTonight(event: LocalEvent, now = new Date()): boolean {
-  const start = new Date(event.starts_at);
-  if (Number.isNaN(start.getTime())) return false;
+  const timeZone = event.timezone?.trim() || DEFAULT_EVENT_TIMEZONE;
+  if (Number.isNaN(new Date(event.starts_at).getTime())) return false;
+  const startHour = localHourInTimezone(event.starts_at, timeZone);
+  if (Number.isNaN(startHour)) return false;
   return (
     eventCalendarDayKey(event.starts_at) === eventCalendarDayKey(now.toISOString()) &&
-    start.getHours() >= EVENING_HOUR
+    startHour >= EVENING_HOUR
   );
 }
 
@@ -198,8 +217,20 @@ function eventBadgeTone(eventType: string | null): SortirLiveEventCard["badgeTon
   const type = eventType?.trim().toLowerCase();
   if (type === "local_concert") return "concert";
   if (type === "exhibition") return "exhibition";
-  if (type === "cafe_meetup" || type === "local_market" || type === "market") return "tasting";
+  if (type === "local_market" || type === "market") return "tasting";
+  if (type === "cafe_meetup" || type === "meetup" || type === "association_evening") return "local";
   return "default";
+}
+
+function sortirCardBadgeLabel(eventType: string | null): string {
+  const type = eventType?.trim().toLowerCase();
+  if (type === "local_concert") return SORTIR_CARD_BADGE_MUSIC;
+  if (type === "local_market" || type === "market") return SORTIR_CARD_BADGE_FOOD;
+  if (type === "cafe_meetup" || type === "meetup" || type === "association_evening") {
+    return SORTIR_CARD_BADGE_LOCAL;
+  }
+  if (type === "exhibition") return SORTIR_CARD_BADGE_CULTURE;
+  return eventTypeLabel(eventType) ?? "Sortie";
 }
 
 function eventMetaLine(event: LocalEvent, now = new Date()): string {
@@ -266,7 +297,7 @@ export function buildSortirLiveEventCards(input: {
         id: event.id,
         title: event.title,
         subtitle,
-        badge: (eventTypeLabel(event.event_type) ?? "Sortie").toUpperCase(),
+        badge: sortirCardBadgeLabel(event.event_type).toUpperCase(),
         badgeTone: eventBadgeTone(event.event_type),
         timeLabel: formatEventClockTime(event.starts_at),
         metaLine: eventMetaLine(event, now),
@@ -573,12 +604,52 @@ export function buildSortirFeaturedToday(input: {
   maxItems?: number;
   now?: Date;
 }): SortirFeaturedTodayResult {
-  const cards = buildSortirLiveEventCards({
-    city: input.city,
-    events: input.events,
-    culturalPlaces: input.culturalPlaces,
-    maxItems: input.maxItems ?? 3,
-    now: input.now,
+  const now = input.now ?? new Date();
+  const maxItems = input.maxItems ?? 3;
+  const ranked = input.events
+    .slice()
+    .filter((event) => !event.is_cancelled)
+    .sort((a, b) => {
+      const score = (event: LocalEvent): number => {
+        let value = 0;
+        if (event.cover_image_url?.trim()) value += 4;
+        if ((event.description?.trim().length ?? 0) >= 40) value += 2;
+        if (isEventTonight(event, now)) value += 1;
+        // « À la une » : privilégier le patrimoine / expo pour laisser
+        // musique / food / vie locale dans la grille « Ce soir ».
+        const type = event.event_type?.trim().toLowerCase();
+        if (type === "exhibition") value += 3;
+        return value;
+      };
+      const delta = score(b) - score(a);
+      if (delta !== 0) return delta;
+      return Date.parse(a.starts_at) - Date.parse(b.starts_at);
+    })
+    .slice(0, maxItems);
+
+  const cards = ranked.map((event) => {
+    const subtitle =
+      event.organization?.name?.trim() ||
+      event.location_name?.trim() ||
+      event.district?.trim() ||
+      input.city;
+    const locationLine =
+      event.neighborhood_summary?.display_name ?? event.district?.trim() ?? event.city;
+    return {
+      id: event.id,
+      title: event.title,
+      subtitle,
+      badge: sortirCardBadgeLabel(event.event_type).toUpperCase(),
+      badgeTone: eventBadgeTone(event.event_type),
+      timeLabel: formatEventClockTime(event.starts_at),
+      metaLine: eventMetaLine(event, now),
+      locationLine,
+      imageUrl:
+        resolveFeaturedCarouselEventImage(event) ??
+        resolveEventHeroImage(event, input.culturalPlaces),
+      href: `/events/${event.id}`,
+      interestedByMe: event.interested_by_me,
+    };
   });
 
   if (cards.length > 0) {
@@ -610,4 +681,347 @@ export function isNewLocalUserContext(input: SortirNewUserContextInput): boolean
     input.passportStampsCount === 0 &&
     noFeedPosts
   );
+}
+
+/** Filtres temporels desktop (rail gauche). */
+export type SortirDesktopWhenId = "today" | "tomorrow" | "weekend" | "pick_date";
+
+export type SortirDesktopCategoryId =
+  | ""
+  | "culture"
+  | "music"
+  | "food"
+  | "sport"
+  | "family"
+  | "local";
+
+export type SortirDesktopToggles = {
+  free: boolean;
+  nearby: boolean;
+  accessible: boolean;
+  indoor: boolean;
+};
+
+export type SortirDesktopGeoOrigin = {
+  latitude: number;
+  longitude: number;
+};
+
+export type SortirDesktopAgendaRow = {
+  id: string;
+  weekdayLabel: string;
+  dayLabel: string;
+  monthLabel: string;
+  title: string;
+  timeLabel: string;
+  placeLabel: string;
+  href: string;
+};
+
+export type SortirDesktopSoonCard = {
+  id: string;
+  title: string;
+  timeLabel: string;
+  placeLabel: string;
+  relativeLabel: string;
+  imageUrl: string | null;
+  href: string;
+};
+
+export type SortirDesktopWeekendCard = {
+  id: string;
+  title: string;
+  dayLabel: string;
+  imageUrl: string | null;
+  href: string;
+};
+
+const MONTH_SHORT = [
+  "JAN",
+  "FÉV",
+  "MAR",
+  "AVR",
+  "MAI",
+  "JUN",
+  "JUL",
+  "AOÛ",
+  "SEP",
+  "OCT",
+  "NOV",
+  "DÉC",
+] as const;
+
+const WEEKDAY_SHORT_FR = ["DIM.", "LUN.", "MAR.", "MER.", "JEU.", "VEN.", "SAM."] as const;
+
+export function mapSortirDesktopCategoryToPortal(
+  categoryId: SortirDesktopCategoryId,
+): SortirCategoryId {
+  switch (categoryId) {
+    case "culture":
+      return "culture";
+    case "music":
+      return "concerts";
+    case "food":
+      return "cafe";
+    case "sport":
+      return "sortir";
+    case "family":
+      return "rencontres";
+    case "local":
+      return "sortir";
+    default:
+      return "";
+  }
+}
+
+function startOfDay(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function endOfDay(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
+
+function isWeekendDay(date: Date): boolean {
+  const day = date.getDay();
+  return day === 0 || day === 6;
+}
+
+export function filterSortirEventsByWhen(
+  events: LocalEvent[],
+  whenId: SortirDesktopWhenId,
+  now = new Date(),
+): LocalEvent[] {
+  if (whenId === "pick_date") return events;
+
+  const todayStart = startOfDay(now);
+  const todayEnd = endOfDay(now);
+
+  return events.filter((event) => {
+    const startsAt = Date.parse(event.starts_at);
+    if (!Number.isFinite(startsAt)) return false;
+    const eventDate = new Date(startsAt);
+
+    switch (whenId) {
+      case "today":
+        return startsAt >= todayStart.getTime() && startsAt <= todayEnd.getTime();
+      case "tomorrow": {
+        const tomorrow = new Date(todayStart);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowEnd = endOfDay(tomorrow);
+        return startsAt >= tomorrow.getTime() && startsAt <= tomorrowEnd.getTime();
+      }
+      case "weekend": {
+        const cursor = new Date(todayStart);
+        for (let i = 0; i < 7; i += 1) {
+          if (isWeekendDay(cursor)) {
+            const dayStart = startOfDay(cursor);
+            const dayEnd = endOfDay(cursor);
+            if (startsAt >= dayStart.getTime() && startsAt <= dayEnd.getTime()) return true;
+          }
+          cursor.setDate(cursor.getDate() + 1);
+        }
+        return false;
+      }
+      default:
+        return true;
+    }
+  });
+}
+
+const SORTIR_NEARBY_MAX_METERS = 3000;
+const FREE_SIGNAL = /gratuit|entr[ée]e libre|sans frais|free entry/i;
+const ACCESSIBLE_SIGNAL = /accessible|pmr|fauteuil|handicap/i;
+const OUTDOOR_SIGNAL = /plein air|ext[ée]rieur|parc\b|jardin|parvis|march[ée]|place publique/i;
+const INDOOR_SIGNAL = /salle|mus[ée]e|th[ée][aâ]tre|int[ée]rieur|galerie|cryptoportique|cin[ée]ma/i;
+const INDOOR_EVENT_TYPES = new Set([
+  "exhibition",
+  "local_concert",
+  "cafe_meetup",
+  "workshop",
+  "creator_meetup",
+]);
+
+function eventTextBlob(event: LocalEvent): string {
+  return `${event.title} ${event.description ?? ""} ${event.location_name} ${event.address ?? ""}`;
+}
+
+export function isSortirEventMarkedFree(event: LocalEvent): boolean {
+  return FREE_SIGNAL.test(eventTextBlob(event));
+}
+
+export function isSortirEventMarkedAccessible(event: LocalEvent): boolean {
+  return ACCESSIBLE_SIGNAL.test(eventTextBlob(event));
+}
+
+export function isSortirEventMarkedIndoor(event: LocalEvent): boolean {
+  const blob = eventTextBlob(event);
+  if (OUTDOOR_SIGNAL.test(blob)) return false;
+  if (INDOOR_SIGNAL.test(blob)) return true;
+  const type = event.event_type?.trim().toLowerCase() ?? "";
+  return INDOOR_EVENT_TYPES.has(type);
+}
+
+export function isSortirEventWithinNearby(
+  event: LocalEvent,
+  origin: SortirDesktopGeoOrigin,
+  maxMeters = SORTIR_NEARBY_MAX_METERS,
+): boolean {
+  if (event.latitude == null || event.longitude == null) return false;
+  return (
+    haversineMeters(origin.latitude, origin.longitude, event.latitude, event.longitude) <= maxMeters
+  );
+}
+
+/**
+ * Applique les toggles desktop Sortir.
+ * Heuristiques texte pour Gratuit / Accessible / Intérieur (pas de champs API dédiés).
+ * Nearby utilise la géoloc event + origin utilisateur/ville.
+ */
+export function filterSortirEventsByDesktopToggles(
+  events: LocalEvent[],
+  toggles: SortirDesktopToggles,
+  origin?: SortirDesktopGeoOrigin | null,
+): LocalEvent[] {
+  if (!toggles.free && !toggles.nearby && !toggles.accessible && !toggles.indoor) {
+    return events;
+  }
+
+  return events.filter((event) => {
+    if (toggles.free && !isSortirEventMarkedFree(event)) return false;
+    if (toggles.accessible && !isSortirEventMarkedAccessible(event)) return false;
+    if (toggles.indoor && !isSortirEventMarkedIndoor(event)) return false;
+    if (toggles.nearby) {
+      if (!origin) return false;
+      if (!isSortirEventWithinNearby(event, origin)) return false;
+    }
+    return true;
+  });
+}
+
+function formatAgendaPlace(event: LocalEvent, city: string): string {
+  return (
+    formatTerritorialLine(event.neighborhood_summary, event.city, event.district) ??
+    formatEventLocation(event, city)
+  );
+}
+
+export function buildSortirDesktopAgendaRows(
+  savedEvents: LocalEvent[],
+  city: string,
+  maxItems = 2,
+  now = new Date(),
+): SortirDesktopAgendaRow[] {
+  const upcoming = filterAgendaUpcomingEvents(savedEvents, now);
+  return upcoming.slice(0, maxItems).map((event) => {
+    const date = new Date(event.starts_at);
+    return {
+      id: event.id,
+      weekdayLabel: WEEKDAY_SHORT_FR[date.getDay()] ?? "—",
+      dayLabel: String(date.getDate()),
+      monthLabel: MONTH_SHORT[date.getMonth()] ?? "—",
+      title: event.title,
+      timeLabel: formatEventClockTime(event.starts_at),
+      placeLabel: formatAgendaPlace(event, city),
+      href: `/events/${event.id}`,
+    };
+  });
+}
+
+export function buildSortirDesktopSoonCard(input: {
+  city: string;
+  events: LocalEvent[];
+  culturalPlaces: CulturalPlaceListItem[];
+  now?: Date;
+}): SortirDesktopSoonCard | null {
+  const now = input.now ?? new Date();
+  const nowMs = now.getTime();
+  const upcoming = filterAgendaUpcomingEvents(input.events, now)
+    .map((event) => ({ event, startsAt: Date.parse(event.starts_at) }))
+    .filter(({ startsAt }) => Number.isFinite(startsAt) && startsAt >= nowMs)
+    .sort((a, b) => a.startsAt - b.startsAt);
+
+  const next = upcoming[0];
+  if (!next) return null;
+
+  const diffHours = Math.max(1, Math.round((next.startsAt - nowMs) / (1000 * 60 * 60)));
+  const cards = buildSortirLiveEventCards({
+    city: input.city,
+    events: [next.event],
+    culturalPlaces: input.culturalPlaces,
+    maxItems: 1,
+    now,
+  });
+  const card = cards[0];
+  if (!card) return null;
+
+  return {
+    id: card.id,
+    title: card.title,
+    timeLabel: card.timeLabel,
+    placeLabel: card.locationLine,
+    relativeLabel: diffHours <= 24 ? `Dans ${diffHours} h` : card.timeLabel,
+    imageUrl: card.imageUrl,
+    href: card.href,
+  };
+}
+
+export function buildSortirDesktopWeekendSpotlight(input: {
+  city: string;
+  events: LocalEvent[];
+  culturalPlaces: CulturalPlaceListItem[];
+  now?: Date;
+}): SortirDesktopWeekendCard | null {
+  const now = input.now ?? new Date();
+  const todayStart = startOfDay(now);
+
+  const weekendEvents = filterAgendaUpcomingEvents(input.events, now).filter((event) => {
+    const startsAt = Date.parse(event.starts_at);
+    if (!Number.isFinite(startsAt)) return false;
+    const eventDate = new Date(startsAt);
+    if (eventDate.getTime() < todayStart.getTime()) return false;
+    for (let i = 0; i < 14; i += 1) {
+      const cursor = new Date(todayStart);
+      cursor.setDate(cursor.getDate() + i);
+      if (!isWeekendDay(cursor)) continue;
+      const dayStart = startOfDay(cursor);
+      const dayEnd = endOfDay(cursor);
+      if (startsAt >= dayStart.getTime() && startsAt <= dayEnd.getTime()) return true;
+    }
+    return false;
+  });
+
+  const spotlight = weekendEvents[0];
+  if (!spotlight) return null;
+
+  const cards = buildSortirLiveEventCards({
+    city: input.city,
+    events: [spotlight],
+    culturalPlaces: input.culturalPlaces,
+    maxItems: 1,
+    now,
+  });
+  const card = cards[0];
+  if (!card) return null;
+
+  const eventDate = new Date(spotlight.starts_at);
+  const dayLabel = eventDate.getDay() === 6 ? "Samedi" : eventDate.getDay() === 0 ? "Dimanche" : "Ce week-end";
+
+  return {
+    id: card.id,
+    title: card.title,
+    dayLabel,
+    imageUrl: card.imageUrl,
+    href: card.href,
+  };
+}
+
+export function resolveSortirDesktopEditorialMoment(now = new Date()): string {
+  const hour = now.getHours();
+  if (hour >= 18) return "AUJOURD'HUI";
+  return "AUJOURD'HUI";
 }

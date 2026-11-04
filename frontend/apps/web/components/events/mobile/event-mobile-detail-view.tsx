@@ -1,18 +1,28 @@
 "use client";
 
+import { EventMobileDetailHero } from "@/components/events/mobile/event-mobile-detail-hero";
+import { EventMobileDetailInfoCard } from "@/components/events/mobile/event-mobile-detail-info-card";
+import { EventMobileDetailMeta } from "@/components/events/mobile/event-mobile-detail-meta";
 import {
-  EventMobileDetailActionBar,
-  EventMobileDetailHero,
-  EventMobileDetailInfoCard,
-  EventMobileDetailOrganizer,
-  EventMobileDetailParticipants,
-  EventMobileDetailPassportOffers,
-  EventMobileDetailTabs,
-} from "@/components/events/mobile";
+  EventMobileAboutSection,
+  EventMobileAgendaSection,
+  EventMobileKnowSection,
+  EventMobileLieuSection,
+  EventMobileProgramSection,
+  EventMobileSimilarSection,
+} from "@/components/events/mobile/event-mobile-detail-sections";
+import { EventMobileDetailShareSave } from "@/components/events/mobile/event-mobile-detail-share-save";
 import type { EventDetailContextState } from "@/hooks/use-event-detail-context";
 import type { CulturalPlaceListItem, LocalEvent } from "@yunicity/types";
-import { EVENT_DETAIL_SHARE_COPIED } from "@yunicity/utils";
-import { useCallback, useState } from "react";
+import {
+  buildEventDesktopBadges,
+  buildEventDesktopGalleryUrls,
+  buildEventDetailBreadcrumbs,
+  buildEventKnowRows,
+  buildEventProgramSteps,
+  splitEventDesktopCopy,
+} from "@yunicity/utils";
+import { useMemo } from "react";
 
 type EventMobileDetailViewProps = {
   event: LocalEvent;
@@ -23,74 +33,58 @@ type EventMobileDetailViewProps = {
   onToggleInterest: () => void;
 };
 
-/** Vue mobile complète détail événement (MOBILE-SORTIR-02). */
 export function EventMobileDetailView({
   event,
   context,
-  venuePlace,
   toggling,
   isAuthenticated,
   onToggleInterest,
 }: EventMobileDetailViewProps) {
-  const [shareHint, setShareHint] = useState<string | null>(null);
-
-  const handleShare = useCallback(async () => {
-    const url =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/events/${event.id}`
-        : `/events/${event.id}`;
-    try {
-      if (typeof navigator !== "undefined" && navigator.share) {
-        await navigator.share({
-          title: event.title,
-          text: event.description?.slice(0, 120),
-          url,
-        });
-        return;
-      }
-      await navigator.clipboard.writeText(url);
-      setShareHint(EVENT_DETAIL_SHARE_COPIED);
-      window.setTimeout(() => setShareHint(null), 2500);
-    } catch {
-      /* annulation */
-    }
-  }, [event.description, event.id, event.title]);
+  const badges = useMemo(() => buildEventDesktopBadges(event), [event]);
+  const breadcrumbs = useMemo(() => buildEventDetailBreadcrumbs(event), [event]);
+  const categoryLabel = breadcrumbs[1]?.label ?? "Sortir";
+  const galleryUrls = useMemo(
+    () => buildEventDesktopGalleryUrls(event, context.culturalPlaces),
+    [context.culturalPlaces, event],
+  );
+  const programSteps = useMemo(() => buildEventProgramSteps(event), [event]);
+  const knowRows = useMemo(() => buildEventKnowRows(event), [event]);
+  const copy = useMemo(() => splitEventDesktopCopy(event.description), [event.description]);
+  const related = context.relatedEvents.filter((item) => item.id !== event.id);
 
   return (
-    <div className="web-mobile-event-detail-only min-w-0 bg-white pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
-      <EventMobileDetailHero
-        event={event}
-        culturalPlaces={context.culturalPlaces}
-        interestedByMe={event.interested_by_me}
-        toggling={toggling}
-        isAuthenticated={isAuthenticated}
-        onToggleInterest={onToggleInterest}
-        onShare={() => void handleShare()}
-      />
-
-      {shareHint ? (
-        <p className="mx-4 mt-3 rounded-full bg-neutral-900 px-4 py-2 text-center text-xs text-white">
-          {shareHint}
-        </p>
-      ) : null}
-
-      <div className="space-y-6 pb-4 pt-0">
-        <EventMobileDetailInfoCard event={event} />
-        <EventMobileDetailTabs event={event} context={context} venuePlace={venuePlace} />
-        <EventMobileDetailPassportOffers offers={context.passportOffers} />
-        <EventMobileDetailParticipants interestCount={event.interest_count ?? 0} />
-        {event.organization ? (
-          <EventMobileDetailOrganizer organization={event.organization} city={event.city} />
-        ) : null}
+    <div
+      className="web-mobile-event-detail-only min-w-0 bg-[#F4F5F7] px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))]"
+      data-event-mobile-detail=""
+    >
+      <div className="space-y-4">
+        <EventMobileDetailHero
+          title={event.title}
+          imageUrls={galleryUrls}
+          categoryLabel={categoryLabel}
+        />
+        <EventMobileDetailMeta event={event} badges={badges} subtitle={copy.subtitle} />
+        <EventMobileDetailInfoCard
+          event={event}
+          toggling={toggling}
+          isAuthenticated={isAuthenticated}
+          onToggleInterest={onToggleInterest}
+        />
+        <EventMobileDetailShareSave
+          eventId={event.id}
+          title={event.title}
+          interestedByMe={event.interested_by_me}
+          toggling={toggling}
+          isAuthenticated={isAuthenticated}
+          onToggleInterest={onToggleInterest}
+        />
+        <EventMobileAboutSection preview={copy.preview} fullText={copy.rest} />
+        <EventMobileProgramSection steps={programSteps} />
+        <EventMobileLieuSection event={event} />
+        <EventMobileKnowSection rows={knowRows} />
+        <EventMobileAgendaSection />
+        <EventMobileSimilarSection events={related} />
       </div>
-
-      <EventMobileDetailActionBar
-        interestedByMe={event.interested_by_me}
-        toggling={toggling}
-        isAuthenticated={isAuthenticated}
-        onToggleInterest={onToggleInterest}
-        onShare={() => void handleShare()}
-      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { CreateHubProvider } from "@/components/create-hub";
 import { ExplorerProvider } from "@/components/explorer";
+import { FeedMediaViewerHost } from "@/components/feed/feed-media-viewer-host";
 import { NavigationOverlayCoordinatorProvider } from "@/components/navigation/navigation-overlay-coordinator";
 import { AuthProvider } from "@/lib/auth/auth-provider";
 import { SITE_DEFAULT_METADATA } from "@/lib/seo/metadata";
@@ -49,7 +50,10 @@ export default function RootLayout({
         <AuthProvider>
           <NavigationOverlayCoordinatorProvider>
             <ExplorerProvider>
-              <CreateHubProvider>{children}</CreateHubProvider>
+              <CreateHubProvider>
+                {children}
+                <FeedMediaViewerHost />
+              </CreateHubProvider>
             </ExplorerProvider>
           </NavigationOverlayCoordinatorProvider>
         </AuthProvider>

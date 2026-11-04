@@ -55,8 +55,7 @@ export type NeighborhoodListCard = {
 export const NEIGHBORHOOD_PORTAL_THEME_SLUGS = [
   "saint-remi",
   "centre-ville",
-  "boulingrin",
-  "cernay",
+  "cernay-jean-jaures",
   "clairmarais",
   "croix-rouge",
 ] as const;
@@ -66,8 +65,7 @@ export type NeighborhoodPortalThemeSlug = (typeof NEIGHBORHOOD_PORTAL_THEME_SLUG
 const FEATURED_HEADLINE_BY_SLUG: Record<string, string> = {
   "centre-ville": "Le cœur historique",
   "saint-remi": "Le quartier qui respire aujourd’hui",
-  boulingrin: "Le quartier gourmand",
-  cernay: "Esprit village en pleine ville",
+  "cernay-jean-jaures": "Le quartier gourmand",
   clairmarais: "Vie locale au quotidien",
   "croix-rouge": "Vie locale et esprit de quartier",
 };

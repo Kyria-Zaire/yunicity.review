@@ -21,7 +21,7 @@ export function TribesAppShell({ children }: TribesAppShellProps) {
         <WebSidebar />
 
         <main className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
-          <div className="web-desktop-tribes-only">
+          <div className="web-tribes-chrome-only">
             <CitizenTopNav />
           </div>
           <div className={CITIZEN_MOBILE_BOTTOM_NAV_PADDING}>{children}</div>

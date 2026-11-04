@@ -1,21 +1,12 @@
 "use client";
 
-import type {
-  LocalEvent,
-  PassportChallengeResponse,
-  PassportChallengesResponse,
-  PassportOverviewResponse,
-  PassportTierCode,
-  PartnerOfferPublic,
-} from "@yunicity/types";
-import {
-  FEED_PORTAL_PASSPORT_CONTINUE,
-  HOME_PRIVILEGE_TITLE,
-  PASSPORT_TIER_LABELS,
-} from "@yunicity/utils";
-import { BookMarked, ChevronRight, MapPin } from "lucide-react";
+import type { LocalEvent, PartnerOfferPublic } from "@yunicity/types";
+import { HOME_PRIVILEGE_TITLE } from "@yunicity/utils";
+import { ChevronRight, MapPin } from "lucide-react";
 import Link from "next/link";
 
+import type { FeedPassportRailData } from "@/components/feed/feed-passport-module";
+import { FeedPassportModule } from "@/components/feed/feed-passport-module";
 import {
   formatFeedEventInterestLabel,
   formatFeedEventTime,
@@ -23,62 +14,15 @@ import {
 } from "@/lib/feed/feed-evening-events";
 import { selectFeedRightRailEveningEvents } from "@/lib/feed/feed-right-rail-modules";
 
-/**
- * Données Passport fournies par le contrôleur — la vue ne fetch pas.
- * Un changement de largeur remonte/démonte la vue Desktop sans relancer d'appel.
- */
-export type FeedDesktopPassportRailData = {
-  overview: PassportOverviewResponse | null;
-  challenges: PassportChallengesResponse | null;
-  loading: boolean;
-  error: boolean;
-};
-
 type FeedDesktopRightRailProps = {
   events: readonly LocalEvent[];
   city: string;
   highlightOffer: PartnerOfferPublic | null;
-  passport: FeedDesktopPassportRailData;
+  passport: FeedPassportRailData;
+  eventsLoading: boolean;
+  eventsError: boolean;
+  onRetryEvents: () => void;
 };
-
-function selectPrimaryChallenge(
-  active: PassportChallengeResponse[] | undefined,
-): PassportChallengeResponse | null {
-  if (!active?.length) return null;
-  const inProgress = active.find((challenge) => !challenge.completed && challenge.target > 0);
-  return inProgress ?? active[0] ?? null;
-}
-
-function PassportProgressRing({ progress, target }: { progress: number; target: number }) {
-  const safeTarget = Math.max(target, 1);
-  const ratio = Math.min(Math.max(progress / safeTarget, 0), 1);
-  const radius = 34;
-  const circumference = 2 * Math.PI * radius;
-  const dashOffset = circumference * (1 - ratio);
-
-  return (
-    <div className="relative h-[5.5rem] w-[5.5rem] shrink-0" aria-hidden="true">
-      <svg viewBox="0 0 80 80" className="h-full w-full -rotate-90">
-        <circle cx="40" cy="40" r={radius} fill="none" stroke="#E5E7EB" strokeWidth="6" />
-        <circle
-          cx="40"
-          cy="40"
-          r={radius}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="6"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={dashOffset}
-          className="text-yunicity-primary transition-[stroke-dashoffset] duration-300"
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <BookMarked className="h-7 w-7 text-yunicity-primary" strokeWidth={1.75} />
-      </div>
-    </div>
-  );
-}
 
 function EveningEventRow({ event, time }: { event: LocalEvent; time: string | null }) {
   return (
@@ -131,10 +75,34 @@ function EveningEventRow({ event, time }: { event: LocalEvent; time: string | nu
   );
 }
 
-function TonightModule({ events, city }: { events: readonly LocalEvent[]; city: string }) {
+function TonightModule({
+  events,
+  city,
+  loading,
+  error,
+  onRetry,
+}: {
+  events: readonly LocalEvent[];
+  city: string;
+  loading: boolean;
+  error: boolean;
+  onRetry: () => void;
+}) {
   const { events: displayEvents, mode } = selectFeedRightRailEveningEvents(events);
 
   const title = resolveFeedEveningEventsTitle(city, mode);
+
+  // Quatre etats distincts (FEED-MAIN-LAYOUT-UIUX-01 §4). Sans cela le module
+  // affirmait « Aucun evenement prevu » avant meme la fin de la requete, et une
+  // panne reseau se lisait comme une soiree vide.
+  const etat =
+    loading && displayEvents.length === 0
+      ? "loading"
+      : error && displayEvents.length === 0
+        ? "error"
+        : displayEvents.length === 0
+          ? "empty"
+          : "loaded";
 
   return (
     <section className="feed-desktop-surface overflow-hidden" data-feed-desktop-tonight-module="">
@@ -145,7 +113,22 @@ function TonightModule({ events, city }: { events: readonly LocalEvent[]; city: 
         </Link>
       </div>
 
-      {displayEvents.length === 0 ? (
+      {etat === "loading" ? (
+        <div className="px-4 pb-4" aria-hidden="true">
+          <div className="h-14 animate-pulse rounded-lg bg-neutral-100" />
+        </div>
+      ) : etat === "error" ? (
+        <p className="px-4 pb-4 text-sm leading-relaxed text-neutral-500">
+          Agenda momentanément indisponible.{" "}
+          <button
+            type="button"
+            onClick={onRetry}
+            className="font-medium text-yunicity-primary hover:underline"
+          >
+            Réessayer
+          </button>
+        </p>
+      ) : etat === "empty" ? (
         <p className="px-4 pb-4 text-sm leading-relaxed text-neutral-500">
           Aucun événement prévu pour le moment.{" "}
           <Link href="/sortir" className="font-medium text-yunicity-primary hover:underline">
@@ -160,98 +143,6 @@ function TonightModule({ events, city }: { events: readonly LocalEvent[]; city: 
         </ul>
       )}
     </section>
-  );
-}
-
-function PassportModule({ overview, challenges, loading, error }: FeedDesktopPassportRailData) {
-  return (
-    <div className="feed-desktop-passport-slot">
-      <section className="feed-desktop-surface p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-neutral-900">Votre Passport local</h3>
-          <Link href="/passport" className="text-xs font-medium text-yunicity-primary hover:underline">
-            Ouvrir
-          </Link>
-        </div>
-        {loading ? (
-          <div className="space-y-2" aria-hidden="true">
-            <div className="h-16 animate-pulse rounded-xl bg-neutral-100" />
-          </div>
-        ) : error || !overview ? (
-          <p className="text-xs text-neutral-400">Passport indisponible</p>
-        ) : (
-          <PassportLoadedContent overview={overview} challenges={challenges?.active} />
-        )}
-      </section>
-    </div>
-  );
-}
-
-function PassportLoadedContent({
-  overview,
-  challenges,
-}: {
-  overview: NonNullable<FeedDesktopPassportRailData["overview"]>;
-  challenges: PassportChallengeResponse[] | undefined;
-}) {
-  const { summary } = overview;
-  const tierCode = summary.passport_tier;
-  const tierLabel =
-    tierCode && tierCode in PASSPORT_TIER_LABELS
-      ? PASSPORT_TIER_LABELS[tierCode as PassportTierCode]
-      : null;
-
-  const primaryChallenge = selectPrimaryChallenge(challenges);
-  const hasChallengeProgress =
-    primaryChallenge != null && primaryChallenge.target > 0 && !primaryChallenge.completed;
-
-  return (
-    <div data-feed-passport-state="loaded" className="space-y-4">
-      <div className="flex items-center gap-4">
-        {hasChallengeProgress ? (
-          <PassportProgressRing
-            progress={primaryChallenge.progress}
-            target={primaryChallenge.target}
-          />
-        ) : (
-          <div className="flex h-[5.5rem] w-[5.5rem] shrink-0 items-center justify-center rounded-full bg-yunicity-primary-soft">
-            <BookMarked className="h-7 w-7 text-yunicity-primary" strokeWidth={1.75} />
-          </div>
-        )}
-        <div className="min-w-0 flex-1">
-          {tierLabel ? (
-            <p className="text-sm font-semibold text-yunicity-primary">Niveau {tierLabel}</p>
-          ) : null}
-          {hasChallengeProgress ? (
-            <>
-              <p className="mt-0.5 text-base font-bold text-neutral-900">
-                {primaryChallenge.progress} / {primaryChallenge.target} découvertes
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-                {primaryChallenge.description || primaryChallenge.name}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="mt-0.5 text-base font-bold text-neutral-900">
-                {summary.earned_badges} badge{summary.earned_badges !== 1 ? "s" : ""} obtenu
-                {summary.earned_badges !== 1 ? "s" : ""}
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-                Continuez à explorer votre ville et ses pépites.
-              </p>
-            </>
-          )}
-        </div>
-      </div>
-
-      <Link
-        href="/passport"
-        className="inline-flex w-full items-center justify-center rounded-xl bg-yunicity-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2"
-      >
-        {FEED_PORTAL_PASSPORT_CONTINUE}
-      </Link>
-    </div>
   );
 }
 
@@ -302,21 +193,44 @@ function RailFooter() {
   );
 }
 
+/**
+ * Volet droit Desktop — FEED-MAIN-LAYOUT-UIUX-01.
+ *
+ * Ordre imposé par l'addendum : Passeport, puis Événements IMMÉDIATEMENT sous
+ * le Passeport. Le privilège partenaire et le pied de rail suivent, sans jamais
+ * s'intercaler entre les deux.
+ *
+ * Ce volet est la position principale de l'agenda Événements : la colonne
+ * centrale ne le rend plus au-delà de 1024px (`.feed-editorial-evening-featured`
+ * dans `globals.css`), sans quoi les mêmes `portalEvents` seraient présentés
+ * deux fois, au même instant, sur le même écran.
+ */
 export function FeedDesktopRightRail({
   events,
   city,
   highlightOffer,
   passport,
+  eventsLoading,
+  eventsError,
+  onRetryEvents,
 }: FeedDesktopRightRailProps) {
   return (
     <aside className="feed-desktop-right-rail" aria-label="Contexte local">
       <div className="space-y-4">
-        <TonightModule events={events} city={city} />
-        <PassportModule
-          overview={passport.overview}
-          challenges={passport.challenges}
-          loading={passport.loading}
-          error={passport.error}
+        <div className="feed-desktop-passport-slot">
+          <FeedPassportModule
+            overview={passport.overview}
+            challenges={passport.challenges}
+            loading={passport.loading}
+            error={passport.error}
+          />
+        </div>
+        <TonightModule
+          events={events}
+          city={city}
+          loading={eventsLoading}
+          error={eventsError}
+          onRetry={onRetryEvents}
         />
         {highlightOffer ? <LocalPrivilegeModule offer={highlightOffer} /> : null}
         <RailFooter />

@@ -19,6 +19,8 @@ import { FeedPublicationSocialActions } from "@/components/feed/feed-publication
 import { EventFeedCard } from "@/components/events/event-feed-card";
 import { OfferFeedCard } from "@/components/feed/offer-feed-card";
 import { OrganizationPostCard } from "@/components/feed/organization-post-card";
+import { PublicationDeleteDialog } from "@/components/feed/publication-delete-dialog";
+import { usePublicationDeletion } from "@/hooks/use-publication-deletion";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
 
@@ -36,11 +38,19 @@ function FeedCardBody({
   post,
   currentUserId,
   onReport,
+  onDelete,
   onToggleEventInterest,
 }: {
   post: FeedPost;
   currentUserId: string | null;
   onReport?: (reason: FeedReportReason) => Promise<void>;
+  /**
+   * Suppression de SA publication — offerte sur la famille CITOYENNE seule
+   * (PROFILE-POST-MENU-01). Une carte evenement, offre ou organisation n'est
+   * pas une publication personnelle : `DELETE /posts/{id}` y retirerait une
+   * carte dont l'entite source resterait, ce qui n'est pas le geste demande.
+   */
+  onDelete?: () => void;
   onToggleEventInterest?: () => Promise<void>;
 }) {
   if (post.type === "offer") {
@@ -59,7 +69,14 @@ function FeedCardBody({
   if (post.type === "partner_creator" || post.author.type === "organization") {
     return <OrganizationPostCard post={post} currentUserId={currentUserId} onReport={onReport} />;
   }
-  return <CitizenPostCard post={post} currentUserId={currentUserId} onReport={onReport} />;
+  return (
+    <CitizenPostCard
+      post={post}
+      currentUserId={currentUserId}
+      onReport={onReport}
+      onDelete={onDelete}
+    />
+  );
 }
 
 /**
@@ -96,6 +113,12 @@ export function FeedCard(props: {
   post: FeedPost;
   onToggleLike: (post: FeedPost) => Promise<void>;
   onReport: (postId: string, reason: FeedReportReason) => Promise<void>;
+  /**
+   * Suppression douce de SA publication. Le reseau reste chez le proprietaire
+   * de la liste — comme `onReport` —, parce que lui seul sait retirer la carte
+   * de son flux. Non fourni : aucune action de suppression n'est offerte.
+   */
+  onDeletePost?: (postId: string) => Promise<void>;
   openCommentsByDefault?: boolean;
 }) {
   const api = useYunicityApi();
@@ -127,12 +150,14 @@ export function FeedCardWithDependencies({
   post: initialPost,
   onToggleLike,
   onReport,
+  onDeletePost,
   openCommentsByDefault = false,
   dependencies,
 }: {
   post: FeedPost;
   onToggleLike: (post: FeedPost) => Promise<void>;
   onReport: (postId: string, reason: FeedReportReason) => Promise<void>;
+  onDeletePost?: (postId: string) => Promise<void>;
   openCommentsByDefault?: boolean;
   dependencies: FeedCardDependencies;
 }) {
@@ -141,6 +166,22 @@ export function FeedCardWithDependencies({
   useEffect(() => {
     setPost(initialPost);
   }, [initialPost]);
+
+  /*
+   * Suppression de SA publication (PROFILE-POST-MENU-01).
+   *
+   * `deletePost` passe par le prop du proprietaire de la liste, JAMAIS par un
+   * provider : la vue doit rester montable hors de l'arbre de contexte
+   * (verrou `lib/feed/feed-card-seam.test.ts`). Quand le prop est absent,
+   * aucune action n'est offerte et la confirmation n'est jamais ouverte.
+   */
+  const deletePost = useCallback(
+    async (postId: string) => {
+      await onDeletePost?.(postId);
+    },
+    [onDeletePost],
+  );
+  const deletion = usePublicationDeletion({ deletePost });
 
   const [commentsOpen, setCommentsOpen] = useState(openCommentsByDefault);
   const [comments, setComments] = useState<FeedComment[]>([]);
@@ -203,46 +244,57 @@ export function FeedCardWithDependencies({
    * C3-FEED-UNIFIED-PUBLICATION-CARD-R2A : une seule barre sociale. `Signaler`
    * n'y figure plus — il vit dans le menu `…` de l'en-tete, seul chemin de
    * signalement, identique sur les trois bandes.
+   *
+   * Elle est rendue pour les CINQ familles. Une exception
+   * `post.type === "event" ? null` privait les evenements de reaction, de
+   * commentaire et de partage ; le commentaire ci-dessus, qui l'accompagnait,
+   * justifiait tout autre chose — le deplacement de `Signaler`. La zone
+   * `expanded` n'a jamais ete conditionnee au type : la barre ouvre donc une
+   * liste de commentaires et un compositeur deja fonctionnels, sans affordance
+   * orpheline.
    */
-  const footer =
-    post.type === "event" ? null : (
-      <FeedPublicationSocialActions
-        post={post}
-        commentsOpen={commentsOpen}
-        onToggleLike={() => void onToggleLike(post)}
-        onToggleComments={() => void toggleComments()}
-      />
-    );
+  const footer = (
+    <FeedPublicationSocialActions
+      post={post}
+      commentsOpen={commentsOpen}
+      onToggleLike={() => void onToggleLike(post)}
+      onToggleComments={() => void toggleComments()}
+    />
+  );
 
   return (
-    <FeedCardShell
-      variant={feedCardVariant(post)}
-      footer={footer}
-      expanded={
-        commentsOpen ? (
-          <>
-            {commentsLoading ? (
-              <p className="text-sm text-neutral-500">Chargement des commentaires…</p>
-            ) : (
-              <CommentList
-                comments={comments}
-                currentUserId={dependencies.currentUserId ?? undefined}
-                onDelete={removeComment}
-              />
-            )}
-            <CommentComposer onSubmit={addComment} />
-          </>
-        ) : undefined
-      }
-    >
-      <FeedCardBody
-        post={post}
-        currentUserId={dependencies.currentUserId}
-        onReport={(reason) => onReport(post.id, reason)}
-        onToggleEventInterest={
-          post.type === "event" && post.event ? () => toggleEventInterest() : undefined
+    <>
+      <FeedCardShell
+        variant={feedCardVariant(post)}
+        footer={footer}
+        expanded={
+          commentsOpen ? (
+            <>
+              {commentsLoading ? (
+                <p className="text-sm text-neutral-500">Chargement des commentaires…</p>
+              ) : (
+                <CommentList
+                  comments={comments}
+                  currentUserId={dependencies.currentUserId ?? undefined}
+                  onDelete={removeComment}
+                />
+              )}
+              <CommentComposer onSubmit={addComment} />
+            </>
+          ) : undefined
         }
-      />
-    </FeedCardShell>
+      >
+        <FeedCardBody
+          post={post}
+          currentUserId={dependencies.currentUserId}
+          onReport={(reason) => onReport(post.id, reason)}
+          onDelete={onDeletePost ? () => deletion.request(post) : undefined}
+          onToggleEventInterest={
+            post.type === "event" && post.event ? () => toggleEventInterest() : undefined
+          }
+        />
+      </FeedCardShell>
+      <PublicationDeleteDialog deletion={deletion} />
+    </>
   );
 }

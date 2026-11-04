@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from urllib.parse import quote
@@ -21,8 +22,11 @@ from app.integrations.resend_email import EmailDeliveryError, send_password_rese
 from app.repositories.password_reset_token_repository import PasswordResetTokenRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.user_repository import UserRepository
+from app.services.email_budget import EmailBudget, EmailCategory
 
-_GENERIC_FORGOT_MESSAGE = (
+logger = logging.getLogger(__name__)
+
+GENERIC_FORGOT_MESSAGE = (
     "Si un compte existe avec cette adresse, vous recevrez un lien de réinitialisation."
 )
 _INVALID_RESET_TOKEN_MSG = "Lien de réinitialisation invalide ou expiré."
@@ -31,8 +35,16 @@ _RESET_SUCCESS_MESSAGE = "Votre mot de passe a été mis à jour."
 
 @dataclass(frozen=True)
 class ForgotPasswordResult:
+    """Resultat de la demande.
+
+    Ne porte QUE le message generique. Le lien de reinitialisation vaut un mot de
+    passe a usage unique : il ne transite que par l'e-mail, jamais par la reponse
+    HTTP (AUTH-03). Un champ optionnel qui ne se remplit que hors production est
+    exactement le genre de chose qu'un deploiement `recette` ou `preprod` reactive
+    sans que personne s'en apercoive.
+    """
+
     message: str
-    reset_url: str | None = None
 
 
 class PasswordResetService:
@@ -44,9 +56,13 @@ class PasswordResetService:
         self._refresh_tokens = RefreshTokenRepository(session)
 
     async def request_password_reset(self, email: str) -> ForgotPasswordResult:
+        """Emet un lien de reinitialisation et l'envoie. Repond toujours la meme chose.
+
+        Le message est identique pour une adresse connue, inconnue ou desactivee :
+        toute variation permettrait d'enumerer les comptes.
+        """
         normalized = normalize_email(email)
         user = await self._users.get_by_email(normalized)
-        reset_url: str | None = None
 
         if user is not None and user.is_active:
             raw_token = generate_opaque_token()
@@ -60,29 +76,34 @@ class PasswordResetService:
                 token_hash=token_hash,
                 expires_at=expires_at,
             )
-            reset_link = self._build_reset_url(raw_token)
 
-            if self._settings.app_env == "prod":
-                try:
-                    await send_password_reset_email(
-                        to=normalized,
-                        reset_url=reset_link,
-                        settings=self._settings,
-                    )
-                except EmailDeliveryError as exc:
-                    await self._session.rollback()
-                    raise AppError(
-                        status_code=503,
-                        code="EMAIL_DELIVERY_FAILED",
-                        detail="Service temporairement indisponible. Réessayez plus tard.",
-                    ) from exc
+            # L'envoi est tente dans TOUS les environnements. C'est le fournisseur
+            # configure qui decide de ce qui part reellement : `none` n'envoie rien,
+            # `console` trace sans divulguer, `resend` expedie. Conditionner l'envoi
+            # a `app_env == "prod"` laissait recette et preprod sans aucun e-mail,
+            # et donc sans autre moyen de recuperer le lien que la reponse HTTP.
+            # Categorie CRITIQUE : la recuperation de compte est le dernier
+            # envoi a s'eteindre, et peut entamer la reserve.
+            budget_ok = await EmailBudget(self._settings).try_consume(EmailCategory.CRITICAL)
+            try:
+                if not budget_ok:
+                    raise EmailDeliveryError("daily email budget exhausted")
+                await send_password_reset_email(
+                    to=normalized,
+                    reset_url=self._build_reset_url(raw_token),
+                    settings=self._settings,
+                )
+            except EmailDeliveryError:
+                # Volontairement NON propage. Un 503 ne survient que si le compte
+                # existe — puisque l'envoi n'est tente que dans ce cas. Pendant une
+                # panne du fournisseur, la paire 503/200 devient donc un oracle
+                # d'existence d'adresse. La panne est tracee pour l'exploitation ;
+                # l'appelant, lui, recoit la meme reponse dans tous les cas.
+                logger.exception("password_reset_send_failed user_id=%s", user.id)
 
             await self._session.commit()
 
-            if self._settings.app_env != "prod":
-                reset_url = reset_link
-
-        return ForgotPasswordResult(message=_GENERIC_FORGOT_MESSAGE, reset_url=reset_url)
+        return ForgotPasswordResult(message=GENERIC_FORGOT_MESSAGE)
 
     async def reset_password(self, raw_token: str, new_password: str) -> str:
         validate_password_strength(new_password)

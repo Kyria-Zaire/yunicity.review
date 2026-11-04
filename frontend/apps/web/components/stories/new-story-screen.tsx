@@ -8,6 +8,7 @@ import {
   STORIES_NEW_TITLE,
   STORIES_NEW_UPLOAD_ERROR,
   humanizeAuthFailure,
+  markStoryRingsStale,
   storyDetailHref,
 } from "@yunicity/utils";
 import { CircleDot } from "lucide-react";
@@ -100,6 +101,10 @@ export function NewStoryScreen() {
         return;
       }
 
+      // Le rail de l'accueil a peut-etre deja ete charge : il ne connait pas
+      // cette Story. On le marque perime ici, apres un succes confirme
+      // seulement — un echec ne doit jamais provoquer de rechargement inutile.
+      markStoryRingsStale();
       sessionStorage.setItem(STORIES_JUST_PUBLISHED_STORAGE_KEY, JSON.stringify(created));
       router.push(storyDetailHref(created.id));
     } finally {
