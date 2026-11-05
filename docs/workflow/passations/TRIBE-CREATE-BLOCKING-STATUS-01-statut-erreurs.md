@@ -1,5 +1,10 @@
 # Passation — TRIBE-CREATE-BLOCKING-STATUS-01 · Statut des erreurs bloquantes à la création de tribu
 
+> ✅ **CLOS le 2026-11-05 au stade Preview sur `5a3e6f22`** (décision de Kyria).
+> Recette Safari iPhone : erreurs **en rouge avec alerte**, zéro erreur **en vert
+> avec coche**. Non fusionné dans `main`. Dette ouverte :
+> `TRIBE-CREATE-CHECKLIST-ACCESS-01`.
+>
 > **Ouvert le 2026-11-05 par Kyria**, seul ticket actif. Préproduction uniquement.
 > ⛔ Aucune action sur `main` ni sur la production. Règles de validation et
 > comportement des boutons **inchangés**.
@@ -57,6 +62,23 @@ pour les erreurs → 4 échecs ; test adapté à `emerald-700`). `tsc` vert ; `e
 `vitest lib/tribes` 3 fichiers / 19 tests ; `@yunicity/utils` 152 fichiers /
 1 278 tests verts.
 
+## 4 bis. 🚀 PREVIEW — *2026-11-05*
+
+- Commits : `31b2147e` (docs de clôture de `MOBILE-PAGE-BG-01`, séparé) puis
+  **`5a3e6f22`** (5 fichiers de ce ticket). Preview avancée
+  **`586dd249..5a3e6f22`** en avance rapide, distante vérifiée, **sans
+  `--force`** ; branche `fix/tribe-create-blocking-status` poussée. `main` =
+  `3e0b27ba`, **inchangé**.
+- **CI — PR #202 sur `5a3e6f22`** : Frontend, Backend, Docker, Lint agent rules
+  ✅ ; Gitleaks, chemins interdits ✅ ; **audit des dépendances ❌ — 19,
+  INCHANGÉ** (réserve préexistante).
+- **Railway Preview** : web `128000d0`, API `e743d3fd` — **SUCCESS** sur
+  `5a3e6f22`.
+- **Servi** : `buildId` `sB1hhz_m0Xp_l-38K7OC4` ; `/tribes/create` 200 ; le
+  morceau `app/tribes/create/page-98bf297e726a1cdb.js` contient le marqueur
+  `data-tribe-create-blocking-status`, `text-red-700` et `text-emerald-700`.
+- Section **non commitée** (un commit relancerait un déploiement).
+
 ## 5. Observations hors périmètre — NON traitées
 
 - Brouillon vide : l'item « Accès et adhésion » de la checklist est **coché**
@@ -69,5 +91,5 @@ pour les erreurs → 4 échecs ; test adapté à `emerald-700`). `tsc` vert ; `e
 
 ## 6. Prochaine action
 
-Présentation à Kyria ; sur décision : commit, intégration en avance rapide sur
-la Preview, CI, SHA servi, recette Safari iPhone des deux états.
+✅ Recette Safari iPhone validée par Kyria (Preview `5a3e6f22`) — ticket clos.
+Suite : `PASSPORT-QR-THIRD-PARTY-01`.
