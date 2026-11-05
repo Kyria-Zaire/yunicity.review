@@ -5,13 +5,14 @@ import {
   TRIBE_CREATE_DESKTOP_CHECKLIST_ACCESS,
   TRIBE_CREATE_DESKTOP_CHECKLIST_CHARTER,
   TRIBE_CREATE_DESKTOP_CHECKLIST_IDENTITY,
-  TRIBE_CREATE_DESKTOP_CHECKLIST_NO_ERRORS,
   TRIBE_CREATE_DESKTOP_CHECKLIST_TITLE,
   TRIBE_CREATE_DESKTOP_CHECKLIST_VISUALS,
   tribeCreateBlockingErrorCount,
   tribeCreateChecklistState,
 } from "@yunicity/utils";
 import { CheckCircle2, Circle } from "lucide-react";
+
+import { TribeCreateBlockingStatus } from "@/components/tribes/create/tribe-create-blocking-status";
 
 type TribeCreateDesktopChecklistProps = {
   draft: TribeCreateDraft;
@@ -51,12 +52,11 @@ export function TribeCreateDesktopChecklist({ draft }: TribeCreateDesktopCheckli
           );
         })}
       </ul>
-      <p className="mt-4 flex items-center gap-1.5 text-xs font-medium text-emerald-600">
-        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
-        {blockingErrors === 0
-          ? TRIBE_CREATE_DESKTOP_CHECKLIST_NO_ERRORS
-          : `${blockingErrors} erreur${blockingErrors > 1 ? "s" : ""} bloquante${blockingErrors > 1 ? "s" : ""}`}
-      </p>
+      <TribeCreateBlockingStatus
+        blockingErrors={blockingErrors}
+        className="mt-4 flex items-center gap-1.5"
+        iconClassName="h-3.5 w-3.5"
+      />
     </section>
   );
 }

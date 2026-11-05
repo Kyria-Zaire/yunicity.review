@@ -2,7 +2,6 @@
 
 import type { TribeCreateDraft } from "@yunicity/utils";
 import {
-  TRIBE_CREATE_DESKTOP_CHECKLIST_NO_ERRORS,
   TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PRIVATE,
   TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PUBLIC,
   TRIBE_CREATE_DESKTOP_PREVIEW_COVER_PLACEHOLDER,
@@ -18,7 +17,6 @@ import {
   tribeCreateChecklistProgress,
 } from "@yunicity/utils";
 import {
-  CheckCircle2,
   ChevronDown,
   ChevronUp,
   ImageIcon,
@@ -26,6 +24,8 @@ import {
   MapPin,
 } from "lucide-react";
 import { useState } from "react";
+
+import { TribeCreateBlockingStatus } from "@/components/tribes/create/tribe-create-blocking-status";
 
 function ChecklistProgressRing({ completed, total }: { completed: number; total: number }) {
   const ratio = total > 0 ? completed / total : 0;
@@ -168,12 +168,11 @@ export function TribeCreateMobilePreview({ draft }: TribeCreateMobilePreviewProp
               <ChecklistProgressRing completed={completed} total={total} />
               {TRIBE_CREATE_MOBILE_CHECKLIST_PROGRESS(completed, total)}
             </p>
-            <p className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600">
-              <CheckCircle2 className="h-4 w-4" aria-hidden />
-              {blockingErrors === 0
-                ? TRIBE_CREATE_DESKTOP_CHECKLIST_NO_ERRORS
-                : `${blockingErrors} erreur${blockingErrors > 1 ? "s" : ""} bloquante${blockingErrors > 1 ? "s" : ""}`}
-            </p>
+            <TribeCreateBlockingStatus
+              blockingErrors={blockingErrors}
+              className="inline-flex items-center gap-1.5"
+              iconClassName="h-4 w-4"
+            />
           </div>
         </div>
       ) : null}
