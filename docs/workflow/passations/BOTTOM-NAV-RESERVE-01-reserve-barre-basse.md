@@ -1,5 +1,10 @@
 # Passation — BOTTOM-NAV-RESERVE-01 · Réserve sous la barre basse mobile
 
+> ✅ **CLOS le 2026-11-05 au stade Preview sur `a39b9171`** (décision de Kyria,
+> recette Safari iPhone ✅). Limites conservées : §8 (échecs intermittents),
+> §9 (vues non mesurées, iPhone partiel), non fusionné dans `main`. Suite :
+> `MOBILE-PAGE-BG-01`.
+>
 > **Ouvert le 2026-11-04 par Kyria**, seul ticket actif. Preview uniquement.
 > ⛔ Aucune action sur `yunicity.city`, son admin, son infrastructure ou `main`.
 > ⛔ Desktop et medium non modifiés. Pas de double marge sur `/feed/new`.
@@ -194,8 +199,78 @@ retiré → test rouge.
   mobiles.
 - `PassportMobileView`, composant mort — dette signalée, hors ticket.
 
+## 9 bis. 🚀 PREVIEW — *2026-11-05*
+
+- Commit **`a39b9171`** (11 fichiers, ce ticket seul) sur
+  `fix/bottom-nav-reserve` (poussée, nouvelle branche) et
+  `feat/c3-videos-refonte-final` en **avance rapide** `983a592c..a39b9171`,
+  distante vérifiée avant poussée, **sans `--force`**. `main` = `3e0b27ba`,
+  inchangé.
+- **CI — PR #202 sur `a39b9171`** (vérifié : `headRefOid` et `headSha` du
+  run) : lint · typecheck · build ✅ · ruff · mypy · pytest ✅ · compose ·
+  health · pytest ✅ · lint-agent-rules ✅ · Gitleaks ✅ · Forbidden paths ✅ ·
+  **Dependency audit ❌ — 19 High/Critical, compte INCHANGÉ** (réserve
+  préexistante, hors ticket).
+- **Railway Preview** : web `yunicity.review` **`3b1f43d5` SUCCESS**,
+  API `unified-media-preview` **`abb10a85` SUCCESS**, tous deux
+  `meta.commitHash = a39b9171`.
+- **Servi sur `preview.yunicity.city`** : `buildId` `izqJBDiszaqaBOyBzGrfk` →
+  **`gfxgH6MxRVf_A_aeRP4fK`** ; feuille `4f16fbddd8e9ec2c.css` — **même
+  empreinte que le build QA local** — contient la réserve
+  `padding-bottom:var(--citizen-bottom-nav-h,0)` et le masquage du pied de
+  page ; ancienne classe `calc(3.25rem…)` absente.
+- ⚠️ **Rappels conservés** : vues **non mesurées** — détail de lieu, fil de
+  discussion ouvert, commentaires vidéo mobiles (§9) ; **échecs intermittents
+  non reproduits** `ios-form-zoom` et `xcode-uuid-contract` (§8) ; Safari
+  iPhone réel **non vérifié**.
+- Cette section est **non commitée** : un commit documentaire sur la branche
+  Preview redéclencherait un déploiement.
+
+## 9 ter. 📱 RECETTE SAFARI IPHONE + BANDE BLANCHE — *2026-11-05*
+
+**Recette de Kyria, Safari iPhone, Preview `a39b9171`** : dernier contenu du
+profil et bouton « Créer une tribu » **entièrement visibles** ; navigation
+**masquée** sur le formulaire, boutons du formulaire **accessibles**.
+
+**Bande blanche au-dessus de la barre (profil, liste des tribus) — origine
+établie** (QA locale, 390 px, pile mesurée) :
+
+```
+vue grise (fond #F4F5F7)            … → 759
+réserve = hauteur de la barre       759 → 812   (transparente)
+.web-three-col padding-bottom 2rem  812 → 844
+barre basse                         791 → 844
+```
+
+- La bande visible (~32 px) est l'**espacement standard de fin de contenu de
+  la grille** — `.web-three-col { padding: 0 1rem 2rem }`, présent à **tous**
+  les paliers, desktop compris — et non une seconde réserve : la réserve vaut
+  exactement la barre.
+- Elle paraît **blanche** parce que `.web-shell-page` impose un fond blanc qui
+  l'emporte sur le `bg-[#F4F5F7]` déclaré par les shells, alors que la vue
+  au-dessus est grise.
+- **Essai mesuré puis ANNULÉ** : neutraliser ce padding quand la barre est
+  présente (`max(0px, calc(2rem - var(--citizen-bottom-nav-h)))`, build QA
+  `OZdVb6p0KjBOJ2MGN2DnI`) supprime la bande **mais retire l'espace
+  nécessaire** : écart contenu → barre `/discussions` **0 px**, profil
+  **10 px**, fil et réglages **17 px** (avant ticket : fil 60, discussions 43).
+  Code revenu **exactement** à `a39b9171` ; **rien de poussé**.
+- **Conclusion** : pas de réserve en double → **non corrigée** dans ce ticket.
+  Sujet **visuel** distinct, à décider : couleur de fond de page mobile des
+  shells à vue grise (proposé `MOBILE-PAGE-BG-01`) — ⚠️ quelques vues sont à
+  fond blanc (détail de quartier) ou `neutral-50` (détail de tribu) : une
+  couleur unique ne convient pas partout.
+
+**Incohérence notée, NON corrigée ici** — « 2 erreurs bloquantes » en **vert
+émeraude avec une coche** sur la création de tribu : lecture de code, le
+statut garde `text-emerald-600` + `CheckCircle2` **quel que soit**
+`blockingErrors` — mobile `components/tribes/create/mobile/tribe-create-mobile-preview.tsx:171-176`,
+desktop `components/tribes/create/desktop/tribe-create-desktop-checklist.tsx:54-59`.
+Identifiant proposé : `TRIBE-CREATE-BLOCKING-STATUS-01`.
+
 ## 10. Prochaine action
 
-Présentation à Kyria **avant tout commit, poussée ou déploiement**.
-Ensuite, sur décision : commit sur `fix/bottom-nav-reserve`, intégration à la
-Preview, recette sur Safari iPhone.
+✅ **Clos par Kyria le 2026-11-05.** Rappel de la décision : clôture de `BOTTOM-NAV-RESERVE-01` au stade Preview
+(`a39b9171`, recette iPhone ✅), la bande blanche relevant d'un sujet visuel
+distinct. Réserves maintenues : trois vues non mesurées (§9), deux échecs de
+test intermittents non reproduits (§8).
