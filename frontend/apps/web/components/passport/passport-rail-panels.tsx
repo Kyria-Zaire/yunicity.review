@@ -2,6 +2,7 @@
 
 import { CulturalImage } from "@/components/culture/cultural-image";
 import { PassportBookletIcon } from "@/components/passport/passport-booklet-icon";
+import { usePassportQrImage } from "@/hooks/use-passport-qr-image";
 import type { PartnerOfferPublic } from "@yunicity/types";
 import type { PassportDesktopActivityItem, PassportDesktopSegmentProgress } from "@yunicity/utils";
 import {
@@ -38,7 +39,7 @@ import {
   Tag,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 /**
  * Variante de montage d'un panneau de rail. Elle existait déjà pour la mise en
@@ -95,15 +96,9 @@ export function PassportQrPanel({
   variant = "rail",
 }: PassportQrPanelProps) {
   const [qrExpanded, setQrExpanded] = useState(false);
-  const qrSize = variant === "medium" ? 176 : 160;
 
-  const qrImageSrc = useMemo(
-    () =>
-      qrPayload
-        ? `https://api.qrserver.com/v1/create-qr-code/?size=${qrExpanded ? 320 : qrSize}x${qrExpanded ? 320 : qrSize}&data=${encodeURIComponent(qrPayload)}`
-        : null,
-    [qrExpanded, qrPayload, qrSize],
-  );
+  // PASSPORT-QR-THIRD-PARTY-01 — image générée sur l'appareil (SVG, aucune requête tierce).
+  const { src: qrImageSrc, generating: qrGenerating } = usePassportQrImage(qrPayload);
 
   const qrBoxClass =
     variant === "medium"
@@ -126,7 +121,7 @@ export function PassportQrPanel({
 
         <div className={`flex items-start gap-3 p-4 ${variant === "medium" ? "sm:gap-4" : ""}`}>
           <div className={qrBoxClass}>
-            {qrLoading ? (
+            {qrLoading || qrGenerating ? (
               <span className="text-center text-[10px] text-neutral-500">{PASSPORT_DESKTOP_QR_LOADING}</span>
             ) : qrImageSrc ? (
               <>

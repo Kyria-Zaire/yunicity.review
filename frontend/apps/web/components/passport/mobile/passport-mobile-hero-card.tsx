@@ -21,6 +21,7 @@ import {
 import { Star } from "lucide-react";
 import { useMemo } from "react";
 import { AvatarImage } from "@/components/avatar-image";
+import { usePassportQrImage } from "@/hooks/use-passport-qr-image";
 
 type PassportMobileHeroCardProps = {
   profile: ProfileMe;
@@ -76,9 +77,8 @@ export function PassportMobileHeroCard({
   ];
 
   const avatarUrl = profile.avatar_url?.trim() || null;
-  const qrImageSrc = qrPayload
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(qrPayload)}`
-    : null;
+  // PASSPORT-QR-THIRD-PARTY-01 — image générée sur l'appareil (SVG, aucune requête tierce).
+  const { src: qrImageSrc, generating: qrGenerating } = usePassportQrImage(qrPayload);
 
   const isActive = overview.passport.status === "active";
 
@@ -131,7 +131,7 @@ export function PassportMobileHeroCard({
 
         <div className="flex shrink-0 flex-col items-center gap-1.5">
           <div className="flex h-[88px] w-[88px] items-center justify-center rounded-2xl bg-white p-2">
-            {qrLoading ? (
+            {qrLoading || qrGenerating ? (
               <span className="text-[10px] text-neutral-500">{PASSPORT_MOBILE_QR_LOADING}</span>
             ) : qrImageSrc ? (
               // eslint-disable-next-line @next/next/no-img-element

@@ -2,6 +2,7 @@
 
 import { PassportBookletIcon } from "@/components/passport/passport-booklet-icon";
 import { PassportOfferQrDialog } from "@/components/passport/offer-detail/passport-offer-qr-dialog";
+import { usePassportQrImage } from "@/hooks/use-passport-qr-image";
 import type { PassportDesktopSegmentProgress } from "@yunicity/utils";
 import {
   PASSPORT_DESKTOP_HERO_SEGMENT_LABEL,
@@ -15,7 +16,7 @@ import {
 } from "@yunicity/utils";
 import { Check } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 type PassportOfferStatusCardProps = {
   city: string;
@@ -35,13 +36,8 @@ export function PassportOfferStatusCard({
   qrLoading,
 }: PassportOfferStatusCardProps) {
   const [qrOpen, setQrOpen] = useState(false);
-  const qrImageSrc = useMemo(
-    () =>
-      qrPayload
-        ? `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(qrPayload)}`
-        : null,
-    [qrPayload],
-  );
+  // PASSPORT-QR-THIRD-PARTY-01 — image générée sur l'appareil (SVG, aucune requête tierce).
+  const { src: qrImageSrc, generating: qrGenerating } = usePassportQrImage(qrPayload);
 
   return (
     <div className="passport-offer-area-status">
@@ -93,7 +89,7 @@ export function PassportOfferStatusCard({
           <button
             type="button"
             onClick={() => setQrOpen(true)}
-            disabled={!qrImageSrc && !qrLoading}
+            disabled={!qrImageSrc && !qrLoading && !qrGenerating}
             className="inline-flex w-full min-h-11 items-center justify-center rounded-xl bg-yunicity-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-yunicity-primary-hover disabled:opacity-50"
           >
             {PASSPORT_OFFER_DETAIL_SHOW_QR}
@@ -119,7 +115,7 @@ export function PassportOfferStatusCard({
         displayName={displayName}
         city={city}
         qrImageSrc={qrImageSrc}
-        qrLoading={qrLoading}
+        qrLoading={qrLoading || qrGenerating}
       />
     </div>
   );
