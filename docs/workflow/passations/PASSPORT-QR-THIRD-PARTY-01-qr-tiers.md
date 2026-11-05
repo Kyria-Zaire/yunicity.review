@@ -136,6 +136,51 @@ rapport (`yargs` 17.7.2 → 17.7.3 sous `@react-native/codegen`) a été **annul
 **Rotation des jetons exposés** : documentée **séparément**, **non exécutée** —
 `docs/workflow/tickets/PASSPORT-QR-TOKEN-ROTATION-01.md`.
 
+## 3 ter. 🚀 PREVIEW — *2026-11-05*
+
+- Commits : `4630d4e7` (docs de clôture de `TRIBE-CREATE-BLOCKING-STATUS-01`,
+  séparé) puis **`1bed2edd`** (ce ticket : 12 fichiers). Preview avancée
+  **`5a3e6f22..1bed2edd`** en avance rapide, distante vérifiée, **sans
+  `--force`** ; branche `fix/passport-qr-local` poussée. `main` = `3e0b27ba`,
+  **inchangé**.
+- **CI — PR #202 sur `1bed2edd`** : Frontend, Backend, Docker, Lint agent rules
+  ✅ ; Gitleaks, chemins interdits ✅ ; **audit des dépendances ❌ — 19,
+  INCHANGÉ**, aucune alerte sur `qrcode` ni ses dépendances.
+- **Railway Preview** : web `14dd990c`, API `8011da1b` — **SUCCESS** sur
+  `1bed2edd`. `buildId` servi : `DAne8tDeDhjDA-dcItyhI`.
+- **Version livrée sans appel tiers** : **29** morceaux JS servis par `/passport`,
+  le détail d'offre, `/organizations/me/partner/passport`, `/login`, `/feed`,
+  `/` → **0** contenant `qrserver` ; génération locale
+  (`data:image/svg+xml;charset=utf-8,`) présente.
+- ⚠️ **Limites maintenues** : **écran partenaire non testé en navigateur**
+  (aucun compte partenaire de recette) ; **relevé réseau authentifié sur
+  `preview.yunicity.city` non fait par l'agent** (pas d'identifiants) — à faire
+  en recette par Kyria.
+- **Rotation : NON exécutée** — procédure **préproduction uniquement** :
+  `docs/workflow/tickets/PASSPORT-QR-TOKEN-ROTATION-01.md` (conséquences pour
+  les anciens QR au §2).
+- Section **non commitée** (un commit relancerait un déploiement).
+
+## 3 quater. 📱 RECETTE SAFARI IPHONE — *Kyria, 2026-11-05, Preview `1bed2edd`*
+
+**Validé par Kyria** (Safari iPhone, `1bed2edd`) — précisément :
+- **`/passport`** s'affiche ;
+- **son QR** s'affiche ;
+- l'**agrandissement** du QR ;
+- la **fermeture** de l'agrandissement ;
+- le **retour du défilement** après fermeture.
+
+*Correction consignée le 2026-11-05 : une première rédaction indiquait « écrans
+et gestes non détaillés » ; le détail ci-dessus vient de Kyria.*
+
+**Non vérifié — limites maintenues** :
+- **réseau en session connectée sur `preview.yunicity.city`** : aucun relevé
+  montrant l'absence de requête vers `api.qrserver.com` depuis un navigateur
+  connecté (la preuve d'absence repose sur le **code servi** — 29 morceaux JS,
+  0 `qrserver` — et sur la QA locale) ;
+- **parcours partenaire** (`/organizations/me/partner/passport`, QR de tampon) :
+  **non vérifié** en navigateur, ni en QA locale ni sur Preview.
+
 ## 4. Décisions attendues de Kyria
 
 1. Option A ou B.
