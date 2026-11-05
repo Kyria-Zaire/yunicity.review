@@ -6104,3 +6104,24 @@ html.local-video-cinema-open body {
     transition: none;
   }
 }
+
+/* MOBILE-PAGE-BG-01 — fond de page mobile = fond de la vue affichée.
+   `.web-shell-page` impose un fond blanc ; sous une vue grise, l'espace de fin
+   de contenu (2rem de la grille, au-dessus de la barre basse) paraissait en
+   bande blanche. Chaque règle ne s'applique que si SA vue mobile est rendue :
+   pas de couleur unique, les vues blanches gardent le blanc. L'espace n'est
+   pas modifié. Palier mobile seulement : desktop et medium inchangés. */
+@media (max-width: 639.98px) {
+  .neighborhoods-mobile-shell:has([data-neighborhoods-mobile-hub]),
+  .notifications-mobile-shell:has([data-notifications-mobile]),
+  .settings-mobile-shell:has(.web-mobile-settings-only),
+  .tribes-mobile-shell:has([data-tribes-mobile-root]),
+  .profile-mobile-shell:has(.web-mobile-profile-portal-only),
+  .event-detail-mobile-shell:has([data-event-mobile-detail]) {
+    background-color: #f4f5f7;
+  }
+
+  .tribes-mobile-shell:has(.tribe-detail-mobile-shell) {
+    background-color: theme("colors.neutral.50");
+  }
+}
