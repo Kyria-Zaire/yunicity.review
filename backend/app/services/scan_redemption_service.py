@@ -66,14 +66,11 @@ class ScanRedemptionService:
         *,
         client_ip: str,
     ) -> ScanResolveResponse:
+        # SCAN-RESOLVE-TOKEN-ORACLE-01 — droits du partenaire AVANT toute recherche de
+        # Passport : un non-partenaire ne doit pas distinguer un jeton valide d'un jeton
+        # inconnu (403 dans les deux cas).
+        org_ids = await self._require_partner_scanner(partner_user)
         passport = await self._resolve_passport(qr_secret, partner_user.id, client_ip)
-        org_ids = await self._offers.list_managed_organization_ids(partner_user.id)
-        if not org_ids:
-            raise AppError(
-                status_code=403,
-                code="SCAN_PARTNER_FORBIDDEN",
-                detail="Aucun lieu vérifié ne vous autorise à scanner.",
-            )
 
         now = datetime.now(UTC)
         offers = await self._offers.list_published_for_organizations(org_ids, now=now)
@@ -116,6 +113,8 @@ class ScanRedemptionService:
         qr_secret: str,
         client_ip: str,
     ) -> ScanRedeemResponse:
+        # SCAN-RESOLVE-TOKEN-ORACLE-01 — même ordre que resolve_for_partner.
+        await self._require_partner_scanner(partner_user)
         passport = await self._resolve_passport(qr_secret, partner_user.id, client_ip)
         now = datetime.now(UTC)
         offer = await self._offers.get_by_id(offer_id)
@@ -285,6 +284,17 @@ class ScanRedemptionService:
             message=message,
             stamp_added=stamp_added,
         )
+
+    async def _require_partner_scanner(self, partner_user: User) -> list[uuid.UUID]:
+        """Organisations vérifiées gérées par l'utilisateur ; 403 s'il n'en gère aucune."""
+        org_ids = await self._offers.list_managed_organization_ids(partner_user.id)
+        if not org_ids:
+            raise AppError(
+                status_code=403,
+                code="SCAN_PARTNER_FORBIDDEN",
+                detail="Aucun lieu vérifié ne vous autorise à scanner.",
+            )
+        return org_ids
 
     async def _resolve_passport(
         self,
