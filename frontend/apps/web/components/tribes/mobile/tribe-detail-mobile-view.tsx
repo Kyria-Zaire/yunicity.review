@@ -121,7 +121,7 @@ export function TribeDetailMobileView({
 
   return (
     <div
-      className="tribe-detail-mobile-shell web-mobile-tribe-detail-only min-w-0 bg-neutral-50 pb-12"
+      className="tribe-detail-mobile-shell web-mobile-tribe-detail-only min-w-0 bg-neutral-50 pb-4"
       data-tribe-detail-mobile=""
     >
       <TribeDetailMobileHeader tribeName={tribe.name} city={city} onShare={onShare} />

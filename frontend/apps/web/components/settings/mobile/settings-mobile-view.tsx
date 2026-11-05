@@ -94,7 +94,7 @@ export function SettingsMobileView({
 
   if (activeSection) {
     return (
-      <div className="web-mobile-settings-only min-w-0 bg-[#F4F5F7] pb-24">
+      <div className="web-mobile-settings-only min-w-0 bg-[#F4F5F7] pb-4">
         <SettingsMobileSectionHeader
           title={sectionTitle}
           onBack={() => setActiveSection(null)}
@@ -122,7 +122,7 @@ export function SettingsMobileView({
   }
 
   return (
-    <div className="web-mobile-settings-only min-w-0 bg-[#F4F5F7] pb-24">
+    <div className="web-mobile-settings-only min-w-0 bg-[#F4F5F7] pb-4">
       <SettingsMobileHeader />
 
       <div className="space-y-3 px-4 pt-3">

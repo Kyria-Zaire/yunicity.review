@@ -100,12 +100,8 @@
 
 /* Palier mobile : réserve sous le contenu = hauteur MESURÉE de la barre basse
    (`useMobileChromeInsets`), puis les 24 px du conteneur de l'écran.
-   ⚠️ `CITIZEN_MOBILE_BOTTOM_NAV_PADDING` n'est PAS fiable ici : sa classe
-   Tailwind est assemblée par interpolation et n'est jamais générée (0
-   occurrence dans le CSS de production) — défaut partagé par 16 autres
-   shells, hors périmètre de ce ticket.
-   TODO(debt): corriger la constante partagée — ticket séparé à ouvrir (voir
-   passation FEED-NEW-UX-01). */
+   Cette règle prime sur `CITIZEN_MOBILE_BOTTOM_NAV_PADDING` (corrigée par
+   BOTTOM-NAV-RESERVE-01) : une seule réserve, pas de double marge. */
 @media (max-width: 639.98px) {
   .new-post-shell .web-three-col {
     padding-bottom: 0;
@@ -1998,6 +1994,14 @@ body {
 
 @media (max-width: 639.98px) {
   .tribes-mobile-shell:has(.tribe-detail-mobile-shell) .web-mobile-chrome-only {
+    display: none !important;
+  }
+
+  /* BOTTOM-NAV-RESERVE-01 — pied de page e-mail masqué sur mobile, comme sur
+     les autres écrans refondus : placé sous la barre basse, il n'était jamais
+     visible. L'en-tête mobile (même classe) est conservé. */
+  .tribes-mobile-shell > footer.web-mobile-chrome-only,
+  .neighborhoods-mobile-shell > footer.web-mobile-chrome-only {
     display: none !important;
   }
 

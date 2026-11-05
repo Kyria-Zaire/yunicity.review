@@ -175,7 +175,7 @@ export function TribesMobileView({
   );
 
   return (
-    <div className="web-mobile-tribes-only min-w-0 bg-[#F4F5F7] pb-24" data-tribes-mobile-root="">
+    <div className="web-mobile-tribes-only min-w-0 bg-[#F4F5F7] pb-4" data-tribes-mobile-root="">
       <div className="space-y-4 px-4 pb-4 pt-3">
         <TribesMobileEditorial city={city} />
 

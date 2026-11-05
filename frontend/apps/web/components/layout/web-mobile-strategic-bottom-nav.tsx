@@ -1,6 +1,7 @@
 "use client";
 
 import { CreateHubTriggerButton } from "@/components/create-hub/create-hub-trigger-button";
+import { useCitizenBottomNavHeight } from "@/hooks/use-citizen-bottom-nav-height";
 import { isCreationRouteWithChrome } from "@/lib/layout/citizen-medium-shell-contract";
 import {
   WEB_CITIZEN_MOBILE_BOTTOM_NAV,
@@ -10,6 +11,7 @@ import {
 import { WebNavIcon } from "@/lib/layout/web-nav-icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRef } from "react";
 
 function ActiveFeedIcon({ className }: { className?: string }) {
   return (
@@ -64,6 +66,8 @@ function BottomNavLink({
  */
 export function WebMobileStrategicBottomNav() {
   const pathname = usePathname();
+  const barre = useRef<HTMLElement>(null);
+  useCitizenBottomNavHeight(barre);
   const creationActive = isCreationRouteWithChrome(pathname);
   const destinations = WEB_CITIZEN_MOBILE_BOTTOM_NAV;
   const half = Math.ceil(destinations.length / 2);
@@ -72,6 +76,7 @@ export function WebMobileStrategicBottomNav() {
 
   return (
     <nav
+      ref={barre}
       className="web-mobile-strategic-bottom-nav web-mobile-docked-bottom-nav fixed inset-x-0 bottom-0 z-[var(--z-chrome,40)] block min-[640px]:hidden border-t border-neutral-200/90 bg-white pb-[env(safe-area-inset-bottom)]"
       aria-label="Navigation principale"
     >

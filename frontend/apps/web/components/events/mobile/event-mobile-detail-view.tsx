@@ -54,7 +54,7 @@ export function EventMobileDetailView({
 
   return (
     <div
-      className="web-mobile-event-detail-only min-w-0 bg-[#F4F5F7] px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))]"
+      className="web-mobile-event-detail-only min-w-0 bg-[#F4F5F7] px-4 pb-4 pt-[max(0.75rem,env(safe-area-inset-top))]"
       data-event-mobile-detail=""
     >
       <div className="space-y-4">
