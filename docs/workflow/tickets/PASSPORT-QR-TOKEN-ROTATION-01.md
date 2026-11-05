@@ -75,6 +75,94 @@ est la rotation de **tous les Passports actifs de la Preview**.
 - un ancien QR (capture de test) est **refusé** (`PASSPORT_NOT_FOUND`) ;
 - aucune requête vers `api.qrserver.com` pendant ces contrôles.
 
+## 3 bis. ✅ Préparé le 2026-11-05 — branche `chore/passport-qr-token-rotation` (non commitée, non poussée)
+
+**Outil**
+- `backend/app/repositories/passport_repository.py` : `count_by_status`,
+  `list_ids`, `set_qr_token`.
+- `backend/app/services/passport_qr_rotation_service.py` : `preview()`
+  (compte, **n'écrit rien**) et `rotate_all()` (nouveau `qr_token` pour
+  **chaque Passport, tout statut** — un Passport suspendu puis réactivé ne doit
+  pas retrouver un jeton exposé ; ne commite pas).
+- `backend/scripts/rotate_passport_qr_tokens.py` : **simulation par défaut** ;
+  **ciblage Railway** (le nom de base seul ne distingue pas les
+  environnements) : `--expected-railway-project`, `--expected-railway-environment`,
+  `--expected-railway-service` comparés à `RAILWAY_PROJECT_ID` /
+  `RAILWAY_ENVIRONMENT_ID` / `RAILWAY_SERVICE_ID` — **vérifiés avant toute
+  requête, simulation comprise** s'ils sont fournis, **obligatoires** avec
+  `--execute` ; l'écriture exige en plus `--expected-database <nom>` et
+  `--expected-count <N>` (= `current_database()` et nombre réel) — sinon
+  **refus** (code 2) ; une transaction, **rollback** en cas d'échec ; sortie =
+  cible (noms + identifiants Railway) et **compteurs seulement**.
+
+**Tests** — `backend/tests/test_passport_qr_rotation.py` (**12** : 6 ciblage Railway, 5 garde-fous, 1 intégration), base jetable
+(`scripts/qa-backend-pytest-host.sh`, base `yunicity_test_*` supprimée) :
+garde-fous (5) ; intégration : simulation sans écriture → rotation → **tous les
+Passports (dont un suspendu) changent de jeton**, unicité, **ancien QR refusé
+`404 PASSPORT_NOT_FOUND`**, **nouveau QR accepté `200`** au `POST
+/api/v1/scan/resolve` (lecture seule) d'un partenaire de test, **aucun jeton**
+dans le rapport ni les journaux. **Mutation** : rotation partielle → test
+rouge. `ruff`, `mypy` verts ; avec les tests existants scan / API Passport /
+QR de tampon : **30 passed**.
+
+**Simulation locale** (QA, base `yunicity_qa`, lecture seule) :
+`[simulation] base=yunicity_qa passports_total=2 par_statut=(active=2)
+jetons_remplaces=0`. Tentative `--execute` avec mauvaise base et mauvais nombre
+→ **deux refus**, aucune écriture.
+
+**Aucun lancement automatique — vérifié** : service API Preview
+`unified-media-preview` (`8c799b6b-…`) construit par **Railpack** depuis
+`/backend` ; démarrage `python -m app.runtime.unified_process` ; pré-déploiement
+`alembic upgrade head` **seulement** ; **aucune migration** dans ce lot ; le code
+de rotation n'est importé que par le script et ses tests (`app/runtime`,
+`app/main.py`, `workers`, `alembic` : aucune référence).
+
+**Cible Preview (pour la simulation)** : projet `dazzling-wisdom`
+`9e19425b-a3c7-4a01-a4ba-debb5207ff19` · environnement `production` *(nom
+Railway de l'unique environnement du projet Preview)*
+`fe15407b-5f4f-4ae6-9026-6e4ae65f0cd4` · service `unified-media-preview`
+`8c799b6b-fff1-465d-80fc-eff6112b077a`.
+
+**Simulation prévue** (lecture seule), depuis le poste, une fois l'accès SSH
+ouvert :
+
+```
+railway ssh --project 9e19425b-a3c7-4a01-a4ba-debb5207ff19   --environment fe15407b-5f4f-4ae6-9026-6e4ae65f0cd4   --service 8c799b6b-fff1-465d-80fc-eff6112b077a --   python scripts/rotate_passport_qr_tokens.py     --expected-railway-project 9e19425b-a3c7-4a01-a4ba-debb5207ff19     --expected-railway-environment fe15407b-5f4f-4ae6-9026-6e4ae65f0cd4     --expected-railway-service 8c799b6b-fff1-465d-80fc-eff6112b077a
+```
+
+**Accès Railway disponibles (vérifiés le 2026-11-05)** : CLI authentifiée ;
+`railway ssh keys list` → **aucune clé enregistrée** ; clé locale
+`~/.ssh/id_ed25519.pub` présente ; base `postgis-preview` **sans proxy TCP**
+(réseau privé). **Étape unique pour Kyria** : `railway ssh keys add` (enregistre
+la clé locale).
+
+**Nombre de Passports de la Preview : NON OBTENU.** La base `postgis-preview`
+n'a **aucun proxy TCP public** (réseau privé Railway seulement) : elle n'est pas
+joignable depuis le poste. Voies possibles, **à décider** :
+1. *(recommandée)* livrer le script sur la Preview (avance rapide), puis
+   lancer la **simulation dans le service API Preview** via `railway ssh` —
+   exige qu'une **clé SSH** soit ajoutée au compte Railway (action de Kyria).
+2. Ouvrir un **proxy TCP temporaire** sur `postgis-preview` — **réglage
+   d'infrastructure**, expose la base : déconseillé.
+3. Compter par l'**API d'administration** Passport de la Preview — exige un
+   **compte administrateur** sur la Preview (non documenté).
+
+**Compte partenaire de test** : **aucun** sur la QA locale (aucun
+`OrganizationMember` dans `qa_fixtures.py`) ni documenté sur la Preview.
+Pour tester « ancien QR refusé / nouveau QR accepté » sur la Preview :
+- créer un compte de test, lui faire **gérer une organisation vérifiée**
+  (membre `owner` ou `admin` actif — règle `list_managed_organization_ids`) ;
+- avant rotation : capturer le QR d'un citoyen de test ; `POST
+  /api/v1/scan/resolve` (**lecture seule**) → `200` ;
+- après rotation : même QR → `404 PASSPORT_NOT_FOUND` ; QR rechargé → `200`.
+Le scénario est **déjà prouvé** en test automatisé sur base jetable ; la
+Preview ajoute la preuve sur l'environnement réel.
+
+**Constat de sécurité, NON traité** : `resolve_for_partner` cherche le Passport
+**avant** de vérifier que l'appelant gère une organisation → tout utilisateur
+connecté distingue un jeton valide (`403 SCAN_PARTNER_FORBIDDEN`) d'un jeton
+inconnu (`404`). Consigné dans l'index (`SCAN-RESOLVE-TOKEN-ORACLE-01`).
+
 ## 4. Hors périmètre
 
 - **Production** : décision séparée, sur demande explicite.

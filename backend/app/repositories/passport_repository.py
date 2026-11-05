@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -22,6 +22,22 @@ from app.models.passport import (
 class PassportRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
+
+    async def count_by_status(self) -> dict[str, int]:
+        """Nombre de Passports par statut (PASSPORT-QR-TOKEN-ROTATION-01)."""
+        result = await self._session.execute(
+            select(Passport.status, func.count()).group_by(Passport.status)
+        )
+        return {str(status): int(count) for status, count in result.all()}
+
+    async def list_ids(self) -> list[uuid.UUID]:
+        result = await self._session.execute(select(Passport.id).order_by(Passport.id))
+        return list(result.scalars().all())
+
+    async def set_qr_token(self, passport_id: uuid.UUID, qr_token: str) -> None:
+        await self._session.execute(
+            update(Passport).where(Passport.id == passport_id).values(qr_token=qr_token)
+        )
 
     async def get_active_by_qr_token(self, qr_token: str) -> Passport | None:
         result = await self._session.execute(
