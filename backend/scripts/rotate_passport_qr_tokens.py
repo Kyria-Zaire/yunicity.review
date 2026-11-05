@@ -45,6 +45,7 @@ from app.services.passport_qr_rotation_service import (  # noqa: E402
 )
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.ext.asyncio import (  # noqa: E402
+    AsyncEngine,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
@@ -133,6 +134,15 @@ def format_report(report: PassportQrRotationReport, *, database_name: str, mode:
     )
 
 
+def build_engine(database_url: str) -> AsyncEngine:
+    """Moteur dédié au script : AUCUN paramètre SQL dans les journaux ni les erreurs.
+
+    Les paramètres des requêtes contiennent les jetons. Le moteur de l'application
+    active l'écho SQL quand ``DEBUG`` est vrai (QA, CI) : il ne doit pas servir ici.
+    """
+    return create_async_engine(database_url, echo=False, hide_parameters=True)
+
+
 async def run(args: argparse.Namespace) -> int:
     print(describe_target(os.environ))
     errors_cible = target_errors(args, os.environ)
@@ -144,7 +154,7 @@ async def run(args: argparse.Namespace) -> int:
     if not settings.database_url:
         print("REFUS : DATABASE_URL absente.", file=sys.stderr)
         return 2
-    engine = create_async_engine(settings.database_url)
+    engine = build_engine(settings.database_url)
     try:
         factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
         async with factory() as session:

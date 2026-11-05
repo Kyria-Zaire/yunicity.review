@@ -110,6 +110,19 @@ QR de tampon : **30 passed**.
 jetons_remplaces=0`. Tentative `--execute` avec mauvaise base et mauvais nombre
 → **deux refus**, aucune écriture.
 
+**Correctif après CI (2026-11-05)** — le job Docker « compose · health · pytest »
+(suite complète, `DEBUG=true`) a **échoué** sur `ea5e28fa` : 1 échec / 2 071
+réussites — **un jeton capturé dans les journaux** pendant le test. Cause : la
+rotation du test passait par le **moteur de l'application**, qui active l'**écho
+SQL** quand `DEBUG` est vrai (paramètres `UPDATE` = nouveaux jetons). Le script
+utilisait déjà son propre moteur ; il est désormais **explicite et durci** :
+`build_engine()` → `echo=False, hide_parameters=True` (aucun paramètre SQL ni
+dans les journaux ni dans les erreurs). Le test passe par ce moteur et ne
+capture, au niveau DEBUG, que les journaux **de la rotation**. **Mutation** :
+moteur avec écho et paramètres visibles → test rouge. `DEBUG` vaut **`false`**
+sur l'API Preview (relu le 2026-11-05). Constat séparé consigné dans l'index :
+`APP-DEBUG-SQL-ECHO-TOKENS-01`.
+
 **Aucun lancement automatique — vérifié** : service API Preview
 `unified-media-preview` (`8c799b6b-…`) construit par **Railpack** depuis
 `/backend` ; démarrage `python -m app.runtime.unified_process` ; pré-déploiement

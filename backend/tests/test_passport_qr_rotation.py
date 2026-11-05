@@ -8,10 +8,12 @@ aucun jeton dans les sorties.
 from __future__ import annotations
 
 import argparse
+import logging
 import uuid
 from typing import Any, cast
 
 import pytest
+from app.core.config import get_settings
 from app.core.organization_constants import OrganizationMemberRole, OrganizationMemberStatus
 from app.core.passport_constants import PassportStatus
 from app.db.session import get_engine
@@ -20,6 +22,7 @@ from app.models.passport import Passport
 from app.services.passport_qr_rotation_service import PassportQrRotationService
 from httpx import AsyncClient
 from scripts.rotate_passport_qr_tokens import (
+    build_engine,
     build_parser,
     describe_target,
     format_report,
@@ -204,10 +207,25 @@ async def test_simulation_puis_rotation_ancien_qr_refuse_nouveau_accepte(
         assert await _jetons(session) == avant
     assert await _resolve(auth_client, partenaire["access_token"], ancien_a) == (200, None)
 
-    # 2. Rotation.
-    async with factory() as session:
-        rapport = await PassportQrRotationService(session).rotate_all()
-        await session.commit()
+    # 2. Rotation — par le moteur DU SCRIPT, journaux capturés au niveau DEBUG.
+    #    (Le moteur de l'application fait de l'écho SQL quand DEBUG est vrai, en QA
+    #    et en CI : c'est lui, et non le script, qui exposerait les paramètres.)
+    database_url = get_settings().database_url
+    assert database_url
+    moteur_script = build_engine(database_url)
+    caplog.clear()
+    caplog.set_level(logging.DEBUG)
+    try:
+        usine_script = async_sessionmaker(
+            moteur_script, class_=AsyncSession, expire_on_commit=False
+        )
+        async with usine_script() as session:
+            rapport = await PassportQrRotationService(session).rotate_all()
+            await session.commit()
+    finally:
+        await moteur_script.dispose()
+    journal_rotation = caplog.text
+    caplog.set_level(logging.WARNING)
     assert rapport.rotated == rapport.total == len(avant)
 
     async with factory() as session:
@@ -227,7 +245,7 @@ async def test_simulation_puis_rotation_ancien_qr_refuse_nouveau_accepte(
     assert nouveau_a != ancien_a
     assert await _resolve(auth_client, partenaire["access_token"], nouveau_a) == (200, None)
 
-    # 4. Aucun jeton (ancien ou nouveau) dans les journaux ni dans le rapport.
-    sortie = format_report(rapport, database_name="test", mode="execution") + caplog.text
+    # 4. Aucun jeton (ancien ou nouveau) dans les journaux de la rotation ni le rapport.
+    sortie = format_report(rapport, database_name="test", mode="execution") + journal_rotation
     for jeton in [*avant.values(), *apres.values(), ancien_b]:
         assert jeton.removeprefix("YNCP1:") not in sortie
