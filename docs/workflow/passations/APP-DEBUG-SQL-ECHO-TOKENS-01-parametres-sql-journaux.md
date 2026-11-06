@@ -265,14 +265,72 @@ sur le correctif ni sur la base.
 poussée** (nouvelle branche distante, suivie par aucun service). `main`, la
 branche Preview et la production n'ont pas été touchés. **Rien n'est déployé.**
 
+## 11. 🚀 LIVRÉ SUR PREVIEW le 2026-11-06 — PROTECTION PARTIELLE
+
+**Ticket NON clos.** Les fuites par les messages d'erreur SQL restent ouvertes
+(`APP-SQL-ERROR-VALUES-01`). Les journaux du serveur Postgres ne sont pas
+examinés (`POSTGRES-SERVER-LOGS-EXPOSURE-01`). Les autres moteurs relèvent de la
+dette `DB-ENGINES-HIDE-PARAMS-01`.
+
+**Ce que la livraison protège** (prouvé sur base jetable et en CI, pas
+observé sur la Preview) : les paramètres liés sont absents de l'écho SQL et du
+texte composé par SQLAlchemy pour ses erreurs ; aucun message DEBUG de
+`sqlalchemy.engine.Engine`, même si le niveau est forcé ; `DEBUG` vrai ou faux.
+**Ce qu'elle ne protège pas** : les valeurs citées par Postgres
+(`DETAIL`, `invalid input syntax`) et par asyncpg, qui restent dans le texte
+des exceptions, les traces et Sentry.
+
+**Lot** : `a0e9d0bc` (code, validé par `docker-ci` run `42150566964` avant
+intégration), puis `a4c9a628`, un commit **documentaire séparé** (aucun fichier
+sous `backend/`). Il contient :
+
+- la correction de la garantie du script de rotation, **seul mon bloc** :
+  le bloc « BLOCAGE SSH » d'une autre session est resté non commité ;
+- cette passation ;
+- la dette `DB-ENGINES-HIDE-PARAMS-01`.
+
+L'index n'y figure pas.
+
+**Intégration** : distante relue (`eef6fd62`), puis avance rapide
+`eef6fd62..a4c9a628` de `feat/c3-videos-refonte-final`, **sans `--force`**.
+`main` = `3e0b27ba`, **inchangé**. Production non touchée.
+
+**Contrôles sur `a4c9a628`** (PR #202) : Docker CI ✅ **2083 passed, 19
+skipped, 7 xfailed** (run `42153339973`) · Backend CI ✅ · Frontend CI ✅ · Lint
+agent rules ✅ · Gitleaks ✅ · chemins interdits ✅ · audit des dépendances ❌
+**19 hautes, inchangé** (réserve préexistante, frontend non touché).
+
+**Railway Preview** (projet `9e19425b-…`, vérifié par la configuration locale
+avant toute commande, lecture seule) : API `unified-media-preview` déploiement
+`35227b74` **SUCCESS sur `a4c9a628`** · web `yunicity.review` déploiement
+`ae8913b6` **SUCCESS sur `a4c9a628`**. `https://preview.yunicity.city/` → 200 ·
+`https://api-preview.yunicity.city/api/v1/health` → 200.
+
+**Non fait, volontairement** : aucune erreur provoquée sur la Preview (ni avec
+un vrai jeton ni avec une valeur fictive), et aucune lecture des journaux
+Preview (décision de Kyria).
+
+**Point d'attention, worktree `yunicity-wt-deps-next-preview`** (branche
+`fix/passport-self-redeem` @ `eef6fd62`, désormais en retard sur la Preview) :
+`PASSPORT-QR-TOKEN-ROTATION-01.md` y contient encore, **non commités**, ma
+correction (maintenant commitée dans `a4c9a628`) **et** le bloc « BLOCAGE SSH »
+de l'autre session. Avant de commiter ces documents, il faudra partir de
+`a4c9a628` et ne reprendre que le bloc « BLOCAGE SSH », sinon la correction
+sera en double. Les autres documents de ce worktree restent intacts et non
+commités.
+
+## 12. ⏸ SUSPENDU le 2026-11-06 (décision de Kyria)
+
+Suspendu au stade Preview sur `a4c9a628`, **protection partielle, NON clos**. La
+fuite **n'est pas entièrement corrigée** : les valeurs citées par Postgres et
+asyncpg dans leurs messages d'erreur sont traitées par `APP-SQL-ERROR-VALUES-01`,
+devenu le ticket actif.
+
 ## 7. Tâches actives
 
-Aucune. En attente de la décision de Kyria sur la livraison Preview.
+Aucune (ticket suspendu).
 
 ## 8. Prochaine action
 
-Sur décision de Kyria : avance rapide de la branche Preview
-`feat/c3-videos-refonte-final` de `eef6fd62` vers `a0e9d0bc`, sans `--force`,
-puis vérification des deux services. **À trancher avant** : joindre ou non au
-lot les documents non commités du worktree `yunicity-wt-deps-next-preview`
-(dont la correction de `PASSPORT-QR-TOKEN-ROTATION-01.md`).
+Aucune sur ce ticket. Il reprendra à la clôture de `APP-SQL-ERROR-VALUES-01`,
+pour décider de sa propre clôture.
