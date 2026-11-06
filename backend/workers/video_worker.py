@@ -14,6 +14,7 @@ from app.core.local_video_constants import (
     LOCAL_VIDEO_PROCESSING_MAX_TRIES,
     LOCAL_VIDEO_PROCESSING_RETRY_BACKOFF_SECONDS,
 )
+from app.core.sql_error_redaction import install_log_record_redaction, redact_sql_errors
 from app.db.session import init_db
 from app.integrations.redis import close_redis, init_redis
 from app.services.local_video.job_queue import ARQ_QUEUE_NAME
@@ -44,6 +45,9 @@ WORKER_HEALTH_CHECK_INTERVAL_SECONDS = 30
 
 async def startup(ctx: dict[str, Any]) -> None:
     del ctx
+    # La CLI `arq` configure ses propres handlers : le masquage SQL agit en amont,
+    # sur chaque enregistrement (APP-SQL-ERROR-VALUES-01).
+    install_log_record_redaction()
     settings = get_settings()
     init_db(settings)
     await init_redis(settings)
@@ -63,6 +67,7 @@ async def shutdown(ctx: dict[str, Any]) -> None:
     await close_redis()
 
 
+@redact_sql_errors
 async def process_local_video_job(
     ctx: dict[str, Any],
     video_id: str,

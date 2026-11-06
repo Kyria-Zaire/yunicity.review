@@ -16,11 +16,14 @@ et cherche ce marqueur dans :
 Le niveau DEBUG est FORCÉ sur ``sqlalchemy.engine`` dans les tests de résultats : la
 protection doit tenir sans dépendre du niveau configuré.
 
-FUITES RESTANTES, mesurées : les messages d'erreur de Postgres et d'asyncpg citent
-la valeur elle-même ; ``hide_parameters`` ne les couvre pas. Les tests concernés
-gardent leurs assertions et sont marqués ``xfail(strict=True)`` : ils passeront au
-rouge (XPASS) dès que la fuite disparaît, et seule une ``AssertionError`` compte
-comme l'échec attendu.
+LIMITE ASSUMÉE, mesurée : les messages d'erreur de Postgres et d'asyncpg citent la
+valeur elle-même ; ``hide_parameters`` ne les couvre pas. APP-SQL-ERROR-VALUES-01
+masque ces messages dans les SORTIES (journaux, Sentry, réponse HTTP, résultat arq :
+``test_sql_error_redaction.py``), mais ne modifie pas l'objet exception : son texte
+brut, que ces tests inspectent aussi, garde la valeur. Ils gardent leurs assertions et
+restent ``xfail(strict=True)`` : ils passeront au rouge (XPASS) si l'exception brute
+cesse un jour de citer la valeur, et seule une ``AssertionError`` compte comme l'échec
+attendu.
 """
 
 from __future__ import annotations
@@ -47,7 +50,8 @@ _FUITE_MESSAGE_SERVEUR = pytest.mark.xfail(
     raises=AssertionError,
     reason=(
         "APP-SQL-ERROR-VALUES-01 : Postgres cite la valeur dans son message d'erreur "
-        "(DETAIL / invalid input syntax), hors de portée de hide_parameters"
+        "(DETAIL / invalid input syntax) ; masquée aux sorties, elle reste dans le texte "
+        "brut de l'exception, que ce test inspecte"
     ),
 )
 _FUITE_MESSAGE_PILOTE = pytest.mark.xfail(
@@ -55,7 +59,8 @@ _FUITE_MESSAGE_PILOTE = pytest.mark.xfail(
     raises=AssertionError,
     reason=(
         "APP-SQL-ERROR-VALUES-01 : asyncpg cite la valeur (tronquée) quand il refuse "
-        "d'encoder un argument, hors de portée de hide_parameters"
+        "d'encoder un argument ; masquée aux sorties, elle reste dans le texte brut de "
+        "l'exception, que ce test inspecte"
     ),
 )
 

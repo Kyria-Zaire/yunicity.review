@@ -12,12 +12,14 @@ import logging
 from typing import Any
 
 from app.core.config import get_settings
+from app.core.sql_error_redaction import redact_sql_errors
 from app.db.session import get_session_factory, init_db
 from app.services.scheduled_post_service import publish_due_scheduled_posts
 
 logger = logging.getLogger(__name__)
 
 
+@redact_sql_errors
 async def publish_scheduled_posts_job(ctx: dict[str, Any]) -> int:
     """Cron entrypoint: publish due scheduled posts, return how many."""
     del ctx

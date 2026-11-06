@@ -70,7 +70,10 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         version="0.1.0",
         lifespan=lifespan,
-        debug=settings.debug,
+        # Jamais de trace dans une réponse HTTP, quel que soit DEBUG : elle citerait
+        # les valeurs des erreurs SQL au client (APP-SQL-ERROR-VALUES-01). La trace
+        # reste dans les journaux, masquée.
+        debug=False,
         docs_url=None if hide_api_docs else "/docs",
         redoc_url=None if hide_api_docs else "/redoc",
         openapi_url=None if hide_api_docs else "/openapi.json",
