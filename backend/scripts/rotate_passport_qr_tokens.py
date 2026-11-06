@@ -135,10 +135,16 @@ def format_report(report: PassportQrRotationReport, *, database_name: str, mode:
 
 
 def build_engine(database_url: str) -> AsyncEngine:
-    """Moteur dédié au script : AUCUN paramètre SQL dans les journaux ni les erreurs.
+    """Moteur dédié au script : pas d'écho SQL, paramètres liés masqués.
 
-    Les paramètres des requêtes contiennent les jetons. Le moteur de l'application
-    active l'écho SQL quand ``DEBUG`` est vrai (QA, CI) : il ne doit pas servir ici.
+    Les paramètres des requêtes contiennent les jetons. ``hide_parameters`` les
+    retire de l'écho et du texte que SQLAlchemy compose pour ses erreurs.
+
+    LIMITE (mesurée, APP-DEBUG-SQL-ECHO-TOKENS-01) : les messages d'erreur produits
+    par Postgres (ex. ``DETAIL: Key (...)=(<valeur>)`` sur une contrainte unique) ou
+    par asyncpg (valeur citée, tronquée) restent dans le texte de l'exception, donc
+    dans toute trace qui l'affiche. Suivi : APP-SQL-ERROR-VALUES-01. Les journaux du
+    serveur Postgres n'ont pas été examinés (POSTGRES-SERVER-LOGS-EXPOSURE-01).
     """
     return create_async_engine(database_url, echo=False, hide_parameters=True)
 
