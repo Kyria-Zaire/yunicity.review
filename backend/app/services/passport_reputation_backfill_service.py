@@ -15,6 +15,7 @@ from app.core.passport_reputation_constants import (
     PassportReputationEventType,
     PassportReputationSourceType,
 )
+from app.core.sql_error_redaction import safe_str
 from app.models.passport import PassportOfferRedemption, PassportStamp
 from app.services.passport_reputation_service import PassportReputationService
 
@@ -106,7 +107,7 @@ class PassportReputationBackfillService:
                 report.created += 1
             except Exception as exc:  # noqa: BLE001 — backfill must continue
                 report.errors += 1
-                report.error_details.append(f"stamp {stamp.id}: {exc}")
+                report.error_details.append(f"stamp {stamp.id}: {safe_str(exc)}")
 
         return report
 
@@ -171,6 +172,6 @@ class PassportReputationBackfillService:
                 report.created += 1
             except Exception as exc:  # noqa: BLE001 — backfill must continue
                 report.errors += 1
-                report.error_details.append(f"redemption {redemption.id}: {exc}")
+                report.error_details.append(f"redemption {redemption.id}: {safe_str(exc)}")
 
         return report

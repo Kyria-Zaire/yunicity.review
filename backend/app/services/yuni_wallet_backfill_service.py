@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.passport_constants import OfferRedemptionStatus
+from app.core.sql_error_redaction import safe_str
 from app.core.yuni_wallet_constants import (
     PARTNER_REDEMPTION_YM,
     STAMP_EARNED_YM,
@@ -115,7 +116,7 @@ class YuniWalletBackfillService:
                 report.skipped_suspended += 1
             except Exception as exc:  # noqa: BLE001 — backfill must continue
                 report.errors += 1
-                report.error_details.append(f"stamp {stamp.id}: {exc}")
+                report.error_details.append(f"stamp {stamp.id}: {safe_str(exc)}")
 
         return report
 
@@ -185,7 +186,7 @@ class YuniWalletBackfillService:
                 report.skipped_suspended += 1
             except Exception as exc:  # noqa: BLE001 — backfill must continue
                 report.errors += 1
-                report.error_details.append(f"redemption {redemption.id}: {exc}")
+                report.error_details.append(f"redemption {redemption.id}: {safe_str(exc)}")
 
         return report
 
