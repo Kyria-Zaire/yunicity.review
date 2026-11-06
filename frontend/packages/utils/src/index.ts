@@ -3491,6 +3491,10 @@ export {
   type NotificationsDesktopSort,
   type NotificationsDesktopTypeFilter,
 } from "./notifications-desktop-presenter";
+export {
+  resolveNotificationDesktopListView,
+  type NotificationsDesktopListView,
+} from "./notifications-desktop-list-view";
 export * from "./notifications-medium-labels";
 export {
   buildNotificationMediumSummaryCards,

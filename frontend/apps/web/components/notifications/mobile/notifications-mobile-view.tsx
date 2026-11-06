@@ -18,14 +18,13 @@ import {
   buildNotificationMediumSummaryCards,
   countNotificationDesktopDisplayedRecent,
   filterNotificationsForDesktop,
-  groupNotificationDesktopRows,
-  hasNotificationDesktopEarlierItems,
   NOTIFICATIONS_ERROR,
   NOTIFICATIONS_LOADING,
   NOTIFICATIONS_MOBILE_TAB_EMPTY,
   NOTIFICATIONS_RETRY,
   NOTIFICATIONS_SESSION_EXPIRED_MESSAGE,
   resolveNotificationDeeplink,
+  resolveNotificationDesktopListView,
   sortNotificationsForDesktop,
   type NotificationsDesktopPrimaryTab,
   type NotificationsDesktopTypeFilter,
@@ -83,8 +82,8 @@ export function NotificationsMobileView({
     [filteredItems],
   );
 
-  const sections = useMemo(
-    () => groupNotificationDesktopRows(rows, filteredItems, { includeEarlier: showEarlier }),
+  const listView = useMemo(
+    () => resolveNotificationDesktopListView(rows, filteredItems, { showEarlier }),
     [filteredItems, rows, showEarlier],
   );
 
@@ -112,8 +111,6 @@ export function NotificationsMobileView({
     }
     return buildNotificationEmptyState(primaryTab === "unread" ? "unread" : "all", localHints);
   }, [allItems.length, filteredItems.length, localHints, primaryTab]);
-
-  const canLoadEarlier = !showEarlier && hasNotificationDesktopEarlierItems(filteredItems);
 
   return (
     <div
@@ -163,15 +160,15 @@ export function NotificationsMobileView({
           </div>
         ) : null}
 
-        {!sessionExpired && !isLoading && !error && sections.length === 0 ? (
+        {!sessionExpired && !isLoading && !error && listView.kind === "empty" ? (
           <NotificationsEmptyState view={emptyState} />
         ) : null}
 
-        {!sessionExpired && !isLoading && !error && sections.length > 0 ? (
+        {!sessionExpired && !isLoading && !error && listView.kind === "list" ? (
           <NotificationsMobileList
-            sections={sections}
+            sections={listView.sections}
             onMarkRead={onMarkRead}
-            canLoadEarlier={canLoadEarlier}
+            canLoadEarlier={listView.canLoadEarlier}
             onLoadEarlier={() => setShowEarlier(true)}
           />
         ) : null}

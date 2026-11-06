@@ -14,14 +14,13 @@ import {
   buildNotificationEmptyState,
   buildNotificationMediumSummaryCards,
   filterNotificationsForDesktop,
-  groupNotificationDesktopRows,
-  hasNotificationDesktopEarlierItems,
   NOTIFICATIONS_DESKTOP_LOAD_PREVIOUS,
   NOTIFICATIONS_ERROR,
   NOTIFICATIONS_LOADING,
   NOTIFICATIONS_RETRY,
   NOTIFICATIONS_SESSION_EXPIRED_MESSAGE,
   resolveNotificationDeeplink,
+  resolveNotificationDesktopListView,
   sortNotificationsForDesktop,
   type NotificationsDesktopPrimaryTab,
   type NotificationsDesktopSort,
@@ -81,8 +80,8 @@ export function NotificationsMediumScreen({
     [filteredItems],
   );
 
-  const sections = useMemo(
-    () => groupNotificationDesktopRows(rows, filteredItems, { includeEarlier: showEarlier }),
+  const listView = useMemo(
+    () => resolveNotificationDesktopListView(rows, filteredItems, { showEarlier }),
     [filteredItems, rows, showEarlier],
   );
 
@@ -100,8 +99,6 @@ export function NotificationsMediumScreen({
     () => buildNotificationEmptyState(primaryTab === "unread" ? "unread" : "all", localHints),
     [localHints, primaryTab],
   );
-
-  const canLoadEarlier = !showEarlier && hasNotificationDesktopEarlierItems(filteredItems);
 
   return (
     <div className="notifications-medium-root w-full min-w-0" data-notifications-medium-root="">
@@ -142,12 +139,12 @@ export function NotificationsMediumScreen({
             {NOTIFICATIONS_RETRY}
           </button>
         </div>
-      ) : sections.length === 0 ? (
+      ) : listView.kind === "empty" ? (
         <NotificationsEmptyState view={emptyState} />
       ) : (
         <>
-          <NotificationsDesktopFeed sections={sections} onMarkRead={onMarkRead} />
-          {canLoadEarlier ? (
+          <NotificationsDesktopFeed sections={listView.sections} onMarkRead={onMarkRead} />
+          {listView.canLoadEarlier ? (
             <button
               type="button"
               onClick={() => setShowEarlier(true)}
