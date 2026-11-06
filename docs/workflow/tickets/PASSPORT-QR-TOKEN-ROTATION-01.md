@@ -116,12 +116,27 @@ réussites — **un jeton capturé dans les journaux** pendant le test. Cause : 
 rotation du test passait par le **moteur de l'application**, qui active l'**écho
 SQL** quand `DEBUG` est vrai (paramètres `UPDATE` = nouveaux jetons). Le script
 utilisait déjà son propre moteur ; il est désormais **explicite et durci** :
-`build_engine()` → `echo=False, hide_parameters=True` (aucun paramètre SQL ni
-dans les journaux ni dans les erreurs). Le test passe par ce moteur et ne
+`build_engine()` → `echo=False, hide_parameters=True` (~~aucun paramètre SQL ni
+dans les journaux ni dans les erreurs~~ → **garantie FAUSSE, corrigée le
+2026-11-06, voir ci-dessous**). Le test passe par ce moteur et ne
 capture, au niveau DEBUG, que les journaux **de la rotation**. **Mutation** :
 moteur avec écho et paramètres visibles → test rouge. `DEBUG` vaut **`false`**
 sur l'API Preview (relu le 2026-11-05). Constat séparé consigné dans l'index :
 `APP-DEBUG-SQL-ECHO-TOKENS-01`.
+
+⚠️ **Correction de classement (2026-11-06, `APP-DEBUG-SQL-ECHO-TOKENS-01`)** —
+la garantie « aucun paramètre SQL ni dans les journaux ni dans les erreurs » était
+**fausse**. **Preuve** : test sur base jetable (`test_sql_log_parameters.py`,
+`test_moteur_script_rotation_erreur_contrainte_aucune_valeur`). Une valeur fictive
+en doublon sur une colonne unique, passée par `build_engine()`, réapparaît dans
+le texte de l'exception, via le `DETAIL: Key (…)=(<valeur>)` de **Postgres**.
+asyncpg cite aussi la valeur (tronquée) quand il refuse d'encoder un argument.
+**Ce qui reste vrai** : pas d'écho SQL, et les paramètres sont absents de la
+partie que SQLAlchemy compose (`[SQL parameters hidden …]`). Le jeton capturé en
+CI sur `ea5e28fa` venait de l'écho du moteur de l'application, **pas** de ce
+chemin, et il était fictif (aléatoire, base CI jetable). Suivi :
+`APP-SQL-ERROR-VALUES-01`. ⚠️ **Les journaux du serveur Postgres (Preview, QA)
+n'ont pas été examinés** : `POSTGRES-SERVER-LOGS-EXPOSURE-01`.
 
 **Aucun lancement automatique — vérifié** : service API Preview
 `unified-media-preview` (`8c799b6b-…`) construit par **Railpack** depuis
