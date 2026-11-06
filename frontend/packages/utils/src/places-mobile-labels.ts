@@ -1,16 +1,28 @@
 /** Places mobile copy (MOBILE-LIEUX-01). */
 
+export const PLACES_MOBILE_EDITORIAL_BODY =
+  "Patrimoine, bonnes adresses et espaces du quotidien.";
 export const PLACES_MOBILE_SEARCH_PLACEHOLDER =
-  "Rechercher un lieu, une adresse, un service…";
-export const PLACES_MOBILE_FILTERS_ARIA = "Filtres avancés";
+  "Rechercher un lieu, une activité…";
+export const PLACES_MOBILE_FILTERS_ARIA = "Filtres";
 export const PLACES_MOBILE_FILTERS_SOON = "Filtres avancés — bientôt disponible";
 
+export const PLACES_MOBILE_FEATURED_MAP = "Sur la carte";
+
+export const PLACES_MOBILE_TRUST_BODY = "Informations locales vérifiées et signalables.";
+export const PLACES_MOBILE_TRUST_CTA = "En savoir plus";
+
 export const PLACES_MOBILE_CATEGORY_ALL = "Tous";
+export const PLACES_MOBILE_CATEGORY_CULTURE = "Culture";
+export const PLACES_MOBILE_CATEGORY_NATURE = "Nature";
+export const PLACES_MOBILE_CATEGORY_FOOD = "Food";
+export const PLACES_MOBILE_CATEGORY_SHOPPING = "Commerces";
+export const PLACES_MOBILE_CATEGORY_SPORT = "Sport";
+export const PLACES_MOBILE_CATEGORY_SERVICES = "Services";
+
+/** @deprecated Anciennes catégories portail — conservées pour compat presenter legacy. */
 export const PLACES_MOBILE_CATEGORY_RESTAURANTS = "Restaurants";
 export const PLACES_MOBILE_CATEGORY_BARS_CAFE = "Bars & Café";
-export const PLACES_MOBILE_CATEGORY_CULTURE = "Culture";
-export const PLACES_MOBILE_CATEGORY_SHOPPING = "Shopping";
-export const PLACES_MOBILE_CATEGORY_SERVICES = "Services";
 export const PLACES_MOBILE_CATEGORY_HEALTH = "Santé";
 
 export const PLACES_MOBILE_MAP_VIEW_MAP = "Carte";

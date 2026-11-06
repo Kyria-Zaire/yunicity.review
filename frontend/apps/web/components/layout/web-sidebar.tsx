@@ -306,7 +306,12 @@ export function WebSidebar() {
         declencheur visible du rail. En bande medium l'aside est `display: none`,
         donc il ne cree aucun item de grille : le rail occupe bien la premiere
         colonne malgre sa position dans le DOM. */}
-    {railActive ? <CitizenMediumRail activeDestination={medium.activeDestination} /> : null}
+    {railActive ? (
+      <CitizenMediumRail
+        activeDestination={medium.activeDestination}
+        createActive={medium.createActive === true}
+      />
+    ) : null}
     {/*
       C3-CITIZEN-MEDIUM-SHELL-R1F — marqueur structurel creation-flow.
       Propriétaire unique : WebSidebar. Aucune page de création ne le porte.

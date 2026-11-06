@@ -11,6 +11,13 @@ import {
   previousTribeCreateStep,
   validateTribeCreateStep,
 } from "./tribe-create-portal";
+import {
+  tribeCreateBlockingErrorCount,
+  tribeCreateChecklistState,
+  tribeCreateChecklistProgress,
+  tribeCreateDesktopNextLabel,
+  tribeCreateStepProgressPercent,
+} from "./tribe-create-desktop-presenter";
 
 describe("tribe-create-portal", () => {
   it("starts with empty draft defaults", () => {
@@ -20,42 +27,43 @@ describe("tribe-create-portal", () => {
     expect(draft.charterAccepted).toBe(false);
   });
 
-  it("validates info step", () => {
+  it("validates identity step", () => {
     const draft = createEmptyTribeCreateDraft();
-    expect(validateTribeCreateStep("info", draft).valid).toBe(false);
+    expect(validateTribeCreateStep("identity", draft).valid).toBe(false);
 
     const valid = {
       ...draft,
-      name: "Cafés & Lecture",
+      name: "Créateurs de Reims",
       category: "cafe_culture",
-      description: "Rencontres autour des livres et du café à Reims.",
+      description: "Un espace pour partager ses projets, demander conseil et créer ensemble.",
+      city: "Reims",
     };
-    expect(validateTribeCreateStep("info", valid).valid).toBe(true);
+    expect(validateTribeCreateStep("identity", valid).valid).toBe(true);
   });
 
   it("enforces name and description limits in validation", () => {
     const draft = {
-      ...createEmptyTribeCreateDraft(),
+      ...createEmptyTribeCreateDraft("Reims"),
       name: "x".repeat(TRIBE_CREATE_NAME_MAX + 1),
       category: "music",
       description: "x".repeat(TRIBE_CREATE_DESC_MAX + 1),
     };
-    expect(validateTribeCreateStep("info", draft).valid).toBe(false);
+    expect(validateTribeCreateStep("identity", draft).valid).toBe(false);
   });
 
-  it("requires charter on rules step", () => {
+  it("requires charter on access step", () => {
     const draft = createEmptyTribeCreateDraft();
-    expect(validateTribeCreateStep("rules", draft).valid).toBe(false);
+    expect(validateTribeCreateStep("access", draft).valid).toBe(false);
     expect(
-      validateTribeCreateStep("rules", { ...draft, charterAccepted: true }).valid,
+      validateTribeCreateStep("access", { ...draft, charterAccepted: true }).valid,
     ).toBe(true);
   });
 
   it("navigates steps in order", () => {
-    expect(nextTribeCreateStep("info")).toBe("personalize");
-    expect(nextTribeCreateStep("confirm")).toBeNull();
-    expect(previousTribeCreateStep("rules")).toBe("personalize");
-    expect(previousTribeCreateStep("info")).toBeNull();
+    expect(nextTribeCreateStep("identity")).toBe("access");
+    expect(nextTribeCreateStep("review")).toBeNull();
+    expect(previousTribeCreateStep("visuals")).toBe("access");
+    expect(previousTribeCreateStep("identity")).toBeNull();
   });
 
   it("builds API payload from draft", () => {
@@ -110,5 +118,46 @@ describe("createTribeCreateDraftFromParams (amorçage CTA tag communauté)", () 
     expect(draft.category).toBe("");
     expect(draft.visibility).toBe("public");
     expect(draft.name).toBe("");
+  });
+});
+
+describe("tribe-create-desktop-presenter", () => {
+  it("checklist reflects draft completion", () => {
+    const draft = createEmptyTribeCreateDraft("Reims");
+    expect(tribeCreateChecklistState(draft).identity).toBe(false);
+    expect(tribeCreateChecklistState(draft).charter).toBe(false);
+
+    const complete = {
+      ...draft,
+      name: "Créateurs de Reims",
+      category: "cafe_culture",
+      description: "Un espace pour partager ses projets, demander conseil et créer ensemble.",
+      charterAccepted: true,
+      coverImageUrl: "https://example.com/cover.jpg",
+    };
+    const state = tribeCreateChecklistState(complete);
+    expect(state.identity).toBe(true);
+    expect(state.charter).toBe(true);
+    expect(state.visuals).toBe(true);
+  });
+
+  it("counts blocking errors for incomplete draft", () => {
+    expect(tribeCreateBlockingErrorCount(createEmptyTribeCreateDraft())).toBeGreaterThan(0);
+  });
+
+  it("returns contextual next labels", () => {
+    expect(tribeCreateDesktopNextLabel("identity")).toContain("accès");
+    expect(tribeCreateDesktopNextLabel("visuals")).toContain("vérification");
+  });
+
+  it("computes mobile step progress percent", () => {
+    expect(tribeCreateStepProgressPercent("identity")).toBe(25);
+    expect(tribeCreateStepProgressPercent("review")).toBe(100);
+  });
+
+  it("computes checklist progress with review milestone", () => {
+    const draft = createEmptyTribeCreateDraft("Reims");
+    expect(tribeCreateChecklistProgress(draft).total).toBe(5);
+    expect(tribeCreateChecklistProgress(draft).completed).toBe(1);
   });
 });

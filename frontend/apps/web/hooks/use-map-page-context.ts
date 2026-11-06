@@ -7,6 +7,7 @@ import type {
   PartnerOfferPublic,
   Tribe,
 } from "@yunicity/types";
+import { keepOfficialSectors } from "@yunicity/utils";
 import { useCallback, useEffect, useState } from "react";
 
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
@@ -50,7 +51,7 @@ export function useMapPageContext(): MapPageContextState {
       setCity(resolvedCity);
 
       const [hoodsRes, tribesRes, cultureRes, offersRes, eventsRes] = await Promise.allSettled([
-        api.neighborhoods.listNeighborhoods({ city: resolvedCity, page_size: 12 }),
+        api.neighborhoods.listNeighborhoods({ city: resolvedCity, page_size: 24 }),
         api.tribes.listTribes({ city: resolvedCity, page_size: 20 }),
         api.listCulturalPlaces({ city: resolvedCity, featured: true, limit: 4 }),
         api.fetchPublicPartnerOffers({ city: resolvedCity, limit: 8 }),
@@ -58,7 +59,9 @@ export function useMapPageContext(): MapPageContextState {
       ]);
 
       if (hoodsRes.status === "fulfilled") {
-        setNeighborhoods(hoodsRes.value.items);
+        // Ni plus ni moins que les 12 secteurs officiels : un environnement dont la base n'a
+        // pas rejoue le seed catalog renvoie encore les 3 quartiers fusionnes comme actifs.
+        setNeighborhoods(keepOfficialSectors(hoodsRes.value.items));
       } else {
         setNeighborhoods([]);
       }

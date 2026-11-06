@@ -2,32 +2,19 @@
 
 import type { SearchTypeFilter } from "@yunicity/types";
 import {
-  type ExplorerCategoryId,
-  SEARCH_EMPTY_BODY,
-  SEARCH_EMPTY_TITLE,
-  SEARCH_ERROR,
-  SEARCH_EXPLORER_RESULTS_TITLE,
-  SEARCH_LOADING,
-  SEARCH_MIN_QUERY_HINT,
   SEARCH_PAGE_SUBTITLE,
   SEARCH_PAGE_TITLE,
-  SEARCH_RETRY,
   buildSearchUrl,
   isSearchInitialState,
   parseSearchParams,
-  visibleSearchGroups,
 } from "@yunicity/utils";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 
 import { SearchAppShell } from "@/components/search/search-app-shell";
+import { SearchDesktopScreen } from "@/components/search/desktop";
+import { SearchMediumScreen } from "@/components/search/medium";
 import { SearchMobileView } from "@/components/search/mobile";
-import { SearchExplorerCategoryChips } from "@/components/search/search-explorer-category-chips";
-import { SearchExplorerLanding } from "@/components/search/search-explorer-landing";
-import { SearchExplorerSidebar } from "@/components/search/search-explorer-sidebar";
-import { SearchGroupSection } from "@/components/search/search-group-section";
-import { SearchTopBar } from "@/components/search/search-top-bar";
-import { SearchTypeTabs } from "@/components/search/search-type-tabs";
 import { SearchCityError } from "@/components/search/search-city-error";
 import { SearchCityRequired } from "@/components/search/search-city-required";
 import { useExplorerCityState } from "@/hooks/use-explorer-city-state";
@@ -52,7 +39,6 @@ function SearchScreenInner({ urlQuery, urlCity, urlTab }: { urlQuery: string; ur
   });
 
   const explorer = useSearchExplorerContext(search.city);
-  const [explorerCategory, setExplorerCategory] = useState<ExplorerCategoryId>("all");
 
   useEffect(() => {
     const parsed = parseSearchParams(new URLSearchParams(searchParams.toString()));
@@ -81,18 +67,6 @@ function SearchScreenInner({ urlQuery, urlCity, urlTab }: { urlQuery: string; ur
   }, [search.debouncedQuery, search.city, search.typeFilter, router, searchParams]);
 
   const showExplorer = isSearchInitialState(search.query, search.hasSearched);
-  const sections = visibleSearchGroups(search.groups, search.typeFilter);
-  const showEmpty =
-    search.hasSearched &&
-    search.isQueryReady &&
-    !search.loading &&
-    !search.error &&
-    sections.every((s) => s.group.items.length === 0);
-
-  const hasResultSections = useMemo(
-    () => sections.some((s) => s.group.items.length > 0),
-    [sections],
-  );
 
   return (
     <SearchAppShell>
@@ -104,125 +78,61 @@ function SearchScreenInner({ urlQuery, urlCity, urlTab }: { urlQuery: string; ur
         onTypeFilterChange={handleTabChange}
         showExplorer={showExplorer}
         explorer={explorer}
-        explorerLoading={explorer.loading}
-        explorerError={explorer.error}
-        onExplorerRetry={explorer.reload}
         searchLoading={search.loading}
         searchError={Boolean(search.error)}
         onSearchRetry={search.retry}
         groups={search.groups}
         onLoadMore={search.loadMoreForGroup}
         loadingMore={search.loading}
+        isQueryReady={search.isQueryReady}
+        neighborhoodSlug={search.neighborhoodSlug}
+        onNeighborhoodSlugChange={search.setNeighborhoodSlug}
+        period={search.period}
+        onPeriodChange={search.setPeriod}
+        onCityChange={search.setCity}
       />
 
-      <div className="web-desktop-search-only mx-auto w-full max-w-[1400px] px-3 py-2 sm:px-4 sm:py-4">
-        <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8 xl:grid-cols-[16rem_minmax(0,1fr)]">
-          {showExplorer ? (
-            <SearchExplorerSidebar
-              activeCategory={explorerCategory}
-              onCategoryChange={setExplorerCategory}
-              trends={explorer.trendLines}
-              city={explorer.city}
-            />
-          ) : null}
+      <SearchMediumScreen
+        city={search.city}
+        query={search.query}
+        onQueryChange={search.setQuery}
+        typeFilter={search.typeFilter}
+        onTypeFilterChange={handleTabChange}
+        groups={search.groups}
+        loading={search.loading}
+        error={search.error}
+        onRetry={search.retry}
+        onLoadMore={search.loadMoreForGroup}
+        showExplorer={showExplorer}
+        explorer={explorer}
+        isQueryReady={search.isQueryReady}
+        neighborhoodSlug={search.neighborhoodSlug}
+        onNeighborhoodSlugChange={search.setNeighborhoodSlug}
+        period={search.period}
+        onPeriodChange={search.setPeriod}
+        onCityChange={search.setCity}
+      />
 
-          <div className="min-w-0 space-y-6 pb-16 lg:space-y-7">
-            <header className="border-b border-neutral-100 pb-5">
-              <h1 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-[1.75rem]">
-                {SEARCH_PAGE_TITLE}
-              </h1>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-neutral-600">
-                {SEARCH_PAGE_SUBTITLE}
-              </p>
-            </header>
-
-            <SearchTopBar
-              city={search.city}
-              query={search.query}
-              onQueryChange={search.setQuery}
-              minQueryHint={
-                !search.isQueryReady && search.query.length > 0 ? SEARCH_MIN_QUERY_HINT : null
-              }
-            />
-
-            {!showExplorer ? <SearchTypeTabs value={search.typeFilter} onChange={handleTabChange} /> : null}
-
-            {showExplorer ? (
-              <SearchExplorerCategoryChips
-                activeCategory={explorerCategory}
-                onCategoryChange={setExplorerCategory}
-              />
-            ) : null}
-
-            {showExplorer ? (
-              explorer.loading ? (
-                <p className="text-sm text-neutral-500" role="status">
-                  {SEARCH_LOADING}
-                </p>
-              ) : explorer.error ? (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-800">
-                  <p>{SEARCH_ERROR}</p>
-                  <button
-                    type="button"
-                    onClick={explorer.reload}
-                    className="mt-3 font-medium underline underline-offset-2"
-                  >
-                    {SEARCH_RETRY}
-                  </button>
-                </div>
-              ) : (
-                <SearchExplorerLanding explorer={explorer} categoryId={explorerCategory} />
-              )
-            ) : null}
-
-            {!showExplorer && search.loading ? (
-              <p className="text-sm text-neutral-500" role="status">
-                {SEARCH_LOADING}
-              </p>
-            ) : null}
-
-            {!showExplorer && search.error ? (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-800">
-                <p>{SEARCH_ERROR}</p>
-                <button
-                  type="button"
-                  onClick={search.retry}
-                  className="mt-3 font-medium underline underline-offset-2"
-                >
-                  {SEARCH_RETRY}
-                </button>
-              </div>
-            ) : null}
-
-            {!showExplorer && showEmpty ? (
-              <div className="rounded-xl border border-neutral-200 bg-white px-4 py-8 text-center">
-                <p className="font-semibold text-neutral-900">{SEARCH_EMPTY_TITLE}</p>
-                <p className="mt-2 text-sm text-neutral-600">{SEARCH_EMPTY_BODY}</p>
-              </div>
-            ) : null}
-
-            {!showExplorer && hasResultSections ? (
-              <section className="space-y-6" aria-labelledby="search-results-title">
-                <h2 id="search-results-title" className="text-base font-semibold text-neutral-900">
-                  {SEARCH_EXPLORER_RESULTS_TITLE}
-                </h2>
-                <div className="space-y-8">
-                  {sections.map(({ key, group }) => (
-                    <SearchGroupSection
-                      key={key}
-                      groupKey={key}
-                      group={group}
-                      city={search.city}
-                      onLoadMore={() => search.loadMoreForGroup(key)}
-                      loadingMore={search.loading}
-                    />
-                  ))}
-                </div>
-              </section>
-            ) : null}
-          </div>
-        </div>
-      </div>
+      <SearchDesktopScreen
+        city={search.city}
+        query={search.query}
+        onQueryChange={search.setQuery}
+        typeFilter={search.typeFilter}
+        onTypeFilterChange={handleTabChange}
+        groups={search.groups}
+        loading={search.loading}
+        error={search.error}
+        onRetry={search.retry}
+        onLoadMore={search.loadMoreForGroup}
+        showExplorer={showExplorer}
+        explorer={explorer}
+        isQueryReady={search.isQueryReady}
+        neighborhoodSlug={search.neighborhoodSlug}
+        onNeighborhoodSlugChange={search.setNeighborhoodSlug}
+        period={search.period}
+        onPeriodChange={search.setPeriod}
+        onCityChange={search.setCity}
+      />
     </SearchAppShell>
   );
 }

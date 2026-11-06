@@ -39,6 +39,7 @@ from app.models.yuni_wallet import YuniTransaction
 from app.services.yuni_wallet_backfill_service import YuniWalletBackfillService
 from app.services.yuni_wallet_service import YuniWalletService
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
@@ -307,3 +308,31 @@ async def test_backfill_limit_is_respected(
 
     report = await service.preview_stamps(limit=2)
     assert report.scanned == 2
+
+
+async def test_execute_stamps_error_detail_never_quotes_sql_values(
+    ym_backfill_db: tuple[AsyncSession, uuid.UUID, uuid.UUID],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """APP-SQL-ERROR-VALUES-01 : le rapport, imprimé par le script de backfill, ne
+    recopie pas le texte d'une erreur SQL (DETAIL cite la valeur) ; le SQLSTATE reste."""
+    session, _user_id, passport_id = ym_backfill_db
+    await _seed_distinct_stamps(session, passport_id, 1)
+    service = YuniWalletBackfillService(session)
+    marker = f"{uuid.uuid4().hex[:16]}-FICTIF"
+
+    class _DriverError(Exception):
+        sqlstate = "23505"
+
+    async def failing(*args: object, **kwargs: object) -> None:
+        raise IntegrityError(
+            "INSERT INTO t VALUES ($1)", None, _DriverError(f"DETAIL:  Key (k)=({marker})")
+        )
+
+    monkeypatch.setattr(service._wallet, "earn", failing)
+    report = await service.execute_stamps()
+
+    assert report.errors >= 1
+    assert report.error_details
+    assert all(marker[:16] not in detail for detail in report.error_details)
+    assert all("sqlstate=23505" in detail for detail in report.error_details)

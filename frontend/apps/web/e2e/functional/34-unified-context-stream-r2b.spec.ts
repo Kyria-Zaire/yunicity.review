@@ -1,6 +1,8 @@
 import type { FeedPost } from "@yunicity/types";
 import type { Locator, Page } from "@playwright/test";
 
+import { FEED_VIEWPORT_DESKTOP_MIN_PX } from "@/lib/layout/feed-breakpoints";
+
 import { expect, test } from "../fixtures";
 
 const VIEWPORTS = [
@@ -14,24 +16,37 @@ const VIEWPORTS = [
   { width: 1536, height: 900 },
 ] as const;
 
-const DESKTOP_MIN_WIDTH = 1280;
-const MEDIUM_CONTEXT_FAMILIES = ["must-see", "local-privilege"] as const;
+/**
+ * Borne du palier desktop — prise au contrat, jamais recopiee. Cette spec
+ * portait 1280, valeur d'AVANT R4B ; `feed-breakpoints.ts` dit 1024.
+ */
+const DESKTOP_MIN_WIDTH = FEED_VIEWPORT_DESKTOP_MIN_PX;
+
+/**
+ * Cadence UNIQUE : les deux familles dont la source se resout entrent dans le
+ * flux a TOUTE largeur, aux memes rangs. C'est le contrat de
+ * `feed-context-stream.ts` — « les trois bandes partageront cette meme cadence
+ * et ne feront varier que le RENDU ».
+ */
+const CADENCE_FAMILIES = ["must-see", "local-privilege"] as const;
+const CADENCE_POSITIONS = [4, 10] as const;
+
 const DESKTOP_CONTEXT_FAMILIES = [] as const;
-const MEDIUM_MODULE_POSITIONS = [4, 10] as const;
 const DESKTOP_MODULE_POSITIONS = [] as const;
 
+/** Familles VISIBLES : le palier desktop les masque au rendu (globals.css). */
 function expectedContextFamilies(width: number) {
-  return width >= DESKTOP_MIN_WIDTH ? DESKTOP_CONTEXT_FAMILIES : MEDIUM_CONTEXT_FAMILIES;
+  return width >= DESKTOP_MIN_WIDTH ? DESKTOP_CONTEXT_FAMILIES : CADENCE_FAMILIES;
 }
 
 function expectedModulePositions(width: number) {
-  return width >= DESKTOP_MIN_WIDTH ? DESKTOP_MODULE_POSITIONS : MEDIUM_MODULE_POSITIONS;
+  return width >= DESKTOP_MIN_WIDTH ? DESKTOP_MODULE_POSITIONS : CADENCE_POSITIONS;
 }
 
 const STREAM = "[data-feed-stream-list]";
 // The Playwright user is not a member of the seeded public tribe.
 // Only context families carrying real content for that viewer are eligible.
-const INITIAL_CONTEXT_FAMILIES = MEDIUM_CONTEXT_FAMILIES;
+const INITIAL_CONTEXT_FAMILIES = CADENCE_FAMILIES;
 
 function post(index: number): FeedPost {
   const id = `r2b-${String(index).padStart(2, "0")}`;
@@ -99,6 +114,26 @@ async function waitForAsyncStreamSources(page: Page): Promise<void> {
   await expectEffectivelyVisible(localVideo, "vidéo locale");
 }
 
+/**
+ * Attend la PRESENCE de la cadence dans le DOM, sans rien exiger du rendu.
+ * Indispensable au-dela de la borne : le palier y masque les modules, donc
+ * attendre leur visibilite n'aboutirait jamais et la mesure lirait une cadence
+ * encore vide.
+ */
+async function waitForCadenceInDom(
+  page: Page,
+  families: readonly (typeof CADENCE_FAMILIES)[number][],
+): Promise<void> {
+  for (const family of families) {
+    await expect(
+      page.locator(
+        `${STREAM} > li[data-feed-stream-item="context-module"][data-feed-context-module="${family}"]`,
+      ),
+      `module contextuel ${family} absent du flux (cadence)`,
+    ).toHaveCount(1, { timeout: 15_000 });
+  }
+}
+
 async function waitForContextModules(
   page: Page,
   families: readonly (typeof INITIAL_CONTEXT_FAMILIES)[number][],
@@ -162,12 +197,70 @@ async function streamState(page: Page) {
     const postIds = items
       .filter((item) => item.getAttribute("data-feed-stream-item") === "post")
       .map((item) => item.getAttribute("data-feed-post-id"));
-    const contextFamilies = items
-      .filter((item) => item.getAttribute("data-feed-stream-item") === "context-module")
-      .map((item) => item.getAttribute("data-feed-context-module"));
+    /*
+     * Le palier desktop masque les modules AU RENDU : leurs <li> restent donc
+     * dans le DOM. Mesurer `querySelectorAll` seul confondrait « masque » et
+     * « absent du flux » — exactement la distinction que porte la decision.
+     */
+    const effectivementVisible = (element: Element) => {
+      const rect = element.getBoundingClientRect();
+      if (element.getClientRects().length === 0 || rect.width <= 0 || rect.height <= 0) {
+        return false;
+      }
+      for (let node: Element | null = element; node; node = node.parentElement) {
+        const style = getComputedStyle(node);
+        if (
+          style.display === "none" ||
+          style.visibility === "hidden" ||
+          node.hasAttribute("hidden") ||
+          node.hasAttribute("inert")
+        ) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    const moduleItems = items.filter(
+      (item) => item.getAttribute("data-feed-stream-item") === "context-module",
+    );
+    const contextFamilies = moduleItems.map((item) =>
+      item.getAttribute("data-feed-context-module"),
+    );
+    const visibleModules = moduleItems.filter(effectivementVisible);
+    const contextFamiliesVisibles = visibleModules.map((item) =>
+      item.getAttribute("data-feed-context-module"),
+    );
+
+    /** Rangs des modules VISIBLES, en contenus reels deja rendus. */
+    const modulePositionsVisibles: number[] = [];
+    let reels = 0;
+    for (const item of items) {
+      if (item.getAttribute("data-feed-stream-item") === "context-module") {
+        if (effectivementVisible(item)) modulePositionsVisibles.push(reels);
+      } else {
+        reels += 1;
+      }
+    }
+
+    /** Un module masque ne doit laisser aucun controle au clavier. */
+    const focusablesDansModulesMasques = moduleItems
+      .filter((item) => !effectivementVisible(item))
+      .reduce(
+        (total, item) =>
+          total +
+          [...item.querySelectorAll('a[href], button, [tabindex]:not([tabindex="-1"])')].filter(
+            (control) => (control as HTMLElement).offsetParent !== null,
+          ).length,
+        0,
+      );
+
     return {
       contextFamilies,
+      contextFamiliesVisibles,
       modulePositions,
+      modulePositionsVisibles,
+      focusablesDansModulesMasques,
       postIds,
       videos: items.filter((item) => item.getAttribute("data-feed-stream-item") === "local-video")
         .length,
@@ -181,15 +274,43 @@ test.describe("C3-FEED-R2B - unified context stream", () => {
       await stubLongFeed(authedPage);
       await gotoFeed(authedPage, viewport);
       await waitForAsyncStreamSources(authedPage);
+      // La cadence entre dans le flux a toute largeur…
+      await waitForCadenceInDom(authedPage, CADENCE_FAMILIES);
+      // …et seules les familles du palier doivent etre effectivement visibles.
       await waitForContextModules(authedPage, expectedContextFamilies(viewport.width));
 
       const state = await streamState(authedPage);
       expect(await authedPage.locator(STREAM).count()).toBe(1);
       expect(new Set(state.postIds).size).toBe(state.postIds.length);
-      expect(await authedPage.locator(`${STREAM} article`).count()).toBe(state.postIds.length);
+      // Un article PAR PUBLICATION : le comptage doit être borné aux entrées
+      // « post ». Le teaser vidéo rend lui aussi un <article>
+      // (feed-video-stream-item.tsx), donc `${STREAM} article` valait
+      // publications + 1 et ne pouvait jamais égaler le nombre de posts.
+      expect(
+        await authedPage.locator(`${STREAM} li[data-feed-stream-item="post"] article`).count(),
+        "un article par publication",
+      ).toBe(state.postIds.length);
       expect(state.videos).toBe(1);
-      expect(state.contextFamilies).toEqual([...expectedContextFamilies(viewport.width)]);
-      expect(state.modulePositions).toEqual([...expectedModulePositions(viewport.width)]);
+
+      // Cadence UNIQUE : meme flux, memes rangs, a toute largeur.
+      expect(state.contextFamilies, "cadence du flux alteree par le palier").toEqual([
+        ...CADENCE_FAMILIES,
+      ]);
+      expect(state.modulePositions, "rangs de cadence alteres par le palier").toEqual([
+        ...CADENCE_POSITIONS,
+      ]);
+
+      // Rendu PAR PALIER : le desktop les masque, sans espace ni focus residuel.
+      expect(state.contextFamiliesVisibles, "modules visibles hors contrat du palier").toEqual([
+        ...expectedContextFamilies(viewport.width),
+      ]);
+      expect(state.modulePositionsVisibles, "rangs visibles hors contrat du palier").toEqual([
+        ...expectedModulePositions(viewport.width),
+      ]);
+      expect(
+        state.focusablesDansModulesMasques,
+        "un module masque laisse un controle atteignable au clavier",
+      ).toBe(0);
     });
   }
 
@@ -255,53 +376,69 @@ test.describe("C3-FEED-R2B - unified context stream", () => {
     expect(new Set(after.postIds).size).toBe(after.postIds.length);
   });
 
-  test("resize et tabs ne dupliquent pas le fetch ni le contexte", async ({ authedPage }) => {
+  /**
+   * Franchir la borne ne duplique ni le fetch ni la cadence.
+   *
+   * Ce test basculait aussi des onglets « Récent » / « Populaire ». Mesuré :
+   * aucun `role="tab"` n'existe sur /feed, à aucune largeur — DÉCISION
+   * PRODUIT : ne pas les construire pour un test. Ce qui restait prouvable est
+   * conservé et renforcé : traverser la borne du palier ne relance aucun
+   * appel, laisse la cadence du flux INTACTE, et ne fait varier que le rendu.
+   */
+  test("franchir la borne ne duplique ni le fetch ni la cadence", async ({ authedPage }) => {
     const feed = await stubLongFeed(authedPage);
     let localVideoRequests = 0;
-    const observedPaths: string[] = [];
 
-    // Install listener before navigation to capture all requests
     authedPage.on("request", (request) => {
-      const pathname = new URL(request.url()).pathname;
-      if (request.method() === "GET") {
-        if (pathname === "/api/v1/local-videos/feed") {
-          localVideoRequests += 1;
-          observedPaths.push(pathname);
-        }
+      if (
+        request.method() === "GET" &&
+        new URL(request.url()).pathname === "/api/v1/local-videos/feed"
+      ) {
+        localVideoRequests += 1;
       }
     });
 
+    const sousLaBorne = DESKTOP_MIN_WIDTH - 1;
     await gotoFeed(authedPage, { width: 375, height: 900 });
     await waitForAsyncStreamSources(authedPage);
-    await waitForContextModules(authedPage, INITIAL_CONTEXT_FAMILIES);
+    await waitForCadenceInDom(authedPage, CADENCE_FAMILIES);
+    await waitForContextModules(authedPage, CADENCE_FAMILIES);
     await expect.poll(() => feed.calls()).toBe(1);
 
+    const avant = await streamState(authedPage);
+    expect(avant.contextFamiliesVisibles).toEqual([...CADENCE_FAMILIES]);
+
+    // Juste sous la borne : rien ne change encore.
+    await authedPage.setViewportSize({ width: sousLaBorne, height: 900 });
+    await waitForContextModules(authedPage, CADENCE_FAMILIES);
+    expect(feed.calls(), "un resize a relance le fetch").toBe(1);
+
+    // Au-dela : le flux est le MEME, seul le rendu masque les modules.
     await authedPage.setViewportSize({ width: 1536, height: 900 });
-    expect(feed.calls()).toBe(1);
+    await expect
+      .poll(async () => (await streamState(authedPage)).contextFamiliesVisibles.length, {
+        timeout: 15_000,
+      })
+      .toBe(0);
 
-    let previous = authedPage.getByRole("tab", { name: "Pour vous", exact: true });
-    for (const name of ["Récent", "Populaire"]) {
-      const tab = authedPage.getByRole("tab", { name, exact: true });
-      await tab.click();
-      await expect(tab).toHaveAttribute("aria-selected", "true");
-      await expect(previous).toHaveAttribute("aria-selected", "false");
-      await expect(authedPage.locator(`${STREAM} [data-feed-stream-item="context-module"]`)).toHaveCount(0);
-      await expect(authedPage.locator(`${STREAM} [data-feed-stream-item="local-video"]`)).toHaveCount(0);
-      expect(feed.calls()).toBe(1);
-      previous = tab;
-    }
+    const apres = await streamState(authedPage);
+    expect(apres.contextFamilies, "la cadence du flux a change au franchissement").toEqual(
+      avant.contextFamilies,
+    );
+    expect(apres.modulePositions, "les rangs de cadence ont change").toEqual(
+      avant.modulePositions,
+    );
+    expect(apres.postIds, "les publications ont change").toEqual(avant.postIds);
+    expect(apres.videos).toBe(1);
+    expect(
+      apres.focusablesDansModulesMasques,
+      "un module masque laisse un controle atteignable au clavier",
+    ).toBe(0);
 
-    const forYou = authedPage.getByRole("tab", { name: "Pour vous", exact: true });
-    await forYou.click();
-    await expect(forYou).toHaveAttribute("aria-selected", "true");
-    await expect(previous).toHaveAttribute("aria-selected", "false");
-    await waitForAsyncStreamSources(authedPage);
-    await waitForContextModules(authedPage, DESKTOP_CONTEXT_FAMILIES);
-    const restored = await streamState(authedPage);
-    expect(restored.videos).toBe(1);
-    expect(restored.contextFamilies).toEqual([...DESKTOP_CONTEXT_FAMILIES]);
-    expect(new Set(restored.postIds).size).toBe(restored.postIds.length);
-    expect(feed.calls()).toBe(1);
-    expect(localVideoRequests, `Expected 1 request to /api/v1/local-videos/feed, got ${localVideoRequests}. Observed paths: [${observedPaths.join(", ")}]`).toBe(1);
+    expect(feed.calls(), "franchir la borne a relance le fetch").toBe(1);
+    expect(
+      localVideoRequests,
+      `attendu 1 appel a /api/v1/local-videos/feed, obtenu ${localVideoRequests}`,
+    ).toBe(1);
   });
 });

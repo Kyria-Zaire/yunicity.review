@@ -101,6 +101,27 @@ export function useProfilePortalContext() {
     void load();
   }, [load]);
 
+  /**
+   * Suppression douce de SA publication (PROFILE-POST-MENU-01).
+   *
+   * Le contexte reste SEUL propriétaire du réseau de cette page : la carte des
+   * publications n'appelle pas l'API, elle demande. Le retrait local suit le
+   * `204` — jamais avant —, et il porte sur `feedPosts`, la source dont
+   * `userPosts` est dérivé : filtrer la projection aurait laissé la publication
+   * revenir au premier recalcul.
+   *
+   * ⚠️ Les statistiques du profil comptent `feedPosts` : le compteur de
+   * publications baisse donc en même temps que la carte disparaît, ce qui est
+   * le comportement attendu côté serveur au prochain chargement.
+   */
+  const deleteUserPost = useCallback(
+    async (postId: string) => {
+      await api.deleteFeedPost(postId);
+      setFeedPosts((current) => current.filter((post) => post.id !== postId));
+    },
+    [api],
+  );
+
   const city = profile?.city?.trim() || "Reims";
 
   const levelView = useMemo(
@@ -245,12 +266,14 @@ export function useProfilePortalContext() {
     journeyCtas,
     neighborhoodCards,
     tribeCards,
+    tribes,
     badges,
     badgesPreview,
     userPosts: useMemo(
       () => (profile ? filterProfileUserFeedPosts(feedPosts, profile) : []),
       [feedPosts, profile],
     ),
+    savedEvents,
     savedEventsCount: savedEvents.length,
     interestedEventsCount: useMemo(
       () => events.filter((event) => event.interested_by_me).length,
@@ -258,5 +281,6 @@ export function useProfilePortalContext() {
     ),
     reload: load,
     setProfile,
+    deleteUserPost,
   };
 }

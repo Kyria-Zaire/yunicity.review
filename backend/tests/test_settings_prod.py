@@ -82,3 +82,8 @@ def test_preprod_requires_refresh_token_pepper() -> None:
             JWT_SECRET_KEY="x" * 48,
             REFRESH_TOKEN_PEPPER="",
         )
+
+
+def test_prod_requires_refresh_token_pepper() -> None:
+    with pytest.raises(ValidationError, match="REFRESH_TOKEN_PEPPER"):
+        _prod_settings(REFRESH_TOKEN_PEPPER="")

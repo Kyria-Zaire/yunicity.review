@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import type { EditorialImageCredit } from "@yunicity/utils";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 type CulturalImageProps = {
   src: string | null;
@@ -13,8 +14,10 @@ type CulturalImageProps = {
   showFallbackCaption?: boolean;
   /** Badge affiché dans le fallback (dégradé + nom). Défaut « Culture ». */
   fallbackLabel?: string;
-  /** @deprecated Ignoré — préférer un overlay via un conteneur parent. */
+  /** @deprecated Utiliser dimOverlay. */
   overlay?: boolean;
+  /** Voile sombre sur l'image. Désactiver pour hero / lightbox. Défaut true. */
+  dimOverlay?: boolean;
 };
 
 const FALLBACK_GRADIENT =
@@ -37,14 +40,17 @@ export function CulturalImage({
   priority = false,
   showFallbackCaption = true,
   fallbackLabel = "Culture",
+  overlay,
+  dimOverlay = true,
 }: CulturalImageProps) {
+  const showDim = overlay === false ? false : dimOverlay;
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const safeSrc = useMemo(() => (src?.trim() ? src : null), [src]);
   const showImage = Boolean(safeSrc) && !failed;
 
   return (
-    <div className={`relative overflow-hidden ${className ?? ""}`}>
+    <div className={`relative h-full w-full overflow-hidden ${className ?? ""}`}>
       {showImage ? (
         <>
           {!loaded ? <div className="absolute inset-0 animate-pulse bg-neutral-200/80" aria-hidden /> : null}
@@ -61,10 +67,12 @@ export function CulturalImage({
           />
         </>
       ) : (
-        <div className={`absolute inset-0 ${FALLBACK_GRADIENT}`} aria-hidden />
+        <div className={`absolute inset-0 h-full w-full ${FALLBACK_GRADIENT}`} aria-hidden />
       )}
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" aria-hidden />
+      {showDim ? (
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" aria-hidden />
+      ) : null}
 
       {!showImage && showFallbackCaption ? (
         <div className="absolute inset-0 flex items-end p-3">
@@ -80,12 +88,177 @@ export function CulturalImage({
   );
 }
 
-export function CulturalImageCredit({ credit }: { credit: string | null }) {
+type CulturalImageCreditDefaultProps = {
+  variant?: "default";
+  credit: string | null;
+  sourceUrl?: string | null;
+  className?: string;
+};
+
+type CulturalImageCreditCompactProps = {
+  variant: "compact";
+  editorialCredit: EditorialImageCredit | null;
+  className?: string;
+};
+
+export type CulturalImageCreditProps =
+  | CulturalImageCreditDefaultProps
+  | CulturalImageCreditCompactProps;
+
+/**
+ * Attribution d'une image tierce.
+ *
+ * - `default` : ligne textuelle (cartes culture, recherche…).
+ * - `compact` : bouton ⓘ superposé + popover accessible (quartiers Wikimedia).
+ */
+export function CulturalImageCredit(props: CulturalImageCreditProps) {
+  if (props.variant === "compact") {
+    return <CulturalImageCreditCompact {...props} />;
+  }
+  return <CulturalImageCreditDefault {...props} />;
+}
+
+function CulturalImageCreditDefault({
+  credit,
+  sourceUrl = null,
+  className,
+}: CulturalImageCreditDefaultProps) {
   if (!credit) return null;
   const compact = credit.length > 88 ? `${credit.slice(0, 85)}...` : credit;
+  const textClassName = `mt-2 line-clamp-1 text-[10px] text-neutral-500 ${className ?? ""}`;
+  if (!sourceUrl) {
+    return (
+      <p className={textClassName} title={credit}>
+        {compact}
+      </p>
+    );
+  }
   return (
-    <p className="mt-2 line-clamp-1 text-[10px] text-neutral-400" title={credit}>
-      {compact}
+    <p className={textClassName} title={credit}>
+      <a
+        href={sourceUrl}
+        target="_blank"
+        rel="license noopener noreferrer"
+        aria-label={`${credit} — ouvrir la page source (nouvel onglet)`}
+        className="rounded underline underline-offset-2 transition hover:text-neutral-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yunicity-primary"
+      >
+        {compact}
+      </a>
     </p>
+  );
+}
+
+function CulturalImageCreditCompact({
+  editorialCredit,
+  className,
+}: CulturalImageCreditCompactProps) {
+  const popoverId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+
+  const close = useCallback(() => setOpen(false), []);
+  const toggle = useCallback(() => setOpen((value) => !value), []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    const onPointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (!rootRef.current?.contains(target)) close();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+    };
+  }, [close, open]);
+
+  if (!editorialCredit) return null;
+
+  const ariaLabel = `Crédits de la photographie ${editorialCredit.commonsFile}`;
+
+  return (
+    <div
+      ref={rootRef}
+      className={`pointer-events-none ${className ?? "absolute right-2 top-2 z-20"}`}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        aria-expanded={open}
+        aria-controls={popoverId}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          toggle();
+        }}
+        onMouseEnter={() => setOpen(true)}
+        onFocus={() => setOpen(true)}
+        className="pointer-events-auto inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/25 bg-black/45 text-[13px] font-semibold leading-none text-white shadow-sm backdrop-blur-sm transition hover:bg-black/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+      >
+        <span aria-hidden>ⓘ</span>
+      </button>
+
+      {open ? (
+        <div
+          id={popoverId}
+          role="dialog"
+          aria-label={ariaLabel}
+          onClick={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
+          className="pointer-events-auto absolute right-0 top-[calc(100%+6px)] z-30 w-[min(17rem,calc(100vw-2rem))] rounded-xl border border-neutral-200/90 bg-white/95 p-3 text-left shadow-lg backdrop-blur-md"
+        >
+          <p className="text-xs font-semibold leading-snug text-neutral-900">
+            <a
+              href={editorialCredit.sourceUrl}
+              target="_blank"
+              rel="license noopener noreferrer"
+              className="underline underline-offset-2 hover:text-yunicity-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yunicity-primary"
+            >
+              {editorialCredit.commonsFile}
+            </a>
+          </p>
+          <dl className="mt-2 space-y-1 text-[11px] leading-snug text-neutral-600">
+            <div className="flex gap-1">
+              <dt className="shrink-0 font-medium text-neutral-700">Photo :</dt>
+              <dd>{editorialCredit.author}</dd>
+            </div>
+            <div className="flex gap-1">
+              <dt className="shrink-0 font-medium text-neutral-700">Licence :</dt>
+              <dd>
+                <a
+                  href={editorialCredit.licenseUrl}
+                  target="_blank"
+                  rel="license noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-yunicity-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yunicity-primary"
+                >
+                  {editorialCredit.license}
+                </a>
+              </dd>
+            </div>
+            <div className="flex gap-1">
+              <dt className="shrink-0 font-medium text-neutral-700">Source :</dt>
+              <dd>
+                <a
+                  href={editorialCredit.sourceUrl}
+                  target="_blank"
+                  rel="license noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-yunicity-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yunicity-primary"
+                >
+                  Wikimedia Commons
+                </a>
+              </dd>
+            </div>
+          </dl>
+        </div>
+      ) : null}
+    </div>
   );
 }

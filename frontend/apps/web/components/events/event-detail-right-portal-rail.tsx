@@ -13,6 +13,7 @@ import {
   EVENT_DETAIL_SAVED_TITLE,
   EVENT_DETAIL_SIMILAR_SEE_ALL,
   EVENT_DETAIL_SIMILAR_TITLE,
+  MY_AGENDA_HREF,
   buildEventPracticalRows,
   buildMapEventUrl,
   buildMapboxStaticPreviewUrl,
@@ -158,7 +159,7 @@ export function EventDetailRightPortalRail({
           <h2 className="mt-2 text-sm font-bold text-neutral-900">{EVENT_DETAIL_SAVED_TITLE}</h2>
           <p className="mt-1 text-sm text-neutral-600">{EVENT_DETAIL_SAVED_BODY}</p>
           <Link
-            href="/events"
+            href={MY_AGENDA_HREF}
             className="mt-3 inline-flex text-xs font-semibold text-yunicity-primary hover:underline"
           >
             {EVENT_DETAIL_SAVED_CTA}

@@ -24,6 +24,13 @@ describe("local-video-errors", () => {
     expect(humanizeLocalVideoError(err, "fallback")).toContain("expirée");
   });
 
+  it("humanizeLocalVideoError explains filesystem capacity failures", () => {
+    const err = new LocalVideoError("LOCAL_VIDEO_STORAGE_INSUFFICIENT", "internal", 507);
+    expect(humanizeLocalVideoError(err, "fallback")).toBe(
+      "Espace de stockage temporairement insuffisant. Réessayez plus tard.",
+    );
+  });
+
   it("humanizeLocalVideoError maps rate limit", () => {
     const err = toLocalVideoError(
       new AuthError("RATE_LIMITED", "Too many requests", 429),

@@ -211,16 +211,25 @@ REIMS_CULTURAL_MEDIA_BY_SLUG: dict[str, dict[str, Any]] = {
         "image_license": _LICENSE_CC,
         "photo_credit": "Wikimedia Commons — Bibliothèque Carnegie",
         "editorial_excerpt": "Un salon de lecture patrimonial offert par Andrew Carnegie à Reims.",
-        "hero_image_url": "https://tse3.mm.bing.net/th/id/OIP.cLDw55L0jijFkgopwKjCAgHaFj?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+        "hero_image_url": (
+            "https://commons.wikimedia.org/wiki/Special:FilePath/"
+            "Reims_-_biblioth%C3%A8que_Carnegie_%281%29.JPG?width=1400"
+        ),
         "gallery_images": _gallery(
             {
-                "url": "https://tse3.mm.bing.net/th/id/OIP.cLDw55L0jijFkgopwKjCAgHaFj?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+                "url": (
+                    "https://commons.wikimedia.org/wiki/Special:FilePath/"
+                    "Reims_-_biblioth%C3%A8que_Carnegie_%281%29.JPG?width=1400"
+                ),
                 "alt": "Bibliothèque Carnegie",
                 "credit": "Wikimedia Commons",
                 "source": _WIKI,
             },
             {
-                "url": _wiki("Bibliotheque_Carnegie_Reims_salle_de_lecture.jpg"),
+                "url": (
+                    "https://commons.wikimedia.org/wiki/Special:FilePath/"
+                    "Bibliotheque_Carnegie_Reims_salle_de_lecture.jpg?width=1400"
+                ),
                 "alt": "Salle de lecture",
                 "credit": "Wikimedia Commons",
                 "source": _WIKI,

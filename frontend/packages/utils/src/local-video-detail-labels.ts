@@ -31,3 +31,9 @@ export const VIDEO_DETAIL_PROCESSING = "Cette vidéo est en cours de traitement.
 export const VIDEO_DETAIL_MOBILE_VIEW_ALL = "Voir tout";
 export const VIDEO_DETAIL_MOBILE_BOOKMARK = "Enregistrer";
 export const VIDEO_DETAIL_MOBILE_BOOKMARK_SOON = "Enregistrer — bientôt disponible";
+
+/** Lecteur immersif — vidéos paysage sur mobile portrait. */
+export const LOCAL_VIDEO_LANDSCAPE_FULLSCREEN = "Plein écran";
+export const LOCAL_VIDEO_LANDSCAPE_EXIT_FULLSCREEN = "Quitter le plein écran";
+export const LOCAL_VIDEO_LANDSCAPE_ROTATE_HINT =
+  "Faites pivoter votre téléphone pour plus de confort";

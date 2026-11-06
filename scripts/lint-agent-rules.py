@@ -63,6 +63,7 @@ PARITY_PAIRS = [
     "backend-fastapi",
     "frontend-next-expo",
     "14-frontend-design-system",
+    "15-passation",
 ]
 
 

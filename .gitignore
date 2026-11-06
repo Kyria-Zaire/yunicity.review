@@ -111,3 +111,9 @@ Desktop.ini
 *.tmp
 .terraform/
 *.tfstate*
+
+# Worktrees Git locaux (jamais versionnés — ils embarquent leur propre copie du dépôt)
+.worktrees/
+
+# Médias QA générés par backend/scripts/seed_qa_portrait_video.py (_write_media), pas des fixtures
+backend/tmp-qa-media/

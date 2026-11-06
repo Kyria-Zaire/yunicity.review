@@ -1,0 +1,15 @@
+export { PlaceMobileDetailAbout } from "./place-mobile-detail-about";
+export { PlaceMobileDetailAddressCard } from "./place-mobile-detail-address-card";
+export { PlaceMobileDetailContact } from "./place-mobile-detail-contact";
+export { PlaceMobileDetailEvents } from "./place-mobile-detail-events";
+export { PlaceMobileDetailGallery } from "./place-mobile-detail-gallery";
+export { PlaceMobileDetailHours } from "./place-mobile-detail-hours";
+export { PlaceMobileDetailKnowRail } from "./place-mobile-detail-know-rail";
+export { PlaceMobileDetailMeta } from "./place-mobile-detail-meta";
+export { PlaceMobileDetailNearby } from "./place-mobile-detail-nearby";
+export { PlaceMobileDetailPhotosRail } from "./place-mobile-detail-photos-rail";
+export { PlaceMobileDetailRelationCard } from "./place-mobile-detail-relation-card";
+export { PlaceMobileDetailReportBand } from "./place-mobile-detail-report-band";
+export { PlaceMobileDetailShell } from "./place-mobile-detail-shell";
+export { PlaceMobileDetailTabs } from "./place-mobile-detail-tabs";
+export { PlaceMobileDetailWhy } from "./place-mobile-detail-why";

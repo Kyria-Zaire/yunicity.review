@@ -82,3 +82,22 @@ class NeighborhoodContributionRepository:
             )
         )
         return list(result.scalars().all())
+
+    async def list_approved_by_author(
+        self,
+        author_user_id: uuid.UUID,
+        *,
+        limit: int,
+    ) -> list[NeighborhoodContribution]:
+        result = await self._session.execute(
+            select(NeighborhoodContribution)
+            .where(
+                NeighborhoodContribution.author_user_id == author_user_id,
+                NeighborhoodContribution.status == NeighborhoodContributionStatus.APPROVED.value,
+                NeighborhoodContribution.approved_at.is_not(None),
+            )
+            .options(selectinload(NeighborhoodContribution.neighborhood))
+            .order_by(NeighborhoodContribution.approved_at.desc())
+            .limit(max(1, limit))
+        )
+        return list(result.scalars().all())

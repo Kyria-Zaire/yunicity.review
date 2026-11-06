@@ -20,7 +20,6 @@ import {
   isLocalVideoProcessingReady,
   mapLocalVideoToFeedPreview,
   registerLocalVideoPending,
-  reorderLocalVideoFeedForFocus,
 } from "@yunicity/utils";
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import { useSearchParams } from "next/navigation";
@@ -89,7 +88,7 @@ function VideosScreenInner() {
     return () => {
       cancelled = true;
     };
-  }, [api, feed.isLoading, feed.items, focusVideoId, pending.syncFromStorage]);
+  }, [api, feed.isLoading, feed.items, focusVideoId, pending]);
 
   const displayItems = useMemo(() => {
     const byId = new Map<string, LocalVideoFeedItem>();
@@ -111,8 +110,8 @@ function VideosScreenInner() {
       }
     }
 
-    return reorderLocalVideoFeedForFocus(Array.from(byId.values()), focusVideoId);
-  }, [feed.items, focusVideoId, pending.processingFeedItems, pinnedVideo]);
+    return Array.from(byId.values());
+  }, [feed.items, pending.processingFeedItems, pinnedVideo]);
 
   const processingErrors = useMemo(() => {
     const map: Record<string, string | null> = {};
@@ -125,7 +124,17 @@ function VideosScreenInner() {
   const detailProcessingError = focusVideoId ? processingErrors[focusVideoId] : null;
 
   return (
-    <VideosAppShell>
+    <VideosAppShell detailMode={isDetailMode} immersiveMode={isDetailMode}>
+      {/* CLOSE-24 : retour immersif mobile (composant hors lot B — cible via aria-label). */}
+      <style>{`
+        [data-videos-immersive-mobile] a[aria-label="Retour aux vidéos"] {
+          display: inline-flex;
+          min-height: 44px;
+          min-width: 44px;
+          align-items: center;
+          justify-content: center;
+        }
+      `}</style>
       <div className="relative">
         {isDetailMode && focusVideoId ? (
           feed.sessionExpired ? (
@@ -154,12 +163,18 @@ function VideosScreenInner() {
                 feed.updateItem(videoId, (item) => bumpLocalVideoCommentCount(item, delta));
               }}
               shareHint={interactions.shareHint}
+              onLoadMore={() => {
+                if (!feed.isLoadingMore && feed.nextCursor) {
+                  void feed.loadMore();
+                }
+              }}
             />
           )
         ) : feed.sessionExpired ? (
           <SessionExpiredPanel message={LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE} returnPath="/videos" />
         ) : (
           <VideosDiscoveryScreen
+            city={feed.city}
             items={displayItems}
             isLoading={feed.isLoading && pending.processingFeedItems.length === 0}
             error={feed.error}
@@ -168,6 +183,17 @@ function VideosScreenInner() {
             onRetry={() => void feed.refresh()}
             onLoadMoreFeed={() => {
               if (!feed.isLoadingMore && feed.nextCursor) feed.loadMore();
+            }}
+            processingErrors={processingErrors}
+            onDismissProcessing={(videoId) => pending.dismissTrack(videoId)}
+            onToggleLike={(item) => void interactions.toggleLike(item)}
+            onShare={(item) => void interactions.shareVideo(item)}
+            onOpenReport={(videoId) => {
+              setReportVideoId(videoId);
+              setReportOpen(true);
+            }}
+            onCommentCountDelta={(videoId, delta) => {
+              feed.updateItem(videoId, (item) => bumpLocalVideoCommentCount(item, delta));
             }}
           />
         )}

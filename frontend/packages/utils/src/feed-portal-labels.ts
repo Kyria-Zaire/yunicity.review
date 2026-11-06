@@ -1,5 +1,10 @@
 /** Fil local portal micro-copy (WEB-FEED-PORTAL-01). */
 
+// AIF §23 — titre de page du fil local. Repris du libellé de navigation que
+// la personne voit déjà, pour qu'un lecteur d'écran annonce la même chose
+// que ce qui est affiché.
+export const FEED_PORTAL_TITLE = "Fil local";
+
 export const FEED_PORTAL_STORIES_TITLE = "À la une";
 export const FEED_PORTAL_STORY_PUBLISH = "Publier";
 export const FEED_PORTAL_STORY_YOURS = "Votre story";
@@ -20,9 +25,19 @@ export const FEED_PORTAL_LEFT_CREATE = "Créer";
 export const FEED_PORTAL_PASSPORT_CONTINUE = "Continuer";
 export const FEED_EVENT_INTEREST_CTA = "Ça m'intéresse";
 
-export const FEED_PORTAL_TAB_FOR_YOU = "Pour vous";
-export const FEED_PORTAL_TAB_RECENT = "Récent";
-export const FEED_PORTAL_TAB_POPULAR = "Populaire";
+/*
+ * Les libellés d'onglets de vue « Pour vous / Récent / Populaire » ont été
+ * retirés : relevé en navigateur, aucun `role="tab"` n'existe sur /feed à
+ * aucune largeur, et ces trois constantes n'avaient plus aucun consommateur
+ * hors leur propre définition. DÉCISION PRODUIT : ne pas reconstruire ces
+ * onglets pour satisfaire des tests.
+ *
+ * Le MODÈLE de vues reste intact — `FeedPortalView` porte toujours
+ * `for_you | recent | popular` et `filterFeedPostsByView` les applique : aucun
+ * filtre fonctionnel n'est supprimé. Seule la copie sans affordance part.
+ * L'affordance réellement rendue garde son propre libellé
+ * (`FEED_PORTAL_LEFT_FOR_YOU`, rail gauche).
+ */
 export const FEED_PORTAL_FILTER = "Filtrer";
 
 export const FEED_PORTAL_TRIBES_TITLE = "Dans vos tribus";

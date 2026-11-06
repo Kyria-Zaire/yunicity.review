@@ -39,5 +39,9 @@ export const EVENT_DETAIL_MOBILE_PROGRAM_EMPTY =
 export const EVENT_DETAIL_MOBILE_DETAILS_EMPTY = "Aucun détail supplémentaire pour ce moment.";
 export const EVENT_DETAIL_MOBILE_ABOUT_EMPTY =
   "Aucune description pour ce moment. Consultez les infos pratiques.";
-export const EVENT_DETAIL_MOBILE_EXPAND_MORE = "Voir plus";
-export const EVENT_DETAIL_MOBILE_EXPAND_LESS = "Voir moins";
+export const EVENT_DETAIL_MOBILE_EXPAND_MORE = "Afficher la suite";
+export const EVENT_DETAIL_MOBILE_EXPAND_LESS = "Réduire";
+export const EVENT_DETAIL_MOBILE_GALLERY = (count: number) =>
+  count <= 1 ? "1 photo" : `${count} photos`;
+export const EVENT_DETAIL_MOBILE_RESPONSE_HINT = "Modifiable à tout moment.";
+export const EVENT_DETAIL_MOBILE_MAP_CTA = "Sur la carte";

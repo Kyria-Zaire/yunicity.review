@@ -21,6 +21,7 @@ import {
   Shield,
 } from "lucide-react";
 import Link from "next/link";
+import { AvatarImage } from "@/components/avatar-image";
 
 const BENEFIT_ICONS = {
   messages: MessageCircleHeart,
@@ -54,8 +55,7 @@ export function SubscriptionRightRail({ community }: SubscriptionRightRailProps)
                   title={avatar.display_name}
                 >
                   {avatar.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <AvatarImage
                       src={avatar.avatar_url}
                       alt=""
                       className="h-full w-full rounded-full object-cover"

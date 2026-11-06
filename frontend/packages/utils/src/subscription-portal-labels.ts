@@ -81,6 +81,13 @@ export const SUBSCRIPTION_LOADING = "Chargement des offres…";
 export const SUBSCRIPTION_ERROR = "Impossible de charger les abonnements.";
 export const SUBSCRIPTION_RETRY = "Réessayer";
 export const SUBSCRIPTION_CHECKOUT_UNAVAILABLE_TITLE = "Paiement pas encore activé";
+// PAY-01-GUARD — libellé du bouton quand Stripe est désactivé : il ne doit
+// pas promettre un achat impossible.
+export const SUBSCRIPTION_CHECKOUT_UNAVAILABLE_CTA = "Bientôt disponible";
+// Extrait de subscription-screen : le même texte sert désormais au bandeau
+// proactif ET au repli après clic, donc une seule source.
+export const SUBSCRIPTION_CHECKOUT_UNAVAILABLE_BODY =
+  "Le paiement en ligne n'est pas encore activé. Vous pouvez continuer à utiliser l'offre gratuite.";
 
 export const SUBSCRIPTION_PLUS_BENEFIT_HIGHLIGHTS = [
   {
