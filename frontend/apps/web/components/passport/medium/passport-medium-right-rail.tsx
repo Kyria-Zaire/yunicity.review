@@ -2,45 +2,38 @@
 
 import {
   PassportActivityPanel,
-  PassportProgressPanel,
   PassportQrPanel,
   PassportSavedPanel,
 } from "@/components/passport/passport-rail-panels";
 import type { PartnerOfferPublic } from "@yunicity/types";
-import type { PassportDesktopActivityItem, PassportDesktopSegmentProgress } from "@yunicity/utils";
+import type { PassportDesktopActivityItem } from "@yunicity/utils";
 
 type PassportMediumRightRailProps = {
   displayName: string;
   city: string;
   qrPayload: string | null;
   qrLoading: boolean;
-  segmentProgress: PassportDesktopSegmentProgress;
   savedOffers: PartnerOfferPublic[];
   activityItems: PassportDesktopActivityItem[];
   onOpenHistory: () => void;
-  onOpenProgress: () => void;
 };
 
 /**
  * Contenu « rail droit » medium — 640 → 1023 px (DESKTOP-PASSPORT-01).
- * Grilles 2 colonnes dans le flux principal (QR + progression, puis saved + activité).
+ * QR seul en pleine largeur : « Prochaine étape » est masqué (PASSPORT-LEVEL-SCALE-01,
+ * D2) ; puis saved + activité en grille 2 colonnes.
  */
 export function PassportMediumSummaryRow({
   displayName,
   city,
   qrPayload,
   qrLoading,
-  segmentProgress,
-  onOpenProgress,
-}: Pick<
-  PassportMediumRightRailProps,
-  "displayName" | "city" | "qrPayload" | "qrLoading" | "segmentProgress" | "onOpenProgress"
->) {
+}: Pick<PassportMediumRightRailProps, "displayName" | "city" | "qrPayload" | "qrLoading">) {
   return (
     <div
-      className="passport-medium-summary-row passport-medium-grid-2"
+      className="passport-medium-summary-row"
       data-passport-medium-right-rail=""
-      aria-label="QR et progression"
+      aria-label="QR Passport"
     >
       <PassportQrPanel
         displayName={displayName}
@@ -49,11 +42,7 @@ export function PassportMediumSummaryRow({
         qrLoading={qrLoading}
         variant="medium"
       />
-      <PassportProgressPanel
-        segmentProgress={segmentProgress}
-        onOpenProgress={onOpenProgress}
-        variant="medium"
-      />
+      {/* PASSPORT-LEVEL-SCALE-01 (D2) : « Prochaine étape » masqué, voir le rail desktop. */}
     </div>
   );
 }

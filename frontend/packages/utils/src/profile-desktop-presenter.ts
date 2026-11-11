@@ -1,9 +1,7 @@
 import type { LocalEvent, ProfileMe, Tribe } from "@yunicity/types";
 
-import {
-  PASSPORT_JOURNEY_LEVELS,
-  type PassportLevelView,
-} from "./passport-dashboard";
+import type { PassportLevelView } from "./passport-dashboard";
+import { PASSPORT_LEVEL_UNAVAILABLE_LABEL } from "./passport-level-labels";
 import type { ProfileTimelineItemKind } from "./profile-portal";
 import {
   PROFILE_DESKTOP_ACTIVITY_KIND_BADGE,
@@ -79,21 +77,13 @@ export function resolveProfileDesktopVisibilityLabel(
   return PROFILE_DESKTOP_PUBLIC;
 }
 
-export function resolveProfileDesktopPassportSteps(
-  levelView: PassportLevelView | null,
-): { done: number; total: number; percent: number; levelLabel: string } {
-  const total = PASSPORT_JOURNEY_LEVELS.length;
-  if (!levelView) {
-    return { done: 1, total, percent: 0, levelLabel: "Explorateur local" };
-  }
-  const index = PASSPORT_JOURNEY_LEVELS.findIndex((level) => level.id === levelView.level.id);
-  const done = Math.max(1, index + 1);
-  return {
-    done,
-    total,
-    percent: levelView.progressPercent,
-    levelLabel: levelView.level.label,
-  };
+/**
+ * Libellé de niveau du profil (PASSPORT-LEVEL-SCALE-01) : le tier Passport, ou
+ * « Niveau indisponible ». Ni étapes, ni pourcentage — l'échelle à cinq paliers
+ * est retirée, et « Explorateur local » (nom de badge) n'est plus un niveau.
+ */
+export function resolveProfilePassportLevelLabel(levelView: PassportLevelView | null): string {
+  return levelView?.currentLabel ?? PASSPORT_LEVEL_UNAVAILABLE_LABEL;
 }
 
 export function buildProfileDesktopTribeRailItems(input: {

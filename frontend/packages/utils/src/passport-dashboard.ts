@@ -1,29 +1,24 @@
-import type { PassportMe, PassportStamp, Tribe } from "@yunicity/types";
+import type { PassportMe, PassportStamp, PassportTierCode, Tribe } from "@yunicity/types";
 
-import { PASSPORT_TIER_LABELS } from "./passport-level-labels";
+import { PASSPORT_LEVEL_UNAVAILABLE_LABEL, PASSPORT_TIER_LABELS } from "./passport-level-labels";
 
-export type PassportJourneyLevelId =
-  | "habitant"
-  | "contributeur"
-  | "explorateur"
-  | "ambassadeur"
-  | "referent";
-
-export type PassportJourneyLevel = {
-  id: PassportJourneyLevelId;
-  label: string;
-  threshold: number;
-  description: string;
-};
-
+/**
+ * Niveau Passport affiché (PASSPORT-LEVEL-SCALE-01).
+ *
+ * Le niveau EST le tier Passport, avec son libellé contractuel
+ * (`PASSPORT_TIER_LABELS`) — PRD-301 §8.3. Il ne dépend d'AUCUN score : l'échelle
+ * front à cinq paliers calculée sur les points (« Habitant… Référent local »),
+ * qui empruntait les noms des badges, est retirée.
+ *
+ * - `tierCode` : `null` quand aucun tier reconnu n'est connu → « Niveau indisponible ».
+ * - `nextLabel` : prochain niveau selon les règles EXISTANTES du backend
+ *   (`build_progression_hint` : basic/neo_arrivant → silver, silver → gold, gold et
+ *   statuts → aucun). Jamais de niveau au-dessus de Gold.
+ */
 export type PassportLevelView = {
-  level: PassportJourneyLevel;
-  points: number;
-  nextLevel: PassportJourneyLevel | null;
-  nextLevelLabel: string | null;
-  pointsToNext: number | null;
-  progressPercent: number;
-  backendTierLabel: string;
+  tierCode: PassportTierCode | null;
+  currentLabel: string;
+  nextLabel: string | null;
 };
 
 export type PassportAchievementId =
@@ -40,14 +35,6 @@ export type PassportAchievementCard = {
   value: number;
   valueLabel: string;
   unavailable: boolean;
-};
-
-export type PassportProgressionStepState = "locked" | "active" | "unlocked";
-
-export type PassportProgressionStep = {
-  level: PassportJourneyLevel;
-  state: PassportProgressionStepState;
-  pointsLabel: string;
 };
 
 export type PassportDerivedBadgeId =
@@ -76,109 +63,61 @@ export type PassportDashboardAchievementInput = {
 const BANNED_METRIC_PATTERN =
   /leaderboard|classement|#\d+\s*(sur|\/)\s*\d+|top\s*\d+/i;
 
-/** Paliers UX alignés sur la réputation réelle (TICKET-502). */
-export const PASSPORT_JOURNEY_LEVELS: PassportJourneyLevel[] = [
-  {
-    id: "habitant",
-    label: "Habitant",
-    threshold: 0,
-    description: "Votre place dans la ville commence ici.",
-  },
-  {
-    id: "contributeur",
-    label: "Contributeur local",
-    threshold: 15,
-    description: "Vous faites vivre le territoire par vos passages.",
-  },
-  {
-    id: "explorateur",
-    label: "Explorateur",
-    threshold: 25,
-    description: "Exploration régulière reconnue sur Reims.",
-  },
-  {
-    id: "ambassadeur",
-    label: "Ambassadeur",
-    threshold: 50,
-    description: "Engagement durable au service de la ville.",
-  },
-  {
-    id: "referent",
-    label: "Référent local",
-    threshold: 70,
-    description: "Référence citoyenne sur le territoire.",
-  },
-];
-
-function resolveJourneyLevel(points: number): PassportJourneyLevel {
-  let current = PASSPORT_JOURNEY_LEVELS[0]!;
-  for (const level of PASSPORT_JOURNEY_LEVELS) {
-    if (points >= level.threshold) {
-      current = level;
-    }
-  }
-  return current;
-}
-
-function resolveNextJourneyLevel(points: number): PassportJourneyLevel | null {
-  return PASSPORT_JOURNEY_LEVELS.find((level) => level.threshold > points) ?? null;
-}
-
 export function formatPassportPoints(points: number | null | undefined): string {
   const safe = typeof points === "number" && Number.isFinite(points) ? Math.max(0, points) : 0;
   return `${safe} pts`;
 }
 
-function buildPassportLevelView(
-  points: number,
-  options: {
-    pointsToNext?: number | null;
-    nextLevelLabel?: string | null;
-    backendTierLabel: string;
-  },
-): PassportLevelView {
-  const level = resolveJourneyLevel(points);
-  const nextLevel = resolveNextJourneyLevel(points);
-  const pointsToNext =
-    options.pointsToNext ?? (nextLevel ? Math.max(0, nextLevel.threshold - points) : null);
-
-  let progressPercent = 100;
-  if (nextLevel) {
-    const span = nextLevel.threshold - level.threshold;
-    progressPercent = span > 0 ? Math.min(100, Math.round(((points - level.threshold) / span) * 100)) : 0;
-  }
-
-  const nextLevelLabel = options.nextLevelLabel?.trim() || nextLevel?.label || null;
-
-  return {
-    level,
-    points,
-    nextLevel,
-    nextLevelLabel,
-    pointsToNext,
-    progressPercent,
-    backendTierLabel: options.backendTierLabel,
-  };
+/** Les six codes de tier du contrat (PRD-301 §2.1) — rien d’autre n’est un niveau. */
+export function isPassportTierCode(value: unknown): value is PassportTierCode {
+  return typeof value === "string" && Object.prototype.hasOwnProperty.call(PASSPORT_TIER_LABELS, value);
 }
 
-export function buildPassportLevelFromReputation(
-  points: number,
-  backendTierLabel = PASSPORT_TIER_LABELS.neo_arrivant,
-): PassportLevelView {
-  return buildPassportLevelView(points, { backendTierLabel });
+export function buildUnavailablePassportLevel(): PassportLevelView {
+  return { tierCode: null, currentLabel: PASSPORT_LEVEL_UNAVAILABLE_LABEL, nextLabel: null };
 }
 
+/**
+ * Seules transitions de niveau cohérentes — miroir des règles EXISTANTES du backend
+ * (`PassportLevelService.build_progression_hint`) : Basic → Silver, Néo-arrivant →
+ * Silver, Silver → Gold. Gold, Créateur·rice local·e et Business n'ont aucun niveau
+ * suivant : les statuts ne sont pas forcés dans l'échelle Basic → Silver → Gold.
+ */
+const PASSPORT_NEXT_TIER: Readonly<Record<PassportTierCode, PassportTierCode | null>> = {
+  basic: "silver",
+  neo_arrivant: "silver",
+  silver: "gold",
+  gold: null,
+  press_creator: null,
+  business: null,
+};
+
+/**
+ * Niveau depuis `/passport/me` : le tier porté ; le prochain tier n'est affiché que
+ * si l'API l'annonce ET qu'il correspond à la seule transition cohérente pour ce
+ * tier. Toute autre combinaison (incohérente, hors contrat, au-delà de Gold) est
+ * ignorée : aucun prochain niveau plutôt qu'un niveau faux.
+ */
 export function buildPassportLevel(passport: PassportMe): PassportLevelView {
-  const points =
-    passport.progression?.reputation_score ??
-    passport.reputation_score ??
-    0;
+  const tierCode = passport.tier?.code;
+  if (!isPassportTierCode(tierCode)) return buildUnavailablePassportLevel();
 
-  return buildPassportLevelView(points, {
-    pointsToNext: passport.progression?.points_to_next ?? null,
-    nextLevelLabel: passport.progression?.next_tier_label ?? null,
-    backendTierLabel: PASSPORT_TIER_LABELS[passport.tier.code] ?? passport.tier.name,
-  });
+  const announced = passport.progression?.next_tier_code;
+  const expected = PASSPORT_NEXT_TIER[tierCode];
+  const nextLabel = expected !== null && announced === expected ? PASSPORT_TIER_LABELS[expected] : null;
+
+  return { tierCode, currentLabel: PASSPORT_TIER_LABELS[tierCode], nextLabel };
+}
+
+/**
+ * Repli quand `/passport/me` manque (décision D3) : le tier du résumé
+ * `/me/passport` s’il est un code du contrat, SANS prochain niveau — aucune
+ * progression n’est déduite de ces données ; sinon « Niveau indisponible ».
+ * Aucun calcul depuis les points.
+ */
+export function buildPassportLevelFromSummaryTier(tier: string | null | undefined): PassportLevelView {
+  if (!isPassportTierCode(tier)) return buildUnavailablePassportLevel();
+  return { tierCode: tier, currentLabel: PASSPORT_TIER_LABELS[tier], nextLabel: null };
 }
 
 function countUniqueNeighborhoodSlugs(stamps: PassportStamp[]): number {
@@ -247,32 +186,6 @@ export function buildPassportAchievements(
       unavailable: false,
     },
   ];
-}
-
-export function buildPassportProgression(passport: PassportMe): PassportProgressionStep[] {
-  const points =
-    passport.progression?.reputation_score ??
-    passport.reputation_score ??
-    0;
-  const current = resolveJourneyLevel(points);
-  const currentIndex = PASSPORT_JOURNEY_LEVELS.findIndex((level) => level.id === current.id);
-
-  return PASSPORT_JOURNEY_LEVELS.map((level, index) => {
-    let state: PassportProgressionStepState = "locked";
-    if (index < currentIndex) {
-      state = "unlocked";
-    } else if (index === currentIndex) {
-      state = "active";
-    } else if (points >= level.threshold) {
-      state = "unlocked";
-    }
-
-    return {
-      level,
-      state,
-      pointsLabel: level.threshold === 0 ? "Départ" : `${level.threshold} pts`,
-    };
-  });
 }
 
 function latestStampAt(stamps: PassportStamp[]): string | null {

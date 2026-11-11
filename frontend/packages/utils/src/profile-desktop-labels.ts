@@ -24,8 +24,6 @@ export const PROFILE_DESKTOP_TAB_ABOUT = "À propos";
 export const PROFILE_DESKTOP_GLANCE_TITLE = "Votre vie locale en un coup d’œil";
 export const PROFILE_DESKTOP_GLANCE_PASSPORT = "Passport";
 export const PROFILE_DESKTOP_GLANCE_LEVEL = (level: string): string => `Niveau ${level}`;
-export const PROFILE_DESKTOP_GLANCE_STEPS = (done: number, total: number): string =>
-  `${done} étapes sur ${total}`;
 export const PROFILE_DESKTOP_GLANCE_PASSPORT_CTA = "Voir mon Passport";
 export const PROFILE_DESKTOP_GLANCE_TRIBE = "Tribu active";
 export const PROFILE_DESKTOP_GLANCE_TRIBE_EMPTY = "Aucune tribu pour l’instant";
@@ -76,8 +74,6 @@ export const PROFILE_DESKTOP_LOCAL_CTA = "Compléter mes informations";
 
 export const PROFILE_DESKTOP_PASSPORT_TITLE = "Mon Passport";
 export const PROFILE_DESKTOP_PASSPORT_CTA = "Ouvrir mon Passport";
-export const PROFILE_DESKTOP_PASSPORT_PROGRESS = (done: number, total: number): string =>
-  `${done} / ${total}`;
 
 export const PROFILE_DESKTOP_TRIBES_TITLE = "Mes tribus";
 export const PROFILE_DESKTOP_TRIBES_MEMBER = "Membre";

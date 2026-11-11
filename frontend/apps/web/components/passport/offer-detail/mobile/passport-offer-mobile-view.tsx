@@ -9,7 +9,6 @@ import { PassportOfferRelatedRail } from "@/components/passport/offer-detail/pas
 import { PassportOfferStatusCard } from "@/components/passport/offer-detail/passport-offer-status-card";
 import { PassportOfferValidationCard } from "@/components/passport/offer-detail/passport-offer-validation-card";
 import type { PartnerOfferPublic } from "@yunicity/types";
-import type { PassportDesktopSegmentProgress } from "@yunicity/utils";
 import {
   buildPartnerOfferMapHref,
   buildPassportOfferAboutCopy,
@@ -23,7 +22,6 @@ type PassportOfferMobileViewProps = {
   city: string;
   displayName: string;
   levelLabel: string;
-  segmentProgress: PassportDesktopSegmentProgress;
   qrPayload: string | null;
   qrLoading: boolean;
 };
@@ -34,7 +32,6 @@ export function PassportOfferMobileView({
   city,
   displayName,
   levelLabel,
-  segmentProgress,
   qrPayload,
   qrLoading,
 }: PassportOfferMobileViewProps) {
@@ -59,7 +56,6 @@ export function PassportOfferMobileView({
           city={city}
           displayName={displayName}
           levelLabel={levelLabel}
-          segmentProgress={segmentProgress}
           qrPayload={qrPayload}
           qrLoading={qrLoading}
         />

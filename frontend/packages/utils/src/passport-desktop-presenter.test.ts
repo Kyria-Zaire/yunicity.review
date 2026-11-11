@@ -4,7 +4,6 @@ import type { PartnerOfferPublic } from "@yunicity/types";
 
 import {
   filterPassportOffersTab,
-  formatPassportDesktopLevelName,
   formatPassportDesktopOfferAvailability,
   formatPassportDesktopPartnerLocation,
   isPartnerOfferFlash,
@@ -115,10 +114,9 @@ describe("passport desktop presenter", () => {
     }).map((item) => item.id)).toEqual(["food"]);
   });
 
-  it("resolves category tones, level names and flash featured offer", () => {
+  it("resolves category tones and flash featured offer", () => {
     expect(resolvePassportDesktopCategoryTone("Food")).toBe("text-orange-600");
     expect(resolvePassportDesktopCategoryTone("Bien-être")).toBe("text-emerald-600");
-    expect(formatPassportDesktopLevelName("Ambassadeur")).toBe("Ambassadeur local");
     expect(pickPassportDesktopFlashOffer([offer()], new Date("2026-08-30T10:00:00Z"))?.id).toBe(
       "o1",
     );

@@ -10,7 +10,7 @@ import {
   PassportOffersStatusHero,
 } from "@/components/passport/passport-offers-panels";
 import type { PartnerOfferPublic } from "@yunicity/types";
-import type { PassportDesktopSegmentProgress, PassportLevelView, PassportNavId } from "@yunicity/utils";
+import type { PassportLevelView, PassportNavId } from "@yunicity/utils";
 import {
   PASSPORT_DESKTOP_OFFERS_ALL_SUBTITLE,
   PASSPORT_DESKTOP_OFFERS_ALL_TITLE,
@@ -63,7 +63,6 @@ type PassportDesktopOffersTabProps = {
   onToggleSaved: (offerId: string) => void;
   displayName: string;
   levelView: PassportLevelView;
-  segmentProgress: PassportDesktopSegmentProgress;
   savedOffers: PartnerOfferPublic[];
   onOpenPassport: () => void;
   onViewAllSaved: () => void;
@@ -111,7 +110,6 @@ export function PassportDesktopOffersTab({
   onToggleSaved,
   displayName,
   levelView,
-  segmentProgress,
   savedOffers,
   onOpenPassport,
   onViewAllSaved,
@@ -188,7 +186,6 @@ export function PassportDesktopOffersTab({
         <PassportOffersStatusHero
           displayName={displayName}
           levelView={levelView}
-          segmentProgress={segmentProgress}
           onOpenPassport={onOpenPassport}
         />
       </div>

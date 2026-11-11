@@ -19,6 +19,7 @@ import {
   type PassportDerivedBadge,
   type PassportLevelView,
 } from "./passport-dashboard";
+import { PASSPORT_LEVEL_UNAVAILABLE_LABEL } from "./passport-level-labels";
 import { neighborhoodHref } from "./neighborhood-labels";
 import {
   PROFILE_PORTAL_ACTIVITY_BADGE,
@@ -575,7 +576,7 @@ export function formatProfileImpactLabel(
   if (percent <= 0) {
     return {
       primary: PROFILE_PORTAL_IMPACT_START,
-      secondary: levelView?.level.label ?? "Explorateur local",
+      secondary: levelView?.currentLabel ?? PASSPORT_LEVEL_UNAVAILABLE_LABEL,
       showPercent: false,
       percent: 0,
     };
@@ -583,7 +584,7 @@ export function formatProfileImpactLabel(
   if (percent >= 100) {
     return {
       primary: PROFILE_PORTAL_IMPACT_ADVANCING,
-      secondary: levelView?.level.label ?? "Palier actuel",
+      secondary: levelView?.currentLabel ?? PASSPORT_LEVEL_UNAVAILABLE_LABEL,
       showPercent: false,
       percent,
     };
@@ -704,18 +705,13 @@ export function buildProfileTribeCards(input: {
   });
 }
 
+/** Le tier Passport (PASSPORT-LEVEL-SCALE-01) — « Explorateur local » est un badge, pas un niveau. */
 export function resolveProfilePortalLevelTitle(levelView: PassportLevelView | null): string {
-  if (!levelView) return "Explorateur local";
-  return levelView.level.label;
+  return levelView?.currentLabel ?? PASSPORT_LEVEL_UNAVAILABLE_LABEL;
 }
 
 export function resolveProfilePortalHeroImage(profile: { banner_url: string | null }): string | null {
   return profile.banner_url?.trim() || null;
-}
-
-export function buildProfilePortalImpactPercent(levelView: PassportLevelView | null): number {
-  if (!levelView) return 0;
-  return Math.min(100, Math.max(0, levelView.progressPercent));
 }
 
 export function buildProfilePortalBadgeItems(input: {

@@ -3,16 +3,13 @@
 import { PassportBookletIcon } from "@/components/passport/passport-booklet-icon";
 import { PassportOfferQrDialog } from "@/components/passport/offer-detail/passport-offer-qr-dialog";
 import { usePassportQrImage } from "@/hooks/use-passport-qr-image";
-import type { PassportDesktopSegmentProgress } from "@yunicity/utils";
 import {
-  PASSPORT_DESKTOP_HERO_SEGMENT_LABEL,
   PASSPORT_OFFER_DETAIL_ELIGIBLE,
   PASSPORT_OFFER_DETAIL_HISTORY,
   PASSPORT_OFFER_DETAIL_QR_CAPTION,
   PASSPORT_OFFER_DETAIL_QR_CAPTION_SHORT,
   PASSPORT_OFFER_DETAIL_SHOW_QR,
   PASSPORT_OFFER_DETAIL_YOUR_PASSPORT,
-  formatPassportDesktopLevelName,
 } from "@yunicity/utils";
 import { Check } from "lucide-react";
 import Link from "next/link";
@@ -22,7 +19,6 @@ type PassportOfferStatusCardProps = {
   city: string;
   displayName: string;
   levelLabel: string;
-  segmentProgress: PassportDesktopSegmentProgress;
   qrPayload: string | null;
   qrLoading: boolean;
 };
@@ -31,7 +27,6 @@ export function PassportOfferStatusCard({
   city,
   displayName,
   levelLabel,
-  segmentProgress,
   qrPayload,
   qrLoading,
 }: PassportOfferStatusCardProps) {
@@ -54,26 +49,8 @@ export function PassportOfferStatusCard({
           </div>
           <div className="space-y-3 p-4">
             <div>
-              <p className="passport-offer-status-level-split text-base font-bold text-neutral-900">
-                {formatPassportDesktopLevelName(levelLabel)}
-              </p>
-              <p className="passport-offer-status-level-split mt-0.5 text-sm text-neutral-500">
-                {PASSPORT_DESKTOP_HERO_SEGMENT_LABEL(segmentProgress.completed, segmentProgress.total)}
-              </p>
-              <p className="passport-offer-status-level-mobile text-base font-bold text-neutral-900">
-                {formatPassportDesktopLevelName(levelLabel)} ·{" "}
-                {PASSPORT_DESKTOP_HERO_SEGMENT_LABEL(segmentProgress.completed, segmentProgress.total)}
-              </p>
-              <div className="mt-3 flex gap-1" aria-hidden>
-                {Array.from({ length: segmentProgress.total }).map((_, index) => (
-                  <span
-                    key={index}
-                    className={`h-1.5 flex-1 rounded-full ${
-                      index < segmentProgress.completed ? "bg-yunicity-primary" : "bg-neutral-200"
-                    }`}
-                  />
-                ))}
-              </div>
+              {/* PASSPORT-LEVEL-SCALE-01 : le tier Passport, sans jauge ni compteur d'étapes. */}
+              <p className="text-base font-bold text-neutral-900">{levelLabel}</p>
             </div>
           </div>
         </div>

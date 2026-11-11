@@ -4,9 +4,8 @@ import { CulturalImage } from "@/components/culture/cultural-image";
 import { PassportBookletIcon } from "@/components/passport/passport-booklet-icon";
 import { LEGAL_ROUTES } from "@/lib/legal/legal-document-contract";
 import type { PartnerOfferPublic } from "@yunicity/types";
-import type { PassportDesktopSegmentProgress, PassportLevelView } from "@yunicity/utils";
+import type { PassportLevelView } from "@yunicity/utils";
 import {
-  PASSPORT_DESKTOP_HERO_SEGMENT_LABEL,
   PASSPORT_DESKTOP_OFFERS_CONDITIONS_BODY,
   PASSPORT_DESKTOP_OFFERS_CONDITIONS_CTA,
   PASSPORT_DESKTOP_OFFERS_CONDITIONS_TITLE,
@@ -19,7 +18,6 @@ import {
   PASSPORT_DESKTOP_SAVED_TITLE,
   PASSPORT_DESKTOP_SAVED_VIEW_ALL,
   buildPartnerOfferHref,
-  formatPassportDesktopLevelName,
   partnerOfferValueLabel,
   resolvePartnerImage,
 } from "@yunicity/utils";
@@ -30,21 +28,15 @@ import { useState, type ReactNode } from "react";
 type PassportOffersStatusHeroProps = {
   displayName: string;
   levelView: PassportLevelView;
-  segmentProgress: PassportDesktopSegmentProgress;
   onOpenPassport: () => void;
 };
 
 export function PassportOffersStatusHero({
   displayName,
   levelView,
-  segmentProgress,
   onOpenPassport,
 }: PassportOffersStatusHeroProps) {
-  const currentLabel = formatPassportDesktopLevelName(levelView.level.label);
-  const progressLabel = PASSPORT_DESKTOP_HERO_SEGMENT_LABEL(
-    segmentProgress.completed,
-    segmentProgress.total,
-  );
+  const { currentLabel } = levelView;
 
   return (
     <section
@@ -58,24 +50,11 @@ export function PassportOffersStatusHero({
         </div>
         <div className="min-w-0">
           <p className="truncate text-sm font-bold sm:block">
-            <span className="sm:hidden">
-              {currentLabel} · {progressLabel}
-            </span>
+            <span className="sm:hidden">{currentLabel}</span>
             <span className="hidden sm:inline">{displayName}</span>
           </p>
           <p className="hidden truncate text-xs text-white/80 sm:block">{currentLabel}</p>
         </div>
-      </div>
-
-      <div className="mt-3 flex gap-1 sm:hidden" aria-hidden>
-        {Array.from({ length: segmentProgress.total }).map((_, index) => (
-          <span
-            key={index}
-            className={`h-1.5 flex-1 rounded-full ${
-              index < segmentProgress.completed ? "bg-white" : "bg-white/30"
-            }`}
-          />
-        ))}
       </div>
 
       <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold sm:mt-0 sm:shrink-0">

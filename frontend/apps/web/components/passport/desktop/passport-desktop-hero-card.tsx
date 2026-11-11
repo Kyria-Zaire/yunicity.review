@@ -1,6 +1,6 @@
 "use client";
 
-import type { PassportDesktopSegmentProgress, PassportLevelView } from "@yunicity/utils";
+import type { PassportLevelView } from "@yunicity/utils";
 import {
   PASSPORT_DESKTOP_HERO_HISTORY_CTA,
   PASSPORT_DESKTOP_HERO_KICKER,
@@ -8,8 +8,6 @@ import {
   PASSPORT_DESKTOP_HERO_NEXT_LEVEL,
   PASSPORT_DESKTOP_HERO_PROGRESS_HINT,
   PASSPORT_DESKTOP_HERO_SCAN_CTA,
-  PASSPORT_DESKTOP_HERO_SEGMENT_LABEL,
-  formatPassportDesktopLevelName,
 } from "@yunicity/utils";
 import { PassportBookletMark } from "@/components/passport/passport-booklet-icon";
 import { History, QrCode, UserRound } from "lucide-react";
@@ -22,7 +20,6 @@ type PassportDesktopHeroCardProps = {
   city: string;
   displayName: string;
   levelView: PassportLevelView;
-  segmentProgress: PassportDesktopSegmentProgress;
   onOpenHistory: () => void;
   /**
    * Défilement vers le panneau QR VISIBLE. Le lien garde sa sémantique et son
@@ -37,14 +34,12 @@ export function PassportDesktopHeroCard({
   city,
   displayName,
   levelView,
-  segmentProgress,
   onOpenHistory,
   onOpenQr,
 }: PassportDesktopHeroCardProps) {
-  const nextLabel = formatPassportDesktopLevelName(
-    levelView.nextLevelLabel ?? levelView.nextLevel?.label ?? "",
-  );
-  const currentLabel = formatPassportDesktopLevelName(levelView.level.label);
+  // PASSPORT-LEVEL-SCALE-01 : le niveau est le tier Passport ; pas de jauge ni de
+  // compteur d'étapes (décision D1) ; aucun prochain niveau au-delà de Gold.
+  const { currentLabel, nextLabel } = levelView;
 
   return (
     /*
@@ -92,23 +87,10 @@ export function PassportDesktopHeroCard({
           </p>
           <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">{displayName}</h2>
           <p className="mt-1 text-sm text-white/85">
-            {PASSPORT_DESKTOP_HERO_LEVEL_PREFIX} · {currentLabel}
+            {levelView.tierCode ? `${PASSPORT_DESKTOP_HERO_LEVEL_PREFIX} · ${currentLabel}` : currentLabel}
           </p>
 
-          <div className="mt-5 max-w-md">
-            <div className="flex gap-1.5" aria-hidden>
-              {Array.from({ length: segmentProgress.total }).map((_, index) => (
-                <span
-                  key={index}
-                  className={`h-2.5 flex-1 rounded-full ${index < segmentProgress.completed ? "bg-white" : "bg-white/30"}`}
-                />
-              ))}
-            </div>
-            <p className="mt-2 text-xs font-medium text-white/90">
-              {PASSPORT_DESKTOP_HERO_SEGMENT_LABEL(segmentProgress.completed, segmentProgress.total)}
-            </p>
-            <p className="mt-1 text-[11px] text-white/70">{PASSPORT_DESKTOP_HERO_PROGRESS_HINT}</p>
-          </div>
+          <p className="mt-5 max-w-md text-[11px] text-white/70">{PASSPORT_DESKTOP_HERO_PROGRESS_HINT}</p>
         </div>
 
         <div className="col-span-2 flex flex-col justify-end gap-4 md:col-span-1">

@@ -10,12 +10,11 @@ import {
   PROFILE_DESKTOP_GLANCE_OUTING_EXPLORE,
   PROFILE_DESKTOP_GLANCE_PASSPORT,
   PROFILE_DESKTOP_GLANCE_PASSPORT_CTA,
-  PROFILE_DESKTOP_GLANCE_STEPS,
   PROFILE_DESKTOP_GLANCE_TRIBE,
   PROFILE_DESKTOP_GLANCE_TRIBE_CTA,
   PROFILE_DESKTOP_GLANCE_TRIBE_EMPTY,
   PROFILE_DESKTOP_GLANCE_TRIBE_EXPLORE,
-  resolveProfileDesktopPassportSteps,
+  resolveProfilePassportLevelLabel,
 } from "@yunicity/utils";
 import { ArrowRight, CalendarDays, Stamp, Users } from "lucide-react";
 import Link from "next/link";
@@ -34,7 +33,10 @@ export function ProfileDesktopGlance({
   nextOuting,
   city,
 }: ProfileDesktopGlanceProps) {
-  const steps = resolveProfileDesktopPassportSteps(levelView);
+  // PASSPORT-LEVEL-SCALE-01 : le tier Passport ; « Niveau » n'est préfixé que si un tier
+  // est connu (sinon « Niveau indisponible » tel quel). Ni barre ni compteur (D1).
+  const levelLabel = resolveProfilePassportLevelLabel(levelView);
+  const levelLine = levelView?.tierCode ? PROFILE_DESKTOP_GLANCE_LEVEL(levelLabel) : levelLabel;
 
   return (
     <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-3" data-profile-desktop-glance="">
@@ -46,16 +48,7 @@ export function ProfileDesktopGlance({
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-neutral-500">{PROFILE_DESKTOP_GLANCE_PASSPORT}</p>
             <p className="mt-0.5 text-sm font-bold leading-snug text-neutral-900">
-              {PROFILE_DESKTOP_GLANCE_LEVEL(steps.levelLabel)}
-            </p>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-neutral-200/80">
-              <div
-                className="h-full rounded-full bg-yunicity-primary transition-[width]"
-                style={{ width: `${steps.percent}%` }}
-              />
-            </div>
-            <p className="mt-1 text-[11px] text-neutral-500">
-              {PROFILE_DESKTOP_GLANCE_STEPS(steps.done, steps.total)}
+              {levelLine}
             </p>
             <Link
               href="/passport"

@@ -36,8 +36,6 @@ export const PASSPORT_DESKTOP_HERO_PROGRESS_HINT =
 export const PASSPORT_DESKTOP_HERO_NEXT_LEVEL = "Prochain niveau";
 export const PASSPORT_DESKTOP_HERO_SCAN_CTA = "Scanner un QR code";
 export const PASSPORT_DESKTOP_HERO_HISTORY_CTA = "Voir mon historique";
-export const PASSPORT_DESKTOP_HERO_SEGMENT_LABEL = (completed: number, total: number) =>
-  `${completed} étapes sur ${total}`;
 
 export const PASSPORT_DESKTOP_NEXT_STEPS_TITLE = "Vos prochaines étapes";
 export const PASSPORT_DESKTOP_NEXT_STEP_TODO = "À faire";

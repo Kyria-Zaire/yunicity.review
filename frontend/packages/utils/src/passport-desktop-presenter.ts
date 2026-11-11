@@ -1,9 +1,5 @@
 import type { PartnerOfferPublic, PassportStamp } from "@yunicity/types";
 
-import {
-  PASSPORT_JOURNEY_LEVELS,
-  type PassportLevelView,
-} from "./passport-dashboard";
 import type { PartnerPublic } from "@yunicity/types";
 
 import {
@@ -22,17 +18,7 @@ import {
   PASSPORT_OFFER_DETAIL_USAGE_ON_SITE,
 } from "./passport-desktop-labels";
 import { isPartnerOfferActive } from "./partner-offer-public";
-import {
-  formatPassportMobileActivityDate,
-  resolvePassportMobileLevelNumber,
-} from "./passport-mobile-presenter";
-
-export type PassportDesktopSegmentProgress = {
-  completed: number;
-  total: number;
-  remaining: number;
-  segmentLabel: string;
-};
+import { formatPassportMobileActivityDate } from "./passport-mobile-presenter";
 
 export type PassportDesktopNextStep = {
   id: (typeof PASSPORT_DESKTOP_NEXT_STEPS)[number]["id"];
@@ -50,21 +36,6 @@ export type PassportDesktopActivityItem = {
   dateLabel: string;
   tone: "blue" | "green" | "orange";
 };
-
-const JOURNEY_TOTAL = PASSPORT_JOURNEY_LEVELS.length;
-
-export function buildPassportDesktopSegmentProgress(
-  levelView: PassportLevelView,
-): PassportDesktopSegmentProgress {
-  const completed = Math.min(JOURNEY_TOTAL, resolvePassportMobileLevelNumber(levelView));
-  const remaining = Math.max(0, JOURNEY_TOTAL - completed);
-  return {
-    completed,
-    total: JOURNEY_TOTAL,
-    remaining,
-    segmentLabel: `${completed} étapes sur ${JOURNEY_TOTAL}`,
-  };
-}
 
 export function buildPassportDesktopNextSteps(input: {
   stampsCount: number;
@@ -182,11 +153,6 @@ export function formatPassportDesktopPartnerLocation(
   const street = partner.address?.split(",")[0]?.trim();
   if (street) return street;
   return PASSPORT_DESKTOP_PARTNERS_LOCATION;
-}
-
-export function formatPassportDesktopLevelName(label: string): string {
-  if (label.trim().toLowerCase() === "ambassadeur") return "Ambassadeur local";
-  return label;
 }
 
 export function resolvePassportOfferCategoryBadge(

@@ -3,20 +3,17 @@
 import { ProfileAvatar } from "@/components/profile-avatar";
 import type { PassportMe, PassportOverviewResponse, ProfileMe } from "@yunicity/types";
 import {
-  PASSPORT_MOBILE_LEVEL_PREFIX,
   PASSPORT_MOBILE_QR_ERROR,
   PASSPORT_MOBILE_QR_LABEL,
   PASSPORT_MOBILE_QR_LOADING,
   PASSPORT_MOBILE_STAT_BADGES,
   PASSPORT_MOBILE_STAT_OFFERS,
   PASSPORT_MOBILE_STAT_USES,
-  PASSPORT_MOBILE_STAT_XP,
   PASSPORT_MOBILE_STATUS_ACTIVE,
   buildPassportLevel,
+  buildPassportLevelFromSummaryTier,
   formatPassportMobileMemberSince,
   formatProfileMobileStatCount,
-  resolvePassportMobileLevelNumber,
-  resolveProfileMobileLevelXpLabel,
 } from "@yunicity/utils";
 import { Star } from "lucide-react";
 import { useMemo } from "react";
@@ -42,26 +39,17 @@ export function PassportMobileHeroCard({
   qrLoading,
   offersCount,
 }: PassportMobileHeroCardProps) {
+  // PASSPORT-LEVEL-SCALE-01 (D4) : le tier Passport remplace « Niveau N » et les XP.
   const levelView = useMemo(
-    () => (passportMe ? buildPassportLevel(passportMe) : null),
-    [passportMe],
+    () => (passportMe ? buildPassportLevel(passportMe) : buildPassportLevelFromSummaryTier(overview.summary.passport_tier)),
+    [overview.summary.passport_tier, passportMe],
   );
-
-  const levelNumber = levelView ? resolvePassportMobileLevelNumber(levelView) : 1;
-  const xpLabel = levelView
-    ? resolveProfileMobileLevelXpLabel(levelView.points, levelView.nextLevel?.threshold ?? null)
-    : `${overview.reputation.total_points} XP`;
-  const progressPercent = levelView?.progressPercent ?? 0;
 
   const memberSince = formatPassportMobileMemberSince(
     passportMe?.activated_at ?? passportMe?.created_at ?? overview.passport.created_at,
   );
 
   const stats = [
-    {
-      label: PASSPORT_MOBILE_STAT_XP,
-      value: formatProfileMobileStatCount(levelView?.points ?? overview.reputation.total_points),
-    },
     {
       label: PASSPORT_MOBILE_STAT_BADGES,
       value: formatProfileMobileStatCount(overview.summary.earned_badges),
@@ -113,18 +101,7 @@ export function PassportMobileHeroCard({
           <div className="mt-4">
             <div className="flex items-center gap-1.5 text-sm font-semibold text-yunicity-premium-accent">
               <Star className="h-4 w-4 fill-amber-300 text-amber-300" aria-hidden />
-              {PASSPORT_MOBILE_LEVEL_PREFIX} {levelNumber}
-            </div>
-            <div className="mt-2">
-              <div className="mb-1 flex items-center justify-between text-[11px] text-yunicity-premium-fg/70">
-                <span>{xpLabel}</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-yunicity-premium-fg/15">
-                <div
-                  className="h-full rounded-full bg-yunicity-primary transition-[width]"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
+              {levelView.currentLabel}
             </div>
           </div>
         </div>

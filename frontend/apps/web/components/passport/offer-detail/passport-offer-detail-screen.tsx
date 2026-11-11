@@ -14,9 +14,8 @@ import {
   PASSPORT_ACTIVATE_TITLE,
   PASSPORT_OFFER_DETAIL_BACK,
   PASSPORT_OFFER_DETAIL_NOT_FOUND,
-  buildPassportDesktopSegmentProgress,
   buildPassportLevel,
-  buildPassportLevelFromReputation,
+  buildPassportLevelFromSummaryTier,
 } from "@yunicity/utils";
 import Link from "next/link";
 import { useMemo } from "react";
@@ -46,19 +45,12 @@ export function PassportOfferDetailScreen({ offerId }: PassportOfferDetailScreen
     displayName,
   } = usePassportOfferDetail(offerId);
 
+  // PASSPORT-LEVEL-SCALE-01 : même règle que la page Passport (repli D3, aucun score).
   const levelView = useMemo(() => {
     if (!overview) return null;
     if (extras.passportMe) return buildPassportLevel(extras.passportMe);
-    return buildPassportLevelFromReputation(
-      overview.reputation.total_points,
-      overview.summary.passport_tier ?? "Citoyen",
-    );
+    return buildPassportLevelFromSummaryTier(overview.summary.passport_tier);
   }, [extras.passportMe, overview]);
-
-  const segmentProgress = useMemo(
-    () => (levelView ? buildPassportDesktopSegmentProgress(levelView) : null),
-    [levelView],
-  );
 
   const activationCard = (
     <div className="mx-auto max-w-lg rounded-3xl border border-neutral-200/90 bg-white p-8 shadow-sm">
@@ -95,7 +87,7 @@ export function PassportOfferDetailScreen({ offerId }: PassportOfferDetailScreen
         </div>
       ) : needsActivation || !overview || !badges || !challenges || !profile ? (
         <div className="px-4 py-8 sm:px-6">{activationCard}</div>
-      ) : offersLoading || !segmentProgress || !levelView ? (
+      ) : offersLoading || !levelView ? (
         <div className="px-4 py-8 sm:px-6">
           <PassportLoadingState />
         </div>
@@ -113,8 +105,7 @@ export function PassportOfferDetailScreen({ offerId }: PassportOfferDetailScreen
             related={related}
             city={city}
             displayName={displayName}
-            levelLabel={levelView.level.label}
-            segmentProgress={segmentProgress}
+            levelLabel={levelView.currentLabel}
             qrPayload={extras.qrPayload}
             qrLoading={extras.isLoading}
           />
@@ -123,8 +114,7 @@ export function PassportOfferDetailScreen({ offerId }: PassportOfferDetailScreen
             related={related}
             city={city}
             displayName={displayName}
-            levelLabel={levelView.level.label}
-            segmentProgress={segmentProgress}
+            levelLabel={levelView.currentLabel}
             qrPayload={extras.qrPayload}
             qrLoading={extras.isLoading}
           />

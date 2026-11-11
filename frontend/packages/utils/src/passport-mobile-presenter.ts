@@ -1,14 +1,7 @@
 import type { PartnerOfferPublic, PassportStamp } from "@yunicity/types";
 
-import { PASSPORT_JOURNEY_LEVELS, type PassportLevelView } from "./passport-dashboard";
 import { PASSPORT_MOBILE_MEMBER_SINCE_PREFIX } from "./passport-mobile-labels";
 import { isPartnerOfferActive } from "./partner-offer-public";
-
-/** Index 1-based du palier parcours (ex. Habitant → 1). */
-export function resolvePassportMobileLevelNumber(levelView: PassportLevelView): number {
-  const index = PASSPORT_JOURNEY_LEVELS.findIndex((level) => level.id === levelView.level.id);
-  return index >= 0 ? index + 1 : 1;
-}
 
 export function formatPassportMobileMemberSince(iso: string | null | undefined): string | null {
   if (!iso) return null;

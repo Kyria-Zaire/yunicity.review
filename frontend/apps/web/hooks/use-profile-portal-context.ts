@@ -19,11 +19,9 @@ import {
   buildProfileLocalJourneyItems,
   buildProfileNeighborhoodCards,
   buildProfilePortalBadgeItems,
-  buildProfilePortalImpactPercent,
   buildProfilePortalStats,
   buildProfileTribeCards,
   filterProfileUserFeedPosts,
-  formatProfileImpactLabel,
   resolveProfilePortalLevelTitle,
 } from "@yunicity/utils";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -201,7 +199,6 @@ export function useProfilePortalContext() {
   );
 
   const levelTitle = useMemo(() => resolveProfilePortalLevelTitle(levelView), [levelView]);
-  const impactPercent = useMemo(() => buildProfilePortalImpactPercent(levelView), [levelView]);
 
   const badges = useMemo(
     () =>
@@ -244,11 +241,6 @@ export function useProfilePortalContext() {
     [city, levelTitle, stamps.length, tribes],
   );
 
-  const impactLabel = useMemo(
-    () => formatProfileImpactLabel(impactPercent, levelView),
-    [impactPercent, levelView],
-  );
-
   return {
     loading,
     error,
@@ -257,8 +249,6 @@ export function useProfilePortalContext() {
     city,
     levelView,
     levelTitle,
-    impactPercent,
-    impactLabel,
     heroSubtitle,
     stats,
     activityTimeline,

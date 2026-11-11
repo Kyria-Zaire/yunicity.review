@@ -3,13 +3,12 @@ import { describe, expect, it } from "vitest";
 import type { LocalEvent, Tribe } from "@yunicity/types";
 
 import type { PassportLevelView } from "./passport-dashboard";
-import { PASSPORT_JOURNEY_LEVELS } from "./passport-dashboard";
 import {
   buildProfileDesktopTribeRailItems,
   buildProfilePublicTribeRailItems,
   formatProfileDesktopMemberSince,
   resolveProfileDesktopNextOuting,
-  resolveProfileDesktopPassportSteps,
+  resolveProfilePassportLevelLabel,
   resolveProfileDesktopVisibilityLabel,
 } from "./profile-desktop-presenter";
 
@@ -45,20 +44,10 @@ describe("profile-desktop-presenter", () => {
     expect(resolveProfileDesktopVisibilityLabel("private")).toBe("Profil privé");
   });
 
-  it("resolveProfileDesktopPassportSteps uses journey levels", () => {
-    const levelView: PassportLevelView = {
-      level: PASSPORT_JOURNEY_LEVELS[2]!,
-      points: 30,
-      nextLevel: PASSPORT_JOURNEY_LEVELS[3]!,
-      nextLevelLabel: PASSPORT_JOURNEY_LEVELS[3]!.label,
-      pointsToNext: 20,
-      progressPercent: 40,
-      backendTierLabel: "Explorateur",
-    };
-    const steps = resolveProfileDesktopPassportSteps(levelView);
-    expect(steps.total).toBe(5);
-    expect(steps.done).toBe(3);
-    expect(steps.levelLabel).toBe("Explorateur");
+  it("resolveProfilePassportLevelLabel shows the Passport tier, or unavailable", () => {
+    const levelView: PassportLevelView = { tierCode: "silver", currentLabel: "Silver", nextLabel: "Gold" };
+    expect(resolveProfilePassportLevelLabel(levelView)).toBe("Silver");
+    expect(resolveProfilePassportLevelLabel(null)).toBe("Niveau indisponible");
   });
 
   it("buildProfilePublicTribeRailItems maps public tribes as member", () => {

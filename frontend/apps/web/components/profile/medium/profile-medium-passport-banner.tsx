@@ -4,7 +4,7 @@ import type { PassportLevelView } from "@yunicity/utils";
 import {
   PROFILE_MEDIUM_PASSPORT_BANNER_CTA,
   PROFILE_MEDIUM_PASSPORT_BANNER_TITLE,
-  resolveProfileDesktopPassportSteps,
+  resolveProfilePassportLevelLabel,
 } from "@yunicity/utils";
 import { Globe2 } from "lucide-react";
 import Link from "next/link";
@@ -15,8 +15,8 @@ type ProfileMediumPassportBannerProps = {
 
 /** Bannière Passport bleue — maquette profil medium. */
 export function ProfileMediumPassportBanner({ levelView }: ProfileMediumPassportBannerProps) {
-  const steps = resolveProfileDesktopPassportSteps(levelView);
-  const segmentCount = 5;
+  // PASSPORT-LEVEL-SCALE-01 : le tier Passport, sans segments ni compteur (D1).
+  const levelLabel = resolveProfilePassportLevelLabel(levelView);
 
   return (
     <section
@@ -31,22 +31,7 @@ export function ProfileMediumPassportBanner({ levelView }: ProfileMediumPassport
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-sm text-white/90">{PROFILE_MEDIUM_PASSPORT_BANNER_TITLE}</p>
-            <p className="mt-0.5 text-xl font-bold tracking-tight">{steps.levelLabel}</p>
-            <div className="mt-3 flex items-center gap-3">
-              <span className="text-sm font-semibold text-white/95">
-                {steps.done} / {steps.total}
-              </span>
-              <div className="flex min-w-0 flex-1 gap-1" aria-hidden>
-                {Array.from({ length: segmentCount }, (_, index) => (
-                  <span
-                    key={index}
-                    className={`h-2 min-w-0 flex-1 rounded-full ${
-                      index < steps.done ? "bg-white" : "bg-white/25"
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
+            <p className="mt-0.5 text-xl font-bold tracking-tight">{levelLabel}</p>
           </div>
         </div>
         <Link

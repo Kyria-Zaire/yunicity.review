@@ -31,11 +31,10 @@ import {
   buildPassportDesktopActivityItems,
   buildPassportDesktopNextSteps,
   buildPassportDesktopSavedOfferPreview,
-  buildPassportDesktopSegmentProgress,
   pickPassportDesktopFlashOffer,
   filterPassportOffersTab,
   buildPassportLevel,
-  buildPassportLevelFromReputation,
+  buildPassportLevelFromSummaryTier,
 } from "@yunicity/utils";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -103,17 +102,12 @@ export function PassportDesktopView({
   const [savedOnly, setSavedOnly] = useState(false);
   const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set());
 
-  const levelView = useMemo(() => {
-    if (passportMe) return buildPassportLevel(passportMe);
-    return buildPassportLevelFromReputation(
-      overview.reputation.total_points,
-      overview.summary.passport_tier ?? "Citoyen",
-    );
-  }, [overview.reputation.total_points, overview.summary.passport_tier, passportMe]);
-
-  const segmentProgress = useMemo(
-    () => buildPassportDesktopSegmentProgress(levelView),
-    [levelView],
+  // PASSPORT-LEVEL-SCALE-01 : le tier de /passport/me ; à défaut (décision D3), le tier du
+  // résumé s'il est reconnu, sans prochain niveau ; sinon « Niveau indisponible ».
+  // Aucun calcul depuis les points.
+  const levelView = useMemo(
+    () => (passportMe ? buildPassportLevel(passportMe) : buildPassportLevelFromSummaryTier(overview.summary.passport_tier)),
+    [overview.summary.passport_tier, passportMe],
   );
 
   const nextSteps = useMemo(
@@ -282,7 +276,6 @@ export function PassportDesktopView({
             onToggleSaved={toggleSaved}
             displayName={displayName}
             levelView={levelView}
-            segmentProgress={segmentProgress}
             savedOffers={savedOffers}
             onOpenPassport={() => goToTab("overview")}
             onViewAllSaved={() => {
@@ -296,7 +289,6 @@ export function PassportDesktopView({
               city={city}
               displayName={displayName}
               levelView={levelView}
-              segmentProgress={segmentProgress}
               onOpenHistory={() => scrollTo("passport-desktop-history", "history")}
               onOpenQr={() => ouvrirAncre("passport-desktop-qr")}
             />
@@ -307,8 +299,6 @@ export function PassportDesktopView({
                 city={city}
                 qrPayload={qrPayload}
                 qrLoading={qrLoading}
-                segmentProgress={segmentProgress}
-                onOpenProgress={() => scrollTo("passport-desktop-how", "overview")}
               />
             </div>
 
@@ -338,7 +328,6 @@ export function PassportDesktopView({
           <PassportDesktopOffersSidebar
             displayName={displayName}
             levelView={levelView}
-            segmentProgress={segmentProgress}
             savedOffers={savedOffers}
             onOpenPassport={() => goToTab("overview")}
             onViewAllSaved={() => {
@@ -352,11 +341,9 @@ export function PassportDesktopView({
             city={city}
             qrPayload={qrPayload}
             qrLoading={qrLoading}
-            segmentProgress={segmentProgress}
             savedOffers={savedOffers}
             activityItems={activityItems}
             onOpenHistory={() => scrollTo("passport-desktop-history", "history")}
-            onOpenProgress={() => scrollTo("passport-desktop-how", "overview")}
           />
         )}
       </div>

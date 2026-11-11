@@ -18,7 +18,6 @@ import {
   PROFILE_DESKTOP_LOCAL_TITLE,
   PROFILE_DESKTOP_NEIGHBORHOOD_UNDEFINED,
   PROFILE_DESKTOP_PASSPORT_CTA,
-  PROFILE_DESKTOP_PASSPORT_PROGRESS,
   PROFILE_DESKTOP_PASSPORT_TITLE,
   PROFILE_DESKTOP_PRIVACY_ACCOUNT,
   PROFILE_DESKTOP_PRIVACY_BLOCKED,
@@ -30,7 +29,7 @@ import {
   PROFILE_DESKTOP_TRIBES_MEMBER,
   PROFILE_DESKTOP_TRIBES_PENDING,
   PROFILE_DESKTOP_TRIBES_TITLE,
-  resolveProfileDesktopPassportSteps,
+  resolveProfilePassportLevelLabel,
 } from "@yunicity/utils";
 import {
   CheckCircle2,
@@ -77,7 +76,7 @@ export function ProfileDesktopRail({
   contributionsLoading,
   city,
 }: ProfileDesktopRailProps) {
-  const steps = resolveProfileDesktopPassportSteps(levelView);
+  const levelLabel = resolveProfilePassportLevelLabel(levelView);
   const interestsSet = profile.interests.length > 0;
   const visibleContribs = contributions.slice(0, 3);
 
@@ -127,16 +126,7 @@ export function ProfileDesktopRail({
           </span>
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-bold">{PROFILE_DESKTOP_PASSPORT_TITLE}</h2>
-            <p className="text-sm text-white/90">{steps.levelLabel}</p>
-            <div className="mt-2.5 flex items-center justify-between gap-2 text-xs font-medium text-white/90">
-              <span>{PROFILE_DESKTOP_PASSPORT_PROGRESS(steps.done, steps.total)}</span>
-            </div>
-            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/25">
-              <div
-                className="h-full rounded-full bg-white transition-[width]"
-                style={{ width: `${steps.percent}%` }}
-              />
-            </div>
+            <p className="text-sm text-white/90">{levelLabel}</p>
           </div>
         </div>
         <Link

@@ -3,7 +3,6 @@
 import { PassportAchievementsRow } from "@/components/passport/passport-achievements-row";
 import { PassportDashboardHero } from "@/components/passport/passport-dashboard-hero";
 import { PassportInternalSidebar } from "@/components/passport/passport-internal-sidebar";
-import { PassportProgressionTrack } from "@/components/passport/passport-progression-track";
 import { PassportRecentBadges } from "@/components/passport/passport-recent-badges";
 import { PassportAppShell } from "@/components/passport/passport-app-shell";
 import { PassportTipsAside } from "@/components/layout/web-page-asides";
@@ -85,10 +84,11 @@ export function PassportDashboardScreen() {
                 <PassportDashboardHero
                   levelView={ctx.levelView}
                   displayName={displayName}
+                  reputationPoints={ctx.passport.progression?.reputation_score ?? ctx.passport.reputation_score ?? 0}
+                  pointsToNext={ctx.passport.progression?.points_to_next ?? null}
                   onScrollProgression={() => scrollTo("passport-progression")}
                 />
                 <PassportAchievementsRow items={ctx.achievements} />
-                <PassportProgressionTrack steps={ctx.progression} />
                 <PassportRecentBadges badges={ctx.badges} />
                 <PassportPartnersPanel partners={ctx.featuredPartners} offers={ctx.offers} />
                 <PassportPartnerOffersSection offers={ctx.offers} />

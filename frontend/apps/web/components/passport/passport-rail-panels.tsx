@@ -4,15 +4,11 @@ import { CulturalImage } from "@/components/culture/cultural-image";
 import { PassportBookletIcon } from "@/components/passport/passport-booklet-icon";
 import { usePassportQrImage } from "@/hooks/use-passport-qr-image";
 import type { PartnerOfferPublic } from "@yunicity/types";
-import type { PassportDesktopActivityItem, PassportDesktopSegmentProgress } from "@yunicity/utils";
+import type { PassportDesktopActivityItem } from "@yunicity/utils";
 import {
   PASSPORT_DESKTOP_ACTIVITY_EMPTY,
   PASSPORT_DESKTOP_ACTIVITY_TITLE,
   PASSPORT_DESKTOP_ACTIVITY_VIEW_ALL,
-  PASSPORT_DESKTOP_PROGRESS_CTA,
-  PASSPORT_DESKTOP_PROGRESS_RATIO,
-  PASSPORT_DESKTOP_PROGRESS_REMAINING,
-  PASSPORT_DESKTOP_PROGRESS_TITLE,
   PASSPORT_DESKTOP_QR_ERROR,
   PASSPORT_DESKTOP_QR_EXPAND,
   PASSPORT_DESKTOP_QR_HINT,
@@ -188,52 +184,6 @@ export function PassportQrPanel({
         </div>
       ) : null}
     </>
-  );
-}
-
-type PassportProgressPanelProps = {
-  segmentProgress: PassportDesktopSegmentProgress;
-  onOpenProgress: () => void;
-  variant?: PassportPanelVariant;
-};
-
-export function PassportProgressPanel({
-  segmentProgress,
-  onOpenProgress,
-  variant = "rail",
-}: PassportProgressPanelProps) {
-  return (
-    <section
-      className="feed-desktop-surface p-4"
-      data-passport-anchor={panelAnchor("progress")}
-      aria-labelledby={panelId(variant, "progress-title")}
-    >
-      <h2 id={panelId(variant, "progress-title")} className="text-sm font-bold text-neutral-900">
-        {PASSPORT_DESKTOP_PROGRESS_TITLE}
-      </h2>
-      <p className="mt-3 text-3xl font-bold tabular-nums text-neutral-900">
-        {PASSPORT_DESKTOP_PROGRESS_RATIO(segmentProgress.completed, segmentProgress.total)}
-      </p>
-      <div className="mt-3 flex gap-1">
-        {Array.from({ length: segmentProgress.total }).map((_, index) => (
-          <span
-            key={index}
-            className={`h-2 flex-1 rounded-full ${index < segmentProgress.completed ? "bg-yunicity-primary" : "bg-neutral-200"}`}
-            aria-hidden
-          />
-        ))}
-      </div>
-      <p className="mt-3 text-xs leading-relaxed text-neutral-600">
-        {PASSPORT_DESKTOP_PROGRESS_REMAINING(segmentProgress.remaining)}
-      </p>
-      <button
-        type="button"
-        onClick={onOpenProgress}
-        className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-yunicity-primary/30 px-4 py-2.5 text-sm font-semibold text-yunicity-primary transition hover:bg-[#EEF0FF]"
-      >
-        {PASSPORT_DESKTOP_PROGRESS_CTA}
-      </button>
-    </section>
   );
 }
 
