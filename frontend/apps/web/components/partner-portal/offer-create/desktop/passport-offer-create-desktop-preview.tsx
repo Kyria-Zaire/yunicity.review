@@ -41,9 +41,11 @@ export function PassportOfferCreateDesktopPreview({
   const flashLabel = flash.isFlash ? PASSPORT_DESKTOP_OFFERS_FLASH : null;
   const isMedium = variant === "medium";
 
+  // Pas de `sticky` : première de quatre cartes de sa colonne, elle recouvrait la
+  // checklist en défilant (PARTNER-OFFER-CREATE-DESKTOP-LAYOUT-01).
   return (
     <aside
-      className={`rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-sm ${isMedium ? "" : "lg:sticky lg:top-6"}`}
+      className="rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-sm"
       data-passport-offer-create-preview=""
       data-variant={variant}
     >

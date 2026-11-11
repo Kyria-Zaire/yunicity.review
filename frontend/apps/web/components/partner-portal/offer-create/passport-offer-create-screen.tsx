@@ -43,15 +43,18 @@ export function PassportOfferCreateScreen({ ctx }: PassportOfferCreateScreenProp
     );
   }
 
+  // Une seule enveloppe visible par palier : l'enveloppe inactive est masquée en entier
+  // (sinon son `min-h-dvh` laisse un bloc vide d'une hauteur d'écran).
   return (
     <>
-      <PassportOfferCreateAppShell variant="mobile">
-        <div className="web-mobile-passport-offer-create-only">
-          <PassportOfferCreateMobileScreen ctx={ctx} />
-        </div>
+      <PassportOfferCreateAppShell
+        variant="mobile"
+        formatClassName="web-mobile-passport-offer-create-only"
+      >
+        <PassportOfferCreateMobileScreen ctx={ctx} />
       </PassportOfferCreateAppShell>
 
-      <PassportOfferCreateAppShell>
+      <PassportOfferCreateAppShell formatClassName="web-medium-up-passport-offer-create-only">
         <div className="web-medium-passport-offer-create-only">
           <PassportOfferCreateMediumScreen ctx={ctx} />
         </div>

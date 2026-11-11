@@ -40,7 +40,7 @@ import {
   partnerOfferTypeLabel,
 } from "@yunicity/utils";
 import { Camera, CheckCircle2, Clock3, Lock, Shield, UtensilsCrossed } from "lucide-react";
-import { useRef } from "react";
+import { useId, useRef } from "react";
 
 const OFFER_TYPES: PartnerOfferType[] = [
   "gift",
@@ -63,9 +63,17 @@ type PassportOfferCreateDesktopFormProps = {
   isSubmitting?: boolean;
 };
 
-function FieldLabel({ children, required }: { children: string; required?: boolean }) {
+function FieldLabel({
+  children,
+  required,
+  id,
+}: {
+  children: string;
+  required?: boolean;
+  id?: string;
+}) {
   return (
-    <span className="text-sm font-semibold text-neutral-900">
+    <span id={id} className="text-sm font-semibold text-neutral-900">
       {children}
       {required ? <span className="text-red-500"> *</span> : null}
     </span>
@@ -104,6 +112,7 @@ export function PassportOfferCreateDesktopForm({
   isSubmitting = false,
 }: PassportOfferCreateDesktopFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const validationLabelId = useId();
   const partnerLocation = partner?.address?.split(",")[0]?.trim() || organization.city;
   const isMedium = variant === "medium";
   const isMobile = variant === "mobile";
@@ -315,7 +324,14 @@ export function PassportOfferCreateDesktopForm({
       </FormSection>
 
       <FormSection id="passport-offer-create-validity" title={PASSPORT_OFFER_CREATE_SECTION_VALIDITY}>
-        <div className={`grid gap-4 ${isMobile ? "grid-cols-1" : "md:grid-cols-3"}`}>
+        {/* Hors mobile, le nombre de colonnes suit la place réelle de la carte (pas la
+            largeur d'écran) : les champs s'empilent quand une date complète n'y tient plus. */}
+        <div
+          data-passport-offer-create-validity-fields=""
+          className={`grid gap-4 ${
+            isMobile ? "grid-cols-1" : "grid-cols-[repeat(auto-fit,minmax(13rem,1fr))]"
+          }`}
+        >
           <label className="block">
             <FieldLabel required>{PASSPORT_OFFER_CREATE_FIELD_START}</FieldLabel>
             <input
@@ -413,17 +429,25 @@ export function PassportOfferCreateDesktopForm({
         </div>
 
         <div>
-          <FieldLabel required>{PASSPORT_OFFER_CREATE_FIELD_VALIDATION}</FieldLabel>
+          <FieldLabel id={validationLabelId} required>
+            {PASSPORT_OFFER_CREATE_FIELD_VALIDATION}
+          </FieldLabel>
           <div className="relative mt-2">
             <Lock
               className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
               aria-hidden
             />
-            <input
-              readOnly
-              value={PASSPORT_OFFER_CREATE_VALIDATION_QR}
-              className="w-full rounded-xl border border-neutral-200 bg-neutral-50 py-2.5 pl-10 pr-3 text-sm text-neutral-700"
-            />
+            {/* Valeur fixe, non modifiable : un `input` ne peut pas passer à la ligne et
+                tronquait le texte dès que la colonne rétrécit. */}
+            <div
+              role="textbox"
+              aria-readonly="true"
+              aria-labelledby={validationLabelId}
+              tabIndex={0}
+              className="w-full break-words rounded-xl border border-neutral-200 bg-neutral-50 py-2.5 pl-10 pr-3 text-sm text-neutral-700"
+            >
+              {PASSPORT_OFFER_CREATE_VALIDATION_QR}
+            </div>
           </div>
           {isMobile ? (
             <p className="mt-2 inline-flex items-center gap-2 text-xs text-neutral-500">

@@ -2623,6 +2623,12 @@ body {
   display: block;
 }
 
+/* PARTNER-OFFER-CREATE-DESKTOP-LAYOUT-01 — enveloppe des versions medium et desktop,
+   masquée en entier (fond et hauteur compris) au palier mobile. */
+.web-medium-up-passport-offer-create-only {
+  display: none;
+}
+
 @media (max-width: 639.98px) {
   .passport-offer-create-mobile-shell {
     margin-left: -1rem;
@@ -2632,6 +2638,10 @@ body {
 }
 
 @media (min-width: 640px) and (max-width: 1023.98px) {
+  .web-medium-up-passport-offer-create-only {
+    display: block;
+  }
+
   .web-medium-passport-offer-create-only {
     display: block;
   }
@@ -2647,6 +2657,10 @@ body {
 }
 
 @media (min-width: 1024px) {
+  .web-medium-up-passport-offer-create-only {
+    display: block;
+  }
+
   .web-desktop-passport-offer-create-only {
     display: block;
   }
