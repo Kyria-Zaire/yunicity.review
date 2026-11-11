@@ -2,6 +2,7 @@
 
 import { CulturalImage } from "@/components/culture/cultural-image";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
+import { TRIBES_HELP_GUIDE_HREF } from "@/lib/tribes/tribes-help-destinations";
 import type {
   TribesDesktopInvitationCard,
   TribesDesktopMyTribeRow,
@@ -198,7 +199,7 @@ export function TribesDesktopRightRail({
         </ul>
         <div className="border-t border-neutral-100 p-3">
           <Link
-            href="/help/tribes"
+            href={TRIBES_HELP_GUIDE_HREF}
             className="inline-flex items-center gap-1 text-sm font-semibold text-yunicity-primary hover:underline"
           >
             {TRIBES_DESKTOP_GET_STARTED_GUIDE}

@@ -1,5 +1,6 @@
 "use client";
 
+import { TRIBES_COMMUNITY_RULES_HREF } from "@/lib/tribes/tribes-help-destinations";
 import {
   TRIBES_DESKTOP_CREATE_BANNER_BODY,
   TRIBES_DESKTOP_CREATE_BANNER_RULES,
@@ -28,7 +29,7 @@ export function TribesDesktopCreateBanner({ city }: TribesDesktopCreateBannerPro
           >
             + {TRIBES_DESKTOP_CREATE_CTA}
           </Link>
-          <Link href="/help/tribes" className="text-sm font-semibold text-yunicity-primary hover:underline">
+          <Link href={TRIBES_COMMUNITY_RULES_HREF} className="text-sm font-semibold text-yunicity-primary hover:underline">
             {TRIBES_DESKTOP_CREATE_BANNER_RULES}
           </Link>
         </div>

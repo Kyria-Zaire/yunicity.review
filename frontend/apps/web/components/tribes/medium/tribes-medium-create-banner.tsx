@@ -1,5 +1,6 @@
 "use client";
 
+import { TRIBES_COMMUNITY_RULES_HREF } from "@/lib/tribes/tribes-help-destinations";
 import {
   TRIBES_DESKTOP_CREATE_BANNER_RULES,
   TRIBES_DESKTOP_CREATE_CTA,
@@ -40,7 +41,7 @@ export function TribesMediumCreateBanner({ city }: TribesMediumCreateBannerProps
             + {TRIBES_DESKTOP_CREATE_CTA}
           </Link>
           <Link
-            href="/help/tribes"
+            href={TRIBES_COMMUNITY_RULES_HREF}
             className="inline-flex items-center gap-1 text-sm font-semibold text-yunicity-primary hover:underline"
           >
             {TRIBES_DESKTOP_CREATE_BANNER_RULES}

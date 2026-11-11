@@ -1,6 +1,7 @@
 "use client";
 
 import { CulturalImage } from "@/components/culture/cultural-image";
+import { TRIBES_HELP_GUIDE_HREF } from "@/lib/tribes/tribes-help-destinations";
 import type { TribesDesktopNearbyRow } from "@yunicity/utils";
 import {
   TRIBES_DESKTOP_GET_STARTED_GUIDE,
@@ -103,7 +104,7 @@ export function TribesMediumNearbyStartedRow({
         </ul>
         <div className="border-t border-neutral-100 p-3 text-right">
           <Link
-            href="/help/tribes"
+            href={TRIBES_HELP_GUIDE_HREF}
             className="inline-flex items-center gap-1 text-sm font-semibold text-yunicity-primary hover:underline"
           >
             {TRIBES_DESKTOP_GET_STARTED_GUIDE}
