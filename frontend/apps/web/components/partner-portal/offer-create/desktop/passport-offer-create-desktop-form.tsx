@@ -2,7 +2,7 @@
 
 import { CulturalImage } from "@/components/culture/cultural-image";
 import type { OrganizationMeItem, PartnerOfferType, PartnerPublic } from "@yunicity/types";
-import type { PassportOfferCreateDraft, PassportOfferCreateTierScope } from "@yunicity/utils";
+import type { PassportOfferCreateDraft } from "@yunicity/utils";
 import {
   PASSPORT_OFFER_CREATE_COVER_CHANGE,
   PASSPORT_OFFER_CREATE_COVER_HINT,
@@ -35,9 +35,7 @@ import {
   PASSPORT_OFFER_CREATE_SUBMIT,
   PASSPORT_OFFER_CREATE_SUBMITTING,
   PASSPORT_OFFER_CREATE_SAVING,
-  PASSPORT_OFFER_CREATE_TIER_ALL,
-  PASSPORT_OFFER_CREATE_TIER_AMBASSADOR,
-  PASSPORT_OFFER_CREATE_TIER_EXPLORER,
+  PASSPORT_OFFER_CREATE_TIER_OPTIONS,
   PASSPORT_OFFER_CREATE_VALIDATION_QR,
   partnerOfferTypeLabel,
 } from "@yunicity/utils";
@@ -394,19 +392,13 @@ export function PassportOfferCreateDesktopForm({
         <div>
           <FieldLabel required>{PASSPORT_OFFER_CREATE_FIELD_TIERS}</FieldLabel>
           <div className="mt-2 flex flex-wrap gap-2">
-            {(
-              [
-                ["all", PASSPORT_OFFER_CREATE_TIER_ALL],
-                ["basic", PASSPORT_OFFER_CREATE_TIER_EXPLORER],
-                ["silver", PASSPORT_OFFER_CREATE_TIER_AMBASSADOR],
-              ] as const
-            ).map(([value, label]) => {
+            {PASSPORT_OFFER_CREATE_TIER_OPTIONS.map(({ value, label }) => {
               const active = draft.tierScope === value;
               return (
                 <button
                   key={value}
                   type="button"
-                  onClick={() => onChange({ tierScope: value as PassportOfferCreateTierScope })}
+                  onClick={() => onChange({ tierScope: value })}
                   className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
                     active
                       ? "border-yunicity-primary bg-[#EEF0FF] text-yunicity-primary"

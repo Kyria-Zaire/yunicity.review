@@ -1,5 +1,7 @@
 /** Création offre Passport — espace partenaire desktop (WEB-PASSPORT-OFFER-CREATE-01). */
 
+import { PASSPORT_TIER_LABELS } from "./passport-level-labels";
+
 export const PASSPORT_OFFER_CREATE_TITLE = "Créer une offre Passport";
 export const PASSPORT_OFFER_CREATE_SUBTITLE =
   "Proposez un avantage clair, vérifiable et réservé aux détenteurs d'un Passport actif.";
@@ -68,8 +70,14 @@ export const PASSPORT_OFFER_CREATE_FLASH_INFO =
   "Le badge OFFRE FLASH sera attribué automatiquement à partir de la période réelle.";
 export const PASSPORT_OFFER_CREATE_PASSPORT_RULE = "Passport Yunicity actif";
 export const PASSPORT_OFFER_CREATE_TIER_ALL = "Tous les niveaux actifs";
-export const PASSPORT_OFFER_CREATE_TIER_EXPLORER = "Explorateur";
-export const PASSPORT_OFFER_CREATE_TIER_AMBASSADOR = "Ambassadeur local";
+/**
+ * PARTNER-OFFER-TIER-LABELS-01 — l'option `basic` ouvre l'offre à Citoyen·ne, Silver et
+ * Gold (accès cumulatif de `tier_can_access`), mais PAS aux tiers spéciaux (Néo-arrivant…) :
+ * on énumère donc les tiers, plutôt qu'un « … et plus » trompeur. Noms tirés du catalogue
+ * contractuel — « Explorateur » et « Ambassadeur » sont des badges (PRD-301 §8.2).
+ */
+export const PASSPORT_OFFER_CREATE_TIER_BASIC_AND_ABOVE = `${PASSPORT_TIER_LABELS.basic}, ${PASSPORT_TIER_LABELS.silver} et ${PASSPORT_TIER_LABELS.gold}`;
+export const PASSPORT_OFFER_CREATE_TIER_SILVER_AND_ABOVE = `${PASSPORT_TIER_LABELS.silver} et ${PASSPORT_TIER_LABELS.gold}`;
 export const PASSPORT_OFFER_CREATE_FIELD_TIERS = "Niveaux éligibles";
 export const PASSPORT_OFFER_CREATE_FIELD_VALIDATION = "Mode de validation";
 export const PASSPORT_OFFER_CREATE_VALIDATION_QR =

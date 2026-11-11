@@ -12,6 +12,9 @@ import {
   PASSPORT_OFFER_CREATE_STEP_GENERAL,
   PASSPORT_OFFER_CREATE_STEP_REVIEW,
   PASSPORT_OFFER_CREATE_STEP_VALIDITY,
+  PASSPORT_OFFER_CREATE_TIER_ALL,
+  PASSPORT_OFFER_CREATE_TIER_BASIC_AND_ABOVE,
+  PASSPORT_OFFER_CREATE_TIER_SILVER_AND_ABOVE,
   PASSPORT_OFFER_CREATE_VALIDATION_CONDITIONS,
   PASSPORT_OFFER_CREATE_VALIDATION_DATES,
   PASSPORT_OFFER_CREATE_VALIDATION_DESCRIPTION,
@@ -28,6 +31,22 @@ export type PassportOfferCreateStepId =
   | "review";
 
 export type PassportOfferCreateTierScope = "all" | "basic" | "silver";
+
+export type PassportOfferCreateTierOption = {
+  value: PassportOfferCreateTierScope;
+  label: string;
+};
+
+/**
+ * Options du champ « Niveaux éligibles », dans l'ordre affiché. Les valeurs sont celles
+ * envoyées en `tier_code_required` (`all` → `null`) : ne pas les modifier sans changer le
+ * contrat d'API (PARTNER-OFFER-TIER-LABELS-01).
+ */
+export const PASSPORT_OFFER_CREATE_TIER_OPTIONS: readonly PassportOfferCreateTierOption[] = [
+  { value: "all", label: PASSPORT_OFFER_CREATE_TIER_ALL },
+  { value: "basic", label: PASSPORT_OFFER_CREATE_TIER_BASIC_AND_ABOVE },
+  { value: "silver", label: PASSPORT_OFFER_CREATE_TIER_SILVER_AND_ABOVE },
+];
 
 export type PassportOfferCreateDraft = {
   organizationId: string;
