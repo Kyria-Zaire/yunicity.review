@@ -118,16 +118,17 @@ export function CitizenMediumRail({ activeDestination, createActive = false }: C
             aucune logique parallèle — la recherche du header du fil reste en
             place et ouvre la même primitive.
 
-            La variante `medium-rail` existait déjà pour la colonne latérale, qui
-            la masque quand le rail prend le relais ; elle porte une cible de
-            `--web-sidebar-icon-hit`, soit 52 px, au-delà des 44 px exigés.
+            RAIL-EXPLORER-LABEL-01 : variante `citizen-medium-rail`, icône +
+            libellé « Explorer » visible, comme les autres contrôles. La variante
+            `medium-rail` (icône seule, 52 px) reste celle de la colonne latérale
+            historique — même séparation que pour le Menu (R1B).
         */}
         <div
           data-rail-label={CITIZEN_MEDIUM_RAIL_EXPLORER_LABEL}
           data-citizen-medium-rail-control="explorer"
           className="flex flex-col items-center gap-1 rounded-xl py-1.5"
         >
-          <ExplorerTriggerButton variant="medium-rail" />
+          <ExplorerTriggerButton variant="citizen-medium-rail" />
         </div>
 
         <div
