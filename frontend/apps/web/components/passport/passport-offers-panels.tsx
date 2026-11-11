@@ -2,6 +2,7 @@
 
 import { CulturalImage } from "@/components/culture/cultural-image";
 import { PassportBookletIcon } from "@/components/passport/passport-booklet-icon";
+import { LEGAL_ROUTES } from "@/lib/legal/legal-document-contract";
 import type { PartnerOfferPublic } from "@yunicity/types";
 import type { PassportDesktopSegmentProgress, PassportLevelView } from "@yunicity/utils";
 import {
@@ -253,8 +254,12 @@ export function PassportOffersConditionsBanner({ titleId }: { titleId: string })
           <p className="mt-2 text-sm leading-relaxed text-neutral-600">
             {PASSPORT_DESKTOP_OFFERS_CONDITIONS_BODY}
           </p>
+          {/* PASSPORT-OFFERS-ANCHOR-01 : `#passport-desktop-how` n'existe pas dans la
+              vue Offres. Les règles des offres vivent dans les CGU (« Passport et
+              offres partenaires ») — ouvertes en haut de page : leur ancre diffère
+              par format. Décision de Kyria, option B (2026-11-11). */}
           <Link
-            href="#passport-desktop-how"
+            href={LEGAL_ROUTES.terms}
             className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-yunicity-primary hover:underline"
           >
             {PASSPORT_DESKTOP_OFFERS_CONDITIONS_CTA}
