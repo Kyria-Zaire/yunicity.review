@@ -3,8 +3,6 @@
 import type { TribeCreateDraft } from "@yunicity/utils";
 import {
   TRIBE_CREATE_DESKTOP_CHECKLIST_TITLE,
-  TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PRIVATE,
-  TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PUBLIC,
   TRIBE_CREATE_DESKTOP_PREVIEW_COVER_PLACEHOLDER,
   TRIBE_CREATE_DESKTOP_PREVIEW_CTA,
   TRIBE_CREATE_DESKTOP_PREVIEW_DESC,
@@ -16,6 +14,7 @@ import {
   tribeCategoryLabel,
   tribeCreateBlockingErrorCount,
   tribeCreateChecklistProgress,
+  tribeCreatePreviewVisibilityBadge,
 } from "@yunicity/utils";
 import {
   ChevronDown,
@@ -82,7 +81,7 @@ export function TribeCreateMobilePreview({ draft }: TribeCreateMobilePreviewProp
   const name = draft.name.trim() || TRIBE_CREATE_DESKTOP_PREVIEW_NAME;
   const description = draft.description.trim() || TRIBE_CREATE_DESKTOP_PREVIEW_DESC;
   const categoryLabel = draft.category.trim() ? tribeCategoryLabel(draft.category) : null;
-  const isPublic = draft.visibility === "public";
+  const visibilityBadge = tribeCreatePreviewVisibilityBadge(draft.visibility);
   const locationMeta = `${draft.city.trim() || "Reims"} · ${TRIBE_CREATE_DESKTOP_PREVIEW_LOCATION_SUFFIX}`;
   const { completed, total } = tribeCreateChecklistProgress(draft);
   const blockingErrors = tribeCreateBlockingErrorCount(draft);
@@ -135,11 +134,11 @@ export function TribeCreateMobilePreview({ draft }: TribeCreateMobilePreviewProp
                 )}
               </div>
               <div className="pt-6">
-                <p className="inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-800">
-                  {isPublic
-                    ? TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PUBLIC
-                    : TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PRIVATE}
-                </p>
+                {visibilityBadge ? (
+                  <p className="inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-800">
+                    {visibilityBadge}
+                  </p>
+                ) : null}
                 <h3 className="mt-2 text-base font-bold text-neutral-900">{name}</h3>
                 {categoryLabel ? (
                   <ul className="mt-2 flex flex-wrap gap-1.5">

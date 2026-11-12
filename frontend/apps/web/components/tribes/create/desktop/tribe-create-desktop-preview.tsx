@@ -2,8 +2,6 @@
 
 import type { TribeCreateDraft } from "@yunicity/utils";
 import {
-  TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PRIVATE,
-  TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PUBLIC,
   TRIBE_CREATE_DESKTOP_PREVIEW_COVER_PLACEHOLDER,
   TRIBE_CREATE_DESKTOP_PREVIEW_CTA,
   TRIBE_CREATE_DESKTOP_PREVIEW_DESC,
@@ -14,6 +12,7 @@ import {
   TRIBE_CREATE_DESKTOP_PREVIEW_TITLE,
   resolveTribeEditorialImage,
   tribeCategoryLabel,
+  tribeCreatePreviewVisibilityBadge,
 } from "@yunicity/utils";
 import { ImageIcon, Info, MapPin } from "lucide-react";
 import { useState } from "react";
@@ -55,7 +54,7 @@ export function TribeCreateDesktopPreview({ draft }: TribeCreateDesktopPreviewPr
   const name = draft.name.trim() || TRIBE_CREATE_DESKTOP_PREVIEW_NAME;
   const description = draft.description.trim() || TRIBE_CREATE_DESKTOP_PREVIEW_DESC;
   const categoryLabel = draft.category.trim() ? tribeCategoryLabel(draft.category) : null;
-  const isPublic = draft.visibility === "public";
+  const visibilityBadge = tribeCreatePreviewVisibilityBadge(draft.visibility);
   const locationMeta = `${draft.city.trim() || "Reims"} · ${TRIBE_CREATE_DESKTOP_PREVIEW_LOCATION_SUFFIX}`;
 
   return (
@@ -120,11 +119,11 @@ export function TribeCreateDesktopPreview({ draft }: TribeCreateDesktopPreviewPr
             ) : null}
 
             <div className={mode === "detail" ? "pt-8" : ""}>
-              <p className="inline-flex rounded-full bg-sky-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-800">
-                {isPublic
-                  ? TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PUBLIC
-                  : TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PRIVATE}
-              </p>
+              {visibilityBadge ? (
+                <p className="inline-flex rounded-full bg-sky-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-800">
+                  {visibilityBadge}
+                </p>
+              ) : null}
               <h3 className="mt-2 text-lg font-bold leading-snug text-neutral-900">{name}</h3>
               {categoryLabel ? (
                 <ul className="mt-2 flex flex-wrap gap-1.5">

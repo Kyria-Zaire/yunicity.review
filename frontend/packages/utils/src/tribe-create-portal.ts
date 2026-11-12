@@ -140,6 +140,14 @@ export function isTribeCreateVisibilityValid(visibility: unknown): visibility is
   return TRIBE_CREATE_VISIBILITIES.some((value) => value === visibility);
 }
 
+/** Les trois cas d'une visibilité de brouillon : les deux valeurs de l'API, ou invalide. */
+export type TribeCreateVisibilityState = TribeVisibility | "invalid";
+
+/** Point unique de distinction `public` / `private_invite` / valeur invalide. */
+export function resolveTribeCreateVisibility(visibility: unknown): TribeCreateVisibilityState {
+  return isTribeCreateVisibilityValid(visibility) ? visibility : "invalid";
+}
+
 /** Seule une acceptation explicite (`true`) compte : une charte non acceptée bloque toujours. */
 export function isTribeCreateCharterAccepted(draft: TribeCreateDraft): boolean {
   return draft.charterAccepted === true;

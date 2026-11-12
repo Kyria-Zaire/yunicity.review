@@ -4054,12 +4054,14 @@ export {
   createTribeCreateDraftFromParams,
   nextTribeCreateStep,
   previousTribeCreateStep,
+  resolveTribeCreateVisibility,
   tribeCreateVisibilityLabel,
   validateTribeCreateStep,
   type TribeCreateDraft,
   type TribeCreateStep,
   type TribeCreateStepId,
   type TribeCreateValidation,
+  type TribeCreateVisibilityState,
 } from "./tribe-create-portal";
 export {
   TRIBE_CREATE_BACK,
@@ -4224,6 +4226,7 @@ export {
   tribeCreateChecklistProgress,
   tribeCreateChecklistState,
   tribeCreateDesktopNextLabel,
+  tribeCreatePreviewVisibilityBadge,
   tribeCreateStepProgressPercent,
   type TribeCreateChecklistKey,
   type TribeCreateDesktopCategoryIcon,

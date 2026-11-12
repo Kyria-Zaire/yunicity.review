@@ -4,6 +4,7 @@ import {
   isTribeCreateCharterAccepted,
   isTribeCreateIdentityComplete,
   isTribeCreateVisibilityValid,
+  resolveTribeCreateVisibility,
   validateTribeCreateStep,
 } from "./tribe-create-portal";
 import { TRIBE_CREATE_CATEGORY_OPTIONS } from "./tribe-create-portal";
@@ -11,6 +12,8 @@ import {
   TRIBE_CREATE_DESKTOP_CHECKLIST_OPTIONAL,
   TRIBE_CREATE_DESKTOP_CHECKLIST_STATE_DONE,
   TRIBE_CREATE_DESKTOP_CHECKLIST_STATE_TODO,
+  TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PRIVATE,
+  TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PUBLIC,
   TRIBE_CREATE_DESKTOP_STEP_ACCESS,
   TRIBE_CREATE_DESKTOP_STEP_ACCESS_HINT,
   TRIBE_CREATE_DESKTOP_STEP_IDENTITY,
@@ -131,6 +134,22 @@ export function tribeCreateChecklistState(draft: TribeCreateDraft): Record<Tribe
 export function tribeCreateChecklistItemStatusText(key: TribeCreateChecklistKey, done: boolean): string {
   const state = done ? TRIBE_CREATE_DESKTOP_CHECKLIST_STATE_DONE : TRIBE_CREATE_DESKTOP_CHECKLIST_STATE_TODO;
   return TRIBE_CREATE_CHECKLIST_RULES[key].required ? state : `${state}, ${TRIBE_CREATE_DESKTOP_CHECKLIST_OPTIONAL}`;
+}
+
+/**
+ * Badge de visibilité des aperçus de création (TRIBE-CREATE-PREVIEW-VISIBILITY-01) :
+ * « Tribu publique », « Tribu privée », ou aucun badge pour une valeur invalide — un aperçu
+ * n'affirme pas une visibilité que le brouillon ne porte pas.
+ */
+export function tribeCreatePreviewVisibilityBadge(visibility: unknown): string | null {
+  switch (resolveTribeCreateVisibility(visibility)) {
+    case "public":
+      return TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PUBLIC;
+    case "private_invite":
+      return TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PRIVATE;
+    case "invalid":
+      return null;
+  }
 }
 
 export function tribeCreateBlockingErrorCount(draft: TribeCreateDraft): number {

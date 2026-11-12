@@ -19,10 +19,20 @@ import {
   tribeCreateChecklistItemStatusText,
   tribeCreateChecklistProgress,
   tribeCreateChecklistState,
+  tribeCreatePreviewVisibilityBadge,
   type TribeCreateChecklistKey,
 } from "./tribe-create-desktop-presenter";
-import { TRIBE_CREATE_DESKTOP_STEP_ACCESS_HINT } from "./tribe-create-desktop-labels";
-import { createEmptyTribeCreateDraft, validateTribeCreateStep, type TribeCreateDraft } from "./tribe-create-portal";
+import {
+  TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PRIVATE,
+  TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PUBLIC,
+  TRIBE_CREATE_DESKTOP_STEP_ACCESS_HINT,
+} from "./tribe-create-desktop-labels";
+import {
+  createEmptyTribeCreateDraft,
+  resolveTribeCreateVisibility,
+  validateTribeCreateStep,
+  type TribeCreateDraft,
+} from "./tribe-create-portal";
 import { TRIBE_CREATE_VALIDATION_CHARTER, TRIBE_CREATE_VALIDATION_NAME } from "./tribe-create-portal-labels";
 
 const IDENTITY: Partial<TribeCreateDraft> = {
@@ -201,6 +211,30 @@ describe("texte d'état restitué aux technologies d'assistance (TRIBE-CREATE-CH
     for (const key of KEYS) {
       const facultatif = tribeCreateChecklistItemStatusText(key, false).endsWith(", facultatif");
       expect(facultatif).toBe(!TRIBE_CREATE_CHECKLIST_RULES[key].required);
+    }
+  });
+});
+
+describe("visibilité : distinction centralisée (TRIBE-CREATE-PREVIEW-VISIBILITY-01)", () => {
+  it.each([
+    ["public", "public", TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PUBLIC],
+    ["private_invite", "private_invite", TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PRIVATE],
+    ["private", "invalid", null],
+    ["", "invalid", null],
+    [null, "invalid", null],
+    [undefined, "invalid", null],
+    [1, "invalid", null],
+  ] as const)("%j → %s, badge %j", (valeur, etat, badge) => {
+    expect(resolveTribeCreateVisibility(valeur)).toBe(etat);
+    expect(tribeCreatePreviewVisibilityBadge(valeur)).toBe(badge);
+  });
+
+  it("même distinction que la coche « Accès et adhésion » et le blocage à l'étape Identité", () => {
+    for (const valeur of ["public", "private_invite", "private", "", null, 1]) {
+      const draft = restored({ ...IDENTITY, charterAccepted: true, visibility: valeur });
+      const valide = resolveTribeCreateVisibility(valeur) !== "invalid";
+      expect(tribeCreateChecklistState(draft).access).toBe(valide);
+      expect(validateTribeCreateStep("identity", draft).valid).toBe(valide);
     }
   });
 });
