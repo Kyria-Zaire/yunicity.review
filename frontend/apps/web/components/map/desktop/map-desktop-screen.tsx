@@ -29,13 +29,18 @@ export function MapDesktopScreen({
       className="hidden w-full lg:grid lg:grid-cols-[280px_minmax(0,1fr)_300px] lg:items-start lg:gap-4 xl:gap-5"
       data-map-desktop-root=""
     >
-      <aside className="sticky top-4 max-h-[calc(100dvh-2rem)] overflow-y-auto pr-1">
+      {/* MAP-HEADER-01 : rails ancrés sous l'en-tête commun fixe (+16 px, aligné
+          sur la recherche). Hauteur bornée par l'en-tête, ces 16 px et la marge
+          basse sous la grille (5rem couvre les paliers lg / xl / 2xl) : un rail
+          `sticky` plus haut serait repoussé SOUS l'en-tête en fin de défilement.
+          Le surplus se consulte par le défilement propre du rail. */}
+      <aside className="sticky top-[calc(var(--citizen-top-nav-height)+1rem)] max-h-[calc(100dvh-var(--citizen-top-nav-height)-6rem)] overflow-y-auto pr-1">
         <MapDesktopLeftRail {...leftRail} />
       </aside>
 
       <MapDesktopMapStage {...mapStage} />
 
-      <aside className="sticky top-4 max-h-[calc(100dvh-2rem)] overflow-y-auto pl-1">
+      <aside className="sticky top-[calc(var(--citizen-top-nav-height)+1rem)] max-h-[calc(100dvh-var(--citizen-top-nav-height)-6rem)] overflow-y-auto pl-1">
         {detailRail ?? (
           <MapDesktopRightRail context={context} culturalPlaces={culturalPlaces} />
         )}

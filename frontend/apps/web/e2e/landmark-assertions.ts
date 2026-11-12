@@ -5,11 +5,13 @@ import { COLD_START_TIMEOUT, gotoCold } from "./cold-start";
 const SESSION_LOADER = /^Chargement de la session…$/;
 
 /**
- * Desktop (≥1024) : la carte remplace le chrome global par un layout dédié
- * (`globals.css` `.map-mobile-shell .web-sidebar-aside { display: none }` +
- * absence de `CitizenTopNav` dans `map-app-shell.tsx`).
+ * Routes sans navigation principale visible au desktop (≥1024).
+ *
+ * MAP-HEADER-01 : `/map` en est retirée — l'en-tête commun (`CitizenTopNav`) y
+ * est désormais affiché à partir de 1024 px. L'exception décrivait un état, elle
+ * ne l'autorisait pas (contrat C3.0 §1-§3). Aucune autre route n'y figurait.
  */
-const ROUTES_WITHOUT_DESKTOP_PRIMARY_NAV = ["/map"] as const;
+const ROUTES_WITHOUT_DESKTOP_PRIMARY_NAV: readonly string[] = [];
 
 export type LandmarkState = {
   main: number;
@@ -23,7 +25,7 @@ export function routeExpectsVisiblePrimaryNav(path: string, viewportWidth: numbe
   const pathname = path.split("?")[0] ?? path;
   if (
     viewportWidth >= 1024 &&
-    (ROUTES_WITHOUT_DESKTOP_PRIMARY_NAV as readonly string[]).includes(pathname)
+    ROUTES_WITHOUT_DESKTOP_PRIMARY_NAV.includes(pathname)
   ) {
     return false;
   }
@@ -103,7 +105,7 @@ export function expectExactlyOneMain(
    * est toujours un défaut d'accessibilité. Relevé sur les six routes concernées,
    * à 1366 / 900 / 390 :
    *
-   *   /map                        0 · 1 · 1
+   *   /map                        1 · 1 · 1   (MAP-HEADER-01, mesuré en local à 1366 / 820 / 390 ; relevé initial 0 · 1 · 1)
    *   /organizations/request      0 · 0 · 0   (canvas création, sans chrome global)
    *   /discussions/new            1 · 1 · 0
    *   /sortir/create              1 · 0 · 0

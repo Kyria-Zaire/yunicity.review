@@ -152,8 +152,13 @@ export function MapDesktopMapStage({
 
       {statusBlock}
 
+      {/* MAP-HEADER-01 : hauteur = ancien calcul (100dvh − 10rem) moins l'en-tête
+          commun fixe et ses 16 px d'espace, pour que le canevas reste entier sous
+          l'en-tête. Plancher 320 px (au lieu de 560) : le plancher coupait le
+          canevas aux petites hauteurs ; en dessous de ~510 px, tout reste
+          atteignable par le défilement de la page. */}
       {apiKey ? (
-        <div className="relative min-h-[560px] h-[calc(100dvh-10rem)] overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm">
+        <div className="relative h-[max(20rem,calc(100dvh-10rem-var(--citizen-top-nav-height)-1rem))] overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm">
           {mapReady ? (
             <GoogleEventMap
               city={city}

@@ -1718,6 +1718,28 @@ body {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
   }
+
+  /* MAP-HEADER-01 : l'en-tete commun (fixe, --citizen-top-nav-height) est
+     affiche sur la carte a partir de 1024px — le rail medium s'arrete a
+     1023.98px, aucune largeur ne reste donc sans navigation. Son espaceur est
+     deja affiche par `.places-shell-grid .citizen-top-nav-spacer`. */
+  .map-mobile-shell .citizen-top-nav {
+    display: block;
+  }
+
+  /* 16px entre l'en-tete et le contenu, alignes sur l'ancrage des rails de la
+     carte (`map-desktop-screen.tsx`) et integres au calcul du canevas
+     (`map-desktop-map-stage.tsx`). */
+  .map-mobile-shell .web-main-column {
+    padding-top: 1rem;
+  }
+
+  /* Un controle amene par le focus clavier ne doit jamais se placer sous
+     l'en-tete fixe. Limite a la page Carte : la regle disparait des que le
+     shell carte est demonte (navigation vers une autre route). */
+  html:has(.map-mobile-shell) {
+    scroll-padding-top: calc(var(--citizen-top-nav-height) + 1rem);
+  }
 }
 
 @media (min-width: 480px) and (max-width: 639.98px) {
