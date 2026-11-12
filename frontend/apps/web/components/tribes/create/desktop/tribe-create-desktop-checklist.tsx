@@ -8,9 +8,11 @@ import {
   TRIBE_CREATE_DESKTOP_CHECKLIST_TITLE,
   TRIBE_CREATE_DESKTOP_CHECKLIST_VISUALS,
   tribeCreateBlockingErrorCount,
+  tribeCreateChecklistItemStatusText,
   tribeCreateChecklistState,
 } from "@yunicity/utils";
 import { CheckCircle2, Circle } from "lucide-react";
+import { useId } from "react";
 
 import { TribeCreateBlockingStatus } from "@/components/tribes/create/tribe-create-blocking-status";
 
@@ -28,14 +30,17 @@ const ITEMS = [
 export function TribeCreateDesktopChecklist({ draft }: TribeCreateDesktopChecklistProps) {
   const state = tribeCreateChecklistState(draft);
   const blockingErrors = tribeCreateBlockingErrorCount(draft);
+  const titleId = useId();
 
   return (
     <section
       className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm"
       data-tribe-create-checklist=""
     >
-      <h2 className="text-sm font-bold text-neutral-900">{TRIBE_CREATE_DESKTOP_CHECKLIST_TITLE}</h2>
-      <ul className="mt-3 space-y-2.5">
+      <h2 id={titleId} className="text-sm font-bold text-neutral-900">
+        {TRIBE_CREATE_DESKTOP_CHECKLIST_TITLE}
+      </h2>
+      <ul className="mt-3 space-y-2.5" aria-labelledby={titleId}>
         {ITEMS.map((item) => {
           const done = state[item.key];
           return (
@@ -52,6 +57,8 @@ export function TribeCreateDesktopChecklist({ draft }: TribeCreateDesktopCheckli
               )}
               <span className={done ? "font-medium text-neutral-800" : "text-neutral-500"}>
                 {item.label}
+                {/* État restitué aux technologies d'assistance ; à l'écran, l'icône le porte. */}
+                <span className="sr-only">{` : ${tribeCreateChecklistItemStatusText(item.key, done)}`}</span>
               </span>
             </li>
           );

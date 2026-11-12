@@ -16,6 +16,7 @@ import { describe, expect, it } from "vitest";
 import {
   TRIBE_CREATE_CHECKLIST_RULES,
   tribeCreateBlockingErrorCount,
+  tribeCreateChecklistItemStatusText,
   tribeCreateChecklistProgress,
   tribeCreateChecklistState,
   type TribeCreateChecklistKey,
@@ -181,6 +182,26 @@ describe("messages des étapes (libellés existants)", () => {
       message: TRIBE_CREATE_VALIDATION_CHARTER,
     });
     expect(validateTribeCreateStep("access", restored({ visibility: "private", charterAccepted: true })).valid).toBe(true);
+  });
+});
+
+describe("texte d'état restitué aux technologies d'assistance (TRIBE-CREATE-CHECKLIST-A11Y-01)", () => {
+  it.each([
+    ["identity", true, "complété"],
+    ["identity", false, "à compléter"],
+    ["access", true, "complété"],
+    ["charter", false, "à compléter"],
+    ["visuals", true, "complété, facultatif"],
+    ["visuals", false, "à compléter, facultatif"],
+  ] as const)("%s, fait=%s → « %s »", (key, done, attendu) => {
+    expect(tribeCreateChecklistItemStatusText(key, done)).toBe(attendu);
+  });
+
+  it("« facultatif » suit la table de règles, pas une liste écrite à part", () => {
+    for (const key of KEYS) {
+      const facultatif = tribeCreateChecklistItemStatusText(key, false).endsWith(", facultatif");
+      expect(facultatif).toBe(!TRIBE_CREATE_CHECKLIST_RULES[key].required);
+    }
   });
 });
 

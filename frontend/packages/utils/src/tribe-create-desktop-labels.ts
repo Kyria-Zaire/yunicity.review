@@ -94,6 +94,10 @@ export const TRIBE_CREATE_DESKTOP_CHECKLIST_ACCESS = "Accès et adhésion";
 export const TRIBE_CREATE_DESKTOP_CHECKLIST_CHARTER = "Une charte claire";
 export const TRIBE_CREATE_DESKTOP_CHECKLIST_VISUALS = "Avatar et bannière";
 export const TRIBE_CREATE_DESKTOP_CHECKLIST_NO_ERRORS = "0 erreur bloquante";
+/** Textes masqués visuellement, restitués aux technologies d'assistance (TRIBE-CREATE-CHECKLIST-A11Y-01). */
+export const TRIBE_CREATE_DESKTOP_CHECKLIST_STATE_DONE = "complété";
+export const TRIBE_CREATE_DESKTOP_CHECKLIST_STATE_TODO = "à compléter";
+export const TRIBE_CREATE_DESKTOP_CHECKLIST_OPTIONAL = "facultatif";
 
 export const TRIBE_CREATE_DESKTOP_HELP_TITLE = "Une communauté saine dès le départ";
 export const TRIBE_CREATE_DESKTOP_HELP_BODY =

@@ -88,7 +88,8 @@ describe("checklist desktop / medium (TRIBE-CREATE-CHECKLIST-ACCESS-01)", () => 
       const item = container.querySelector<HTMLElement>(`[data-tribe-create-checklist-item="${cle}"]`);
       expect(item, `élément ${cle} introuvable`).not.toBeNull();
       expect(item?.dataset.done, `coche ${cle}`).toBe(String(attendu));
-      expect(item?.textContent).toBe(LIBELLES[cle as keyof Coches]);
+      // Libellé visible, suivi du seul état masqué (TRIBE-CREATE-CHECKLIST-A11Y-01).
+      expect(item?.textContent).toBe(`${LIBELLES[cle as keyof Coches]}${item?.querySelector(".sr-only")?.textContent ?? ""}`);
     }
     expect(container.querySelector("[data-tribe-create-blocking-status]")?.textContent).toBe(statut);
   });

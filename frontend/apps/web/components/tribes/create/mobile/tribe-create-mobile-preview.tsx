@@ -2,6 +2,7 @@
 
 import type { TribeCreateDraft } from "@yunicity/utils";
 import {
+  TRIBE_CREATE_DESKTOP_CHECKLIST_TITLE,
   TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PRIVATE,
   TRIBE_CREATE_DESKTOP_PREVIEW_BADGE_PUBLIC,
   TRIBE_CREATE_DESKTOP_PREVIEW_COVER_PLACEHOLDER,
@@ -166,6 +167,8 @@ export function TribeCreateMobilePreview({ draft }: TribeCreateMobilePreviewProp
           <div className="mt-4 flex items-center justify-between gap-3 border-t border-neutral-100 pt-3">
             <p className="inline-flex items-center gap-2 text-xs font-medium text-neutral-700">
               <ChecklistProgressRing completed={completed} total={total} />
+              {/* Contexte du compteur pour les technologies d'assistance ; règle de calcul inchangée. */}
+              <span className="sr-only">{`${TRIBE_CREATE_DESKTOP_CHECKLIST_TITLE} : `}</span>
               {TRIBE_CREATE_MOBILE_CHECKLIST_PROGRESS(completed, total)}
             </p>
             <TribeCreateBlockingStatus

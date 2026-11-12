@@ -8,6 +8,9 @@ import {
 } from "./tribe-create-portal";
 import { TRIBE_CREATE_CATEGORY_OPTIONS } from "./tribe-create-portal";
 import {
+  TRIBE_CREATE_DESKTOP_CHECKLIST_OPTIONAL,
+  TRIBE_CREATE_DESKTOP_CHECKLIST_STATE_DONE,
+  TRIBE_CREATE_DESKTOP_CHECKLIST_STATE_TODO,
   TRIBE_CREATE_DESKTOP_STEP_ACCESS,
   TRIBE_CREATE_DESKTOP_STEP_ACCESS_HINT,
   TRIBE_CREATE_DESKTOP_STEP_IDENTITY,
@@ -118,6 +121,16 @@ export function tribeCreateChecklistState(draft: TribeCreateDraft): Record<Tribe
     charter: TRIBE_CREATE_CHECKLIST_RULES.charter.isMet(draft),
     visuals: TRIBE_CREATE_CHECKLIST_RULES.visuals.isMet(draft),
   };
+}
+
+/**
+ * Texte d'état d'un élément de la checklist, masqué visuellement et restitué aux technologies
+ * d'assistance : « complété » / « à compléter », suivi de « facultatif » pour une règle non
+ * obligatoire (TRIBE-CREATE-CHECKLIST-A11Y-01). À l'écran, l'état reste porté par l'icône.
+ */
+export function tribeCreateChecklistItemStatusText(key: TribeCreateChecklistKey, done: boolean): string {
+  const state = done ? TRIBE_CREATE_DESKTOP_CHECKLIST_STATE_DONE : TRIBE_CREATE_DESKTOP_CHECKLIST_STATE_TODO;
+  return TRIBE_CREATE_CHECKLIST_RULES[key].required ? state : `${state}, ${TRIBE_CREATE_DESKTOP_CHECKLIST_OPTIONAL}`;
 }
 
 export function tribeCreateBlockingErrorCount(draft: TribeCreateDraft): number {
