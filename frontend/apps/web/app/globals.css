@@ -5235,6 +5235,25 @@ body {
     border-right: 1px solid rgb(229 229 229 / 0.8);
   }
 
+  /* RAIL-SHORT-VIEWPORT-01 : corps du rail (logo, navigation, groupe du bas).
+     Il ne defile qu'au-dessous de 480px de haut (bloc dedie ci-dessous). */
+  [data-citizen-medium-rail-body] {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* Region de la navigation : boite NON defilante qui porte les reperes de
+     contenu cache, poses sur ses bords pendant que la navigation defile. */
+  [data-citizen-medium-rail-nav-region] {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
   [data-citizen-medium-rail-nav] {
     flex: 1 1 auto;
     min-height: 0;
@@ -5242,6 +5261,25 @@ body {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    /* RAIL-SHORT-VIEWPORT-01 : un controle amene au bord par le focus clavier
+       garde 20px de marge = repere (16px) + anneau de focus (2px) + 2px. Il
+       n'est jamais masque par un repere ni coupe par le bord du defilement. */
+    scroll-padding-block: 1.25rem;
+  }
+
+  /* RAIL-SHORT-VIEWPORT-01 : barre native masquee sur les deux zones
+     defilantes, comme les rails desktop. Une barre classique (15px sous
+     Windows) retirait 15px de largeur aux cibles et coupait « Notifications ».
+     Les reperes du rail tiennent lieu d'indicateur ; molette, toucher et
+     clavier restent disponibles. */
+  [data-citizen-medium-rail-nav],
+  [data-citizen-medium-rail-body] {
+    scrollbar-width: none;
+  }
+
+  [data-citizen-medium-rail-nav]::-webkit-scrollbar,
+  [data-citizen-medium-rail-body]::-webkit-scrollbar {
+    display: none;
   }
 
   [data-citizen-medium-rail-footer] {
@@ -5264,6 +5302,37 @@ body {
 
   [data-citizen-medium-creation-flow] {
     display: none;
+  }
+}
+
+/* --- RAIL-SHORT-VIEWPORT-01 : rail medium sous 480px de haut ---
+   Mesure sur 0ceba225 : le groupe du bas occupe 223px. Sous 480px (telephone en
+   paysage), il ne laisse a la navigation que 49 a 119px, moins de deux cibles.
+   A ces hauteurs, c'est TOUT le rail qui defile : la navigation reprend sa
+   hauteur naturelle et le groupe du bas suit, atteint en defilant. Au-dessus
+   de 480px, rien ne change : navigation defilante, groupe du bas fixe. */
+@media (min-width: 640px) and (max-width: 1023.98px) and (max-height: 479.98px) {
+  [data-citizen-medium-rail-body] {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    /* Meme marge que la navigation : repere (16px) + anneau (2px) + 2px. */
+    scroll-padding-block: 1.25rem;
+  }
+
+  [data-citizen-medium-rail-nav-region],
+  [data-citizen-medium-rail-nav] {
+    flex: none;
+  }
+
+  [data-citizen-medium-rail-nav] {
+    overflow: visible;
+  }
+
+  /* `mt-auto` vaut 0 quand le contenu deborde : separation explicite. */
+  [data-citizen-medium-rail-footer] {
+    margin-top: 1rem;
   }
 }
 
