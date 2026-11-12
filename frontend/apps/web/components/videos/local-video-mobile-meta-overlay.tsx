@@ -47,14 +47,17 @@ export function LocalVideoMobileMetaOverlay({ item }: LocalVideoMobileMetaOverla
   // reconstruit rien : il affiche, ou n'affiche pas.
   const raison = resolveVideoRankingReason(item);
 
+  // Bloc transparent au pointeur : un appui sur le texte atteint la vidéo
+  // (pause / reprise). Seuls profil, Suivre et liens sont ciblables
+  // (VIDEO-MOBILE-CHROME-RETURN-01).
   return (
-    <div className="pointer-events-auto min-w-0 space-y-2.5 pr-2 text-white">
+    <div className="pointer-events-none min-w-0 space-y-2.5 pr-2 text-white">
       <div className="flex flex-wrap items-center gap-2">
         {profileHref ? (
           <Link
             href={profileHref}
             aria-label="Profil du créateur"
-            className={`inline-flex min-h-11 min-w-0 max-w-full items-center gap-1.5 ${VIDEO_IMMERSIVE_FOCUS}`}
+            className={`pointer-events-auto inline-flex min-h-11 min-w-0 max-w-full items-center gap-1.5 ${VIDEO_IMMERSIVE_FOCUS}`}
           >
             {item.author.avatar_url ? (
               <AvatarImage
@@ -77,7 +80,7 @@ export function LocalVideoMobileMetaOverlay({ item }: LocalVideoMobileMetaOverla
           disabled
           title={VIDEO_DETAIL_FOLLOW_SOON}
           aria-label={VIDEO_DETAIL_FOLLOW_SOON}
-          className={`${VIDEO_TOUCH_TARGET} ${VIDEO_FOLLOW_DISABLED_CLASS} ${VIDEO_IMMERSIVE_FOCUS}`}
+          className={`pointer-events-auto ${VIDEO_TOUCH_TARGET} ${VIDEO_FOLLOW_DISABLED_CLASS} ${VIDEO_IMMERSIVE_FOCUS}`}
         >
           {VIDEO_DETAIL_FOLLOW}
         </button>
@@ -113,7 +116,7 @@ export function LocalVideoMobileMetaOverlay({ item }: LocalVideoMobileMetaOverla
       {mapHref ? (
         <Link
           href={mapHref}
-          className="inline-flex w-full max-w-[16rem] items-center justify-center gap-2 rounded-xl border border-yunicity-primary/70 bg-neutral-950/55 px-4 py-2.5 text-sm font-semibold text-yunicity-primary transition hover:bg-neutral-950/70"
+          className="pointer-events-auto inline-flex w-full max-w-[16rem] items-center justify-center gap-2 rounded-xl border border-yunicity-primary/70 bg-neutral-950/55 px-4 py-2.5 text-sm font-semibold text-yunicity-primary transition hover:bg-neutral-950/70"
         >
           <MapPin className="h-4 w-4 shrink-0" aria-hidden />
           {VIDEOS_DESKTOP_SEE_ON_MAP}
@@ -123,7 +126,7 @@ export function LocalVideoMobileMetaOverlay({ item }: LocalVideoMobileMetaOverla
       {discoverCta ? (
         <Link
           href={discoverCta.href}
-          className={`${VIDEO_TOUCH_TARGET} max-w-full gap-1 text-sm font-semibold text-white/90 transition hover:text-white ${VIDEO_IMMERSIVE_FOCUS}`}
+          className={`pointer-events-auto ${VIDEO_TOUCH_TARGET} max-w-full gap-1 text-sm font-semibold text-white/90 transition hover:text-white ${VIDEO_IMMERSIVE_FOCUS}`}
         >
           <span className="truncate">{discoverCta.label || VIDEOS_DESKTOP_DISCOVER_PLACE}</span>
           <ChevronRight className="h-4 w-4 shrink-0 text-white/70" aria-hidden />

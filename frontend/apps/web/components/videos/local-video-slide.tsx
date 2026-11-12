@@ -10,7 +10,14 @@ import {
   resolveLocalVideoLayout,
 } from "@yunicity/utils";
 import { Heart, Pause, Play } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FocusEvent,
+  type RefObject,
+} from "react";
 
 import { LocalVideoActionRail } from "@/components/videos/local-video-action-rail";
 import { LocalVideoMobileMetaOverlay } from "@/components/videos/local-video-mobile-meta-overlay";
@@ -21,6 +28,30 @@ import { useDeviceOrientation } from "@/hooks/use-device-orientation";
 const SINGLE_TAP_DELAY_MS = 260;
 /** Délai avant masquage des overlays pendant la lecture (style Reels / Shorts). */
 const CHROME_AUTO_HIDE_MS = 5_000;
+
+/**
+ * Chrome masqué : transparent au pointeur pour TOUS ses descendants.
+ * Les racines internes (méta, barre de lecture, rail) déclarent
+ * `pointer-events-auto` ; sans le `!important` descendant, elles restaient
+ * ciblables invisibles et interceptaient l'appui destiné au `<video>`
+ * (VIDEO-MOBILE-CHROME-RETURN-01).
+ */
+const CHROME_HIDDEN_CLASS = "pointer-events-none opacity-0 [&_*]:!pointer-events-none";
+
+/**
+ * Focus clavier (et non focus posé par un clic) : seul cas où le chrome doit
+ * rester visible tant qu'il contient le focus.
+ */
+function isKeyboardFocus(target: EventTarget): boolean {
+  if (!(target instanceof Element)) return false;
+  try {
+    return target.matches(":focus-visible");
+  } catch {
+    // Moteur sans `:focus-visible` : on garde le chrome visible — un focus
+    // invisible est le défaut à éviter, un chrome affiché ne l'est pas.
+    return true;
+  }
+}
 
 /** Slide inactive : inert + aria-hidden pour exclure clavier et TA sans démonter le snap. */
 function useSlideInert(articleRef: RefObject<HTMLElement | null>, isActive: boolean): void {
@@ -67,6 +98,10 @@ export function LocalVideoSlide({
   useSlideInert(articleRef, isActive);
   const singleTapTimerRef = useRef<number | null>(null);
   const hideChromeTimerRef = useRef<number | null>(null);
+  const bottomChromeRef = useRef<HTMLDivElement>(null);
+  const actionRailRef = useRef<HTMLDivElement>(null);
+  /** Vrai tant qu'un focus clavier est dans le chrome : suspend le masquage automatique. */
+  const keyboardFocusInChromeRef = useRef(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isMuted, setIsMuted] = useState(LOCAL_VIDEO_DEFAULT_MUTED);
   const [showPauseHint, setShowPauseHint] = useState(false);
@@ -94,12 +129,42 @@ export function LocalVideoSlide({
 
   const scheduleChromeHide = useCallback(() => {
     clearHideChromeTimer();
-    if (!isActive || isPaused) return;
+    if (!isActive || isPaused || keyboardFocusInChromeRef.current) return;
     hideChromeTimerRef.current = window.setTimeout(() => {
-      setChromeVisible(false);
       hideChromeTimerRef.current = null;
+      if (keyboardFocusInChromeRef.current) return;
+      setChromeVisible(false);
     }, CHROME_AUTO_HIDE_MS);
   }, [clearHideChromeTimer, isActive, isPaused]);
+
+  const isInsideChrome = useCallback((node: Node): boolean => {
+    return Boolean(
+      bottomChromeRef.current?.contains(node) || actionRailRef.current?.contains(node),
+    );
+  }, []);
+
+  /** Focus clavier entrant : chrome réaffiché immédiatement, masquage suspendu. */
+  const handleChromeFocus = useCallback(
+    (event: FocusEvent<HTMLDivElement>) => {
+      if (!isKeyboardFocus(event.target)) return;
+      keyboardFocusInChromeRef.current = true;
+      clearHideChromeTimer();
+      setChromeVisible(true);
+    },
+    [clearHideChromeTimer],
+  );
+
+  /** Focus sorti du chrome (pas un passage entre deux commandes) : masquage réarmé. */
+  const handleChromeBlur = useCallback(
+    (event: FocusEvent<HTMLDivElement>) => {
+      const next = event.relatedTarget;
+      if (next instanceof Node && isInsideChrome(next)) return;
+      if (!keyboardFocusInChromeRef.current) return;
+      keyboardFocusInChromeRef.current = false;
+      scheduleChromeHide();
+    },
+    [isInsideChrome, scheduleChromeHide],
+  );
 
   const revealChrome = useCallback(
     (autoHide: boolean) => {
@@ -122,11 +187,14 @@ export function LocalVideoSlide({
     setIsPaused(false);
     setMediaError(false);
     setChromeVisible(true);
+    keyboardFocusInChromeRef.current = false;
     clearHideChromeTimer();
   }, [item.id, clearHideChromeTimer]);
 
   useEffect(() => {
     if (!isActive) {
+      // Slide rendue inert : le focus en sort sans garantie d'événement blur.
+      keyboardFocusInChromeRef.current = false;
       setChromeVisible(true);
       clearHideChromeTimer();
       return;
@@ -355,8 +423,13 @@ export function LocalVideoSlide({
       ) : null}
 
       <div
+        ref={bottomChromeRef}
+        onFocus={handleChromeFocus}
+        onBlur={handleChromeBlur}
         className={`videos-slide-bottom-chrome absolute inset-x-0 bottom-0 z-20 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pr-[4.75rem] ${chromeTransition} ${
-          chromeVisible ? "opacity-100" : "pointer-events-none opacity-0"
+          // Visible : conteneur transparent au pointeur, seuls les éléments
+          // interactifs (pointer-events-auto) captent l'appui.
+          chromeVisible ? "pointer-events-none opacity-100" : CHROME_HIDDEN_CLASS
         }`}
       >
         <div className="min-w-0 space-y-2">
@@ -380,8 +453,11 @@ export function LocalVideoSlide({
       </div>
 
       <div
+        ref={actionRailRef}
+        onFocus={handleChromeFocus}
+        onBlur={handleChromeBlur}
         className={`videos-slide-action-rail absolute right-3 bottom-[var(--videos-mobile-action-rail-bottom,1.75rem)] z-20 ${chromeTransition} ${
-          chromeVisible ? "opacity-100" : "pointer-events-none opacity-0"
+          chromeVisible ? "opacity-100" : CHROME_HIDDEN_CLASS
         }`}
       >
         <LocalVideoActionRail
