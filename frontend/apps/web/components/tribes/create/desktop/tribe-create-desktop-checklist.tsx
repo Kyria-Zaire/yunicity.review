@@ -39,7 +39,12 @@ export function TribeCreateDesktopChecklist({ draft }: TribeCreateDesktopCheckli
         {ITEMS.map((item) => {
           const done = state[item.key];
           return (
-            <li key={item.key} className="flex items-start gap-2 text-sm">
+            <li
+              key={item.key}
+              className="flex items-start gap-2 text-sm"
+              data-tribe-create-checklist-item={item.key}
+              data-done={done ? "true" : "false"}
+            >
               {done ? (
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" aria-hidden />
               ) : (

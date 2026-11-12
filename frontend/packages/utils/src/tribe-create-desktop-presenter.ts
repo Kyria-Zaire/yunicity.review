@@ -1,5 +1,11 @@
 import type { TribeCreateDraft, TribeCreateStepId } from "./tribe-create-portal";
-import { TRIBE_CREATE_STEPS, validateTribeCreateStep } from "./tribe-create-portal";
+import {
+  TRIBE_CREATE_STEPS,
+  isTribeCreateCharterAccepted,
+  isTribeCreateIdentityComplete,
+  isTribeCreateVisibilityValid,
+  validateTribeCreateStep,
+} from "./tribe-create-portal";
 import { TRIBE_CREATE_CATEGORY_OPTIONS } from "./tribe-create-portal";
 import {
   TRIBE_CREATE_DESKTOP_STEP_ACCESS,
@@ -84,20 +90,41 @@ export const TRIBE_CREATE_DESKTOP_CATEGORY_GRID: TribeCreateDesktopCategoryOptio
 
 export type TribeCreateChecklistKey = "identity" | "access" | "charter" | "visuals";
 
+export type TribeCreateChecklistRule = {
+  /** Obligatoire : non satisfaite, elle compte comme erreur bloquante. Facultative : jamais bloquante. */
+  required: boolean;
+  isMet: (draft: TribeCreateDraft) => boolean;
+};
+
+/**
+ * Source unique des coches de la checklist « Avant de publier » ET du comptage des erreurs
+ * bloquantes (TRIBE-CREATE-CHECKLIST-ACCESS-01). Ensemble, les règles obligatoires
+ * recouvrent exactement la validation des étapes Identité (champs + visibilité) et Accès
+ * (charte) vérifiée avant publication.
+ */
+export const TRIBE_CREATE_CHECKLIST_RULES: Readonly<Record<TribeCreateChecklistKey, TribeCreateChecklistRule>> = {
+  identity: { required: true, isMet: isTribeCreateIdentityComplete },
+  access: { required: true, isMet: (draft) => isTribeCreateVisibilityValid(draft.visibility) },
+  charter: { required: true, isMet: isTribeCreateCharterAccepted },
+  visuals: { required: false, isMet: (draft) => draft.coverImageUrl.trim().length > 0 },
+};
+
+const TRIBE_CREATE_CHECKLIST_KEYS: readonly TribeCreateChecklistKey[] = ["identity", "access", "charter", "visuals"];
+
 export function tribeCreateChecklistState(draft: TribeCreateDraft): Record<TribeCreateChecklistKey, boolean> {
   return {
-    identity: validateTribeCreateStep("identity", draft).valid,
-    access: true,
-    charter: draft.charterAccepted,
-    visuals: draft.coverImageUrl.trim().length > 0,
+    identity: TRIBE_CREATE_CHECKLIST_RULES.identity.isMet(draft),
+    access: TRIBE_CREATE_CHECKLIST_RULES.access.isMet(draft),
+    charter: TRIBE_CREATE_CHECKLIST_RULES.charter.isMet(draft),
+    visuals: TRIBE_CREATE_CHECKLIST_RULES.visuals.isMet(draft),
   };
 }
 
 export function tribeCreateBlockingErrorCount(draft: TribeCreateDraft): number {
-  let count = 0;
-  if (!validateTribeCreateStep("identity", draft).valid) count += 1;
-  if (!validateTribeCreateStep("access", draft).valid) count += 1;
-  return count;
+  return TRIBE_CREATE_CHECKLIST_KEYS.filter((key) => {
+    const rule = TRIBE_CREATE_CHECKLIST_RULES[key];
+    return rule.required && !rule.isMet(draft);
+  }).length;
 }
 
 export function tribeCreateChecklistProgress(draft: TribeCreateDraft): {
