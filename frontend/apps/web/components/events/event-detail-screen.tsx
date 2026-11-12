@@ -3,9 +3,11 @@
 import { EventDesktopDetailView } from "@/components/events/desktop";
 import { EventDetailAppShell } from "@/components/events/event-detail-app-shell";
 import { EventDetailCancelledState } from "@/components/events/event-detail-cancelled-state";
+import type { EventEndedRemoval, EventEndedRemovalStatus } from "@/components/events/event-ended-actions";
 import { EventMediumDetailView } from "@/components/events/medium";
 import { EventMobileDetailView } from "@/components/events/mobile";
 import { useEventDetailContext } from "@/hooks/use-event-detail-context";
+import { useEventDetailTiming } from "@/hooks/use-event-detail-timing";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import { useAuth } from "@/lib/auth/auth-provider";
 import {
@@ -21,8 +23,14 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
   const { user } = useAuth();
   const context = useEventDetailContext(eventId);
   const [toggling, setToggling] = useState(false);
+  // Retrait d'un événement terminé, rattaché à l'événement affiché (aucune fuite d'une fiche à l'autre).
+  const [removal, setRemoval] = useState<{ eventId: string; status: EventEndedRemovalStatus }>({
+    eventId,
+    status: "idle",
+  });
 
   const event = context.event;
+  const timing = useEventDetailTiming(event?.starts_at ?? null, event?.ends_at ?? null);
 
   const venuePlace = useMemo(
     () => (event ? resolveEventVenuePlace(event, context.culturalPlaces) : null),
@@ -48,6 +56,40 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
       setToggling(false);
     }
   }
+
+  const removalStatus: EventEndedRemovalStatus = removal.eventId === eventId ? removal.status : "idle";
+
+  /**
+   * EVENTS-PAST-01 — retrait d'un événement terminé. Le succès n'est annoncé que si le
+   * serveur confirme `interested: false` ; toute autre issue garde le bouton et affiche l'erreur.
+   */
+  async function handleRemoveEnded() {
+    const current = context.event;
+    if (!current || removalStatus === "pending") return;
+    setRemoval({ eventId, status: "pending" });
+    let result: Awaited<ReturnType<typeof api.events.toggleInterest>>;
+    try {
+      result = await api.events.toggleInterest(current.id);
+    } catch {
+      setRemoval({ eventId, status: "error" });
+      return;
+    }
+    context.patchEvent({
+      interested_by_me: result.interested,
+      interest_count: result.interest_count,
+    });
+    setRemoval({ eventId, status: result.interested ? "error" : "removed" });
+    await context.syncPlanningAfterInterest(result.interested, {
+      ...current,
+      interested_by_me: result.interested,
+      interest_count: result.interest_count,
+    });
+  }
+
+  const endedRemoval: EventEndedRemoval = {
+    status: removalStatus,
+    onRemove: () => void handleRemoveEnded(),
+  };
 
   const desktopMain = (
     <div className="web-desktop-event-detail-only">
@@ -83,6 +125,8 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
           toggling={toggling}
           isAuthenticated={Boolean(user)}
           onToggleInterest={() => void handleInterest()}
+          timing={timing}
+          endedRemoval={endedRemoval}
         />
       ) : null}
     </div>
@@ -122,6 +166,8 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
           toggling={toggling}
           isAuthenticated={Boolean(user)}
           onToggleInterest={() => void handleInterest()}
+          timing={timing}
+          endedRemoval={endedRemoval}
         />
       ) : null}
     </div>
@@ -164,6 +210,8 @@ export function EventDetailScreen({ eventId }: { eventId: string }) {
           toggling={toggling}
           isAuthenticated={Boolean(user)}
           onToggleInterest={() => void handleInterest()}
+          timing={timing}
+          endedRemoval={endedRemoval}
         />
       ) : null}
     </>

@@ -16,6 +16,8 @@ type EventMobileDetailShareSaveProps = {
   toggling: boolean;
   isAuthenticated: boolean;
   onToggleInterest: () => void;
+  /** Événement terminé : l'ajout disparaît, le retrait passe par le bloc « terminé ». */
+  isEnded: boolean;
 };
 
 export function EventMobileDetailShareSave({
@@ -25,6 +27,7 @@ export function EventMobileDetailShareSave({
   toggling,
   isAuthenticated,
   onToggleInterest,
+  isEnded,
 }: EventMobileDetailShareSaveProps) {
   const [shareHint, setShareHint] = useState<string | null>(null);
 
@@ -46,7 +49,7 @@ export function EventMobileDetailShareSave({
 
   return (
     <div
-      className="grid grid-cols-2 divide-x divide-neutral-200 rounded-2xl border border-neutral-200/90 bg-white"
+      className={`grid ${isEnded ? "grid-cols-1" : "grid-cols-2"} divide-x divide-neutral-200 rounded-2xl border border-neutral-200/90 bg-white`}
       data-event-mobile-share=""
     >
       <button
@@ -57,6 +60,7 @@ export function EventMobileDetailShareSave({
         <Share2 className="h-4 w-4" aria-hidden />
         {shareHint ?? EVENT_DETAIL_DESKTOP_SHARE}
       </button>
+      {isEnded ? null : (
       <button
         type="button"
         disabled={toggling || !isAuthenticated}
@@ -68,6 +72,7 @@ export function EventMobileDetailShareSave({
         <Bookmark className={`h-4 w-4 ${interestedByMe ? "fill-current text-yunicity-primary" : ""}`} aria-hidden />
         {interestedByMe ? EVENT_DETAIL_MOBILE_BOOKMARK_ACTIVE : EVENT_DETAIL_MOBILE_BOOKMARK}
       </button>
+      )}
     </div>
   );
 }

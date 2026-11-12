@@ -12,7 +12,9 @@ import {
   EventMobileSimilarSection,
 } from "@/components/events/mobile/event-mobile-detail-sections";
 import { EventMobileDetailShareSave } from "@/components/events/mobile/event-mobile-detail-share-save";
+import type { EventEndedRemoval } from "@/components/events/event-ended-actions";
 import type { EventDetailContextState } from "@/hooks/use-event-detail-context";
+import type { EventDetailTiming } from "@/hooks/use-event-detail-timing";
 import type { CulturalPlaceListItem, LocalEvent } from "@yunicity/types";
 import {
   buildEventDesktopBadges,
@@ -31,6 +33,8 @@ type EventMobileDetailViewProps = {
   toggling: boolean;
   isAuthenticated: boolean;
   onToggleInterest: () => void;
+  timing: EventDetailTiming;
+  endedRemoval: EventEndedRemoval;
 };
 
 export function EventMobileDetailView({
@@ -39,6 +43,8 @@ export function EventMobileDetailView({
   toggling,
   isAuthenticated,
   onToggleInterest,
+  timing,
+  endedRemoval,
 }: EventMobileDetailViewProps) {
   const badges = useMemo(() => buildEventDesktopBadges(event), [event]);
   const breadcrumbs = useMemo(() => buildEventDetailBreadcrumbs(event), [event]);
@@ -69,6 +75,8 @@ export function EventMobileDetailView({
           toggling={toggling}
           isAuthenticated={isAuthenticated}
           onToggleInterest={onToggleInterest}
+          timing={timing}
+          endedRemoval={endedRemoval}
         />
         <EventMobileDetailShareSave
           eventId={event.id}
@@ -77,6 +85,7 @@ export function EventMobileDetailView({
           toggling={toggling}
           isAuthenticated={isAuthenticated}
           onToggleInterest={onToggleInterest}
+          isEnded={timing.status === "ended"}
         />
         <EventMobileAboutSection preview={copy.preview} fullText={copy.rest} />
         <EventMobileProgramSection steps={programSteps} />

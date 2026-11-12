@@ -11,6 +11,7 @@ import {
   NEIGHBORHOOD_EDITORIAL_IMAGE_CENTRE_VILLE,
 } from "./editorial-fallback-images";
 import { EVENT_TYPE_FALLBACK_IMAGES, resolveEventHeroImage } from "./event-hero-image";
+import { nextEventTimeTransitionMs, resolveEventTimeStatus } from "./event-time-status";
 import {
   EVENT_DETAIL_DESKTOP_BREADCRUMB_SORTIR,
   EVENT_DETAIL_DESKTOP_FEATURED_BADGE,
@@ -288,23 +289,41 @@ export function resolveEventDesktopMapPoint(event: LocalEvent): {
   return EVENT_DETAIL_MAP_FALLBACK;
 }
 
+/** Statut affiché — même règle que les actions de la fiche (`resolveEventTimeStatus`, EVENTS-PAST-01). */
 export function formatEventCountdownLabel(
   startsAt: string,
   endsAt: string | null,
   now = new Date(),
 ): string | null {
-  const start = Date.parse(startsAt);
-  if (!Number.isFinite(start)) return null;
-  const end = endsAt ? Date.parse(endsAt) : start + 2 * 60 * 60 * 1000;
-  const nowMs = now.getTime();
-  if (Number.isFinite(end) && end <= nowMs) return EVENT_DETAIL_DESKTOP_ENDED;
-  if (start <= nowMs) return EVENT_DETAIL_DESKTOP_STARTED;
-  const diffMin = Math.round((start - nowMs) / 60_000);
+  const status = resolveEventTimeStatus(startsAt, endsAt, now);
+  if (status === "unknown") return null;
+  if (status === "ended") return EVENT_DETAIL_DESKTOP_ENDED;
+  if (status === "ongoing") return EVENT_DETAIL_DESKTOP_STARTED;
+  const diffMin = Math.round((Date.parse(startsAt) - now.getTime()) / 60_000);
   if (diffMin < 60) return EVENT_DETAIL_DESKTOP_STARTS_IN(`${diffMin} min`);
   const hours = Math.floor(diffMin / 60);
   const rest = diffMin % 60;
   if (rest === 0) return EVENT_DETAIL_DESKTOP_STARTS_IN(`${hours} h`);
   return EVENT_DETAIL_DESKTOP_STARTS_IN(`${hours} h ${rest} min`);
+}
+
+/**
+ * Prochain instant où `formatEventCountdownLabel` peut changer de texte :
+ * minute suivante du compte à rebours avant le début (arrondi de
+ * `Math.round` : le texte passe de k à k − 1 minutes juste après
+ * `début − (k − 0,5) min`), puis franchissements du statut (début, fin).
+ */
+export function nextEventCountdownLabelChangeMs(
+  startsAt: string,
+  endsAt: string | null,
+  now = new Date(),
+): number | null {
+  const transition = nextEventTimeTransitionMs(startsAt, endsAt, now);
+  if (resolveEventTimeStatus(startsAt, endsAt, now) !== "upcoming") return transition;
+  const start = Date.parse(startsAt);
+  const minutesLeft = Math.round((start - now.getTime()) / 60_000);
+  if (minutesLeft <= 0) return start;
+  return Math.min(start, start - minutesLeft * 60_000 + 30_000 + 1);
 }
 
 export function formatEventDesktopWhenLine(

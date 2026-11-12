@@ -1,7 +1,9 @@
 "use client";
 
 import { CulturalImage } from "@/components/culture/cultural-image";
+import { EventEndedActions, type EventEndedRemoval } from "@/components/events/event-ended-actions";
 import type { EventDetailContextState } from "@/hooks/use-event-detail-context";
+import type { EventDetailTiming } from "@/hooks/use-event-detail-timing";
 import type { LocalEvent } from "@yunicity/types";
 import type { EventDesktopBadge } from "@yunicity/utils";
 import {
@@ -31,7 +33,6 @@ import {
   eventDesktopSimilarBadgeLabel,
   eventDesktopSimilarBadgeTone,
   formatEventClockTime,
-  formatEventCountdownLabel,
   formatEventDateBadge,
   formatEventDesktopAgendaWhen,
   formatEventDesktopLocationLine,
@@ -66,6 +67,8 @@ type EventDesktopRightRailProps = {
   toggling: boolean;
   isAuthenticated: boolean;
   onToggleInterest: () => void;
+  timing: EventDetailTiming;
+  endedRemoval: EventEndedRemoval;
 };
 
 export function EventDesktopRightRail({
@@ -74,9 +77,11 @@ export function EventDesktopRightRail({
   toggling,
   isAuthenticated,
   onToggleInterest,
+  timing,
+  endedRemoval,
 }: EventDesktopRightRailProps) {
   const whenLine = formatEventDesktopWhenLine(event);
-  const countdown = formatEventCountdownLabel(event.starts_at, event.ends_at);
+  const countdown = timing.countdownLabel;
   const calendarUrl = buildGoogleCalendarUrl(event);
   const partnerHref = buildPartnerPlaceHrefFromEvent(event);
   const locationLine = formatEventDesktopLocationLine(event);
@@ -124,6 +129,15 @@ export function EventDesktopRightRail({
           ) : null}
         </ul>
 
+        {timing.status === "ended" ? (
+          <div className="mt-4">
+            <EventEndedActions
+              interestedByMe={event.interested_by_me}
+              isAuthenticated={isAuthenticated}
+              removal={endedRemoval}
+            />
+          </div>
+        ) : (
         <div className="mt-4 space-y-2.5">
           <button
             type="button"
@@ -166,6 +180,7 @@ export function EventDesktopRightRail({
             {EVENT_DETAIL_DESKTOP_PARTICIPATE_HINT}
           </p>
         </div>
+        )}
       </div>
 
       {/* Votre agenda */}

@@ -2125,6 +2125,10 @@ export {
   EVENT_DETAIL_DESKTOP_STARTED,
   EVENT_DETAIL_DESKTOP_STARTS_IN,
   EVENT_DETAIL_DESKTOP_ENDED,
+  EVENT_DETAIL_ENDED_NOTICE,
+  EVENT_DETAIL_ENDED_REMOVE,
+  EVENT_DETAIL_ENDED_REMOVE_ERROR,
+  EVENT_DETAIL_ENDED_REMOVED,
   EVENT_DETAIL_DESKTOP_TONIGHT,
   EVENT_DETAIL_DESKTOP_VIEW_AGENDA,
   EVENT_DETAIL_INTEREST_CTA,
@@ -2231,6 +2235,7 @@ export {
   formatEventDesktopAgendaWhen,
   formatEventDesktopLocationLine,
   formatEventDesktopWhenLine,
+  nextEventCountdownLabelChangeMs,
   resolveEventDesktopMapPoint,
   splitEventAboutText,
   splitEventDesktopCopy,
@@ -2585,6 +2590,15 @@ export {
   type AgendaTimeSlot,
   type AgendaWeekDay,
 } from "./events-agenda";
+export {
+  EVENT_END_FALLBACK_MIN_DURATION_MS,
+  EVENT_END_FALLBACK_TIME_ZONE,
+  nextEventTimeTransitionMs,
+  nextLocalMidnightMs,
+  resolveEventEffectiveEndMs,
+  resolveEventTimeStatus,
+  type EventTimeStatus,
+} from "./event-time-status";
 export {
   FEATURED_CAROUSEL_CTA,
   FEATURED_CAROUSEL_MAX_ITEMS,

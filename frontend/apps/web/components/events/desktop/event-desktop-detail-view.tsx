@@ -6,7 +6,9 @@ import { EventDesktopLieuSavoir } from "@/components/events/desktop/event-deskto
 import { EventDesktopMeta } from "@/components/events/desktop/event-desktop-meta";
 import { EventDesktopRightRail } from "@/components/events/desktop/event-desktop-right-rail";
 import { EventDetailBreadcrumbs } from "@/components/events/event-detail-breadcrumbs";
+import type { EventEndedRemoval } from "@/components/events/event-ended-actions";
 import type { EventDetailContextState } from "@/hooks/use-event-detail-context";
+import type { EventDetailTiming } from "@/hooks/use-event-detail-timing";
 import type { LocalEvent } from "@yunicity/types";
 import {
   EVENT_DETAIL_BACK_SORTIR,
@@ -27,6 +29,8 @@ type EventDesktopDetailViewProps = {
   toggling: boolean;
   isAuthenticated: boolean;
   onToggleInterest: () => void;
+  timing: EventDetailTiming;
+  endedRemoval: EventEndedRemoval;
 };
 
 export function EventDesktopDetailView({
@@ -35,6 +39,8 @@ export function EventDesktopDetailView({
   toggling,
   isAuthenticated,
   onToggleInterest,
+  timing,
+  endedRemoval,
 }: EventDesktopDetailViewProps) {
   const breadcrumbs = useMemo(() => buildEventDetailBreadcrumbs(event), [event]);
   const badges = useMemo(() => buildEventDesktopBadges(event), [event]);
@@ -69,6 +75,7 @@ export function EventDesktopDetailView({
             toggling={toggling}
             isAuthenticated={isAuthenticated}
             onToggleInterest={onToggleInterest}
+            isEnded={timing.status === "ended"}
           />
           <EventDesktopAboutProgram
             preview={copy.preview}
@@ -85,6 +92,8 @@ export function EventDesktopDetailView({
             toggling={toggling}
             isAuthenticated={isAuthenticated}
             onToggleInterest={onToggleInterest}
+            timing={timing}
+            endedRemoval={endedRemoval}
           />
         </div>
       </div>

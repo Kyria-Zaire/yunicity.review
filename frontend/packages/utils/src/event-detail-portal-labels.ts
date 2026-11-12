@@ -95,6 +95,11 @@ export const EVENT_DETAIL_DESKTOP_PROGRAM_START_CONCERT = "Début du concert";
 export const EVENT_DETAIL_DESKTOP_STARTS_IN = (label: string) => `Commence dans ${label}`;
 export const EVENT_DETAIL_DESKTOP_STARTED = "En cours";
 export const EVENT_DETAIL_DESKTOP_ENDED = "Terminé";
+/** EVENTS-PAST-01 — fiche d'un événement terminé. */
+export const EVENT_DETAIL_ENDED_NOTICE = "Cet événement est terminé.";
+export const EVENT_DETAIL_ENDED_REMOVE = "Retirer de mon agenda";
+export const EVENT_DETAIL_ENDED_REMOVED = "Retiré de votre agenda.";
+export const EVENT_DETAIL_ENDED_REMOVE_ERROR = "Le retrait n’a pas abouti. Réessayez.";
 export const EVENT_DETAIL_DESKTOP_FREE_BOOKING = "Gratuit · Réservation conseillée";
 export const EVENT_DETAIL_DESKTOP_BREADCRUMB_SORTIR = "Sortir";
 export const EVENT_DETAIL_DESKTOP_KNOW_LANG = "Visite en français";

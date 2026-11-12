@@ -32,6 +32,8 @@ type EventDesktopMetaProps = {
   toggling: boolean;
   isAuthenticated: boolean;
   onToggleInterest: () => void;
+  /** Événement terminé : l'ajout disparaît, le retrait passe par le bloc « terminé ». */
+  isEnded: boolean;
 };
 
 export function EventDesktopMeta({
@@ -41,6 +43,7 @@ export function EventDesktopMeta({
   toggling,
   isAuthenticated,
   onToggleInterest,
+  isEnded,
 }: EventDesktopMetaProps) {
   const [shareHint, setShareHint] = useState<string | null>(null);
   const partnerHref = buildPartnerPlaceHrefFromEvent(event);
@@ -75,6 +78,7 @@ export function EventDesktopMeta({
         <Share2 className="h-4 w-4" aria-hidden />
         {shareHint ?? EVENT_DETAIL_DESKTOP_SHARE}
       </button>
+      {isEnded ? null : (
       <button
         type="button"
         disabled={toggling || !isAuthenticated}
@@ -87,6 +91,7 @@ export function EventDesktopMeta({
         />
         {event.interested_by_me ? EVENT_DETAIL_DESKTOP_SAVE_ACTIVE : EVENT_DETAIL_DESKTOP_SAVE}
       </button>
+      )}
       <button
         type="button"
         disabled

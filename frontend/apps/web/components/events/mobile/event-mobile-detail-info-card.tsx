@@ -1,5 +1,7 @@
 "use client";
 
+import { EventEndedActions, type EventEndedRemoval } from "@/components/events/event-ended-actions";
+import type { EventDetailTiming } from "@/hooks/use-event-detail-timing";
 import type { LocalEvent } from "@yunicity/types";
 import {
   EVENT_DETAIL_DESKTOP_ADD_AGENDA,
@@ -9,7 +11,6 @@ import {
   EVENT_DETAIL_DESKTOP_PARTICIPATE,
   EVENT_DETAIL_MOBILE_RESPONSE_HINT,
   buildGoogleCalendarUrl,
-  formatEventCountdownLabel,
   formatEventDateBadge,
   formatEventDesktopLocationLine,
   formatEventDesktopWhenLine,
@@ -21,6 +22,8 @@ type EventMobileDetailInfoCardProps = {
   toggling: boolean;
   isAuthenticated: boolean;
   onToggleInterest: () => void;
+  timing: EventDetailTiming;
+  endedRemoval: EventEndedRemoval;
 };
 
 export function EventMobileDetailInfoCard({
@@ -28,9 +31,11 @@ export function EventMobileDetailInfoCard({
   toggling,
   isAuthenticated,
   onToggleInterest,
+  timing,
+  endedRemoval,
 }: EventMobileDetailInfoCardProps) {
   const whenLine = formatEventDesktopWhenLine(event);
-  const countdown = formatEventCountdownLabel(event.starts_at, event.ends_at);
+  const countdown = timing.countdownLabel;
   const calendarUrl = buildGoogleCalendarUrl(event);
   const locationLine = formatEventDesktopLocationLine(event);
   const dateBadge = formatEventDateBadge(event.starts_at);
@@ -71,6 +76,15 @@ export function EventMobileDetailInfoCard({
         </ul>
       </div>
 
+      {timing.status === "ended" ? (
+        <div className="mt-4">
+          <EventEndedActions
+            interestedByMe={event.interested_by_me}
+            isAuthenticated={isAuthenticated}
+            removal={endedRemoval}
+          />
+        </div>
+      ) : (
       <div className="mt-4 flex flex-col gap-2">
         <button
           type="button"
@@ -106,6 +120,7 @@ export function EventMobileDetailInfoCard({
         ) : null}
         <p className="text-center text-[11px] text-neutral-400">{EVENT_DETAIL_MOBILE_RESPONSE_HINT}</p>
       </div>
+      )}
     </section>
   );
 }

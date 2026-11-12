@@ -1,5 +1,7 @@
 "use client";
 
+import { EventEndedActions, type EventEndedRemoval } from "@/components/events/event-ended-actions";
+import type { EventDetailTiming } from "@/hooks/use-event-detail-timing";
 import type { LocalEvent } from "@yunicity/types";
 import {
   EVENT_DETAIL_DESKTOP_ADD_AGENDA,
@@ -8,7 +10,6 @@ import {
   EVENT_DETAIL_DESKTOP_INTEREST_DONE,
   EVENT_DETAIL_DESKTOP_PARTICIPATE,
   buildGoogleCalendarUrl,
-  formatEventCountdownLabel,
   formatEventDateBadge,
   formatEventDesktopLocationLine,
   formatEventDesktopWhenLine,
@@ -20,6 +21,8 @@ type EventMediumParticipateCardProps = {
   toggling: boolean;
   isAuthenticated: boolean;
   onToggleInterest: () => void;
+  timing: EventDetailTiming;
+  endedRemoval: EventEndedRemoval;
 };
 
 /** Carte Participer horizontale — rail medium (maquette). */
@@ -28,9 +31,11 @@ export function EventMediumParticipateCard({
   toggling,
   isAuthenticated,
   onToggleInterest,
+  timing,
+  endedRemoval,
 }: EventMediumParticipateCardProps) {
   const whenLine = formatEventDesktopWhenLine(event);
-  const countdown = formatEventCountdownLabel(event.starts_at, event.ends_at);
+  const countdown = timing.countdownLabel;
   const calendarUrl = buildGoogleCalendarUrl(event);
   const locationLine = formatEventDesktopLocationLine(event);
   const dateBadge = formatEventDateBadge(event.starts_at);
@@ -72,6 +77,13 @@ export function EventMediumParticipateCard({
           </ul>
         </div>
 
+        {timing.status === "ended" ? (
+          <EventEndedActions
+            interestedByMe={event.interested_by_me}
+            isAuthenticated={isAuthenticated}
+            removal={endedRemoval}
+          />
+        ) : (
         <div className="flex flex-col gap-2">
           <button
             type="button"
@@ -108,6 +120,7 @@ export function EventMediumParticipateCard({
             </a>
           ) : null}
         </div>
+        )}
       </div>
     </section>
   );

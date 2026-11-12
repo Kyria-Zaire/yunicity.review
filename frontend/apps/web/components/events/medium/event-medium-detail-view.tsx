@@ -8,7 +8,9 @@ import { EventMediumAgendaBar } from "@/components/events/medium/event-medium-ag
 import { EventMediumHeader } from "@/components/events/medium/event-medium-header";
 import { EventMediumParticipateCard } from "@/components/events/medium/event-medium-participate-card";
 import { EventMediumSimilarRail } from "@/components/events/medium/event-medium-similar-rail";
+import type { EventEndedRemoval } from "@/components/events/event-ended-actions";
 import type { EventDetailContextState } from "@/hooks/use-event-detail-context";
+import type { EventDetailTiming } from "@/hooks/use-event-detail-timing";
 import type { LocalEvent } from "@yunicity/types";
 import {
   buildEventDesktopBadges,
@@ -26,6 +28,8 @@ type EventMediumDetailViewProps = {
   toggling: boolean;
   isAuthenticated: boolean;
   onToggleInterest: () => void;
+  timing: EventDetailTiming;
+  endedRemoval: EventEndedRemoval;
 };
 
 export function EventMediumDetailView({
@@ -34,6 +38,8 @@ export function EventMediumDetailView({
   toggling,
   isAuthenticated,
   onToggleInterest,
+  timing,
+  endedRemoval,
 }: EventMediumDetailViewProps) {
   const breadcrumbs = useMemo(() => buildEventDetailBreadcrumbs(event), [event]);
   const categoryLabel = breadcrumbs[1]?.label ?? "Sortir";
@@ -61,12 +67,15 @@ export function EventMediumDetailView({
         toggling={toggling}
         isAuthenticated={isAuthenticated}
         onToggleInterest={onToggleInterest}
+        isEnded={timing.status === "ended"}
       />
       <EventMediumParticipateCard
         event={event}
         toggling={toggling}
         isAuthenticated={isAuthenticated}
         onToggleInterest={onToggleInterest}
+        timing={timing}
+        endedRemoval={endedRemoval}
       />
       <EventDesktopAboutProgram
         preview={copy.preview}
