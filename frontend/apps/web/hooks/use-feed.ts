@@ -98,6 +98,28 @@ export function useFeed({ scopeKey = "feed" }: { scopeKey?: string } = {}) {
 
   const loadInitial = useCallback(() => loadPage(null, "initial"), [loadPage]);
 
+  /**
+   * Suppression douce de SA publication (PROFILE-POST-MENU-01).
+   *
+   * Le retrait local suit le `204`, et JAMAIS avant : une suppression
+   * optimiste masquerait une carte qu'un `403` laisse en ligne, et l'écran
+   * mentirait jusqu'au prochain rechargement. En échange, la confirmation
+   * reste ouverte pendant l'appel — c'est elle qui porte l'état d'attente.
+   *
+   * `nextCursor` n'est pas touché : le curseur du fil est temporel, et retirer
+   * un élément déjà chargé ne déplace pas la page suivante.
+   */
+  const deletePost = useCallback(
+    async (postId: string) => {
+      await api.deleteFeedPost(postId);
+      setPagination((current) => ({
+        ...current,
+        items: current.items.filter((item) => item.id !== postId),
+      }));
+    },
+    [api],
+  );
+
   const toggleLike = useCallback(
     async (post: FeedPost) => {
       const nextLiked = !post.liked_by_me;
@@ -140,5 +162,6 @@ export function useFeed({ scopeKey = "feed" }: { scopeKey?: string } = {}) {
     loadMore,
     createPost,
     toggleLike,
+    deletePost,
   };
 }

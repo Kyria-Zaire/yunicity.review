@@ -6,6 +6,7 @@ import { useLocalVideoTeasers } from "@/hooks/use-local-video-teasers";
 import { PlaceMobileDetailMapPreview } from "@/components/places/mobile/place-mobile-detail-map-preview";
 import type { CulturalPlaceDetail } from "@yunicity/types";
 import {
+  buildLocalVideoTeaserViewFromFeedItem,
   PLACE_DETAIL_MOBILE_ABOUT_EMPTY,
   PLACE_DETAIL_MOBILE_OFFERS_EMPTY,
   PLACE_DETAIL_MOBILE_PHOTOS_EMPTY,
@@ -130,7 +131,7 @@ export function PlaceMobileDetailTabs({
             <p className="text-sm text-neutral-500">{PLACE_DETAIL_MOBILE_PUBLICATIONS_EMPTY}</p>
           ) : (
             <LocalVideoTeaserRail
-              items={publications.items}
+              views={publications.items.map(buildLocalVideoTeaserViewFromFeedItem)}
               title={LOCAL_VIDEO_TEASER_SECTION_PLACE}
               layout="scroll"
             />

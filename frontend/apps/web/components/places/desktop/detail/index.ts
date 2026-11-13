@@ -1,0 +1,11 @@
+export { PlaceDesktopDetailAbout } from "./place-desktop-detail-about";
+export { PlaceDesktopDetailEvents } from "./place-desktop-detail-events";
+export { PlaceDesktopDetailGallery } from "./place-desktop-detail-gallery";
+export { PlaceDesktopDetailKnow } from "./place-desktop-detail-know";
+export { PlaceDesktopDetailMeta } from "./place-desktop-detail-meta";
+export { PlaceDesktopDetailNearby } from "./place-desktop-detail-nearby";
+export { PlaceDesktopDetailPhotos } from "./place-desktop-detail-photos";
+export { PlaceDesktopDetailRightRail } from "./place-desktop-detail-right-rail";
+export { PlaceDesktopDetailTabs } from "./place-desktop-detail-tabs";
+export { PlaceDesktopDetailView } from "./place-desktop-detail-view";
+export { PlaceDesktopDetailWhy } from "./place-desktop-detail-why";

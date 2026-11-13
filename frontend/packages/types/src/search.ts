@@ -38,6 +38,11 @@ export type SearchResultItem = {
   body?: string | null;
   username?: string | null;
   starts_at?: string | null;
+  /**
+   * Événements : fin renseignée, ou `null` si inconnue (SEARCH-EVENT-PAST-STATUS-01).
+   * Absente des réponses antérieures à ce champ — ne pas confondre absente et `null`.
+   */
+  ends_at?: string | null;
   is_flash?: boolean | null;
 };
 

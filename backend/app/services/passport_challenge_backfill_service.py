@@ -15,6 +15,7 @@ from app.core.passport_challenge_constants import (
     PassportChallengeType,
 )
 from app.core.passport_constants import OfferRedemptionStatus
+from app.core.sql_error_redaction import safe_str
 from app.models.passport import PassportOfferRedemption, PassportStamp
 from app.models.passport_challenge import PassportChallenge
 from app.services.passport_challenge_progress_service import PassportChallengeProgressService
@@ -145,7 +146,7 @@ class PassportChallengeBackfillService:
                             was_completed = True
                 except Exception as exc:  # noqa: BLE001 — backfill must continue
                     report.errors += 1
-                    report.error_details.append(f"stamp {stamp.id}: {exc}")
+                    report.error_details.append(f"stamp {stamp.id}: {safe_str(exc)}")
 
         return report
 
@@ -210,6 +211,6 @@ class PassportChallengeBackfillService:
                             was_completed = True
                 except Exception as exc:  # noqa: BLE001 — backfill must continue
                     report.errors += 1
-                    report.error_details.append(f"redemption {redemption.id}: {exc}")
+                    report.error_details.append(f"redemption {redemption.id}: {safe_str(exc)}")
 
         return report

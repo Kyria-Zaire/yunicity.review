@@ -24,7 +24,18 @@ export type LocalVideoProcessingStatusId =
 
 export type LocalVideoContentType = "video/mp4" | "video/quicktime";
 
-export const LOCAL_VIDEO_MAX_BYTES = 52_428_800;
+/**
+ * Taille maximale d'une video locale.
+ *
+ * DOIT valoir exactement `LOCAL_VIDEO_MAX_BYTES` du backend
+ * (`backend/app/core/local_video_constants.py`) : c'est lui qui applique la
+ * regle, cette copie ne sert qu'au rejet anticipe cote client. Un test de
+ * contrat compare les deux et echoue si elles divergent.
+ *
+ * 200 Mo : un iPhone filme en 4K a ~400 Mo/min, donc 30 s pesent environ
+ * 200 Mo. Tenable depuis que l'upload est recu par blocs.
+ */
+export const LOCAL_VIDEO_MAX_BYTES = 209_715_200;
 export const LOCAL_VIDEO_MAX_DURATION_SECONDS = 90;
 export const LOCAL_VIDEO_ALLOWED_CONTENT_TYPES: readonly LocalVideoContentType[] = [
   "video/mp4",
@@ -54,6 +65,8 @@ export type LocalVideo = {
   media_url: string;
   thumbnail_url: string;
   duration_seconds: number;
+  media_width: number | null;
+  media_height: number | null;
   file_size_bytes: number;
   mime_type: string;
   latitude: number | null;
@@ -108,6 +121,12 @@ export type LocalVideoPublishAcceptedResponse = {
   message: string;
 };
 
+/** Codes de motif du feed territorial (VIDEO-03) — stables côté API. */
+export type LocalVideoFeedReasonCode =
+  | "neighborhood_match"
+  | "same_city"
+  | "territory_fallback";
+
 export type LocalVideoFeedItem = {
   id: string;
   author_user_id: string;
@@ -128,6 +147,8 @@ export type LocalVideoFeedItem = {
   media_url: string;
   thumbnail_url: string;
   duration_seconds: number;
+  media_width: number | null;
+  media_height: number | null;
   mime_type: string;
   latitude: number | null;
   longitude: number | null;
@@ -140,6 +161,15 @@ export type LocalVideoFeedItem = {
   comment_count: number;
   view_count: number;
   liked_by_me: boolean;
+  /**
+   * Explicabilité du classement territorial (VIDEO-03).
+   *
+   * Optionnels : le backend les sert toujours, mais les marquer requis
+   * casserait les fixtures et les consommateurs déjà écrits. Le code est
+   * stable côté API ; le libellé est déjà localisé par le serveur.
+   */
+  reason_code?: LocalVideoFeedReasonCode;
+  reason_label?: string;
 };
 
 export type LocalVideoLikeResponse = {
@@ -205,6 +235,7 @@ export type LocalVideoErrorCode =
   | "LOCAL_VIDEO_UPLOAD_NOT_AVAILABLE"
   | "LOCAL_VIDEO_UPLOAD_ALREADY_USED"
   | "LOCAL_VIDEO_UPLOAD_NOT_FOUND"
+  | "LOCAL_VIDEO_STORAGE_INSUFFICIENT"
   | "LOCAL_VIDEO_FORBIDDEN"
   | "LOCAL_VIDEO_NOT_FOUND"
   | "LOCAL_VIDEO_INVALID_NEIGHBORHOOD"
@@ -218,3 +249,17 @@ export type LocalVideoErrorCode =
   | "LOCAL_VIDEO_PROCESSING_TIMEOUT"
   | "RATE_LIMITED"
   | "UNKNOWN_ERROR";
+
+/**
+ * Politique de durée du créateur connecté — `GET /local-videos/policy` (VIDEO-04D).
+ *
+ * Calculée côté serveur depuis les rôles persistés. Le client ne peut ni l'envoyer
+ * ni la choisir : elle ne sert qu'à un rejet anticipé ergonomique, le backend
+ * restant l'autorité finale.
+ */
+export type LocalVideoDurationPolicy = {
+  tier: "pilot" | "verified";
+  max_duration_seconds: number;
+  max_bytes: number;
+  label: string;
+};

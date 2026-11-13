@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any
 
@@ -22,6 +23,50 @@ class PostRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
+    async def get_active_post_by_media_url(
+        self,
+        media_urls: Sequence[str],
+        *,
+        author_id: uuid.UUID,
+        now: datetime | None = None,
+    ) -> Post | None:
+        """Retrouve la story VIVANTE qui reference reellement ce media.
+
+        Sert l'autorisation des fichiers de story : un fichier present sur le disque ne
+        suffit jamais, il faut la ligne metier qui le porte. Les filtres sont ceux des
+        lectures de stories du repository (`is_active`, expiration), et `author_id`
+        verrouille l'appartenance : changer le `user_id` de l'URL ne peut pas faire
+        pointer vers le media d'un autre.
+
+        `is_story` n'est PAS exige : le meme stockage sert les medias du composer de
+        posts (`POST /posts/media`), dont les lignes ne sont pas des stories.
+        """
+        moment = now or datetime.now(tz=UTC)
+        stmt = (
+            select(Post)
+            .where(
+                Post.is_active.is_(True),
+                Post.author_id == author_id,
+                or_(Post.story_expires_at.is_(None), Post.story_expires_at > moment),
+                # Les stories ecrivent dans `media_url` (scalaire) ; le composer de posts
+                # ecrit dans `media_urls` (JSONB). Le meme service de stockage sert les
+                # deux, donc les deux formes doivent resoudre.
+                # Plusieurs formes d'URL peuvent designer le meme media : la route API
+                # (forme courante) et l'URL CDN absolue des lignes historiques. Les deux
+                # doivent RESOUDRE, pour que l'autorisation reconnaisse une ancienne
+                # ligne -- sans que le client recoive jamais l'URL directe.
+                or_(
+                    *[Post.media_url == candidate for candidate in media_urls],
+                    *[
+                        Post.media_urls.contains([{"url": candidate}])
+                        for candidate in media_urls
+                    ],
+                ),
+            )
+            .limit(1)
+        )
+        return (await self._session.execute(stmt)).scalars().first()
+
     async def get_by_id(self, post_id: uuid.UUID, *, active_only: bool = False) -> Post | None:
         stmt = (
             select(Post)
@@ -37,6 +82,35 @@ class PostRepository:
             stmt = stmt.where(Post.is_active.is_(True))
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_by_client_request(
+        self,
+        *,
+        author_id: uuid.UUID,
+        client_request_id: uuid.UUID,
+    ) -> Post | None:
+        """Retrouve la tentative de publication deja enregistree sous cette cle.
+
+        Le filtre `author_id` est celui de l'index unique : la cle appartient a SON
+        auteur, celle d'un tiers ne resout jamais. Les `selectinload` reprennent ceux
+        de `get_by_id` -- la ligne relue est serialisee comme une creation, et une
+        relation chargee paresseusement echouerait en contexte async.
+        """
+        stmt = (
+            select(Post)
+            .where(
+                Post.author_id == author_id,
+                Post.client_request_id == client_request_id,
+            )
+            .options(
+                selectinload(Post.partner_offer).selectinload(PartnerOffer.neighborhood),
+                selectinload(Post.partner_creator_content),
+                selectinload(Post.local_event).selectinload(LocalEvent.neighborhood),
+                selectinload(Post.neighborhood),
+            )
+        )
+        result = await self._session.execute(stmt)
+        return result.scalars().first()
 
     async def get_by_local_event_id(self, event_id: uuid.UUID) -> Post | None:
         result = await self._session.execute(select(Post).where(Post.local_event_id == event_id))
@@ -110,6 +184,33 @@ class PostRepository:
                     ),
                 )
             )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_public_posts_by_user(
+        self,
+        user_id: uuid.UUID,
+        *,
+        limit: int,
+    ) -> list[Post]:
+        """Public citizen posts for a profile page (non-story, city feed posts)."""
+        stmt = (
+            select(Post)
+            .where(
+                Post.author_id == user_id,
+                Post.type == PostType.POST.value,
+                Post.is_active.is_(True),
+                Post.is_story.is_(False),
+                Post.tribe_id.is_(None),
+                visible_posts_filter(None),
+            )
+            .options(
+                selectinload(Post.local_event).selectinload(LocalEvent.neighborhood),
+                selectinload(Post.neighborhood),
+            )
+            .order_by(Post.created_at.desc(), Post.id.desc())
+            .limit(limit)
+        )
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 

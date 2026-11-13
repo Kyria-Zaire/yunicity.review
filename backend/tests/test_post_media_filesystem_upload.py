@@ -117,7 +117,9 @@ async def test_upload_valid_image_success(
     assert files[0].read_bytes() == content
     assert ".." not in files[0].parts
 
-    fetched = await auth_client.get(url)
+    # STORY-MEDIA-AUTHORIZATION-01 : la lecture d'un media exige desormais une
+    # authentification ; le proprietaire lit toujours le sien.
+    fetched = await auth_client.get(url, headers=_auth_headers(auth["access_token"]))
     assert fetched.status_code == 200
     assert fetched.headers["content-type"].split(";")[0] == content_type
     assert fetched.headers["x-content-type-options"] == "nosniff"
@@ -211,6 +213,7 @@ async def test_create_post_then_reload_media(auth_client: AsyncClient) -> None:
     reloaded = await auth_client.get(f"/api/v1/posts/{post_id}", headers=_auth_headers(token))
     assert reloaded.status_code == 200
     assert reloaded.json()["media_url"] == media_url
-    fetched = await auth_client.get(media_url)
+    # STORY-MEDIA-AUTHORIZATION-01 : lecture authentifiee.
+    fetched = await auth_client.get(media_url, headers=_auth_headers(token))
     assert fetched.status_code == 200
     assert fetched.content == MINIMAL_PNG_BYTES

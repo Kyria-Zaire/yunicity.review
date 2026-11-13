@@ -10,6 +10,7 @@ from fastapi import Response as FastAPIResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import require_authenticated_user
+from app.core.errors import AppError
 from app.core.passport_constants import PARTNER_OFFER_TYPES, PartnerOfferType
 from app.core.rate_limit import enforce_rate_limit
 from app.db.session import get_db
@@ -22,7 +23,6 @@ from app.schemas.passport import (
     PassportTierListResponse,
 )
 from app.schemas.passport_stamp_claim import StampClaimRequest, StampClaimResponse
-from app.schemas.redemption import RedemptionResponse
 from app.schemas.scan import PassportQrResponse
 from app.services.passport_service import PassportService
 from app.services.passport_stamp_claim_service import PassportStampClaimService
@@ -38,6 +38,7 @@ def _parse_offer_type(value: str | None) -> PartnerOfferType | None:
     if normalized not in PARTNER_OFFER_TYPES:
         return None
     return PartnerOfferType(normalized)
+
 
 router = APIRouter(prefix="/passport", tags=["passport"])
 
@@ -139,21 +140,24 @@ async def list_passport_offers(
     )
 
 
-@router.post("/offers/{offer_id}/redeem", response_model=RedemptionResponse)
+@router.post(
+    "/offers/{offer_id}/redeem",
+    response_model=None,
+    responses={
+        403: {"description": "La consommation d'une offre exige une validation partenaire."}
+    },
+)
 async def redeem_passport_offer(
     offer_id: uuid.UUID,
-    request: Request,
     current_user: Annotated[User, Depends(require_authenticated_user)],
-    session: Annotated[AsyncSession, Depends(get_db)],
-) -> RedemptionResponse:
-    await enforce_rate_limit(
-        f"passport:redeem:{current_user.id}",
-        limit=20,
-        window_seconds=3600,
+) -> None:
+    """PASSPORT-SELF-REDEEM-API-01 — décision produit (2026-11-05) : un citoyen ne
+    consomme pas une offre seul. La validation passe par le scan partenaire
+    (``/scan/resolve`` puis ``/scan/redeem``). Réponse identique quelle que soit
+    l'offre : aucune lecture métier, aucune écriture.
+    """
+    raise AppError(
+        status_code=403,
+        code="OFFER_PARTNER_VALIDATION_REQUIRED",
+        detail="Cette offre se valide chez le partenaire : présentez votre QR Passport.",
     )
-    await enforce_rate_limit(
-        f"passport:redeem:ip:{_client_ip(request)}",
-        limit=40,
-        window_seconds=3600,
-    )
-    return await PassportService(session).redeem_offer(current_user, offer_id)

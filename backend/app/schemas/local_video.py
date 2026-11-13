@@ -95,6 +95,8 @@ class LocalVideoItem(BaseModel):
     media_url: str
     thumbnail_url: str
     duration_seconds: float
+    media_width: int | None = None
+    media_height: int | None = None
     file_size_bytes: int
     mime_type: str
     latitude: float | None
@@ -133,6 +135,8 @@ class LocalVideoFeedItem(BaseModel):
     media_url: str
     thumbnail_url: str
     duration_seconds: float
+    media_width: int | None = None
+    media_height: int | None = None
     mime_type: str
     latitude: float | None
     longitude: float | None
@@ -144,6 +148,10 @@ class LocalVideoFeedItem(BaseModel):
     like_count: int
     comment_count: int
     view_count: int = 0
+    #: VIDEO-03 — explicabilite du classement. Champs a defaut : un client
+    #: existant qui les ignore continue de fonctionner a l'identique.
+    reason_code: str = "territory_fallback"
+    reason_label: str = ""
     liked_by_me: bool = False
 
 
@@ -185,3 +193,17 @@ class LocalVideoCommentListResponse(BaseModel):
 
 class LocalVideoReportCreateRequest(BaseModel):
     reason: LocalVideoReportReason
+
+
+class LocalVideoDurationPolicyResponse(BaseModel):
+    """Politique de duree servie a `/videos/new` (VIDEO-04D).
+
+    Le tier est calcule cote serveur a partir des roles persistes ; le client ne
+    peut ni l'envoyer ni le choisir. Le backend reste l'autorite : cette reponse
+    ne sert qu'a un rejet anticipe ergonomique.
+    """
+
+    tier: str
+    max_duration_seconds: int
+    max_bytes: int
+    label: str

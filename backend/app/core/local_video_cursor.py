@@ -25,23 +25,52 @@ def _decode_segment(cursor: str) -> str:
         ) from exc
 
 
-def encode_local_video_feed_cursor(published_at: datetime, video_id: uuid.UUID) -> str:
-    return _encode_segment(f"{published_at.isoformat()}|{video_id}")
+def _invalid_cursor(cause: Exception | None = None) -> AppError:
+    err = AppError(
+        status_code=400,
+        code="INVALID_CURSOR",
+        detail="Curseur de pagination invalide.",
+    )
+    if cause is not None:
+        raise err from cause
+    return err
 
 
-def decode_local_video_feed_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
-    parts = _decode_segment(cursor).split("|", 1)
-    if len(parts) != 2:
-        raise AppError(
-            status_code=400,
-            code="INVALID_CURSOR",
-            detail="Curseur de pagination invalide.",
-        )
+def encode_local_video_feed_cursor(
+    published_at: datetime,
+    video_id: uuid.UUID,
+    tier: int | None = None,
+) -> str:
+    """Curseur keyset du feed.
+
+    VIDEO-03 ajoute le tier de classement en tete : l'ordre total est
+    `(tier ASC, published_at DESC, id DESC)`, donc paginer sans le tier
+    melangerait les tiers d'une page a l'autre. Le format historique a deux
+    segments reste emis quand aucun tier n'est fourni, et reste decodable.
+    """
+    if tier is None:
+        return _encode_segment(f"{published_at.isoformat()}|{video_id}")
+    return _encode_segment(f"{tier}|{published_at.isoformat()}|{video_id}")
+
+
+def decode_local_video_feed_cursor(cursor: str) -> tuple[int | None, datetime, uuid.UUID]:
+    """Retourne `(tier | None, published_at, video_id)`.
+
+    `tier` vaut None pour un curseur historique a deux segments : le classement
+    retombe alors sur le predicat keyset d'origine, ce qui garde les clients
+    deja en vol fonctionnels.
+    """
+    parts = _decode_segment(cursor).split("|")
+    if len(parts) == 2:
+        tier_raw, published_raw, id_raw = None, parts[0], parts[1]
+    elif len(parts) == 3:
+        tier_raw, published_raw, id_raw = parts[0], parts[1], parts[2]
+    else:
+        raise _invalid_cursor()
+
     try:
-        return datetime.fromisoformat(parts[0]), uuid.UUID(parts[1])
+        tier = int(tier_raw) if tier_raw is not None else None
+        return tier, datetime.fromisoformat(published_raw), uuid.UUID(id_raw)
     except (ValueError, TypeError) as exc:
-        raise AppError(
-            status_code=400,
-            code="INVALID_CURSOR",
-            detail="Curseur de pagination invalide.",
-        ) from exc
+        _invalid_cursor(exc)
+        raise  # pragma: no cover - _invalid_cursor leve toujours

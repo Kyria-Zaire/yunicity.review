@@ -59,6 +59,14 @@ export interface PostCreatePayload {
   cross_post_targets?: PostCrossPostTargets | null;
   use_media_caption?: boolean;
   location?: { latitude: number; longitude: number } | null;
+  /**
+   * Clé d'idempotence d'une TENTATIVE logique de publication (UUID v4).
+   *
+   * Conservée à travers les réessais de la même tentative : le serveur répond
+   * 200 avec la publication existante au lieu d'en créer une seconde. Absente
+   * ou `null`, le comportement est strictement celui d'avant.
+   */
+  client_request_id?: string | null;
 }
 
 export interface PostMediaUploadResponse {

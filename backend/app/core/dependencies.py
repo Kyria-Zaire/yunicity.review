@@ -48,6 +48,19 @@ async def get_current_user(
             code="UNAUTHORIZED",
             detail="Utilisateur introuvable.",
         )
+    # Suppression demandee : l'acces est coupe IMMEDIATEMENT, y compris pour un
+    # jeton d'acces deja emis. Cette dependance relit l'utilisateur a chaque
+    # requete, donc un seul controle ici couvre toute la surface authentifiee —
+    # revoquer les seuls refresh tokens aurait laisse un quart d'heure d'acces.
+    if user.deletion_requested_at is not None:
+        raise AppError(
+            status_code=403,
+            code="ACCOUNT_PENDING_DELETION",
+            detail=(
+                "La suppression de ce compte a été demandée. "
+                "Utilisez le lien d'annulation reçu par e-mail pour le réactiver."
+            ),
+        )
     if not user.is_active:
         raise AppError(
             status_code=403,
@@ -77,7 +90,7 @@ async def get_current_user_optional(
         return None
 
     user = await UserRepository(session).get_by_id(user_id)
-    if user is None or not user.is_active:
+    if user is None or not user.is_active or user.deletion_requested_at is not None:
         return None
     bind_user_id(str(user.id))  # UUID only — correlates logs/Sentry, never PII
     return user

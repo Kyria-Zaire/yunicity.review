@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -50,6 +51,18 @@ class FeedEventMeta(BaseModel):
     interested_by_me: bool = False
 
 
+class FeedMediaItem(BaseModel):
+    """Un média d'une publication, tel que le fil le restitue.
+
+    Le littéral est redéclaré ici plutôt qu'importé de `schemas.post` : ce
+    module est en AMONT (`schemas.post` importe `schemas.feed`), et l'importer
+    créerait un cycle.
+    """
+
+    url: str
+    media_type: Literal["image", "video"] = "image"
+
+
 class FeedPostItem(BaseModel):
     id: uuid.UUID
     type: str
@@ -58,6 +71,11 @@ class FeedPostItem(BaseModel):
     title: str | None
     body: str | None
     media_url: str | None = None
+    #: Liste ORDONNÉE des médias. `media_url` reste le PREMIER, inchangé, pour
+    #: les clients antérieurs à MEDIA-MULTI-PHOTO-01. Vide pour les
+    #: publications dont la colonne `media_urls` n'a jamais été écrite : le
+    #: client retombe alors sur `media_url` — aucune valeur n'est inventée ici.
+    media_urls: list[FeedMediaItem] = Field(default_factory=list)
     location: FeedLocation | None = None
     like_count: int
     comment_count: int

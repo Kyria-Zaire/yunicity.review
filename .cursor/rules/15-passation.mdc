@@ -1,0 +1,51 @@
+---
+description: Passation entre sessions — index des tickets, ticket actif, passation
+alwaysApply: true
+---
+
+# Passation entre sessions
+
+## Au démarrage de toute session — avant d'agir
+
+Lire, dans cet ordre :
+
+1. **`docs/workflow/TICKETS-INDEX.md`** — quel est le ticket actif, quels sont
+   les autres.
+2. **La passation du ticket actif**, sous `docs/workflow/passations/`.
+3. Les documents que cette passation désigne comme importants.
+
+Puis **énoncer le ticket actif et la prochaine action** avant toute
+modification. Si l'index et une autre source se contredisent, **l'index fait
+foi**.
+
+## En fin de session — avant de rendre la main
+
+Mettre à jour la passation du ticket actif : état Git, preuves acquises avec
+leur environnement, inconnues, tâches actives, prochaine action.
+
+Une passation se met à jour **à chaque fin de session**, pas seulement à la
+clôture du ticket.
+
+## Ce qu'une passation doit contenir
+
+Objectif · état Git · documents importants · preuves acquises · erreurs de
+classement corrigées · inconnues · décisions CTO · tâches actives · prochaine
+action.
+
+## Règles de fond
+
+- **Une preuve garde son SHA et son environnement.** Elle ne devient pas la
+  validation d'un autre déploiement par simple report.
+- **Une mitigation n'est pas une résolution.**
+- **Ne reclasser aucun élément sans preuve** — dans un sens comme dans l'autre.
+- Une erreur de classement corrigée se **consigne**, avec la preuve qui l'a
+  corrigée. Elle ne s'efface pas.
+- **Un seul ticket actif.** Ouvrir un ticket suppose de fermer ou suspendre le
+  précédent dans l'index.
+
+## Portée
+
+Ce protocole complète le workflow officiel
+(`docs/workflow/YUNICITY-OFFICIAL-WORKFLOW.md`) et le sous-cycle BMAD
+(`docs/bmad/BMAD.md`). Il ne les remplace pas : il conserve l'état **entre** les
+sessions de travail sur un même ticket.

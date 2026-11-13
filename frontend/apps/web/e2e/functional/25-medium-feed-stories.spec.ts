@@ -20,7 +20,7 @@
  */
 import type { Page } from "@playwright/test";
 
-import { expect, test } from "../fixtures";
+import { expect, testCitizen as test } from "../fixtures";
 
 const MEDIUM = [
   { label: "640x900", width: 640, height: 900 },

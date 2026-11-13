@@ -3,9 +3,9 @@
  * Source unique des parcours affichés dans le dialogue.
  */
 
-import { PARTNER_PORTAL_BASE } from "@yunicity/utils";
+import { PARTNER_PORTAL_BASE, buildPartnerPortalOfferCreateHref } from "@yunicity/utils";
 import type { LucideIcon } from "lucide-react";
-import { Handshake, MapPin, PenLine, Users, Video, Camera } from "lucide-react";
+import { Handshake, CalendarDays, Gift, MapPin, PenLine, Users, Video, Camera } from "lucide-react";
 
 export type PartnerAccessStatus = "idle" | "loading" | "allowed" | "denied";
 
@@ -40,6 +40,13 @@ const BASE_ACTIONS: readonly CreateHubAction[] = [
     href: "/videos/new",
   },
   {
+    id: "sortir-event",
+    title: "Créer un événement",
+    description: "Publiez un moment local sur Sortir.",
+    icon: CalendarDays,
+    href: "/sortir/create",
+  },
+  {
     id: "tribe",
     title: "Créer une tribu",
     description: "Rassemble une communauté autour d'un centre d'intérêt.",
@@ -54,6 +61,14 @@ const BASE_ACTIONS: readonly CreateHubAction[] = [
     href: "/organizations/request",
   },
 ] as const;
+
+const PARTNER_OFFER_ACTION: CreateHubAction = {
+  id: "passport-offer",
+  title: "Créer une offre Passport",
+  description: "Proposez un avantage réservé aux détenteurs du Passport.",
+  icon: Gift,
+  href: buildPartnerPortalOfferCreateHref(),
+};
 
 const PARTNER_ACTION: CreateHubAction = {
   id: "partner-place",
@@ -73,6 +88,8 @@ export function buildCreateHubActions(input: {
 
   const actions = [...BASE_ACTIONS];
   if (input.partnerAccessStatus === "allowed") {
+    const eventIndex = actions.findIndex((action) => action.id === "sortir-event");
+    actions.splice(eventIndex + 1, 0, PARTNER_OFFER_ACTION);
     actions.push(PARTNER_ACTION);
   }
   return actions;

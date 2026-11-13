@@ -2,11 +2,17 @@
 
 from __future__ import annotations
 
+import uuid
+from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 
 import pytest
+from app.core.local_event_constants import LocalEventModerationStatus, LocalEventVisibility
 from app.core.search_constants import SEARCH_RATE_LIMIT
+from app.db.session import get_session_factory
 from app.integrations.redis import get_redis_client
+from app.models.local_event import LocalEvent
+from app.models.user import User
 from httpx import AsyncClient
 
 from tests.conftest_passport import auth_header
@@ -311,3 +317,128 @@ async def test_search_invalid_type_returns_400(auth_client: AsyncClient) -> None
     response = await auth_client.get("/api/v1/search?q=reims&city=Reims&type=bogus")
     assert response.status_code == 400, response.text
     assert response.json()["code"] == "INVALID_SEARCH_TYPE"
+
+
+# --- SEARCH-EVENT-PAST-STATUS-01 — `ends_at` in event results -------------------------------
+
+_EVENT_TOKEN = "b4evtfinunique"
+
+
+async def _seed_search_events(now: datetime) -> dict[str, tuple[uuid.UUID, datetime | None]]:
+    """Seed approved public Reims events matching `_EVENT_TOKEN` (same rank for all).
+
+    Returns `{case: (event_id, ends_at)}`. Inserted directly: the partner route is not the
+    subject here, and past start dates must be representable.
+    """
+    specs: dict[str, tuple[datetime, datetime | None]] = {
+        "upcoming": (now + timedelta(days=2), now + timedelta(days=2, hours=3)),
+        "ongoing_multi_day": (now - timedelta(days=2), now + timedelta(days=1)),
+        "ended": (now - timedelta(days=3), now - timedelta(days=3) + timedelta(hours=3)),
+        "no_end": (now - timedelta(days=1), None),
+    }
+    factory = get_session_factory()
+    assert factory is not None
+    seeded: dict[str, tuple[uuid.UUID, datetime | None]] = {}
+    async with factory() as session:
+        author = User(
+            email="search-event-author@example.com",
+            hashed_password="hashed",
+            full_name="Search Event Author",
+            city="Reims",
+        )
+        session.add(author)
+        await session.flush()
+        for case, (starts_at, ends_at) in specs.items():
+            event = LocalEvent(
+                created_by_user_id=author.id,
+                title=f"Sortie {_EVENT_TOKEN}",
+                city="Reims",
+                starts_at=starts_at,
+                ends_at=ends_at,
+                location_name="Lieu fictif",
+                moderation_status=LocalEventModerationStatus.APPROVED.value,
+                visibility=LocalEventVisibility.PUBLIC.value,
+            )
+            session.add(event)
+            await session.flush()
+            seeded[case] = (event.id, ends_at)
+        await session.commit()
+    return seeded
+
+
+def _parse_optional_datetime(value: str | None) -> datetime | None:
+    return None if value is None else datetime.fromisoformat(value)
+
+
+@pytest.mark.asyncio
+async def test_search_event_items_carry_ends_at_including_explicit_null(
+    auth_client: AsyncClient,
+) -> None:
+    now = datetime.now(UTC).replace(microsecond=0)
+    seeded = await _seed_search_events(now)
+
+    response = await auth_client.get(
+        "/api/v1/search",
+        params={"q": _EVENT_TOKEN, "city": "Reims", "type": "event", "period": "all"},
+    )
+
+    assert response.status_code == 200, response.text
+    items = _group(response.json(), "events")["items"]
+    by_id = {item["id"]: item for item in items}
+    assert len(by_id) == len(seeded)
+    for case, (event_id, ends_at) in seeded.items():
+        item = by_id[str(event_id)]
+        assert "ends_at" in item, case
+        assert _parse_optional_datetime(item["ends_at"]) == ends_at, case
+    assert by_id[str(seeded["no_end"][0])]["ends_at"] is None
+
+
+@pytest.mark.asyncio
+async def test_search_non_event_items_carry_null_ends_at(auth_client: AsyncClient) -> None:
+    user = await _register(auth_client, suffix="-ends-at-post")
+    await _complete_profile(auth_client, user["access_token"])
+    created = await auth_client.post(
+        "/api/v1/posts",
+        json={"author_type": "citizen", "body": f"Publication {_EVENT_TOKEN}"},
+        headers=auth_header(user["access_token"]),
+    )
+    assert created.status_code == 201, created.text
+
+    response = await auth_client.get(
+        "/api/v1/search",
+        params={"q": _EVENT_TOKEN, "city": "Reims", "type": "all"},
+    )
+
+    assert response.status_code == 200, response.text
+    posts = _group(response.json(), "posts")["items"]
+    assert len(posts) >= 1
+    for item in posts:
+        assert "ends_at" in item
+        assert item["ends_at"] is None
+
+
+@pytest.mark.asyncio
+async def test_search_event_period_order_and_counts_unchanged(auth_client: AsyncClient) -> None:
+    """Characterization: `period` still compares `starts_at` with now (ends_at is display-only).
+
+    An ongoing multi-day event is therefore listed under `past` — the known inconsistency
+    `SEARCH-PERIOD-ENDED-RULE-01`, deliberately NOT changed by this ticket.
+    """
+    now = datetime.now(UTC).replace(microsecond=0)
+    seeded = await _seed_search_events(now)
+    ids = {case: str(event_id) for case, (event_id, _) in seeded.items()}
+
+    expected: dict[str, list[str]] = {
+        "all": [ids["ended"], ids["ongoing_multi_day"], ids["no_end"], ids["upcoming"]],
+        "upcoming": [ids["upcoming"]],
+        "past": [ids["no_end"], ids["ongoing_multi_day"], ids["ended"]],
+    }
+    for period, expected_ids in expected.items():
+        response = await auth_client.get(
+            "/api/v1/search",
+            params={"q": _EVENT_TOKEN, "city": "Reims", "type": "event", "period": period},
+        )
+        assert response.status_code == 200, response.text
+        group = _group(response.json(), "events")
+        assert [item["id"] for item in group["items"]] == expected_ids, period
+        assert group["count"] == len(expected_ids), period

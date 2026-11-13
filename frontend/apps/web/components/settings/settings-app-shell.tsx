@@ -11,7 +11,7 @@ type SettingsAppShellProps = {
   children: ReactNode;
 };
 
-/** Shell Paramètres — mobile MOBILE-SETTINGS-01 + desktop portail existant. */
+/** Shell Paramètres — mobile + medium hub + desktop DESKTOP-SETTINGS-01. */
 export function SettingsAppShell({ children }: SettingsAppShellProps) {
   return (
     <div className="web-shell-page settings-mobile-shell min-h-dvh bg-[#F4F5F7]">
@@ -21,7 +21,7 @@ export function SettingsAppShell({ children }: SettingsAppShellProps) {
         <WebSidebar />
 
         <main className="web-main-column min-w-0 pt-0 sm:pt-2 xl:pt-0">
-          <div className="web-desktop-settings-only">
+          <div className="hidden min-[640px]:block">
             <CitizenTopNav />
           </div>
           <div className={CITIZEN_MOBILE_BOTTOM_NAV_PADDING}>{children}</div>

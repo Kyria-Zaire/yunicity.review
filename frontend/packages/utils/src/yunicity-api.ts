@@ -120,6 +120,11 @@ import {
 import { PartnerPassportApi, createPartnerPassportApi } from "./partner-passport-api";
 import { CreatorPublicApi, createCreatorPublicApi } from "./creator-public-api";
 import { PartnersApi, createPartnersApi, fetchPublicPartnerOffers } from "./partners-api";
+import {
+  fetchAuthorizedMediaBlob as fetchAuthorizedMediaBlobRequest,
+  type AuthorizedMediaVariant,
+  type AuthorizedMediaBlob,
+} from "./authorized-media-fetch";
 
 /** FaÃƒÆ’Ã‚Â§ade profile + organizations + passport. */
 export class YunicityApi {
@@ -151,8 +156,13 @@ export class YunicityApi {
   readonly organizationCreatorContent: OrganizationCreatorContentApi;
   readonly creatorPublic: CreatorPublicApi;
 
+  readonly auth: AuthClient;
+
   constructor(client: AuthClient, apiBaseUrl: string) {
     this.apiBaseUrl = apiBaseUrl;
+    // Le client d'authentification porte deja la session courante : l'exposer
+    // evite d'en recreer un sans jeton la ou une route authentifiee est appelee.
+    this.auth = client;
     this.profile = createProfileApi(client, apiBaseUrl);
     this.organization = createOrganizationApi(client, apiBaseUrl);
     this.partnerOffers = createPartnerOffersApi(client, apiBaseUrl);
@@ -408,6 +418,30 @@ export class YunicityApi {
     return this.profile.getPublicProfileByUserId(userId);
   }
 
+  getPublicProfilePosts(username: string, limit = 12) {
+    return this.profile.getPublicProfilePosts(username, limit);
+  }
+
+  getPublicProfilePostsByUserId(userId: string, limit = 12) {
+    return this.profile.getPublicProfilePostsByUserId(userId, limit);
+  }
+
+  getPublicProfileContributions(username: string, limit = 12) {
+    return this.profile.getPublicProfileContributions(username, limit);
+  }
+
+  getPublicProfileContributionsByUserId(userId: string, limit = 12) {
+    return this.profile.getPublicProfileContributionsByUserId(userId, limit);
+  }
+
+  getPublicProfileTribes(username: string, limit = 12) {
+    return this.profile.getPublicProfileTribes(username, limit);
+  }
+
+  getPublicProfileTribesByUserId(userId: string, limit = 12) {
+    return this.profile.getPublicProfileTribesByUserId(userId, limit);
+  }
+
   listMyOrganizations(): Promise<OrganizationMeListResponse> {
     return this.organization.listMyOrganizations();
   }
@@ -500,12 +534,37 @@ export class YunicityApi {
     return this.feed.getPost(postId);
   }
 
-  createFeedPost(payload: PostCreatePayload): Promise<FeedPost> {
-    return this.feed.createPost(payload);
+  createFeedPost(payload: PostCreatePayload, signal?: AbortSignal): Promise<FeedPost> {
+    return this.feed.createPost(payload, signal);
   }
 
-  uploadPostMedia(file: File): Promise<PostMediaUploadResponse> {
-    return this.feed.uploadPostMedia(file);
+  uploadPostMedia(file: File, signal?: AbortSignal): Promise<PostMediaUploadResponse> {
+    return this.feed.uploadPostMedia(file, signal);
+  }
+
+  /**
+   * Charge un média de publication via GET Bearer vers l'origine API (MEDIA-01B).
+   * Retourne un Blob image — jamais une URL relative WEB ni un token dans le src.
+   */
+  /**
+   * @param variant Variante d'affichage. Absente : l'original, inchangé — c'est
+   *   le comportement de tous les appelants antérieurs à MEDIA-MULTI-PHOTO-01.
+   */
+  fetchAuthorizedMediaBlob(
+    mediaUrl: string,
+    signal?: AbortSignal,
+    variant?: AuthorizedMediaVariant,
+  ): Promise<AuthorizedMediaBlob> {
+    return fetchAuthorizedMediaBlobRequest(this.auth, mediaUrl, {
+      signal,
+      publicApiUrl: this.apiBaseUrl || undefined,
+      ...(variant ? { variant } : {}),
+    });
+  }
+
+  /** Suppression douce de SA publication (PROFILE-POST-MENU-01). */
+  deleteFeedPost(postId: string): Promise<void> {
+    return this.feed.deletePost(postId);
   }
 
   likeFeedPost(postId: string): Promise<void> {

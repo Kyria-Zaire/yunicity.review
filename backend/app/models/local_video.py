@@ -108,6 +108,8 @@ class LocalVideo(TimestampMixin, Base):
     media_url: Mapped[str] = mapped_column(String(1024), nullable=False)
     thumbnail_url: Mapped[str] = mapped_column(String(1024), nullable=False)
     duration_seconds: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False)
+    media_width: Mapped[int | None] = mapped_column(nullable=True)
+    media_height: Mapped[int | None] = mapped_column(nullable=True)
     file_size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
     mime_type: Mapped[str] = mapped_column(String(64), nullable=False)
     latitude: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)

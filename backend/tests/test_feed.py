@@ -65,6 +65,35 @@ async def test_create_citizen_post(auth_client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
+async def test_feed_citizen_author_includes_avatar(auth_client: AsyncClient) -> None:
+    user = await _register(auth_client, suffix="-avatar", city="Reims")
+    avatar_url = "https://cdn.example.com/freeway-avatar.jpg"
+    profile_patch = await auth_client.patch(
+        "/api/v1/profile/me",
+        json={"avatar_url": avatar_url},
+        headers=auth_header(user["access_token"]),
+    )
+    assert profile_patch.status_code == 200, profile_patch.text
+
+    create = await auth_client.post(
+        "/api/v1/posts",
+        json={"author_type": "citizen", "body": "Post avec avatar"},
+        headers=auth_header(user["access_token"]),
+    )
+    assert create.status_code == 201, create.text
+    assert create.json()["author"]["logo_url"] == avatar_url
+
+    feed = await auth_client.get(
+        "/api/v1/feed",
+        headers=auth_header(user["access_token"]),
+    )
+    assert feed.status_code == 200, feed.text
+    items = feed.json()["items"]
+    assert items
+    assert items[0]["author"]["logo_url"] == avatar_url
+
+
+@pytest.mark.asyncio
 async def test_create_citizen_post_with_composer_metadata(auth_client: AsyncClient) -> None:
     user = await _register(auth_client, suffix="-composer", city="Reims")
     response = await auth_client.post(
@@ -332,6 +361,40 @@ async def test_soft_delete_post_author_and_moderator(
 
 
 @pytest.mark.asyncio
+async def test_soft_delete_post_rejects_other_citizen(
+    auth_client: AsyncClient,
+) -> None:
+    """Un tiers sans droit de moderation ne supprime PAS la publication d'autrui.
+
+    Cette branche est la frontiere de securite du bouton « Supprimer » cable
+    cote web (PROFILE-POST-MENU-01) : le rendu client ne fait que cacher
+    l'action, c'est l'API qui la refuse. Le `403` et la SURVIE de la
+    publication sont donc tous deux verifies.
+    """
+    author = await _register(auth_client, suffix="-delowner", city="Reims")
+    outsider = await _register(auth_client, suffix="-delintruder", city="Reims")
+    created = await auth_client.post(
+        "/api/v1/posts",
+        json={"author_type": "citizen", "body": "Publication d'un autre"},
+        headers=auth_header(author["access_token"]),
+    )
+    assert created.status_code == 201, created.text
+    post_id = created.json()["id"]
+
+    forbidden = await auth_client.delete(
+        f"/api/v1/posts/{post_id}",
+        headers=auth_header(outsider["access_token"]),
+    )
+    assert forbidden.status_code == 403, forbidden.text
+
+    still_there = await auth_client.get(
+        f"/api/v1/posts/{post_id}",
+        headers=auth_header(author["access_token"]),
+    )
+    assert still_there.status_code == 200, still_there.text
+
+
+@pytest.mark.asyncio
 async def test_non_public_post_hidden_from_other_users_feed_and_detail(
     auth_client: AsyncClient,
 ) -> None:
@@ -517,3 +580,121 @@ async def test_published_offer_appears_in_feed(
     assert feed.status_code == 200
     offers = [item for item in feed.json()["items"] if item["type"] == "offer"]
     assert any(item["title"] == "Brunch offert" for item in offers)
+
+@pytest.mark.asyncio
+async def test_feed_returns_every_media_url_in_order(auth_client: AsyncClient) -> None:
+    """Le fil restitue TOUS les medias d'une publication, dans l'ordre publie.
+
+    C'est la rupture de MEDIA-MULTI-PHOTO-01 : les photos etaient bien
+    STOCKEES (colonne `media_urls`), mais le contrat du fil n'exposait que
+    `media_url`, la premiere. Les autres ne quittaient jamais le serveur, et
+    aucune grille cote client ne pouvait les rendre.
+
+    L'ORDRE est verifie, pas seulement la presence : c'est celui que l'auteur
+    a choisi en selectionnant ses fichiers.
+    """
+    user = await _register(auth_client, suffix="-multimedia", city="Reims")
+    urls = [
+        "https://cdn.example.com/recette/photo-1.jpg",
+        "https://cdn.example.com/recette/photo-2.jpg",
+        "https://cdn.example.com/recette/photo-3.jpg",
+    ]
+    created = await auth_client.post(
+        "/api/v1/posts",
+        json={
+            "author_type": "citizen",
+            "body": "Trois photos de Reims",
+            "media_url": urls[0],
+            "media_urls": [{"url": url, "media_type": "image"} for url in urls],
+        },
+        headers=auth_header(user["access_token"]),
+    )
+    assert created.status_code == 201, created.text
+    post_id = created.json()["id"]
+
+    feed = await auth_client.get(
+        "/api/v1/feed",
+        headers=auth_header(user["access_token"]),
+    )
+    assert feed.status_code == 200, feed.text
+    item = next(entry for entry in feed.json()["items"] if entry["id"] == post_id)
+
+    assert [media["url"] for media in item["media_urls"]] == urls
+    assert [media["media_type"] for media in item["media_urls"]] == ["image"] * 3
+    # Non-regression : `media_url` reste la PREMIERE, pour les clients qui ne
+    # lisent pas encore la liste.
+    assert item["media_url"] == urls[0]
+
+
+@pytest.mark.asyncio
+async def test_feed_media_urls_preserves_video_entries_and_skips_duplicates(
+    auth_client: AsyncClient,
+) -> None:
+    """Un media video garde son type, et une URL repetee n'est rendue qu'une fois.
+
+    Le type est CONSERVE tel quel : la carte web decide du rendu, et ce test
+    garantit qu'elle recoit l'information au lieu de la deviner.
+
+    Le dedoublonnage n'est pas cosmetique : chaque media affiche declenche sa
+    propre resolution autorisee cote client, et deux tuiles pour un meme
+    fichier paieraient deux fois le meme appel.
+    """
+    user = await _register(auth_client, suffix="-mixedmedia", city="Reims")
+    photo = "https://cdn.example.com/recette/mixte-1.jpg"
+    video = "https://cdn.example.com/recette/mixte-2.mp4"
+    created = await auth_client.post(
+        "/api/v1/posts",
+        json={
+            "author_type": "citizen",
+            "body": "Une photo et une video",
+            "media_url": photo,
+            "media_urls": [
+                {"url": photo, "media_type": "image"},
+                {"url": video, "media_type": "video"},
+                {"url": photo, "media_type": "image"},
+            ],
+        },
+        headers=auth_header(user["access_token"]),
+    )
+    assert created.status_code == 201, created.text
+    post_id = created.json()["id"]
+
+    feed = await auth_client.get(
+        "/api/v1/feed",
+        headers=auth_header(user["access_token"]),
+    )
+    assert feed.status_code == 200, feed.text
+    item = next(entry for entry in feed.json()["items"] if entry["id"] == post_id)
+
+    assert [media["url"] for media in item["media_urls"]] == [photo, video]
+    assert [media["media_type"] for media in item["media_urls"]] == ["image", "video"]
+
+
+@pytest.mark.asyncio
+async def test_feed_media_urls_is_empty_when_column_never_written(
+    auth_client: AsyncClient,
+) -> None:
+    """Une publication sans liste rend une liste VIDE — aucun repli fabrique.
+
+    Deviner le `media_type` d'un media historique reviendrait a inventer une
+    donnee. Le client retombe sur `media_url`, exactement comme avant ce
+    ticket : c'est la non-regression des publications a une seule photo.
+    """
+    user = await _register(auth_client, suffix="-nomedialist", city="Reims")
+    created = await auth_client.post(
+        "/api/v1/posts",
+        json={"author_type": "citizen", "body": "Publication sans media"},
+        headers=auth_header(user["access_token"]),
+    )
+    assert created.status_code == 201, created.text
+    post_id = created.json()["id"]
+
+    feed = await auth_client.get(
+        "/api/v1/feed",
+        headers=auth_header(user["access_token"]),
+    )
+    assert feed.status_code == 200, feed.text
+    item = next(entry for entry in feed.json()["items"] if entry["id"] == post_id)
+
+    assert item["media_urls"] == []
+    assert item["media_url"] is None

@@ -2,13 +2,14 @@
 
 import type { TribeCreateDraft, TribeCreateStepId } from "@yunicity/utils";
 import {
+  TRIBE_CREATE_ACCESS_TITLE,
   TRIBE_CREATE_BACK,
   TRIBE_CREATE_CANCEL,
-  TRIBE_CREATE_CATEGORY_PLACEHOLDER,
   TRIBE_CREATE_CHARTER_LABEL,
   TRIBE_CREATE_CONFIRM_BODY,
   TRIBE_CREATE_CONFIRM_TITLE,
   TRIBE_CREATE_DESC_MAX,
+  TRIBE_CREATE_CATEGORY_PLACEHOLDER,
   TRIBE_CREATE_DESC_PLACEHOLDER,
   TRIBE_CREATE_FIELD_CATEGORY,
   TRIBE_CREATE_FIELD_CITY,
@@ -19,12 +20,11 @@ import {
   TRIBE_CREATE_INFO_TITLE,
   TRIBE_CREATE_INVITE_PRIVATE,
   TRIBE_CREATE_INVITE_PUBLIC,
-  TRIBE_CREATE_INVITE_TITLE,
   TRIBE_CREATE_NAME_MAX,
   TRIBE_CREATE_NAME_PLACEHOLDER,
   TRIBE_CREATE_NEXT,
-  TRIBE_CREATE_PERSONALIZE_TITLE,
   TRIBE_CREATE_PREVIEW_COVER_SOON,
+  TRIBE_CREATE_REVIEW_TITLE,
   TRIBE_CREATE_RULES_BODY,
   TRIBE_CREATE_RULES_TITLE,
   TRIBE_CREATE_SUBMIT,
@@ -33,6 +33,7 @@ import {
   TRIBE_CREATE_VISIBILITY_PRIVATE_DESC,
   TRIBE_CREATE_VISIBILITY_PUBLIC,
   TRIBE_CREATE_VISIBILITY_PUBLIC_DESC,
+  TRIBE_CREATE_VISUALS_TITLE,
   TRIBE_CREATE_CATEGORY_OPTIONS,
   tribeCreateVisibilityLabel,
   tribeCategoryLabel,
@@ -91,7 +92,7 @@ export function TribeCreateWizard({
         </p>
       ) : null}
 
-      {step === "info" ? (
+      {step === "identity" ? (
         <div>
           <h2 className="text-xl font-bold text-neutral-900">{TRIBE_CREATE_INFO_TITLE}</h2>
           <div className="mt-6 space-y-5">
@@ -138,7 +139,7 @@ export function TribeCreateWizard({
             </label>
 
             <label className="block space-y-1.5 text-sm">
-              <FieldLabel>{TRIBE_CREATE_FIELD_CITY}</FieldLabel>
+              <FieldLabel required>{TRIBE_CREATE_FIELD_CITY}</FieldLabel>
               <input
                 value={draft.city}
                 onChange={(event) => onChange({ city: event.target.value })}
@@ -188,9 +189,31 @@ export function TribeCreateWizard({
         </div>
       ) : null}
 
-      {step === "personalize" ? (
+      {step === "access" ? (
         <div className="space-y-5">
-          <h2 className="text-xl font-bold text-neutral-900">{TRIBE_CREATE_PERSONALIZE_TITLE}</h2>
+          <h2 className="text-xl font-bold text-neutral-900">{TRIBE_CREATE_ACCESS_TITLE}</h2>
+          <p className="text-sm leading-relaxed text-neutral-600">
+            {draft.visibility === "private_invite"
+              ? TRIBE_CREATE_INVITE_PRIVATE
+              : TRIBE_CREATE_INVITE_PUBLIC}
+          </p>
+          <h3 className="text-base font-bold text-neutral-900">{TRIBE_CREATE_RULES_TITLE}</h3>
+          <p className="text-sm leading-relaxed text-neutral-600">{TRIBE_CREATE_RULES_BODY}</p>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-neutral-200 p-4 has-[:checked]:border-yunicity-primary has-[:checked]:bg-[#EEF0FF]/50">
+            <input
+              type="checkbox"
+              checked={draft.charterAccepted}
+              onChange={(event) => onChange({ charterAccepted: event.target.checked })}
+              className="mt-1 accent-yunicity-primary"
+            />
+            <span className="text-sm leading-relaxed text-neutral-800">{TRIBE_CREATE_CHARTER_LABEL}</span>
+          </label>
+        </div>
+      ) : null}
+
+      {step === "visuals" ? (
+        <div className="space-y-5">
+          <h2 className="text-xl font-bold text-neutral-900">{TRIBE_CREATE_VISUALS_TITLE}</h2>
           <p className="text-sm text-neutral-600">{TRIBE_CREATE_PREVIEW_COVER_SOON}</p>
           <label className="block space-y-1.5 text-sm">
             <FieldLabel>{TRIBE_CREATE_FIELD_COVER}</FieldLabel>
@@ -205,36 +228,9 @@ export function TribeCreateWizard({
         </div>
       ) : null}
 
-      {step === "rules" ? (
-        <div className="space-y-5">
-          <h2 className="text-xl font-bold text-neutral-900">{TRIBE_CREATE_RULES_TITLE}</h2>
-          <p className="text-sm leading-relaxed text-neutral-600">{TRIBE_CREATE_RULES_BODY}</p>
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-neutral-200 p-4 has-[:checked]:border-yunicity-primary has-[:checked]:bg-[#EEF0FF]/50">
-            <input
-              type="checkbox"
-              checked={draft.charterAccepted}
-              onChange={(event) => onChange({ charterAccepted: event.target.checked })}
-              className="mt-1 accent-yunicity-primary"
-            />
-            <span className="text-sm leading-relaxed text-neutral-800">{TRIBE_CREATE_CHARTER_LABEL}</span>
-          </label>
-        </div>
-      ) : null}
-
-      {step === "invite" ? (
+      {step === "review" ? (
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-neutral-900">{TRIBE_CREATE_INVITE_TITLE}</h2>
-          <p className="text-sm leading-relaxed text-neutral-600">
-            {draft.visibility === "private_invite"
-              ? TRIBE_CREATE_INVITE_PRIVATE
-              : TRIBE_CREATE_INVITE_PUBLIC}
-          </p>
-        </div>
-      ) : null}
-
-      {step === "confirm" ? (
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-neutral-900">{TRIBE_CREATE_CONFIRM_TITLE}</h2>
+          <h2 className="text-xl font-bold text-neutral-900">{TRIBE_CREATE_REVIEW_TITLE}</h2>
           <p className="text-sm text-neutral-600">{TRIBE_CREATE_CONFIRM_BODY}</p>
           <dl className="mt-4 rounded-xl border border-neutral-100 bg-neutral-50/60 px-4">
             <ReviewRow label="Nom" value={draft.name} />
@@ -248,7 +244,7 @@ export function TribeCreateWizard({
       ) : null}
 
       <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 pt-6">
-        {step === "info" ? (
+        {step === "identity" ? (
           <Link
             href="/tribes"
             className="rounded-full border border-neutral-200 px-5 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50"
@@ -265,7 +261,7 @@ export function TribeCreateWizard({
           </button>
         )}
 
-        {step === "confirm" ? (
+        {step === "review" ? (
           <button
             type="button"
             onClick={onSubmit}

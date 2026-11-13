@@ -19,7 +19,6 @@ export const NEIGHBORHOODS_PORTAL_CTA_LIVE = "Ce qui vit aujourd’hui";
 
 export const NEIGHBORHOODS_PORTAL_KICKER = "Territoire · Reims";
 export const NEIGHBORHOODS_PORTAL_HERO_CTA_MAP = "Ouvrir la carte";
-export const NEIGHBORHOODS_PORTAL_HERO_IMAGE_URL = "https://images.unsplash.com/photo-1549918844-3bc88390b162?auto=format&fit=crop&q=80&w=1280";
 
 const NEIGHBORHOODS_PORTAL_MOMENTS_WORD = "Moments";
 const NEIGHBORHOODS_PORTAL_CAFES_WORD = "Cafés";

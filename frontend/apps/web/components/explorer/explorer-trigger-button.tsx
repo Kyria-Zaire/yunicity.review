@@ -2,12 +2,24 @@
 
 import { useExplorerOptional } from "@/components/explorer/explorer-provider";
 import { useNavigationSurfacesOptional } from "@/hooks/use-navigation-surfaces";
+import { CITIZEN_MEDIUM_RAIL_EXPLORER_LABEL } from "@/lib/layout/citizen-medium-rail-contract";
 import { WEB_CITIZEN_SEARCH_ACCESS } from "@/lib/layout/web-layout-config";
 import { Search } from "lucide-react";
 import { useEffect, useState, type MouseEvent } from "react";
 
 type ExplorerTriggerButtonProps = {
-  variant: "compact-mobile" | "medium-rail" | "desktop-text" | "sidebar-expanded";
+  /**
+   * `medium-rail` : carré icône seule de la colonne latérale historique (routes
+   * `legacy`). `citizen-medium-rail` : contrôle du rail citoyen medium, icône +
+   * libellé court (RAIL-EXPLORER-LABEL-01). Deux variantes distinctes, comme
+   * pour le Menu (C3-CITIZEN-MEDIUM-SHELL-R1B).
+   */
+  variant:
+    | "compact-mobile"
+    | "medium-rail"
+    | "citizen-medium-rail"
+    | "desktop-text"
+    | "sidebar-expanded";
   className?: string;
 };
 
@@ -55,6 +67,27 @@ export function ExplorerTriggerButton({ variant, className = "" }: ExplorerTrigg
         style={{ width: "var(--web-sidebar-icon-hit)", height: "var(--web-sidebar-icon-hit)" }}
       >
         <Search className="h-[26px] w-[26px]" aria-hidden />
+      </button>
+    );
+  }
+
+  if (variant === "citizen-medium-rail") {
+    // Grammaire des contrôles du rail : icône + libellé court dessous, case
+    // pleine largeur cliquable. Le nom accessible reste
+    // `WEB_CITIZEN_SEARCH_ACCESS.label` via `aria-label` ; le libellé visible
+    // vient du contrat du rail. Icône bleue conservée (décision D2-b).
+    //
+    // Hauteur : même cible que l'ancien carré (`--web-sidebar-icon-hit`, 52 px,
+    // ≥ 44 px) et `py-1.5` au lieu de `py-2` — le libellé tient sans agrandir la
+    // case du rail (64 px), pour ne pas aggraver RAIL-SHORT-VIEWPORT-01.
+    return (
+      <button
+        {...triggerProps}
+        className={`flex w-full flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 text-[11px] font-medium leading-tight text-neutral-700 transition hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary/50 disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+        style={{ minHeight: "var(--web-sidebar-icon-hit)" }}
+      >
+        <Search className="h-5 w-5 shrink-0 text-yunicity-primary" aria-hidden />
+        <span className="w-full text-center">{CITIZEN_MEDIUM_RAIL_EXPLORER_LABEL}</span>
       </button>
     );
   }

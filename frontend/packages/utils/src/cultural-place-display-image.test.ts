@@ -114,4 +114,23 @@ describe("cultural-place-display-image", () => {
   it("conserve les overrides des lieux hors des 12 (ex. domaine-pommery)", () => {
     expect(resolveCulturalPlaceSlugImageOverride("domaine-pommery")).toBeTruthy();
   });
+
+  it("résout marche-du-boulingrin (QA) avec une photo réelle", () => {
+    const url = resolveCulturalPlaceDisplayUrl(
+      basePlace({ slug: "marche-du-boulingrin", hero_image_url: null, thumbnail_image_url: null }),
+    );
+    expect(url).toContain("halles_du_Boulingrin");
+  });
+
+  it("fallback halles-boulingrin quand l'API ne sert que le placeholder générique", () => {
+    const url = resolveCulturalPlaceDisplayUrl(
+      basePlace({
+        slug: "halles-boulingrin",
+        hero_image_url: GENERIC_URL,
+        thumbnail_image_url: GENERIC_URL,
+      }),
+    );
+    expect(url).toContain("halles_du_Boulingrin");
+    expect(resolveCulturalPlaceSlugImageOverride("halles-boulingrin")).toBeNull();
+  });
 });

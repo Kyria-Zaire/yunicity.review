@@ -1,4 +1,4 @@
-import { API_URL, bearer, expect, test } from "../fixtures";
+import { API_URL, bearer, expect, testCitizen as test } from "../fixtures";
 import type { Locator, Response } from "@playwright/test";
 
 /**
@@ -26,11 +26,28 @@ test.describe("Publication UI (Create Hub)", () => {
   test("FAB Créer → Publier sur le fil → POST /posts → affiché", async ({ citizenAPage }) => {
     const marker = `E2E UI ${Date.now()}`;
     await citizenAPage.goto("/feed");
-    // Mobile composer trigger is a button carrying the placeholder text; tap it, then the
-    // visible textarea appears (a hidden desktop twin shares the id, so scope to :visible).
-    await citizenAPage.locator('button:has-text("Quoi de neuf")').first().click();
+    /*
+     * Le compositeur n'a PAS d'etat replie : rien a ouvrir.
+     *
+     * Ce clic attendait un bouton portant l'espace reserve, affordance de
+     * `FeedMobileComposer` — plus monte nulle part depuis la consolidation
+     * responsive. `/feed` sert `FeedDesktopComposer` a toutes les largeurs, dont
+     * l'espace reserve est le `placeholder` du `textarea` et un `label`
+     * `sr-only`, jamais un bouton. Quatrieme spec portant ce contrat perime,
+     * apres 17, 18 et 21.
+     *
+     * Il attendait donc 120 s, le timeout du TEST expirait, Playwright demontait
+     * le contexte, et l'action en attente rapportait « Target page, context or
+     * browser has been closed » — message de demontage, non de crash.
+     *
+     * La zone de saisie est disponible des le chargement : l'assertion qui suit
+     * le prouve, et remplace l'ouverture de ce qui est deja ouvert. Le `:visible`
+     * reste utile — un jumeau desktop cache partage le meme identifiant.
+     */
     const box = citizenAPage.locator('textarea[placeholder*="Quoi de neuf"]:visible').first();
-    await expect(box).toBeVisible({ timeout: 15_000 });
+    await expect(box, "zone de saisie indisponible sans action prealable").toBeVisible({
+      timeout: 15_000,
+    });
     await box.fill(marker);
     const [resp] = await Promise.all([
       citizenAPage.waitForResponse(
@@ -49,10 +66,24 @@ test.describe("Tribu publique UI", () => {
   test("rejoindre (charte) puis quitter via l'UI", async ({ citizenBPage }) => {
     await citizenBPage.goto("/tribes/qa-tribu-publique?city=Reims");
     await citizenBPage.waitForLoadState("networkidle").catch(() => {});
-    // The mobile hero "Rejoindre" opens the charter form (checkbox + confirm). Re-issue the
-    // open-click only while the charter checkbox is absent (hydration-safe, no sleep).
+    // Il n'y a RIEN à ouvrir : `TribeDetailMobileJoinCard` rend la case de la
+    // charte inconditionnellement, et son « Rejoindre » est `disabled` tant que
+    // la case n'est pas cochée.
+    //
+    // Le pas précédent rejouait un clic sur « Rejoindre » tant que la case était
+    // absente. Quand la case était déjà peinte il ne cliquait jamais, et le test
+    // passait ; quand la page était lente, il cliquait un bouton désactivé PAR
+    // CONCEPTION, que Playwright attend jusqu'à épuisement du budget. D'où un
+    // échec corrélé à la lenteur de la page, et non au produit.
+    //
+    // Le flux décrit — « Rejoindre » ouvre un formulaire de charte — est celui
+    // de la branche `showJoinForm` de `TribeDetailMobileMembershipAction`, qui
+    // n'était montée nulle part. Même racine que les trois autres contrats
+    // périmés de cette spec.
     const charter = citizenBPage.locator('input[type="checkbox"]:visible').first();
-    await clickUntil(citizenBPage.getByRole("button", { name: "Rejoindre", exact: true }), charter);
+    await expect(charter, "la carte d'adhésion ne rend pas la charte").toBeVisible({
+      timeout: 15_000,
+    });
     await charter.check({ force: true });
     const confirmJoin = citizenBPage.getByRole("button", { name: "Rejoindre", exact: true }).last();
     await expect(confirmJoin).toBeEnabled({ timeout: 10_000 });
@@ -79,6 +110,18 @@ test.describe("Tribu publique UI", () => {
     await expect(
       citizenBPage.getByRole("button", { name: "Rejoindre", exact: true }).first(),
     ).toBeVisible({ timeout: 15_000 });
+
+    // Persistance : l'état après rechargement vient du serveur, pas du state
+    // client que le départ vient de modifier. Sans ce pas, un retrait purement
+    // optimiste passerait pour un départ réel.
+    await citizenBPage.reload();
+    await citizenBPage.waitForLoadState("networkidle").catch(() => {});
+    await expect(
+      citizenBPage.getByRole("button", { name: "Rejoindre", exact: true }).first(),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(
+      citizenBPage.getByRole("button", { name: "Membre", exact: true }),
+    ).toHaveCount(0);
   });
 });
 
@@ -86,28 +129,108 @@ test.describe("Tribu privée UI", () => {
   test("demande d'adhésion via l'UI → état en attente + persiste", async ({ citizenAPage, citizenA }) => {
     await citizenAPage.goto("/tribes/qa-tribu-privee?city=Reims");
     await citizenAPage.waitForLoadState("networkidle").catch(() => {});
-    // The private gate renders "Demander à rejoindre"; the join-request POST has no optimistic
-    // UI, so gate the retry on the network: once a terminal POST response is observed we NEVER
-    // click again (no double mutation), and a missed pre-hydration click simply retries.
+    /*
+     * ── Pourquoi une écoute PERSISTANTE ────────────────────────────────────
+     *
+     * La preuve réseau était armée par une fenêtre `waitForResponse` de 2,5 s
+     * POSÉE AVANT CHAQUE CLIC. Mesuré : quand la réponse dépasse ce délai, la
+     * boucle réessaie — mais le bouton a déjà cédé la place au message
+     * d'attente, donc plus aucun POST n'est observable et l'assertion échoue
+     * sur une action RÉUSSIE (capture : « Votre demande a été envoyée — elle
+     * est en attente de validation »).
+     *
+     * L'écoute est donc installée UNE FOIS, avant toute action, et survit à
+     * toute la séquence. L'état « en attente » ARRÊTE les clics — il ne
+     * remplace pas la preuve réseau, qui reste exigée séparément ci-dessous.
+     */
+    /*
+     * Deux signaux distincts, et c'est la clé : la REQUÊTE partie interdit un
+     * second clic, la RÉPONSE revenue fait la preuve.
+     *
+     * Mesuré par sonde instrumentée : la réponse du POST met 1,4 à 2,8 s. Un
+     * garde fondé sur la seule réponse laissait donc la boucle recliquer toutes
+     * les ~100 ms pendant toute la latence — des dizaines de POST pour une
+     * intention unique. Le garde porte désormais sur la requête ÉMISE : un clic
+     * qui a produit une requête n'est jamais répété, un clic resté sans effet
+     * (handler React pas encore attaché) l'est.
+     */
+    const requetesJoin: number[] = [];
+    const surRequete = (r: { method: () => string; url: () => string }) => {
+      if (r.method() !== "POST") return;
+      if (!/\/tribes\/qa-tribu-privee\/join-requests(\?|$)/.test(r.url())) return;
+      requetesJoin.push(Date.now());
+    };
+    citizenAPage.on("request", surRequete);
+
+    const postsJoin: { chemin: string; statut: number; code: string | null }[] = [];
+    const surReponse = (r: Response) => {
+      if (r.request().method() !== "POST") return;
+      if (!/\/tribes\/qa-tribu-privee\/join-requests(\?|$)/.test(r.url())) return;
+      // Le code métier est lu ICI : le corps n'est plus accessible après coup.
+      void r
+        .json()
+        .then((corps: unknown) => {
+          const code =
+            corps && typeof corps === "object" && "code" in corps
+              ? String((corps as { code: unknown }).code)
+              : null;
+          postsJoin.push({ chemin: new URL(r.url()).pathname, statut: r.status(), code });
+        })
+        .catch(() => {
+          postsJoin.push({ chemin: new URL(r.url()).pathname, statut: r.status(), code: null });
+        });
+    };
+    citizenAPage.on("response", surReponse);
+
     const reqBtn = citizenAPage.getByRole("button", { name: "Demander à rejoindre", exact: true });
-    let jrResp: Response | null = null;
-    await expect(async () => {
-      if (jrResp) return; // terminal response already seen → do not click again
-      const respP = citizenAPage
-        .waitForResponse(
-          (r) =>
-            /\/tribes\/qa-tribu-privee\/join-requests(\?|$)/.test(r.url()) &&
-            r.request().method() === "POST",
-          { timeout: 2_500 },
-        )
-        .catch(() => null);
-      await reqBtn.first().click();
-      jrResp = await respP;
-      expect(jrResp, "join-request POST must fire").not.toBeNull();
-    }).toPass({ timeout: 15_000 });
-    // 201 created, or 409 if a prior attempt already registered the (unique-indexed) request.
-    expect([201, 409]).toContain((jrResp as unknown as Response).status());
     const pending = citizenAPage.getByText(/en attente de validation/i);
+
+    await expect(async () => {
+      // Une requête déjà partie, ou l'état « en attente » : on ne reclique pas.
+      if (requetesJoin.length === 0 && (await pending.count()) === 0) {
+        await reqBtn.first().click();
+      }
+      expect(
+        requetesJoin.length + (await pending.count()),
+        "le clic n'a produit ni requête join-request ni état « en attente »",
+      ).toBeGreaterThan(0);
+    }).toPass({ timeout: 20_000 });
+
+    // La preuve RÉSEAU reste exigée, même si l'UI a déjà basculé.
+    await expect
+      .poll(() => postsJoin.length, {
+        message: "aucun POST join-request observé",
+        timeout: 15_000,
+      })
+      .toBeGreaterThan(0);
+    citizenAPage.off("response", surReponse);
+    citizenAPage.off("request", surRequete);
+
+    // La bonne tribu, et une réponse réussie.
+    for (const post of postsJoin) {
+      expect(post.chemin, "POST vers une autre tribu").toMatch(
+        /\/tribes\/qa-tribu-privee\/join-requests$/,
+      );
+    }
+    /*
+     * 201 créé, ou 409 SI ET SEULEMENT SI le code métier est
+     * `TRIBE_REQUEST_PENDING` — une tentative antérieure a déjà enregistré la
+     * demande (index unique).
+     *
+     * Accepter un 409 quelconque laissait passer deux états qui CONTREDISENT
+     * ce test : `TRIBE_ALREADY_MEMBER` (déjà membre, donc aucune demande en
+     * attente) et `TRIBE_REJOIN_COOLDOWN` (délai de ré-adhésion, demande
+     * refusée). Les trois sont levés par le même service
+     * (`tribe_service.create_join_request`) avec le même statut.
+     */
+    const premier = postsJoin[0]!;
+    const resume = postsJoin.map((p) => `${p.statut}/${p.code ?? "sans code"}`).join(", ");
+    expect([201, 409], `réponses observées : ${resume}`).toContain(premier.statut);
+    if (premier.statut === 409) {
+      expect(premier.code, `409 hors contrat — réponses observées : ${resume}`).toBe(
+        "TRIBE_REQUEST_PENDING",
+      );
+    }
     await expect(pending.first()).toBeVisible({ timeout: 15_000 });
     // Persistence proven server-side (the viewer field the UI reads on next load). API is proof
     // here, not a replacement — the state was produced by the real UI click above.
@@ -120,35 +243,61 @@ test.describe("Tribu privée UI", () => {
 
 test.describe("Vidéo UI", () => {
   test("like via l'UI (écran détail) + persistance", async ({ citizenAPage, citizenA }) => {
-    // The player opens via ?video={id} (query-param). The detail screen's like control lives
-    // in VideosMobileDetailMeta with aria-label "J'aime" + aria-pressed (NOT the TikTok feed
-    // rail's "Aimer la vidéo" — that label only exists in the fullscreen feed viewport).
+    // L'écran détail s'ouvre par `?video={id}`.
+    //
+    // Le détail mobile EST le flux immersif : `video-detail-screen` ne monte
+    // `VideosMobileDetailMeta`, porteur du libellé « J'aime », que pour le palier
+    // `medium`. Au palier `mobile` — le Pixel 7 de ce projet — il rend
+    // `VideosMobileImmersiveDetail`, dont le contrôle vit dans
+    // `local-video-action-rail`. Le commentaire précédent affirmait l'inverse :
+    // il décrivait le palier voisin.
     const feed = await citizenAPage.request.get(`${API_URL}/api/v1/local-videos/feed?city=Reims`, {
       headers: bearer(citizenA),
     });
     const vid = ((await feed.json()) as { items: Array<{ id: string }> }).items[0];
     if (!vid) throw new Error("seeded local video must exist");
-    await citizenAPage.goto("/videos");
+    // Le pas précédent passait par un clic sur la carte héros de découverte, qui
+    // n'existe plus sur mobile : sous 640 px, `.videos-discovery-mobile-grid-fallback`
+    // est en `display: none !important` dès que le flux immersif est actif, ce
+    // qui est le cas ici. Le lien restait dans le DOM — Playwright le RÉSOLVAIT —
+    // sans jamais obtenir de boîte visible : soixante secondes d'attente, puis le
+    // teardown, qui rapportait « browser has been closed ».
+    await citizenAPage.goto(`/videos?video=${vid.id}`);
     await citizenAPage.waitForLoadState("networkidle").catch(() => {});
-    await citizenAPage.locator(`a[href*="video=${vid.id}"]`).first().click();
-    await citizenAPage.waitForURL(/video=/);
-    await citizenAPage.waitForLoadState("networkidle").catch(() => {});
-    const like = citizenAPage.locator("button[aria-label^=\"J'aime\"]:visible").first();
+
+    // Deux conséquences sur le ciblage du contrôle.
+    //
+    // Le rail fait BASCULER son libellé — « Aimer la vidéo » non aimé, « Retirer
+    // le like » aimé — donc aucun préfixe unique ne suit le contrôle d'un état à
+    // l'autre. `aria-pressed` reste la source d'état ; le libellé n'en est que
+    // la traduction.
+    //
+    // Et le flux monte TOUTES les diapositives, les inactives en `inert` +
+    // `aria-hidden`. On borne donc à la diapositive de la vidéo visée. Sans
+    // cela, un `.first()` pouvait aimer une AUTRE vidéo sans que rien ne le
+    // signale, l'assertion sur le POST ne fixant pas l'identifiant — elle le
+    // fixe maintenant.
+    const slide = citizenAPage.locator(`[data-video-slide-id="${vid.id}"]`);
+    const like = slide
+      .locator('button[aria-label="Aimer la vidéo"], button[aria-label="Retirer le like"]')
+      .first();
     await expect(like).toBeVisible({ timeout: 20_000 });
     await expect(like).toHaveAttribute("aria-pressed", "false");
     const likeResp = citizenAPage.waitForResponse(
-      (r) => /\/local-videos\/[^/]+\/like/.test(r.url()) && r.request().method() === "POST",
+      (r) =>
+        new RegExp(`/local-videos/${vid.id}/like`).test(r.url()) &&
+        r.request().method() === "POST",
     );
-    const pressed = citizenAPage.locator(
-      "button[aria-label^=\"J'aime\"][aria-pressed=\"true\"]:visible",
-    );
+    const pressed = slide.locator('button[aria-label="Retirer le like"][aria-pressed="true"]');
     await clickUntil(like, pressed);
     expect([200, 201, 204]).toContain((await likeResp).status());
     // Persistence: reload and confirm the like held server-side.
     await citizenAPage.reload();
     await citizenAPage.waitForLoadState("networkidle").catch(() => {});
     await expect(
-      citizenAPage.locator("button[aria-label^=\"J'aime\"][aria-pressed=\"true\"]:visible").first(),
+      citizenAPage
+        .locator(`[data-video-slide-id="${vid.id}"]`)
+        .locator('button[aria-label="Retirer le like"][aria-pressed="true"]'),
     ).toBeVisible({ timeout: 20_000 });
   });
 });
@@ -157,12 +306,26 @@ test.describe("Notifications UI", () => {
   test("read-all via l'UI → non-lu = 0 + persiste", async ({ citizenAPage, citizenA }) => {
     await citizenAPage.goto("/notifications");
     await citizenAPage.waitForLoadState("networkidle").catch(() => {});
-    // Mobile: read-all lives behind the "Actions notifications" menu — a client toggle, so
-    // re-issue the open-click only while "Tout marquer comme lu" is absent (hydration-safe).
-    const actionsMenu = citizenAPage.locator('button[aria-label="Actions notifications"]:visible');
+    /*
+     * Ce test ouvrait d'abord un menu « Actions notifications » censé abriter
+     * le bouton. Mesuré par sonde instrumentée, cinq chargements successifs :
+     * ce déclencheur n'existe PAS à ce palier — zéro occurrence à chaque essai —
+     * tandis que « Tout marquer comme lu » est rendu directement dans la
+     * bannière, visible.
+     *
+     * `clickUntil` n'avait donc aucun chemin de reprise : son seul recours,
+     * quand le bouton attendu n'est pas visible à l'instant du test, est de
+     * cliquer un déclencheur absent, ce qui lève. Or la page refetch à chaque
+     * chargement (deux `GET /notifications` relevés), et un re-rendu fait
+     * vaciller la bannière — d'où un échec intermittent sur une UI saine.
+     *
+     * On attend donc le bouton RÉEL, avec l'attente automatique de Playwright,
+     * qui tolère un re-rendu. Même budget, aucune assertion affaiblie.
+     */
     const markAll = citizenAPage.locator('button:has-text("Tout marquer comme lu"):visible');
-    await clickUntil(actionsMenu, markAll);
-    await expect(markAll.first()).toBeVisible({ timeout: 15_000 });
+    await expect(markAll.first(), "bouton « Tout marquer comme lu » absent").toBeVisible({
+      timeout: 15_000,
+    });
     const [resp] = await Promise.all([
       citizenAPage.waitForResponse((r) => r.url().includes("/notifications/read-all")),
       markAll.first().click(),

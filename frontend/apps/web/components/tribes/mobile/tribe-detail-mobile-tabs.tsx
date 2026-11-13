@@ -30,7 +30,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 const TAB_OPTIONS: { id: TribeDetailMobileTabId; label: string }[] = [
-  { id: "featured", label: TRIBE_DETAIL_MOBILE_TAB_FEATURED },
+  { id: "overview", label: TRIBE_DETAIL_MOBILE_TAB_FEATURED },
   { id: "discussions", label: TRIBE_DETAIL_MOBILE_TAB_DISCUSSIONS },
   { id: "events", label: TRIBE_DETAIL_MOBILE_TAB_EVENTS },
   { id: "members", label: TRIBE_DETAIL_MOBILE_TAB_MEMBERS },
@@ -69,7 +69,7 @@ export function TribeDetailMobileTabs({
   onLoadMorePosts,
   hasMorePosts,
 }: TribeDetailMobileTabsProps) {
-  const [tab, setTab] = useState<TribeDetailMobileTabId>("featured");
+  const [tab, setTab] = useState<TribeDetailMobileTabId>("overview");
 
   function switchTab(next: TribeDetailMobileTabId) {
     setTab(next);
@@ -102,7 +102,7 @@ export function TribeDetailMobileTabs({
         ))}
       </div>
 
-      {tab === "featured" ? (
+      {tab === "overview" ? (
         <div className="space-y-5">
           <section className="space-y-3">
             <div className="flex items-center justify-between gap-3">

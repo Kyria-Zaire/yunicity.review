@@ -7,7 +7,7 @@ import type {
   PartnerOfferPublic,
   Tribe,
 } from "@yunicity/types";
-import { filterAgendaUpcomingEvents } from "@yunicity/utils";
+import { filterAgendaUpcomingEvents, keepOfficialSectors } from "@yunicity/utils";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
@@ -26,6 +26,8 @@ export type NeighborhoodsPortalContextState = {
 };
 
 const DEFAULT_CITY = "Reims";
+/** 12 secteurs + 3 fusionnés encore actifs en QA (15 lignes) avant `keepOfficialSectors`. */
+const NEIGHBORHOOD_PORTAL_PAGE_SIZE = 24;
 
 export function useNeighborhoodsPortalContext(initialCity?: string): NeighborhoodsPortalContextState {
   const api = useYunicityApi();
@@ -48,7 +50,7 @@ export function useNeighborhoodsPortalContext(initialCity?: string): Neighborhoo
     setError(false);
     try {
       const results = await Promise.allSettled([
-        api.neighborhoods.listNeighborhoods({ city, page_size: 24 }),
+        api.neighborhoods.listNeighborhoods({ city, page_size: NEIGHBORHOOD_PORTAL_PAGE_SIZE }),
         api.events.listEvents({ city }),
         api.listCulturalPlaces({ city, limit: 48 }),
         api.tribes.listTribes({ city, page_size: 8 }),
@@ -58,7 +60,9 @@ export function useNeighborhoodsPortalContext(initialCity?: string): Neighborhoo
       const [hoodsRes, eventsRes, placesRes, tribesRes, offersRes] = results;
 
       if (hoodsRes.status === "fulfilled") {
-        setNeighborhoods(hoodsRes.value.items.filter((hood) => hood.is_active));
+        // Ni plus ni moins que les 12 secteurs officiels : un environnement dont la base n'a
+        // pas rejoué le seed catalog renvoie encore les 3 quartiers fusionnés comme actifs.
+        setNeighborhoods(keepOfficialSectors(hoodsRes.value.items));
       } else {
         setNeighborhoods([]);
       }

@@ -38,6 +38,7 @@ class SearchRow:
     body: str | None = None
     username: str | None = None
     starts_at: datetime | None = None
+    ends_at: datetime | None = None
     is_flash: bool | None = None
 
 
@@ -92,15 +93,11 @@ class SearchRepository:
         ]
         if neighborhood_id is not None:
             filters.append(Post.neighborhood_id == neighborhood_id)
-        base = select(Post.id, Post.title, Post.body, Post.city, rank.label("rank")).where(
-            *filters
-        )
+        base = select(Post.id, Post.title, Post.body, Post.city, rank.label("rank")).where(*filters)
         count_stmt = select(func.count()).select_from(base.subquery())
         total = int((await self._session.execute(count_stmt)).scalar_one())
         rows = await self._session.execute(
-            base.order_by(rank.desc(), Post.created_at.desc())
-            .limit(limit)
-            .offset(offset)
+            base.order_by(rank.desc(), Post.created_at.desc()).limit(limit).offset(offset)
         )
         items = [
             SearchRow(
@@ -146,6 +143,7 @@ class SearchRepository:
             LocalEvent.title,
             LocalEvent.city,
             LocalEvent.starts_at,
+            LocalEvent.ends_at,
             rank.label("rank"),
         ).where(*filters)
         count_stmt = select(func.count()).select_from(base.subquery())
@@ -162,6 +160,7 @@ class SearchRepository:
                 title=row.title,
                 city=row.city,
                 starts_at=row.starts_at,
+                ends_at=row.ends_at,
             )
             for row in rows.all()
         ]
@@ -328,6 +327,9 @@ class SearchRepository:
             )
         filters = [
             User.is_active.is_(True),
+            # Un compte dont la suppression est demandee sort des resultats
+            # (AUTH-02A), sans que ses contenus soient touches.
+            User.deletion_requested_at.is_(None),
             UserProfile.onboarding_completed.is_(True),
             func.lower(UserProfile.city) == city_lower,
             visibility_filter,

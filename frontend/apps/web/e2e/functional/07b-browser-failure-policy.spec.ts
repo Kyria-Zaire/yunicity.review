@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { evaluateBrowserFailures, type FailedRequestRecord } from "../browser-failure-policy";
+import { evaluateBrowserFailures, type FailedRequestRecord, type ProvenMediaContext } from "../browser-failure-policy";
 
 /**
  * C3.0-T4-R1 — tests de la POLITIQUE d'échecs navigateur, indépendants du parcours produit.
@@ -18,10 +18,22 @@ const NOTIF_FAILURE: FailedRequestRecord = {
   errorText: "net::ERR_FAILED",
 };
 
-const MEDIA_FAILURE: FailedRequestRecord = {
+const MEDIA_ORB_FAILURE: FailedRequestRecord = {
   url: `${QA_API}/qa/qa-sample-video.mp4`,
   method: "GET",
   errorText: "net::ERR_BLOCKED_BY_ORB",
+};
+
+const MEDIA_LANDSCAPE_ABORT: FailedRequestRecord = {
+  url: `${QA_API}/media/qa/qa-sample-video.mp4`,
+  method: "GET",
+  errorText: "net::ERR_ABORTED",
+};
+
+const MEDIA_PORTRAIT_ABORT: FailedRequestRecord = {
+  url: `${QA_API}/media/qa/qa-sample-video-portrait.mp4`,
+  method: "GET",
+  errorText: "net::ERR_ABORTED",
 };
 
 /** Message console observé en QA, porteur de l'URL de la requête annulée (QA-NOTIF-01). */
@@ -33,6 +45,47 @@ const NOTIF_CONSOLE_MESSAGE =
 /** Message console générique, sans URL — inexploitable seul. */
 const GENERIC_CONSOLE_MESSAGE = "Failed to load resource: net::ERR_FAILED";
 
+/** UUID synthétique — aucun identifiant QA courant codé en dur. */
+const SYNTH_UUID = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+
+function dynamicProcessedUrl(origin: string, uuid = SYNTH_UUID): string {
+  return `${origin}/media/local-video/reims/${uuid}/processed.mp4`;
+}
+
+function provenContext(urls: readonly string[], httpErrors: readonly string[] = []): ProvenMediaContext {
+  return {
+    provenSuccessfulMediaUrls: new Set(urls),
+    knownHttpErrorMediaUrls: new Set(httpErrors),
+  };
+}
+
+const DYNAMIC_MEDIA_ABORT: FailedRequestRecord = {
+  url: dynamicProcessedUrl(QA_API),
+  method: "GET",
+  errorText: "net::ERR_ABORTED",
+  resourceType: "media",
+};
+
+/**
+ * Hash de build Next, synthetique : la regle QA-RSC-01 n'en controle que la
+ * presence et la non-vacuite, jamais la valeur.
+ */
+const RSC_HASH = "kfdbIDKPpsaF5Nd9";
+
+function rscPrefetch(
+  chemin: string,
+  surcharge: Partial<FailedRequestRecord> = {},
+  origine = QA_WEB,
+): FailedRequestRecord {
+  return {
+    url: `${origine}${chemin}?_rsc=${RSC_HASH}`,
+    method: "GET",
+    errorText: "net::ERR_ABORTED",
+    resourceType: "fetch",
+    ...surcharge,
+  };
+}
+
 test.describe("Politique d'échecs navigateur", () => {
   test("autorise la requête notifications QA exacte avec son erreur exacte", () => {
     const verdict = evaluateBrowserFailures({ failedRequests: [NOTIF_FAILURE], consoleErrors: [] });
@@ -41,7 +94,19 @@ test.describe("Politique d'échecs navigateur", () => {
   });
 
   test("autorise le média placeholder QA exact bloqué par ORB", () => {
-    const verdict = evaluateBrowserFailures({ failedRequests: [MEDIA_FAILURE], consoleErrors: [] });
+    const verdict = evaluateBrowserFailures({ failedRequests: [MEDIA_ORB_FAILURE], consoleErrors: [] });
+    expect(verdict.violations).toEqual([]);
+    expect(verdict.ok).toBe(true);
+  });
+
+  test("autorise le média landscape QA annulé par le navigateur (ERR_ABORTED)", () => {
+    const verdict = evaluateBrowserFailures({ failedRequests: [MEDIA_LANDSCAPE_ABORT], consoleErrors: [] });
+    expect(verdict.violations).toEqual([]);
+    expect(verdict.ok).toBe(true);
+  });
+
+  test("autorise le média portrait QA annulé par le navigateur (ERR_ABORTED)", () => {
+    const verdict = evaluateBrowserFailures({ failedRequests: [MEDIA_PORTRAIT_ABORT], consoleErrors: [] });
     expect(verdict.violations).toEqual([]);
     expect(verdict.ok).toBe(true);
   });
@@ -118,10 +183,66 @@ test.describe("Politique d'échecs navigateur", () => {
 
   test("REFUSE un média QA portant une query inattendue", () => {
     const verdict = evaluateBrowserFailures({
-      failedRequests: [{ ...MEDIA_FAILURE, url: `${QA_API}/qa/qa-sample-video.mp4?v=2` }],
+      failedRequests: [{ ...MEDIA_ORB_FAILURE, url: `${QA_API}/qa/qa-sample-video.mp4?v=2` }],
       consoleErrors: [],
     });
     expect(verdict.ok).toBe(false);
+  });
+
+  test("REFUSE le portrait QA avec ERR_FAILED (pas une annulation navigateur)", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [{ ...MEDIA_PORTRAIT_ABORT, errorText: "net::ERR_FAILED" }],
+      consoleErrors: [],
+    });
+    expect(verdict.ok).toBe(false);
+    expect(verdict.violations.join(" ")).toContain("qa-sample-video-portrait.mp4");
+  });
+
+  test("REFUSE un autre MP4 local non seedé", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [
+        {
+          url: `${QA_API}/media/qa/other-sample-video.mp4`,
+          method: "GET",
+          errorText: "net::ERR_ABORTED",
+        },
+      ],
+      consoleErrors: [],
+    });
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REFUSE le portrait QA sur une origine de production", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [
+        {
+          url: "https://media.yunicity.city/media/qa/qa-sample-video-portrait.mp4",
+          method: "GET",
+          errorText: "net::ERR_ABORTED",
+        },
+      ],
+      consoleErrors: [],
+    });
+    expect(verdict.ok).toBe(false);
+    expect(verdict.violations.join(" ")).toContain("media.yunicity.city");
+  });
+
+  test("REFUSE POST sur le portrait QA même avec ERR_ABORTED", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [{ ...MEDIA_PORTRAIT_ABORT, method: "POST" }],
+      consoleErrors: [],
+    });
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REFUSE le portrait QA avec une erreur HTTP 404/500 (pas ERR_ABORTED)", () => {
+    for (const errorText of ["net::ERR_HTTP_RESPONSE_CODE_404", "net::ERR_HTTP_RESPONSE_CODE_500"]) {
+      const verdict = evaluateBrowserFailures({
+        failedRequests: [{ ...MEDIA_PORTRAIT_ABORT, errorText }],
+        consoleErrors: [],
+      });
+      expect(verdict.ok, errorText).toBe(false);
+    }
   });
 
   test("REFUSE un message console générique sans requête échouée corrélée", () => {
@@ -138,8 +259,8 @@ test.describe("Politique d'échecs navigateur", () => {
       failedRequests: [
         NOTIF_FAILURE,
         { url: `${QA_API}/qa/qa-sample-video.jpg`, method: "GET", errorText: "net::ERR_BLOCKED_BY_ORB" },
-        MEDIA_FAILURE,
-        MEDIA_FAILURE,
+        MEDIA_ORB_FAILURE,
+        MEDIA_ORB_FAILURE,
       ],
       consoleErrors: [NOTIF_CONSOLE_MESSAGE, GENERIC_CONSOLE_MESSAGE],
     });
@@ -167,5 +288,217 @@ test.describe("Politique d'échecs navigateur", () => {
   test("autorise l'absence totale de défaillance", () => {
     const verdict = evaluateBrowserFailures({ failedRequests: [], consoleErrors: [] });
     expect(verdict.ok).toBe(true);
+  });
+
+  test("ACCEPT — média local dynamique prouvé (206) + GET + media + ERR_ABORTED", () => {
+    const url = dynamicProcessedUrl(QA_API);
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [{ ...DYNAMIC_MEDIA_ABORT, url }],
+      consoleErrors: [],
+      provenMedia: provenContext([url]),
+    });
+    expect(verdict.violations).toEqual([]);
+    expect(verdict.ok).toBe(true);
+  });
+
+  test("REJECT — UUID valide mais URL non prouvée", () => {
+    const url = dynamicProcessedUrl(QA_API);
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [{ ...DYNAMIC_MEDIA_ABORT, url }],
+      consoleErrors: [],
+      provenMedia: provenContext([]),
+    });
+    expect(verdict.ok).toBe(false);
+    expect(verdict.violations.join(" ")).toContain(url);
+  });
+
+  test("REJECT — média prouvé mais erreur HTTP ultérieure connue", () => {
+    const url = dynamicProcessedUrl(QA_API);
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [{ ...DYNAMIC_MEDIA_ABORT, url }],
+      consoleErrors: [],
+      provenMedia: provenContext([url], [url]),
+    });
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REJECT — ERR_FAILED sur média dynamique prouvé", () => {
+    const url = dynamicProcessedUrl(QA_API);
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [{ ...DYNAMIC_MEDIA_ABORT, url, errorText: "net::ERR_FAILED" }],
+      consoleErrors: [],
+      provenMedia: provenContext([url]),
+    });
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REJECT — POST sur média dynamique prouvé", () => {
+    const url = dynamicProcessedUrl(QA_API);
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [{ ...DYNAMIC_MEDIA_ABORT, url, method: "POST" }],
+      consoleErrors: [],
+      provenMedia: provenContext([url]),
+    });
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REJECT — origine production media.yunicity.city", () => {
+    const url = dynamicProcessedUrl("https://media.yunicity.city", SYNTH_UUID);
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [{ ...DYNAMIC_MEDIA_ABORT, url }],
+      consoleErrors: [],
+      provenMedia: provenContext([url]),
+    });
+    expect(verdict.ok).toBe(false);
+    expect(verdict.violations.join(" ")).toContain("media.yunicity.city");
+  });
+
+  test("REJECT — pathname local-video sans processed.mp4", () => {
+    const url = `${QA_API}/media/local-video/reims/${SYNTH_UUID}/source.mp4`;
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [{ ...DYNAMIC_MEDIA_ABORT, url }],
+      consoleErrors: [],
+      provenMedia: provenContext([url]),
+    });
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REJECT — resourceType manquant sur média dynamique prouvé", () => {
+    const url = dynamicProcessedUrl(QA_API);
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [{ url, method: "GET", errorText: "net::ERR_ABORTED" }],
+      consoleErrors: [],
+      provenMedia: provenContext([url]),
+    });
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REJECT — ERR_ABORTED sur autre MP4 local non seedé (fixtures QA restent via QA-MEDIA-02)", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [
+        {
+          url: `${QA_API}/media/qa/other-sample-video.mp4`,
+          method: "GET",
+          errorText: "net::ERR_ABORTED",
+          resourceType: "media",
+        },
+      ],
+      consoleErrors: [],
+      provenMedia: provenContext([`${QA_API}/media/qa/other-sample-video.mp4`]),
+    });
+    expect(verdict.ok).toBe(false);
+  });
+
+  /**
+   * QA-RSC-01 — la tolerance du prefetch RSC annule. Mesure : le serveur repond
+   * 200, c'est le client qui annule la derniere requete de la file. Les tests
+   * qui suivent bornent la regle : chacun ne change QU'UN champ par rapport au
+   * cas tolere, et doit redevenir bloquant.
+   */
+  test("autorise un prefetch RSC annule par le client, quel que soit le chemin", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [
+        rscPrefetch("/profile/qa_citizen_a"),
+        rscPrefetch("/feed"),
+        rscPrefetch("/une/route/encore/inconnue"),
+      ],
+      consoleErrors: [],
+    });
+    expect(verdict.violations).toEqual([]);
+    expect(verdict.ok).toBe(true);
+  });
+
+  test("REFUSE un prefetch RSC qui ECHOUE au lieu d'etre annule", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [rscPrefetch("/profile/qa_citizen_a", { errorText: "net::ERR_FAILED" })],
+      consoleErrors: [],
+    });
+    expect(verdict.violations).toHaveLength(1);
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REFUSE un fetch annule de meme origine SANS le marqueur _rsc", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [
+        {
+          url: `${QA_WEB}/profile/qa_citizen_a`,
+          method: "GET",
+          errorText: "net::ERR_ABORTED",
+          resourceType: "fetch",
+        },
+      ],
+      consoleErrors: [],
+    });
+    expect(verdict.violations).toHaveLength(1);
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REFUSE un prefetch RSC portant un parametre SUPPLEMENTAIRE", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [
+        {
+          ...rscPrefetch("/profile/qa_citizen_a"),
+          url: `${QA_WEB}/profile/qa_citizen_a?_rsc=${RSC_HASH}&redirect=http://evil.test`,
+        },
+      ],
+      consoleErrors: [],
+    });
+    expect(verdict.violations).toHaveLength(1);
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REFUSE un marqueur _rsc VIDE", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [
+        { ...rscPrefetch("/feed"), url: `${QA_WEB}/feed?_rsc=` },
+      ],
+      consoleErrors: [],
+    });
+    expect(verdict.violations).toHaveLength(1);
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REFUSE le meme marqueur sur l'origine de l'API", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [rscPrefetch("/api/v1/me", {}, QA_API)],
+      consoleErrors: [],
+    });
+    expect(verdict.violations).toHaveLength(1);
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REFUSE le meme marqueur sur une origine EXTERNE", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [rscPrefetch("/feed", {}, "https://evil.test")],
+      consoleErrors: [],
+    });
+    expect(verdict.violations).toHaveLength(1);
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REFUSE une NAVIGATION document annulee, et non un prefetch", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [rscPrefetch("/feed", { resourceType: "document" })],
+      consoleErrors: [],
+    });
+    expect(verdict.violations).toHaveLength(1);
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("REFUSE un media annule qui emprunterait le marqueur _rsc", () => {
+    const verdict = evaluateBrowserFailures({
+      failedRequests: [
+        {
+          url: `${dynamicProcessedUrl(QA_WEB)}?_rsc=${RSC_HASH}`,
+          method: "GET",
+          errorText: "net::ERR_ABORTED",
+          resourceType: "media",
+        },
+      ],
+      consoleErrors: [],
+      provenMedia: provenContext([dynamicProcessedUrl(QA_WEB)]),
+    });
+    expect(verdict.violations).toHaveLength(1);
+    expect(verdict.ok).toBe(false);
   });
 });

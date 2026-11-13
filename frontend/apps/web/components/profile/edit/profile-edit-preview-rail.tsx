@@ -17,6 +17,7 @@ import {
 } from "@yunicity/utils";
 import { Eye, Heart, Lightbulb, MapPin, Users } from "lucide-react";
 import Link from "next/link";
+import { AvatarImage } from "@/components/avatar-image";
 
 type ProfileEditPreviewRailProps = {
   preview: ProfileEditPreviewView;
@@ -46,8 +47,7 @@ export function ProfileEditPreviewRail({ preview }: ProfileEditPreviewRailProps)
         <div className="relative px-5 pb-5 pt-10">
           <div className="absolute -top-8 left-5 h-16 w-16 overflow-hidden rounded-full border-4 border-white bg-neutral-200 shadow-sm">
             {preview.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={preview.avatarUrl} alt="" className="size-full object-cover" />
+              <AvatarImage src={preview.avatarUrl} alt="" className="size-full object-cover" />
             ) : (
               <span className="flex size-full items-center justify-center bg-yunicity-primary/15 text-lg font-bold text-yunicity-primary">
                 {preview.displayName.slice(0, 1).toUpperCase()}

@@ -20,10 +20,13 @@ import { VideosMobileDetailComments } from "@/components/videos/mobile/videos-mo
 import { VideosMobileDetailHeader } from "@/components/videos/mobile/videos-mobile-detail-header";
 import { VideosMobileDetailMeta } from "@/components/videos/mobile/videos-mobile-detail-meta";
 import { VideosMobileDetailPlayer } from "@/components/videos/mobile/videos-mobile-detail-player";
+import { VideosMobileImmersiveDetail } from "@/components/videos/mobile/videos-mobile-immersive-detail";
 import { VideoDetailCommentsSection } from "@/components/videos/video-detail-comments-section";
 import { VideoDetailMeta } from "@/components/videos/video-detail-meta";
 import { VideoDetailPlayer } from "@/components/videos/video-detail-player";
 import { VideoDetailSidebar } from "@/components/videos/video-detail-sidebar";
+import { useVideosViewportTier } from "@/hooks/use-videos-viewport-tier";
+import { scrollIntoViewRespectingReducedMotion, VIDEO_CANVAS_FOCUS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
 
 type VideoDetailScreenProps = {
   videoId: string;
@@ -36,6 +39,7 @@ type VideoDetailScreenProps = {
   onOpenReport: (videoId: string) => void;
   onCommentCountDelta: (videoId: string, delta: number) => void;
   shareHint?: string | null;
+  onLoadMore?: () => void;
 };
 
 export function VideoDetailScreen({
@@ -49,8 +53,10 @@ export function VideoDetailScreen({
   onOpenReport,
   onCommentCountDelta,
   shareHint,
+  onLoadMore,
 }: VideoDetailScreenProps) {
   const router = useRouter();
+  const viewportTier = useVideosViewportTier();
   const [autoplayEnabled, setAutoplayEnabled] = useState(true);
 
   const video = useMemo(
@@ -64,7 +70,7 @@ export function VideoDetailScreen({
   );
 
   const scrollToComments = useCallback(() => {
-    document.getElementById("video-detail-comments")?.scrollIntoView({
+    scrollIntoViewRespectingReducedMotion(document.getElementById("video-detail-comments"), {
       behavior: "smooth",
       block: "start",
     });
@@ -77,10 +83,23 @@ export function VideoDetailScreen({
     router.push(buildLocalVideoTeaserHref(next.id));
   }, [autoplayEnabled, relatedVideos, router]);
 
+  // Dernier hook du composant : il DOIT rester au-dessus des retours anticipés.
+  // Placé après eux, le passage loading → loaded (ou processing → loaded) faisait
+  // varier le nombre de hooks entre deux rendus du même montage — React lève alors
+  // « Rendered more hooks than during the previous render ». Le contrat d'ordre est
+  // verrouillé par `lib/layout/video-detail-hook-order.test.ts`.
+  const processingErrors = useMemo(
+    () => (processingError ? { [videoId]: processingError } : {}),
+    [processingError, videoId],
+  );
+
   if (isLoading && !video) {
     return (
       <>
-        <div className="web-mobile-videos-only px-4 py-16 text-center text-sm text-neutral-500">
+        <div className="videos-detail-immersive-only flex min-h-[100dvh] items-center justify-center bg-black px-4 text-center text-sm text-white/70">
+          {VIDEO_DETAIL_LOADING}
+        </div>
+        <div className="videos-detail-medium-only px-4 py-16 text-center text-sm text-neutral-500">
           {VIDEO_DETAIL_LOADING}
         </div>
         <div className="web-desktop-videos-only mx-auto max-w-[1400px] px-4 py-16 text-center text-sm text-neutral-500">
@@ -93,7 +112,17 @@ export function VideoDetailScreen({
   if (!video) {
     return (
       <>
-        <div className="web-mobile-videos-only px-4 py-16 text-center">
+        <div className="videos-detail-immersive-only flex min-h-[100dvh] flex-col items-center justify-center bg-black px-4 text-center">
+          <p className="text-sm text-white/80">{VIDEO_DETAIL_NOT_FOUND}</p>
+          <Link
+            href="/videos"
+            className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-yunicity-primary hover:underline"
+          >
+            <ChevronLeft className="h-4 w-4" aria-hidden />
+            {VIDEO_DETAIL_BACK}
+          </Link>
+        </div>
+        <div className="videos-detail-medium-only px-4 py-16 text-center">
           <p className="text-sm text-neutral-600">{VIDEO_DETAIL_NOT_FOUND}</p>
           <Link
             href="/videos"
@@ -163,34 +192,62 @@ export function VideoDetailScreen({
 
   return (
     <>
-      <div className="web-mobile-videos-only min-h-dvh bg-white">
-        <VideosMobileDetailHeader onOpenReport={() => onOpenReport(video.id)} />
+      {viewportTier === "mobile" ? (
+        <VideosMobileImmersiveDetail
+          focusVideoId={videoId}
+          items={items}
+          processingErrors={processingErrors}
+          onDismissProcessing={() => onDismissProcessing?.()}
+          onToggleLike={onToggleLike}
+          onShare={onShare}
+          onOpenReport={onOpenReport}
+          onCommentCountDelta={onCommentCountDelta}
+          onLoadMore={onLoadMore}
+        />
+      ) : null}
 
-        {shareHint ? (
-          <p className="mx-4 mt-3 rounded-full bg-neutral-900 px-4 py-2 text-center text-xs text-white">
-            {shareHint}
-          </p>
-        ) : null}
+      {viewportTier === "medium" ? (
+        <div className="min-h-dvh bg-white">
+          <Link
+            href="/videos"
+            className={`mx-4 mt-3 ${VIDEO_TOUCH_TARGET} gap-2 text-sm font-semibold text-neutral-700 transition hover:text-yunicity-primary ${VIDEO_CANVAS_FOCUS}`}
+          >
+            <ChevronLeft className="h-4 w-4" aria-hidden />
+            {VIDEO_DETAIL_BACK}
+          </Link>
 
-        <div className="space-y-5 px-4 py-3">
-          <VideosMobileDetailPlayer item={video} onEnded={handleVideoEnded} />
-          <VideosMobileDetailMeta
-            item={video}
-            onToggleLike={() => onToggleLike(video)}
-            onShare={() => onShare(video)}
-            onOpenComments={scrollToComments}
+          <VideosMobileDetailHeader
+            onOpenReport={() => onOpenReport(video.id)}
+            showBackLink={false}
           />
-          <VideosMobileDetailComments
-            video={video}
-            onCommentCountDelta={onCommentCountDelta}
-          />
+
+          {shareHint ? (
+            <p className="mx-4 mt-3 rounded-full bg-neutral-900 px-4 py-2 text-center text-xs text-white">
+              {shareHint}
+            </p>
+          ) : null}
+
+          <div className="space-y-5 px-4 py-3">
+            <VideosMobileDetailPlayer item={video} onEnded={handleVideoEnded} portraitContain />
+            <VideosMobileDetailMeta
+              item={video}
+              onToggleLike={() => onToggleLike(video)}
+              onShare={() => onShare(video)}
+              onOpenComments={scrollToComments}
+            />
+            <VideosMobileDetailComments
+              video={video}
+              onCommentCountDelta={onCommentCountDelta}
+            />
+          </div>
         </div>
-      </div>
+      ) : null}
 
+      {viewportTier === "desktop" ? (
       <div className="web-desktop-videos-only mx-auto w-full max-w-[1400px] px-3 py-2 sm:px-4 sm:py-4">
         <Link
           href="/videos"
-          className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-neutral-700 transition hover:text-yunicity-primary"
+          className={`mb-5 ${VIDEO_TOUCH_TARGET} gap-2 text-sm font-semibold text-neutral-700 transition hover:text-yunicity-primary ${VIDEO_CANVAS_FOCUS}`}
         >
           <ChevronLeft className="h-4 w-4" aria-hidden />
           {VIDEO_DETAIL_BACK}
@@ -231,6 +288,7 @@ export function VideoDetailScreen({
           />
         </div>
       </div>
+      ) : null}
     </>
   );
 }

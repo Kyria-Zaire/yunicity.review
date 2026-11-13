@@ -37,7 +37,13 @@ export class FeedApi extends ApiClientBase {
     return this.getJson<FeedPost>(`/posts/${encodeURIComponent(postId)}`);
   }
 
-  createPost(payload: PostCreatePayload): Promise<FeedPost> {
+  /**
+   * `signal` borne l'attente côté client (FEED-NEW-UX-01, I3) : sans lui, une
+   * requête avalée par le réseau laissait l'écran en « création » indéfiniment.
+   * ⚠️ Annuler l'ATTENTE n'annule pas la création côté serveur — d'où la clé
+   * d'idempotence.
+   */
+  createPost(payload: PostCreatePayload, signal?: AbortSignal): Promise<FeedPost> {
     return this.postJson<FeedPost>("/posts", {
       author_type: "citizen",
       body: payload.body,
@@ -57,13 +63,26 @@ export class FeedApi extends ApiClientBase {
       cross_post_targets: payload.cross_post_targets ?? null,
       use_media_caption: payload.use_media_caption ?? false,
       location: payload.location ?? null,
-    });
+      // Le corps est construit champ par champ : sans cette ligne, la clé
+      // d'idempotence disparaîtrait avant l'envoi réseau, et seule la
+      // production le révélerait (FEED-NEW-UX-01, §4 du contrat).
+      client_request_id: payload.client_request_id ?? null,
+    }, { signal });
   }
 
-  uploadPostMedia(file: File): Promise<PostMediaUploadResponse> {
+  uploadPostMedia(file: File, signal?: AbortSignal): Promise<PostMediaUploadResponse> {
     const form = new FormData();
     form.append("file", file);
-    return this.postFormData<PostMediaUploadResponse>("/posts/media", form);
+    return this.postFormData<PostMediaUploadResponse>("/posts/media", form, { signal });
+  }
+
+  /**
+   * Suppression DOUCE d'une publication — `204`, réservée à l'auteur ou à un
+   * modérateur côté serveur (`post_service.soft_delete_post`). La ligne et les
+   * fichiers médias restent en base : voir `publication-delete.ts`.
+   */
+  deletePost(postId: string): Promise<void> {
+    return this.deleteVoid(`/posts/${encodeURIComponent(postId)}`);
   }
 
   likePost(postId: string): Promise<void> {

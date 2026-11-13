@@ -52,10 +52,8 @@ describe("partner-offer-public", () => {
     expect(formatPartnerOfferValidity(BASE)).toContain("2099");
   });
 
-  it("builds partner detail href with offer anchor", () => {
-    expect(buildPartnerOfferHref(BASE)).toBe(
-      "/places/belga-queen?city=Reims#passport-offer-belga-queen-accueil-passport",
-    );
+  it("builds passport offer detail href", () => {
+    expect(buildPartnerOfferHref(BASE)).toBe("/passport/offre/1");
   });
 
   it("rejects internal field names in public payloads", () => {
