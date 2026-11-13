@@ -7,10 +7,7 @@ import {
   LOCAL_VIDEO_RETRY_LABEL,
   VIDEOS_MOBILE_RECENT_TITLE,
   VIDEOS_PORTAL_LOADING,
-  VIDEOS_SUBSCRIPTIONS_VIEW_ALL,
 } from "@yunicity/utils";
-import { ChevronRight } from "lucide-react";
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { VideosDesktopFeedStream } from "@/components/videos/desktop/videos-desktop-feed-stream";
@@ -117,16 +114,7 @@ export function VideosEditorialStreamRegion({
           >
             <VideosMobileFeaturedHero items={[...featuredItems]} />
 
-            <div className="flex items-center justify-between gap-3 pt-1">
-              <h2 className="text-base font-bold text-neutral-900">{VIDEOS_MOBILE_RECENT_TITLE}</h2>
-              <Link
-                href="/videos"
-                className="inline-flex items-center gap-0.5 text-sm font-semibold text-yunicity-primary"
-              >
-                {VIDEOS_SUBSCRIPTIONS_VIEW_ALL}
-                <ChevronRight className="h-4 w-4" aria-hidden />
-              </Link>
-            </div>
+            <h2 className="pt-1 text-base font-bold text-neutral-900">{VIDEOS_MOBILE_RECENT_TITLE}</h2>
 
             <div className="videos-mobile-grid grid grid-cols-2 gap-3">
               {visibleItems.map((item) => (

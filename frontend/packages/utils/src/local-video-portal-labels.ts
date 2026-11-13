@@ -81,6 +81,8 @@ export const VIDEOS_FEATURED_BADGE = "Nouveau";
 export const VIDEOS_FEATURED_PREV = "Vidéo précédente";
 export const VIDEOS_FEATURED_NEXT = "Vidéo suivante";
 
+/** VIDEO-REFONTE-L1B — section mobile listant les auteurs des vidéos chargées (pas des abonnements). */
+export const VIDEOS_FEED_CREATORS_TITLE = "Créateurs du fil";
 export const VIDEOS_SUBSCRIPTIONS_TITLE = "Abonnements";
 export const VIDEOS_SUBSCRIPTIONS_VIEW_ALL = "Voir tout";
 export const VIDEOS_SUBSCRIPTIONS_ONLINE = "En ligne";

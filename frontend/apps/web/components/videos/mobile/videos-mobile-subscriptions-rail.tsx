@@ -4,22 +4,13 @@ import type { VideoPortalCreator } from "@yunicity/utils";
 import {
   VIDEOS_MOBILE_PUBLISH_ARIA,
   VIDEOS_MOBILE_PUBLISH_LABEL,
-  VIDEOS_SUBSCRIPTIONS_ONLINE,
-  VIDEOS_SUBSCRIPTIONS_TITLE,
-  VIDEOS_SUBSCRIPTIONS_VIEW_ALL,
+  VIDEOS_FEED_CREATORS_TITLE,
   buildLocalVideoTeaserHref,
   formatVideoTemporalLabel,
 } from "@yunicity/utils";
-import { ChevronRight, Play, Video } from "lucide-react";
+import { Play, Video } from "lucide-react";
 import Link from "next/link";
 import { AvatarImage } from "@/components/avatar-image";
-
-const STORY_RING_GRADIENT = [
-  "bg-gradient-to-tr from-violet-500 via-fuchsia-500 to-orange-400",
-  "bg-gradient-to-tr from-orange-400 via-amber-500 to-yellow-400",
-  "bg-gradient-to-tr from-sky-500 via-blue-500 to-indigo-400",
-  "bg-gradient-to-tr from-rose-400 via-pink-500 to-orange-400",
-] as const;
 
 const RING_SIZE = "h-[4.25rem] w-[4.25rem]";
 const ITEM_WIDTH = "w-[4.75rem]";
@@ -64,45 +55,35 @@ type VideosMobileSubscriptionsRailProps = {
   creators: VideoPortalCreator[];
 };
 
-/** Rail abonnements mobile — anneaux + CTA publier (MOBILE-VIDEOS-01). */
+/**
+ * Créateurs du fil — auteurs des vidéos chargées, chacun vers sa dernière vidéo, + CTA publier
+ * (MOBILE-VIDEOS-01). VIDEO-REFONTE-L1B : ce ne sont pas des abonnements ; aucun statut de
+ * présence n'existe côté API, seule l'ancienneté réelle de la dernière vidéo est affichée.
+ */
 export function VideosMobileSubscriptionsRail({ creators }: VideosMobileSubscriptionsRailProps) {
   if (creators.length === 0) return null;
 
   return (
     <section className="space-y-3" aria-labelledby="videos-mobile-subscriptions-title">
-      <div className="flex items-center justify-between gap-3">
-        <h2 id="videos-mobile-subscriptions-title" className="text-base font-bold text-neutral-900">
-          {VIDEOS_SUBSCRIPTIONS_TITLE}
-        </h2>
-        <Link
-          href="/videos"
-          className="inline-flex shrink-0 items-center gap-0.5 text-sm font-semibold text-yunicity-primary"
-        >
-          {VIDEOS_SUBSCRIPTIONS_VIEW_ALL}
-          <ChevronRight className="h-4 w-4" aria-hidden />
-        </Link>
-      </div>
+      <h2 id="videos-mobile-subscriptions-title" className="text-base font-bold text-neutral-900">
+        {VIDEOS_FEED_CREATORS_TITLE}
+      </h2>
 
       <nav
-        aria-label={VIDEOS_SUBSCRIPTIONS_TITLE}
+        aria-label={VIDEOS_FEED_CREATORS_TITLE}
         className="-mx-1 overflow-x-auto px-1 pb-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         <ul className="flex min-w-max items-start gap-4">
           <li>
             <PublishVideoTile href="/videos/new" />
           </li>
-          {creators.map((creator, index) => {
+          {creators.map((creator) => {
             const href = buildLocalVideoTeaserHref(creator.latestVideoId);
-            const isOnline = index % 3 === 0;
-            const ringClass = STORY_RING_GRADIENT[index % STORY_RING_GRADIENT.length];
-            const statusLabel = isOnline
-              ? VIDEOS_SUBSCRIPTIONS_ONLINE
-              : formatVideoTemporalLabel(creator.latestPublishedAt);
 
             return (
               <li key={creator.authorUserId}>
                 <Link href={href} className={`flex ${ITEM_WIDTH} shrink-0 flex-col items-center gap-1.5`}>
-                  <div className={`relative rounded-full ${RING_SIZE} bg-gradient-to-tr p-[2.5px] ${ringClass}`}>
+                  <div className={`relative rounded-full ${RING_SIZE} bg-neutral-200 p-[2.5px]`}>
                     <div className="relative h-full w-full overflow-hidden rounded-full bg-white p-[3px]">
                       {creator.avatarUrl ? (
                         <AvatarImage
@@ -117,22 +98,12 @@ export function VideosMobileSubscriptionsRail({ creators }: VideosMobileSubscrip
                       )}
                       <CreatorPlayOverlay />
                     </div>
-                    {isOnline ? (
-                      <span
-                        className="absolute bottom-0 right-0 z-20 h-3 w-3 rounded-full border-2 border-white bg-emerald-500"
-                        aria-hidden
-                      />
-                    ) : null}
                   </div>
                   <span className="max-w-full truncate text-center text-[11px] font-semibold text-neutral-900">
                     {creator.handle}
                   </span>
-                  <span
-                    className={`max-w-full truncate text-center text-[10px] font-medium ${
-                      isOnline ? "text-emerald-600" : "text-neutral-500"
-                    }`}
-                  >
-                    {statusLabel}
+                  <span className="max-w-full truncate text-center text-[10px] font-medium text-neutral-500">
+                    {formatVideoTemporalLabel(creator.latestPublishedAt)}
                   </span>
                 </Link>
               </li>
