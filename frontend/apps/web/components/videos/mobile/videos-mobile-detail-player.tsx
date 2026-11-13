@@ -106,8 +106,13 @@ export function VideosMobileDetailPlayer({ item, onEnded, portraitContain = fals
     portraitContain,
   );
 
+  // Couches (VIDEO-MEDIUM-CONTROLS-01) — la vidéo est opaque : toute commande doit être déclarée
+  // au-dessus d'elle, jamais laissée à l'ordre du DOM. `isolate` confine ces z-index au lecteur.
+  // z-0 poster · z-10 vidéo · z-20 badges puis Lire / Pause (pleine surface) · z-30 barre basse, erreur.
+  // Les badges partagent la couche de Lire et le précèdent dans le DOM : le voile de Lire les couvre au
+  // repos, comme avant ; ils restent au-dessus de la vidéo et ne captent aucun appui.
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-neutral-950 shadow-md ring-1 ring-neutral-200/80">
+    <div className="relative isolate overflow-hidden rounded-2xl bg-neutral-950 shadow-md ring-1 ring-neutral-200/80">
       {isPortraitMedium && !isPlaying && !mediaError ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -137,17 +142,17 @@ export function VideosMobileDetailPlayer({ item, onEnded, portraitContain = fals
       </video>
 
       {mediaError ? (
-        <p className="absolute inset-x-0 bottom-16 z-10 px-3 text-center text-sm font-semibold text-white" role="alert">
+        <p className="pointer-events-none absolute inset-x-0 bottom-16 z-30 px-3 text-center text-sm font-semibold text-white" role="alert">
           {LOCAL_VIDEO_PLAYBACK_ERROR}
         </p>
       ) : null}
 
-      <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-yunicity-primary/95 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
+      <span className="pointer-events-none absolute left-3 top-3 z-20 inline-flex items-center gap-1 rounded-full bg-yunicity-primary/95 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
         <MapPin className="h-3 w-3" aria-hidden />
         {cityLabel}
       </span>
 
-      <span className="pointer-events-none absolute right-3 top-3 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+      <span className="pointer-events-none absolute right-3 top-3 z-20 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
         {formatLocalVideoDuration(duration)}
       </span>
 
@@ -155,7 +160,7 @@ export function VideosMobileDetailPlayer({ item, onEnded, portraitContain = fals
         <button
           type="button"
           onClick={() => void togglePlay()}
-          className={`absolute inset-0 flex items-center justify-center bg-black/15 ${VIDEO_IMMERSIVE_FOCUS}`}
+          className={`absolute inset-0 z-20 flex items-center justify-center bg-black/15 ${VIDEO_IMMERSIVE_FOCUS} focus-visible:ring-inset`}
           aria-label="Lire la vidéo"
           aria-pressed={false}
         >
@@ -167,17 +172,17 @@ export function VideosMobileDetailPlayer({ item, onEnded, portraitContain = fals
         <button
           type="button"
           onClick={() => void togglePlay()}
-          className={`absolute inset-0 flex items-center justify-center bg-transparent ${VIDEO_IMMERSIVE_FOCUS}`}
+          className={`absolute inset-0 z-20 flex items-center justify-center bg-transparent ${VIDEO_IMMERSIVE_FOCUS} focus-visible:ring-inset`}
           aria-label="Mettre en pause"
           aria-pressed
         >
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/35 text-white opacity-0 transition hover:opacity-100 focus-visible:opacity-100 motion-reduce:transition-none">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/35 text-white">
             <Pause className="h-5 w-5" aria-hidden />
           </span>
         </button>
       ) : null}
 
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/35 to-transparent px-3 pb-3 pt-8">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/70 via-black/35 to-transparent px-3 pb-3 pt-8">
         <div className="flex items-center gap-2">
           <div
             role="slider"
@@ -191,7 +196,7 @@ export function VideosMobileDetailPlayer({ item, onEnded, portraitContain = fals
             onKeyDown={(event) => {
               handleVideoProgressKeyDown(event, currentTime, duration, seekToRatio);
             }}
-            className={`group flex min-h-11 min-w-0 flex-1 cursor-pointer items-center rounded-full ${VIDEO_IMMERSIVE_FOCUS}`}
+            className={`group pointer-events-auto flex min-h-11 min-w-0 flex-1 cursor-pointer items-center rounded-full ${VIDEO_IMMERSIVE_FOCUS}`}
           >
             <div className="relative h-1 w-full overflow-hidden rounded-full bg-white/30">
               <div
@@ -209,7 +214,7 @@ export function VideosMobileDetailPlayer({ item, onEnded, portraitContain = fals
           <button
             type="button"
             onClick={() => void handleFullscreen()}
-            className={`${VIDEO_TOUCH_TARGET} rounded-full text-white/90 hover:bg-white/15 ${VIDEO_IMMERSIVE_FOCUS}`}
+            className={`${VIDEO_TOUCH_TARGET} pointer-events-auto rounded-full text-white/90 hover:bg-white/15 ${VIDEO_IMMERSIVE_FOCUS}`}
             aria-label="Plein écran"
           >
             <Maximize2 className="h-3.5 w-3.5" aria-hidden />
