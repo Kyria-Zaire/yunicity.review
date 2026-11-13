@@ -38,6 +38,7 @@ class SearchRow:
     body: str | None = None
     username: str | None = None
     starts_at: datetime | None = None
+    ends_at: datetime | None = None
     is_flash: bool | None = None
 
 
@@ -142,6 +143,7 @@ class SearchRepository:
             LocalEvent.title,
             LocalEvent.city,
             LocalEvent.starts_at,
+            LocalEvent.ends_at,
             rank.label("rank"),
         ).where(*filters)
         count_stmt = select(func.count()).select_from(base.subquery())
@@ -158,6 +160,7 @@ class SearchRepository:
                 title=row.title,
                 city=row.city,
                 starts_at=row.starts_at,
+                ends_at=row.ends_at,
             )
             for row in rows.all()
         ]

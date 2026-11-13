@@ -5,6 +5,7 @@ import {
   SEARCH_DESKTOP_ORG_KIND,
   SEARCH_MOBILE_VIEW_CTA,
   buildSearchPostCard,
+  isSearchEventEnded,
   searchResultHref,
   searchResultSubtitle,
   searchResultTitle,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { SearchEventEndedBadge } from "@/components/search/search-event-ended-badge";
 import { SearchPostCardContent } from "@/components/search/search-post-card-content";
 
 type SearchMobileResultCardsProps = {
@@ -53,7 +55,9 @@ function SearchMobileResultCard({
 
   switch (groupKey) {
     case "events":
-      return <EventRow title={title} subtitle={subtitle} href={href} />;
+      return (
+        <EventRow title={title} subtitle={subtitle} href={href} ended={isSearchEventEnded(item)} />
+      );
     case "tribes":
       return <TribeRow title={title} subtitle={subtitle} href={href} />;
     case "posts":
@@ -69,10 +73,12 @@ function EventRow({
   title,
   subtitle,
   href,
+  ended,
 }: {
   title: string;
   subtitle: string;
   href: string | null | undefined;
+  ended: boolean;
 }) {
   const content = (
     <div className="flex items-center gap-3">
@@ -84,7 +90,14 @@ function EventRow({
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-bold text-neutral-950">{title}</p>
-        {subtitle ? <p className="mt-1 text-xs text-neutral-500">{subtitle}</p> : null}
+        {ended ? (
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-neutral-500">
+            <SearchEventEndedBadge />
+            {subtitle ? <span>{subtitle}</span> : null}
+          </p>
+        ) : subtitle ? (
+          <p className="mt-1 text-xs text-neutral-500">{subtitle}</p>
+        ) : null}
       </div>
       {href ? (
         <span className="inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold text-yunicity-primary">

@@ -8,6 +8,7 @@ import {
   SEARCH_DESKTOP_OTHER_RESULTS,
   SEARCH_DESKTOP_TRIBE_CTA,
   buildSearchPostCard,
+  isSearchEventEnded,
   searchResultHref,
   searchResultSubtitle,
   searchResultTitle,
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { SearchEventEndedBadge } from "@/components/search/search-event-ended-badge";
 import { SearchPostCardContent } from "@/components/search/search-post-card-content";
 
 type SearchDesktopResultCardsProps = {
@@ -59,7 +61,9 @@ function SearchDesktopResultCard({
 
   switch (groupKey) {
     case "events":
-      return <EventCard title={title} subtitle={subtitle} href={href} />;
+      return (
+        <EventCard title={title} subtitle={subtitle} href={href} ended={isSearchEventEnded(item)} />
+      );
     case "tribes":
       return <TribeCard title={title} subtitle={subtitle} href={href} />;
     case "posts":
@@ -75,10 +79,12 @@ function EventCard({
   title,
   subtitle,
   href,
+  ended,
 }: {
   title: string;
   subtitle: string;
   href: string | null | undefined;
+  ended: boolean;
 }) {
   const content = (
     <article className="flex overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm transition hover:border-neutral-300">
@@ -86,7 +92,10 @@ function EventCard({
         <CalendarDays className="h-8 w-8 text-emerald-600" aria-hidden />
       </div>
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 p-4">
-        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-emerald-700">Sortie</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-emerald-700">Sortie</p>
+          {ended ? <SearchEventEndedBadge /> : null}
+        </div>
         <h3 className="text-sm font-bold text-neutral-950">{title}</h3>
         {subtitle ? <p className="text-xs text-neutral-600">{subtitle}</p> : null}
         {href ? (

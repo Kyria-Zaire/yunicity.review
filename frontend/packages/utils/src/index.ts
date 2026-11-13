@@ -3226,6 +3226,7 @@ export {
   searchPostExcerpt,
   type SearchPostCardModel,
 } from "./search-post-card";
+export { SEARCH_EVENT_ENDED_LABEL, isSearchEventEnded } from "./search-event-status";
 export {
   SEARCH_DESKTOP_APPLY_FILTERS,
   SEARCH_DESKTOP_BACK,
