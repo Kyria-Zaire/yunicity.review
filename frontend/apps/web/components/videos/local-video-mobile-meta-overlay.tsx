@@ -2,8 +2,6 @@
 
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import {
-  VIDEO_DETAIL_FOLLOW,
-  VIDEO_DETAIL_FOLLOW_SOON,
   VIDEOS_DESKTOP_DISCOVER_PLACE,
   VIDEOS_DESKTOP_SEE_ON_MAP,
   buildVideoAuthorProfileHref,
@@ -19,7 +17,7 @@ import {
 import { ChevronRight, MapPin, Music2 } from "lucide-react";
 import Link from "next/link";
 
-import { VIDEO_IMMERSIVE_FOCUS, VIDEO_TOUCH_TARGET, VIDEO_FOLLOW_DISABLED_CLASS } from "@/lib/videos/video-playback-a11y";
+import { VIDEO_IMMERSIVE_FOCUS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
 import { AvatarImage } from "@/components/avatar-image";
 
 type LocalVideoMobileMetaOverlayProps = {
@@ -75,15 +73,6 @@ export function LocalVideoMobileMetaOverlay({ item }: LocalVideoMobileMetaOverla
         ) : (
           <span className="truncate text-sm font-bold">{displayName}</span>
         )}
-        <button
-          type="button"
-          disabled
-          title={VIDEO_DETAIL_FOLLOW_SOON}
-          aria-label={VIDEO_DETAIL_FOLLOW_SOON}
-          className={`pointer-events-auto ${VIDEO_TOUCH_TARGET} ${VIDEO_FOLLOW_DISABLED_CLASS} ${VIDEO_IMMERSIVE_FOCUS}`}
-        >
-          {VIDEO_DETAIL_FOLLOW}
-        </button>
       </div>
 
       {placeLabel ? (

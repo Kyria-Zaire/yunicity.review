@@ -10,7 +10,6 @@ import {
   VIDEOS_PORTAL_PUBLISH_CTA,
   VIDEOS_PORTAL_TITLE,
   VIDEOS_TAB_NEARBY,
-  VIDEOS_TAB_SUBSCRIPTIONS,
 } from "@yunicity/utils";
 import {
   Bookmark,
@@ -19,7 +18,6 @@ import {
   MapPin,
   PlayCircle,
   Shield,
-  Users,
   Video,
 } from "lucide-react";
 import Link from "next/link";
@@ -46,7 +44,6 @@ const IN_PAGE_NAV: Array<{
 }> = [
   { id: "for_you", label: VIDEOS_MOBILE_TAB_FOR_YOU, icon: PlayCircle, tab: "all" },
   { id: "nearby", label: VIDEOS_TAB_NEARBY, icon: Compass, tab: "nearby" },
-  { id: "subscriptions", label: VIDEOS_TAB_SUBSCRIPTIONS, icon: Users, tab: "subscriptions" },
 ];
 
 const EXTERNAL_NAV: Array<{

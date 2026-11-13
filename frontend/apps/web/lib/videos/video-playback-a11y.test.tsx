@@ -8,7 +8,6 @@ import {
   VIDEO_DETAIL_AUTOPLAY,
   VIDEO_DETAIL_COMMENT,
   VIDEO_DETAIL_LIKE,
-  VIDEO_DETAIL_MOBILE_BOOKMARK_SOON,
   VIDEO_DETAIL_SHARE,
 } from "@yunicity/utils";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
@@ -208,7 +207,7 @@ describe("LocalVideoPlaybackBar", () => {
 });
 
 describe("LocalVideoActionRail", () => {
-  it("like aria-pressed, save disabled sans aria-pressed, report une fois", () => {
+  it("like aria-pressed, aucun Enregistrer (VIDEO-REFONTE-L1), report une fois", () => {
     const onReport = vi.fn();
     const { rerender } = render(
       <LocalVideoActionRail
@@ -226,9 +225,7 @@ describe("LocalVideoActionRail", () => {
     const like = screen.getByRole("button", { name: "Aimer la vidéo" });
     expect(like.getAttribute("aria-pressed")).toBe("false");
 
-    const save = screen.getByRole("button", { name: VIDEO_DETAIL_MOBILE_BOOKMARK_SOON });
-    expect((save as HTMLButtonElement).disabled).toBe(true);
-    expect(save.getAttribute("aria-pressed")).toBeNull();
+    expect(screen.queryByRole("button", { name: /Enregistrer/ })).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: LOCAL_VIDEO_REPORT_LABEL }));
     expect(onReport).toHaveBeenCalledTimes(1);

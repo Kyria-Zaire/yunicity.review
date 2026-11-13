@@ -3,8 +3,6 @@
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import {
   VIDEO_DETAIL_COMMENT,
-  VIDEO_DETAIL_FOLLOW,
-  VIDEO_DETAIL_FOLLOW_SOON,
   VIDEO_DETAIL_LIKE,
   VIDEO_DETAIL_MORE,
   VIDEO_DETAIL_SHARE,
@@ -26,7 +24,7 @@ import {
   Share2,
 } from "lucide-react";
 
-import { VIDEO_CANVAS_FOCUS, VIDEO_FOLLOW_DISABLED_CLASS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
+import { VIDEO_CANVAS_FOCUS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
 import { AvatarImage } from "@/components/avatar-image";
 
 type VideoDetailMetaProps = {
@@ -116,16 +114,6 @@ export function VideoDetailMeta({
             </p>
           </div>
         </div>
-
-        <button
-          type="button"
-          disabled
-          title={VIDEO_DETAIL_FOLLOW_SOON}
-          aria-label={VIDEO_DETAIL_FOLLOW_SOON}
-          className={`${VIDEO_TOUCH_TARGET} ${VIDEO_FOLLOW_DISABLED_CLASS} ${VIDEO_CANVAS_FOCUS}`}
-        >
-          {VIDEO_DETAIL_FOLLOW}
-        </button>
       </div>
 
       {item.description?.trim() ? (

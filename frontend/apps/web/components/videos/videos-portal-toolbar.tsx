@@ -9,7 +9,6 @@ import {
   VIDEOS_TAB_ALL,
   VIDEOS_TAB_MINE,
   VIDEOS_TAB_NEW,
-  VIDEOS_TAB_SUBSCRIPTIONS,
   VIDEOS_TAB_TRENDING,
 } from "@yunicity/utils";
 import { ChevronDown } from "lucide-react";
@@ -28,7 +27,6 @@ const TABS: { id: VideosPortalTabId; label: string }[] = [
   { id: "all", label: VIDEOS_TAB_ALL },
   { id: "trending", label: VIDEOS_TAB_TRENDING },
   { id: "new", label: VIDEOS_TAB_NEW },
-  { id: "subscriptions", label: VIDEOS_TAB_SUBSCRIPTIONS },
   { id: "mine", label: VIDEOS_TAB_MINE },
 ];
 

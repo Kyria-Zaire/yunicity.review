@@ -14,7 +14,6 @@ import {
   VIDEOS_PORTAL_TITLE,
   VIDEOS_TAB_FOR_YOU,
   VIDEOS_TAB_NEARBY,
-  VIDEOS_TAB_SUBSCRIPTIONS,
 } from "@yunicity/utils";
 import { SlidersHorizontal } from "lucide-react";
 import type { ReactNode, RefObject } from "react";
@@ -73,7 +72,6 @@ type VideosResponsiveShellProps = {
 const DESKTOP_TABS = [
   { id: "all" as const, label: VIDEOS_TAB_FOR_YOU },
   { id: "nearby" as const, label: VIDEOS_TAB_NEARBY },
-  { id: "subscriptions" as const, label: VIDEOS_TAB_SUBSCRIPTIONS },
 ];
 
 /**

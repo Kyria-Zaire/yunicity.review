@@ -4,9 +4,7 @@ import type { LocalVideoFeedItem } from "@yunicity/types";
 import {
   LOCAL_VIDEO_REPORT_LABEL,
   VIDEOS_DESKTOP_MORE,
-  VIDEOS_DESKTOP_SAVE,
   VIDEOS_DESKTOP_VIEW_PROFILE,
-  VIDEO_DETAIL_MOBILE_BOOKMARK_SOON,
   VIDEOS_DESKTOP_SEE_ON_MAP,
   VIDEOS_DESKTOP_SHARE,
   VIDEOS_GRID_MORE,
@@ -29,7 +27,6 @@ import {
   resolveVideoRankingReason,
 } from "@yunicity/utils";
 import {
-  Bookmark,
   ChevronRight,
   Heart,
   MapPin,
@@ -172,16 +169,6 @@ function PortraitSimpleMetaActions({
       >
         <Share2 className="h-3.5 w-3.5" aria-hidden />
         <span className="sr-only">{VIDEO_DETAIL_SHARE}</span>
-      </button>
-
-      <button
-        type="button"
-        disabled
-        aria-label={VIDEO_DETAIL_MOBILE_BOOKMARK_SOON}
-        className={`inline-flex min-h-11 min-w-11 items-center gap-1 rounded-md px-1 text-neutral-400 ${VIDEO_CANVAS_FOCUS}`}
-      >
-        <Bookmark className="h-3.5 w-3.5" aria-hidden />
-        <span className="sr-only">{VIDEOS_DESKTOP_SAVE}</span>
       </button>
 
       {shareHint ? (
@@ -367,15 +354,6 @@ export function VideosDesktopPortraitCard({
               >
                 <Share2 className="h-5 w-5" aria-hidden />
                 {VIDEOS_DESKTOP_SHARE}
-              </button>
-              <button
-                type="button"
-                disabled
-                aria-label={VIDEO_DETAIL_MOBILE_BOOKMARK_SOON}
-                className={`inline-flex min-h-11 min-w-11 items-center gap-2 text-neutral-400 ${VIDEO_CANVAS_FOCUS}`}
-              >
-                <Bookmark className="h-5 w-5" aria-hidden />
-                {VIDEOS_DESKTOP_SAVE}
               </button>
             </div>
 

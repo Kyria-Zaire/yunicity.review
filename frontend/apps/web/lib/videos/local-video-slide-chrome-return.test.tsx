@@ -264,7 +264,7 @@ describe("Chrome visible — le bloc méta ne masque plus la vidéo", () => {
     );
   }
 
-  it("conteneur et bloc méta transparents ; seuls profil, Suivre et liens sont ciblables", () => {
+  it("conteneur et bloc méta transparents ; seuls profil et liens sont ciblables", () => {
     renderSlideWithLinks();
     const [bottomChrome] = chromeContainers();
     expect(bottomChrome!.className).toContain("pointer-events-none");
@@ -277,8 +277,9 @@ describe("Chrome visible — le bloc méta ne masque plus la vidéo", () => {
     expect(metaRoot.className).not.toContain("pointer-events-auto");
 
     const interactive = [...metaRoot.querySelectorAll<HTMLElement>("a, button")];
-    // Profil, Suivre, « Voir sur la carte », lien de découverte.
-    expect(interactive.length).toBe(4);
+    // Profil, « Voir sur la carte », lien de découverte (Suivre retiré : VIDEO-REFONTE-L1).
+    expect(interactive.length).toBe(3);
+    expect(interactive.some((element) => /Suivre/.test(element.textContent ?? ""))).toBe(false);
     for (const element of interactive) {
       expect(element.className).toContain("pointer-events-auto");
     }
@@ -300,9 +301,16 @@ describe("Chrome visible — le bloc méta ne masque plus la vidéo", () => {
     expect(isChromeVisible()).toBe(true);
   });
 
-  it("un appui sur « Suivre » (désactivé) ne bascule pas la lecture", () => {
+  // Avant VIDEO-REFONTE-L1, ce garde-fou passait par « Suivre » (désactivé, retiré) ;
+  // il porte désormais sur la seule commande du bloc méta toujours présente : le profil.
+  it("un appui sur une commande du bloc méta (profil) ne bascule pas la lecture", () => {
     renderSlide();
-    fireEvent.click(screen.getByRole("button", { name: /Suivre/ }));
+    expect(screen.queryByRole("button", { name: /Suivre/ })).toBeNull();
+    const [bottomChrome] = chromeContainers();
+    const profile = bottomChrome!.querySelector<HTMLElement>('a[aria-label="Profil du créateur"]');
+    if (!profile) throw new Error("Lien profil du bloc méta introuvable");
+    profile.addEventListener("click", (event) => event.preventDefault());
+    fireEvent.click(profile);
     advance(SINGLE_TAP_SETTLE_MS);
     expect(isPlaybackPaused()).toBe(false);
   });

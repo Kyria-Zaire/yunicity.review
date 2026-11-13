@@ -3,12 +3,10 @@
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import {
   LOCAL_VIDEO_REPORT_LABEL,
-  VIDEO_DETAIL_MOBILE_BOOKMARK_SOON,
-  VIDEOS_DESKTOP_SAVE,
   VIDEOS_DESKTOP_SHARE,
   buildVideoAuthorProfileHref,
 } from "@yunicity/utils";
-import { Bookmark, Flag, Heart, MessageCircle, Share2 } from "lucide-react";
+import { Flag, Heart, MessageCircle, Share2 } from "lucide-react";
 import Link from "next/link";
 
 import { VIDEO_IMMERSIVE_FOCUS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
@@ -112,16 +110,6 @@ export function LocalVideoActionRail({
       >
         <Flag className="h-5 w-5" aria-hidden />
         <span className="text-[10px] font-semibold leading-none">{LOCAL_VIDEO_REPORT_LABEL}</span>
-      </button>
-
-      <button
-        type="button"
-        disabled
-        aria-label={VIDEO_DETAIL_MOBILE_BOOKMARK_SOON}
-        className={`${railButtonClass} text-white/75`}
-      >
-        <Bookmark className="h-5 w-5" aria-hidden />
-        <span className="text-[10px] font-semibold leading-none">{VIDEOS_DESKTOP_SAVE}</span>
       </button>
     </div>
   );
