@@ -3219,6 +3219,14 @@ export {
   type SearchHrefTarget,
 } from "./search-labels";
 export {
+  SEARCH_POST_EMPTY_LABEL,
+  SEARCH_POST_EXCERPT_MAX_LENGTH,
+  buildSearchPostCard,
+  normalizeSearchPostText,
+  searchPostExcerpt,
+  type SearchPostCardModel,
+} from "./search-post-card";
+export {
   SEARCH_DESKTOP_APPLY_FILTERS,
   SEARCH_DESKTOP_BACK,
   SEARCH_DESKTOP_CITY_BADGE,

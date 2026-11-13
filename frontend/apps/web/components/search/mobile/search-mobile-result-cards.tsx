@@ -4,6 +4,7 @@ import type { SearchGroupKey, SearchResultItem } from "@yunicity/types";
 import {
   SEARCH_DESKTOP_ORG_KIND,
   SEARCH_MOBILE_VIEW_CTA,
+  buildSearchPostCard,
   searchResultHref,
   searchResultSubtitle,
   searchResultTitle,
@@ -14,9 +15,10 @@ import {
   Camera,
   ChevronRight,
   MessageSquare,
-  Users,
 } from "lucide-react";
 import Link from "next/link";
+
+import { SearchPostCardContent } from "@/components/search/search-post-card-content";
 
 type SearchMobileResultCardsProps = {
   groupKey: SearchGroupKey;
@@ -55,7 +57,7 @@ function SearchMobileResultCard({
     case "tribes":
       return <TribeRow title={title} subtitle={subtitle} href={href} />;
     case "posts":
-      return <PostRow title={title} subtitle={subtitle} body={item.body} />;
+      return <PostRow item={item} city={city} />;
     case "organizations":
       return <OrganizationRow title={title} city={city} href={href} />;
     default:
@@ -136,36 +138,14 @@ function TribeRow({
   );
 }
 
-function PostRow({
-  title,
-  subtitle,
-  body,
-}: {
-  title: string;
-  subtitle: string;
-  body?: string | null;
-}) {
+/** Non cliquable : aucune destination n'existe pour une publication (SEARCH-POST-NAVIGATION-01). */
+function PostRow({ item, city }: { item: SearchResultItem; city: string }) {
   return (
-    <div className="space-y-3">
-      <div className="flex items-start gap-3">
-        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-700">
-          <MessageSquare className="h-4 w-4" aria-hidden />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-neutral-950">{title}</p>
-          {subtitle ? <p className="text-[11px] text-neutral-400">{subtitle}</p> : null}
-        </div>
-      </div>
-      {body ? <p className="text-sm leading-relaxed text-neutral-700">{body}</p> : null}
-      <div className="grid grid-cols-4 gap-1.5">
-        {[0, 1, 2, 3].map((index) => (
-          <div
-            key={index}
-            className="aspect-[3/4] rounded-lg bg-gradient-to-br from-neutral-100 to-neutral-200"
-            aria-hidden
-          />
-        ))}
-      </div>
+    <div className="flex items-start gap-3" data-search-post-card="">
+      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-700">
+        <MessageSquare className="h-4 w-4" aria-hidden />
+      </span>
+      <SearchPostCardContent post={buildSearchPostCard(item, city)} titleAs="p" />
     </div>
   );
 }

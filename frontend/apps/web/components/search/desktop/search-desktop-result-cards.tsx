@@ -7,12 +7,12 @@ import {
   SEARCH_DESKTOP_ORG_KIND,
   SEARCH_DESKTOP_OTHER_RESULTS,
   SEARCH_DESKTOP_TRIBE_CTA,
+  buildSearchPostCard,
   searchResultHref,
   searchResultSubtitle,
   searchResultTitle,
 } from "@yunicity/utils";
 import {
-  Bookmark,
   Briefcase,
   Building2,
   CalendarDays,
@@ -23,6 +23,8 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
+
+import { SearchPostCardContent } from "@/components/search/search-post-card-content";
 
 type SearchDesktopResultCardsProps = {
   groupKey: SearchGroupKey;
@@ -61,7 +63,7 @@ function SearchDesktopResultCard({
     case "tribes":
       return <TribeCard title={title} subtitle={subtitle} href={href} />;
     case "posts":
-      return <PostCard title={title} subtitle={subtitle} body={item.body} />;
+      return <PostCard item={item} city={city} />;
     case "organizations":
       return <OrganizationCard title={title} subtitle={subtitle} city={city} href={href} />;
     default:
@@ -139,40 +141,17 @@ function TribeCard({
   );
 }
 
-function PostCard({
-  title,
-  subtitle,
-  body,
-}: {
-  title: string;
-  subtitle: string;
-  body?: string | null;
-}) {
+/** Non cliquable : aucune destination n'existe pour une publication (SEARCH-POST-NAVIGATION-01). */
+function PostCard({ item, city }: { item: SearchResultItem; city: string }) {
   return (
-    <article className="rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-3">
-          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-700">
-            <MessageSquare className="h-4 w-4" aria-hidden />
-          </span>
-          <div className="min-w-0">
-            <h3 className="text-sm font-bold text-neutral-950">{title}</h3>
-            {subtitle ? <p className="mt-1 text-xs leading-relaxed text-neutral-600">{subtitle}</p> : null}
-          </div>
-        </div>
-        <Bookmark className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden />
-      </div>
-      {body ? (
-        <div className="mt-3 grid grid-cols-4 gap-1.5">
-          {[0, 1, 2, 3].map((index) => (
-            <div
-              key={index}
-              className="aspect-square rounded-lg bg-gradient-to-br from-neutral-100 to-neutral-200"
-              aria-hidden
-            />
-          ))}
-        </div>
-      ) : null}
+    <article
+      className="flex items-start gap-3 rounded-2xl border border-neutral-200/90 bg-white p-4 shadow-sm"
+      data-search-post-card=""
+    >
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-700">
+        <MessageSquare className="h-4 w-4" aria-hidden />
+      </span>
+      <SearchPostCardContent post={buildSearchPostCard(item, city)} titleAs="h3" />
     </article>
   );
 }
