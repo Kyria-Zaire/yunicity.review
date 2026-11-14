@@ -124,7 +124,16 @@ export function VideoCommentsSheet({
     }
   }
 
-  if (!video) return null;
+  // Sans vidéo : Drawer FERMÉ plutôt que rien. Même type, même position que le Drawer
+  // ouvert ci-dessous : React garde l'instance, et la transition fermé → ouvert donne le
+  // focus au dialogue (VIDEO-REFONTE-L3L4, écran F). Monter un Drawer déjà ouvert ne le fait pas.
+  if (!video) {
+    return (
+      <Drawer open={false} onOpenChange={() => {}} title="Commentaires" zIndex={Z_INDEX.VIDEO_COMMENTS}>
+        {null}
+      </Drawer>
+    );
+  }
 
   return (
     <Drawer

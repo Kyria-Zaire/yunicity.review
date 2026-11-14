@@ -91,6 +91,17 @@ export const VIDEOS_MOBILE_ERROR_HINT = "Vérifiez la connexion, puis réessayez
 export const VIDEOS_MOBILE_SHARE_ACTION = "Partager la vidéo";
 export const VIDEOS_MOBILE_SHARE_SHORT = "Partager";
 export const VIDEOS_MOBILE_MORE_ACTIONS = "Plus d'options : signaler";
+/** VIDEO-REFONTE-L3L4 — lot 4 : légende « plus », feuille Description (E), menu « … » (I). */
+export const VIDEOS_MOBILE_CAPTION_MORE = "plus";
+export const VIDEOS_MOBILE_DESCRIPTION_TITLE = "Description";
+export const VIDEOS_MOBILE_DESCRIPTION_CLOSE = "Fermer la description";
+export const VIDEOS_MOBILE_MORE_TITLE = "Plus d'options";
+export const VIDEOS_MOBILE_REPORT_ACTION = "Signaler la vidéo";
+export const VIDEOS_MOBILE_CANCEL = "Annuler";
+export const VIDEOS_MOBILE_PAUSED_BADGE = "En pause";
+export function formatVideosMobileViews(viewCount: number): string {
+  return `${viewCount} ${viewCount > 1 ? "vues" : "vue"}`;
+}
 export function formatVideosMobileLikeActionLabel(likedByMe: boolean, likeCount: number): string {
   return `${likedByMe ? "Retirer le J'aime" : "Aimer la vidéo"} — ${likeCount} J'aime`;
 }

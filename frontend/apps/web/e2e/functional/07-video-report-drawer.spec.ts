@@ -14,6 +14,8 @@ import type { APIRequestContext, Locator, Page } from "@playwright/test";
 const REPORT_TRIGGER_MORE = "Plus d'options";
 const REPORT_TRIGGER_DIRECT = "Signaler";
 const DRAWER_TITLE = "Signaler";
+/** Action du menu « … » mobile (v2.3, écran I) — une entrée DU menu, pas son déclencheur. */
+const REPORT_MENU_ACTION = "Signaler la vidéo";
 const CLOSE_LABEL = "Fermer";
 
 async function seededVideoId(api: APIRequestContext, user: QaUser): Promise<string> {
@@ -59,6 +61,13 @@ async function overlayState(page: Page) {
 async function openDrawer(page: Page, trigger: Locator) {
   await trigger.click();
   await expect(page.getByRole("dialog")).toBeVisible();
+  // Mobile v2.3 (VIDEO-REFONTE-L3L4, écran I) : « … » ouvre d'abord un menu dont la
+  // première ligne est « Signaler la vidéo » ; elle ouvre la feuille de motifs, qui le remplace.
+  const reportAction = page.getByRole("button", { name: REPORT_MENU_ACTION });
+  if (await reportAction.isVisible()) {
+    await reportAction.click();
+    await expect(page.getByRole("dialog", { name: DRAWER_TITLE })).toBeVisible();
+  }
 }
 
 /**

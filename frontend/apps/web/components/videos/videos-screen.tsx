@@ -8,6 +8,7 @@ import { VideosDiscoveryScreen } from "@/components/videos/videos-discovery-scre
 import { VideosFeedError } from "@/components/videos/videos-feed-error";
 import { VideosFeedSkeleton } from "@/components/videos/videos-feed-skeleton";
 import { useLocalVideoInteractions } from "@/hooks/use-local-video-interactions";
+import { ActiveReportVideoContext } from "@/lib/videos/active-report-video-context";
 import { useLocalVideoPendingTracker } from "@/hooks/use-local-video-pending-tracker";
 import { useLocalVideosFeed } from "@/hooks/use-local-videos-feed";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
@@ -135,6 +136,7 @@ function VideosScreenInner() {
           justify-content: center;
         }
       `}</style>
+      <ActiveReportVideoContext.Provider value={reportOpen ? reportVideoId : null}>
       <div className="relative">
         {isDetailMode && focusVideoId ? (
           feed.sessionExpired ? (
@@ -212,6 +214,7 @@ function VideosScreenInner() {
           }}
         />
       </div>
+      </ActiveReportVideoContext.Provider>
     </VideosAppShell>
   );
 }

@@ -5,9 +5,12 @@ import { LOCAL_VIDEO_DEFAULT_MUTED, type VideosPortalTabId } from "@yunicity/uti
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { LocalVideoDescriptionSheet } from "@/components/videos/local-video-description-sheet";
 import { LocalVideoFeedViewport } from "@/components/videos/local-video-feed-viewport";
+import { LocalVideoMoreMenu } from "@/components/videos/local-video-more-menu";
 import { VideosMobileFeedTopBar } from "@/components/videos/mobile/videos-mobile-feed-top-bar";
 import { VideoCommentsSheet } from "@/components/videos/video-comments-sheet";
+import { useActiveReportVideoId } from "@/lib/videos/active-report-video-context";
 
 type VideosMobileImmersiveFeedProps = {
   items: readonly LocalVideoFeedItem[];
@@ -45,6 +48,13 @@ export function VideosMobileImmersiveFeed({
 }: VideosMobileImmersiveFeedProps) {
   const router = useRouter();
   const [commentsVideoId, setCommentsVideoId] = useState<string | null>(null);
+  const [descriptionVideoId, setDescriptionVideoId] = useState<string | null>(null);
+  const [moreVideoId, setMoreVideoId] = useState<string | null>(null);
+  /** Déclencheur du panneau ouvert : cible explicite du retour du focus (WebKit). */
+  const panelTriggerRef = useRef<HTMLElement | null>(null);
+  const activeReportVideoId = useActiveReportVideoId();
+  // Règle des panneaux : la vidéo concernée reste en pause tant qu'un panneau est ouvert.
+  const suspendedVideoId = commentsVideoId ?? descriptionVideoId ?? moreVideoId ?? activeReportVideoId;
   const [isMuted, setIsMuted] = useState(LOCAL_VIDEO_DEFAULT_MUTED);
   const [pointerOverFeed, setPointerOverFeed] = useState(false);
   const detailUrlSyncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,6 +64,10 @@ export function VideosMobileImmersiveFeed({
   const commentsVideo = useMemo(
     () => feedItems.find((item) => item.id === commentsVideoId) ?? null,
     [commentsVideoId, feedItems],
+  );
+  const descriptionVideo = useMemo(
+    () => feedItems.find((item) => item.id === descriptionVideoId) ?? null,
+    [descriptionVideoId, feedItems],
   );
 
   useEffect(
@@ -109,19 +123,42 @@ export function VideosMobileImmersiveFeed({
           onOpenComments={setCommentsVideoId}
           onToggleLike={onToggleLike}
           onShare={onShare}
-          onOpenReport={onOpenReport}
+          onOpenMore={(videoId, trigger) => {
+            panelTriggerRef.current = trigger;
+            setMoreVideoId(videoId);
+          }}
+          onOpenDescription={(videoId, trigger) => {
+            panelTriggerRef.current = trigger;
+            setDescriptionVideoId(videoId);
+          }}
+          suspendedVideoId={suspendedVideoId}
           onEndReached={onLoadMore}
         />
       </div>
 
-      {commentsVideo ? (
-        <VideoCommentsSheet
-          open={Boolean(commentsVideoId)}
-          video={commentsVideo}
-          onClose={() => setCommentsVideoId(null)}
-          onCommentCountDelta={onCommentCountDelta}
-        />
-      ) : null}
+      <LocalVideoDescriptionSheet
+        video={descriptionVideo}
+        returnFocusRef={panelTriggerRef}
+        onClose={() => setDescriptionVideoId(null)}
+      />
+
+      <LocalVideoMoreMenu
+        open={Boolean(moreVideoId)}
+        returnFocusRef={panelTriggerRef}
+        onClose={() => setMoreVideoId(null)}
+        onReport={() => {
+          const videoId = moreVideoId;
+          setMoreVideoId(null);
+          if (videoId) onOpenReport(videoId);
+        }}
+      />
+
+      <VideoCommentsSheet
+        open={Boolean(commentsVideo)}
+        video={commentsVideo}
+        onClose={() => setCommentsVideoId(null)}
+        onCommentCountDelta={onCommentCountDelta}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import {
+  VIDEOS_MOBILE_CAPTION_MORE,
   buildVideoAuthorProfileHref,
   formatVideoAuthorDisplayName,
   resolveLocalVideoTeaserTitle,
@@ -18,7 +19,7 @@ import { VIDEO_IMMERSIVE_FOCUS } from "@/lib/videos/video-playback-a11y";
 type LocalVideoMobileMetaOverlayProps = {
   item: LocalVideoFeedItem;
   /** « plus » : ouvre la description complète (écran E). Absent : pas de bouton. */
-  onExpandDescription?: () => void;
+  onExpandDescription?: (trigger: HTMLElement) => void;
 };
 
 function authorInitials(item: LocalVideoFeedItem): string {
@@ -91,11 +92,11 @@ export function LocalVideoMobileMetaOverlay({ item, onExpandDescription }: Local
         {onExpandDescription ? (
           <button
             type="button"
-            onClick={onExpandDescription}
-            aria-expanded={false}
+            onClick={(event) => onExpandDescription(event.currentTarget)}
+            aria-haspopup="dialog"
             className={`pointer-events-auto shrink-0 font-bold text-white ${VIDEO_IMMERSIVE_FOCUS}`}
           >
-            plus
+            {VIDEOS_MOBILE_CAPTION_MORE}
           </button>
         ) : null}
       </div>

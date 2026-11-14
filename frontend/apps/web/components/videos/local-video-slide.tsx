@@ -16,6 +16,7 @@ import { LocalVideoProgressThread } from "@/components/videos/local-video-progre
 import { LocalVideoLandscapeStage, LocalVideoPortraitFrame } from "@/components/videos/local-video-slide-frames";
 import { LocalVideoSlideOverlays } from "@/components/videos/local-video-slide-overlays";
 import { useSlideChrome } from "@/hooks/use-slide-chrome";
+import { usePauseWhileOpen } from "@/hooks/use-pause-while-open";
 import { useSlideGestures } from "@/hooks/use-slide-gestures";
 
 /** Diapositive inactive : inert + aria-hidden pour exclure clavier et TA sans démonter le snap. */
@@ -55,8 +56,12 @@ type LocalVideoSlideProps = {
   onOpenComments: () => void;
   onToggleLike: () => void;
   onShare: () => void;
-  /** « … » (écran I). */
-  onOpenMore: () => void;
+  /** « … » (écran I) ; reçoit le bouton, cible du retour du focus. */
+  onOpenMore: (trigger: HTMLElement) => void;
+  /** « plus » de la légende (écran E) ; reçoit le bouton. */
+  onOpenDescription: (trigger: HTMLElement) => void;
+  /** Un panneau est ouvert sur cette vidéo : pause, reprise seulement si elle jouait. */
+  suspended?: boolean;
   onChromeVisibleChange?: (visible: boolean) => void;
 };
 
@@ -75,6 +80,8 @@ export function LocalVideoSlide({
   onToggleLike,
   onShare,
   onOpenMore,
+  onOpenDescription,
+  suspended = false,
   onChromeVisibleChange,
 }: LocalVideoSlideProps) {
   const articleRef = useRef<HTMLElement>(null);
@@ -85,6 +92,14 @@ export function LocalVideoSlide({
   const [isPaused, setIsPaused] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [mediaError, setMediaError] = useState(false);
+
+  // Remise à zéro par vidéo, déclarée AVANT les hooks de lecture : ses effets s'exécutent
+  // ensuite et peuvent mettre en pause (panneau déjà ouvert) sans être écrasés ici.
+  useEffect(() => {
+    setCurrentTime(0);
+    setIsPaused(false);
+    setMediaError(false);
+  }, [item.id]);
 
   const containers = useMemo(() => [bandRef, actionsRef] as const, []);
   const chrome = useSlideChrome({ itemId: item.id, isActive, isPaused, pointerOverFeed, containers, onChromeVisibleChange });
@@ -97,16 +112,11 @@ export function LocalVideoSlide({
     onToggleLike,
   });
   const { togglePause } = gestures;
+  usePauseWhileOpen(suspended, isActive && !isPaused, setIsPaused);
 
   const layout = resolveLocalVideoLayout(item);
   const isPortrait = layout === "portrait";
   const duration = item.duration_seconds ?? 0;
-
-  useEffect(() => {
-    setCurrentTime(0);
-    setIsPaused(false);
-    setMediaError(false);
-  }, [item.id]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -178,10 +188,19 @@ export function LocalVideoSlide({
         isPaused={isPaused}
         showResumeHint={gestures.showResumeHint}
         likeBurst={gestures.likeBurst}
+        suspended={suspended}
         onResume={resumeOrPause}
       />
     ),
-    meta: <LocalVideoMobileMetaOverlay item={item} />,
+    meta: (
+      <LocalVideoMobileMetaOverlay
+        item={item}
+        onExpandDescription={(trigger) => {
+          revealChrome(true);
+          onOpenDescription(trigger);
+        }}
+      />
+    ),
     bar: chromeVisible ? (
       <LocalVideoPlaybackBar
         currentTime={currentTime}
@@ -208,9 +227,9 @@ export function LocalVideoSlide({
           revealChrome(true);
           onShare();
         }}
-        onMoreClick={() => {
+        onMoreClick={(trigger) => {
           revealChrome(true);
-          onOpenMore();
+          onOpenMore(trigger);
         }}
       />
     ),

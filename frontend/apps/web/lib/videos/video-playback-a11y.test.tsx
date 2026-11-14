@@ -292,6 +292,7 @@ describe("LocalVideoSlide", () => {
         onToggleLike={() => {}}
         onShare={() => {}}
         onOpenMore={() => {}}
+        onOpenDescription={() => {}}
       />,
     );
 

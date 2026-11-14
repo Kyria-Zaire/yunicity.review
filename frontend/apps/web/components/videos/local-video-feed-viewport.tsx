@@ -18,7 +18,10 @@ type LocalVideoFeedViewportProps = {
   onOpenComments: (videoId: string) => void;
   onToggleLike: (item: LocalVideoFeedItem) => void;
   onShare: (item: LocalVideoFeedItem) => void;
-  onOpenReport: (videoId: string) => void;
+  onOpenMore: (videoId: string, trigger: HTMLElement) => void;
+  onOpenDescription: (videoId: string, trigger: HTMLElement) => void;
+  /** Vidéo dont un panneau est ouvert (commentaires, description, « … », signalement). */
+  suspendedVideoId?: string | null;
   onEndReached?: () => void;
   onSlideChromeVisible?: (visible: boolean) => void;
 };
@@ -38,7 +41,9 @@ export function LocalVideoFeedViewport({
   onOpenComments,
   onToggleLike,
   onShare,
-  onOpenReport,
+  onOpenMore,
+  onOpenDescription,
+  suspendedVideoId = null,
   onEndReached,
   onSlideChromeVisible,
 }: LocalVideoFeedViewportProps) {
@@ -108,7 +113,9 @@ export function LocalVideoFeedViewport({
           onOpenComments={() => onOpenComments(item.id)}
           onToggleLike={() => onToggleLike(item)}
           onShare={() => onShare(item)}
-          onOpenMore={() => onOpenReport(item.id)}
+          onOpenMore={(trigger) => onOpenMore(item.id, trigger)}
+          onOpenDescription={(trigger) => onOpenDescription(item.id, trigger)}
+          suspended={suspendedVideoId === item.id}
           onChromeVisibleChange={
             activeId === item.id ? onSlideChromeVisible : undefined
           }

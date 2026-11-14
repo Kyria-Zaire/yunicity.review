@@ -119,6 +119,7 @@ describe("LocalVideoSlide — inert slides", () => {
         onShare={() => {}}
         isMuted
         onOpenMore={() => {}}
+        onOpenDescription={() => {}}
       />,
     );
 
@@ -138,6 +139,7 @@ describe("LocalVideoSlide — inert slides", () => {
         onShare={() => {}}
         isMuted
         onOpenMore={() => {}}
+        onOpenDescription={() => {}}
       />,
     );
 
@@ -158,6 +160,7 @@ describe("LocalVideoSlide — inert slides", () => {
         onShare={() => {}}
         isMuted
         onOpenMore={() => {}}
+        onOpenDescription={() => {}}
       />,
     );
 
@@ -172,6 +175,7 @@ describe("LocalVideoSlide — inert slides", () => {
         onShare={() => {}}
         isMuted
         onOpenMore={() => {}}
+        onOpenDescription={() => {}}
       />,
     );
 
@@ -192,7 +196,8 @@ describe("LocalVideoFeedViewport — une seule slide interactive", () => {
         onOpenComments={() => {}}
         onToggleLike={() => {}}
         onShare={() => {}}
-        onOpenReport={() => {}}
+        onOpenMore={() => {}}
+        onOpenDescription={() => {}}
       />,
     );
 
@@ -213,7 +218,8 @@ describe("LocalVideoFeedViewport — une seule slide interactive", () => {
         onOpenComments={() => {}}
         onToggleLike={() => {}}
         onShare={() => {}}
-        onOpenReport={() => {}}
+        onOpenMore={() => {}}
+        onOpenDescription={() => {}}
       />,
     );
 
@@ -226,7 +232,8 @@ describe("LocalVideoFeedViewport — une seule slide interactive", () => {
         onOpenComments={() => {}}
         onToggleLike={() => {}}
         onShare={() => {}}
-        onOpenReport={() => {}}
+        onOpenMore={() => {}}
+        onOpenDescription={() => {}}
       />,
     );
 
@@ -278,6 +285,7 @@ describe("LocalVideoSlide — relais « … » (slide active)", () => {
         onToggleLike={() => {}}
         onShare={() => {}}
         onOpenMore={onOpenMore}
+        onOpenDescription={() => {}}
       />,
     );
 

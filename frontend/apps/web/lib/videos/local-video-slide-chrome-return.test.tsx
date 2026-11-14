@@ -102,6 +102,7 @@ function renderSlide(layout: "portrait" | "landscape" = "portrait", pointerOverF
     onToggleLike: vi.fn<() => void>(),
     onShare: vi.fn<() => void>(),
     onOpenMore: vi.fn<() => void>(),
+    onOpenDescription: vi.fn<() => void>(),
   };
   const item = playableItem(layout);
   const view = render(
@@ -276,11 +277,12 @@ describe("Chrome visible — le bloc méta ne masque plus la vidéo", () => {
         onToggleLike={vi.fn<() => void>()}
         onShare={vi.fn<() => void>()}
         onOpenMore={vi.fn<() => void>()}
+        onOpenDescription={() => {}}
       />,
     );
   }
 
-  it("conteneur et légende transparents ; seuls profil et puce quartier sont ciblables", () => {
+  it("conteneur et légende transparents ; seuls profil, « plus » et puce quartier sont ciblables", () => {
     renderSlideWithLinks();
     const [bottomChrome] = chromeContainers();
     expect(bottomChrome!.className).toContain("pointer-events-none");
@@ -291,9 +293,9 @@ describe("Chrome visible — le bloc méta ne masque plus la vidéo", () => {
     expect(metaRoot.className).not.toContain("pointer-events-auto");
 
     const interactive = [...metaRoot.querySelectorAll<HTMLElement>("a, button")];
-    // v2.3 : profil et puce quartier ; « Voir sur la carte », « Découvrir », le son et
-    // les hashtags passent dans la feuille Description (écran E). Suivre retiré (L1).
-    expect(interactive.length).toBe(2);
+    // v2.3 : profil, « plus » (feuille Description, écran E) et puce quartier ;
+    // « Voir sur la carte », le son et les hashtags sont dans la feuille. Suivre retiré (L1).
+    expect(interactive.length).toBe(3);
     expect(interactive.some((element) => /Suivre/.test(element.textContent ?? ""))).toBe(false);
     for (const element of interactive) {
       expect(element.className).toContain("pointer-events-auto");

@@ -256,6 +256,7 @@ describe("Paysage (écran D)", () => {
         onToggleLike={vi.fn()}
         onShare={vi.fn()}
         onOpenMore={vi.fn()}
+        onOpenDescription={() => {}}
       />,
     );
   }
@@ -298,6 +299,7 @@ describe("Portrait (écrans A et C)", () => {
         onToggleLike={vi.fn()}
         onShare={vi.fn()}
         onOpenMore={vi.fn()}
+        onOpenDescription={() => {}}
       />,
     );
     const band = document.querySelector(".videos-slide-bottom-chrome")!;

@@ -21,7 +21,8 @@ type LocalVideoActionRailProps = {
   onLikeClick: () => void;
   onCommentsClick: () => void;
   onShareClick: () => void;
-  onMoreClick: () => void;
+  /** Reçoit le bouton « … » : cible explicite du retour du focus à la fermeture du menu. */
+  onMoreClick: (trigger: HTMLElement) => void;
 };
 
 const actionButtonClass = `flex h-[58px] w-[58px] flex-col items-center justify-center gap-0.5 text-white ${VIDEO_IMMERSIVE_FOCUS}`;
@@ -78,9 +79,9 @@ export function LocalVideoActionRail({
 
       <button
         type="button"
-        onClick={onMoreClick}
+        onClick={(event) => onMoreClick(event.currentTarget)}
         aria-label={VIDEOS_MOBILE_MORE_ACTIONS}
-        aria-haspopup="menu"
+        aria-haspopup="dialog"
         className={`flex h-11 w-[58px] items-center justify-center text-white ${VIDEO_IMMERSIVE_FOCUS}`}
       >
         <MoreHorizontal className="h-6 w-6" strokeWidth={2} aria-hidden />
