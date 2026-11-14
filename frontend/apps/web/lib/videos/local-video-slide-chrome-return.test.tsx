@@ -204,6 +204,22 @@ describe("Chrome replié — pointeur et tactile", () => {
     expect(profileLink()).toBeTruthy();
   });
 
+  it("v2.3 : bande compacte au repli ; colonne hors de la bande (pas de spacer sombre)", () => {
+    renderSlide();
+    const band = article().querySelector(".videos-slide-bottom-chrome")!;
+    const rail = article().querySelector(".videos-slide-action-rail")!;
+    expect(screen.getByRole("button", { name: "Mettre en pause" })).toBeTruthy();
+    expect(band.contains(rail)).toBe(false);
+
+    hideChromeByPlayback();
+
+    expect(band.querySelector("[aria-hidden='true'].h-12")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Mettre en pause" })).toBeNull();
+    expect(screen.getByRole("progressbar", { name: "Progression de la lecture" })).toBeTruthy();
+    expect(likeButton()).toBeTruthy();
+    expect(article().querySelector(".videos-slide-action-rail")).toBeTruthy();
+  });
+
   it.each(["portrait", "landscape"] as const)(
     "%s : un appui sur la vidéo masquée met en pause et réaffiche, durablement",
     (layout) => {

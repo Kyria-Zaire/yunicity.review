@@ -105,8 +105,12 @@ export function VideosMobileFiltersSheet({
       returnFocusRef={returnFocusRef}
       className="max-h-[85dvh] rounded-t-[20px] bg-white"
     >
-      <div className="flex max-h-[70dvh] flex-col">
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-1 pb-2">
+      {/*
+        Un seul scroll (celui du Drawer) + pied sticky : « Les plus commentées »
+        peut remonter entièrement au-dessus de Réinitialiser / Voir N.
+      */}
+      <div className="-mx-4 -mb-4 flex flex-col">
+        <div className="space-y-4 px-5 pb-36">
           <fieldset className="space-y-2">
             <legend className="text-[14px] font-bold text-neutral-900">{VIDEOS_FILTER_CATEGORY}</legend>
             <div className="flex flex-wrap gap-2">
@@ -183,7 +187,7 @@ export function VideosMobileFiltersSheet({
             </div>
           </fieldset>
 
-          <fieldset className="space-y-2">
+          <fieldset className="space-y-2" data-videos-filters-popularity="">
             <legend className="text-[14px] font-bold text-neutral-900">{VIDEOS_FILTER_POPULARITY}</legend>
             <div className="flex flex-wrap gap-2">
               {(
@@ -204,27 +208,34 @@ export function VideosMobileFiltersSheet({
           </fieldset>
         </div>
 
-        <p role="status" className="border-t border-neutral-200 px-1 pt-2.5 text-[13px] text-neutral-700">
-          <strong>{resultCount} vidéo{resultCount > 1 ? "s" : ""}</strong>
-          {` parmi les ${loadedCount} chargée${loadedCount > 1 ? "s" : ""}. D'autres peuvent correspondre dans les vidéos suivantes.`}
-        </p>
-        <p className="sr-only">{formatVideosMobileFiltersStatus(resultCount, loadedCount)}</p>
+        <div
+          data-videos-filters-footer=""
+          className="sticky bottom-0 z-10 border-t border-neutral-200 bg-white px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2.5"
+        >
+          <p role="status" className="text-[13px] text-neutral-700">
+            <strong>
+              {resultCount} vidéo{resultCount > 1 ? "s" : ""}
+            </strong>
+            {` parmi les ${loadedCount} chargée${loadedCount > 1 ? "s" : ""}. D'autres peuvent correspondre dans les vidéos suivantes.`}
+          </p>
+          <p className="sr-only">{formatVideosMobileFiltersStatus(resultCount, loadedCount)}</p>
 
-        <div className="flex gap-2 pb-1 pt-2.5">
-          <button
-            type="button"
-            onClick={onReset}
-            className={`h-12 shrink-0 rounded-full border border-neutral-300 bg-white px-4 text-[15px] font-semibold text-neutral-900 ${VIDEO_IMMERSIVE_FOCUS}`}
-          >
-            {VIDEOS_MOBILE_FILTERS_RESET}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className={`h-12 min-w-0 flex-1 rounded-full bg-yunicity-primary text-[15px] font-bold text-white ${VIDEO_IMMERSIVE_FOCUS}`}
-          >
-            {formatVideosMobileFiltersSee(resultCount)}
-          </button>
+          <div className="mt-2.5 flex gap-2">
+            <button
+              type="button"
+              onClick={onReset}
+              className={`h-12 shrink-0 rounded-full border border-neutral-300 bg-white px-4 text-[15px] font-semibold text-neutral-900 ${VIDEO_IMMERSIVE_FOCUS}`}
+            >
+              {VIDEOS_MOBILE_FILTERS_RESET}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className={`h-12 min-w-0 flex-1 rounded-full bg-yunicity-primary text-[15px] font-bold text-white ${VIDEO_IMMERSIVE_FOCUS}`}
+            >
+              {formatVideosMobileFiltersSee(resultCount)}
+            </button>
+          </div>
         </div>
       </div>
     </Drawer>

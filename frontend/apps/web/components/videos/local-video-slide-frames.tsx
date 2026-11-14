@@ -2,7 +2,13 @@
 
 import { VIDEOS_MOBILE_FULLSCREEN } from "@yunicity/utils";
 import { Maximize } from "lucide-react";
-import type { FocusEvent, ReactNode, RefObject } from "react";
+import {
+  useLayoutEffect,
+  useState,
+  type FocusEvent,
+  type ReactNode,
+  type RefObject,
+} from "react";
 
 import { VIDEO_IMMERSIVE_FOCUS } from "@/lib/videos/video-playback-a11y";
 
@@ -23,29 +29,61 @@ export type LocalVideoSlideParts = {
 };
 
 /**
+ * Empreinte verticale de `LocalVideoPlaybackBar` (`mt-1.5` + `h-12`) — réservée
+ * uniquement pour l'ancrage de la colonne, pas peinte dans la bande.
+ */
+export const LOCAL_VIDEO_PLAYBACK_BAR_SLOT_PX = 54;
+
+/**
  * Portrait (écrans A, B, C) : vidéo plein cadre ; bande de voile 60 % en bas (compte,
  * légende, quartier, puis barre de lecture quand elle est affichée) ; colonne d'actions
- * juste au-dessus de la bande ; fil de 2 px au bas de la bande quand la barre est repliée.
+ * ancrée au cadre de la diapositive (pas à la hauteur variable de la bande) ; fil de 2 px
+ * au bas de la bande quand la barre est repliée.
+ *
+ * Objectifs conjoints : bande compacte au repli (plus de spacer sombre) ET colonne stable
+ * (on compense numériquement l'empreinte de la barre absente).
  */
 export function LocalVideoPortraitFrame(parts: LocalVideoSlideParts) {
+  const [railBottom, setRailBottom] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    const band = parts.bandRef.current;
+    if (!band) return;
+
+    const sync = () => {
+      const height = band.getBoundingClientRect().height;
+      const absentBarReserve = parts.bar ? 0 : LOCAL_VIDEO_PLAYBACK_BAR_SLOT_PX;
+      setRailBottom(Math.round(height + 12 + absentBarReserve));
+    };
+
+    sync();
+    const Observer = globalThis.ResizeObserver;
+    if (typeof Observer !== "function") return;
+    const observer = new Observer(sync);
+    observer.observe(band);
+    return () => observer.disconnect();
+  }, [parts.bandRef, parts.bar]);
+
   return (
     <>
       {parts.video}
       {parts.overlays}
+      <div
+        ref={parts.actionsRef}
+        onFocus={parts.onChromeFocus}
+        onBlur={parts.onChromeBlur}
+        className="videos-slide-action-rail absolute right-2 z-20"
+        style={railBottom != null ? { bottom: railBottom } : undefined}
+        data-videos-action-rail-bottom={railBottom ?? undefined}
+      >
+        {parts.actions}
+      </div>
       <div
         ref={parts.bandRef}
         onFocus={parts.onChromeFocus}
         onBlur={parts.onChromeBlur}
         className="videos-slide-bottom-chrome pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-[rgba(17,24,39,0.6)] px-4 pb-2 pt-1.5"
       >
-        <div
-          ref={parts.actionsRef}
-          onFocus={parts.onChromeFocus}
-          onBlur={parts.onChromeBlur}
-          className="videos-slide-action-rail absolute bottom-[calc(100%+12px)] right-2"
-        >
-          {parts.actions}
-        </div>
         {parts.meta}
         {parts.bar}
         {parts.thread ? <div className="absolute inset-x-0 bottom-0">{parts.thread}</div> : null}

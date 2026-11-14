@@ -10,7 +10,15 @@ import {
   LOCAL_VIDEO_COMMENTS_EMPTY,
 } from "@yunicity/utils";
 import { Loader2, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FocusEvent,
+  type RefObject,
+} from "react";
 
 import { useAuth } from "@/lib/auth/auth-provider";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
@@ -37,6 +45,66 @@ function formatCommentTime(iso: string): string {
   });
 }
 
+/**
+ * Ancre le tiroir bas au visualViewport quand le clavier réduit la zone visible
+ * (Safari iPhone : sinon fermeture hors cadre et « Publier » coincé sous le clavier).
+ */
+function useCommentsKeyboardViewport(active: boolean) {
+  const panelRef = useRef<HTMLElement | null>(null);
+
+  useLayoutEffect(() => {
+    if (!active) {
+      const panel = panelRef.current;
+      if (panel) {
+        panel.style.bottom = "";
+        panel.style.maxHeight = "";
+        panel.style.top = "";
+      }
+      panelRef.current = null;
+      return;
+    }
+
+    const findPanel = (): HTMLElement | null => {
+      const dialogs = document.querySelectorAll<HTMLElement>('[data-yunicity-overlay="bottom"] [role="dialog"]');
+      return dialogs[dialogs.length - 1] ?? null;
+    };
+
+    const sync = () => {
+      const panel = findPanel();
+      if (!panel) return;
+      panelRef.current = panel;
+      const vv = window.visualViewport;
+      if (!vv) {
+        panel.style.bottom = "";
+        panel.style.maxHeight = "90dvh";
+        return;
+      }
+      const keyboardInset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      panel.style.bottom = `${keyboardInset}px`;
+      panel.style.maxHeight = `${Math.round(vv.height * 0.92)}px`;
+      panel.style.top = "auto";
+    };
+
+    sync();
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", sync);
+    vv?.addEventListener("scroll", sync);
+    window.addEventListener("resize", sync);
+    return () => {
+      vv?.removeEventListener("resize", sync);
+      vv?.removeEventListener("scroll", sync);
+      window.removeEventListener("resize", sync);
+      const panel = panelRef.current;
+      if (panel) {
+        panel.style.bottom = "";
+        panel.style.maxHeight = "";
+        panel.style.top = "";
+      }
+      panelRef.current = null;
+    };
+  }, [active]);
+}
+
 export function VideoCommentsSheet({
   open,
   video,
@@ -53,6 +121,10 @@ export function VideoCommentsSheet({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const capturedTriggerRef = useRef<HTMLElement | null>(null);
+  const sheetBodyRef = useRef<HTMLDivElement>(null);
+  const blurCloseTimerRef = useRef<number | null>(null);
+
+  useCommentsKeyboardViewport(open && keyboardExpanded);
 
   useLayoutEffect(() => {
     if (open) {
@@ -93,6 +165,13 @@ export function VideoCommentsSheet({
     }
   }, [open]);
 
+  useEffect(
+    () => () => {
+      if (blurCloseTimerRef.current != null) window.clearTimeout(blurCloseTimerRef.current);
+    },
+    [],
+  );
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!video) return;
@@ -124,6 +203,24 @@ export function VideoCommentsSheet({
     }
   }
 
+  const handleComposerFocus = () => {
+    if (blurCloseTimerRef.current != null) {
+      window.clearTimeout(blurCloseTimerRef.current);
+      blurCloseTimerRef.current = null;
+    }
+    setKeyboardExpanded(true);
+  };
+
+  const handleComposerBlur = (event: FocusEvent<HTMLTextAreaElement>) => {
+    const next = event.relatedTarget;
+    if (next instanceof Node && sheetBodyRef.current?.contains(next)) return;
+    // Laisse le clic sur « Fermer » / « Publier » se résoudre avant de replier le tiroir.
+    blurCloseTimerRef.current = window.setTimeout(() => {
+      blurCloseTimerRef.current = null;
+      setKeyboardExpanded(false);
+    }, 120);
+  };
+
   // Sans vidéo : Drawer FERMÉ plutôt que rien. Même type, même position que le Drawer
   // ouvert ci-dessous : React garde l'instance, et la transition fermé → ouvert donne le
   // focus au dialogue (VIDEO-REFONTE-L3L4, écran F). Monter un Drawer déjà ouvert ne le fait pas.
@@ -146,7 +243,11 @@ export function VideoCommentsSheet({
       returnFocusRef={returnFocusRef}
       className={`rounded-t-3xl bg-white ${keyboardExpanded ? "max-h-[90dvh]" : "max-h-[60dvh]"}`}
     >
-      <div className="flex min-h-0 flex-1 flex-col -mx-4 -my-4 px-4 py-4">
+      <div
+        ref={sheetBodyRef}
+        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden"
+        data-videos-comments-keyboard={keyboardExpanded ? "expanded" : "collapsed"}
+      >
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-neutral-400 motion-reduce:animate-none" aria-hidden />
@@ -192,23 +293,26 @@ export function VideoCommentsSheet({
           </p>
         ) : null}
 
-        <form onSubmit={(event) => void handleSubmit(event)} className="border-t border-neutral-200 pt-3">
-          <div className="flex items-end gap-2">
+        <form
+          onSubmit={(event) => void handleSubmit(event)}
+          className="shrink-0 border-t border-neutral-200 pt-3"
+        >
+          <div className="flex min-w-0 items-end gap-2">
             <textarea
               rows={1}
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               placeholder={LOCAL_VIDEO_COMMENT_PLACEHOLDER}
               maxLength={500}
-              onFocus={() => setKeyboardExpanded(true)}
-              onBlur={() => setKeyboardExpanded(false)}
-              className="max-h-28 min-h-11 flex-1 resize-none rounded-2xl border border-neutral-200 px-4 py-3 text-sm text-neutral-800"
+              onFocus={handleComposerFocus}
+              onBlur={handleComposerBlur}
+              className="max-h-28 min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-neutral-200 px-4 py-3 text-sm text-neutral-800"
               aria-label="Écrire un commentaire"
             />
             <button
               type="submit"
               disabled={!draft.trim() || isSubmitting}
-              className="inline-flex min-h-11 items-center rounded-full bg-yunicity-primary px-4 text-sm font-semibold text-white disabled:opacity-40"
+              className="inline-flex min-h-11 shrink-0 items-center rounded-full bg-yunicity-primary px-4 text-sm font-semibold text-white disabled:opacity-40"
             >
               {isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden />
