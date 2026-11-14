@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { VideosMobileFiltersSheet } from "@/components/videos/mobile/videos-mobile-filters-sheet";
 import { VideoCommentsSheet } from "@/components/videos/video-comments-sheet";
 import {
+  resolveVideosMobileImmersiveHeightPx,
   resolveVideosMobileNavBandPx,
   useVideosMobileImmersiveViewport,
   VIDEOS_MOBILE_IMMERSIVE_VIEWPORT_HEIGHT_VAR,
@@ -137,11 +138,28 @@ describe("P0-A — commentaires : textarea ≥ 16 px, pas de maximum-scale", () 
   });
 });
 
-describe("P0-B — hauteur immersif alignée sur nav mesurée + visualViewport", () => {
-  it("publie des hauteurs px sur le shell à partir de la nav mesurée", () => {
+describe("P0-B / SCROLL-01 — hauteur immersif = espace au-dessus de la nav (pas vv.height)", () => {
+  it("publie la hauteur navTop − feedTop (même repère)", () => {
     const shell = document.createElement("div");
     shell.className = "videos-mobile-shell";
     document.body.appendChild(shell);
+
+    const feed = document.createElement("div");
+    feed.setAttribute("data-videos-immersive-mobile", "");
+    Object.defineProperty(feed, "getBoundingClientRect", {
+      value: () => ({
+        height: 757,
+        width: 390,
+        top: 0,
+        bottom: 757,
+        left: 0,
+        right: 390,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }),
+    });
+    shell.appendChild(feed);
 
     const nav = document.createElement("nav");
     nav.className = "web-mobile-strategic-bottom-nav";
@@ -160,13 +178,51 @@ describe("P0-B — hauteur immersif alignée sur nav mesurée + visualViewport",
     });
     document.body.appendChild(nav);
 
+    expect(resolveVideosMobileImmersiveHeightPx(nav, feed)).toBe(757);
+    mockVisualViewport(500); // VV plus petit ne doit PAS raccourcir le feed
     render(<Probe />);
 
     expect(shell.style.getPropertyValue(VIDEOS_MOBILE_NAV_BAND_BOTTOM_VAR)).toBe("87px");
-    const immersive = shell.style.getPropertyValue(VIDEOS_MOBILE_IMMERSIVE_VIEWPORT_HEIGHT_VAR);
-    expect(immersive).toMatch(/^\d+px$/);
-    const px = Number.parseInt(immersive, 10);
-    expect(px).toBe(Math.max(0, window.innerHeight - 87));
+    expect(shell.style.getPropertyValue(VIDEOS_MOBILE_IMMERSIVE_VIEWPORT_HEIGHT_VAR)).toBe("757px");
+  });
+
+  it("soustrait feedTop quand le feed n’est pas à y=0", () => {
+    const feed = document.createElement("div");
+    feed.setAttribute("data-videos-immersive-mobile", "");
+    Object.defineProperty(feed, "getBoundingClientRect", {
+      value: () => ({
+        height: 571,
+        width: 390,
+        top: 40,
+        bottom: 611,
+        left: 0,
+        right: 390,
+        x: 0,
+        y: 40,
+        toJSON: () => ({}),
+      }),
+    });
+    document.body.appendChild(feed);
+
+    const nav = document.createElement("nav");
+    nav.className = "web-mobile-strategic-bottom-nav";
+    Object.defineProperty(nav, "getBoundingClientRect", {
+      value: () => ({
+        height: 53,
+        width: 390,
+        top: 611,
+        bottom: 664,
+        left: 0,
+        right: 390,
+        x: 0,
+        y: 611,
+        toJSON: () => ({}),
+      }),
+    });
+    document.body.appendChild(nav);
+
+    expect(resolveVideosMobileImmersiveHeightPx(nav, feed)).toBe(571);
+    expect(resolveVideosMobileImmersiveHeightPx(nav)).toBe(571);
   });
 
   it("ignore une --citizen-bottom-nav-h périmée quand la nav est masquée (display:none)", () => {
@@ -195,32 +251,56 @@ describe("P0-B — hauteur immersif alignée sur nav mesurée + visualViewport",
     document.body.appendChild(nav);
 
     expect(resolveVideosMobileNavBandPx(nav, "87px")).toBe(0);
-
-    const vv = mockVisualViewport(800);
+    mockVisualViewport(800);
     render(<Probe />);
 
     expect(shell.style.getPropertyValue(VIDEOS_MOBILE_NAV_BAND_BOTTOM_VAR)).toBe("0px");
-    expect(shell.style.getPropertyValue(VIDEOS_MOBILE_IMMERSIVE_VIEWPORT_HEIGHT_VAR)).toBe("800px");
-    expect(vv.height).toBe(800);
+    expect(shell.style.getPropertyValue(VIDEOS_MOBILE_IMMERSIVE_VIEWPORT_HEIGHT_VAR)).toBe(
+      `${window.innerHeight}px`,
+    );
   });
 
-  it("recalcule après changement de visualViewport.height + événement resize", () => {
-    const shell = document.createElement("div");
-    shell.className = "videos-mobile-shell";
-    document.body.appendChild(shell);
-
+  it("ne suit pas un visualViewport plus petit que l'espace jusqu'à la nav (bande blanche)", () => {
     const nav = document.createElement("nav");
     nav.className = "web-mobile-strategic-bottom-nav";
     Object.defineProperty(nav, "getBoundingClientRect", {
       value: () => ({
         height: 53,
         width: 390,
-        top: 0,
-        bottom: 53,
+        top: 611,
+        bottom: 664,
         left: 0,
         right: 390,
         x: 0,
-        y: 0,
+        y: 611,
+        toJSON: () => ({}),
+      }),
+    });
+    document.body.appendChild(nav);
+    mockVisualViewport(530);
+    // Ancienne formule vv - nav = 477 → bande. Nouvelle = navTop − feedTop(0) = 611.
+    expect(resolveVideosMobileImmersiveHeightPx(nav)).toBe(611);
+    expect(530 - 53).toBe(477);
+  });
+
+  it("recalcule après événement resize quand le haut de la nav bouge", () => {
+    const shell = document.createElement("div");
+    shell.className = "videos-mobile-shell";
+    document.body.appendChild(shell);
+
+    let navTop = 700;
+    const nav = document.createElement("nav");
+    nav.className = "web-mobile-strategic-bottom-nav";
+    Object.defineProperty(nav, "getBoundingClientRect", {
+      value: () => ({
+        height: 53,
+        width: 390,
+        top: navTop,
+        bottom: navTop + 53,
+        left: 0,
+        right: 390,
+        x: 0,
+        y: navTop,
         toJSON: () => ({}),
       }),
     });
@@ -228,14 +308,14 @@ describe("P0-B — hauteur immersif alignée sur nav mesurée + visualViewport",
 
     const vv = mockVisualViewport(700);
     render(<Probe />);
-    expect(shell.style.getPropertyValue(VIDEOS_MOBILE_IMMERSIVE_VIEWPORT_HEIGHT_VAR)).toBe("647px");
+    expect(shell.style.getPropertyValue(VIDEOS_MOBILE_IMMERSIVE_VIEWPORT_HEIGHT_VAR)).toBe("700px");
 
-    vv.height = 620;
+    navTop = 620;
     act(() => {
       vv.dispatch("resize");
     });
     expect(shell.style.getPropertyValue(VIDEOS_MOBILE_NAV_BAND_BOTTOM_VAR)).toBe("53px");
-    expect(shell.style.getPropertyValue(VIDEOS_MOBILE_IMMERSIVE_VIEWPORT_HEIGHT_VAR)).toBe("567px");
+    expect(shell.style.getPropertyValue(VIDEOS_MOBILE_IMMERSIVE_VIEWPORT_HEIGHT_VAR)).toBe("620px");
   });
 
   it("nettoie les variables CSS immersives au démontage", () => {
@@ -249,12 +329,12 @@ describe("P0-B — hauteur immersif alignée sur nav mesurée + visualViewport",
       value: () => ({
         height: 53,
         width: 390,
-        top: 0,
-        bottom: 53,
+        top: 611,
+        bottom: 664,
         left: 0,
         right: 390,
         x: 0,
-        y: 0,
+        y: 611,
         toJSON: () => ({}),
       }),
     });

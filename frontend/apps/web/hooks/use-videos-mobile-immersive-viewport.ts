@@ -6,7 +6,7 @@ import { CITIZEN_BOTTOM_NAV_HEIGHT_VAR } from "@/lib/layout/feed-mobile-refonte"
 
 /**
  * Variable publiée sur `.videos-mobile-shell` : hauteur pixel réelle du lecteur
- * immersif au-dessus de la barre basse (visualViewport − nav mesurée).
+ * immersif au-dessus de la barre basse.
  */
 export const VIDEOS_MOBILE_IMMERSIVE_VIEWPORT_HEIGHT_VAR =
   "--videos-mobile-immersive-viewport-height" as const;
@@ -15,6 +15,7 @@ export const VIDEOS_MOBILE_NAV_BAND_BOTTOM_VAR = "--videos-mobile-nav-band-botto
 
 const NAV_SELECTOR = ".web-mobile-strategic-bottom-nav";
 const SHELL_SELECTOR = ".videos-mobile-shell";
+const FEED_SELECTOR = "[data-videos-immersive-mobile], .videos-mobile-immersive-feed";
 
 /**
  * Hauteur de bande nav pour l'immersif.
@@ -42,10 +43,34 @@ export function resolveVideosMobileNavBandPx(
 }
 
 /**
- * VIDEO-REFONTE-IOS-SAFARI-P0-02 / P0-B — aligne la hauteur immersif sur la
- * géométrie réelle iOS (visualViewport + nav mesurée), au lieu du seul
- * `calc(100dvh - 3.25rem - safe-area)`.
+ * Hauteur immersif = espace layout entre le haut du feed et le haut de la nav
+ * (même repère : getBoundingClientRect).
  *
+ * VIDEO-SAFARI-SCROLL-01 : `visualViewport.height - nav` crée une bande claire
+ * entre le lecteur et la nav quand Safari réduit le visualViewport (barres
+ * déployées) alors que `position: fixed; bottom: 0` reste ancré au viewport
+ * de mise en page (`innerHeight`). On n’utilise pas le VV pour cette hauteur.
+ *
+ * `navTop` seul n’est valide que si le feed est à y≈0 ; sinon `navTop - feedTop`.
+ */
+export function resolveVideosMobileImmersiveHeightPx(
+  nav: HTMLElement | null,
+  feed: HTMLElement | null = null,
+): number {
+  if (nav && getComputedStyle(nav).display !== "none") {
+    const navTop = Math.round(nav.getBoundingClientRect().top);
+    const feedEl =
+      feed ?? document.querySelector<HTMLElement>(FEED_SELECTOR);
+    const feedTop = feedEl ? Math.round(feedEl.getBoundingClientRect().top) : 0;
+    const available = Math.round(navTop - feedTop);
+    if (available > 0) return available;
+  }
+  const navBand = resolveVideosMobileNavBandPx(nav);
+  return Math.max(0, Math.round(window.innerHeight - navBand));
+}
+
+/**
+ * Aligne la hauteur immersif sur l'espace réel au-dessus de la nav basse.
  * Ne touche pas au zoom (pas de maximum-scale / user-scalable).
  */
 export function useVideosMobileImmersiveViewport(active: boolean): void {
@@ -57,11 +82,9 @@ export function useVideosMobileImmersiveViewport(active: boolean): void {
 
     const publish = () => {
       const nav = document.querySelector<HTMLElement>(NAV_SELECTOR);
+      const feed = document.querySelector<HTMLElement>(FEED_SELECTOR);
       const navBand = resolveVideosMobileNavBandPx(nav);
-
-      const vv = window.visualViewport;
-      const viewportH = Math.round(vv?.height ?? window.innerHeight);
-      const available = Math.max(0, viewportH - navBand);
+      const available = resolveVideosMobileImmersiveHeightPx(nav, feed);
 
       shell.style.setProperty(VIDEOS_MOBILE_NAV_BAND_BOTTOM_VAR, `${navBand}px`);
       shell.style.setProperty(VIDEOS_MOBILE_IMMERSIVE_VIEWPORT_HEIGHT_VAR, `${available}px`);
@@ -80,7 +103,6 @@ export function useVideosMobileImmersiveViewport(active: boolean): void {
       if (typeof mobileNavQuery.addEventListener === "function") {
         mobileNavQuery.addEventListener("change", onBreakpoint);
       } else {
-        // Safari < 14
         mobileNavQuery.addListener(onBreakpoint);
       }
     }

@@ -93,6 +93,117 @@ export function LocalVideoFeedViewport({
     if (remaining < 240) onEndReached();
   }, [onEndReached, scrollRoot]);
 
+  /**
+   * VIDEO-SAFARI-SCROLL-01 — ré-alignement snap :
+   * 1) hauteur du scrollport change (barres Safari / republish immersif) ;
+   * 2) fin de geste si arrêt entre deux cartes.
+   * Pas de resnap pendant un swipe ; garde anti-réentrance (pas de boucle
+   * ResizeObserver ↔ scrollend ↔ debounce).
+   */
+  useEffect(() => {
+    const node = scrollRoot;
+    if (!node) return;
+
+    let previousHeight = node.clientHeight;
+    let gestureActive = false;
+    let snapping = false;
+    let pendingIndexBasis: number | null = null;
+    let scrollSettleTimer = 0;
+
+    const snapToNearest = (heightForIndex?: number) => {
+      if (snapping || gestureActive) return;
+      const nextHeight = node.clientHeight;
+      if (nextHeight <= 0) return;
+      const basis =
+        heightForIndex && heightForIndex > 0
+          ? heightForIndex
+          : pendingIndexBasis && pendingIndexBasis > 0
+            ? pendingIndexBasis
+            : nextHeight;
+      pendingIndexBasis = null;
+      const index = Math.round(node.scrollTop / basis);
+      const maxIndex = Math.max(0, node.querySelectorAll("[data-video-slide-id]").length - 1);
+      const clamped = Math.min(Math.max(0, index), maxIndex);
+      const target = clamped * nextHeight;
+      if (Math.abs(node.scrollTop - target) <= 1) return;
+      snapping = true;
+      node.scrollTo({ top: target, behavior: "auto" });
+      window.requestAnimationFrame(() => {
+        snapping = false;
+      });
+    };
+
+    const beginGesture = () => {
+      gestureActive = true;
+      window.clearTimeout(scrollSettleTimer);
+    };
+    const endGesture = () => {
+      gestureActive = false;
+      // Appliquer un resnap différé (ex. resize pendant le geste) à la fin.
+      window.clearTimeout(scrollSettleTimer);
+      scrollSettleTimer = window.setTimeout(() => snapToNearest(), 140);
+    };
+
+    const Observer = globalThis.ResizeObserver;
+    let observer: ResizeObserver | null = null;
+    if (typeof Observer === "function") {
+      observer = new Observer(() => {
+        const nextHeight = node.clientHeight;
+        if (nextHeight <= 0) return;
+        if (previousHeight <= 0) {
+          previousHeight = nextHeight;
+          return;
+        }
+        if (nextHeight === previousHeight) return;
+        const prior = previousHeight;
+        previousHeight = nextHeight;
+        if (gestureActive) {
+          pendingIndexBasis = prior;
+          return;
+        }
+        snapToNearest(prior);
+      });
+      observer.observe(node);
+    }
+
+    const onScrollEnd = () => {
+      window.clearTimeout(scrollSettleTimer);
+      snapToNearest();
+    };
+    // Repli si `scrollend` absent : un seul debounce, pas en parallèle de scrollend.
+    const supportsScrollEnd = typeof window !== "undefined" && "onscrollend" in window;
+    const onScrollSettle = () => {
+      if (gestureActive || snapping) return;
+      window.clearTimeout(scrollSettleTimer);
+      scrollSettleTimer = window.setTimeout(() => snapToNearest(), 140);
+    };
+
+    node.addEventListener("pointerdown", beginGesture, { passive: true });
+    node.addEventListener("pointerup", endGesture, { passive: true });
+    node.addEventListener("pointercancel", endGesture, { passive: true });
+    node.addEventListener("touchstart", beginGesture, { passive: true });
+    node.addEventListener("touchend", endGesture, { passive: true });
+    node.addEventListener("touchcancel", endGesture, { passive: true });
+    if (supportsScrollEnd) {
+      node.addEventListener("scrollend", onScrollEnd);
+    } else {
+      node.addEventListener("scroll", onScrollSettle, { passive: true });
+    }
+
+    return () => {
+      observer?.disconnect();
+      node.removeEventListener("pointerdown", beginGesture);
+      node.removeEventListener("pointerup", endGesture);
+      node.removeEventListener("pointercancel", endGesture);
+      node.removeEventListener("touchstart", beginGesture);
+      node.removeEventListener("touchend", endGesture);
+      node.removeEventListener("touchcancel", endGesture);
+      node.removeEventListener("scrollend", onScrollEnd);
+      node.removeEventListener("scroll", onScrollSettle);
+      window.clearTimeout(scrollSettleTimer);
+    };
+  }, [scrollRoot]);
+
   return (
     <div
       ref={setScrollRoot}
