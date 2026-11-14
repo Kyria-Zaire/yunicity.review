@@ -25,6 +25,7 @@ type VideosDiscoveryScreenProps = {
   isLoadingMore: boolean;
   onRetry: () => void;
   onLoadMoreFeed: () => void;
+  onLoadMorePages?: () => Promise<{ pagesLoaded: number; hasMore: boolean; error: boolean }>;
   processingErrors?: Record<string, string | null | undefined>;
   onDismissProcessing?: (videoId: string) => void;
   onToggleLike?: (item: LocalVideoFeedItem) => void;
@@ -42,6 +43,7 @@ export function VideosDiscoveryScreen({
   isLoadingMore,
   onRetry,
   onLoadMoreFeed,
+  onLoadMorePages,
   processingErrors,
   onDismissProcessing,
   onToggleLike,
@@ -128,6 +130,17 @@ export function VideosDiscoveryScreen({
         onOpenReport={onOpenReport}
         onCommentCountDelta={onCommentCountDelta}
         onLoadMoreFeed={handleImmersiveLoadMore}
+        immersiveItems={portal.feedItems}
+        hasMoreFeed={hasMoreFeed}
+        isLoadingMore={isLoadingMore}
+        onLoadMorePages={
+          onLoadMorePages
+            ? async () => {
+                const result = await onLoadMorePages();
+                if (result.error) throw new Error("load_more_failed");
+              }
+            : undefined
+        }
       />
 
       <VideosFilterSheet

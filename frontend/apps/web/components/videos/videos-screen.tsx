@@ -186,6 +186,7 @@ function VideosScreenInner() {
             onLoadMoreFeed={() => {
               if (!feed.isLoadingMore && feed.nextCursor) feed.loadMore();
             }}
+            onLoadMorePages={() => feed.loadMorePages()}
             processingErrors={processingErrors}
             onDismissProcessing={(videoId) => pending.dismissTrack(videoId)}
             onToggleLike={(item) => void interactions.toggleLike(item)}

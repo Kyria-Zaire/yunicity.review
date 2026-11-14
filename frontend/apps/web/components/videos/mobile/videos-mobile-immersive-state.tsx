@@ -4,28 +4,49 @@ import type { VideosPortalTabId } from "@yunicity/utils";
 import {
   LOCAL_VIDEO_ERROR_MESSAGE,
   LOCAL_VIDEO_RETRY_LABEL,
+  VIDEOS_MOBILE_CRITERIA_EMPTY,
+  VIDEOS_MOBILE_CRITERIA_EMPTY_MORE,
+  VIDEOS_MOBILE_CRITERIA_EMPTY_MORE_HINT,
   VIDEOS_MOBILE_EMPTY_BACK_TO_FOR_YOU,
   VIDEOS_MOBILE_ERROR_HINT,
+  VIDEOS_MOBILE_FILTERS_RESET_CRITERIA,
   VIDEOS_MOBILE_FOR_YOU_EMPTY,
   VIDEOS_MOBILE_FOR_YOU_EMPTY_HINT,
   VIDEOS_MOBILE_NEW_EMPTY,
   VIDEOS_MOBILE_NEW_EMPTY_HINT,
   VIDEOS_MOBILE_PUBLISH_ARIA,
+  VIDEOS_MOBILE_SEARCH_MORE,
   VIDEOS_MOBILE_TRENDING_EMPTY,
   VIDEOS_MOBILE_TRENDING_EMPTY_HINT,
   VIDEOS_PORTAL_LOADING,
 } from "@yunicity/utils";
 import { AlertCircle, MonitorPlay } from "lucide-react";
 import Link from "next/link";
+import type { Ref } from "react";
 
 import { VideosMobileFeedTopBar } from "@/components/videos/mobile/videos-mobile-feed-top-bar";
 import { VIDEO_IMMERSIVE_FOCUS } from "@/lib/videos/video-playback-a11y";
 
 type VideosMobileImmersiveStateProps = {
-  kind: "loading" | "empty" | "error";
+  kind: "loading" | "empty" | "error" | "criteria" | "criteria-more";
   tab: VideosPortalTabId;
   onTabChange?: (tab: VideosPortalTabId) => void;
   onRetry: () => void;
+  criteriaSummary?: string;
+  onResetFilters?: () => void;
+  onLoadMoreCriteria?: () => void;
+  isLoadingMore?: boolean;
+  filters?: {
+    activeCount: number;
+    open: boolean;
+    onOpen: () => void;
+    buttonRef?: Ref<HTMLButtonElement>;
+  };
+  search?: {
+    open: boolean;
+    onOpen: () => void;
+    buttonRef?: Ref<HTMLButtonElement>;
+  };
 };
 
 function emptyCopy(tab: VideosPortalTabId): { title: string; hint: string } {
@@ -37,11 +58,22 @@ function emptyCopy(tab: VideosPortalTabId): { title: string; hint: string } {
 const actionClass = `mt-2 inline-flex h-11 items-center rounded-full bg-white px-5 text-[15px] font-bold text-neutral-900 ${VIDEO_IMMERSIVE_FOCUS}`;
 
 /**
- * États du fil immersif mobile (cadrage v24, écrans V1 et V2) : chargement, vue vide,
- * erreur de chargement. Seul le sélecteur de vue reste en haut ; une erreur n'est jamais
- * présentée comme une vue vide.
+ * États du fil immersif mobile (v24 V1/V2 + v25 V3) : chargement, vue vide, critères,
+ * erreur. Une erreur n'est jamais présentée comme une vue vide. Tant qu'il reste des
+ * pages, on n'affirme pas qu'il n'existe aucun résultat (criteria-more).
  */
-export function VideosMobileImmersiveState({ kind, tab, onTabChange, onRetry }: VideosMobileImmersiveStateProps) {
+export function VideosMobileImmersiveState({
+  kind,
+  tab,
+  onTabChange,
+  onRetry,
+  criteriaSummary,
+  onResetFilters,
+  onLoadMoreCriteria,
+  isLoadingMore = false,
+  filters,
+  search,
+}: VideosMobileImmersiveStateProps) {
   const empty = emptyCopy(tab);
 
   return (
@@ -51,7 +83,13 @@ export function VideosMobileImmersiveState({ kind, tab, onTabChange, onRetry }: 
       data-videos-immersive-mobile=""
       data-videos-immersive-state={kind}
     >
-      <VideosMobileFeedTopBar variant="discovery" tab={tab} onTabChange={onTabChange} />
+      <VideosMobileFeedTopBar
+        variant="discovery"
+        tab={tab}
+        onTabChange={onTabChange}
+        filters={filters}
+        search={search}
+      />
       <div className="flex flex-1 items-center justify-center px-8">
         {kind === "loading" ? (
           <p role="status" className="text-sm font-semibold">
@@ -67,6 +105,43 @@ export function VideosMobileImmersiveState({ kind, tab, onTabChange, onRetry }: 
             <button type="button" onClick={onRetry} className={actionClass}>
               {LOCAL_VIDEO_RETRY_LABEL}
             </button>
+          </div>
+        ) : kind === "criteria-more" ? (
+          <div role="status" className="flex flex-col items-center gap-2.5 text-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.12]">
+              <MonitorPlay className="h-[26px] w-[26px]" aria-hidden />
+            </span>
+            <p className="mt-1.5 text-[17px] font-bold">{VIDEOS_MOBILE_CRITERIA_EMPTY_MORE}</p>
+            <p className="text-sm leading-5">{VIDEOS_MOBILE_CRITERIA_EMPTY_MORE_HINT}</p>
+            {criteriaSummary ? <p className="text-sm text-white/80">{criteriaSummary}</p> : null}
+            {onLoadMoreCriteria ? (
+              <button
+                type="button"
+                onClick={onLoadMoreCriteria}
+                disabled={isLoadingMore}
+                className={`${actionClass} disabled:opacity-60`}
+              >
+                {isLoadingMore ? "Chargement…" : VIDEOS_MOBILE_SEARCH_MORE}
+              </button>
+            ) : null}
+            {onResetFilters ? (
+              <button type="button" onClick={onResetFilters} className={actionClass}>
+                {VIDEOS_MOBILE_FILTERS_RESET_CRITERIA}
+              </button>
+            ) : null}
+          </div>
+        ) : kind === "criteria" ? (
+          <div role="status" className="flex flex-col items-center gap-2.5 text-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.12]">
+              <MonitorPlay className="h-[26px] w-[26px]" aria-hidden />
+            </span>
+            <p className="mt-1.5 text-[17px] font-bold">{VIDEOS_MOBILE_CRITERIA_EMPTY}</p>
+            {criteriaSummary ? <p className="text-sm text-white/80">{criteriaSummary}</p> : null}
+            {onResetFilters ? (
+              <button type="button" onClick={onResetFilters} className={actionClass}>
+                {VIDEOS_MOBILE_FILTERS_RESET_CRITERIA}
+              </button>
+            ) : null}
           </div>
         ) : (
           <div role="status" className="flex flex-col items-center gap-2.5 text-center">

@@ -11,6 +11,7 @@ import {
   VIDEOS_PORTAL_PAGE_SIZE,
   extractVideoPortalCreators,
   filterVideosPortalItems,
+  filterVideosPortalItemsBySearch,
   isLocalVideoFeedItemPlayable,
   listVideoPortalNeighborhoods,
   pickFeaturedVideos,
@@ -46,30 +47,22 @@ export function useVideosPortalContext({ items }: UseVideosPortalContextOptions)
     [playableItems],
   );
 
-  const filteredItems = useMemo(() => {
-    let result = sortVideosPortalItems(
-      filterVideosPortalItems(playableItems, sidebarFilters, tab, user?.id),
-      sort,
-      tab,
-    );
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return result;
-    return result.filter((item) => {
-      const haystack = [
-        item.title,
-        item.description,
-        item.author.username,
-        item.author.full_name,
-        item.neighborhood_name,
-        item.cultural_place_name,
-        item.city,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(query);
-    });
-  }, [playableItems, sidebarFilters, searchQuery, sort, tab, user?.id]);
+  /** Fil + filtres + vue, sans la recherche overlay mobile (R1–R4). */
+  const feedItems = useMemo(
+    () =>
+      sortVideosPortalItems(
+        filterVideosPortalItems(playableItems, sidebarFilters, tab, user?.id),
+        sort,
+        tab,
+      ),
+    [playableItems, sidebarFilters, sort, tab, user?.id],
+  );
+
+  /** Catalogue medium/desktop : conserve la recherche textuelle sur le fil filtré. */
+  const filteredItems = useMemo(
+    () => filterVideosPortalItemsBySearch(feedItems, searchQuery),
+    [feedItems, searchQuery],
+  );
 
   const visibleItems = useMemo(
     () => filteredItems.slice(0, visibleCount),
@@ -109,9 +102,12 @@ export function useVideosPortalContext({ items }: UseVideosPortalContextOptions)
     searchQuery,
     neighborhoods,
     featuredItems,
+    /** Fil immersif mobile : vue + filtres, sans recherche overlay. */
+    feedItems,
     visibleItems,
     filteredItems,
     creators,
+    playableCount: playableItems.length,
     hasMore: visibleCount < filteredItems.length,
     loadMore: () => setVisibleCount((count) => count + VIDEOS_PORTAL_PAGE_SIZE),
     resetSidebarFilters,

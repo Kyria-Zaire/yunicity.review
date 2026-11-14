@@ -2,17 +2,20 @@
 
 import type { VideosPortalTabId } from "@yunicity/utils";
 import {
+  VIDEOS_MOBILE_FILTERS_OPEN,
+  VIDEOS_MOBILE_SEARCH_PLACEHOLDER,
   VIDEOS_MOBILE_SOUND_OFF,
   VIDEOS_MOBILE_SOUND_ON,
   VIDEOS_MOBILE_TAB_FOR_YOU,
   VIDEOS_MOBILE_VIEW_MENU_LABEL,
   VIDEOS_TAB_NEW,
   VIDEOS_TAB_TRENDING,
+  formatVideosMobileFiltersButtonLabel,
   formatVideosMobileViewButtonLabel,
 } from "@yunicity/utils";
-import { ArrowLeft, Check, ChevronDown, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, Search, SlidersHorizontal, Volume2, VolumeX } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type Ref } from "react";
 
 import { VIDEO_IMMERSIVE_FOCUS } from "@/lib/videos/video-playback-a11y";
 
@@ -132,13 +135,33 @@ type VideosMobileFeedTopBarProps = {
   onTabChange?: (tab: VideosPortalTabId) => void;
   /** Son : absent quand aucune vidéo n'est affichée (états vide et erreur). */
   sound?: { isMuted: boolean; onToggle: () => void };
+  /** F1 : pastille filtres (avant son et recherche). */
+  filters?: {
+    activeCount: number;
+    open: boolean;
+    onOpen: () => void;
+    buttonRef?: Ref<HTMLButtonElement>;
+  };
+  /** R1 : pastille recherche. */
+  search?: {
+    open: boolean;
+    onOpen: () => void;
+    buttonRef?: Ref<HTMLButtonElement>;
+  };
 };
 
 /**
- * Barre haute du fil immersif mobile v2.3 (écran A) : pastilles sur voile 60 %, cibles de
- * 44 px. Découverte : sélecteur de vue ; lien partagé : retour aux vidéos.
+ * Barre haute du fil immersif mobile v2.3 (écran A + F1) : pastilles sur voile 60 %,
+ * cibles de 44 px. Découverte : sélecteur de vue ; lien partagé : retour aux vidéos.
  */
-export function VideosMobileFeedTopBar({ variant, tab, onTabChange, sound }: VideosMobileFeedTopBarProps) {
+export function VideosMobileFeedTopBar({
+  variant,
+  tab,
+  onTabChange,
+  sound,
+  filters,
+  search,
+}: VideosMobileFeedTopBarProps) {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex h-14 items-center justify-between pl-3 pr-1.5 [&>*]:pointer-events-auto">
       {variant === "detail" ? (
@@ -152,18 +175,57 @@ export function VideosMobileFeedTopBar({ variant, tab, onTabChange, sound }: Vid
       ) : (
         <span />
       )}
-      {sound ? (
-        <button
-          type="button"
-          onClick={sound.onToggle}
-          aria-label={sound.isMuted ? VIDEOS_MOBILE_SOUND_ON : VIDEOS_MOBILE_SOUND_OFF}
-          className={`flex h-11 w-11 items-center justify-center ${VIDEO_IMMERSIVE_FOCUS}`}
-        >
-          <span className={`${pillClass} w-[34px] justify-center`}>
-            {sound.isMuted ? <VolumeX className="h-[18px] w-[18px]" aria-hidden /> : <Volume2 className="h-[18px] w-[18px]" aria-hidden />}
-          </span>
-        </button>
-      ) : null}
+      <div className="flex items-center">
+        {filters ? (
+          <button
+            ref={filters.buttonRef}
+            type="button"
+            onClick={filters.onOpen}
+            aria-expanded={filters.open}
+            aria-haspopup="dialog"
+            aria-label={formatVideosMobileFiltersButtonLabel(filters.activeCount)}
+            className={`relative flex h-11 w-11 items-center justify-center ${VIDEO_IMMERSIVE_FOCUS}`}
+          >
+            <span className={`${pillClass} w-[34px] justify-center`}>
+              <SlidersHorizontal className="h-[18px] w-[18px]" aria-hidden />
+            </span>
+            {filters.activeCount > 0 ? (
+              <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-yunicity-primary px-1 text-[10px] font-bold text-white">
+                {filters.activeCount}
+              </span>
+            ) : (
+              <span className="sr-only">{VIDEOS_MOBILE_FILTERS_OPEN}</span>
+            )}
+          </button>
+        ) : null}
+        {sound ? (
+          <button
+            type="button"
+            onClick={sound.onToggle}
+            aria-label={sound.isMuted ? VIDEOS_MOBILE_SOUND_ON : VIDEOS_MOBILE_SOUND_OFF}
+            className={`flex h-11 w-11 items-center justify-center ${VIDEO_IMMERSIVE_FOCUS}`}
+          >
+            <span className={`${pillClass} w-[34px] justify-center`}>
+              {sound.isMuted ? <VolumeX className="h-[18px] w-[18px]" aria-hidden /> : <Volume2 className="h-[18px] w-[18px]" aria-hidden />}
+            </span>
+          </button>
+        ) : null}
+        {search ? (
+          <button
+            ref={search.buttonRef}
+            type="button"
+            onClick={search.onOpen}
+            aria-expanded={search.open}
+            aria-haspopup="dialog"
+            aria-label={VIDEOS_MOBILE_SEARCH_PLACEHOLDER}
+            className={`flex h-11 w-11 items-center justify-center ${VIDEO_IMMERSIVE_FOCUS}`}
+          >
+            <span className={`${pillClass} w-[34px] justify-center`}>
+              <Search className="h-[18px] w-[18px]" aria-hidden />
+            </span>
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

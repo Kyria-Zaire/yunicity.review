@@ -66,8 +66,91 @@ export const VIDEOS_TAB_MINE = "Mes vidéos";
 
 /** Copy mobile portail Vidéos (MOBILE-VIDEOS-01). */
 export const VIDEOS_MOBILE_TAB_FOR_YOU = "Pour vous";
-export const VIDEOS_MOBILE_SEARCH_PLACEHOLDER =
-  "Rechercher une vidéo, un lieu, un moment…";
+export const VIDEOS_MOBILE_SEARCH_PLACEHOLDER = "Rechercher une vidéo";
+export const VIDEOS_MOBILE_SEARCH_SCOPE_HINT =
+  "Titre, description, créateur, quartier ou lieu.";
+export const VIDEOS_MOBILE_SEARCH_BACK = "Fermer la recherche";
+export const VIDEOS_MOBILE_SEARCH_CLEAR_FIELD = "Effacer le champ de recherche";
+export const VIDEOS_MOBILE_SEARCH_CLEAR = "Effacer la recherche";
+export const VIDEOS_MOBILE_SEARCH_MORE = "Chercher dans plus de vidéos";
+export const VIDEOS_MOBILE_SEARCH_RETRY = "Réessayer";
+export const VIDEOS_MOBILE_SEARCH_CURRENT = "Vidéo en cours";
+export const VIDEOS_MOBILE_FILTERS_OPEN = "Filtres";
+export const VIDEOS_MOBILE_FILTERS_CLOSE = "Fermer les filtres";
+export const VIDEOS_MOBILE_FILTERS_RESET = "Réinitialiser";
+export const VIDEOS_MOBILE_FILTERS_RESET_CRITERIA = "Réinitialiser les filtres";
+export const VIDEOS_MOBILE_FILTERS_LOCATION_HINT = "Quartiers des vidéos chargées";
+export const VIDEOS_MOBILE_CRITERIA_EMPTY = "Aucune vidéo ne correspond à vos critères";
+export const VIDEOS_MOBILE_CRITERIA_EMPTY_MORE =
+  "Aucune vidéo parmi celles déjà chargées ne correspond à vos critères.";
+export const VIDEOS_MOBILE_CRITERIA_EMPTY_MORE_HINT =
+  "D'autres vidéos peuvent correspondre. Chargez les suivantes ou réinitialisez les filtres.";
+
+export function formatVideosMobileFiltersButtonLabel(activeCount: number): string {
+  if (activeCount <= 0) return "Filtres";
+  return `Filtres — ${activeCount} actif${activeCount > 1 ? "s" : ""}`;
+}
+
+export function formatVideosMobileSearchInView(viewLabel: string): string {
+  return `Dans la vue ${viewLabel}`;
+}
+
+export function formatVideosMobileSearchLoadedBanner(loadedCount: number): string {
+  const n = Math.max(0, loadedCount);
+  return `La recherche porte sur les ${n} vidéo${n > 1 ? "s" : ""} déjà chargée${n > 1 ? "s" : ""}. Vous pourrez chercher parmi les suivantes.`;
+}
+
+export function formatVideosMobileSearchResultStatus(
+  resultCount: number,
+  loadedCount: number,
+  viewLabel: string,
+): string {
+  const results = Math.max(0, resultCount);
+  const loaded = Math.max(0, loadedCount);
+  if (results === 0) {
+    return `Aucune vidéo parmi les ${loaded} chargée${loaded > 1 ? "s" : ""} · vue ${viewLabel}`;
+  }
+  return `${results} vidéo${results > 1 ? "s" : ""} parmi les ${loaded} chargée${loaded > 1 ? "s" : ""} · vue ${viewLabel}`;
+}
+
+export function formatVideosMobileSearchNoneAmongLoaded(loadedCount: number, query: string): {
+  title: string;
+  hint: string;
+} {
+  const n = Math.max(0, loadedCount);
+  const term = query.trim();
+  return {
+    title: `Aucun résultat parmi les ${n} vidéo${n > 1 ? "s" : ""} chargée${n > 1 ? "s" : ""}`,
+    hint: term
+      ? `D'autres vidéos peuvent correspondre à « ${term} ». Chargez les suivantes pour poursuivre la recherche.`
+      : "Chargez les suivantes pour poursuivre la recherche.",
+  };
+}
+
+export function formatVideosMobileSearchExhausted(query: string, viewLabel: string): {
+  title: string;
+  hint: string;
+  status: string;
+} {
+  const term = query.trim();
+  return {
+    status: `Aucune vidéo parmi celles de la vue ${viewLabel}`,
+    title: term ? `Aucune vidéo ne correspond à « ${term} »` : "Aucune vidéo ne correspond à la recherche",
+    hint: `Toutes les vidéos de la vue ${viewLabel} ont été parcourues. Essayez un autre mot.`,
+  };
+}
+
+export function formatVideosMobileFiltersSee(count: number): string {
+  const n = Math.max(0, count);
+  return `Voir ${n} vidéo${n > 1 ? "s" : ""}`;
+}
+
+export function formatVideosMobileFiltersStatus(resultCount: number, loadedCount: number): string {
+  const results = Math.max(0, resultCount);
+  const loaded = Math.max(0, loadedCount);
+  const base = `${results} vidéo${results > 1 ? "s" : ""} parmi les ${loaded} chargée${loaded > 1 ? "s" : ""}.`;
+  return `${base} D'autres peuvent correspondre dans les vidéos suivantes.`;
+}
 export const VIDEOS_MOBILE_RECENT_TITLE = "Les plus récentes";
 export const VIDEOS_MOBILE_PUBLISH_ARIA = "Publier une vidéo";
 export const VIDEOS_MOBILE_PUBLISH_LABEL = "Publier";

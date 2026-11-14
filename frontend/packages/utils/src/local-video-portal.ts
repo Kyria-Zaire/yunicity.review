@@ -111,6 +111,48 @@ export function filterVideosPortalItems(
   });
 }
 
+/** Recherche locale dédiée aux vidéos (titre, description, créateur, quartier, lieu, ville). */
+export function matchVideosPortalSearchQuery(item: LocalVideoFeedItem, query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  const haystack = [
+    item.title,
+    item.description,
+    item.author.username,
+    item.author.full_name,
+    item.neighborhood_name,
+    item.cultural_place_name,
+    item.city,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(needle);
+}
+
+export function filterVideosPortalItemsBySearch(
+  items: readonly LocalVideoFeedItem[],
+  query: string,
+): LocalVideoFeedItem[] {
+  const needle = query.trim();
+  if (!needle) return [...items];
+  return items.filter((item) => matchVideosPortalSearchQuery(item, needle));
+}
+
+/** Nombre de filtres latéraux différents de la valeur par défaut (badge F1). */
+export function countVideosPortalActiveFilters(filters: VideosPortalSidebarFilters): number {
+  let count = 0;
+  if (filters.category !== DEFAULT_VIDEOS_PORTAL_SIDEBAR_FILTERS.category) count += 1;
+  if (filters.location !== DEFAULT_VIDEOS_PORTAL_SIDEBAR_FILTERS.location) count += 1;
+  if (filters.duration !== DEFAULT_VIDEOS_PORTAL_SIDEBAR_FILTERS.duration) count += 1;
+  if (filters.date !== DEFAULT_VIDEOS_PORTAL_SIDEBAR_FILTERS.date) count += 1;
+  if (filters.popularity !== DEFAULT_VIDEOS_PORTAL_SIDEBAR_FILTERS.popularity) count += 1;
+  return count;
+}
+
+/** Pages supplémentaires maximales par appui « Chercher dans plus de vidéos ». */
+export const VIDEOS_MOBILE_SEARCH_PAGES_PER_PRESS = 3;
+
 export function sortVideosPortalItems(
   items: readonly LocalVideoFeedItem[],
   sort: VideosPortalSortId,
@@ -221,6 +263,41 @@ export function isVideosPortalSidebarDefault(filters: VideosPortalSidebarFilters
     filters.date === DEFAULT_VIDEOS_PORTAL_SIDEBAR_FILTERS.date &&
     filters.popularity === DEFAULT_VIDEOS_PORTAL_SIDEBAR_FILTERS.popularity
   );
+}
+
+/** Résumé court des filtres actifs pour l'état V3 (libellés FR). */
+export function summarizeVideosPortalActiveFilters(
+  filters: VideosPortalSidebarFilters,
+  items: readonly LocalVideoFeedItem[],
+): string {
+  const parts: string[] = [];
+  if (filters.category !== "all") {
+    const label = LOCAL_VIDEO_TYPE_LABELS[filters.category] ?? filters.category;
+    parts.push(`Catégorie : ${label}`);
+  }
+  if (filters.location !== "all") {
+    parts.push(`Lieu : ${resolveVideoPortalNeighborhoodLabel(filters.location, items)}`);
+  }
+  if (filters.duration !== "all") {
+    const label =
+      filters.duration === "short"
+        ? "Courtes (< 1 min)"
+        : filters.duration === "medium"
+          ? "Moyennes (1–3 min)"
+          : "Longues (> 3 min)";
+    parts.push(`Durée : ${label}`);
+  }
+  if (filters.date !== "all") {
+    const label =
+      filters.date === "today" ? "Aujourd'hui" : filters.date === "week" ? "Cette semaine" : "Ce mois-ci";
+    parts.push(`Date : ${label}`);
+  }
+  if (filters.popularity !== "all") {
+    parts.push(
+      filters.popularity === "liked" ? "Popularité : Les plus aimées" : "Popularité : Les plus commentées",
+    );
+  }
+  return parts.join(" · ");
 }
 
 export function resolveVideoPortalNeighborhoodLabel(

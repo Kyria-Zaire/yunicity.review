@@ -68,6 +68,10 @@ type VideosResponsiveShellProps = {
   onOpenReport?: (videoId: string) => void;
   onCommentCountDelta?: (videoId: string, delta: number) => void;
   onLoadMoreFeed?: () => void;
+  immersiveItems?: readonly LocalVideoFeedItem[];
+  hasMoreFeed?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMorePages?: () => Promise<void> | void;
 };
 
 const DESKTOP_TABS = [
@@ -118,6 +122,10 @@ export function VideosResponsiveShell({
   onOpenReport,
   onCommentCountDelta,
   onLoadMoreFeed,
+  immersiveItems,
+  hasMoreFeed,
+  isLoadingMore,
+  onLoadMorePages,
 }: VideosResponsiveShellProps) {
   const upNext = filteredItems
     .filter((item) => !visibleItems.some((visible) => visible.id === item.id))
@@ -222,6 +230,15 @@ export function VideosResponsiveShell({
           onCommentCountDelta={onCommentCountDelta}
           onLoadMoreFeed={onLoadMoreFeed}
           onTabChange={onTabChange}
+          immersiveItems={immersiveItems}
+          sidebarFilters={sidebarFilters}
+          neighborhoods={neighborhoods}
+          sourceItems={sourceItems}
+          onResetSidebarFilters={onResetSidebarFilters}
+          onUpdateSidebarFilter={onUpdateSidebarFilter}
+          hasMoreFeed={hasMoreFeed}
+          isLoadingMore={isLoadingMore}
+          onLoadMorePages={onLoadMorePages}
         />
       </div>
 

@@ -3,7 +3,7 @@
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import { LOCAL_VIDEO_DEFAULT_MUTED, type VideosPortalTabId } from "@yunicity/utils";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type Ref } from "react";
 
 import { LocalVideoDescriptionSheet } from "@/components/videos/local-video-description-sheet";
 import { LocalVideoFeedViewport } from "@/components/videos/local-video-feed-viewport";
@@ -26,11 +26,24 @@ type VideosMobileImmersiveFeedProps = {
   onOpenReport: (videoId: string) => void;
   onCommentCountDelta: (videoId: string, delta: number) => void;
   onLoadMore?: () => void;
+  /** Suspension externe (recherche / filtres ouverts). */
+  externalSuspended?: boolean;
+  filters?: {
+    activeCount: number;
+    open: boolean;
+    onOpen: () => void;
+    buttonRef?: Ref<HTMLButtonElement>;
+  };
+  search?: {
+    open: boolean;
+    onOpen: () => void;
+    buttonRef?: Ref<HTMLButtonElement>;
+  };
 };
 
 /**
  * Fil vertical plein écran mobile (≤639px), v2.3 — découverte (Pour vous, Tendances,
- * Nouveautés) ou lien partagé ?video=. Barre haute en surimpression (écran A).
+ * Nouveautés) ou lien partagé ?video=. Barre haute en surimpression (écran A + F1).
  */
 export function VideosMobileImmersiveFeed({
   items,
@@ -45,6 +58,9 @@ export function VideosMobileImmersiveFeed({
   onOpenReport,
   onCommentCountDelta,
   onLoadMore,
+  externalSuspended = false,
+  filters,
+  search,
 }: VideosMobileImmersiveFeedProps) {
   const router = useRouter();
   const [commentsVideoId, setCommentsVideoId] = useState<string | null>(null);
@@ -53,8 +69,12 @@ export function VideosMobileImmersiveFeed({
   /** Déclencheur du panneau ouvert : cible explicite du retour du focus (WebKit). */
   const panelTriggerRef = useRef<HTMLElement | null>(null);
   const activeReportVideoId = useActiveReportVideoId();
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(focusVideoId);
   // Règle des panneaux : la vidéo concernée reste en pause tant qu'un panneau est ouvert.
-  const suspendedVideoId = commentsVideoId ?? descriptionVideoId ?? moreVideoId ?? activeReportVideoId;
+  const panelSuspendedId = commentsVideoId ?? descriptionVideoId ?? moreVideoId ?? activeReportVideoId;
+  const suspendedVideoId = externalSuspended
+    ? (panelSuspendedId ?? activeVideoId ?? focusVideoId ?? items[0]?.id ?? null)
+    : panelSuspendedId;
   const [isMuted, setIsMuted] = useState(LOCAL_VIDEO_DEFAULT_MUTED);
   const [pointerOverFeed, setPointerOverFeed] = useState(false);
   const detailUrlSyncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -81,6 +101,7 @@ export function VideosMobileImmersiveFeed({
 
   const handleActiveVideoChange = useCallback(
     (videoId: string | null) => {
+      setActiveVideoId(videoId);
       // Discovery reste sur /videos — pas de ?video= à chaque snap (évite bascule détail + boucle RSC).
       if (variant === "discovery") return;
       if (!videoId || videoId === focusVideoId) return;
@@ -110,6 +131,8 @@ export function VideosMobileImmersiveFeed({
           tab={tab}
           onTabChange={onTabChange}
           sound={{ isMuted, onToggle: () => setIsMuted((value) => !value) }}
+          filters={variant === "discovery" ? filters : undefined}
+          search={variant === "discovery" ? search : undefined}
         />
 
         <LocalVideoFeedViewport

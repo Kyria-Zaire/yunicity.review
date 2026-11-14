@@ -1,14 +1,24 @@
 "use client";
 
 import type { LocalVideoFeedItem } from "@yunicity/types";
-import type { VideoPortalCreator, VideosPortalTabId } from "@yunicity/utils";
+import type {
+  VideoPortalCreator,
+  VideosPortalSidebarFilters,
+  VideosPortalTabId,
+} from "@yunicity/utils";
 import {
   LOCAL_VIDEO_ERROR_MESSAGE,
   LOCAL_VIDEO_RETRY_LABEL,
   VIDEOS_MOBILE_RECENT_TITLE,
+  VIDEOS_MOBILE_TAB_FOR_YOU,
   VIDEOS_PORTAL_LOADING,
+  VIDEOS_TAB_NEW,
+  VIDEOS_TAB_TRENDING,
+  countVideosPortalActiveFilters,
+  isVideosPortalSidebarDefault,
+  summarizeVideosPortalActiveFilters,
 } from "@yunicity/utils";
-import type { ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 
 import { VideosDesktopFeedStream } from "@/components/videos/desktop/videos-desktop-feed-stream";
 import {
@@ -18,7 +28,9 @@ import {
   VideosMobileSubscriptionsRail,
 } from "@/components/videos/mobile";
 import { isVideosMobileFeedView } from "@/components/videos/mobile/videos-mobile-feed-top-bar";
+import { VideosMobileFiltersSheet } from "@/components/videos/mobile/videos-mobile-filters-sheet";
 import { VideosMobileImmersiveState } from "@/components/videos/mobile/videos-mobile-immersive-state";
+import { VideosMobileSearchDialog } from "@/components/videos/mobile/videos-mobile-search-dialog";
 import { useVideosViewportTier } from "@/hooks/use-videos-viewport-tier";
 
 export type VideosEditorialStreamRegionProps = {
@@ -27,6 +39,8 @@ export type VideosEditorialStreamRegionProps = {
   error: string | null;
   emptyMessage: string;
   visibleItems: readonly LocalVideoFeedItem[];
+  /** Fil immersif mobile : vue + filtres, sans recherche overlay. */
+  immersiveItems?: readonly LocalVideoFeedItem[];
   featuredItems: readonly LocalVideoFeedItem[];
   creators: readonly VideoPortalCreator[];
   onRetry: () => void;
@@ -40,7 +54,24 @@ export type VideosEditorialStreamRegionProps = {
   onCommentCountDelta?: (videoId: string, delta: number) => void;
   onLoadMoreFeed?: () => void;
   onTabChange?: (tab: VideosPortalTabId) => void;
+  sidebarFilters?: VideosPortalSidebarFilters;
+  neighborhoods?: string[];
+  sourceItems?: readonly LocalVideoFeedItem[];
+  onResetSidebarFilters?: () => void;
+  onUpdateSidebarFilter?: <K extends keyof VideosPortalSidebarFilters>(
+    key: K,
+    value: VideosPortalSidebarFilters[K],
+  ) => void;
+  hasMoreFeed?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMorePages?: () => Promise<void> | void;
 };
+
+function viewLabelForTab(tab: VideosPortalTabId): string {
+  if (tab === "trending") return VIDEOS_TAB_TRENDING;
+  if (tab === "new") return VIDEOS_TAB_NEW;
+  return VIDEOS_MOBILE_TAB_FOR_YOU;
+}
 
 /** États + flux vidéo partagé mobile / medium / desktop (C3-VIDEOS-RESPONSIVE-SHELL). */
 export function VideosEditorialStreamRegion({
@@ -49,6 +80,7 @@ export function VideosEditorialStreamRegion({
   error,
   emptyMessage,
   visibleItems,
+  immersiveItems,
   featuredItems,
   creators,
   onRetry,
@@ -62,8 +94,17 @@ export function VideosEditorialStreamRegion({
   onCommentCountDelta,
   onLoadMoreFeed,
   onTabChange,
+  sidebarFilters,
+  neighborhoods = [],
+  sourceItems = [],
+  onResetSidebarFilters,
+  onUpdateSidebarFilter,
+  hasMoreFeed = false,
+  isLoadingMore = false,
+  onLoadMorePages,
 }: VideosEditorialStreamRegionProps) {
   const viewportTier = useVideosViewportTier();
+  const feedForImmersive = immersiveItems ?? visibleItems;
   // D-Q1 (14/11) : sur mobile, Pour vous, Tendances et Nouveautés vivent dans le fil
   // immersif, avec leurs états ; l'ancien catalogue mobile n'est plus affiché.
   const immersive =
@@ -71,21 +112,81 @@ export function VideosEditorialStreamRegion({
       ? { onToggleLike, onShare, onOpenReport, onCommentCountDelta }
       : null;
 
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [focusVideoId, setFocusVideoId] = useState<string | null>(null);
+  const [searchLoadError, setSearchLoadError] = useState(false);
+  const filterButtonRef = useRef<HTMLButtonElement>(null);
+  const searchButtonRef = useRef<HTMLButtonElement>(null);
+
+  const filtersActive = sidebarFilters ? !isVideosPortalSidebarDefault(sidebarFilters) : false;
+  const activeFilterCount = sidebarFilters ? countVideosPortalActiveFilters(sidebarFilters) : 0;
+  const viewLabel = viewLabelForTab(tab);
+
+  const openFilters = useCallback(() => setFiltersOpen(true), []);
+  const openSearch = useCallback(() => setSearchOpen(true), []);
+
+  const topFilters =
+    sidebarFilters && onUpdateSidebarFilter && onResetSidebarFilters
+      ? {
+          activeCount: activeFilterCount,
+          open: filtersOpen,
+          onOpen: openFilters,
+          buttonRef: filterButtonRef,
+        }
+      : undefined;
+  const topSearch = {
+    open: searchOpen,
+    onOpen: openSearch,
+    buttonRef: searchButtonRef,
+  };
+
+  const handleSearchMore = useCallback(async () => {
+    if (!onLoadMorePages) return;
+    setSearchLoadError(false);
+    try {
+      await onLoadMorePages();
+    } catch {
+      setSearchLoadError(true);
+    }
+  }, [onLoadMorePages]);
+
   if (immersive) {
+    const emptyKind = (() => {
+      if (isLoading) return "loading" as const;
+      if (error) return "error" as const;
+      if (feedForImmersive.length > 0) return null;
+      if (filtersActive && hasMoreFeed) return "criteria-more" as const;
+      if (filtersActive) return "criteria" as const;
+      return "empty" as const;
+    })();
+
     return (
       <div className={className} data-videos-medium-region="stream">
-        {isLoading ? (
-          <VideosMobileImmersiveState kind="loading" tab={tab} onTabChange={onTabChange} onRetry={onRetry} />
-        ) : error ? (
-          <VideosMobileImmersiveState kind="error" tab={tab} onTabChange={onTabChange} onRetry={onRetry} />
-        ) : visibleItems.length === 0 ? (
-          <VideosMobileImmersiveState kind="empty" tab={tab} onTabChange={onTabChange} onRetry={onRetry} />
+        {emptyKind ? (
+          <VideosMobileImmersiveState
+            kind={emptyKind}
+            tab={tab}
+            onTabChange={onTabChange}
+            onRetry={onRetry}
+            criteriaSummary={
+              sidebarFilters && filtersActive
+                ? summarizeVideosPortalActiveFilters(sidebarFilters, sourceItems)
+                : undefined
+            }
+            onResetFilters={onResetSidebarFilters}
+            onLoadMoreCriteria={onLoadMorePages ? () => void handleSearchMore() : undefined}
+            isLoadingMore={isLoadingMore}
+            filters={topFilters}
+            search={topSearch}
+          />
         ) : (
           <VideosMobileImmersiveFeed
             variant="discovery"
             tab={tab}
             onTabChange={onTabChange}
-            items={visibleItems}
+            items={feedForImmersive}
+            focusVideoId={focusVideoId}
             processingErrors={processingErrors}
             onDismissProcessing={onDismissProcessing}
             onToggleLike={immersive.onToggleLike}
@@ -93,8 +194,44 @@ export function VideosEditorialStreamRegion({
             onOpenReport={immersive.onOpenReport}
             onCommentCountDelta={immersive.onCommentCountDelta}
             onLoadMore={onLoadMoreFeed}
+            externalSuspended={searchOpen || filtersOpen}
+            filters={topFilters}
+            search={topSearch}
           />
         )}
+
+        {sidebarFilters && onUpdateSidebarFilter && onResetSidebarFilters ? (
+          <VideosMobileFiltersSheet
+            open={filtersOpen}
+            viewLabel={viewLabel}
+            filters={sidebarFilters}
+            neighborhoods={neighborhoods}
+            items={sourceItems}
+            resultCount={feedForImmersive.length}
+            loadedCount={sourceItems.length}
+            onClose={() => setFiltersOpen(false)}
+            onReset={onResetSidebarFilters}
+            onChange={onUpdateSidebarFilter}
+            returnFocusRef={filterButtonRef}
+          />
+        ) : null}
+
+        <VideosMobileSearchDialog
+          open={searchOpen}
+          viewLabel={viewLabel}
+          items={feedForImmersive}
+          activeVideoId={focusVideoId}
+          hasMoreFeed={hasMoreFeed}
+          isLoadingMore={isLoadingMore}
+          loadMoreError={searchLoadError}
+          onClose={() => setSearchOpen(false)}
+          onSelectVideo={(videoId) => {
+            setFocusVideoId(videoId);
+            setSearchOpen(false);
+          }}
+          onSearchMore={() => void handleSearchMore()}
+          onClearLoadError={() => setSearchLoadError(false)}
+        />
       </div>
     );
   }
@@ -128,10 +265,7 @@ export function VideosEditorialStreamRegion({
 
       {!isLoading && !error && visibleItems.length > 0 ? (
         <>
-
-          <div
-            className="videos-discovery-mobile-only space-y-4"
-          >
+          <div className="videos-discovery-mobile-only space-y-4">
             <VideosMobileFeaturedHero items={[...featuredItems]} />
 
             <h2 className="pt-1 text-base font-bold text-neutral-900">{VIDEOS_MOBILE_RECENT_TITLE}</h2>
