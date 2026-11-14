@@ -1,115 +1,89 @@
 "use client";
 
-import type { LocalVideoFeedItem } from "@yunicity/types";
 import {
-  LOCAL_VIDEO_REPORT_LABEL,
-  VIDEOS_DESKTOP_SHARE,
-  buildVideoAuthorProfileHref,
+  VIDEOS_MOBILE_MORE_ACTIONS,
+  VIDEOS_MOBILE_SHARE_ACTION,
+  VIDEOS_MOBILE_SHARE_SHORT,
+  formatVideosMobileCommentsActionLabel,
+  formatVideosMobileLikeActionLabel,
 } from "@yunicity/utils";
-import { Flag, Heart, MessageCircle, Share2 } from "lucide-react";
-import Link from "next/link";
+import { Heart, MessageCircle, MoreHorizontal, Send } from "lucide-react";
 
-import { VIDEO_IMMERSIVE_FOCUS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
-import { AvatarImage } from "@/components/avatar-image";
+import { VIDEO_IMMERSIVE_FOCUS } from "@/lib/videos/video-playback-a11y";
 
 type LocalVideoActionRailProps = {
-  item: LocalVideoFeedItem;
   likeCount: number;
   commentCount: number;
   likedByMe: boolean;
   likeAnimating?: boolean;
+  /** `overlay` : sur la vidéo (pastille voilée, écran A) ; `stage` : à côté d'une vidéo paysage (écran D). */
+  surface?: "overlay" | "stage";
   onLikeClick: () => void;
   onCommentsClick: () => void;
   onShareClick: () => void;
-  onReportClick: () => void;
+  onMoreClick: () => void;
 };
 
-function authorInitials(item: LocalVideoFeedItem): string {
-  const name = item.author.full_name?.trim() || item.author.username || "YU";
-  const parts = name.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-}
+const actionButtonClass = `flex h-[58px] w-[58px] flex-col items-center justify-center gap-0.5 text-white ${VIDEO_IMMERSIVE_FOCUS}`;
 
-const railButtonClass = `${VIDEO_TOUCH_TARGET} flex-col gap-1 ${VIDEO_IMMERSIVE_FOCUS}`;
-
-/** Colonne d'actions droite — avatar, like, commentaire, partage, enregistrer. */
+/**
+ * Colonne d'actions mobile v2.3 (écrans A et D) : J'aime, Commentaires, Partager, « … ».
+ * Pastille de 58 px ; voile 60 % sur la vidéo. Suivre et Enregistrer n'existent pas
+ * (VIDEO-REFONTE-L1) ; Signaler est rangé dans « … » (écran I).
+ */
 export function LocalVideoActionRail({
-  item,
   likeCount,
   commentCount,
   likedByMe,
   likeAnimating = false,
+  surface = "overlay",
   onLikeClick,
   onCommentsClick,
   onShareClick,
-  onReportClick,
+  onMoreClick,
 }: LocalVideoActionRailProps) {
-  const profileHref = buildVideoAuthorProfileHref(item);
-
-  const avatar = item.author.avatar_url ? (
-    <AvatarImage src={item.author.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-white/80" />
-  ) : (
-    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-yunicity-primary text-[10px] font-bold text-white ring-2 ring-white/80">
-      {authorInitials(item)}
-    </span>
-  );
-
   return (
-    <div className="local-video-action-rail pointer-events-auto flex flex-col items-center gap-5 pb-1 pt-0.5">
-      {profileHref ? (
-        <Link
-          href={profileHref}
-          className={`${VIDEO_TOUCH_TARGET} shrink-0 ${VIDEO_IMMERSIVE_FOCUS}`}
-          aria-label="Profil du créateur"
-        >
-          {avatar}
-        </Link>
-      ) : (
-        <span className={`${VIDEO_TOUCH_TARGET} shrink-0`}>{avatar}</span>
-      )}
-
+    <div
+      className={`local-video-action-rail pointer-events-auto flex w-[58px] flex-col items-center rounded-[29px] py-1.5 ${
+        surface === "overlay" ? "bg-[rgba(17,24,39,0.6)]" : "bg-white/[0.08]"
+      }`}
+    >
       <button
         type="button"
         onClick={onLikeClick}
-        aria-label={likedByMe ? "Retirer le like" : "Aimer la vidéo"}
+        aria-label={formatVideosMobileLikeActionLabel(likedByMe, likeCount)}
         aria-pressed={likedByMe}
-        className={`${railButtonClass} transition-transform duration-200 motion-reduce:transition-none ${
-          likedByMe ? "text-rose-400" : "text-white"
-        } ${likeAnimating ? "scale-110 motion-reduce:scale-100" : "scale-100"}`}
+        className={`${actionButtonClass} transition-transform duration-200 motion-reduce:transition-none ${
+          likeAnimating ? "scale-110 motion-reduce:scale-100" : "scale-100"
+        }`}
       >
-        <Heart className={`h-5 w-5 ${likedByMe ? "fill-current" : ""}`} aria-hidden />
-        <span className="text-[10px] font-semibold tabular-nums leading-none">{likeCount}</span>
+        <Heart className={`h-[26px] w-[26px] ${likedByMe ? "fill-rose-400 text-rose-400" : ""}`} strokeWidth={2} aria-hidden />
+        <span className="text-xs font-semibold tabular-nums leading-none">{likeCount}</span>
       </button>
 
       <button
         type="button"
         onClick={onCommentsClick}
-        aria-label="Ouvrir les commentaires"
-        className={`${railButtonClass} text-white`}
+        aria-label={formatVideosMobileCommentsActionLabel(commentCount)}
+        className={actionButtonClass}
       >
-        <MessageCircle className="h-5 w-5" aria-hidden />
-        <span className="text-[10px] font-semibold tabular-nums leading-none">{commentCount}</span>
+        <MessageCircle className="h-[26px] w-[26px]" strokeWidth={2} aria-hidden />
+        <span className="text-xs font-semibold tabular-nums leading-none">{commentCount}</span>
+      </button>
+
+      <button type="button" onClick={onShareClick} aria-label={VIDEOS_MOBILE_SHARE_ACTION} className={actionButtonClass}>
+        <Send className="h-[26px] w-[26px]" strokeWidth={2} aria-hidden />
+        <span className="text-[11px] font-semibold leading-none">{VIDEOS_MOBILE_SHARE_SHORT}</span>
       </button>
 
       <button
         type="button"
-        onClick={onShareClick}
-        aria-label={VIDEOS_DESKTOP_SHARE}
-        className={`${railButtonClass} text-white`}
+        onClick={onMoreClick}
+        aria-label={VIDEOS_MOBILE_MORE_ACTIONS}
+        aria-haspopup="menu"
+        className={`flex h-11 w-[58px] items-center justify-center text-white ${VIDEO_IMMERSIVE_FOCUS}`}
       >
-        <Share2 className="h-5 w-5" aria-hidden />
-        <span className="text-[10px] font-semibold leading-none">{VIDEOS_DESKTOP_SHARE}</span>
-      </button>
-
-      <button
-        type="button"
-        onClick={onReportClick}
-        aria-label={LOCAL_VIDEO_REPORT_LABEL}
-        className={`${railButtonClass} text-white`}
-      >
-        <Flag className="h-5 w-5" aria-hidden />
-        <span className="text-[10px] font-semibold leading-none">{LOCAL_VIDEO_REPORT_LABEL}</span>
+        <MoreHorizontal className="h-6 w-6" strokeWidth={2} aria-hidden />
       </button>
     </div>
   );

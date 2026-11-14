@@ -1,6 +1,6 @@
 "use client";
 
-import { Pause, Play, Volume2, VolumeX } from "lucide-react";
+import { Pause, Play } from "lucide-react";
 
 import {
   VIDEO_IMMERSIVE_FOCUS,
@@ -14,39 +14,34 @@ type LocalVideoPlaybackBarProps = {
   currentTime: number;
   duration: number;
   isPaused: boolean;
-  isMuted: boolean;
   onTogglePause: () => void;
-  onToggleMute: () => void;
   onSeek: (ratio: number) => void;
 };
 
-/** Barre de lecture bas d'écran — style Reels / YouTube Shorts. */
+/**
+ * Barre de lecture mobile v2.3 (écran B) : pause, progression, durée. Le son est dans la
+ * barre haute du fil ; repliée, la barre devient le fil de progression de 2 px.
+ */
 export function LocalVideoPlaybackBar({
   currentTime,
   duration,
   isPaused,
-  isMuted,
   onTogglePause,
-  onToggleMute,
   onSeek,
 }: LocalVideoPlaybackBarProps) {
   const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
   const valueText = formatVideoProgressValueText(currentTime, duration);
 
   return (
-    <div className="pointer-events-auto flex items-center gap-2.5 pt-2">
+    <div className="pointer-events-auto -mx-3 mt-1.5 flex h-12 items-center gap-1">
       <button
         type="button"
         onClick={onTogglePause}
-        className={`${VIDEO_TOUCH_TARGET} rounded-full text-white/95 transition hover:bg-white/10 ${VIDEO_IMMERSIVE_FOCUS}`}
+        className={`${VIDEO_TOUCH_TARGET} rounded-full text-white transition hover:bg-white/10 ${VIDEO_IMMERSIVE_FOCUS}`}
         aria-label={isPaused ? "Lire la vidéo" : "Mettre en pause"}
         aria-pressed={!isPaused}
       >
-        {isPaused ? (
-          <Play className="ml-0.5 h-4 w-4 fill-current" aria-hidden />
-        ) : (
-          <Pause className="h-4 w-4" aria-hidden />
-        )}
+        {isPaused ? <Play className="ml-0.5 h-[22px] w-[22px] fill-current" aria-hidden /> : <Pause className="h-[22px] w-[22px]" aria-hidden />}
       </button>
 
       <div
@@ -66,33 +61,21 @@ export function LocalVideoPlaybackBar({
         onKeyDown={(event) => {
           handleVideoProgressKeyDown(event, currentTime, duration, onSeek);
         }}
-        className={`relative flex min-h-11 min-w-0 flex-1 cursor-pointer items-center rounded-full ${VIDEO_IMMERSIVE_FOCUS}`}
+        className={`relative flex h-11 min-w-0 flex-1 cursor-pointer items-center ${VIDEO_IMMERSIVE_FOCUS}`}
       >
-        <div className="relative h-1 w-full overflow-hidden rounded-full bg-white/30">
+        <div className="relative h-1 w-full rounded-full bg-white/35">
+          <div className="absolute inset-y-0 left-0 rounded-full bg-white" style={{ width: `${progress}%` }} />
           <div
-            className="absolute inset-y-0 left-0 rounded-full bg-yunicity-primary"
-            style={{ width: `${progress}%` }}
+            className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
+            style={{ left: `${progress}%` }}
+            aria-hidden
           />
         </div>
       </div>
 
-      <span className="sr-only" aria-live="off">
-        {valueText}
+      <span className="w-[84px] shrink-0 text-center text-[13px] tabular-nums text-white" aria-hidden>
+        {formatVideoClock(currentTime)} / {formatVideoClock(duration)}
       </span>
-
-      <span className="shrink-0 text-[11px] font-semibold tabular-nums text-white/90" aria-hidden>
-        {formatVideoClock(currentTime)}
-      </span>
-
-      <button
-        type="button"
-        onClick={onToggleMute}
-        className={`${VIDEO_TOUCH_TARGET} rounded-full text-white/95 transition hover:bg-white/10 ${VIDEO_IMMERSIVE_FOCUS}`}
-        aria-label={isMuted ? "Activer le son" : "Couper le son"}
-        aria-pressed={isMuted}
-      >
-        {isMuted ? <VolumeX className="h-4 w-4" aria-hidden /> : <Volume2 className="h-4 w-4" aria-hidden />}
-      </button>
     </div>
   );
 }

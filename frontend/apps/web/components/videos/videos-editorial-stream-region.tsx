@@ -17,6 +17,8 @@ import {
   VideosMobileImmersiveFeed,
   VideosMobileSubscriptionsRail,
 } from "@/components/videos/mobile";
+import { isVideosMobileFeedView } from "@/components/videos/mobile/videos-mobile-feed-top-bar";
+import { VideosMobileImmersiveState } from "@/components/videos/mobile/videos-mobile-immersive-state";
 import { useVideosViewportTier } from "@/hooks/use-videos-viewport-tier";
 
 export type VideosEditorialStreamRegionProps = {
@@ -59,12 +61,43 @@ export function VideosEditorialStreamRegion({
   onOpenReport,
   onCommentCountDelta,
   onLoadMoreFeed,
+  onTabChange,
 }: VideosEditorialStreamRegionProps) {
   const viewportTier = useVideosViewportTier();
-  const showDiscoveryImmersive =
-    viewportTier === "mobile" &&
-    tab === "all" &&
-    Boolean(onToggleLike && onShare && onOpenReport && onCommentCountDelta);
+  // D-Q1 (14/11) : sur mobile, Pour vous, Tendances et Nouveautés vivent dans le fil
+  // immersif, avec leurs états ; l'ancien catalogue mobile n'est plus affiché.
+  const immersive =
+    viewportTier === "mobile" && isVideosMobileFeedView(tab) && onToggleLike && onShare && onOpenReport && onCommentCountDelta
+      ? { onToggleLike, onShare, onOpenReport, onCommentCountDelta }
+      : null;
+
+  if (immersive) {
+    return (
+      <div className={className} data-videos-medium-region="stream">
+        {isLoading ? (
+          <VideosMobileImmersiveState kind="loading" tab={tab} onTabChange={onTabChange} onRetry={onRetry} />
+        ) : error ? (
+          <VideosMobileImmersiveState kind="error" tab={tab} onTabChange={onTabChange} onRetry={onRetry} />
+        ) : visibleItems.length === 0 ? (
+          <VideosMobileImmersiveState kind="empty" tab={tab} onTabChange={onTabChange} onRetry={onRetry} />
+        ) : (
+          <VideosMobileImmersiveFeed
+            variant="discovery"
+            tab={tab}
+            onTabChange={onTabChange}
+            items={visibleItems}
+            processingErrors={processingErrors}
+            onDismissProcessing={onDismissProcessing}
+            onToggleLike={immersive.onToggleLike}
+            onShare={immersive.onShare}
+            onOpenReport={immersive.onOpenReport}
+            onCommentCountDelta={immersive.onCommentCountDelta}
+            onLoadMore={onLoadMoreFeed}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={className} data-videos-medium-region="stream">
@@ -95,22 +128,9 @@ export function VideosEditorialStreamRegion({
 
       {!isLoading && !error && visibleItems.length > 0 ? (
         <>
-          {showDiscoveryImmersive ? (
-            <VideosMobileImmersiveFeed
-              variant="discovery"
-              items={visibleItems}
-              processingErrors={processingErrors}
-              onDismissProcessing={onDismissProcessing}
-              onToggleLike={onToggleLike!}
-              onShare={onShare!}
-              onOpenReport={onOpenReport!}
-              onCommentCountDelta={onCommentCountDelta!}
-              onLoadMore={onLoadMoreFeed}
-            />
-          ) : null}
 
           <div
-            className={`videos-discovery-mobile-only space-y-4 ${showDiscoveryImmersive ? "videos-discovery-mobile-grid-fallback" : ""}`}
+            className="videos-discovery-mobile-only space-y-4"
           >
             <VideosMobileFeaturedHero items={[...featuredItems]} />
 

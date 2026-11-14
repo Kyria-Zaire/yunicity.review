@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { LocalVideoFeedItem } from "@yunicity/types";
-import { LOCAL_VIDEO_REPORT_LABEL, VIDEOS_DESKTOP_SHARE } from "@yunicity/utils";
+import { VIDEOS_MOBILE_MORE_ACTIONS, VIDEOS_MOBILE_SHARE_ACTION } from "@yunicity/utils";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -9,9 +9,13 @@ import { LocalVideoSlide } from "@/components/videos/local-video-slide";
 
 /**
  * VIDEO-MOBILE-CHROME-RETURN-01 — retour des commandes du fil immersif mobile.
- * Pointeur : le chrome masqué n'intercepte rien, l'appui sur la vidéo met en
- * pause et réaffiche. Clavier : le focus entrant réaffiche, le chrome reste
- * visible tant qu'il contient le focus clavier. Actions simulées (espions).
+ * Pointeur : l'appui sur la vidéo met en pause et réaffiche la barre. Clavier : le
+ * focus entrant réaffiche, la barre reste visible tant que les commandes contiennent
+ * le focus clavier. Actions simulées (espions).
+ *
+ * VIDEO-REFONTE-L3L4 (v2.3, écran A) : seule la BARRE se replie (en fil de 2 px) ;
+ * la bande (compte, légende, quartier) et la colonne d'actions restent visibles et
+ * ciblables. Les tests de l'ancien repli total sont remplacés et signalés comme tels.
  */
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -97,15 +101,15 @@ function renderSlide(layout: "portrait" | "landscape" = "portrait", pointerOverF
     onOpenComments: vi.fn<() => void>(),
     onToggleLike: vi.fn<() => void>(),
     onShare: vi.fn<() => void>(),
-    onOpenReport: vi.fn<() => void>(),
+    onOpenMore: vi.fn<() => void>(),
   };
   const item = playableItem(layout);
   const view = render(
-    <LocalVideoSlide item={item} isActive pointerOverFeed={pointerOverFeed} {...handlers} />,
+    <LocalVideoSlide item={item} isActive isMuted pointerOverFeed={pointerOverFeed} {...handlers} />,
   );
   const rerenderWith = (nextPointerOverFeed: boolean) =>
     view.rerender(
-      <LocalVideoSlide item={item} isActive pointerOverFeed={nextPointerOverFeed} {...handlers} />,
+      <LocalVideoSlide item={item} isActive isMuted pointerOverFeed={nextPointerOverFeed} {...handlers} />,
     );
   return { handlers, rerenderWith };
 }
@@ -131,6 +135,12 @@ function chromeContainers(): HTMLElement[] {
 }
 
 const isChromeVisible = () => article().hasAttribute("data-videos-slide-chrome-visible");
+const likeButton = () => screen.getByRole("button", { name: /^Aimer la vidéo/ });
+const profileLink = () => {
+  const link = chromeContainers()[0]!.querySelector<HTMLElement>('a[aria-label="Profil du créateur"]');
+  if (!link) throw new Error("Lien profil de la légende introuvable");
+  return link;
+};
 const isPlaybackPaused = () => screen.queryByRole("button", { name: "Lire la vidéo" }) !== null;
 
 function advance(ms: number) {
@@ -174,18 +184,23 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("Chrome masqué — pointeur et tactile", () => {
-  it("rend chaque conteneur masqué transparent au pointeur pour tous ses descendants", () => {
+describe("Chrome replié — pointeur et tactile", () => {
+  // Remplace « rend chaque conteneur masqué transparent… » (ancien repli total).
+  it("v2.3 : seule la barre se replie en fil de 2 px ; bande et actions restent", () => {
     renderSlide();
+    expect(screen.getByRole("button", { name: "Mettre en pause" })).toBeTruthy();
+    expect(screen.queryByRole("progressbar")).toBeNull();
+
+    hideChromeByPlayback();
+
+    expect(screen.queryByRole("button", { name: "Mettre en pause" })).toBeNull();
+    expect(screen.getByRole("progressbar", { name: "Progression de la lecture" })).toBeTruthy();
     for (const container of chromeContainers()) {
+      expect(container.className).not.toContain("opacity-0");
       expect(container.className).not.toContain("[&_*]:!pointer-events-none");
     }
-    hideChromeByPlayback();
-    for (const container of chromeContainers()) {
-      expect(container.className).toContain("pointer-events-none");
-      expect(container.className).toContain("[&_*]:!pointer-events-none");
-      expect(container.className).toContain("opacity-0");
-    }
+    expect(likeButton()).toBeTruthy();
+    expect(profileLink()).toBeTruthy();
   });
 
   it.each(["portrait", "landscape"] as const)(
@@ -256,29 +271,29 @@ describe("Chrome visible — le bloc méta ne masque plus la vidéo", () => {
       <LocalVideoSlide
         item={item}
         isActive
+        isMuted
         onOpenComments={vi.fn<() => void>()}
         onToggleLike={vi.fn<() => void>()}
         onShare={vi.fn<() => void>()}
-        onOpenReport={vi.fn<() => void>()}
+        onOpenMore={vi.fn<() => void>()}
       />,
     );
   }
 
-  it("conteneur et bloc méta transparents ; seuls profil et liens sont ciblables", () => {
+  it("conteneur et légende transparents ; seuls profil et puce quartier sont ciblables", () => {
     renderSlideWithLinks();
     const [bottomChrome] = chromeContainers();
     expect(bottomChrome!.className).toContain("pointer-events-none");
 
-    // Deux liens « Profil du créateur » : bloc méta (bas) et rail — on vise le bas.
-    const profile = bottomChrome!.querySelector<HTMLElement>('a[aria-label="Profil du créateur"]');
-    const metaRoot = profile?.closest<HTMLElement>(".space-y-2\\.5");
-    if (!metaRoot) throw new Error("Bloc méta introuvable");
+    const metaRoot = bottomChrome!.querySelector<HTMLElement>("[data-video-caption]");
+    if (!metaRoot) throw new Error("Légende introuvable");
     expect(metaRoot.className).toContain("pointer-events-none");
     expect(metaRoot.className).not.toContain("pointer-events-auto");
 
     const interactive = [...metaRoot.querySelectorAll<HTMLElement>("a, button")];
-    // Profil, « Voir sur la carte », lien de découverte (Suivre retiré : VIDEO-REFONTE-L1).
-    expect(interactive.length).toBe(3);
+    // v2.3 : profil et puce quartier ; « Voir sur la carte », « Découvrir », le son et
+    // les hashtags passent dans la feuille Description (écran E). Suivre retiré (L1).
+    expect(interactive.length).toBe(2);
     expect(interactive.some((element) => /Suivre/.test(element.textContent ?? ""))).toBe(false);
     for (const element of interactive) {
       expect(element.className).toContain("pointer-events-auto");
@@ -306,25 +321,26 @@ describe("Chrome visible — le bloc méta ne masque plus la vidéo", () => {
   it("un appui sur une commande du bloc méta (profil) ne bascule pas la lecture", () => {
     renderSlide();
     expect(screen.queryByRole("button", { name: /Suivre/ })).toBeNull();
-    const [bottomChrome] = chromeContainers();
-    const profile = bottomChrome!.querySelector<HTMLElement>('a[aria-label="Profil du créateur"]');
-    if (!profile) throw new Error("Lien profil du bloc méta introuvable");
+    const profile = profileLink();
     profile.addEventListener("click", (event) => event.preventDefault());
     fireEvent.click(profile);
     advance(SINGLE_TAP_SETTLE_MS);
     expect(isPlaybackPaused()).toBe(false);
   });
 
-  it("le chrome masqué reste non ciblable pour tous ses descendants", () => {
+  // Remplace « le chrome masqué reste non ciblable… » : en v2.3 la bande reste affichée.
+  it("barre repliée : la bande reste transparente au pointeur, ses liens restent ciblables", () => {
     renderSlideWithLinks();
     hideChromeByPlayback();
     const [bottomChrome] = chromeContainers();
-    expect(bottomChrome!.className).toContain("[&_*]:!pointer-events-none");
+    expect(bottomChrome!.className).toContain("pointer-events-none");
+    expect(profileLink().className).toContain("pointer-events-auto");
   });
 });
 
 describe("Chrome visible — commandes utilisables (actions simulées)", () => {
-  it("pause, son, like, commentaires, partage et signalement répondent", () => {
+  // Le son se règle depuis la barre haute du fil (v2.3) : voir video-mobile-feed-top-bar.test.
+  it("pause, J'aime, commentaires, partage et « … » répondent", () => {
     const { handlers } = renderSlide();
 
     fireEvent.click(screen.getByRole("button", { name: "Mettre en pause" }));
@@ -332,18 +348,15 @@ describe("Chrome visible — commandes utilisables (actions simulées)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Lire la vidéo" }));
     expect(isPlaybackPaused()).toBe(false);
 
-    fireEvent.click(screen.getByRole("button", { name: "Activer le son" }));
-    expect(screen.getByRole("button", { name: "Couper le son" })).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("button", { name: "Aimer la vidéo" }));
-    fireEvent.click(screen.getByRole("button", { name: "Ouvrir les commentaires" }));
-    fireEvent.click(screen.getByRole("button", { name: VIDEOS_DESKTOP_SHARE }));
-    fireEvent.click(screen.getByRole("button", { name: LOCAL_VIDEO_REPORT_LABEL }));
+    fireEvent.click(likeButton());
+    fireEvent.click(screen.getByRole("button", { name: /^Ouvrir les commentaires/ }));
+    fireEvent.click(screen.getByRole("button", { name: VIDEOS_MOBILE_SHARE_ACTION }));
+    fireEvent.click(screen.getByRole("button", { name: VIDEOS_MOBILE_MORE_ACTIONS }));
 
     expect(handlers.onToggleLike).toHaveBeenCalledTimes(1);
     expect(handlers.onOpenComments).toHaveBeenCalledTimes(1);
     expect(handlers.onShare).toHaveBeenCalledTimes(1);
-    expect(handlers.onOpenReport).toHaveBeenCalledTimes(1);
+    expect(handlers.onOpenMore).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -353,7 +366,8 @@ describe("Chrome — focus clavier", () => {
     renderSlide();
     hideChromeByPlayback();
 
-    focusElement(screen.getByRole("button", { name: "Mettre en pause" }));
+    // Barre repliée : elle n'est plus dans le DOM ; le clavier entre par la légende.
+    focusElement(profileLink());
 
     expect(isChromeVisible()).toBe(true);
     expect(isPlaybackPaused()).toBe(false);
@@ -364,16 +378,20 @@ describe("Chrome — focus clavier", () => {
     renderSlide();
     hideChromeByPlayback();
 
+    focusElement(profileLink());
+    advance(CHROME_AUTO_HIDE_MS * 2);
+    expect(isChromeVisible()).toBe(true);
+
+    // Passage d'une commande à l'autre : légende → barre → colonne d'actions.
     focusElement(screen.getByRole("button", { name: "Mettre en pause" }));
     advance(CHROME_AUTO_HIDE_MS * 2);
     expect(isChromeVisible()).toBe(true);
 
-    // Passage d'un conteneur à l'autre : barre de lecture → rail d'actions.
-    focusElement(screen.getByRole("button", { name: "Aimer la vidéo" }));
+    focusElement(likeButton());
     advance(CHROME_AUTO_HIDE_MS * 2);
     expect(isChromeVisible()).toBe(true);
 
-    focusElement(screen.getByRole("button", { name: "Ouvrir les commentaires" }));
+    focusElement(screen.getByRole("button", { name: /^Ouvrir les commentaires/ }));
     advance(CHROME_AUTO_HIDE_MS * 2);
     expect(isChromeVisible()).toBe(true);
   });
@@ -385,7 +403,7 @@ describe("Chrome — focus clavier", () => {
     document.body.appendChild(outside);
     hideChromeByPlayback();
 
-    focusElement(screen.getByRole("button", { name: "Aimer la vidéo" }));
+    focusElement(likeButton());
     advance(CHROME_AUTO_HIDE_MS * 2);
     expect(isChromeVisible()).toBe(true);
 
@@ -413,7 +431,7 @@ describe("Chrome — focus clavier", () => {
     mockFocusVisible(false);
     renderSlide();
 
-    focusElement(screen.getByRole("button", { name: "Aimer la vidéo" }));
+    focusElement(likeButton());
     advance(CHROME_AUTO_HIDE_MS + 50);
 
     expect(isChromeVisible()).toBe(false);

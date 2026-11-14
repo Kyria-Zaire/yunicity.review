@@ -1,19 +1,21 @@
 "use client";
 
 import type { LocalVideoFeedItem } from "@yunicity/types";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { LOCAL_VIDEO_DEFAULT_MUTED, type VideosPortalTabId } from "@yunicity/utils";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { FeedMobileHeader } from "@/components/feed/mobile/feed-mobile-header";
 import { LocalVideoFeedViewport } from "@/components/videos/local-video-feed-viewport";
+import { VideosMobileFeedTopBar } from "@/components/videos/mobile/videos-mobile-feed-top-bar";
 import { VideoCommentsSheet } from "@/components/videos/video-comments-sheet";
 
 type VideosMobileImmersiveFeedProps = {
   items: readonly LocalVideoFeedItem[];
   focusVideoId?: string | null;
   variant: "discovery" | "detail";
+  /** Vue affichée (D-Q1) : Pour vous, Tendances ou Nouveautés. */
+  tab?: VideosPortalTabId;
+  onTabChange?: (tab: VideosPortalTabId) => void;
   processingErrors?: Record<string, string | null | undefined>;
   onDismissProcessing?: (videoId: string) => void;
   onToggleLike: (item: LocalVideoFeedItem) => void;
@@ -24,12 +26,15 @@ type VideosMobileImmersiveFeedProps = {
 };
 
 /**
- * Feed vertical plein écran mobile (≤639px) — discovery « Pour vous » ou détail ?video=.
+ * Fil vertical plein écran mobile (≤639px), v2.3 — découverte (Pour vous, Tendances,
+ * Nouveautés) ou lien partagé ?video=. Barre haute en surimpression (écran A).
  */
 export function VideosMobileImmersiveFeed({
   items,
   focusVideoId = null,
   variant,
+  tab = "all",
+  onTabChange,
   processingErrors = {},
   onDismissProcessing,
   onToggleLike,
@@ -40,7 +45,7 @@ export function VideosMobileImmersiveFeed({
 }: VideosMobileImmersiveFeedProps) {
   const router = useRouter();
   const [commentsVideoId, setCommentsVideoId] = useState<string | null>(null);
-  const [slideChromeVisible, setSlideChromeVisible] = useState(true);
+  const [isMuted, setIsMuted] = useState(LOCAL_VIDEO_DEFAULT_MUTED);
   const [pointerOverFeed, setPointerOverFeed] = useState(false);
   const detailUrlSyncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -82,37 +87,22 @@ export function VideosMobileImmersiveFeed({
       className="videos-mobile-immersive-feed flex h-full max-h-full min-h-0 flex-col overflow-hidden bg-black"
       data-videos-discovery-immersive={variant === "discovery" ? "" : undefined}
       data-videos-immersive-mobile=""
-      onMouseEnter={() => {
-        setPointerOverFeed(true);
-        setSlideChromeVisible(true);
-      }}
+      onMouseEnter={() => setPointerOverFeed(true)}
       onMouseLeave={() => setPointerOverFeed(false)}
     >
-      <div className="videos-immersive-mobile-chrome shrink-0">
-        <FeedMobileHeader />
-      </div>
-
       <div className="videos-immersive-stage relative min-h-0 flex-1 overflow-hidden">
-        {variant === "detail" ? (
-          <div
-            className={`pointer-events-none absolute inset-x-0 top-0 z-50 px-3 pb-2 pt-3 transition-opacity duration-300 ease-out motion-reduce:transition-none ${
-              slideChromeVisible ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <Link
-              href="/videos"
-              className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full bg-neutral-950/45 text-white transition hover:bg-neutral-950/60"
-              aria-label="Retour aux vidéos"
-            >
-              <ArrowLeft className="h-5 w-5" strokeWidth={2} aria-hidden />
-            </Link>
-          </div>
-        ) : null}
+        <VideosMobileFeedTopBar
+          variant={variant}
+          tab={tab}
+          onTabChange={onTabChange}
+          sound={{ isMuted, onToggle: () => setIsMuted((value) => !value) }}
+        />
 
         <LocalVideoFeedViewport
           items={feedItems}
           focusVideoId={focusVideoId}
           pointerOverFeed={pointerOverFeed}
+          isMuted={isMuted}
           processingErrors={processingErrors}
           onDismissProcessing={onDismissProcessing}
           onActiveVideoChange={handleActiveVideoChange}
@@ -121,7 +111,6 @@ export function VideosMobileImmersiveFeed({
           onShare={onShare}
           onOpenReport={onOpenReport}
           onEndReached={onLoadMore}
-          onSlideChromeVisible={setSlideChromeVisible}
         />
       </div>
 

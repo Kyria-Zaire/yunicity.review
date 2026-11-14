@@ -72,6 +72,32 @@ export const VIDEOS_MOBILE_RECENT_TITLE = "Les plus récentes";
 export const VIDEOS_MOBILE_PUBLISH_ARIA = "Publier une vidéo";
 export const VIDEOS_MOBILE_PUBLISH_LABEL = "Publier";
 
+/** VIDEO-REFONTE-L3L4 — fil immersif mobile v2.3 (sélecteur de vue, son, états). */
+export const VIDEOS_MOBILE_VIEW_MENU_LABEL = "Choisir une vue";
+export function formatVideosMobileViewButtonLabel(viewLabel: string): string {
+  return `Vue : ${viewLabel} — changer de vue`;
+}
+export const VIDEOS_MOBILE_SOUND_ON = "Activer le son";
+export const VIDEOS_MOBILE_SOUND_OFF = "Couper le son";
+export const VIDEOS_MOBILE_FULLSCREEN = "Plein écran";
+export const VIDEOS_MOBILE_FOR_YOU_EMPTY = "Aucune vidéo pour le moment.";
+export const VIDEOS_MOBILE_FOR_YOU_EMPTY_HINT = "Les vidéos publiées par les habitants apparaîtront ici.";
+export const VIDEOS_MOBILE_TRENDING_EMPTY = "Aucune vidéo tendance pour le moment.";
+export const VIDEOS_MOBILE_TRENDING_EMPTY_HINT = "Les vidéos aimées par les habitants apparaîtront ici.";
+export const VIDEOS_MOBILE_NEW_EMPTY = "Aucune nouvelle vidéo ces 14 derniers jours.";
+export const VIDEOS_MOBILE_NEW_EMPTY_HINT = "Les vidéos publiées récemment apparaîtront ici.";
+export const VIDEOS_MOBILE_EMPTY_BACK_TO_FOR_YOU = "Voir « Pour vous »";
+export const VIDEOS_MOBILE_ERROR_HINT = "Vérifiez la connexion, puis réessayez.";
+export const VIDEOS_MOBILE_SHARE_ACTION = "Partager la vidéo";
+export const VIDEOS_MOBILE_SHARE_SHORT = "Partager";
+export const VIDEOS_MOBILE_MORE_ACTIONS = "Plus d'options : signaler";
+export function formatVideosMobileLikeActionLabel(likedByMe: boolean, likeCount: number): string {
+  return `${likedByMe ? "Retirer le J'aime" : "Aimer la vidéo"} — ${likeCount} J'aime`;
+}
+export function formatVideosMobileCommentsActionLabel(commentCount: number): string {
+  return `Ouvrir les commentaires — ${commentCount} ${commentCount > 1 ? "commentaires" : "commentaire"}`;
+}
+
 export const VIDEOS_SORT_LABEL = "Trier par :";
 export const VIDEOS_SORT_RELEVANCE = "Au plus près de toi";
 export const VIDEOS_SORT_RECENT = "Les plus récents";

@@ -19,6 +19,7 @@ import { SlidersHorizontal } from "lucide-react";
 import type { ReactNode, RefObject } from "react";
 
 import { VideosDesktopLeftRail } from "@/components/videos/desktop/videos-desktop-left-rail";
+import { isVideosMobileFeedView } from "@/components/videos/mobile/videos-mobile-feed-top-bar";
 import { VideosDesktopRightRail } from "@/components/videos/desktop/videos-desktop-right-rail";
 import {
   VideosMobileHeader,
@@ -135,7 +136,7 @@ export function VideosResponsiveShell({
 
         <div
           className={`videos-discovery-mobile-only min-w-0 space-y-4 px-4 pb-2 pt-1 ${
-            tab === "all" ? "videos-discovery-mobile-chrome" : ""
+            isVideosMobileFeedView(tab) ? "videos-discovery-mobile-chrome" : ""
           }`}
         >
           <VideosMobileHeader />

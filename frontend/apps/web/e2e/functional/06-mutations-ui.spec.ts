@@ -267,10 +267,10 @@ test.describe("Vidéo UI", () => {
 
     // Deux conséquences sur le ciblage du contrôle.
     //
-    // Le rail fait BASCULER son libellé — « Aimer la vidéo » non aimé, « Retirer
-    // le like » aimé — donc aucun préfixe unique ne suit le contrôle d'un état à
-    // l'autre. `aria-pressed` reste la source d'état ; le libellé n'en est que
-    // la traduction.
+    // Le rail fait BASCULER son libellé — « Aimer la vidéo — N J'aime » non aimé,
+    // « Retirer le J'aime — N J'aime » aimé (libellés figés v2.3, VIDEO-REFONTE-L3L4)
+    // — donc on cible par préfixe, et le nombre inclus change avec le like.
+    // `aria-pressed` reste la source d'état ; le libellé n'en est que la traduction.
     //
     // Et le flux monte TOUTES les diapositives, les inactives en `inert` +
     // `aria-hidden`. On borne donc à la diapositive de la vidéo visée. Sans
@@ -279,7 +279,7 @@ test.describe("Vidéo UI", () => {
     // fixe maintenant.
     const slide = citizenAPage.locator(`[data-video-slide-id="${vid.id}"]`);
     const like = slide
-      .locator('button[aria-label="Aimer la vidéo"], button[aria-label="Retirer le like"]')
+      .locator(`button[aria-label^="Aimer la vidéo"], button[aria-label^="Retirer le J'aime"]`)
       .first();
     await expect(like).toBeVisible({ timeout: 20_000 });
     await expect(like).toHaveAttribute("aria-pressed", "false");
@@ -288,7 +288,7 @@ test.describe("Vidéo UI", () => {
         new RegExp(`/local-videos/${vid.id}/like`).test(r.url()) &&
         r.request().method() === "POST",
     );
-    const pressed = slide.locator('button[aria-label="Retirer le like"][aria-pressed="true"]');
+    const pressed = slide.locator(`button[aria-label^="Retirer le J'aime"][aria-pressed="true"]`);
     await clickUntil(like, pressed);
     expect([200, 201, 204]).toContain((await likeResp).status());
     // Persistence: reload and confirm the like held server-side.
@@ -297,7 +297,7 @@ test.describe("Vidéo UI", () => {
     await expect(
       citizenAPage
         .locator(`[data-video-slide-id="${vid.id}"]`)
-        .locator('button[aria-label="Retirer le like"][aria-pressed="true"]'),
+        .locator(`button[aria-label^="Retirer le J'aime"][aria-pressed="true"]`),
     ).toBeVisible({ timeout: 20_000 });
   });
 });

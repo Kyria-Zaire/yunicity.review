@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { LocalVideoFeedItem } from "@yunicity/types";
-import { LOCAL_VIDEO_REPORT_LABEL } from "@yunicity/utils";
+import { VIDEOS_MOBILE_MORE_ACTIONS } from "@yunicity/utils";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -117,14 +117,15 @@ describe("LocalVideoSlide — inert slides", () => {
         onOpenComments={() => {}}
         onToggleLike={() => {}}
         onShare={() => {}}
-        onOpenReport={() => {}}
+        isMuted
+        onOpenMore={() => {}}
       />,
     );
 
     const article = slideArticle("v-active");
     expect(article.inert).toBe(false);
     expect(article.getAttribute("aria-hidden")).toBeNull();
-    expect(screen.getByRole("button", { name: "Aimer la vidéo" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: /^Aimer la vidéo/ })).not.toBeNull();
   });
 
   it("slide inactive : inert et aria-hidden, commandes hors arbre accessible", () => {
@@ -135,15 +136,16 @@ describe("LocalVideoSlide — inert slides", () => {
         onOpenComments={() => {}}
         onToggleLike={() => {}}
         onShare={() => {}}
-        onOpenReport={() => {}}
+        isMuted
+        onOpenMore={() => {}}
       />,
     );
 
     const article = slideArticle("v-inactive");
     expect(article.inert).toBe(true);
     expect(article.getAttribute("aria-hidden")).toBe("true");
-    expect(screen.queryByRole("button", { name: LOCAL_VIDEO_REPORT_LABEL })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Aimer la vidéo" })).toBeNull();
+    expect(screen.queryByRole("button", { name: VIDEOS_MOBILE_MORE_ACTIONS })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Aimer la vidéo/ })).toBeNull();
   });
 
   it("bascule isActive : inert permute entre les slides", () => {
@@ -154,7 +156,8 @@ describe("LocalVideoSlide — inert slides", () => {
         onOpenComments={() => {}}
         onToggleLike={() => {}}
         onShare={() => {}}
-        onOpenReport={() => {}}
+        isMuted
+        onOpenMore={() => {}}
       />,
     );
 
@@ -167,12 +170,13 @@ describe("LocalVideoSlide — inert slides", () => {
         onOpenComments={() => {}}
         onToggleLike={() => {}}
         onShare={() => {}}
-        onOpenReport={() => {}}
+        isMuted
+        onOpenMore={() => {}}
       />,
     );
 
     expect(slideArticle("v-toggle").inert).toBe(false);
-    expect(screen.getByRole("button", { name: "Aimer la vidéo" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: /^Aimer la vidéo/ })).not.toBeNull();
   });
 });
 
@@ -183,6 +187,7 @@ describe("LocalVideoFeedViewport — une seule slide interactive", () => {
     render(
       <LocalVideoFeedViewport
         items={[playableItem("v-one"), playableItem("v-two")]}
+        isMuted
         onActiveVideoChange={() => {}}
         onOpenComments={() => {}}
         onToggleLike={() => {}}
@@ -193,8 +198,8 @@ describe("LocalVideoFeedViewport — une seule slide interactive", () => {
 
     expect(slideArticle("v-one").inert).toBe(false);
     expect(slideArticle("v-two").inert).toBe(true);
-    expect(screen.getByRole("button", { name: "Aimer la vidéo" })).not.toBeNull();
-    expect(screen.queryAllByRole("button", { name: "Aimer la vidéo" })).toHaveLength(1);
+    expect(screen.getByRole("button", { name: /^Aimer la vidéo/ })).not.toBeNull();
+    expect(screen.queryAllByRole("button", { name: /^Aimer la vidéo/ })).toHaveLength(1);
   });
 
   it("changement activeId : inert bascule sans second lecteur actif", () => {
@@ -203,6 +208,7 @@ describe("LocalVideoFeedViewport — une seule slide interactive", () => {
     const { rerender } = render(
       <LocalVideoFeedViewport
         items={[playableItem("v-one"), playableItem("v-two")]}
+        isMuted
         onActiveVideoChange={() => {}}
         onOpenComments={() => {}}
         onToggleLike={() => {}}
@@ -215,6 +221,7 @@ describe("LocalVideoFeedViewport — une seule slide interactive", () => {
     rerender(
       <LocalVideoFeedViewport
         items={[playableItem("v-one"), playableItem("v-two")]}
+        isMuted
         onActiveVideoChange={() => {}}
         onOpenComments={() => {}}
         onToggleLike={() => {}}
@@ -233,47 +240,48 @@ describe("LocalVideoFeedViewport — une seule slide interactive", () => {
   });
 });
 
-describe("LocalVideoActionRail — action Signaler", () => {
-  it("expose un bouton accessible Signaler qui appelle onReportClick une fois", () => {
-    const onReportClick = vi.fn();
+// v2.3 : Signaler est rangé dans « … » (écran I) ; la colonne expose « … ».
+describe("LocalVideoActionRail — action « … »", () => {
+  it("expose un bouton accessible « … » qui appelle onMoreClick une fois", () => {
+    const onMoreClick = vi.fn();
 
     render(
       <LocalVideoActionRail
-        item={playableItem()}
         likeCount={0}
         commentCount={0}
         likedByMe={false}
         onLikeClick={() => {}}
         onCommentsClick={() => {}}
         onShareClick={() => {}}
-        onReportClick={onReportClick}
+        onMoreClick={onMoreClick}
       />,
     );
 
-    const reportButton = screen.getByRole("button", { name: LOCAL_VIDEO_REPORT_LABEL });
-    fireEvent.click(reportButton);
+    fireEvent.click(screen.getByRole("button", { name: VIDEOS_MOBILE_MORE_ACTIONS }));
 
-    expect(onReportClick).toHaveBeenCalledTimes(1);
+    expect(onMoreClick).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("button", { name: /^Signaler$/ })).toBeNull();
     expect(fetch).not.toHaveBeenCalled();
   });
 });
 
-describe("LocalVideoSlide — relais onOpenReport (slide active)", () => {
-  it("relaye le clic Signaler vers onOpenReport quand la slide est active", () => {
-    const onOpenReport = vi.fn();
+describe("LocalVideoSlide — relais « … » (slide active)", () => {
+  it("relaye le clic « … » vers onOpenMore quand la slide est active", () => {
+    const onOpenMore = vi.fn();
 
     render(
       <LocalVideoSlide
         item={playableItem()}
         isActive
+        isMuted
         onOpenComments={() => {}}
         onToggleLike={() => {}}
         onShare={() => {}}
-        onOpenReport={onOpenReport}
+        onOpenMore={onOpenMore}
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: LOCAL_VIDEO_REPORT_LABEL }));
-    expect(onOpenReport).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: VIDEOS_MOBILE_MORE_ACTIONS }));
+    expect(onOpenMore).toHaveBeenCalledTimes(1);
   });
 });

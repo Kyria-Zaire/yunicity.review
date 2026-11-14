@@ -3,12 +3,10 @@
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import {
   DEFAULT_VIDEOS_PORTAL_SIDEBAR_FILTERS,
-  LOCAL_VIDEO_REPORT_LABEL,
   VIDEO_DETAIL_COMMENT,
   VIDEO_DETAIL_MORE,
   VIDEO_DETAIL_SHARE,
   VIDEOS_DESKTOP_LEFT_SAVED,
-  VIDEOS_DESKTOP_SHARE,
   VIDEOS_DESKTOP_VIEW_PROFILE,
   VIDEOS_MOBILE_TAB_FOR_YOU,
   VIDEOS_PORTAL_SUBSCRIPTIONS_EMPTY,
@@ -169,25 +167,25 @@ function expectNoDeadControl(container: HTMLElement): void {
 }
 
 describe("Enregistrer retiré", () => {
-  it("absent du rail immersif ; J'aime, Commentaires, Partager et Signaler conservés", () => {
+  it("absent du rail immersif ; J'aime, Commentaires, Partager et « … » conservés", () => {
     const { container } = render(
       <LocalVideoActionRail
-        item={playableItem()}
         likeCount={0}
         commentCount={0}
         likedByMe={false}
         onLikeClick={() => {}}
         onCommentsClick={() => {}}
         onShareClick={() => {}}
-        onReportClick={() => {}}
+        onMoreClick={() => {}}
       />,
     );
 
     expectNoDeadControl(container);
-    expect(screen.getByRole("button", { name: "Aimer la vidéo" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Ouvrir les commentaires" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: VIDEOS_DESKTOP_SHARE })).toBeTruthy();
-    expect(screen.getByRole("button", { name: LOCAL_VIDEO_REPORT_LABEL })).toBeTruthy();
+    // v2.3 : Signaler est rangé dans « … » (écran I).
+    expect(screen.getByRole("button", { name: /^Aimer la vidéo/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Ouvrir les commentaires/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Partager la vidéo" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Plus d'options : signaler" })).toBeTruthy();
     expect(fetch).not.toHaveBeenCalled();
   });
 

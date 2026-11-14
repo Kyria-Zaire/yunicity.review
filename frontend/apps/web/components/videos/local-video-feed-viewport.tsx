@@ -10,6 +10,8 @@ type LocalVideoFeedViewportProps = {
   items: LocalVideoFeedItem[];
   focusVideoId?: string | null;
   pointerOverFeed?: boolean;
+  /** Son coupé, réglé depuis la barre haute du fil et commun à toutes les vidéos. */
+  isMuted: boolean;
   processingErrors?: Record<string, string | null | undefined>;
   onDismissProcessing?: (videoId: string) => void;
   onActiveVideoChange: (videoId: string | null) => void;
@@ -29,6 +31,7 @@ export function LocalVideoFeedViewport({
   items,
   focusVideoId = null,
   pointerOverFeed = false,
+  isMuted,
   processingErrors = {},
   onDismissProcessing,
   onActiveVideoChange,
@@ -97,6 +100,7 @@ export function LocalVideoFeedViewport({
           item={item}
           isActive={activeId === item.id}
           pointerOverFeed={pointerOverFeed}
+          isMuted={isMuted}
           processingError={processingErrors[item.id]}
           onDismissProcessing={
             onDismissProcessing ? () => onDismissProcessing(item.id) : undefined
@@ -104,7 +108,7 @@ export function LocalVideoFeedViewport({
           onOpenComments={() => onOpenComments(item.id)}
           onToggleLike={() => onToggleLike(item)}
           onShare={() => onShare(item)}
-          onOpenReport={() => onOpenReport(item.id)}
+          onOpenMore={() => onOpenReport(item.id)}
           onChromeVisibleChange={
             activeId === item.id ? onSlideChromeVisible : undefined
           }

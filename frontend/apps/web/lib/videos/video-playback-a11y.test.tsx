@@ -4,7 +4,6 @@ import type { LocalVideoFeedItem } from "@yunicity/types";
 import {
   LOCAL_VIDEO_PLAYBACK_ERROR,
   LOCAL_VIDEO_PLAYBACK_FALLBACK,
-  LOCAL_VIDEO_REPORT_LABEL,
   VIDEO_DETAIL_AUTOPLAY,
   VIDEO_DETAIL_COMMENT,
   VIDEO_DETAIL_LIKE,
@@ -160,22 +159,22 @@ describe("video-playback-a11y helpers", () => {
 });
 
 describe("LocalVideoPlaybackBar", () => {
-  it("play/mute : noms dynamiques, aria-pressed, slider clavier et valuetext", () => {
+  // v2.3 : le son est dans la barre haute du fil (videos-mobile-feed-top-bar), plus ici.
+  it("lecture : nom dynamique, aria-pressed, slider clavier, valuetext et durée", () => {
     const onSeek = vi.fn();
     render(
       <LocalVideoPlaybackBar
         currentTime={5}
         duration={42}
         isPaused={false}
-        isMuted
         onTogglePause={() => {}}
-        onToggleMute={() => {}}
         onSeek={onSeek}
       />,
     );
 
     expect(screen.getByRole("button", { name: "Mettre en pause" }).getAttribute("aria-pressed")).toBe("true");
-    expect(screen.getByRole("button", { name: "Activer le son" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.queryByRole("button", { name: /son/ })).toBeNull();
+    expect(screen.getByText("0:05 / 0:42")).toBeTruthy();
 
     const slider = screen.getByRole("slider", { name: "Progression de la lecture" });
     expect(slider.getAttribute("aria-valuetext")).toBe("0:05 sur 0:42");
@@ -193,9 +192,7 @@ describe("LocalVideoPlaybackBar", () => {
         currentTime={0}
         duration={42}
         isPaused
-        isMuted={false}
         onTogglePause={() => {}}
-        onToggleMute={() => {}}
         onSeek={() => {}}
       />,
     );
@@ -207,42 +204,61 @@ describe("LocalVideoPlaybackBar", () => {
 });
 
 describe("LocalVideoActionRail", () => {
-  it("like aria-pressed, aucun Enregistrer (VIDEO-REFONTE-L1), report une fois", () => {
-    const onReport = vi.fn();
+  // Noms accessibles figés v2.3 (maquette, écran A) : « Aimer la vidéo — N J'aime »…
+  it("noms v2.3, J'aime aria-pressed, aucun Enregistrer (L1), « … » une fois", () => {
+    const onMore = vi.fn();
     const { rerender } = render(
       <LocalVideoActionRail
-        item={playableItem()}
         likeCount={1}
+        commentCount={8}
+        likedByMe={false}
+        onLikeClick={() => {}}
+        onCommentsClick={() => {}}
+        onShareClick={() => {}}
+        onMoreClick={onMore}
+      />,
+    );
+
+    const like = screen.getByRole("button", { name: "Aimer la vidéo — 1 J'aime" });
+    expect(like.getAttribute("aria-pressed")).toBe("false");
+    expect(screen.getByRole("button", { name: "Ouvrir les commentaires — 8 commentaires" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Partager la vidéo" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Enregistrer/ })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Plus d'options : signaler" }));
+    expect(onMore).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <LocalVideoActionRail
+        likeCount={2}
+        commentCount={1}
+        likedByMe
+        onLikeClick={() => {}}
+        onCommentsClick={() => {}}
+        onShareClick={() => {}}
+        onMoreClick={onMore}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Retirer le J'aime — 2 J'aime" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Ouvrir les commentaires — 1 commentaire" })).toBeTruthy();
+  });
+
+  it("cibles tactiles de 58 px (44 px pour « … »)", () => {
+    render(
+      <LocalVideoActionRail
+        likeCount={0}
         commentCount={0}
         likedByMe={false}
         onLikeClick={() => {}}
         onCommentsClick={() => {}}
         onShareClick={() => {}}
-        onReportClick={onReport}
+        onMoreClick={() => {}}
       />,
     );
-
-    const like = screen.getByRole("button", { name: "Aimer la vidéo" });
-    expect(like.getAttribute("aria-pressed")).toBe("false");
-
-    expect(screen.queryByRole("button", { name: /Enregistrer/ })).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: LOCAL_VIDEO_REPORT_LABEL }));
-    expect(onReport).toHaveBeenCalledTimes(1);
-
-    rerender(
-      <LocalVideoActionRail
-        item={playableItem()}
-        likeCount={2}
-        commentCount={0}
-        likedByMe
-        onLikeClick={() => {}}
-        onCommentsClick={() => {}}
-        onShareClick={() => {}}
-        onReportClick={onReport}
-      />,
-    );
-    expect(screen.getByRole("button", { name: "Retirer le like" }).getAttribute("aria-pressed")).toBe("true");
+    for (const button of screen.getAllByRole("button")) {
+      expect(button.className).toMatch(/h-\[58px\]|h-11/);
+      expect(button.className).toMatch(/w-\[58px\]/);
+    }
   });
 });
 
@@ -271,10 +287,11 @@ describe("LocalVideoSlide", () => {
       <LocalVideoSlide
         item={playableItem()}
         isActive
+        isMuted
         onOpenComments={() => {}}
         onToggleLike={() => {}}
         onShare={() => {}}
-        onOpenReport={() => {}}
+        onOpenMore={() => {}}
       />,
     );
 
