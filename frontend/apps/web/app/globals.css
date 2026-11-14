@@ -1333,7 +1333,11 @@ body {
     padding-right: 0 !important;
   }
 
-  .videos-mobile-shell:has([data-videos-discovery-immersive=""]) .web-main-column > div {
+  /*
+   * Cible UNIQUEMENT l'enveloppe contenu (div.relative), pas .web-desktop-videos-only
+   * ni d'autres enfants directs — évite une double contrainte de hauteur.
+   */
+  .videos-mobile-shell:has([data-videos-discovery-immersive=""]) .web-main-column > div.relative {
     height: var(--videos-mobile-immersive-viewport-height) !important;
     min-height: var(--videos-mobile-immersive-viewport-height) !important;
     max-height: var(--videos-mobile-immersive-viewport-height) !important;
@@ -1341,6 +1345,7 @@ body {
     overflow: hidden;
   }
 
+  /* Chaîne 100 % jusqu'au feed (enveloppe imbriquée `.relative` incluse). */
   .videos-mobile-shell:has([data-videos-discovery-immersive=""]) .web-main-column > div > .relative,
   .videos-mobile-shell:has([data-videos-discovery-immersive=""]) .videos-shell,
   .videos-mobile-shell:has([data-videos-discovery-immersive=""]) .videos-main-column,
@@ -1358,7 +1363,7 @@ body {
     padding-right: 0 !important;
   }
 
-  .videos-mobile-shell.videos-immersive-mode .web-main-column > div {
+  .videos-mobile-shell.videos-immersive-mode .web-main-column > div.relative {
     height: var(--videos-mobile-immersive-viewport-height) !important;
     min-height: var(--videos-mobile-immersive-viewport-height) !important;
     max-height: var(--videos-mobile-immersive-viewport-height) !important;
@@ -1378,12 +1383,22 @@ body {
     padding-top: 0 !important;
   }
 
-  /* Immersif mobile — barre ancrée + safe area. */
+  /*
+   * Immersif mobile — bande = hauteur MESURÉE de la nav (`--citizen-bottom-nav-h`,
+   * safe-area incluse), pas un `3.25rem + safe-area` hardcodé qui diverge sur
+   * Safari iPhone. Le hook `useVideosMobileImmersiveViewport` peut publier des
+   * px exacts (visualViewport) par-dessus ces repli CSS.
+   */
   .videos-mobile-shell:has([data-videos-immersive-mobile=""]),
   .videos-mobile-shell:has([data-videos-discovery-immersive=""]),
   .videos-mobile-shell.videos-immersive-mode {
-    --videos-mobile-nav-band-bottom: calc(3.25rem + env(safe-area-inset-bottom));
-    --videos-mobile-immersive-viewport-height: calc(100dvh - var(--videos-mobile-nav-band-bottom));
+    --videos-mobile-nav-band-bottom: var(
+      --citizen-bottom-nav-h,
+      calc(3.25rem + env(safe-area-inset-bottom, 0px))
+    );
+    --videos-mobile-immersive-viewport-height: calc(
+      100dvh - var(--videos-mobile-nav-band-bottom)
+    );
   }
 
   .videos-mobile-shell:has([data-videos-immersive-mobile=""]) .web-mobile-strategic-bottom-nav,

@@ -25,6 +25,7 @@ import Link from "next/link";
 import type { Ref } from "react";
 
 import { VideosMobileFeedTopBar } from "@/components/videos/mobile/videos-mobile-feed-top-bar";
+import { useVideosMobileImmersiveViewport } from "@/hooks/use-videos-mobile-immersive-viewport";
 import { VIDEO_IMMERSIVE_FOCUS } from "@/lib/videos/video-playback-a11y";
 
 type VideosMobileImmersiveStateProps = {
@@ -74,6 +75,7 @@ export function VideosMobileImmersiveState({
   filters,
   search,
 }: VideosMobileImmersiveStateProps) {
+  useVideosMobileImmersiveViewport(true);
   const empty = emptyCopy(tab);
 
   return (

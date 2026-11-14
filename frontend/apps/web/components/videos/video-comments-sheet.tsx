@@ -45,9 +45,24 @@ function formatCommentTime(iso: string): string {
   });
 }
 
+/** Remet le panneau commentaires dans son contrat CSS (plus de styles clavier). */
+function clearCommentsPanelViewportStyles(panel: HTMLElement) {
+  panel.style.bottom = "";
+  panel.style.maxHeight = "";
+  panel.style.top = "";
+  panel.style.left = "";
+  panel.style.right = "";
+  panel.style.width = "";
+}
+
 /**
  * Ancre le tiroir bas au visualViewport quand le clavier réduit la zone visible
  * (Safari iPhone : sinon fermeture hors cadre et « Publier » coincé sous le clavier).
+ *
+ * Ne combat PAS un zoom manuel (`scale > 1`) : on restaure alors les styles pour
+ * éviter un décalage horizontal persistant après fermeture du clavier.
+ * Le zoom auto Safari est prévenu en amont (textarea ≥ 16 px), jamais en
+ * verrouillant l'échelle du viewport meta.
  */
 function useCommentsKeyboardViewport(active: boolean) {
   const panelRef = useRef<HTMLElement | null>(null);
@@ -55,11 +70,7 @@ function useCommentsKeyboardViewport(active: boolean) {
   useLayoutEffect(() => {
     if (!active) {
       const panel = panelRef.current;
-      if (panel) {
-        panel.style.bottom = "";
-        panel.style.maxHeight = "";
-        panel.style.top = "";
-      }
+      if (panel) clearCommentsPanelViewportStyles(panel);
       panelRef.current = null;
       return;
     }
@@ -75,14 +86,22 @@ function useCommentsKeyboardViewport(active: boolean) {
       panelRef.current = panel;
       const vv = window.visualViewport;
       if (!vv) {
-        panel.style.bottom = "";
+        clearCommentsPanelViewportStyles(panel);
         panel.style.maxHeight = "90dvh";
+        return;
+      }
+      // Zoom manuel / résidu Safari : ne pas forcer left/width (cause du décalage).
+      if (vv.scale > 1.01) {
+        clearCommentsPanelViewportStyles(panel);
         return;
       }
       const keyboardInset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
       panel.style.bottom = `${keyboardInset}px`;
       panel.style.maxHeight = `${Math.round(vv.height * 0.92)}px`;
       panel.style.top = "auto";
+      panel.style.left = "0";
+      panel.style.right = "0";
+      panel.style.width = "100%";
     };
 
     sync();
@@ -95,11 +114,7 @@ function useCommentsKeyboardViewport(active: boolean) {
       vv?.removeEventListener("scroll", sync);
       window.removeEventListener("resize", sync);
       const panel = panelRef.current;
-      if (panel) {
-        panel.style.bottom = "";
-        panel.style.maxHeight = "";
-        panel.style.top = "";
-      }
+      if (panel) clearCommentsPanelViewportStyles(panel);
       panelRef.current = null;
     };
   }, [active]);
@@ -295,9 +310,9 @@ export function VideoCommentsSheet({
 
         <form
           onSubmit={(event) => void handleSubmit(event)}
-          className="shrink-0 border-t border-neutral-200 pt-3"
+          className="min-w-0 shrink-0 border-t border-neutral-200 pt-3"
         >
-          <div className="flex min-w-0 items-end gap-2">
+          <div className="flex min-w-0 max-w-full items-end gap-2">
             <textarea
               rows={1}
               value={draft}
@@ -306,13 +321,14 @@ export function VideoCommentsSheet({
               maxLength={500}
               onFocus={handleComposerFocus}
               onBlur={handleComposerBlur}
-              className="max-h-28 min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-neutral-200 px-4 py-3 text-sm text-neutral-800"
+              /* text-base (16 px) : seuil Safari iOS — text-sm (14 px) déclenche le zoom auto. */
+              className="max-h-28 min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-neutral-200 px-4 py-3 text-base text-neutral-800"
               aria-label="Écrire un commentaire"
             />
             <button
               type="submit"
               disabled={!draft.trim() || isSubmitting}
-              className="inline-flex min-h-11 shrink-0 items-center rounded-full bg-yunicity-primary px-4 text-sm font-semibold text-white disabled:opacity-40"
+              className="inline-flex min-h-11 max-w-[40%] shrink-0 items-center rounded-full bg-yunicity-primary px-4 text-sm font-semibold text-white disabled:opacity-40"
             >
               {isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden />

@@ -22,7 +22,6 @@ import {
   VIDEOS_FILTER_POPULARITY,
   VIDEOS_MOBILE_FILTERS_CLOSE,
   VIDEOS_MOBILE_FILTERS_LOCATION_HINT,
-  VIDEOS_MOBILE_FILTERS_OPEN,
   VIDEOS_MOBILE_FILTERS_RESET,
   VIDEOS_SIDEBAR_FILTERS_TITLE,
   formatVideosMobileFiltersSee,
@@ -77,6 +76,11 @@ function Chip({ label, pressed, onClick }: ChipProps) {
 
 /**
  * Feuille Filtres mobile (cadrage v25, F2) : cinq filtres dont Lieu, application en direct.
+ *
+ * P0-C : le scroll appartient à `data-videos-filters-scroll` ; le pied
+ * Réinitialiser / Voir N est `shrink-0` HORS de cette zone. Sticky dans le
+ * scroll OverlayPanel restait fragile sur Safari iOS (dernières options
+ * Popularité masquées).
  */
 export function VideosMobileFiltersSheet({
   open,
@@ -104,13 +108,13 @@ export function VideosMobileFiltersSheet({
       zIndex={Z_INDEX.VIDEO_COMMENTS}
       returnFocusRef={returnFocusRef}
       className="max-h-[85dvh] rounded-t-[20px] bg-white"
+      contentClassName="!flex !min-h-0 !flex-1 !flex-col !overflow-hidden !p-0"
     >
-      {/*
-        Un seul scroll (celui du Drawer) + pied sticky : « Les plus commentées »
-        peut remonter entièrement au-dessus de Réinitialiser / Voir N.
-      */}
-      <div className="-mx-4 -mb-4 flex flex-col">
-        <div className="space-y-4 px-5 pb-36">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div
+          data-videos-filters-scroll=""
+          className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 pb-4 pt-4"
+        >
           <fieldset className="space-y-2">
             <legend className="text-[14px] font-bold text-neutral-900">{VIDEOS_FILTER_CATEGORY}</legend>
             <div className="flex flex-wrap gap-2">
@@ -210,7 +214,7 @@ export function VideosMobileFiltersSheet({
 
         <div
           data-videos-filters-footer=""
-          className="sticky bottom-0 z-10 border-t border-neutral-200 bg-white px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2.5"
+          className="shrink-0 border-t border-neutral-200 bg-white px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2.5"
         >
           <p role="status" className="text-[13px] text-neutral-700">
             <strong>
@@ -242,4 +246,4 @@ export function VideosMobileFiltersSheet({
   );
 }
 
-export { VIDEOS_MOBILE_FILTERS_OPEN };
+export { VIDEOS_MOBILE_FILTERS_OPEN } from "@yunicity/utils";

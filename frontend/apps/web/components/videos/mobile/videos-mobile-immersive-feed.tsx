@@ -10,6 +10,7 @@ import { LocalVideoFeedViewport } from "@/components/videos/local-video-feed-vie
 import { LocalVideoMoreMenu } from "@/components/videos/local-video-more-menu";
 import { VideosMobileFeedTopBar } from "@/components/videos/mobile/videos-mobile-feed-top-bar";
 import { VideoCommentsSheet } from "@/components/videos/video-comments-sheet";
+import { useVideosMobileImmersiveViewport } from "@/hooks/use-videos-mobile-immersive-viewport";
 import { useActiveReportVideoId } from "@/lib/videos/active-report-video-context";
 
 type VideosMobileImmersiveFeedProps = {
@@ -63,6 +64,7 @@ export function VideosMobileImmersiveFeed({
   search,
 }: VideosMobileImmersiveFeedProps) {
   const router = useRouter();
+  useVideosMobileImmersiveViewport(true);
   const [commentsVideoId, setCommentsVideoId] = useState<string | null>(null);
   const [descriptionVideoId, setDescriptionVideoId] = useState<string | null>(null);
   const [moreVideoId, setMoreVideoId] = useState<string | null>(null);

@@ -70,6 +70,13 @@ export type OverlayPanelProps = {
   zIndex?: number;
   className?: string;
   /**
+   * Classes additionnelles sur le corps scrollable (`data-yunicity-overlay-scroll`).
+   * Additif : sans cette prop, le comportement est inchangé. Sert aux écrans
+   * qui reprennent le scroll en interne (ex. feuille Filtres : zone scroll +
+   * pied fixe, sans sticky dans le scroll OverlayPanel — fragile sur iOS).
+   */
+  contentClassName?: string;
+  /**
    * Habillage du panneau. `default` : en-tete titre + corps rembourre.
    * `bare` (C3.1-R1L.1) : plein viewport, sans carte ni rembourrage, pour une
    * surface dont le CONTENU est le sujet — une visionneuse d'image. Le contrat
@@ -95,6 +102,7 @@ export function OverlayPanel({
   returnFocusRef,
   zIndex = yunicitySemantic.z.modal,
   className,
+  contentClassName,
   chrome = "default",
   children,
 }: OverlayPanelProps) {
@@ -361,6 +369,7 @@ export function OverlayPanel({
               className={cx(
                 bare ? "min-h-0 flex-1 overflow-hidden" : "min-h-0 flex-1 overflow-y-auto p-4",
                 side === "bottom" && "max-h-[calc(85dvh-4.75rem)]",
+                contentClassName,
               )}
               data-yunicity-overlay-scroll=""
             >
