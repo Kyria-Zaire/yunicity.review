@@ -2,6 +2,7 @@
 
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import { act, cleanup, fireEvent, render, renderHook, screen, within } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { LocalVideoDescriptionSheet } from "@/components/videos/local-video-description-sheet";
@@ -226,6 +227,47 @@ describe("Fil immersif — « … » puis signalement (V4-2)", () => {
     });
     expect(onOpenReport).toHaveBeenCalledWith("v1");
     expect(screen.queryByRole("dialog", { name: "Plus d'options" })).toBeNull();
+  });
+
+  it("menu → signalement : aucune reprise intermédiaire, la vidéo reste en pause jusqu'à la fermeture", () => {
+    const play = vi.spyOn(HTMLMediaElement.prototype, "play");
+    function Harness() {
+      const [reportId, setReportId] = useState<string | null>(null);
+      return (
+        <ActiveReportVideoContext.Provider value={reportId}>
+          <VideosMobileImmersiveFeed
+            variant="discovery"
+            items={[item("v1"), item("v2")]}
+            onToggleLike={vi.fn()}
+            onShare={vi.fn()}
+            onOpenReport={setReportId}
+            onCommentCountDelta={vi.fn()}
+          />
+          <button type="button" onClick={() => setReportId(null)}>
+            fermer-signalement
+          </button>
+        </ActiveReportVideoContext.Provider>
+      );
+    }
+    render(<Harness />);
+    const active = document.querySelector<HTMLElement>('[data-video-slide-id="v1"]')!;
+    fireEvent.click(within(active).getByRole("button", { name: "Plus d'options : signaler" }));
+    expect(within(active).getByText("En pause")).toBeTruthy();
+    const playsBeforeReport = play.mock.calls.length;
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "Signaler la vidéo" }));
+    });
+    // Passage menu → signalement : ni appel à play(), ni disparition de « En pause ».
+    expect(play.mock.calls.length).toBe(playsBeforeReport);
+    expect(within(active).getByText("En pause")).toBeTruthy();
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "fermer-signalement" }));
+    });
+    // Fermeture du signalement : la vidéo jouait avant le menu, elle reprend.
+    expect(within(active).queryByText("En pause")).toBeNull();
+    expect(play.mock.calls.length).toBeGreaterThan(playsBeforeReport);
   });
 
   it("signalement ouvert (contexte) : la vidéo concernée reste en pause", () => {
