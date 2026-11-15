@@ -22,6 +22,8 @@ export type LocalVideoSlideParts = {
   /** Fil de progression de 2 px (écran A) ; `null` quand la barre est affichée. */
   thread: ReactNode;
   actions: ReactNode;
+  /** Medium v1.2 : son dans le cadre vidéo (coin haut droit), pas dans une toolbar isolée. */
+  muteControl?: ReactNode;
   bandRef: RefObject<HTMLDivElement>;
   actionsRef: RefObject<HTMLDivElement>;
   onChromeFocus: (event: FocusEvent<HTMLElement>) => void;
@@ -119,12 +121,13 @@ type LocalVideoMediumPortraitStageProps = LocalVideoSlideParts & {
 export function LocalVideoMediumPortraitStage({ nav = null, ...parts }: LocalVideoMediumPortraitStageProps) {
   return (
     <div
-      className="videos-medium-portrait-stage flex h-full w-full items-stretch justify-center gap-3 bg-white px-2 py-2"
+      className="videos-medium-portrait-stage flex h-full w-full items-stretch justify-center gap-3 bg-white px-1.5 py-1.5"
       data-videos-medium-portrait-stage=""
     >
       <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-2xl bg-black">
         {parts.video}
         {parts.overlays}
+        {parts.muteControl}
         <div
           ref={parts.bandRef}
           onFocus={parts.onChromeFocus}
@@ -177,6 +180,7 @@ export function LocalVideoLandscapeStage({ aspectRatio, onFullscreen, ...parts }
       <div className="relative max-h-[60%] w-full bg-black" style={{ aspectRatio }}>
         {parts.video}
         {parts.overlays}
+        {parts.muteControl}
         <button
           type="button"
           onClick={onFullscreen}

@@ -6,7 +6,6 @@ import {
   LOCAL_VIDEO_SHARED_BADGE,
   reorderLocalVideoFeedForFocus,
 } from "@yunicity/utils";
-import { Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { LocalVideoDescriptionSheet } from "@/components/videos/local-video-description-sheet";
@@ -14,7 +13,6 @@ import { LocalVideoFeedViewport } from "@/components/videos/local-video-feed-vie
 import { LocalVideoMoreMenu } from "@/components/videos/local-video-more-menu";
 import { VideoCommentsSheet } from "@/components/videos/video-comments-sheet";
 import { useActiveReportVideoId } from "@/lib/videos/active-report-video-context";
-import { VIDEO_CANVAS_FOCUS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
 
 type VideosMediumVerticalFeedProps = {
   items: readonly LocalVideoFeedItem[];
@@ -111,21 +109,6 @@ export function VideosMediumVerticalFeed({
       onMouseEnter={() => setPointerOverFeed(true)}
       onMouseLeave={() => setPointerOverFeed(false)}
     >
-      <div className="videos-medium-vertical-toolbar">
-        <button
-          type="button"
-          className={`${VIDEO_TOUCH_TARGET} ${VIDEO_CANVAS_FOCUS} ml-auto rounded-full border border-neutral-200 bg-white text-neutral-800`}
-          aria-label={isMuted ? "Activer le son" : "Couper le son"}
-          onClick={() => setIsMuted((value) => !value)}
-        >
-          {isMuted ? (
-            <VolumeX className="h-5 w-5" aria-hidden />
-          ) : (
-            <Volume2 className="h-5 w-5" aria-hidden />
-          )}
-        </button>
-      </div>
-
       {showSharedBadge ? (
         <p className="videos-medium-shared-badge" role="status">
           {LOCAL_VIDEO_SHARED_BADGE}
@@ -161,6 +144,7 @@ export function VideosMediumVerticalFeed({
             canPrevious: activeIndex > 0,
             canNext: activeIndex >= 0 && activeIndex < feedItems.length - 1,
           }}
+          onToggleMute={() => setIsMuted((value) => !value)}
         />
       </div>
 

@@ -1,0 +1,146 @@
+{
+  "env": "localhost+api-simulee",
+  "note": "Preuves locales API simulée. Captures CTO indisponibles localement. Scrollbar masquée ≠ preuve.",
+  "clipBasDefinition": "clipBasPx = stage.bottom - innerHeight ; >0 débordement (KO) ; <=0 pas de débordement (OK).",
+  "geometry": [
+    {
+      "name": "640x900",
+      "rem": 16,
+      "offsetRem": 14.5,
+      "offsetPx": 232,
+      "viewport": {
+        "w": 640,
+        "h": 900
+      },
+      "heroH": 65,
+      "portalH": 89,
+      "chromeBottomPx": 210,
+      "stageTopPx": 230,
+      "gapSortToStagePx": 20,
+      "stageH": 668,
+      "expectedMaxH": 668,
+      "reserveCoversChrome": true,
+      "clipBasPx": -2,
+      "overflowBas": false,
+      "pageScrollRoom": 32
+    },
+    {
+      "name": "820x1180",
+      "rem": 16,
+      "offsetRem": 14.5,
+      "offsetPx": 232,
+      "viewport": {
+        "w": 820,
+        "h": 1180
+      },
+      "heroH": 65,
+      "portalH": 89,
+      "chromeBottomPx": 210,
+      "stageTopPx": 230,
+      "gapSortToStagePx": 20,
+      "stageH": 720,
+      "expectedMaxH": 720,
+      "reserveCoversChrome": true,
+      "clipBasPx": -230,
+      "overflowBas": false,
+      "pageScrollRoom": 32
+    },
+    {
+      "name": "1023x768",
+      "rem": 16,
+      "offsetRem": 14.5,
+      "offsetPx": 232,
+      "viewport": {
+        "w": 1023,
+        "h": 768
+      },
+      "heroH": 65,
+      "portalH": 89,
+      "chromeBottomPx": 210,
+      "stageTopPx": 230,
+      "gapSortToStagePx": 20,
+      "stageH": 536,
+      "expectedMaxH": 536,
+      "reserveCoversChrome": true,
+      "clipBasPx": -2,
+      "overflowBas": false,
+      "pageScrollRoom": 32
+    },
+    {
+      "name": "844x390",
+      "rem": 16,
+      "offsetRem": 14.5,
+      "offsetPx": 232,
+      "viewport": {
+        "w": 844,
+        "h": 390
+      },
+      "heroH": 65,
+      "portalH": 89,
+      "chromeBottomPx": 210,
+      "stageTopPx": 230,
+      "gapSortToStagePx": 20,
+      "stageH": 240,
+      "expectedMaxH": 240,
+      "reserveCoversChrome": true,
+      "clipBasPx": 80,
+      "overflowBas": true,
+      "pageScrollRoom": 112
+    }
+  ],
+  "scroll": [
+    {
+      "mode": "mouse-wheel",
+      "start": "vid-b",
+      "afterNext": "vid-a",
+      "afterPrev": "vid-b",
+      "nextChanged": true,
+      "prevRestored": true
+    },
+    {
+      "mode": "nav-arrows",
+      "start": "vid-b",
+      "afterNext": "vid-a",
+      "afterPrev": "vid-b",
+      "nextChanged": true,
+      "prevRestored": true,
+      "share": true,
+      "comments": true,
+      "mute": true
+    },
+    {
+      "mode": "trackpad-pixel-bursts",
+      "start": "vid-b",
+      "afterNext": "vid-c",
+      "afterPrev": "vid-b",
+      "nextChanged": true,
+      "prevRestored": true
+    },
+    {
+      "mode": "touch-scrollBy",
+      "start": "vid-b",
+      "afterNext": "vid-a",
+      "afterPrev": "vid-b",
+      "nextChanged": true,
+      "prevRestored": true
+    }
+  ],
+  "shortLandscape": {
+    "beforeScroll": {
+      "scrollRoom": 112,
+      "stageBottomBeyond": 80
+    },
+    "afterScroll": {
+      "stageFull": true,
+      "allSideButtonsInView": false,
+      "muteInView": true,
+      "shareInView": true,
+      "commentsInView": true
+    },
+    "afterScrollTop": {
+      "navPrevInView": true
+    }
+  },
+  "failures": [],
+  "ok": true
+}

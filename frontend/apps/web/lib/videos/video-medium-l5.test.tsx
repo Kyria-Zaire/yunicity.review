@@ -15,6 +15,7 @@ vi.mock("@/components/videos/local-video-feed-viewport", () => ({
     focusVideoId,
     presentation,
     mediumNav,
+    onToggleMute,
   }: {
     items: LocalVideoFeedItem[];
     focusVideoId?: string | null;
@@ -25,6 +26,7 @@ vi.mock("@/components/videos/local-video-feed-viewport", () => ({
       canPrevious: boolean;
       canNext: boolean;
     } | null;
+    onToggleMute?: () => void;
   }) => (
     <div
       data-testid="medium-feed-viewport"
@@ -32,6 +34,7 @@ vi.mock("@/components/videos/local-video-feed-viewport", () => ({
       data-ids={items.map((item) => item.id).join(",")}
       data-presentation={presentation ?? ""}
       data-medium-side-column=""
+      data-has-mute={onToggleMute ? "1" : ""}
     >
       {mediumNav ? (
         <div data-videos-medium-side-column="">
@@ -146,7 +149,8 @@ describe("VIDEO-REFONTE-L5-MEDIUM-01 — fil vertical", () => {
     expect(viewport.getAttribute("data-ids")).toBe("a,b");
     expect(viewport.getAttribute("data-presentation")).toBe("medium");
     expect(screen.queryByText(LOCAL_VIDEO_SHARED_BADGE)).toBeNull();
-    expect(screen.getByRole("button", { name: "Activer le son" })).toBeTruthy();
+    // Son : dans le cadre vidéo (slide), plus dans une toolbar isolée.
+    expect(screen.queryByRole("button", { name: "Activer le son" })).toBeNull();
     expect(
       (screen.getByRole("button", { name: "Vidéo précédente" }) as HTMLButtonElement).disabled,
     ).toBe(true);

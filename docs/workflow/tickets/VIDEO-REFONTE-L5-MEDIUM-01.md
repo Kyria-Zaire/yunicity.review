@@ -40,3 +40,11 @@ rail + hero-header **inchangés** ; `/videos?video=` ouvre la vidéo en premier 
 ## Prochaine étape
 
 Validation CTO du plan → ouverture formelle du ticket (seul actif) → BUILD.
+
+## Livraison Preview (15/11)
+
+- SHA initial : **`95674af1`**
+- Relevé : [`LIVRAISON-PREVIEW-95674af1-releve.md`](../../qa/LIVRAISON-PREVIEW-95674af1-releve.md)
+- Recette visuelle CTO : **non validée** → correctif layout (son dans cadre, stage `100dvh−14.5rem`, portal mb 0, scroll vérifié).
+- Preuves correctif : [`recette-visuelle/RAPPORT-RECETTE-VISUELLE-CORRECTIF.md`](../../qa/controle-rendu/l5-medium/recette-visuelle/RAPPORT-RECETTE-VISUELLE-CORRECTIF.md) — API simulée ; captures CTO indisponibles localement.
+- Statut : **NON clos** — ticket ouvert jusqu’à nouvelle recette visuelle CTO.

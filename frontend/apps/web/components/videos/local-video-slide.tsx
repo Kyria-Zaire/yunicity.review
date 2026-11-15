@@ -6,6 +6,7 @@ import {
   isLocalVideoFeedItemProcessing,
   resolveLocalVideoLayout,
 } from "@yunicity/utils";
+import { Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 import { LocalVideoActionRail } from "@/components/videos/local-video-action-rail";
@@ -22,6 +23,7 @@ import { LocalVideoSlideOverlays } from "@/components/videos/local-video-slide-o
 import { useSlideChrome } from "@/hooks/use-slide-chrome";
 import { usePauseWhileOpen } from "@/hooks/use-pause-while-open";
 import { useSlideGestures } from "@/hooks/use-slide-gestures";
+import { VIDEO_IMMERSIVE_FOCUS } from "@/lib/videos/video-playback-a11y";
 
 /** Diapositive inactive : inert + aria-hidden pour exclure clavier et TA sans démonter le snap. */
 function useSlideInert(articleRef: RefObject<HTMLElement | null>, isActive: boolean): void {
@@ -78,6 +80,8 @@ type LocalVideoSlideProps = {
     canPrevious: boolean;
     canNext: boolean;
   } | null;
+  /** Medium : bascule son (bouton dans le cadre vidéo, maquette v1.2). */
+  onToggleMute?: () => void;
 };
 
 /**
@@ -100,6 +104,7 @@ export function LocalVideoSlide({
   onChromeVisibleChange,
   presentation = "immersive",
   mediumNav = null,
+  onToggleMute,
 }: LocalVideoSlideProps) {
   const articleRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -252,6 +257,23 @@ export function LocalVideoSlide({
         }}
       />
     ),
+    muteControl:
+      presentation === "medium" && onToggleMute ? (
+        <button
+          type="button"
+          aria-label={isMuted ? "Activer le son" : "Couper le son"}
+          onClick={onToggleMute}
+          className={`absolute right-1.5 top-1.5 z-20 flex h-11 w-11 items-center justify-center text-white ${VIDEO_IMMERSIVE_FOCUS}`}
+        >
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(17,24,39,0.6)]">
+            {isMuted ? (
+              <VolumeX className="h-[18px] w-[18px]" aria-hidden />
+            ) : (
+              <Volume2 className="h-[18px] w-[18px]" aria-hidden />
+            )}
+          </span>
+        </button>
+      ) : null,
     bandRef,
     actionsRef,
     onChromeFocus: chrome.handleChromeFocus,

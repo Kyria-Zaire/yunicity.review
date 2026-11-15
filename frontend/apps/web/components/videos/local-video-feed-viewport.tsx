@@ -35,6 +35,7 @@ type LocalVideoFeedViewportProps = {
     canPrevious: boolean;
     canNext: boolean;
   } | null;
+  onToggleMute?: () => void;
 };
 
 function scrollContainerToSlide(container: HTMLElement, slide: HTMLElement): void {
@@ -59,6 +60,7 @@ export function LocalVideoFeedViewport({
   onSlideChromeVisible,
   presentation = "immersive",
   mediumNav = null,
+  onToggleMute,
 }: LocalVideoFeedViewportProps) {
   const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
   const suppressActiveChangeRef = useRef(false);
@@ -245,6 +247,7 @@ export function LocalVideoFeedViewport({
           }
           presentation={presentation}
           mediumNav={activeId === item.id ? mediumNav : null}
+          onToggleMute={onToggleMute}
         />
       ))}
     </div>
