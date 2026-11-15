@@ -1,9 +1,17 @@
 "use client";
 
-import { VIDEOS_MOBILE_FULLSCREEN } from "@yunicity/utils";
+import {
+  LOCAL_VIDEO_FALLBACK_LANDSCAPE,
+  LOCAL_VIDEO_FALLBACK_PORTRAIT,
+  MEDIUM_SIDE_COLUMN_GAP_PX,
+  MEDIUM_SIDE_COLUMN_WIDTH_PX,
+  VIDEOS_MOBILE_FULLSCREEN,
+  fitMediaFrameInBox,
+} from "@yunicity/utils";
 import { ChevronDown, ChevronUp, Maximize } from "lucide-react";
 import {
   useLayoutEffect,
+  useRef,
   useState,
   type FocusEvent,
   type ReactNode,
@@ -104,72 +112,257 @@ type LocalVideoLandscapeStageProps = LocalVideoSlideParts & {
  * légende + actions centré verticalement ; légende sur fond neutre, sans voile, juste sous
  * l'image ; actions à droite dès le bas de l'image ; « Plein écran » conservé.
  */
-type LocalVideoMediumPortraitStageProps = LocalVideoSlideParts & {
-  /** Flèches medium v1.2 — même colonne que les actions, hors vidéo (≠ R-PAN). */
-  nav?: {
-    onPrevious: () => void;
-    onNext: () => void;
-    canPrevious: boolean;
-    canNext: boolean;
-  } | null;
+type MediumNav = {
+  onPrevious: () => void;
+  onNext: () => void;
+  canPrevious: boolean;
+  canNext: boolean;
 };
 
-/**
- * Medium v1.2 portrait : vidéo (voile + légende) + colonne d'actions **à droite hors cadre**.
- * Réf. `Lecteur-medium.dc.html` : `ax = vx + vw + 12`. Ne pas confondre avec le panneau R-PAN (Lot 6).
- */
-export function LocalVideoMediumPortraitStage({ nav = null, ...parts }: LocalVideoMediumPortraitStageProps) {
+type LocalVideoMediumPortraitStageProps = LocalVideoSlideParts & {
+  /** Flèches medium v1.2 — même colonne que les actions, hors vidéo (≠ R-PAN). */
+  nav?: MediumNav | null;
+  /** Dimensions intrinsèques / API du média (pas du viewport). */
+  mediaWidth?: number | null;
+  mediaHeight?: number | null;
+  /** Badge « Vidéo partagée » dans le cadre (Lecteur-medium.dc.html). */
+  sharedBadge?: ReactNode;
+};
+
+type LocalVideoMediumLandscapeStageProps = LocalVideoSlideParts & {
+  nav?: MediumNav | null;
+  mediaWidth?: number | null;
+  mediaHeight?: number | null;
+  sharedBadge?: ReactNode;
+  onFullscreen: () => void;
+};
+
+function MediumSideColumn({
+  nav,
+  actions,
+  actionsRef,
+  onChromeFocus,
+  onChromeBlur,
+  columnHeight,
+}: {
+  nav: MediumNav | null;
+  actions: ReactNode;
+  actionsRef: RefObject<HTMLDivElement>;
+  onChromeFocus: (event: FocusEvent<HTMLElement>) => void;
+  onChromeBlur: (event: FocusEvent<HTMLElement>) => void;
+  columnHeight: number;
+}) {
   return (
     <div
-      className="videos-medium-portrait-stage flex h-full w-full items-stretch justify-center gap-3 bg-white px-1.5 py-1.5"
+      ref={actionsRef}
+      onFocus={onChromeFocus}
+      onBlur={onChromeBlur}
+      className="videos-slide-action-rail videos-medium-side-column z-20 flex shrink-0 flex-col items-center py-1"
+      data-videos-medium-side-column=""
+      style={{ width: MEDIUM_SIDE_COLUMN_WIDTH_PX, height: columnHeight }}
+    >
+      {nav ? (
+        <div className="flex flex-col items-center gap-2">
+          <button
+            type="button"
+            aria-label="Vidéo précédente"
+            disabled={!nav.canPrevious}
+            onClick={nav.onPrevious}
+            className={`flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-900 disabled:opacity-40 ${VIDEO_IMMERSIVE_FOCUS}`}
+          >
+            <ChevronUp className="h-[22px] w-[22px]" aria-hidden />
+          </button>
+          <button
+            type="button"
+            aria-label="Vidéo suivante"
+            disabled={!nav.canNext}
+            onClick={nav.onNext}
+            className={`flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-900 disabled:opacity-40 ${VIDEO_IMMERSIVE_FOCUS}`}
+          >
+            <ChevronDown className="h-[22px] w-[22px]" aria-hidden />
+          </button>
+        </div>
+      ) : null}
+      <div className="mt-auto flex flex-col items-center">{actions}</div>
+    </div>
+  );
+}
+
+function useFittedMediaFrame(
+  mediaWidth: number | null | undefined,
+  mediaHeight: number | null | undefined,
+  fallback: { width: number; height: number },
+  /** Réserve verticale sous la vidéo (légende paysage). */
+  bottomReservePx = 0,
+) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [frame, setFrame] = useState({ width: 0, height: 0 });
+
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    const sync = () => {
+      const style = getComputedStyle(root);
+      const padX = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
+      const padY = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
+      const availW = Math.max(
+        0,
+        root.clientWidth - padX - MEDIUM_SIDE_COLUMN_WIDTH_PX - MEDIUM_SIDE_COLUMN_GAP_PX,
+      );
+      const availH = Math.max(0, root.clientHeight - padY - bottomReservePx);
+      const mw = mediaWidth && mediaWidth > 0 ? mediaWidth : fallback.width;
+      const mh = mediaHeight && mediaHeight > 0 ? mediaHeight : fallback.height;
+      setFrame(fitMediaFrameInBox(availW, availH, mw, mh));
+    };
+
+    sync();
+    const Observer = globalThis.ResizeObserver;
+    if (typeof Observer !== "function") return;
+    const observer = new Observer(sync);
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [mediaWidth, mediaHeight, fallback.width, fallback.height, bottomReservePx]);
+
+  return { rootRef, frame };
+}
+
+/**
+ * Medium v1.2 portrait : cadre **haut et étroit** au ratio média, voile + légende,
+ * colonne d'actions hors cadre (`ax = vx + vw + 12`). Pas de flex-1 qui aplatit le cadre.
+ */
+export function LocalVideoMediumPortraitStage({
+  nav = null,
+  mediaWidth = null,
+  mediaHeight = null,
+  sharedBadge = null,
+  ...parts
+}: LocalVideoMediumPortraitStageProps) {
+  const { rootRef, frame } = useFittedMediaFrame(
+    mediaWidth,
+    mediaHeight,
+    LOCAL_VIDEO_FALLBACK_PORTRAIT,
+  );
+
+  return (
+    <div
+      ref={rootRef}
+      className="videos-medium-portrait-stage flex h-full w-full items-center justify-center bg-white px-1.5 py-1.5"
       data-videos-medium-portrait-stage=""
     >
-      <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-2xl bg-black">
-        {parts.video}
-        {parts.overlays}
-        {parts.muteControl}
+      {frame.width > 0 ? (
         <div
-          ref={parts.bandRef}
-          onFocus={parts.onChromeFocus}
-          onBlur={parts.onChromeBlur}
-          className="videos-slide-bottom-chrome pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-[rgba(17,24,39,0.6)] px-4 pb-2 pt-1.5"
+          className="flex items-stretch"
+          style={{ gap: MEDIUM_SIDE_COLUMN_GAP_PX, height: frame.height }}
         >
-          {parts.meta}
-          {parts.bar}
-          {parts.thread ? <div className="absolute inset-x-0 bottom-0">{parts.thread}</div> : null}
-        </div>
-      </div>
-      <div
-        ref={parts.actionsRef}
-        onFocus={parts.onChromeFocus}
-        onBlur={parts.onChromeBlur}
-        className="videos-slide-action-rail videos-medium-side-column z-20 flex w-14 shrink-0 flex-col items-center self-stretch py-1"
-        data-videos-medium-side-column=""
-      >
-        {nav ? (
-          <div className="flex flex-col items-center gap-2">
-            <button
-              type="button"
-              aria-label="Vidéo précédente"
-              disabled={!nav.canPrevious}
-              onClick={nav.onPrevious}
-              className={`flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-900 disabled:opacity-40 ${VIDEO_IMMERSIVE_FOCUS}`}
+          <div
+            className="relative overflow-hidden rounded-2xl bg-black"
+            data-videos-medium-video-frame=""
+            data-videos-medium-frame-orientation="portrait"
+            style={{ width: frame.width, height: frame.height }}
+          >
+            {parts.video}
+            {parts.overlays}
+            {parts.muteControl}
+            {sharedBadge}
+            <div
+              ref={parts.bandRef}
+              onFocus={parts.onChromeFocus}
+              onBlur={parts.onChromeBlur}
+              className="videos-slide-bottom-chrome pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-[rgba(17,24,39,0.6)] px-4 pb-2 pt-1.5"
             >
-              <ChevronUp className="h-[22px] w-[22px]" aria-hidden />
-            </button>
-            <button
-              type="button"
-              aria-label="Vidéo suivante"
-              disabled={!nav.canNext}
-              onClick={nav.onNext}
-              className={`flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-900 disabled:opacity-40 ${VIDEO_IMMERSIVE_FOCUS}`}
-            >
-              <ChevronDown className="h-[22px] w-[22px]" aria-hidden />
-            </button>
+              {parts.meta}
+              {parts.bar}
+              {parts.thread ? <div className="absolute inset-x-0 bottom-0">{parts.thread}</div> : null}
+            </div>
           </div>
-        ) : null}
-        <div className="mt-auto flex flex-col items-center">{parts.actions}</div>
-      </div>
+          <MediumSideColumn
+            nav={nav}
+            actions={parts.actions}
+            actionsRef={parts.actionsRef}
+            onChromeFocus={parts.onChromeFocus}
+            onChromeBlur={parts.onChromeBlur}
+            columnHeight={frame.height}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Réserve pour légende + puce sous le lecteur paysage (M4 / M8). */
+const MEDIUM_LANDSCAPE_META_RESERVE_PX = 128;
+
+/**
+ * Medium v1.2 paysage : cadre horizontal au ratio média (`object-fit: contain` côté vidéo),
+ * informations **sous** le lecteur sur fond blanc, actions latérales (≠ R-PAN).
+ */
+export function LocalVideoMediumLandscapeStage({
+  nav = null,
+  mediaWidth = null,
+  mediaHeight = null,
+  sharedBadge = null,
+  onFullscreen,
+  ...parts
+}: LocalVideoMediumLandscapeStageProps) {
+  const { rootRef, frame } = useFittedMediaFrame(
+    mediaWidth,
+    mediaHeight,
+    LOCAL_VIDEO_FALLBACK_LANDSCAPE,
+    MEDIUM_LANDSCAPE_META_RESERVE_PX,
+  );
+
+  return (
+    <div
+      ref={rootRef}
+      className="videos-medium-landscape-stage flex h-full w-full items-center justify-center bg-white px-1.5 py-1.5"
+      data-videos-medium-landscape-stage=""
+    >
+      {frame.width > 0 ? (
+        <div className="flex flex-col" style={{ width: frame.width + MEDIUM_SIDE_COLUMN_GAP_PX + MEDIUM_SIDE_COLUMN_WIDTH_PX }}>
+          <div className="flex items-stretch" style={{ gap: MEDIUM_SIDE_COLUMN_GAP_PX }}>
+            <div
+              className="relative overflow-hidden rounded-2xl bg-black"
+              data-videos-medium-video-frame=""
+              data-videos-medium-frame-orientation="landscape"
+              style={{ width: frame.width, height: frame.height }}
+            >
+              {parts.video}
+              {parts.overlays}
+              {parts.muteControl}
+              {sharedBadge}
+              <button
+                type="button"
+                onClick={onFullscreen}
+                aria-label={VIDEOS_MOBILE_FULLSCREEN}
+                className={`absolute bottom-1 right-1 z-20 flex h-11 w-11 items-center justify-center text-white ${VIDEO_IMMERSIVE_FOCUS}`}
+              >
+                <Maximize className="h-5 w-5" strokeWidth={2} aria-hidden />
+              </button>
+              {parts.thread ? <div className="absolute inset-x-0 bottom-0 z-10">{parts.thread}</div> : null}
+            </div>
+            <MediumSideColumn
+              nav={nav}
+              actions={parts.actions}
+              actionsRef={parts.actionsRef}
+              onChromeFocus={parts.onChromeFocus}
+              onChromeBlur={parts.onChromeBlur}
+              columnHeight={frame.height}
+            />
+          </div>
+          <div
+            ref={parts.bandRef}
+            onFocus={parts.onChromeFocus}
+            onBlur={parts.onChromeBlur}
+            className="videos-slide-bottom-chrome mt-2 min-w-0 bg-white pt-1"
+            style={{ width: frame.width }}
+            data-videos-medium-landscape-meta=""
+          >
+            {parts.meta}
+            {parts.bar}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

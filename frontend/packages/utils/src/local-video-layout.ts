@@ -13,19 +13,62 @@ import {
 /** Seuil height/width au-delà duquel une vidéo est considérée portrait. */
 export const LOCAL_VIDEO_PORTRAIT_RATIO_THRESHOLD = 1.05;
 
+/** Ratios de repli quand les métadonnées API / intrinsèques manquent encore. */
+export const LOCAL_VIDEO_FALLBACK_PORTRAIT = { width: 9, height: 16 } as const;
+export const LOCAL_VIDEO_FALLBACK_LANDSCAPE = { width: 16, height: 9 } as const;
+
+/** Colonne d'actions medium v1.2 — `Lecteur-medium.dc.html` (largeur 56, écart ax = vw + 12). */
+export const MEDIUM_SIDE_COLUMN_WIDTH_PX = 56;
+export const MEDIUM_SIDE_COLUMN_GAP_PX = 12;
+
 export type LocalVideoFeedLayout = "portrait" | "landscape";
 
+export type MediaFrameSize = { width: number; height: number };
+
 /**
- * Détermine le layout feed desktop à partir des dimensions API (ffprobe backend).
- * Sans dimensions, retombe sur paysage (ratio 16:9 par défaut côté UI).
+ * Cadre média qui tient dans une boîte, **sans forcer un ratio unique**.
+ * Conserve le ratio `mediaW/mediaH` ; la contrainte active est largeur OU hauteur.
+ * Réf. medium : portrait ~528×938 ; paysage ~560×420 (M4) — chaque média son ratio.
  */
-export function resolveLocalVideoLayout(item: LocalVideoFeedItem): LocalVideoFeedLayout {
-  const width = item.media_width;
-  const height = item.media_height;
+export function fitMediaFrameInBox(
+  boxWidth: number,
+  boxHeight: number,
+  mediaWidth: number,
+  mediaHeight: number,
+): MediaFrameSize {
+  if (boxWidth <= 0 || boxHeight <= 0 || mediaWidth <= 0 || mediaHeight <= 0) {
+    return { width: 0, height: 0 };
+  }
+  const mediaRatio = mediaWidth / mediaHeight;
+  const boxRatio = boxWidth / boxHeight;
+  if (boxRatio > mediaRatio) {
+    const height = Math.round(boxHeight);
+    return { width: Math.round(height * mediaRatio), height };
+  }
+  const width = Math.round(boxWidth);
+  return { width, height: Math.round(width / mediaRatio) };
+}
+
+/**
+ * Détermine le layout à partir des dimensions média (API ffprobe ou intrinsèques).
+ * Sans dimensions : `null` — ne pas inventer un paysage par défaut (évite un basculement).
+ */
+export function resolveLocalVideoLayoutFromDims(
+  width: number | null | undefined,
+  height: number | null | undefined,
+): LocalVideoFeedLayout | null {
   if (width != null && height != null && width > 0 && height > 0) {
     return height / width > LOCAL_VIDEO_PORTRAIT_RATIO_THRESHOLD ? "portrait" : "landscape";
   }
-  return "landscape";
+  return null;
+}
+
+/**
+ * Détermine le layout feed à partir des dimensions API (ffprobe backend).
+ * Sans dimensions, retombe sur paysage (compat cartes / catalogue hors fil medium).
+ */
+export function resolveLocalVideoLayout(item: LocalVideoFeedItem): LocalVideoFeedLayout {
+  return resolveLocalVideoLayoutFromDims(item.media_width, item.media_height) ?? "landscape";
 }
 
 export function buildVideoAuthorProfileHref(item: LocalVideoFeedItem): string | null {

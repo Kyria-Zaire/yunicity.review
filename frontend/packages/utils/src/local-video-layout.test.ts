@@ -7,9 +7,11 @@ import {
   buildVideoAuthorProfileHref,
   buildVideosPortraitHashtags,
   extractVideoPortalTopics,
+  fitMediaFrameInBox,
   formatVideosPortalSubtitle,
   formatVideosPortraitOriginalSound,
   resolveLocalVideoLayout,
+  resolveLocalVideoLayoutFromDims,
   resolveVideosPortraitDiscoverCta,
   resolveVideosPortraitMapHref,
   resolveVideosPortraitPlaceLabel,
@@ -79,6 +81,36 @@ describe("resolveLocalVideoLayout", () => {
     expect(resolveLocalVideoLayout(feedItem({ media_width: null, media_height: null }))).toBe(
       "landscape",
     );
+  });
+});
+
+describe("resolveLocalVideoLayoutFromDims", () => {
+  it("retourne null sans dimensions (pas de basculement inventé)", () => {
+    expect(resolveLocalVideoLayoutFromDims(null, null)).toBeNull();
+  });
+});
+
+describe("fitMediaFrameInBox", () => {
+  it("conserve le ratio portrait dans une boîte large (hauteur contrainte)", () => {
+    // Stage medium large type 1023 : boîte ~900×536 — cadre portrait haut et étroit.
+    const fit = fitMediaFrameInBox(900, 536, 720, 1280);
+    expect(fit.height).toBe(536);
+    expect(fit.width).toBe(Math.round(536 * (720 / 1280)));
+    expect(fit.width).toBeLessThan(fit.height);
+  });
+
+  it("conserve le ratio paysage dans une boîte haute (largeur contrainte)", () => {
+    const fit = fitMediaFrameInBox(600, 800, 1920, 1080);
+    expect(fit.width).toBe(600);
+    expect(fit.height).toBe(Math.round(600 / (1920 / 1080)));
+    expect(fit.width).toBeGreaterThan(fit.height);
+  });
+
+  it("ne force pas un ratio unique entre portrait et paysage", () => {
+    const portrait = fitMediaFrameInBox(700, 700, 9, 16);
+    const landscape = fitMediaFrameInBox(700, 700, 16, 9);
+    expect(portrait.width / portrait.height).toBeCloseTo(9 / 16, 2);
+    expect(landscape.width / landscape.height).toBeCloseTo(16 / 9, 2);
   });
 });
 

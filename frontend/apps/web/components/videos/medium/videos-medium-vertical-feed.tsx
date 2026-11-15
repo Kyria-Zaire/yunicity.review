@@ -3,7 +3,6 @@
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import {
   LOCAL_VIDEO_DEFAULT_MUTED,
-  LOCAL_VIDEO_SHARED_BADGE,
   reorderLocalVideoFeedForFocus,
 } from "@yunicity/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -99,8 +98,8 @@ export function VideosMediumVerticalFeed({
     [activeIndex, feedItems, onLoadMore],
   );
 
-  const showSharedBadge =
-    sharedEntry && Boolean(focusVideoId) && activeVideoId === focusVideoId;
+  const sharedBadgeVideoId =
+    sharedEntry && focusVideoId && activeVideoId === focusVideoId ? focusVideoId : null;
 
   return (
     <div
@@ -109,12 +108,6 @@ export function VideosMediumVerticalFeed({
       onMouseEnter={() => setPointerOverFeed(true)}
       onMouseLeave={() => setPointerOverFeed(false)}
     >
-      {showSharedBadge ? (
-        <p className="videos-medium-shared-badge" role="status">
-          {LOCAL_VIDEO_SHARED_BADGE}
-        </p>
-      ) : null}
-
       <div className="videos-medium-vertical-stage">
         <LocalVideoFeedViewport
           items={feedItems}
@@ -145,6 +138,7 @@ export function VideosMediumVerticalFeed({
             canNext: activeIndex >= 0 && activeIndex < feedItems.length - 1,
           }}
           onToggleMute={() => setIsMuted((value) => !value)}
+          sharedBadgeVideoId={sharedBadgeVideoId}
         />
       </div>
 

@@ -36,6 +36,8 @@ type LocalVideoFeedViewportProps = {
     canNext: boolean;
   } | null;
   onToggleMute?: () => void;
+  /** Medium : badge partagé uniquement sur la slide focus (dans le cadre). */
+  sharedBadgeVideoId?: string | null;
 };
 
 function scrollContainerToSlide(container: HTMLElement, slide: HTMLElement): void {
@@ -61,6 +63,7 @@ export function LocalVideoFeedViewport({
   presentation = "immersive",
   mediumNav = null,
   onToggleMute,
+  sharedBadgeVideoId = null,
 }: LocalVideoFeedViewportProps) {
   const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
   const suppressActiveChangeRef = useRef(false);
@@ -248,6 +251,7 @@ export function LocalVideoFeedViewport({
           presentation={presentation}
           mediumNav={activeId === item.id ? mediumNav : null}
           onToggleMute={onToggleMute}
+          showSharedBadge={sharedBadgeVideoId === item.id}
         />
       ))}
     </div>

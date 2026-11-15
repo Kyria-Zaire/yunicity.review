@@ -20,6 +20,11 @@ type LocalVideoMobileMetaOverlayProps = {
   item: LocalVideoFeedItem;
   /** « plus » : ouvre la description complète (écran E). Absent : pas de bouton. */
   onExpandDescription?: (trigger: HTMLElement) => void;
+  /**
+   * `overlay` : texte blanc sur voile (portrait).
+   * `panel` : texte sombre sur fond clair (paysage medium — sous le lecteur).
+   */
+  surface?: "overlay" | "panel";
 };
 
 function authorInitials(item: LocalVideoFeedItem): string {
@@ -43,7 +48,11 @@ function captionRest(item: LocalVideoFeedItem, title: string): string | null {
  * Bloc transparent au pointeur : un appui sur le texte atteint la vidéo (pause / reprise) ;
  * seuls le profil, « plus » et la puce sont ciblables (VIDEO-MOBILE-CHROME-RETURN-01).
  */
-export function LocalVideoMobileMetaOverlay({ item, onExpandDescription }: LocalVideoMobileMetaOverlayProps) {
+export function LocalVideoMobileMetaOverlay({
+  item,
+  onExpandDescription,
+  surface = "overlay",
+}: LocalVideoMobileMetaOverlayProps) {
   const displayName = formatVideoAuthorDisplayName(item);
   const profileHref = buildVideoAuthorProfileHref(item);
   const title = resolveLocalVideoTeaserTitle(item);
@@ -52,20 +61,34 @@ export function LocalVideoMobileMetaOverlay({ item, onExpandDescription }: Local
   const placeHref = resolveVideosPortraitDiscoverCta(item)?.href ?? null;
   // VIDEO-03 — motif du classement, décidé par l'API. Le frontend ne reconstruit rien.
   const raison = resolveVideoRankingReason(item);
+  const onPanel = surface === "panel";
 
   const avatar = item.author.avatar_url ? (
-    <AvatarImage src={item.author.avatar_url} alt="" className="h-8 w-8 shrink-0 rounded-full border-2 border-white object-cover" />
+    <AvatarImage
+      src={item.author.avatar_url}
+      alt=""
+      className={`h-8 w-8 shrink-0 rounded-full object-cover ${onPanel ? "" : "border-2 border-white"}`}
+    />
   ) : (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-white bg-yunicity-primary text-xs font-bold text-white">
+    <span
+      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-yunicity-primary text-xs font-bold text-white ${
+        onPanel ? "" : "border-2 border-white"
+      }`}
+    >
       {authorInitials(item)}
     </span>
   );
 
-  const chipClass =
-    "inline-flex h-[30px] max-w-full items-center gap-1 rounded-full bg-white/[0.18] px-2.5 text-[13px] font-semibold text-white";
+  const chipClass = onPanel
+    ? "inline-flex h-[30px] max-w-full items-center gap-1 rounded-full bg-[#EEF0FF] px-2.5 text-[13px] font-semibold text-yunicity-primary"
+    : "inline-flex h-[30px] max-w-full items-center gap-1 rounded-full bg-white/[0.18] px-2.5 text-[13px] font-semibold text-white";
 
   return (
-    <div data-video-caption="" className="pointer-events-none flex min-w-0 flex-col gap-1 text-white">
+    <div
+      data-video-caption=""
+      data-video-caption-surface={surface}
+      className={`pointer-events-none flex min-w-0 flex-col gap-1 ${onPanel ? "text-neutral-900" : "text-white"}`}
+    >
       <div className="flex min-w-0 items-center gap-2">
         {profileHref ? (
           <Link
@@ -94,7 +117,7 @@ export function LocalVideoMobileMetaOverlay({ item, onExpandDescription }: Local
             type="button"
             onClick={(event) => onExpandDescription(event.currentTarget)}
             aria-haspopup="dialog"
-            className={`pointer-events-auto shrink-0 font-bold text-white ${VIDEO_IMMERSIVE_FOCUS}`}
+            className={`pointer-events-auto shrink-0 font-bold ${onPanel ? "text-neutral-900" : "text-white"} ${VIDEO_IMMERSIVE_FOCUS}`}
           >
             {VIDEOS_MOBILE_CAPTION_MORE}
           </button>
@@ -117,7 +140,9 @@ export function LocalVideoMobileMetaOverlay({ item, onExpandDescription }: Local
           ) : null}
           {raison.visible ? (
             // Pas de role="status" : précision de contexte, pas une alerte (VIDEO-03).
-            <span className="min-w-0 truncate text-[13px] text-white">{raison.label}</span>
+            <span className={`min-w-0 truncate text-[13px] ${onPanel ? "text-neutral-700" : "text-white"}`}>
+              {raison.label}
+            </span>
           ) : null}
         </div>
       ) : null}

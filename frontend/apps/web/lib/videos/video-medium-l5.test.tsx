@@ -16,6 +16,7 @@ vi.mock("@/components/videos/local-video-feed-viewport", () => ({
     presentation,
     mediumNav,
     onToggleMute,
+    sharedBadgeVideoId,
   }: {
     items: LocalVideoFeedItem[];
     focusVideoId?: string | null;
@@ -27,6 +28,7 @@ vi.mock("@/components/videos/local-video-feed-viewport", () => ({
       canNext: boolean;
     } | null;
     onToggleMute?: () => void;
+    sharedBadgeVideoId?: string | null;
   }) => (
     <div
       data-testid="medium-feed-viewport"
@@ -35,7 +37,13 @@ vi.mock("@/components/videos/local-video-feed-viewport", () => ({
       data-presentation={presentation ?? ""}
       data-medium-side-column=""
       data-has-mute={onToggleMute ? "1" : ""}
+      data-shared-badge={sharedBadgeVideoId ?? ""}
     >
+      {sharedBadgeVideoId ? (
+        <p role="status" data-videos-medium-shared-badge="">
+          {LOCAL_VIDEO_SHARED_BADGE}
+        </p>
+      ) : null}
       {mediumNav ? (
         <div data-videos-medium-side-column="">
           <button

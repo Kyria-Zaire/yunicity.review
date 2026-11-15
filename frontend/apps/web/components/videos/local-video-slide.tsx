@@ -3,10 +3,12 @@
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import {
   LOCAL_VIDEO_PLAYBACK_FALLBACK,
+  LOCAL_VIDEO_SHARED_BADGE,
   isLocalVideoFeedItemProcessing,
   resolveLocalVideoLayout,
+  resolveLocalVideoLayoutFromDims,
 } from "@yunicity/utils";
-import { Volume2, VolumeX } from "lucide-react";
+import { Link2, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 import { LocalVideoActionRail } from "@/components/videos/local-video-action-rail";
@@ -16,6 +18,7 @@ import { LocalVideoProcessingSlide } from "@/components/videos/local-video-proce
 import { LocalVideoProgressThread } from "@/components/videos/local-video-progress-thread";
 import {
   LocalVideoLandscapeStage,
+  LocalVideoMediumLandscapeStage,
   LocalVideoMediumPortraitStage,
   LocalVideoPortraitFrame,
 } from "@/components/videos/local-video-slide-frames";
@@ -71,7 +74,7 @@ type LocalVideoSlideProps = {
   onChromeVisibleChange?: (visible: boolean) => void;
   /**
    * `immersive` : mobile plein cadre (défaut).
-   * `medium` : portrait v1.2 — actions hors vidéo (colonne latérale ≠ R-PAN).
+   * `medium` : v1.2 — cadre au ratio média + colonne latérale (≠ R-PAN).
    */
   presentation?: "immersive" | "medium";
   mediumNav?: {
@@ -82,6 +85,8 @@ type LocalVideoSlideProps = {
   } | null;
   /** Medium : bascule son (bouton dans le cadre vidéo, maquette v1.2). */
   onToggleMute?: () => void;
+  /** Medium : badge « Vidéo partagée » dans le cadre (une seule fois). */
+  showSharedBadge?: boolean;
 };
 
 /**
@@ -105,6 +110,7 @@ export function LocalVideoSlide({
   presentation = "immersive",
   mediumNav = null,
   onToggleMute,
+  showSharedBadge = false,
 }: LocalVideoSlideProps) {
   const articleRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -114,6 +120,8 @@ export function LocalVideoSlide({
   const [isPaused, setIsPaused] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [mediaError, setMediaError] = useState(false);
+  /** Intrinsèques lues une fois si l'API n'a pas de dimensions — évite un basculement paysage→portrait. */
+  const [probedDims, setProbedDims] = useState<{ width: number; height: number } | null>(null);
 
   // Remise à zéro par vidéo, déclarée AVANT les hooks de lecture : ses effets s'exécutent
   // ensuite et peuvent mettre en pause (panneau déjà ouvert) sans être écrasés ici.
@@ -121,6 +129,7 @@ export function LocalVideoSlide({
     setCurrentTime(0);
     setIsPaused(false);
     setMediaError(false);
+    setProbedDims(null);
   }, [item.id]);
 
   const containers = useMemo(() => [bandRef, actionsRef] as const, []);
@@ -136,7 +145,14 @@ export function LocalVideoSlide({
   const { togglePause } = gestures;
   usePauseWhileOpen(suspended, isActive && !isPaused, setIsPaused);
 
-  const layout = resolveLocalVideoLayout(item);
+  const mediaWidth = item.media_width ?? probedDims?.width ?? null;
+  const mediaHeight = item.media_height ?? probedDims?.height ?? null;
+  const resolvedLayout =
+    presentation === "medium"
+      ? resolveLocalVideoLayoutFromDims(mediaWidth, mediaHeight)
+      : resolveLocalVideoLayout(item);
+  // Medium sans dims : attendre les métadonnées (pas de composition inventée).
+  const layout = resolvedLayout ?? (presentation === "medium" ? null : "landscape");
   const isPortrait = layout === "portrait";
   const duration = item.duration_seconds ?? 0;
 
@@ -183,19 +199,46 @@ export function LocalVideoSlide({
     );
   }
 
+  const objectFitClass =
+    presentation === "medium"
+      ? isPortrait
+        ? "object-cover"
+        : "object-contain"
+      : isPortrait
+        ? "object-cover"
+        : "object-contain";
+
+  const sharedBadgeNode =
+    presentation === "medium" && showSharedBadge ? (
+      <div
+        role="status"
+        className="pointer-events-none absolute left-3 top-3 z-20 flex h-8 items-center gap-1.5 rounded-full bg-[rgba(17,24,39,0.75)] px-3 text-[13px] font-semibold text-white"
+        data-videos-medium-shared-badge=""
+      >
+        <Link2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        {LOCAL_VIDEO_SHARED_BADGE}
+      </div>
+    ) : null;
+
   const parts = {
     video: (
       <video
         ref={videoRef}
         src={item.media_url}
         poster={item.thumbnail_url}
-        className={`absolute inset-0 h-full w-full ${isPortrait ? "object-cover" : "object-contain"}`}
+        className={`absolute inset-0 h-full w-full ${objectFitClass}`}
         playsInline
         loop
         muted={isMuted}
         preload="metadata"
         onClick={gestures.handleVideoTap}
         onError={handleMediaError}
+        onLoadedMetadata={() => {
+          if (item.media_width && item.media_height) return;
+          const element = videoRef.current;
+          if (!element || element.videoWidth <= 0 || element.videoHeight <= 0) return;
+          setProbedDims((prev) => prev ?? { width: element.videoWidth, height: element.videoHeight });
+        }}
         onTimeUpdate={() => {
           const element = videoRef.current;
           if (element) setCurrentTime(element.currentTime);
@@ -217,6 +260,7 @@ export function LocalVideoSlide({
     meta: (
       <LocalVideoMobileMetaOverlay
         item={item}
+        surface={presentation === "medium" && layout === "landscape" ? "panel" : "overlay"}
         onExpandDescription={(trigger) => {
           revealChrome(true);
           onOpenDescription(trigger);
@@ -280,30 +324,53 @@ export function LocalVideoSlide({
     onChromeBlur: chrome.handleChromeBlur,
   };
 
-  const mediumPortrait = presentation === "medium" && isPortrait;
+  const mediumReady = presentation === "medium" && layout != null;
+  const mediumPortrait = mediumReady && isPortrait;
+  const mediumLandscape = mediumReady && !isPortrait;
 
   return (
     <article
       ref={articleRef}
       data-video-slide-id={item.id}
-      data-videos-media-layout={layout}
+      data-videos-media-layout={layout ?? "pending"}
       data-videos-slide-presentation={presentation}
       data-videos-slide-chrome-visible={chromeVisible ? "" : undefined}
       className={`relative h-full min-h-full w-full snap-start snap-always overflow-hidden ${
-        mediumPortrait ? "bg-white" : isPortrait ? "bg-black" : "bg-[#111827]"
+        presentation === "medium" ? "bg-white" : isPortrait ? "bg-black" : "bg-[#111827]"
       }`}
     >
       {mediumPortrait ? (
         <LocalVideoMediumPortraitStage
           {...parts}
           nav={isActive ? mediumNav : null}
+          mediaWidth={mediaWidth}
+          mediaHeight={mediaHeight}
+          sharedBadge={sharedBadgeNode}
         />
+      ) : mediumLandscape ? (
+        <LocalVideoMediumLandscapeStage
+          {...parts}
+          nav={isActive ? mediumNav : null}
+          mediaWidth={mediaWidth}
+          mediaHeight={mediaHeight}
+          sharedBadge={sharedBadgeNode}
+          onFullscreen={() => enterVideoFullscreen(videoRef.current)}
+        />
+      ) : presentation === "medium" ? (
+        <div
+          className="relative h-full w-full bg-white"
+          data-videos-medium-layout-pending=""
+          aria-busy="true"
+        >
+          {/* Vidéo montée (métadonnées) sans composer une fausse orientation. */}
+          <div className="pointer-events-none absolute inset-0 opacity-0">{parts.video}</div>
+        </div>
       ) : isPortrait ? (
         <LocalVideoPortraitFrame {...parts} />
       ) : (
         <LocalVideoLandscapeStage
           {...parts}
-          aspectRatio={`${item.media_width ?? 16} / ${item.media_height ?? 9}`}
+          aspectRatio={`${mediaWidth ?? 16} / ${mediaHeight ?? 9}`}
           onFullscreen={() => enterVideoFullscreen(videoRef.current)}
         />
       )}

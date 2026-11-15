@@ -45,6 +45,7 @@ Validation CTO du plan → ouverture formelle du ticket (seul actif) → BUILD.
 
 - SHA initial : **`95674af1`** — relevé [`LIVRAISON-PREVIEW-95674af1-releve.md`](../../qa/LIVRAISON-PREVIEW-95674af1-releve.md)
 - Recette visuelle CTO : **non validée** → correctif layout (son dans cadre, stage `100dvh−14.5rem`, portal mb 0, scroll vérifié).
-- SHA correctif : **`6fdf5fe4`** — relevé [`LIVRAISON-PREVIEW-6fdf5fe4-releve.md`](../../qa/LIVRAISON-PREVIEW-6fdf5fe4-releve.md)
-- Preuves correctif : [`recette-visuelle/RAPPORT-RECETTE-VISUELLE-CORRECTIF.md`](../../qa/controle-rendu/l5-medium/recette-visuelle/RAPPORT-RECETTE-VISUELLE-CORRECTIF.md) — API simulée ; captures CTO indisponibles localement.
+- SHA correctif chrome : **`6fdf5fe4`** — relevé [`LIVRAISON-PREVIEW-6fdf5fe4-releve.md`](../../qa/LIVRAISON-PREVIEW-6fdf5fe4-releve.md)
+- Recette portrait/paysage : **non validée** → correctif cadre ratio média (`fitMediaFrameInBox`, stages portrait/paysage).
+- Preuves : [`portrait-paysage/RAPPORT-PORTRAIT-PAYSAGE.md`](../../qa/controle-rendu/l5-medium/portrait-paysage/RAPPORT-PORTRAIT-PAYSAGE.md) — API simulée + REF CTO.
 - Statut : **NON clos** — ticket ouvert jusqu’à nouvelle recette visuelle CTO.
