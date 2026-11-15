@@ -86,6 +86,8 @@ export const LOCAL_VIDEO_TITLE_MAX_LENGTH = 80;
 export const LOCAL_VIDEO_DESCRIPTION_MAX_LENGTH = 300;
 
 export const LOCAL_VIDEO_SHARE_COPIED = "Lien copié";
+/** Badge medium F2 — ouverture d'un lien partagé `?video=`. */
+export const LOCAL_VIDEO_SHARED_BADGE = "Vidéo partagée";
 /** H2 — échec du partage natif (copie à la demande). */
 export const LOCAL_VIDEO_SHARE_FAILED_TITLE = "Le partage n'a pas abouti.";
 export const LOCAL_VIDEO_SHARE_FAILED_CLOSE = "Fermer";

@@ -32,6 +32,8 @@ type VideosDiscoveryScreenProps = {
   onShare?: (item: LocalVideoFeedItem) => void;
   onOpenReport?: (videoId: string) => void;
   onCommentCountDelta?: (videoId: string, delta: number) => void;
+  /** `?video=` — fil medium L5 ; ignoré hors medium. */
+  deepLinkVideoId?: string | null;
 };
 
 export function VideosDiscoveryScreen({
@@ -50,6 +52,7 @@ export function VideosDiscoveryScreen({
   onShare,
   onOpenReport,
   onCommentCountDelta,
+  deepLinkVideoId = null,
 }: VideosDiscoveryScreenProps) {
   const portal = useVideosPortalContext({ items });
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
@@ -131,6 +134,7 @@ export function VideosDiscoveryScreen({
         onCommentCountDelta={onCommentCountDelta}
         onLoadMoreFeed={handleImmersiveLoadMore}
         immersiveItems={portal.feedItems}
+        deepLinkVideoId={deepLinkVideoId}
         hasMoreFeed={hasMoreFeed}
         isLoadingMore={isLoadingMore}
         onLoadMorePages={

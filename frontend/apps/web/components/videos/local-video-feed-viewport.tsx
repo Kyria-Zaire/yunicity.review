@@ -24,6 +24,17 @@ type LocalVideoFeedViewportProps = {
   suspendedVideoId?: string | null;
   onEndReached?: () => void;
   onSlideChromeVisible?: (visible: boolean) => void;
+  /**
+   * `immersive` (défaut) : mobile plein cadre.
+   * `medium` : portrait v1.2 — colonne d'actions hors vidéo (≠ R-PAN Lot 6).
+   */
+  presentation?: "immersive" | "medium";
+  mediumNav?: {
+    onPrevious: () => void;
+    onNext: () => void;
+    canPrevious: boolean;
+    canNext: boolean;
+  } | null;
 };
 
 function scrollContainerToSlide(container: HTMLElement, slide: HTMLElement): void {
@@ -46,6 +57,8 @@ export function LocalVideoFeedViewport({
   suspendedVideoId = null,
   onEndReached,
   onSlideChromeVisible,
+  presentation = "immersive",
+  mediumNav = null,
 }: LocalVideoFeedViewportProps) {
   const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
   const suppressActiveChangeRef = useRef(false);
@@ -230,6 +243,8 @@ export function LocalVideoFeedViewport({
           onChromeVisibleChange={
             activeId === item.id ? onSlideChromeVisible : undefined
           }
+          presentation={presentation}
+          mediumNav={activeId === item.id ? mediumNav : null}
         />
       ))}
     </div>

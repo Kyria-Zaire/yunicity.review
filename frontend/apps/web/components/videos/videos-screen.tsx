@@ -9,6 +9,7 @@ import { VideosDiscoveryScreen } from "@/components/videos/videos-discovery-scre
 import { VideosFeedError } from "@/components/videos/videos-feed-error";
 import { VideosFeedSkeleton } from "@/components/videos/videos-feed-skeleton";
 import { useLocalVideoInteractions } from "@/hooks/use-local-video-interactions";
+import { useVideosViewportTier } from "@/hooks/use-videos-viewport-tier";
 import { ActiveReportVideoContext } from "@/lib/videos/active-report-video-context";
 import { LocalVideoShareFeedbackProvider } from "@/lib/videos/local-video-share-feedback-context";
 import { useLocalVideoPendingTracker } from "@/hooks/use-local-video-pending-tracker";
@@ -45,7 +46,9 @@ function VideosScreenInner() {
   const api = useYunicityApi();
   const searchParams = useSearchParams();
   const focusVideoId = searchParams.get("video")?.trim() || null;
-  const isDetailMode = Boolean(focusVideoId);
+  const viewportTier = useVideosViewportTier();
+  // L5 : medium garde le shell découverte (hero + rail) ; détail page = mobile / desktop.
+  const isDetailMode = Boolean(focusVideoId) && viewportTier !== "medium";
 
   const feed = useLocalVideosFeed();
   const pending = useLocalVideoPendingTracker({
@@ -201,6 +204,7 @@ function VideosScreenInner() {
               onCommentCountDelta={(videoId, delta) => {
                 feed.updateItem(videoId, (item) => bumpLocalVideoCommentCount(item, delta));
               }}
+              deepLinkVideoId={viewportTier === "medium" ? focusVideoId : null}
             />
           )}
 

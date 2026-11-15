@@ -69,6 +69,8 @@ type VideosResponsiveShellProps = {
   onCommentCountDelta?: (videoId: string, delta: number) => void;
   onLoadMoreFeed?: () => void;
   immersiveItems?: readonly LocalVideoFeedItem[];
+  /** Lien partagé / deep-link medium (`?video=`). */
+  deepLinkVideoId?: string | null;
   hasMoreFeed?: boolean;
   isLoadingMore?: boolean;
   onLoadMorePages?: () => Promise<void> | void;
@@ -123,6 +125,7 @@ export function VideosResponsiveShell({
   onCommentCountDelta,
   onLoadMoreFeed,
   immersiveItems,
+  deepLinkVideoId = null,
   hasMoreFeed,
   isLoadingMore,
   onLoadMorePages,
@@ -231,6 +234,7 @@ export function VideosResponsiveShell({
           onLoadMoreFeed={onLoadMoreFeed}
           onTabChange={onTabChange}
           immersiveItems={immersiveItems}
+          deepLinkVideoId={deepLinkVideoId}
           sidebarFilters={sidebarFilters}
           neighborhoods={neighborhoods}
           sourceItems={sourceItems}

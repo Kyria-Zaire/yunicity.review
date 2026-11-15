@@ -21,6 +21,7 @@ import {
 import { useCallback, useRef, useState, type ReactNode } from "react";
 
 import { VideosDesktopFeedStream } from "@/components/videos/desktop/videos-desktop-feed-stream";
+import { VideosMediumVerticalFeed } from "@/components/videos/medium/videos-medium-vertical-feed";
 import {
   VideosMobileFeaturedHero,
   VideosMobileGridCard,
@@ -41,6 +42,8 @@ export type VideosEditorialStreamRegionProps = {
   visibleItems: readonly LocalVideoFeedItem[];
   /** Fil immersif mobile : vue + filtres, sans recherche overlay. */
   immersiveItems?: readonly LocalVideoFeedItem[];
+  /** `?video=` — medium place la cible en tête ; mobile détail géré ailleurs. */
+  deepLinkVideoId?: string | null;
   featuredItems: readonly LocalVideoFeedItem[];
   creators: readonly VideoPortalCreator[];
   onRetry: () => void;
@@ -81,6 +84,7 @@ export function VideosEditorialStreamRegion({
   emptyMessage,
   visibleItems,
   immersiveItems,
+  deepLinkVideoId = null,
   featuredItems,
   creators,
   onRetry,
@@ -111,7 +115,11 @@ export function VideosEditorialStreamRegion({
     viewportTier === "mobile" && isVideosMobileFeedView(tab) && onToggleLike && onShare && onOpenReport && onCommentCountDelta
       ? { onToggleLike, onShare, onOpenReport, onCommentCountDelta }
       : null;
-
+  // L5 : medium = fil vertical (pas le catalogue cartes). Desktop inchangé.
+  const mediumFeed =
+    viewportTier === "medium" && onToggleLike && onShare && onOpenReport && onCommentCountDelta
+      ? { onToggleLike, onShare, onOpenReport, onCommentCountDelta }
+      : null;
   const [searchOpen, setSearchOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [focusVideoId, setFocusVideoId] = useState<string | null>(null);
@@ -150,6 +158,57 @@ export function VideosEditorialStreamRegion({
       setSearchLoadError(true);
     }
   }, [onLoadMorePages]);
+
+  if (mediumFeed) {
+    const mediumItems = immersiveItems ?? visibleItems;
+    const emptyKind = (() => {
+      if (isLoading) return "loading" as const;
+      if (error) return "error" as const;
+      if (mediumItems.length > 0) return null;
+      return "empty" as const;
+    })();
+
+    return (
+      <div className={className} data-videos-medium-region="vertical-feed">
+        {emptyKind === "loading" ? (
+          <p className="text-sm text-neutral-500" role="status">
+            {VIDEOS_PORTAL_LOADING}
+          </p>
+        ) : null}
+        {emptyKind === "error" ? (
+          <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-6 text-center">
+            <p className="text-sm text-red-800">{LOCAL_VIDEO_ERROR_MESSAGE}</p>
+            <button
+              type="button"
+              onClick={onRetry}
+              className="mt-3 text-sm font-semibold text-yunicity-primary hover:underline"
+            >
+              {LOCAL_VIDEO_RETRY_LABEL}
+            </button>
+          </div>
+        ) : null}
+        {emptyKind === "empty" ? (
+          <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-10 text-center text-sm text-neutral-600">
+            {emptyMessage}
+          </p>
+        ) : null}
+        {!emptyKind ? (
+          <VideosMediumVerticalFeed
+            items={mediumItems}
+            focusVideoId={deepLinkVideoId}
+            sharedEntry={Boolean(deepLinkVideoId)}
+            processingErrors={processingErrors}
+            onDismissProcessing={onDismissProcessing}
+            onToggleLike={mediumFeed.onToggleLike}
+            onShare={mediumFeed.onShare}
+            onOpenReport={mediumFeed.onOpenReport}
+            onCommentCountDelta={mediumFeed.onCommentCountDelta}
+            onLoadMore={onLoadMoreFeed}
+          />
+        ) : null}
+      </div>
+    );
+  }
 
   if (immersive) {
     const emptyKind = (() => {
@@ -281,6 +340,7 @@ export function VideosEditorialStreamRegion({
             <VideosMobileSubscriptionsRail creators={[...creators]} />
           </div>
 
+          {/* Desktop ≥1024 uniquement — medium utilise VideosMediumVerticalFeed (L5). */}
           <div className="videos-medium-desktop-stream space-y-5">
             <VideosDesktopFeedStream items={visibleItems} />
             {loadMore}

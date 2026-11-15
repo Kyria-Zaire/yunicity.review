@@ -13,7 +13,11 @@ import { LocalVideoMobileMetaOverlay } from "@/components/videos/local-video-mob
 import { LocalVideoPlaybackBar } from "@/components/videos/local-video-playback-bar";
 import { LocalVideoProcessingSlide } from "@/components/videos/local-video-processing-slide";
 import { LocalVideoProgressThread } from "@/components/videos/local-video-progress-thread";
-import { LocalVideoLandscapeStage, LocalVideoPortraitFrame } from "@/components/videos/local-video-slide-frames";
+import {
+  LocalVideoLandscapeStage,
+  LocalVideoMediumPortraitStage,
+  LocalVideoPortraitFrame,
+} from "@/components/videos/local-video-slide-frames";
 import { LocalVideoSlideOverlays } from "@/components/videos/local-video-slide-overlays";
 import { useSlideChrome } from "@/hooks/use-slide-chrome";
 import { usePauseWhileOpen } from "@/hooks/use-pause-while-open";
@@ -63,6 +67,17 @@ type LocalVideoSlideProps = {
   /** Un panneau est ouvert sur cette vidéo : pause, reprise seulement si elle jouait. */
   suspended?: boolean;
   onChromeVisibleChange?: (visible: boolean) => void;
+  /**
+   * `immersive` : mobile plein cadre (défaut).
+   * `medium` : portrait v1.2 — actions hors vidéo (colonne latérale ≠ R-PAN).
+   */
+  presentation?: "immersive" | "medium";
+  mediumNav?: {
+    onPrevious: () => void;
+    onNext: () => void;
+    canPrevious: boolean;
+    canNext: boolean;
+  } | null;
 };
 
 /**
@@ -83,6 +98,8 @@ export function LocalVideoSlide({
   onOpenDescription,
   suspended = false,
   onChromeVisibleChange,
+  presentation = "immersive",
+  mediumNav = null,
 }: LocalVideoSlideProps) {
   const articleRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -217,7 +234,9 @@ export function LocalVideoSlide({
         commentCount={item.comment_count}
         likedByMe={item.liked_by_me}
         likeAnimating={gestures.likeAnimating}
-        surface={isPortrait ? "overlay" : "stage"}
+        surface={
+          presentation === "medium" ? "side" : isPortrait ? "overlay" : "stage"
+        }
         onLikeClick={gestures.handleLike}
         onCommentsClick={() => {
           revealChrome(true);
@@ -239,15 +258,25 @@ export function LocalVideoSlide({
     onChromeBlur: chrome.handleChromeBlur,
   };
 
+  const mediumPortrait = presentation === "medium" && isPortrait;
+
   return (
     <article
       ref={articleRef}
       data-video-slide-id={item.id}
       data-videos-media-layout={layout}
+      data-videos-slide-presentation={presentation}
       data-videos-slide-chrome-visible={chromeVisible ? "" : undefined}
-      className={`relative h-full min-h-full w-full snap-start snap-always overflow-hidden ${isPortrait ? "bg-black" : "bg-[#111827]"}`}
+      className={`relative h-full min-h-full w-full snap-start snap-always overflow-hidden ${
+        mediumPortrait ? "bg-white" : isPortrait ? "bg-black" : "bg-[#111827]"
+      }`}
     >
-      {isPortrait ? (
+      {mediumPortrait ? (
+        <LocalVideoMediumPortraitStage
+          {...parts}
+          nav={isActive ? mediumNav : null}
+        />
+      ) : isPortrait ? (
         <LocalVideoPortraitFrame {...parts} />
       ) : (
         <LocalVideoLandscapeStage

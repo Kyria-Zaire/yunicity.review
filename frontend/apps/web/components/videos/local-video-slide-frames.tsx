@@ -1,7 +1,7 @@
 "use client";
 
 import { VIDEOS_MOBILE_FULLSCREEN } from "@yunicity/utils";
-import { Maximize } from "lucide-react";
+import { ChevronDown, ChevronUp, Maximize } from "lucide-react";
 import {
   useLayoutEffect,
   useState,
@@ -102,6 +102,75 @@ type LocalVideoLandscapeStageProps = LocalVideoSlideParts & {
  * légende + actions centré verticalement ; légende sur fond neutre, sans voile, juste sous
  * l'image ; actions à droite dès le bas de l'image ; « Plein écran » conservé.
  */
+type LocalVideoMediumPortraitStageProps = LocalVideoSlideParts & {
+  /** Flèches medium v1.2 — même colonne que les actions, hors vidéo (≠ R-PAN). */
+  nav?: {
+    onPrevious: () => void;
+    onNext: () => void;
+    canPrevious: boolean;
+    canNext: boolean;
+  } | null;
+};
+
+/**
+ * Medium v1.2 portrait : vidéo (voile + légende) + colonne d'actions **à droite hors cadre**.
+ * Réf. `Lecteur-medium.dc.html` : `ax = vx + vw + 12`. Ne pas confondre avec le panneau R-PAN (Lot 6).
+ */
+export function LocalVideoMediumPortraitStage({ nav = null, ...parts }: LocalVideoMediumPortraitStageProps) {
+  return (
+    <div
+      className="videos-medium-portrait-stage flex h-full w-full items-stretch justify-center gap-3 bg-white px-2 py-2"
+      data-videos-medium-portrait-stage=""
+    >
+      <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden rounded-2xl bg-black">
+        {parts.video}
+        {parts.overlays}
+        <div
+          ref={parts.bandRef}
+          onFocus={parts.onChromeFocus}
+          onBlur={parts.onChromeBlur}
+          className="videos-slide-bottom-chrome pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-[rgba(17,24,39,0.6)] px-4 pb-2 pt-1.5"
+        >
+          {parts.meta}
+          {parts.bar}
+          {parts.thread ? <div className="absolute inset-x-0 bottom-0">{parts.thread}</div> : null}
+        </div>
+      </div>
+      <div
+        ref={parts.actionsRef}
+        onFocus={parts.onChromeFocus}
+        onBlur={parts.onChromeBlur}
+        className="videos-slide-action-rail videos-medium-side-column z-20 flex w-14 shrink-0 flex-col items-center self-stretch py-1"
+        data-videos-medium-side-column=""
+      >
+        {nav ? (
+          <div className="flex flex-col items-center gap-2">
+            <button
+              type="button"
+              aria-label="Vidéo précédente"
+              disabled={!nav.canPrevious}
+              onClick={nav.onPrevious}
+              className={`flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-900 disabled:opacity-40 ${VIDEO_IMMERSIVE_FOCUS}`}
+            >
+              <ChevronUp className="h-[22px] w-[22px]" aria-hidden />
+            </button>
+            <button
+              type="button"
+              aria-label="Vidéo suivante"
+              disabled={!nav.canNext}
+              onClick={nav.onNext}
+              className={`flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-900 disabled:opacity-40 ${VIDEO_IMMERSIVE_FOCUS}`}
+            >
+              <ChevronDown className="h-[22px] w-[22px]" aria-hidden />
+            </button>
+          </div>
+        ) : null}
+        <div className="mt-auto flex flex-col items-center">{parts.actions}</div>
+      </div>
+    </div>
+  );
+}
+
 export function LocalVideoLandscapeStage({ aspectRatio, onFullscreen, ...parts }: LocalVideoLandscapeStageProps) {
   return (
     <div className="flex h-full flex-col justify-center pt-14">

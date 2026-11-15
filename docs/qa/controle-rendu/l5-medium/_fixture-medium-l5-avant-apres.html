@@ -1,0 +1,155 @@
+﻿<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>L5 medium — avant/après actions portrait v1.2</title>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #e5e5e5; }
+    .frame { margin: 16px auto; background: #fff; border: 1px solid #e5e5e5; position: relative; overflow: hidden; }
+    .rail { position: absolute; left: 0; top: 0; bottom: 0; width: 87px; background: #fafafa; border-right: 1px solid #eee; }
+    .hero { position: absolute; left: 87px; right: 0; top: 0; height: 65px; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; padding: 0 16px; font-weight: 700; }
+    .toolbar { position: absolute; left: 87px; right: 0; top: 65px; height: 48px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: flex-end; padding: 0 16px; color: #525252; font-size: 13px; }
+    .feed { position: absolute; left: 87px; right: 0; top: 113px; bottom: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; box-sizing: border-box; }
+    .badge { align-self: flex-start; background: rgba(17,24,39,.85); color: #fff; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; }
+    .label { position: absolute; left: 8px; top: 8px; z-index: 5; background: #2A2FFF; color: #fff; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
+    .tag { position: absolute; right: 8px; top: 8px; z-index: 5; background: #111827; color: #fff; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
+    /* AVANT : overlay sur vidéo (écart maquette) */
+    .stage-avant { flex: 1; min-height: 0; border-radius: 16px; background: #111827; position: relative; overflow: hidden; }
+    .stage-avant .vid { position: absolute; inset: 0; background: linear-gradient(160deg,#4b5563,#111827); }
+    .stage-avant .band { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 14px; background: rgba(17,24,39,.6); color: #fff; font-size: 13px; }
+    .stage-avant .actions { position: absolute; right: 8px; bottom: 88px; width: 56px; display: flex; flex-direction: column; gap: 8px; align-items: center; padding: 6px 0; border-radius: 29px; background: rgba(17,24,39,.6); }
+    .stage-avant .pill { width: 44px; height: 44px; border-radius: 999px; background: transparent; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+    /* APRES : colonne hors vidéo (Lecteur-medium ax = vx+vw+12) */
+    .stage-apres { flex: 1; min-height: 0; border-radius: 16px; background: #fff; display: flex; gap: 12px; padding: 8px; box-sizing: border-box; }
+    .stage-apres .vid-wrap { flex: 1; min-width: 0; border-radius: 16px; background: #111827; position: relative; overflow: hidden; }
+    .stage-apres .vid { position: absolute; inset: 0; background: linear-gradient(160deg,#4b5563,#111827); }
+    .stage-apres .band { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 14px; background: rgba(17,24,39,.6); color: #fff; font-size: 13px; }
+    .stage-apres .side { width: 56px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; align-self: stretch; }
+    .stage-apres .nav { display: flex; flex-direction: column; gap: 8px; }
+    .stage-apres .nav button, .stage-apres .act { width: 48px; height: 48px; border-radius: 999px; border: 1px solid #E5E7EB; background: #fff; color: #111827; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .stage-apres .acts { margin-top: auto; display: flex; flex-direction: column; gap: 12px; align-items: center; color: #374151; font-size: 12px; font-weight: 600; }
+    .stage-apres .act { border: 0; background: #F3F4F6; }
+    .note { font-size: 11px; color: #737373; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <!-- AVANT 640 -->
+  <div class="frame" style="width:640px;height:900px" data-size="640x900" data-phase="avant">
+    <div class="label">640 × 900 · AVANT</div>
+    <div class="tag">overlay</div>
+    <div class="rail"></div>
+    <div class="hero">Vidéos locales · Reims</div>
+    <div class="toolbar">Son</div>
+    <div class="feed">
+      <div class="stage-avant" data-videos-action-surface="overlay">
+        <div class="vid"></div>
+        <div class="actions"><span class="pill">♥</span><span class="pill">💬</span><span class="pill">↗</span><span class="pill">…</span></div>
+        <div class="band">@compte · légende…</div>
+      </div>
+    </div>
+  </div>
+  <!-- APRES 640 -->
+  <div class="frame" style="width:640px;height:900px" data-size="640x900" data-phase="apres">
+    <div class="label">640 × 900 · APRÈS</div>
+    <div class="tag">side ≠ R-PAN</div>
+    <div class="rail"></div>
+    <div class="hero">Vidéos locales · Reims</div>
+    <div class="toolbar">Son</div>
+    <div class="feed" data-videos-medium-vertical-feed="">
+      <div class="stage-apres" data-videos-medium-portrait-stage="">
+        <div class="vid-wrap"><div class="vid"></div><div class="band">@compte · légende…</div></div>
+        <div class="side" data-videos-medium-side-column="">
+          <div class="nav"><button type="button" aria-label="Vidéo précédente">▲</button><button type="button" aria-label="Vidéo suivante">▼</button></div>
+          <div class="acts"><span class="act">♥</span><span>24</span><span class="act">💬</span><span>8</span><span class="act">↗</span><span>Partager</span><span class="act">…</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- AVANT 820 -->
+  <div class="frame" style="width:820px;height:1180px" data-size="820x1180" data-phase="avant">
+    <div class="label">820 × 1180 · AVANT</div>
+    <div class="tag">overlay</div>
+    <div class="rail"></div>
+    <div class="hero">Vidéos locales · Reims</div>
+    <div class="toolbar">Son</div>
+    <div class="feed">
+      <div class="badge">Vidéo partagée</div>
+      <div class="stage-avant"><div class="vid"></div><div class="actions"><span class="pill">♥</span><span class="pill">💬</span><span class="pill">↗</span><span class="pill">…</span></div><div class="band">@compte · légende…</div></div>
+    </div>
+  </div>
+  <!-- APRES 820 -->
+  <div class="frame" style="width:820px;height:1180px" data-size="820x1180" data-phase="apres">
+    <div class="label">820 × 1180 · APRÈS · F2</div>
+    <div class="tag">side ≠ R-PAN</div>
+    <div class="rail"></div>
+    <div class="hero">Vidéos locales · Reims</div>
+    <div class="toolbar">Son</div>
+    <div class="feed" data-videos-medium-vertical-feed="">
+      <div class="badge">Vidéo partagée</div>
+      <div class="stage-apres" data-videos-medium-portrait-stage="">
+        <div class="vid-wrap"><div class="vid"></div><div class="band">@compte · légende…</div></div>
+        <div class="side" data-videos-medium-side-column="">
+          <div class="nav"><button type="button">▲</button><button type="button">▼</button></div>
+          <div class="acts"><span class="act">♥</span><span>24</span><span class="act">💬</span><span>8</span><span class="act">↗</span><span>Partager</span><span class="act">…</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- AVANT 1023 -->
+  <div class="frame" style="width:1023px;height:768px" data-size="1023x768" data-phase="avant">
+    <div class="label">1023 × 768 · AVANT</div>
+    <div class="tag">overlay</div>
+    <div class="rail" style="width:101px"></div>
+    <div class="hero" style="left:101px">Vidéos locales · Reims</div>
+    <div class="toolbar" style="left:101px">Son</div>
+    <div class="feed" style="left:101px">
+      <div class="stage-avant"><div class="vid"></div><div class="actions"><span class="pill">♥</span><span class="pill">💬</span><span class="pill">↗</span><span class="pill">…</span></div><div class="band">@compte · légende…</div></div>
+    </div>
+  </div>
+  <!-- APRES 1023 -->
+  <div class="frame" style="width:1023px;height:768px" data-size="1023x768" data-phase="apres">
+    <div class="label">1023 × 768 · APRÈS</div>
+    <div class="tag">side ≠ R-PAN</div>
+    <div class="rail" style="width:101px"></div>
+    <div class="hero" style="left:101px">Vidéos locales · Reims</div>
+    <div class="toolbar" style="left:101px">Son</div>
+    <div class="feed" style="left:101px" data-videos-medium-vertical-feed="">
+      <div class="stage-apres" data-videos-medium-portrait-stage="">
+        <div class="vid-wrap"><div class="vid"></div><div class="band">@compte · légende…</div></div>
+        <div class="side" data-videos-medium-side-column="">
+          <div class="nav"><button type="button">▲</button><button type="button">▼</button></div>
+          <div class="acts"><span class="act">♥</span><span>24</span><span class="act">💬</span><span>8</span><span class="act">↗</span><span>Partager</span><span class="act">…</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- AVANT 844x390 -->
+  <div class="frame" style="width:844px;height:390px" data-size="844x390" data-phase="avant">
+    <div class="label">844 × 390 · AVANT</div>
+    <div class="tag">overlay</div>
+    <div class="rail"></div>
+    <div class="hero">Vidéos locales · Reims</div>
+    <div class="toolbar">Son</div>
+    <div class="feed">
+      <div class="stage-avant"><div class="vid"></div><div class="actions" style="bottom:48px"><span class="pill">♥</span><span class="pill">💬</span></div><div class="band">bande</div></div>
+    </div>
+  </div>
+  <!-- APRES 844x390 -->
+  <div class="frame" style="width:844px;height:390px" data-size="844x390" data-phase="apres">
+    <div class="label">844 × 390 · APRÈS · RC-M1</div>
+    <div class="tag">compact side</div>
+    <div class="rail"></div>
+    <div class="hero">Vidéos locales · Reims</div>
+    <div class="toolbar">Son</div>
+    <div class="feed" data-videos-medium-vertical-feed="">
+      <div class="stage-apres" data-videos-medium-portrait-stage="">
+        <div class="vid-wrap"><div class="vid"></div><div class="band">@compte · légende…</div></div>
+        <div class="side" data-videos-medium-side-column="">
+          <div class="nav"><button type="button" style="width:44px;height:44px">▲</button><button type="button" style="width:44px;height:44px">▼</button></div>
+          <div class="acts" style="gap:6px"><span class="act" style="width:44px;height:44px">♥</span><span class="act" style="width:44px;height:44px">💬</span><span class="act" style="width:44px;height:44px">↗</span><span class="act" style="width:44px;height:44px">…</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

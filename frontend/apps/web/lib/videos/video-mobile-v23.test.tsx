@@ -238,10 +238,18 @@ describe("Aiguillage mobile (D-Q1)", () => {
     expect(empty.container.querySelector('[data-videos-immersive-state="empty"]')).not.toBeNull();
   });
 
-  it("medium et desktop : aucun changement d'aiguillage", () => {
+  it("medium : fil vertical L5 (pas immersif mobile)", () => {
     tier.value = "medium";
     const { container } = renderRegion("trending");
     expect(container.querySelector("[data-videos-discovery-immersive]")).toBeNull();
+    expect(container.querySelector("[data-videos-medium-vertical-feed]")).not.toBeNull();
+  });
+
+  it("desktop : pas d'immersif mobile ni de fil medium", () => {
+    tier.value = "desktop";
+    const { container } = renderRegion("trending");
+    expect(container.querySelector("[data-videos-discovery-immersive]")).toBeNull();
+    expect(container.querySelector("[data-videos-medium-vertical-feed]")).toBeNull();
   });
 });
 
