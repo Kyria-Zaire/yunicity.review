@@ -5,6 +5,7 @@ import type { LocalVideoFeedItem } from "@yunicity/types";
 import {
   applyLocalVideoLikeToggle,
   buildLocalVideoShareUrl,
+  copyLocalVideoLink,
   isDoubleTap,
   shareLocalVideoWithFallback,
 } from "./local-video-state";
@@ -81,6 +82,49 @@ describe("local-video social state", () => {
       "https://yunicity.fr/videos?video=abc-123",
     );
   });
+});
+
+describe("VIDEO-REFONTE-L2-PARTAGE-01 — shareLocalVideoWithFallback", () => {
+  it("returns shared when navigator.share succeeds (no clipboard write)", async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    const writeText = vi.fn();
+    vi.stubGlobal("navigator", { share, clipboard: { writeText } });
+
+    await expect(
+      shareLocalVideoWithFallback(baseItem(), "https://yunicity.fr"),
+    ).resolves.toBe("shared");
+    expect(share).toHaveBeenCalled();
+    expect(writeText).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it("returns cancelled on AbortError without copying", async () => {
+    const writeText = vi.fn();
+    vi.stubGlobal("navigator", {
+      share: vi.fn().mockRejectedValue(new DOMException("Dismissed", "AbortError")),
+      clipboard: { writeText },
+    });
+
+    await expect(
+      shareLocalVideoWithFallback(baseItem(), "https://yunicity.fr"),
+    ).resolves.toBe("cancelled");
+    expect(writeText).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it("returns failed on non-abort share error without copying", async () => {
+    const writeText = vi.fn();
+    vi.stubGlobal("navigator", {
+      share: vi.fn().mockRejectedValue(new DOMException("Denied", "NotAllowedError")),
+      clipboard: { writeText },
+    });
+
+    await expect(
+      shareLocalVideoWithFallback(baseItem(), "https://yunicity.fr"),
+    ).resolves.toBe("failed");
+    expect(writeText).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
 
   it("falls back to clipboard when Web Share API is unavailable", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
@@ -89,13 +133,48 @@ describe("local-video social state", () => {
       clipboard: { writeText },
     });
 
-    const result = await shareLocalVideoWithFallback(
-      baseItem(),
-      "https://yunicity.fr",
-    );
+    const result = await shareLocalVideoWithFallback(baseItem(), "https://yunicity.fr");
 
     expect(result).toBe("copied");
     expect(writeText).toHaveBeenCalledWith("https://yunicity.fr/videos?video=v1");
+    vi.unstubAllGlobals();
+  });
+
+  it("returns unavailable when clipboard is missing", async () => {
+    vi.stubGlobal("navigator", { share: undefined, clipboard: undefined });
+    await expect(
+      shareLocalVideoWithFallback(baseItem(), "https://yunicity.fr"),
+    ).resolves.toBe("unavailable");
+    vi.unstubAllGlobals();
+  });
+
+  it("returns unavailable when clipboard write fails", async () => {
+    vi.stubGlobal("navigator", {
+      share: undefined,
+      clipboard: { writeText: vi.fn().mockRejectedValue(new Error("denied")) },
+    });
+    await expect(
+      shareLocalVideoWithFallback(baseItem(), "https://yunicity.fr"),
+    ).resolves.toBe("unavailable");
+    vi.unstubAllGlobals();
+  });
+});
+
+describe("VIDEO-REFONTE-L2-PARTAGE-01 — copyLocalVideoLink", () => {
+  it("returns copied after successful writeText", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    await expect(copyLocalVideoLink("https://yunicity.fr/videos?video=v1")).resolves.toBe(
+      "copied",
+    );
+    vi.unstubAllGlobals();
+  });
+
+  it("returns unavailable when writeText rejects", async () => {
+    vi.stubGlobal("navigator", {
+      clipboard: { writeText: vi.fn().mockRejectedValue(new Error("nope")) },
+    });
+    await expect(copyLocalVideoLink("https://x/videos?video=v1")).resolves.toBe("unavailable");
     vi.unstubAllGlobals();
   });
 });

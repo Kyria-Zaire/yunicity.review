@@ -38,7 +38,6 @@ type VideoDetailScreenProps = {
   onShare: (item: LocalVideoFeedItem) => void;
   onOpenReport: (videoId: string) => void;
   onCommentCountDelta: (videoId: string, delta: number) => void;
-  shareHint?: string | null;
   onLoadMore?: () => void;
 };
 
@@ -52,7 +51,6 @@ export function VideoDetailScreen({
   onShare,
   onOpenReport,
   onCommentCountDelta,
-  shareHint,
   onLoadMore,
 }: VideoDetailScreenProps) {
   const router = useRouter();
@@ -221,12 +219,6 @@ export function VideoDetailScreen({
             showBackLink={false}
           />
 
-          {shareHint ? (
-            <p className="mx-4 mt-3 rounded-full bg-neutral-900 px-4 py-2 text-center text-xs text-white">
-              {shareHint}
-            </p>
-          ) : null}
-
           <div className="space-y-5 px-4 py-3">
             <VideosMobileDetailPlayer item={video} onEnded={handleVideoEnded} portraitContain />
             <VideosMobileDetailMeta
@@ -252,12 +244,6 @@ export function VideoDetailScreen({
           <ChevronLeft className="h-4 w-4" aria-hidden />
           {VIDEO_DETAIL_BACK}
         </Link>
-
-        {shareHint ? (
-          <p className="mb-4 rounded-full bg-neutral-900 px-4 py-2 text-center text-xs text-white">
-            {shareHint}
-          </p>
-        ) : null}
 
         <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="min-w-0 space-y-8">

@@ -59,6 +59,7 @@ vi.mock("@/hooks/use-local-video-interactions", () => ({
   useLocalVideoInteractions: () => ({
     toggleLike: vi.fn(),
     shareVideo: vi.fn(),
+    copyShareLinkFromFailed: vi.fn(),
     reportVideo: vi.fn(),
     shareHint: null,
     reportError: null,

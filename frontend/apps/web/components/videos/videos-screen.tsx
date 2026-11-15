@@ -2,6 +2,7 @@
 
 import { SessionExpiredPanel } from "@/components/auth/session-expired-panel";
 import { LocalVideoReportSheet } from "@/components/videos/local-video-report-sheet";
+import { LocalVideoShareFeedback } from "@/components/videos/local-video-share-feedback";
 import { VideoDetailScreen } from "@/components/videos/video-detail-screen";
 import { VideosAppShell } from "@/components/videos/videos-app-shell";
 import { VideosDiscoveryScreen } from "@/components/videos/videos-discovery-screen";
@@ -9,6 +10,7 @@ import { VideosFeedError } from "@/components/videos/videos-feed-error";
 import { VideosFeedSkeleton } from "@/components/videos/videos-feed-skeleton";
 import { useLocalVideoInteractions } from "@/hooks/use-local-video-interactions";
 import { ActiveReportVideoContext } from "@/lib/videos/active-report-video-context";
+import { LocalVideoShareFeedbackProvider } from "@/lib/videos/local-video-share-feedback-context";
 import { useLocalVideoPendingTracker } from "@/hooks/use-local-video-pending-tracker";
 import { useLocalVideosFeed } from "@/hooks/use-local-videos-feed";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
@@ -32,7 +34,9 @@ export function VideosScreen() {
 
   return (
     <GeoProvider defaultCity={defaultCity}>
-      <VideosScreenInner />
+      <LocalVideoShareFeedbackProvider>
+        <VideosScreenInner />
+      </LocalVideoShareFeedbackProvider>
     </GeoProvider>
   );
 }
@@ -137,24 +141,57 @@ function VideosScreenInner() {
         }
       `}</style>
       <ActiveReportVideoContext.Provider value={reportOpen ? reportVideoId : null}>
-      <div className="relative">
-        {isDetailMode && focusVideoId ? (
-          feed.sessionExpired ? (
-            <SessionExpiredPanel
-              message={LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE}
-              returnPath={`/videos?video=${encodeURIComponent(focusVideoId)}`}
-            />
-          ) : feed.isLoading && pending.processingFeedItems.length === 0 ? (
-            <VideosFeedSkeleton />
-          ) : feed.error && !displayItems.some((item) => item.id === focusVideoId) ? (
-            <VideosFeedError onRetry={() => void feed.refresh()} />
+        <div className="relative">
+          {isDetailMode && focusVideoId ? (
+            feed.sessionExpired ? (
+              <SessionExpiredPanel
+                message={LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE}
+                returnPath={`/videos?video=${encodeURIComponent(focusVideoId)}`}
+              />
+            ) : feed.isLoading && pending.processingFeedItems.length === 0 ? (
+              <VideosFeedSkeleton />
+            ) : feed.error && !displayItems.some((item) => item.id === focusVideoId) ? (
+              <VideosFeedError onRetry={() => void feed.refresh()} />
+            ) : (
+              <VideoDetailScreen
+                videoId={focusVideoId}
+                items={displayItems}
+                isLoading={feed.isLoading}
+                processingError={detailProcessingError}
+                onDismissProcessing={() => pending.dismissTrack(focusVideoId)}
+                onToggleLike={(item) => void interactions.toggleLike(item)}
+                onShare={(item) => void interactions.shareVideo(item)}
+                onOpenReport={(videoId) => {
+                  setReportVideoId(videoId);
+                  setReportOpen(true);
+                }}
+                onCommentCountDelta={(videoId, delta) => {
+                  feed.updateItem(videoId, (item) => bumpLocalVideoCommentCount(item, delta));
+                }}
+                onLoadMore={() => {
+                  if (!feed.isLoadingMore && feed.nextCursor) {
+                    void feed.loadMore();
+                  }
+                }}
+              />
+            )
+          ) : feed.sessionExpired ? (
+            <SessionExpiredPanel message={LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE} returnPath="/videos" />
           ) : (
-            <VideoDetailScreen
-              videoId={focusVideoId}
+            <VideosDiscoveryScreen
+              city={feed.city}
               items={displayItems}
-              isLoading={feed.isLoading}
-              processingError={detailProcessingError}
-              onDismissProcessing={() => pending.dismissTrack(focusVideoId)}
+              isLoading={feed.isLoading && pending.processingFeedItems.length === 0}
+              error={feed.error}
+              hasMoreFeed={Boolean(feed.nextCursor)}
+              isLoadingMore={feed.isLoadingMore}
+              onRetry={() => void feed.refresh()}
+              onLoadMoreFeed={() => {
+                if (!feed.isLoadingMore && feed.nextCursor) feed.loadMore();
+              }}
+              onLoadMorePages={() => feed.loadMorePages()}
+              processingErrors={processingErrors}
+              onDismissProcessing={(videoId) => pending.dismissTrack(videoId)}
               onToggleLike={(item) => void interactions.toggleLike(item)}
               onShare={(item) => void interactions.shareVideo(item)}
               onOpenReport={(videoId) => {
@@ -164,57 +201,27 @@ function VideosScreenInner() {
               onCommentCountDelta={(videoId, delta) => {
                 feed.updateItem(videoId, (item) => bumpLocalVideoCommentCount(item, delta));
               }}
-              shareHint={interactions.shareHint}
-              onLoadMore={() => {
-                if (!feed.isLoadingMore && feed.nextCursor) {
-                  void feed.loadMore();
-                }
-              }}
             />
-          )
-        ) : feed.sessionExpired ? (
-          <SessionExpiredPanel message={LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE} returnPath="/videos" />
-        ) : (
-          <VideosDiscoveryScreen
-            city={feed.city}
-            items={displayItems}
-            isLoading={feed.isLoading && pending.processingFeedItems.length === 0}
-            error={feed.error}
-            hasMoreFeed={Boolean(feed.nextCursor)}
-            isLoadingMore={feed.isLoadingMore}
-            onRetry={() => void feed.refresh()}
-            onLoadMoreFeed={() => {
-              if (!feed.isLoadingMore && feed.nextCursor) feed.loadMore();
+          )}
+
+          <LocalVideoShareFeedback
+            onCopyFromFailed={() => void interactions.copyShareLinkFromFailed()}
+          />
+
+          <LocalVideoReportSheet
+            open={reportOpen}
+            onClose={() => {
+              setReportOpen(false);
+              setReportVideoId(null);
             }}
-            onLoadMorePages={() => feed.loadMorePages()}
-            processingErrors={processingErrors}
-            onDismissProcessing={(videoId) => pending.dismissTrack(videoId)}
-            onToggleLike={(item) => void interactions.toggleLike(item)}
-            onShare={(item) => void interactions.shareVideo(item)}
-            onOpenReport={(videoId) => {
-              setReportVideoId(videoId);
-              setReportOpen(true);
-            }}
-            onCommentCountDelta={(videoId, delta) => {
-              feed.updateItem(videoId, (item) => bumpLocalVideoCommentCount(item, delta));
+            alreadyReported={reportVideoId ? interactions.hasReported(reportVideoId) : false}
+            errorMessage={interactions.reportError}
+            onReport={async (reason) => {
+              if (!reportVideoId) return;
+              await interactions.reportVideo(reportVideoId, reason);
             }}
           />
-        )}
-
-        <LocalVideoReportSheet
-          open={reportOpen}
-          onClose={() => {
-            setReportOpen(false);
-            setReportVideoId(null);
-          }}
-          alreadyReported={reportVideoId ? interactions.hasReported(reportVideoId) : false}
-          errorMessage={interactions.reportError}
-          onReport={async (reason) => {
-            if (!reportVideoId) return;
-            await interactions.reportVideo(reportVideoId, reason);
-          }}
-        />
-      </div>
+        </div>
       </ActiveReportVideoContext.Provider>
     </VideosAppShell>
   );

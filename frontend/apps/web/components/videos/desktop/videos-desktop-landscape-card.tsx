@@ -134,12 +134,6 @@ export function VideosDesktopLandscapeCard({ item: initialItem }: VideosDesktopL
             <span className="sr-only">{VIDEO_DETAIL_SHARE}</span>
           </button>
 
-          {interactions.shareHint ? (
-            <span className="text-[11px] font-medium text-emerald-600" role="status">
-              {interactions.shareHint}
-            </span>
-          ) : null}
-
           <div ref={menuRef} className="relative ml-auto">
             <button
               type="button"

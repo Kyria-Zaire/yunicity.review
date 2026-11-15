@@ -125,14 +125,12 @@ function PortraitSimpleMetaActions({
   onOpenComments,
   onShare,
   onReport,
-  shareHint,
 }: {
   item: LocalVideoFeedItem;
   onToggleLike: () => void;
   onOpenComments: () => void;
   onShare: () => void;
   onReport: () => void;
-  shareHint: string | null;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-500">
@@ -170,12 +168,6 @@ function PortraitSimpleMetaActions({
         <Share2 className="h-3.5 w-3.5" aria-hidden />
         <span className="sr-only">{VIDEO_DETAIL_SHARE}</span>
       </button>
-
-      {shareHint ? (
-        <span className="text-[11px] font-medium text-emerald-600" role="status">
-          {shareHint}
-        </span>
-      ) : null}
 
       <PortraitOverflowMenu onReport={onReport} variant="light" />
     </div>
@@ -249,7 +241,6 @@ export function VideosDesktopPortraitCard({
             onOpenComments={() => setCommentsOpen(true)}
             onShare={() => void interactions.shareVideo(item)}
             onReport={() => setReportOpen(true)}
-            shareHint={interactions.shareHint}
           />
         </div>
       </div>

@@ -86,6 +86,17 @@ export const LOCAL_VIDEO_TITLE_MAX_LENGTH = 80;
 export const LOCAL_VIDEO_DESCRIPTION_MAX_LENGTH = 300;
 
 export const LOCAL_VIDEO_SHARE_COPIED = "Lien copié";
+/** H2 — échec du partage natif (copie à la demande). */
+export const LOCAL_VIDEO_SHARE_FAILED_TITLE = "Le partage n'a pas abouti.";
+export const LOCAL_VIDEO_SHARE_FAILED_CLOSE = "Fermer";
+export const LOCAL_VIDEO_SHARE_FAILED_COPY = "Copier le lien";
+/** H3 — partage / copie indisponibles (texte figé v2.3). */
+export const LOCAL_VIDEO_SHARE_UNAVAILABLE_TITLE = "Lien de la vidéo";
+export const LOCAL_VIDEO_SHARE_UNAVAILABLE_BODY =
+  "Le partage n'est pas disponible sur cet appareil. Le lien complet est sélectionné : copiez-le avec le menu du téléphone.";
+export const LOCAL_VIDEO_SHARE_UNAVAILABLE_FIELD_LABEL = "Lien de la vidéo, sélectionné";
+export const LOCAL_VIDEO_SHARE_UNAVAILABLE_SELECT_ALL = "Sélectionner tout le lien";
+export const LOCAL_VIDEO_SHARE_UNAVAILABLE_CLOSE = "Fermer";
 export const LOCAL_VIDEO_REPORT_LABEL = "Signaler";
 export const LOCAL_VIDEO_REPORT_SUCCESS = "Signalement envoyé. Merci pour votre vigilance.";
 export const LOCAL_VIDEO_REPORT_ERROR = "Impossible d'envoyer le signalement pour le moment.";

@@ -4982,6 +4982,14 @@ export {
   LOCAL_VIDEO_REPORT_REASONS,
   LOCAL_VIDEO_REPORT_SUCCESS,
   LOCAL_VIDEO_SHARE_COPIED,
+  LOCAL_VIDEO_SHARE_FAILED_CLOSE,
+  LOCAL_VIDEO_SHARE_FAILED_COPY,
+  LOCAL_VIDEO_SHARE_FAILED_TITLE,
+  LOCAL_VIDEO_SHARE_UNAVAILABLE_BODY,
+  LOCAL_VIDEO_SHARE_UNAVAILABLE_CLOSE,
+  LOCAL_VIDEO_SHARE_UNAVAILABLE_FIELD_LABEL,
+  LOCAL_VIDEO_SHARE_UNAVAILABLE_SELECT_ALL,
+  LOCAL_VIDEO_SHARE_UNAVAILABLE_TITLE,
   LOCAL_VIDEO_TITLE_MAX_LENGTH,
   LOCAL_VIDEO_UPLOAD_BACK_TO_FEED,
   LOCAL_VIDEO_UPLOAD_CANCEL,
@@ -5034,10 +5042,11 @@ export {
   applyLocalVideoLikeToggle,
   buildLocalVideoShareUrl,
   bumpLocalVideoCommentCount,
+  copyLocalVideoLink,
   isDoubleTap,
   shareLocalVideoWithFallback,
 } from "./local-video-state";
-export type { LocalVideoShareResult } from "./local-video-state";
+export type { LocalVideoCopyResult, LocalVideoShareResult } from "./local-video-state";
 export { LocalVideosApi, createLocalVideosApi, mapLocalVideoToFeedPreview } from "./local-videos-api";
 export {
   resolveVideoRankingReason,
