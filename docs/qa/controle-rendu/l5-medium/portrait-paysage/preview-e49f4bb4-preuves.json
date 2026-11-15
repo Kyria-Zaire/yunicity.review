@@ -1,0 +1,122 @@
+{
+  "env": "preview.yunicity.city+api-simulee",
+  "sha": "e49f4bb4",
+  "note": "Feed Preview réel = 401 sans login. Preuves sur JS servi Preview + API simulée.",
+  "cases": [
+    {
+      "name": "820x1180",
+      "kind": "portrait",
+      "mediumFeed": true,
+      "activeId": "vid-portrait",
+      "layout": "portrait",
+      "frameOrientation": "portrait",
+      "hasPortraitStage": true,
+      "hasLandscapeStage": false,
+      "hasMetaPanel": false,
+      "frame": {
+        "w": 398,
+        "h": 708,
+        "ratio": 0.562
+      },
+      "objectFit": "cover",
+      "badgeCount": 0,
+      "mute": true,
+      "share": true,
+      "comments": true,
+      "navPrev": true,
+      "navNext": true
+    },
+    {
+      "name": "820x1180",
+      "kind": "landscape",
+      "mediumFeed": true,
+      "activeId": "vid-landscape",
+      "layout": "landscape",
+      "frameOrientation": "landscape",
+      "hasPortraitStage": false,
+      "hasLandscapeStage": true,
+      "hasMetaPanel": true,
+      "frame": {
+        "w": 612,
+        "h": 344,
+        "ratio": 1.779
+      },
+      "objectFit": "contain",
+      "badgeCount": 0,
+      "mute": true,
+      "share": true,
+      "comments": true,
+      "navPrev": true,
+      "navNext": true
+    },
+    {
+      "name": "1023x768",
+      "kind": "portrait",
+      "mediumFeed": true,
+      "activeId": "vid-portrait",
+      "layout": "portrait",
+      "frameOrientation": "portrait",
+      "hasPortraitStage": true,
+      "hasLandscapeStage": false,
+      "hasMetaPanel": false,
+      "frame": {
+        "w": 295,
+        "h": 524,
+        "ratio": 0.563
+      },
+      "objectFit": "cover",
+      "badgeCount": 0,
+      "mute": true,
+      "share": true,
+      "comments": true,
+      "navPrev": true,
+      "navNext": true
+    },
+    {
+      "name": "1023x768",
+      "kind": "landscape",
+      "mediumFeed": true,
+      "activeId": "vid-landscape",
+      "layout": "landscape",
+      "frameOrientation": "landscape",
+      "hasPortraitStage": false,
+      "hasLandscapeStage": true,
+      "hasMetaPanel": true,
+      "frame": {
+        "w": 704,
+        "h": 396,
+        "ratio": 1.778
+      },
+      "objectFit": "contain",
+      "badgeCount": 0,
+      "mute": true,
+      "share": true,
+      "comments": true,
+      "navPrev": true,
+      "navNext": true
+    }
+  ],
+  "failures": [],
+  "shared": {
+    "mediumFeed": true,
+    "activeId": "vid-portrait",
+    "layout": "portrait",
+    "frameOrientation": "portrait",
+    "hasPortraitStage": true,
+    "hasLandscapeStage": false,
+    "hasMetaPanel": false,
+    "frame": {
+      "w": 398,
+      "h": 708,
+      "ratio": 0.562
+    },
+    "objectFit": "cover",
+    "badgeCount": 1,
+    "mute": true,
+    "share": true,
+    "comments": true,
+    "navPrev": true,
+    "navNext": true
+  },
+  "ok": true
+}
