@@ -2,7 +2,7 @@
 
 ## Objectif
 
-Lot 5 : fil vertical medium v1.2. Correctif recette visuelle CTO (espaces, stage, son, scroll) puis livraison Preview.
+Lot 5 : fil vertical medium v1.2. Correctif recette visuelle CTO livré sur Preview.
 
 ## État Git
 
@@ -10,48 +10,43 @@ Lot 5 : fil vertical medium v1.2. Correctif recette visuelle CTO (espaces, stage
 |--|--|
 | Worktree | `yunicity-wt-video-lot1` |
 | Branche | `feat/video-refonte-l3l4-mobile-v23` |
-| Preview tip avant correctif | **`95674af1`** |
-| Working tree | correctif layout **prêt commit** (scripts probe exclus) |
+| HEAD / Preview | **`6fdf5fe4`** (FF `95674af1..6fdf5fe4`, sans `--force`) |
 | Production / `main` | gelés |
 
 ## Documents importants
 
+- Relevé : `docs/qa/LIVRAISON-PREVIEW-6fdf5fe4-releve.md`
 - Rapport correctif : `docs/qa/controle-rendu/l5-medium/recette-visuelle/RAPPORT-RECETTE-VISUELLE-CORRECTIF.md`
-- Preuves scroll/géométrie : `recette-visuelle/verify-scroll-geometry.json`
-- Mesures : `recette-visuelle/mesures-apres.json`
-- Réf. : `Lecteur-medium.dc.html`
+- Preuves : `recette-visuelle/verify-scroll-geometry.json`
 
 ## Preuves acquises
 
-- Livraison Preview antérieure `95674af1`.
-- Recette visuelle CTO **non validée** — causes établies (toolbar son, double margin portal, 70dvh).
-- Correctif local (API simulée) : gap tri→stage **20 px** ; réserve **14.5rem (232 px) ≥ stageTop 230 px**.
-- **clipBasPx** = `stage.bottom − innerHeight` ; `>0` = débordement KO ; `≤0` = OK.
-- Trois grandes hauteurs : **clipBas ≤ 0** (pas de débordement) — 640×900 (−2), 820×1180 (−230), 1023×768 (−2).
-- 844×390 : clipBas +80 attendu ; scroll page → lecteur entier + mute/share/comments + nav haut.
-- Scroll réel : souris / trackpad / tactile / flèches — **VERIFY_OK** (scrollbar masquée ≠ preuve).
-- Vitest medium concernés : **22/22**.
+- Correctif : son dans cadre ; stage `100dvh−14.5rem` ; portal mb 0 ; scroll fil (scrollbar masquée ≠ preuve).
+- clipBasPx = `stage.bottom − innerHeight` ; `>0` KO ; `≤0` OK.
+- Trois grandes hauteurs sans débordement ; 844×390 scroll → lecteur + actions.
+- VERIFY_OK souris / trackpad / tactile ; vitest medium **22/22**.
+- Railway API + web **SUCCESS** sur `6fdf5fe4` ; API health OK ; CSS `14.5rem` servi.
+- CI OK sauf audit préexistant (60 GHSA, identique).
 - Mention : preuves locales API simulée ; captures CTO indisponibles localement.
 
 ## Inconnues / réserves
 
-- Session Preview réelle (login) non rejouée avant déploiement du correctif.
+- Nouvelle recette visuelle CTO (humaine) non faite.
 - RC-M1 appareil réel ; Lot 6 ; L1/L1B/L3L4/P0-02 suspendus.
-- Ticket **ouvert** jusqu’à nouvelle recette visuelle CTO.
 
 ## Décisions CTO
 
-- Recette visuelle non validée → correctif local.
-- GO livraison Preview du correctif si contrôles OK (15/11) — FF sans `--force` ; ticket reste ouvert.
+- GO livraison Preview du correctif (15/11).
+- Ticket **reste ouvert** jusqu’à nouvelle recette visuelle CTO.
 - Production / `main` hors périmètre.
 
 ## Tâches actives
 
-1. ~~Diagnostiquer + corriger local~~
-2. ~~Vérifs scroll + géométrie + tests~~
-3. **Commit ciblé + FF Preview + CI/Railway**
-4. Nouvelle recette visuelle CTO
+1. ~~Correctif + vérifs + tests~~
+2. ~~Commit + FF Preview + CI/Railway~~
+3. **Nouvelle recette visuelle CTO**
+4. Clôture sur validation CTO
 
 ## Prochaine action
 
-Commit (hors scripts temporaires) → vérifier distante encore `95674af1` → FF `feat/c3-videos-refonte-final` → attendre CI/Railway → confirmer SHA servis.
+Recette visuelle CTO sur https://preview.yunicity.city/videos (`6fdf5fe4`) — ticket ouvert.
