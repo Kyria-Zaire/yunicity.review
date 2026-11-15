@@ -17,6 +17,8 @@ export type LoadMorePagesResult = {
   pagesLoaded: number;
   hasMore: boolean;
   error: boolean;
+  /** Identifiants réellement ajoutés (Lot 8 R-ORD / R-VIDE). */
+  newIds?: string[];
 };
 
 function dedupeById(
@@ -42,6 +44,8 @@ export function useLocalVideosFeed() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Erreur de pagination seule — ne vide pas la grille déjà affichée (Lot 7 / D3). */
+  const [loadMoreError, setLoadMoreError] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
   const nextCursorRef = useRef<string | null>(null);
   const loadLockRef = useRef(false);
@@ -50,11 +54,24 @@ export function useLocalVideosFeed() {
     nextCursorRef.current = nextCursor;
   }, [nextCursor]);
 
+  const itemsRef = useRef<LocalVideoFeedItem[]>([]);
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
   const fetchPage = useCallback(
-    async (cursor?: string | null, append = false): Promise<LoadMorePagesResult & { ok: boolean }> => {
-      if (append) setIsLoadingMore(true);
-      else setIsLoading(true);
-      setError(null);
+    async (
+      cursor?: string | null,
+      append = false,
+    ): Promise<LoadMorePagesResult & { ok: boolean; pageIds: string[] }> => {
+      if (append) {
+        setIsLoadingMore(true);
+        setLoadMoreError(false);
+      } else {
+        setIsLoading(true);
+        setError(null);
+        setLoadMoreError(false);
+      }
       setSessionExpired(false);
       try {
         const response = await api.listLocalVideos({
@@ -65,24 +82,45 @@ export function useLocalVideosFeed() {
           longitude: currentPosition?.longitude,
         });
         setCity(response.city);
+        const previousIds = new Set(itemsRef.current.map((item) => item.id));
         setItems((prev) => (append ? dedupeById(prev, response.items) : response.items));
         setNextCursor(response.next_cursor);
         nextCursorRef.current = response.next_cursor;
+        const pageIds = append
+          ? response.items.map((item) => item.id).filter((id) => !previousIds.has(id))
+          : response.items.map((item) => item.id);
+        if (append) {
+          itemsRef.current = dedupeById(itemsRef.current, response.items);
+        } else {
+          itemsRef.current = response.items;
+        }
         return {
           ok: true,
           pagesLoaded: 1,
           hasMore: Boolean(response.next_cursor),
           error: false,
+          pageIds,
+          newIds: pageIds,
         };
       } catch (err) {
         if (isSessionExpiredAuthError(err)) {
           setSessionExpired(true);
-          setError(null);
+          if (!append) setError(null);
+        } else if (append) {
+          // Pagination : conserver les items, signaler localement.
+          setLoadMoreError(true);
         } else {
           setError("load_failed");
+          setItems([]);
         }
-        if (!append) setItems([]);
-        return { ok: false, pagesLoaded: 0, hasMore: Boolean(nextCursorRef.current), error: true };
+        return {
+          ok: false,
+          pagesLoaded: 0,
+          hasMore: Boolean(nextCursorRef.current),
+          error: true,
+          pageIds: [],
+          newIds: [],
+        };
       } finally {
         setIsLoading(false);
         setIsLoadingMore(false);
@@ -119,19 +157,38 @@ export function useLocalVideosFeed() {
   const loadMorePages = useCallback(
     async (maxPages: number = VIDEOS_MOBILE_SEARCH_PAGES_PER_PRESS): Promise<LoadMorePagesResult> => {
       if (loadLockRef.current) {
-        return { pagesLoaded: 0, hasMore: Boolean(nextCursorRef.current), error: false };
+        return {
+          pagesLoaded: 0,
+          hasMore: Boolean(nextCursorRef.current),
+          error: false,
+          newIds: [],
+        };
       }
       loadLockRef.current = true;
       let pagesLoaded = 0;
+      const newIds: string[] = [];
       try {
         while (pagesLoaded < maxPages && nextCursorRef.current) {
           const result = await fetchPage(nextCursorRef.current, true);
           if (!result.ok) {
-            return { pagesLoaded, hasMore: Boolean(nextCursorRef.current), error: true };
+            return {
+              pagesLoaded,
+              hasMore: Boolean(nextCursorRef.current),
+              error: true,
+              newIds,
+            };
           }
+          newIds.push(...(result.pageIds ?? []));
           pagesLoaded += 1;
+          // R-VIDE : dès qu'une vidéo correspondante est ajoutée, on s'arrête.
+          if (result.pageIds.length > 0) break;
         }
-        return { pagesLoaded, hasMore: Boolean(nextCursorRef.current), error: false };
+        return {
+          pagesLoaded,
+          hasMore: Boolean(nextCursorRef.current),
+          error: false,
+          newIds,
+        };
       } finally {
         loadLockRef.current = false;
       }
@@ -146,10 +203,12 @@ export function useLocalVideosFeed() {
     isLoading,
     isLoadingMore,
     error,
+    loadMoreError,
     sessionExpired,
     refresh: () => fetchPage(null, false),
     loadMore,
     loadMorePages,
+    clearLoadMoreError: () => setLoadMoreError(false),
     updateItem,
   };
 }

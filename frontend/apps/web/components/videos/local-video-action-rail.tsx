@@ -16,12 +16,16 @@ type LocalVideoActionRailProps = {
   commentCount: number;
   likedByMe: boolean;
   likeAnimating?: boolean;
+  /** F9 C2 : commentaires ouverts. */
+  commentsPressed?: boolean;
   /**
    * `overlay` : pastille voilée sur la vidéo (mobile A).
    * `stage` : à côté d'une vidéo paysage mobile (D).
    * `side` : colonne medium v1.2 hors vidéo (pastilles claires) — ≠ panneau R-PAN.
    */
   surface?: "overlay" | "stage" | "side";
+  /** F8 C2 : pastille blanche 48×48 pour « … ». */
+  moreStyle?: "default" | "desktop-c2";
   onLikeClick: () => void;
   onCommentsClick: () => void;
   onShareClick: () => void;
@@ -38,7 +42,9 @@ export function LocalVideoActionRail({
   commentCount,
   likedByMe,
   likeAnimating = false,
+  commentsPressed = false,
   surface = "overlay",
+  moreStyle = "default",
   onLikeClick,
   onCommentsClick,
   onShareClick,
@@ -57,6 +63,7 @@ export function LocalVideoActionRail({
   const actionButtonClass = side
     ? `flex flex-col items-center gap-1 ${ink} ${VIDEO_IMMERSIVE_FOCUS}`
     : `flex h-[58px] w-[58px] flex-col items-center justify-center gap-0.5 text-white ${VIDEO_IMMERSIVE_FOCUS}`;
+  const moreDesktopC2 = moreStyle === "desktop-c2" && !side;
 
   return (
     <div
@@ -88,6 +95,7 @@ export function LocalVideoActionRail({
         type="button"
         onClick={onCommentsClick}
         aria-label={formatVideosMobileCommentsActionLabel(commentCount)}
+        aria-pressed={commentsPressed}
         className={actionButtonClass}
       >
         <span className={pill || undefined}>
@@ -113,10 +121,16 @@ export function LocalVideoActionRail({
         className={
           side
             ? `flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 text-neutral-900 ${VIDEO_IMMERSIVE_FOCUS}`
-            : `flex h-11 w-[58px] items-center justify-center text-white ${VIDEO_IMMERSIVE_FOCUS}`
+            : moreDesktopC2
+              ? `mt-0.5 flex h-12 w-12 items-center justify-center rounded-full bg-white text-neutral-900 ${VIDEO_IMMERSIVE_FOCUS}`
+              : `flex h-11 w-[58px] items-center justify-center text-white ${VIDEO_IMMERSIVE_FOCUS}`
         }
       >
-        <MoreHorizontal className={side ? "h-[22px] w-[22px]" : "h-6 w-6"} strokeWidth={2} aria-hidden />
+        <MoreHorizontal
+          className={side || moreDesktopC2 ? "h-[22px] w-[22px]" : "h-6 w-6"}
+          strokeWidth={2}
+          aria-hidden
+        />
       </button>
     </div>
   );

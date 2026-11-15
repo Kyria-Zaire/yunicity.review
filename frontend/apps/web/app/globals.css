@@ -1566,6 +1566,30 @@ body {
   }
 }
 
+/* Lot 7 — grille mixte C1 (masonry colonnes, ratios portrait/paysage). */
+.videos-desktop-grid {
+  column-count: 2;
+  column-gap: 1rem;
+}
+
+@media (min-width: 1280px) {
+  .videos-desktop-grid {
+    column-count: 3;
+  }
+}
+
+@media (min-width: 1440px) {
+  .videos-desktop-grid {
+    column-count: 3;
+    column-gap: 1.25rem;
+  }
+}
+
+.videos-desktop-grid-tile {
+  display: inline-block;
+  width: 100%;
+}
+
 @media (min-width: 1024px) {
   .videos-discovery-mobile-only {
     display: none !important;

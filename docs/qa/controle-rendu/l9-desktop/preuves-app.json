@@ -1,0 +1,117 @@
+{
+  "env": "next+api-simulee",
+  "cases": [
+    {
+      "kind": "c4-unavailable",
+      "file": "APP-C4-indisponible-1440.png",
+      "origin": "direct",
+      "title": 1,
+      "noVideo": true,
+      "gridUnder": true,
+      "getLocalVideoHits": 1,
+      "noRequestLoop": true,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "c4-see-feed-closes",
+      "url": "http://127.0.0.1:3002/videos",
+      "originAtOpen": "direct",
+      "overlayGone": true,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "c7-load-error",
+      "file": "APP-C7-erreur-1440.png",
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "c7-retry-success",
+      "stage": 1,
+      "video": 1,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "c2-finitions",
+      "file": "APP-C2-comments-f1-f10-1440.png",
+      "fileAfter": "APP-C2-f1-top32-apres-1440.png",
+      "panelWidth": 380,
+      "panelHeight": 836,
+      "panelTop": 32,
+      "panelTopDeltaVs32": 0,
+      "composerHeight": 44,
+      "closeCommentsSize": {
+        "w": 44,
+        "h": 44
+      },
+      "avatarCount": 3,
+      "relativeTime": 1,
+      "commentsPressed": "true",
+      "moreWhite": true,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "rfocus-after-c2",
+      "y0": 0,
+      "y1": 0,
+      "delta": 0,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "integrated-grid-open-close",
+      "yOpen": 60,
+      "yClose": 60,
+      "delta": 0,
+      "focus": "p2",
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "midnav-to-unavailable",
+      "file": "APP-midnav-C4-1440.png",
+      "url": "http://127.0.0.1:3002/videos?video=gone",
+      "gridUnder": true,
+      "noVideo": true,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "d2-login-next",
+      "file": "APP-D2-login-next-1440.png",
+      "url": "http://127.0.0.1:3002/login?next=%2Fvideos%3Fvideo%3Dp1",
+      "next": "/videos?video=p1",
+      "nextDecoded": "/videos?video=p1",
+      "ok": true,
+      "env": "next+api-simulee",
+      "reserve": "credentials-reels-non-joues"
+    },
+    {
+      "kind": "d2-login-return-video",
+      "file": "APP-D2-retour-lecteur-1440.png",
+      "fileReload": "APP-D2-reload-lecteur-1440.png",
+      "returnUrl": "http://127.0.0.1:3002/videos?video=p1",
+      "reloadUrl": "http://127.0.0.1:3002/videos?video=p1",
+      "videoId": "p1",
+      "reloadVideoId": "p1",
+      "overlayAfterLogin": 1,
+      "overlayAfterReload": 1,
+      "nextPreserved": true,
+      "ok": true,
+      "env": "next+api-simulee",
+      "reserve": "credentials-reels-non-joues"
+    },
+    {
+      "kind": "medium-no-desktop-overlay",
+      "overlay": 0,
+      "ok": true,
+      "env": "next+api-simulee"
+    }
+  ],
+  "failures": [],
+  "ok": true
+}

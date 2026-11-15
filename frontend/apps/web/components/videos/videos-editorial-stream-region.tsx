@@ -68,6 +68,9 @@ export type VideosEditorialStreamRegionProps = {
   hasMoreFeed?: boolean;
   isLoadingMore?: boolean;
   onLoadMorePages?: () => Promise<void> | void;
+  /** Erreur locale « Charger plus » (desktop C1) — grille conservée. */
+  loadMoreError?: boolean;
+  onRetryLoadMore?: () => void;
 };
 
 function viewLabelForTab(tab: VideosPortalTabId): string {
@@ -106,6 +109,8 @@ export function VideosEditorialStreamRegion({
   hasMoreFeed = false,
   isLoadingMore = false,
   onLoadMorePages,
+  loadMoreError = false,
+  onRetryLoadMore,
 }: VideosEditorialStreamRegionProps) {
   const viewportTier = useVideosViewportTier();
   const feedForImmersive = immersiveItems ?? visibleItems;
@@ -297,34 +302,35 @@ export function VideosEditorialStreamRegion({
 
   return (
     <div className={className} data-videos-medium-region="stream">
-      {isLoading ? (
-        <p className="text-sm text-neutral-500" role="status">
-          {VIDEOS_PORTAL_LOADING}
-        </p>
-      ) : null}
+      {/* Catalogue mobile (≤639) — états locaux ; medium a déjà returné plus haut. */}
+      <div className="videos-discovery-mobile-only space-y-4">
+        {isLoading ? (
+          <p className="text-sm text-neutral-500" role="status">
+            {VIDEOS_PORTAL_LOADING}
+          </p>
+        ) : null}
 
-      {!isLoading && error ? (
-        <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-6 text-center">
-          <p className="text-sm text-red-800">{LOCAL_VIDEO_ERROR_MESSAGE}</p>
-          <button
-            type="button"
-            onClick={onRetry}
-            className="mt-3 text-sm font-semibold text-yunicity-primary hover:underline"
-          >
-            {LOCAL_VIDEO_RETRY_LABEL}
-          </button>
-        </div>
-      ) : null}
+        {!isLoading && error ? (
+          <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-6 text-center">
+            <p className="text-sm text-red-800">{LOCAL_VIDEO_ERROR_MESSAGE}</p>
+            <button
+              type="button"
+              onClick={onRetry}
+              className="mt-3 text-sm font-semibold text-yunicity-primary hover:underline"
+            >
+              {LOCAL_VIDEO_RETRY_LABEL}
+            </button>
+          </div>
+        ) : null}
 
-      {!isLoading && !error && visibleItems.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-10 text-center text-sm text-neutral-600">
-          {emptyMessage}
-        </p>
-      ) : null}
+        {!isLoading && !error && visibleItems.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-10 text-center text-sm text-neutral-600">
+            {emptyMessage}
+          </p>
+        ) : null}
 
-      {!isLoading && !error && visibleItems.length > 0 ? (
-        <>
-          <div className="videos-discovery-mobile-only space-y-4">
+        {!isLoading && !error && visibleItems.length > 0 ? (
+          <>
             <VideosMobileFeaturedHero items={[...featuredItems]} />
 
             <h2 className="pt-1 text-base font-bold text-neutral-900">{VIDEOS_MOBILE_RECENT_TITLE}</h2>
@@ -338,15 +344,26 @@ export function VideosEditorialStreamRegion({
             {loadMore}
 
             <VideosMobileSubscriptionsRail creators={[...creators]} />
-          </div>
+          </>
+        ) : null}
+      </div>
 
-          {/* Desktop ≥1024 uniquement — medium utilise VideosMediumVerticalFeed (L5). */}
-          <div className="videos-medium-desktop-stream space-y-5">
-            <VideosDesktopFeedStream items={visibleItems} />
-            {loadMore}
-          </div>
-        </>
-      ) : null}
+      {/* Desktop ≥1024 — grille mixte C1 (Lot 7) ; lecteurs Lot 8 hors scope. */}
+      <div className="videos-medium-desktop-stream space-y-5">
+        <VideosDesktopFeedStream
+          items={visibleItems}
+          isLoading={isLoading}
+          error={error}
+          emptyMessage={emptyMessage}
+          onRetry={onRetry}
+          loadMore={loadMore}
+          hasMore={hasMoreFeed}
+          isLoadingMore={isLoadingMore}
+          onLoadMore={onLoadMoreFeed}
+          loadMoreError={loadMoreError}
+          onRetryLoadMore={onRetryLoadMore ?? onLoadMoreFeed}
+        />
+      </div>
     </div>
   );
 }

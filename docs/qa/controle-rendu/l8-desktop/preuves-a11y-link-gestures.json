@@ -1,0 +1,59 @@
+{
+  "env": "next+api-simulee",
+  "cases": [
+    {
+      "kind": "keyboard-enter-rfocus",
+      "yBeforeEnter": 80,
+      "yAfterEnter": 80,
+      "delta": 0,
+      "focusAfterEnter": "p2",
+      "overlayAfterEnter": true,
+      "urlAfterEnter": true,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "ctrl-cmd-click-new-tab",
+      "urlBeforeCtrl": "http://127.0.0.1:3002/videos",
+      "urlAfterCtrl": "http://127.0.0.1:3002/videos",
+      "sameTabUnchanged": true,
+      "overlayBeforeCtrl": 0,
+      "overlayAfterCtrl": 0,
+      "popupOpened": true,
+      "popupHasVideo": true,
+      "note": "Ctrl/Cmd+clic doit ouvrir un nouvel onglet (ou laisser le navigateur gérer) sans superposer dans l'onglet courant.",
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "middle-click-mousedown",
+      "defaultPreventedByDispatch": false,
+      "preventedSeenInCapture": false,
+      "appWouldSkip": true,
+      "href": "/videos?video=p1",
+      "ok": true,
+      "note": "button=1 : onMouseDown return avant preventDefault ; href conservé pour ouverture native milieu.",
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "touch-tap-rfocus",
+      "yTouchBefore": 60,
+      "yTouchAfter": 60,
+      "delta": 0,
+      "focusTouch": "p2",
+      "touchOverlay": true,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "modifier-mousedown-side-effect",
+      "sessionAfterModMousedown": "p1",
+      "scrollMarked": "0",
+      "ok": true,
+      "note": "Mesure : mousedown modifié marque encore la session (effet de bord mineur si nouvel onglet). Pas une régression d'ouverture tant que Ctrl+clic n'ouvre pas l'overlay ici.",
+      "env": "next+api-simulee"
+    }
+  ],
+  "failures": [],
+  "ok": true
+}

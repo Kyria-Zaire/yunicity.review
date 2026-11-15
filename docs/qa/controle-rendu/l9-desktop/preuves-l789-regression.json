@@ -1,0 +1,56 @@
+{
+  "env": "next+api-simulee",
+  "lot": "L7+L8+L9-regression",
+  "cases": [
+    {
+      "kind": "l7-grid-pagination",
+      "file": "APP-L789-grille-1440.png",
+      "tilesBefore": 4,
+      "tilesAfter": 6,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "l8-open-nav-history-rfocus",
+      "urlOpen": "http://127.0.0.1:3002/videos?video=p1",
+      "urlNext": "http://127.0.0.1:3002/videos?video=l1",
+      "urlBack": "http://127.0.0.1:3002/videos",
+      "yOpen": 80,
+      "yClose": 80,
+      "delta": 0,
+      "focus": "p1",
+      "panelTop": 32,
+      "shareUi": true,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "l9-c4-no-loop",
+      "hits1": 1,
+      "hits2": 1,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "l9-c7-retry",
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "preserve-medium-no-desktop-overlay",
+      "width": 820,
+      "overlay": 0,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "preserve-mobile-no-desktop-overlay",
+      "width": 390,
+      "overlay": 0,
+      "ok": true,
+      "env": "next+api-simulee"
+    }
+  ],
+  "failures": [],
+  "ok": true
+}

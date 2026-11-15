@@ -34,6 +34,8 @@ type VideosDiscoveryScreenProps = {
   onCommentCountDelta?: (videoId: string, delta: number) => void;
   /** `?video=` — fil medium L5 ; ignoré hors medium. */
   deepLinkVideoId?: string | null;
+  loadMoreError?: boolean;
+  onRetryLoadMore?: () => void;
 };
 
 export function VideosDiscoveryScreen({
@@ -53,6 +55,8 @@ export function VideosDiscoveryScreen({
   onOpenReport,
   onCommentCountDelta,
   deepLinkVideoId = null,
+  loadMoreError = false,
+  onRetryLoadMore,
 }: VideosDiscoveryScreenProps) {
   const portal = useVideosPortalContext({ items });
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
@@ -145,6 +149,8 @@ export function VideosDiscoveryScreen({
               }
             : undefined
         }
+        loadMoreError={loadMoreError}
+        onRetryLoadMore={onRetryLoadMore ?? onLoadMoreFeed}
       />
 
       <VideosFilterSheet

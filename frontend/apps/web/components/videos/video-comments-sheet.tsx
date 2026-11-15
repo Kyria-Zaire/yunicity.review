@@ -9,7 +9,7 @@ import {
   LOCAL_VIDEO_COMMENT_SUBMIT_LABEL,
   LOCAL_VIDEO_COMMENTS_EMPTY,
 } from "@yunicity/utils";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Send, Trash2 } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -32,6 +32,11 @@ type VideoCommentsSheetProps = {
   onCommentCountDelta?: (videoId: string, delta: number) => void;
   /** Cible explicite de retour du focus à la fermeture (sinon mémorise le déclencheur à l'ouverture). */
   returnFocusRef?: RefObject<HTMLElement | null>;
+  /**
+   * `sheet` (défaut) : tiroir bas Lot 4.
+   * `panel` : contenu seul pour panneau latéral desktop C2 (Lot 8) — sans Drawer.
+   */
+  presentation?: "sheet" | "panel";
 };
 
 function formatCommentTime(iso: string): string {
@@ -43,6 +48,30 @@ function formatCommentTime(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+/** Horodatage relatif court pour panneau C2 (maquette « · 1 h »). */
+function formatCommentRelativeTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const deltaSec = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
+  if (deltaSec < 60) return "à l'instant";
+  const minutes = Math.floor(deltaSec / 60);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} j`;
+  return formatCommentTime(iso);
+}
+
+function commentInitials(displayName: string): string {
+  const parts = displayName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  const first = parts[0] ?? "";
+  if (parts.length === 1) return first.slice(0, 2).toUpperCase();
+  const second = parts[1] ?? "";
+  return `${first[0] ?? ""}${second[0] ?? ""}`.toUpperCase();
 }
 
 /** Remet le panneau commentaires dans son contrat CSS (plus de styles clavier). */
@@ -126,6 +155,7 @@ export function VideoCommentsSheet({
   onClose,
   onCommentCountDelta,
   returnFocusRef: returnFocusRefProp,
+  presentation = "sheet",
 }: VideoCommentsSheetProps) {
   const api = useYunicityApi();
   const { user } = useAuth();
@@ -139,7 +169,7 @@ export function VideoCommentsSheet({
   const sheetBodyRef = useRef<HTMLDivElement>(null);
   const blurCloseTimerRef = useRef<number | null>(null);
 
-  useCommentsKeyboardViewport(open && keyboardExpanded);
+  useCommentsKeyboardViewport(presentation === "sheet" && open && keyboardExpanded);
 
   useLayoutEffect(() => {
     if (open) {
@@ -155,7 +185,7 @@ export function VideoCommentsSheet({
     setError(null);
     try {
       const response = await api.listLocalVideoComments(video.id, { limit: 50 });
-      setComments(response.items);
+      setComments(Array.isArray(response?.items) ? response.items : []);
     } catch {
       setError(LOCAL_VIDEO_COMMENT_LOAD_ERROR);
       setComments([]);
@@ -226,7 +256,7 @@ export function VideoCommentsSheet({
     setKeyboardExpanded(true);
   };
 
-  const handleComposerBlur = (event: FocusEvent<HTMLTextAreaElement>) => {
+  const handleComposerBlur = (event: FocusEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     const next = event.relatedTarget;
     if (next instanceof Node && sheetBodyRef.current?.contains(next)) return;
     // Laisse le clic sur « Fermer » / « Publier » se résoudre avant de replier le tiroir.
@@ -235,6 +265,160 @@ export function VideoCommentsSheet({
       setKeyboardExpanded(false);
     }, 120);
   };
+
+  const body = !video ? null : (
+    <div
+      ref={sheetBodyRef}
+      className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden"
+      data-videos-comments-keyboard={keyboardExpanded ? "expanded" : "collapsed"}
+      data-videos-comments-presentation={presentation}
+    >
+      {isLoading ? (
+        <div className="flex flex-1 items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-neutral-400 motion-reduce:animate-none" aria-hidden />
+        </div>
+      ) : comments.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center px-4 text-center">
+          <p className="text-sm text-neutral-600">{LOCAL_VIDEO_COMMENTS_EMPTY}</p>
+        </div>
+      ) : (
+        <ul
+          className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${
+            presentation === "panel" ? "gap-0 px-5 py-1" : "gap-3 pb-3"
+          }`}
+        >
+          {comments.map((comment) => {
+            const isMine = comment.author_user_id === user?.id;
+            return (
+              <li
+                key={comment.id}
+                className={
+                  presentation === "panel"
+                    ? "flex gap-3 border-b border-transparent py-3"
+                    : "rounded-2xl bg-neutral-50 px-3 py-2"
+                }
+              >
+                {presentation === "panel" ? (
+                  <span
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EEF0FF] text-[12px] font-bold text-[#2A2FFF]"
+                    aria-hidden
+                  >
+                    {commentInitials(comment.author_display_name)}
+                  </span>
+                ) : null}
+                <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
+                  <div className={`min-w-0 ${presentation === "panel" ? "flex flex-col gap-0.5" : ""}`}>
+                    <p
+                      className={
+                        presentation === "panel"
+                          ? "text-[13px] font-bold text-neutral-900"
+                          : "text-sm font-semibold text-neutral-900"
+                      }
+                    >
+                      {comment.author_display_name}
+                      {presentation === "panel" ? (
+                        <span className="font-normal text-[#6B7280]">
+                          {" "}
+                          · {formatCommentRelativeTime(comment.created_at)}
+                        </span>
+                      ) : null}
+                    </p>
+                    {presentation === "sheet" ? (
+                      <p className="text-xs text-neutral-500">{formatCommentTime(comment.created_at)}</p>
+                    ) : null}
+                    <p
+                      className={
+                        presentation === "panel"
+                          ? "text-[14px] leading-5 text-neutral-900"
+                          : "mt-1 text-sm text-neutral-800"
+                      }
+                    >
+                      {comment.body}
+                    </p>
+                  </div>
+                  {isMine ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleDelete(comment)}
+                      className={`${VIDEO_TOUCH_TARGET} rounded-full text-neutral-500 hover:bg-neutral-100 ${VIDEO_CANVAS_FOCUS}`}
+                      aria-label="Supprimer mon commentaire"
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden />
+                    </button>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {error ? (
+        <p className="px-4 pb-2 text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      <form
+        onSubmit={(event) => void handleSubmit(event)}
+        className={`min-w-0 shrink-0 border-t border-neutral-200 ${
+          presentation === "panel" ? "px-3 pb-3 pl-5 pt-2.5" : "pt-3"
+        }`}
+      >
+        <div className="flex min-w-0 max-w-full items-center gap-2">
+          {presentation === "panel" ? (
+            <input
+              type="text"
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder={LOCAL_VIDEO_COMMENT_PLACEHOLDER}
+              maxLength={500}
+              onFocus={handleComposerFocus}
+              onBlur={handleComposerBlur}
+              className="h-11 min-w-0 flex-1 rounded-full border border-neutral-200 bg-[#F7F8FA] px-3.5 text-[15px] text-neutral-900"
+              aria-label="Écrire un commentaire"
+            />
+          ) : (
+            <textarea
+              rows={1}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder={LOCAL_VIDEO_COMMENT_PLACEHOLDER}
+              maxLength={500}
+              onFocus={handleComposerFocus}
+              onBlur={handleComposerBlur}
+              /* text-base (16 px) : seuil Safari iOS — text-sm (14 px) déclenche le zoom auto. */
+              className="max-h-28 min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-neutral-200 px-4 py-3 text-base text-neutral-800"
+              aria-label="Écrire un commentaire"
+            />
+          )}
+          <button
+            type="submit"
+            disabled={!draft.trim() || isSubmitting}
+            aria-label={LOCAL_VIDEO_COMMENT_SUBMIT_LABEL}
+            className={
+              presentation === "panel"
+                ? "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-neutral-200 text-neutral-500 disabled:opacity-60 enabled:bg-yunicity-primary enabled:text-white"
+                : "inline-flex min-h-11 max-w-[40%] shrink-0 items-center rounded-full bg-yunicity-primary px-4 text-sm font-semibold text-white disabled:opacity-40"
+            }
+          >
+            {isSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden />
+            ) : presentation === "panel" ? (
+              <Send className="h-4 w-4" aria-hidden />
+            ) : (
+              LOCAL_VIDEO_COMMENT_SUBMIT_LABEL
+            )}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+
+  if (presentation === "panel") {
+    if (!open || !video) return null;
+    return body;
+  }
 
   // Sans vidéo : Drawer FERMÉ plutôt que rien. Même type, même position que le Drawer
   // ouvert ci-dessous : React garde l'instance, et la transition fermé → ouvert donne le
@@ -258,87 +442,7 @@ export function VideoCommentsSheet({
       returnFocusRef={returnFocusRef}
       className={`rounded-t-3xl bg-white ${keyboardExpanded ? "max-h-[90dvh]" : "max-h-[60dvh]"}`}
     >
-      <div
-        ref={sheetBodyRef}
-        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden"
-        data-videos-comments-keyboard={keyboardExpanded ? "expanded" : "collapsed"}
-      >
-        {isLoading ? (
-          <div className="flex flex-1 items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-neutral-400 motion-reduce:animate-none" aria-hidden />
-          </div>
-        ) : comments.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center text-center">
-            <p className="text-sm text-neutral-600">{LOCAL_VIDEO_COMMENTS_EMPTY}</p>
-          </div>
-        ) : (
-          <ul className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pb-3">
-            {comments.map((comment) => {
-              const isMine = comment.author_user_id === user?.id;
-              return (
-                <li key={comment.id} className="rounded-2xl bg-neutral-50 px-3 py-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-neutral-900">
-                        {comment.author_display_name}
-                      </p>
-                      <p className="text-xs text-neutral-500">{formatCommentTime(comment.created_at)}</p>
-                    </div>
-                    {isMine ? (
-                      <button
-                        type="button"
-                        onClick={() => void handleDelete(comment)}
-                        className={`${VIDEO_TOUCH_TARGET} rounded-full text-neutral-500 hover:bg-neutral-100 ${VIDEO_CANVAS_FOCUS}`}
-                        aria-label="Supprimer mon commentaire"
-                      >
-                        <Trash2 className="h-4 w-4" aria-hidden />
-                      </button>
-                    ) : null}
-                  </div>
-                  <p className="mt-1 text-sm text-neutral-800">{comment.body}</p>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-
-        {error ? (
-          <p className="pb-2 text-sm text-red-600" role="alert">
-            {error}
-          </p>
-        ) : null}
-
-        <form
-          onSubmit={(event) => void handleSubmit(event)}
-          className="min-w-0 shrink-0 border-t border-neutral-200 pt-3"
-        >
-          <div className="flex min-w-0 max-w-full items-end gap-2">
-            <textarea
-              rows={1}
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              placeholder={LOCAL_VIDEO_COMMENT_PLACEHOLDER}
-              maxLength={500}
-              onFocus={handleComposerFocus}
-              onBlur={handleComposerBlur}
-              /* text-base (16 px) : seuil Safari iOS — text-sm (14 px) déclenche le zoom auto. */
-              className="max-h-28 min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-neutral-200 px-4 py-3 text-base text-neutral-800"
-              aria-label="Écrire un commentaire"
-            />
-            <button
-              type="submit"
-              disabled={!draft.trim() || isSubmitting}
-              className="inline-flex min-h-11 max-w-[40%] shrink-0 items-center rounded-full bg-yunicity-primary px-4 text-sm font-semibold text-white disabled:opacity-40"
-            >
-              {isSubmitting ? (
-                <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden />
-              ) : (
-                LOCAL_VIDEO_COMMENT_SUBMIT_LABEL
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
+      {body}
     </Drawer>
   );
 }

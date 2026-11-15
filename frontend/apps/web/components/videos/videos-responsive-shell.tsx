@@ -74,6 +74,8 @@ type VideosResponsiveShellProps = {
   hasMoreFeed?: boolean;
   isLoadingMore?: boolean;
   onLoadMorePages?: () => Promise<void> | void;
+  loadMoreError?: boolean;
+  onRetryLoadMore?: () => void;
 };
 
 const DESKTOP_TABS = [
@@ -129,6 +131,8 @@ export function VideosResponsiveShell({
   hasMoreFeed,
   isLoadingMore,
   onLoadMorePages,
+  loadMoreError = false,
+  onRetryLoadMore,
 }: VideosResponsiveShellProps) {
   const upNext = filteredItems
     .filter((item) => !visibleItems.some((visible) => visible.id === item.id))
@@ -179,7 +183,13 @@ export function VideosResponsiveShell({
 
         <div className="videos-shell-desktop-header flex items-start justify-between gap-4">
           <div>
-            <h1 className="feed-desktop-greeting-title">{VIDEOS_PORTAL_TITLE}</h1>
+            <h1
+              className="feed-desktop-greeting-title"
+              data-videos-desktop-grid-title=""
+              tabIndex={-1}
+            >
+              {VIDEOS_PORTAL_TITLE}
+            </h1>
             <p className="feed-desktop-greeting-subtitle">{formatVideosPortalSubtitle(city)}</p>
           </div>
           <button
@@ -243,6 +253,8 @@ export function VideosResponsiveShell({
           hasMoreFeed={hasMoreFeed}
           isLoadingMore={isLoadingMore}
           onLoadMorePages={onLoadMorePages}
+          loadMoreError={loadMoreError}
+          onRetryLoadMore={onRetryLoadMore}
         />
       </div>
 

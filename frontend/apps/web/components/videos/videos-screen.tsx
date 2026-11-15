@@ -3,6 +3,7 @@
 import { SessionExpiredPanel } from "@/components/auth/session-expired-panel";
 import { LocalVideoReportSheet } from "@/components/videos/local-video-report-sheet";
 import { LocalVideoShareFeedback } from "@/components/videos/local-video-share-feedback";
+import { VideosDesktopOverlayPlayer } from "@/components/videos/desktop/videos-desktop-overlay-player";
 import { VideoDetailScreen } from "@/components/videos/video-detail-screen";
 import { VideosAppShell } from "@/components/videos/videos-app-shell";
 import { VideosDiscoveryScreen } from "@/components/videos/videos-discovery-screen";
@@ -21,13 +22,16 @@ import {
   LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE,
   bumpLocalVideoCommentCount,
   isLocalVideoFeedItemPlayable,
-  isLocalVideoProcessingReady,
-  mapLocalVideoToFeedPreview,
   registerLocalVideoPending,
 } from "@yunicity/utils";
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import {
+  classifyDesktopOverlayDirectError,
+  type DesktopOverlayDirectError,
+} from "@/lib/videos/desktop-overlay-direct-error";
 
 export function VideosScreen() {
   const { user } = useAuth();
@@ -47,8 +51,9 @@ function VideosScreenInner() {
   const searchParams = useSearchParams();
   const focusVideoId = searchParams.get("video")?.trim() || null;
   const viewportTier = useVideosViewportTier();
-  // L5 : medium garde le shell découverte (hero + rail) ; détail page = mobile / desktop.
-  const isDetailMode = Boolean(focusVideoId) && viewportTier !== "medium";
+  // L8 : desktop → superposition sur grille ; mobile → page détail ; medium → fil L5.
+  const isMobileDetail = Boolean(focusVideoId) && viewportTier === "mobile";
+  const isDesktopOverlay = Boolean(focusVideoId) && viewportTier === "desktop";
 
   const feed = useLocalVideosFeed();
   const pending = useLocalVideoPendingTracker({
@@ -58,7 +63,9 @@ function VideosScreenInner() {
         void api
           .getLocalVideo(videoId)
           .then((video) => setPinnedVideo(video))
-          .catch(() => {});
+          .catch(() => {
+            /* ignore */
+          });
       }
     },
   });
@@ -66,37 +73,61 @@ function VideosScreenInner() {
   const [reportOpen, setReportOpen] = useState(false);
   const [reportVideoId, setReportVideoId] = useState<string | null>(null);
   const [pinnedVideo, setPinnedVideo] = useState<LocalVideoFeedItem | null>(null);
+  const [directError, setDirectError] = useState<DesktopOverlayDirectError | null>(null);
+  const [directRetryBusy, setDirectRetryBusy] = useState(false);
+  // Évite une boucle d'effet si l'objet `pending` change d'identité à chaque rendu.
+  const syncPendingFromStorageRef = useRef(pending.syncFromStorage);
+  syncPendingFromStorageRef.current = pending.syncFromStorage;
 
-  useEffect(() => {
-    if (!focusVideoId || feed.isLoading) return;
-    if (feed.items.some((item) => item.id === focusVideoId)) {
-      setPinnedVideo(null);
-      return;
-    }
-
-    let cancelled = false;
-    void api
-      .getVideo(focusVideoId)
-      .then((video) => {
-        if (cancelled) return;
-        if (!isLocalVideoProcessingReady(video)) {
+  const fetchPinnedVideo = useCallback(
+    async (videoId: string, signal: { cancelled: boolean }) => {
+      try {
+        const video = await api.getLocalVideo(videoId);
+        if (signal.cancelled) return;
+        // Feed item : pas de processing_status — pending si non jouable.
+        if (!isLocalVideoFeedItemPlayable(video)) {
           registerLocalVideoPending({
             videoId: video.id,
             title: video.title,
             registeredAt: video.created_at,
           });
-          pending.syncFromStorage();
+          syncPendingFromStorageRef.current();
         }
-        setPinnedVideo(mapLocalVideoToFeedPreview(video));
-      })
-      .catch(() => {
-        if (!cancelled) setPinnedVideo(null);
-      });
+        setPinnedVideo(video);
+        setDirectError(null);
+      } catch (error) {
+        if (signal.cancelled) return;
+        setPinnedVideo(null);
+        setDirectError(classifyDesktopOverlayDirectError(error));
+      }
+    },
+    [api],
+  );
 
+  useEffect(() => {
+    if (!focusVideoId || feed.isLoading) return;
+    if (feed.items.some((item) => item.id === focusVideoId)) {
+      setPinnedVideo(null);
+      setDirectError(null);
+      return;
+    }
+
+    const signal = { cancelled: false };
+    void fetchPinnedVideo(focusVideoId, signal);
     return () => {
-      cancelled = true;
+      signal.cancelled = true;
     };
-  }, [api, feed.isLoading, feed.items, focusVideoId, pending]);
+  }, [feed.isLoading, feed.items, focusVideoId, fetchPinnedVideo]);
+
+  const retryDirectVideo = useCallback(() => {
+    if (!focusVideoId) return;
+    setDirectRetryBusy(true);
+    setDirectError(null);
+    const signal = { cancelled: false };
+    void fetchPinnedVideo(focusVideoId, signal).finally(() => {
+      if (!signal.cancelled) setDirectRetryBusy(false);
+    });
+  }, [fetchPinnedVideo, focusVideoId]);
 
   const displayItems = useMemo(() => {
     const byId = new Map<string, LocalVideoFeedItem>();
@@ -132,7 +163,7 @@ function VideosScreenInner() {
   const detailProcessingError = focusVideoId ? processingErrors[focusVideoId] : null;
 
   return (
-    <VideosAppShell detailMode={isDetailMode} immersiveMode={isDetailMode}>
+    <VideosAppShell detailMode={isMobileDetail} immersiveMode={isMobileDetail}>
       {/* CLOSE-24 : retour immersif mobile (composant hors lot B — cible via aria-label). */}
       <style>{`
         [data-videos-immersive-mobile] a[aria-label="Retour aux vidéos"] {
@@ -145,7 +176,7 @@ function VideosScreenInner() {
       `}</style>
       <ActiveReportVideoContext.Provider value={reportOpen ? reportVideoId : null}>
         <div className="relative">
-          {isDetailMode && focusVideoId ? (
+          {isMobileDetail && focusVideoId ? (
             feed.sessionExpired ? (
               <SessionExpiredPanel
                 message={LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE}
@@ -178,34 +209,82 @@ function VideosScreenInner() {
                 }}
               />
             )
-          ) : feed.sessionExpired ? (
-            <SessionExpiredPanel message={LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE} returnPath="/videos" />
-          ) : (
-            <VideosDiscoveryScreen
-              city={feed.city}
-              items={displayItems}
-              isLoading={feed.isLoading && pending.processingFeedItems.length === 0}
-              error={feed.error}
-              hasMoreFeed={Boolean(feed.nextCursor)}
-              isLoadingMore={feed.isLoadingMore}
-              onRetry={() => void feed.refresh()}
-              onLoadMoreFeed={() => {
-                if (!feed.isLoadingMore && feed.nextCursor) feed.loadMore();
-              }}
-              onLoadMorePages={() => feed.loadMorePages()}
-              processingErrors={processingErrors}
-              onDismissProcessing={(videoId) => pending.dismissTrack(videoId)}
-              onToggleLike={(item) => void interactions.toggleLike(item)}
-              onShare={(item) => void interactions.shareVideo(item)}
-              onOpenReport={(videoId) => {
-                setReportVideoId(videoId);
-                setReportOpen(true);
-              }}
-              onCommentCountDelta={(videoId, delta) => {
-                feed.updateItem(videoId, (item) => bumpLocalVideoCommentCount(item, delta));
-              }}
-              deepLinkVideoId={viewportTier === "medium" ? focusVideoId : null}
+          ) : feed.sessionExpired ||
+            (isDesktopOverlay && directError?.kind === "auth") ? (
+            <SessionExpiredPanel
+              message={LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE}
+              returnPath={
+                focusVideoId
+                  ? `/videos?video=${encodeURIComponent(focusVideoId)}`
+                  : "/videos"
+              }
             />
+          ) : (
+            <>
+              <VideosDiscoveryScreen
+                city={feed.city}
+                items={displayItems}
+                isLoading={feed.isLoading && pending.processingFeedItems.length === 0}
+                error={feed.error}
+                hasMoreFeed={Boolean(feed.nextCursor)}
+                isLoadingMore={feed.isLoadingMore}
+                loadMoreError={feed.loadMoreError}
+                onRetry={() => void feed.refresh()}
+                onLoadMoreFeed={() => {
+                  if (!feed.isLoadingMore && feed.nextCursor) feed.loadMore();
+                }}
+                onRetryLoadMore={() => {
+                  if (!feed.isLoadingMore && feed.nextCursor) feed.loadMore();
+                }}
+                onLoadMorePages={() => feed.loadMorePages()}
+                processingErrors={processingErrors}
+                onDismissProcessing={(videoId) => pending.dismissTrack(videoId)}
+                onToggleLike={(item) => void interactions.toggleLike(item)}
+                onShare={(item) => void interactions.shareVideo(item)}
+                onOpenReport={(videoId) => {
+                  setReportVideoId(videoId);
+                  setReportOpen(true);
+                }}
+                onCommentCountDelta={(videoId, delta) => {
+                  feed.updateItem(videoId, (item) => bumpLocalVideoCommentCount(item, delta));
+                }}
+                deepLinkVideoId={viewportTier === "medium" ? focusVideoId : null}
+              />
+
+              {isDesktopOverlay && focusVideoId ? (
+                <VideosDesktopOverlayPlayer
+                  videoId={focusVideoId}
+                  items={displayItems}
+                  isFeedLoading={feed.isLoading}
+                  hasMore={Boolean(feed.nextCursor)}
+                  isLoadingMore={feed.isLoadingMore}
+                  directError={
+                    directError?.kind === "unavailable" || directError?.kind === "load_error"
+                      ? directError
+                      : null
+                  }
+                  directRetryBusy={directRetryBusy}
+                  onRetryDirect={retryDirectVideo}
+                  onLoadPages={async (maxPages) => {
+                    const result = await feed.loadMorePages(maxPages);
+                    return {
+                      pageIds: result.newIds ?? [],
+                      hasMore: result.hasMore,
+                      error: result.error,
+                    };
+                  }}
+                  onToggleLike={(item) => void interactions.toggleLike(item)}
+                  onShare={(item) => void interactions.shareVideo(item)}
+                  onOpenReport={(videoId) => {
+                    setReportVideoId(videoId);
+                    setReportOpen(true);
+                  }}
+                  onCommentCountDelta={(videoId, delta) => {
+                    feed.updateItem(videoId, (item) => bumpLocalVideoCommentCount(item, delta));
+                  }}
+                />
+              ) : null}
+            </>
           )}
 
           <LocalVideoShareFeedback
