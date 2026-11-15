@@ -219,6 +219,187 @@ export function shouldIgnoreOverlayArrowKeys(target: EventTarget | null): boolea
   return false;
 }
 
+/** Seuil / anti-inertie molette & trackpad (lecteur desktop). */
+export const DESKTOP_OVERLAY_WHEEL_THRESHOLD_PX = 48;
+/** Silence (ms) sans événement → fin du geste (queue d’inertie espacée incluse). */
+export const DESKTOP_OVERLAY_WHEEL_GESTURE_IDLE_MS = 450;
+/** Verrou minimum après une nav — empêche un 2e saut si un trou > idle apparaît au milieu de l’inertie. */
+export const DESKTOP_OVERLAY_WHEEL_MIN_LOCK_MS = 650;
+
+/** Largeur de la barre de défilement (0 si absente). */
+export function measureOverlayScrollbarGap(): number {
+  if (typeof window === "undefined") return 0;
+  return Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+}
+
+export type DesktopOverlayScrollLockSnapshot = {
+  bodyOverflow: string;
+  bodyPaddingRight: string;
+  htmlOverflow: string;
+  htmlGutter: string;
+};
+
+/**
+ * Verrouille le fond sans `scrollbar-gutter: stable` (cause bande blanche à droite :
+ * gouttière réservée hors de `fixed inset-0`). Compensation = padding-right = gap.
+ */
+export function applyDesktopOverlayScrollLock(): DesktopOverlayScrollLockSnapshot {
+  const snapshot: DesktopOverlayScrollLockSnapshot = {
+    bodyOverflow: document.body.style.overflow,
+    bodyPaddingRight: document.body.style.paddingRight,
+    htmlOverflow: document.documentElement.style.overflow,
+    htmlGutter: document.documentElement.style.scrollbarGutter,
+  };
+  const gap = measureOverlayScrollbarGap();
+  /* Retirer une gouttière forcée éventuelle pour que le voile peigne bord à bord. */
+  document.documentElement.style.scrollbarGutter = "";
+  document.documentElement.style.overflow = "hidden";
+  document.body.style.overflow = "hidden";
+  /* Remplace (ne cumule pas) toute compensation précédente. */
+  document.body.style.paddingRight = gap > 0 ? `${gap}px` : "";
+  return snapshot;
+}
+
+export function releaseDesktopOverlayScrollLock(snapshot: DesktopOverlayScrollLockSnapshot): void {
+  document.body.style.overflow = snapshot.bodyOverflow;
+  document.body.style.paddingRight = snapshot.bodyPaddingRight;
+  document.documentElement.style.overflow = snapshot.htmlOverflow;
+  document.documentElement.style.scrollbarGutter = snapshot.htmlGutter;
+}
+
+/** Ancêtre encore défilable dans le sens de la molette. */
+export function isWheelOverScrollableRegion(target: Element, deltaY: number): boolean {
+  let node: Element | null = target;
+  while (node && node !== document.documentElement) {
+    if (node instanceof HTMLElement) {
+      const style = window.getComputedStyle(node);
+      const overflowY = style.overflowY;
+      const canY =
+        overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay";
+      if (canY && node.scrollHeight > node.clientHeight + 1) {
+        if (deltaY > 0 && node.scrollTop + node.clientHeight < node.scrollHeight - 1) {
+          return true;
+        }
+        if (deltaY < 0 && node.scrollTop > 1) {
+          return true;
+        }
+      }
+    }
+    node = node.parentElement;
+  }
+  return false;
+}
+
+/**
+ * Molette : ignorer zoom (Ctrl/Meta), saisie, panneaux / drawers portail,
+ * et zones encore défilables. Hors voile desktop → ignorer.
+ */
+export function shouldIgnoreOverlayWheel(event: {
+  ctrlKey: boolean;
+  metaKey: boolean;
+  deltaY: number;
+  target: EventTarget | null;
+}): boolean {
+  if (event.ctrlKey || event.metaKey) return true;
+  if (shouldIgnoreOverlayArrowKeys(event.target)) return true;
+  if (!(event.target instanceof Element)) return true;
+  if (
+    event.target.closest(
+      '[data-yunicity-overlay], [data-overlay-arrow-nav="ignore"], [data-videos-desktop-overlay-comments-panel], [data-overlay-wheel-nav="ignore"]',
+    )
+  ) {
+    return true;
+  }
+  if (!event.target.closest("[data-videos-desktop-overlay]")) {
+    return true;
+  }
+  return isWheelOverScrollableRegion(event.target, event.deltaY);
+}
+
+export type DesktopOverlayWheelAction = "previous" | "next";
+
+export type DesktopOverlayWheelGate = {
+  /**
+   * Accumule deltaY. Une seule action par geste : après navigation, toute la
+   * queue d’inertie (même sens) est avalée jusqu’à un silence `gestureIdleMs`
+   * ou un changement de sens.
+   */
+  consume: (deltaY: number, nowMs: number) => DesktopOverlayWheelAction | null;
+  reset: () => void;
+};
+
+/**
+ * Anti-inertie trackpad / molette.
+ * Un cooldown fixe ne suffit pas : après N ms la queue inertielle peut encore
+ * franchir le seuil. On combine verrou minimum + « une nav / geste jusqu’au silence ».
+ */
+export function createDesktopOverlayWheelGate(options?: {
+  thresholdPx?: number;
+  gestureIdleMs?: number;
+  minLockMs?: number;
+}): DesktopOverlayWheelGate {
+  const threshold = options?.thresholdPx ?? DESKTOP_OVERLAY_WHEEL_THRESHOLD_PX;
+  const gestureIdleMs = options?.gestureIdleMs ?? DESKTOP_OVERLAY_WHEEL_GESTURE_IDLE_MS;
+  const minLockMs = options?.minLockMs ?? DESKTOP_OVERLAY_WHEEL_MIN_LOCK_MS;
+  let accumulated = 0;
+  let direction: -1 | 0 | 1 = 0;
+  let lastEventMs = 0;
+  let lockedUntil = 0;
+  /** true = une nav a déjà eu lieu pour le geste en cours. */
+  let consumedThisGesture = false;
+
+  return {
+    reset() {
+      accumulated = 0;
+      direction = 0;
+      lastEventMs = 0;
+      lockedUntil = 0;
+      consumedThisGesture = false;
+    },
+    consume(deltaY, nowMs) {
+      if (!deltaY || Number.isNaN(deltaY)) return null;
+
+      const nextDir: -1 | 1 = deltaY > 0 ? 1 : -1;
+
+      /* Pendant le verrou min : avaler l’inertie (même sens). Sens inverse = nouveau geste. */
+      if (nowMs < lockedUntil) {
+        if (direction !== 0 && nextDir !== direction) {
+          lockedUntil = 0;
+          consumedThisGesture = false;
+          accumulated = 0;
+        } else {
+          lastEventMs = nowMs;
+          return null;
+        }
+      } else if (lastEventMs > 0 && nowMs - lastEventMs > gestureIdleMs) {
+        accumulated = 0;
+        direction = 0;
+        consumedThisGesture = false;
+      }
+
+      lastEventMs = nowMs;
+
+      if (direction !== 0 && nextDir !== direction) {
+        accumulated = 0;
+        consumedThisGesture = false;
+      }
+      direction = nextDir;
+
+      if (consumedThisGesture) {
+        return null;
+      }
+
+      accumulated += Math.abs(deltaY);
+      if (accumulated < threshold) return null;
+
+      accumulated = 0;
+      consumedThisGesture = true;
+      lockedUntil = nowMs + minLockMs;
+      return nextDir > 0 ? "next" : "previous";
+    },
+  };
+}
+
 export const DESKTOP_OVERLAY_GRID_TITLE_SELECTOR = "[data-videos-desktop-grid-title]";
 
 export function desktopOverlayTileSelector(videoId: string): string {

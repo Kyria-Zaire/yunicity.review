@@ -19,10 +19,15 @@ beforeAll(() => {
   });
 });
 
+const { routerReplace, routerBack } = vi.hoisted(() => ({
+  routerReplace: vi.fn(),
+  routerBack: vi.fn(),
+}));
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
-    replace: vi.fn(),
-    back: vi.fn(),
+    replace: routerReplace,
+    back: routerBack,
     push: vi.fn(),
   }),
 }));
@@ -85,6 +90,12 @@ function item(id: string, orientation: "portrait" | "landscape" = "portrait"): L
 afterEach(() => {
   cleanup();
   sessionStorage.clear();
+  routerReplace.mockClear();
+  routerBack.mockClear();
+  document.body.style.overflow = "";
+  document.body.style.paddingRight = "";
+  document.documentElement.style.overflow = "";
+  document.documentElement.style.scrollbarGutter = "";
 });
 
 describe("VIDEO-REFONTE-L8 — overlay desktop", () => {
@@ -218,5 +229,57 @@ describe("VIDEO-REFONTE-L8 — overlay desktop", () => {
 
   it("createTraversalSequence — ouverture grille conserve l'ordre", () => {
     expect(createTraversalSequence(["a", "b", "c"], "b")).toEqual(["a", "b", "c"]);
+  });
+
+  it("VOILE — lock sans scrollbar-gutter ; voile 100vw", () => {
+    markOverlayOpenFromGrid("p1");
+    render(
+      <VideosDesktopOverlayPlayer
+        videoId="p1"
+        items={[item("p1")]}
+        isFeedLoading={false}
+        hasMore={false}
+        isLoadingMore={false}
+        onLoadPages={async () => ({ pageIds: [], hasMore: false, error: false })}
+        onToggleLike={() => {}}
+        onShare={() => {}}
+        onOpenReport={() => {}}
+        onCommentCountDelta={() => {}}
+      />,
+    );
+    expect(document.body.style.overflow).toBe("hidden");
+    expect(document.documentElement.style.overflow).toBe("hidden");
+    expect(document.documentElement.style.scrollbarGutter).toBe("");
+    const overlay = document.querySelector("[data-videos-desktop-overlay]") as HTMLElement;
+    expect(overlay.style.width).toBe("100vw");
+  });
+
+  it("MOLETTE — bas → suivante ; Ctrl+molette ignoré", async () => {
+    markOverlayOpenFromGrid("p1");
+    render(
+      <VideosDesktopOverlayPlayer
+        videoId="p1"
+        items={[item("p1"), item("p2")]}
+        isFeedLoading={false}
+        hasMore={false}
+        isLoadingMore={false}
+        onLoadPages={async () => ({ pageIds: [], hasMore: false, error: false })}
+        onToggleLike={() => {}}
+        onShare={() => {}}
+        onOpenReport={() => {}}
+        onCommentCountDelta={() => {}}
+      />,
+    );
+    const stage = document.querySelector("[data-videos-desktop-overlay]")!;
+    stage.dispatchEvent(
+      new WheelEvent("wheel", { deltaY: 120, bubbles: true, cancelable: true, ctrlKey: true }),
+    );
+    expect(routerReplace).not.toHaveBeenCalled();
+
+    stage.dispatchEvent(
+      new WheelEvent("wheel", { deltaY: 120, bubbles: true, cancelable: true }),
+    );
+    await waitFor(() => expect(routerReplace).toHaveBeenCalled(), { timeout: 2000 });
+    expect(String(routerReplace.mock.calls[0]?.[0])).toContain("video=p2");
   });
 });

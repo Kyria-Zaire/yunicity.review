@@ -2,32 +2,37 @@
 
 ## Objectif
 
-Correction C1/C2/C3 livrée Preview — L7/L8/L9 **NON CLOS** jusqu’à recette CTO réelle.
+Correction C1/C2/C3 + doublon lieu C3 — **LIVRÉE** Preview. L7/L8/L9 **NON CLOS**.
 
 ## État Git
 
 | | |
 |--|--|
-| SHA Preview | **`2c6f9b30`** (FF `b7107736..2c6f9b30`, sans force) |
+| SHA Preview | **`2d0c48c4`** (FF `2c6f9b30..2d0c48c4`, sans force) |
 | Worktree | `yunicity-wt-video-lot1` |
 | Production / `main` | gelés |
 
 ## Documents importants
 
-- `docs/qa/controle-rendu/l789-correction/` (rapport, bandes, preuves, captures)
-- Relevé : `docs/qa/LIVRAISON-PREVIEW-L789-CORRECTION-releve.md`
+- `docs/qa/controle-rendu/l789-correction/`
+- Relevé Preview L789 (si présent)
 
 ## Preuves acquises
 
-- Pré-commit local : C1 ordres ×4 largeurs ; C2/C3@1024 ; R-FOCUS Δ0 ; typecheck ; vitest
-- CI : Frontend/Backend/Docker/Lint ✅ ; audit 45/60 constant
-- Railway API `b974f8d9` + web `cf5aef63` SUCCESS sur `2c6f9b30`
-- Runtime Preview : health 200, `/videos` 200, marqueurs grid/overlay/meta-band
+- C1/C2/C3 + doublon C3 sur `2d0c48c4`
+- CI Frontend/Backend/Docker/Lint ✅ ; audit 45/60
+- Railway API/web SUCCESS sur `2d0c48c4` ; health / `/videos` 200
 
-## Inconnues
+## Décisions CTO
 
-- Recette CTO Preview réelle (credentials, Safari)
+- Validation visuelle C1/C2/C3 sur `2c6f9b30` puis doublon corrigé `2d0c48c4`
+- Nav/fermeture, retour connexion réelle, Safari iPhone : validés (reportés sur ticket voile/molette)
+
+## Statut
+
+⏸ **Suspendu** — ticket actif basculé vers `VIDEO-REFONTE-DESKTOP-VOILE-MOLETTE-01`.  
+L7/L8/L9 restent ouverts jusqu’à recette finale.
 
 ## Prochaine action
 
-Recette humaine Preview ; tickets L7/L8/L9 restent ouverts.
+Recette finale CTO L7/L8/L9 après correctifs desktop restants.

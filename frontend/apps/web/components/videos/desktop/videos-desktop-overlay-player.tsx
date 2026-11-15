@@ -33,8 +33,12 @@ import { useActiveReportVideoId } from "@/lib/videos/active-report-video-context
 import type { DesktopOverlayDirectError } from "@/lib/videos/desktop-overlay-direct-error";
 import {
   DESKTOP_OVERLAY_LABELS,
+  applyDesktopOverlayScrollLock,
   consumeOverlayOpenOrigin,
+  createDesktopOverlayWheelGate,
+  releaseDesktopOverlayScrollLock,
   shouldIgnoreOverlayArrowKeys,
+  shouldIgnoreOverlayWheel,
 } from "@/lib/videos/desktop-overlay-navigation";
 import { Z_INDEX } from "@/lib/layout/z-index";
 import {
@@ -524,26 +528,61 @@ export function VideosDesktopOverlayPlayer({
     return () => window.removeEventListener("keydown", onKey);
   }, [closeAndRestore, commentsOpen, descriptionOpen, goNext, goPrev, moreOpen, panelOpen]);
 
+  // Molette / trackpad : même ordre que ▲▼ ; hors panneaux défilants ; pas Ctrl+molette.
+  const goPrevRef = useRef(goPrev);
+  const goNextRef = useRef(goNext);
+  const wheelNavRef = useRef({
+    canPrevious: navState.canPrevious,
+    canAdvance:
+      !navState.atEndOfSequence ||
+      hasMore ||
+      navState.rVide.kind === "continue" ||
+      navState.rVide.kind === "error",
+  });
+  goPrevRef.current = goPrev;
+  goNextRef.current = goNext;
+  wheelNavRef.current = {
+    canPrevious: navState.canPrevious,
+    canAdvance:
+      !navState.atEndOfSequence ||
+      hasMore ||
+      navState.rVide.kind === "continue" ||
+      navState.rVide.kind === "error",
+  };
+
+  useEffect(() => {
+    const gate = createDesktopOverlayWheelGate();
+    const onWheel = (event: WheelEvent) => {
+      if (shouldIgnoreOverlayWheel(event)) return;
+      const action = gate.consume(event.deltaY, performance.now());
+      if (!action) return;
+      event.preventDefault();
+      if (action === "previous") {
+        if (wheelNavRef.current.canPrevious) goPrevRef.current();
+        return;
+      }
+      if (wheelNavRef.current.canAdvance) goNextRef.current();
+    };
+    window.addEventListener("wheel", onWheel, { passive: false, capture: true });
+    return () => window.removeEventListener("wheel", onWheel, { capture: true });
+  }, []);
+
   // Inerte : bloquer le scroll de fond + désactiver la restauration auto du navigateur
   // (CADRAGE Desktop C / PRD : aucun scroll automatique du routeur).
-  // scrollbar-gutter stable pendant l'overlay. Au unlock : garder scrollRestoration=manual
-  // un tick pour que R-FOCUS re-pin avant que le navigateur / Next ne réagissent.
+  // Compensation scrollbar via padding-right (pas scrollbar-gutter: bande blanche à droite).
+  // Au unlock : garder scrollRestoration=manual un tick pour que R-FOCUS re-pin.
   useEffect(() => {
-    const prevOverflow = document.body.style.overflow;
-    const prevGutter = document.documentElement.style.scrollbarGutter;
     try {
       window.history.scrollRestoration = "manual";
     } catch {
       /* ignore */
     }
-    document.documentElement.style.scrollbarGutter = "stable";
     const lockedY = window.scrollY;
-    document.body.style.overflow = "hidden";
+    const lockSnap = applyDesktopOverlayScrollLock();
     // Empêche le recentrage focus/overflow pendant l'overlay (même Δ~11).
     window.scrollTo({ top: lockedY, left: 0, behavior: "auto" });
     return () => {
-      document.body.style.overflow = prevOverflow;
-      document.documentElement.style.scrollbarGutter = prevGutter;
+      releaseDesktopOverlayScrollLock(lockSnap);
       window.setTimeout(() => {
         try {
           // Remise différée : laisse les re-pins R-FOCUS gagner sur le scroll auto.
@@ -627,7 +666,15 @@ export function VideosDesktopOverlayPlayer({
   return (
     <div
       className="fixed inset-0 flex items-stretch justify-center"
-      style={{ zIndex: Z_INDEX.VIDEO_HEADER + 5, background: VEIL_BG }}
+      style={{
+        zIndex: Z_INDEX.VIDEO_HEADER + 5,
+        background: VEIL_BG,
+        /* Couverture visuelle bord à bord (évite bande claire si gutter / subpixel). */
+        width: "100vw",
+        minWidth: "100%",
+        left: 0,
+        right: 0,
+      }}
       data-videos-desktop-overlay=""
       data-videos-desktop-overlay-origin={originBoot.current}
       onMouseDown={handleVeilMouseDown}
