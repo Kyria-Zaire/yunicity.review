@@ -10,7 +10,7 @@ Lot 5 : fil vertical medium v1.2. Correctif recette visuelle CTO livré sur Prev
 |--|--|
 | Worktree | `yunicity-wt-video-lot1` |
 | Branche | `feat/video-refonte-l3l4-mobile-v23` |
-| HEAD / Preview | **`6fdf5fe4`** (FF `95674af1..6fdf5fe4`, sans `--force`) |
+| HEAD / Preview | **`d077e455`** (correctif `6fdf5fe4` + relevé docs ; FF sans `--force`) |
 | Production / `main` | gelés |
 
 ## Documents importants
