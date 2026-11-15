@@ -89,6 +89,39 @@ describe("L7 — vignette desktop C1", () => {
     expect(tile.getAttribute("data-videos-desktop-tile-orientation")).toBe("landscape");
     const img = tile.querySelector("img") as HTMLImageElement;
     expect(img.style.aspectRatio.replace(/\s/g, "")).toBe("1920/1080");
+    expect(img.className).toContain("object-contain");
+  });
+
+  it("marque orientation pour span CSS (portrait 1 / paysage 2)", () => {
+    const { container, rerender } = render(
+      <VideosDesktopFeedStream
+        items={[item({ id: "p" }), item({ id: "l", media_width: 1920, media_height: 1080 })]}
+        emptyMessage="vide"
+        onRetry={vi.fn()}
+      />,
+    );
+    const grid = container.querySelector(".videos-desktop-grid");
+    expect(grid).toBeTruthy();
+    expect(
+      container
+        .querySelector('[data-videos-desktop-tile-orientation="portrait"]')
+        ?.getAttribute("data-videos-desktop-tile-orientation"),
+    ).toBe("portrait");
+    expect(
+      container
+        .querySelector('[data-videos-desktop-tile-orientation="landscape"]')
+        ?.getAttribute("data-videos-desktop-tile-orientation"),
+    ).toBe("landscape");
+    rerender(
+      <VideosDesktopFeedStream
+        items={[item({ id: "p1" }), item({ id: "p2", title: "Autre" })]}
+        emptyMessage="vide"
+        onRetry={vi.fn()}
+      />,
+    );
+    expect(container.querySelectorAll('[data-videos-desktop-tile-orientation="portrait"]')).toHaveLength(
+      2,
+    );
   });
 });
 

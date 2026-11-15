@@ -48,7 +48,7 @@ export function VideosDesktopGridTile({ item }: VideosDesktopGridTileProps) {
       data-videos-desktop-grid-tile=""
       data-video-id={item.id}
       data-videos-desktop-tile-orientation={layout}
-      className="videos-desktop-grid-tile mb-4 break-inside-avoid"
+      className="videos-desktop-grid-tile mb-4"
     >
       <Link
         href={href}
@@ -69,7 +69,7 @@ export function VideosDesktopGridTile({ item }: VideosDesktopGridTileProps) {
           markOverlayOpenFromGrid(item.id);
         }}
       >
-        <div className="relative overflow-hidden rounded-2xl bg-neutral-200 ring-1 ring-neutral-200/80">
+        <div className="relative overflow-hidden rounded-2xl bg-neutral-900 ring-1 ring-neutral-200/80">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={item.thumbnail_url || undefined}
@@ -77,7 +77,8 @@ export function VideosDesktopGridTile({ item }: VideosDesktopGridTileProps) {
             loading="lazy"
             decoding="async"
             data-videos-media-layout={layout}
-            className="w-full object-cover"
+            /* C1 : portrait cover ; paysage contain (bandes = média, pas étirement). */
+            className={`w-full ${isPortrait ? "object-cover" : "object-contain"}`}
             style={{ aspectRatio: aspect }}
           />
           <span className="pointer-events-none absolute bottom-2 right-2 rounded-md bg-neutral-950/80 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-white">

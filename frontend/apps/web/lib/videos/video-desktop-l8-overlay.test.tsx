@@ -109,6 +109,9 @@ describe("VIDEO-REFONTE-L8 — overlay desktop", () => {
     expect(document.querySelector("[data-videos-desktop-overlay]")).toBeTruthy();
     expect(document.querySelector('[data-videos-desktop-overlay-stage="portrait"]')).toBeTruthy();
     expect(document.querySelector("video")).toBeTruthy();
+    /* C2 — méta auteur/titre sur le stage (correction L789). */
+    expect(document.querySelector("[data-videos-desktop-overlay-meta-band]")).toBeTruthy();
+    expect(document.querySelector("[data-video-caption]")).toBeTruthy();
   });
 
   it("composition paysage C3", () => {
@@ -129,6 +132,9 @@ describe("VIDEO-REFONTE-L8 — overlay desktop", () => {
     );
     expect(document.querySelector('[data-videos-desktop-overlay-layout="landscape"]')).toBeTruthy();
     expect(document.querySelector('[data-videos-desktop-overlay-stage="landscape"]')).toBeTruthy();
+    expect(document.querySelector("[data-videos-desktop-overlay-caption]")).toBeTruthy();
+    /* Méta C3 sous le cadre — pas de bande méta dans le stage. */
+    expect(document.querySelector("[data-videos-desktop-overlay-meta-band]")).toBeNull();
   });
 
   it("C6 — chargement direct hors grille", () => {

@@ -99,12 +99,15 @@ function DesktopOverlayVideo({
   onToggleMute,
   suspended,
   landscape,
+  caption = null,
 }: {
   item: LocalVideoFeedItem;
   isMuted: boolean;
   onToggleMute: () => void;
   suspended: boolean;
   landscape: boolean;
+  /** C2 : méta auteur/titre/quartier sur le stage (pas sous le média). */
+  caption?: ReactNode;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -190,11 +193,16 @@ function DesktopOverlayVideo({
 
   return (
     <div
-      className={`relative isolate overflow-hidden bg-black ${landscape ? "rounded-2xl" : "rounded-2xl"}`}
+      className="relative isolate overflow-hidden rounded-2xl bg-black"
       data-videos-desktop-overlay-stage={landscape ? "landscape" : "portrait"}
       style={
         landscape
-          ? { width: "min(800px, 90vw)", aspectRatio: `${C3_FRAME_W} / ${C3_FRAME_H}` }
+          ? {
+              /* C3 : cadre 800×600 borné à l’espace restant (méta + chrome hors stage). */
+              width: "min(800px, calc(100vw - 8rem))",
+              maxHeight: "min(600px, calc(100dvh - 14rem))",
+              aspectRatio: `${C3_FRAME_W} / ${C3_FRAME_H}`,
+            }
           : {
               height: `min(${C2_VIDEO_MAX_HEIGHT_RATIO * 100}dvh, 836px)`,
               aspectRatio: "9 / 16",
@@ -210,6 +218,7 @@ function DesktopOverlayVideo({
         poster={item.thumbnail_url || undefined}
         playsInline
         muted={isMuted}
+        /* Bandes = ratio média (object-contain) — pas de letterbox artificiel lecteur. */
         className="absolute inset-0 h-full w-full object-contain"
         onTimeUpdate={() => {
           if (videoRef.current) setCurrentTime(videoRef.current.currentTime);
@@ -247,66 +256,94 @@ function DesktopOverlayVideo({
         </span>
       </button>
 
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex items-center gap-1 bg-[rgba(17,24,39,0.6)] px-1"
-        data-videos-desktop-overlay-bar=""
-      >
-        <button
-          type="button"
-          className={`pointer-events-auto h-11 w-11 text-white ${VIDEO_IMMERSIVE_FOCUS}`}
-          aria-label={isPlaying ? "Mettre en pause" : "Lire la vidéo"}
-          onClick={(e) => {
-            e.stopPropagation();
-            void togglePlay();
-          }}
-        >
-          {isPlaying ? <Pause className="mx-auto h-5 w-5" /> : <Play className="mx-auto h-5 w-5" />}
-        </button>
-        <div
-          role="slider"
-          tabIndex={0}
-          aria-label="Progression de la lecture"
-          aria-valuemin={0}
-          aria-valuemax={Math.round(duration)}
-          aria-valuenow={Math.round(currentTime)}
-          aria-valuetext={formatVideoProgressValueText(currentTime, duration)}
-          className={`pointer-events-auto relative h-11 flex-1 cursor-pointer ${VIDEO_IMMERSIVE_FOCUS}`}
-          onClick={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            seekToRatio(Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width)));
-          }}
-          onKeyDown={(e) => handleVideoProgressKeyDown(e, currentTime, duration, seekToRatio)}
-        >
-          <span className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-white/35">
-            <span className="absolute left-0 top-0 h-1 rounded-full bg-white" style={{ width: `${progress}%` }} />
-          </span>
-        </div>
-        <span className="pointer-events-none px-1 text-xs tabular-nums text-white">
-          {formatVideoClock(currentTime)} / {formatLocalVideoDuration(duration)}
-        </span>
-        <button
-          type="button"
-          className={`pointer-events-auto h-11 w-11 text-white ${VIDEO_IMMERSIVE_FOCUS}`}
-          aria-label={isMuted ? "Activer le son" : "Couper le son"}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleMute();
-          }}
-        >
-          {isMuted ? <VolumeX className="mx-auto h-4 w-4" /> : <Volume2 className="mx-auto h-4 w-4" />}
-        </button>
-        <button
-          type="button"
-          className={`pointer-events-auto h-11 w-11 text-white ${VIDEO_IMMERSIVE_FOCUS}`}
-          aria-label="Plein écran"
-          onClick={(e) => {
-            e.stopPropagation();
-            void handleFullscreen();
-          }}
-        >
-          <Maximize2 className="mx-auto h-4 w-4" />
-        </button>
-      </div>
+      {(() => {
+        const transport = (
+          <>
+            <button
+              type="button"
+              className={`pointer-events-auto h-11 w-11 text-white ${VIDEO_IMMERSIVE_FOCUS}`}
+              aria-label={isPlaying ? "Mettre en pause" : "Lire la vidéo"}
+              onClick={(e) => {
+                e.stopPropagation();
+                void togglePlay();
+              }}
+            >
+              {isPlaying ? <Pause className="mx-auto h-5 w-5" /> : <Play className="mx-auto h-5 w-5" />}
+            </button>
+            <div
+              role="slider"
+              tabIndex={0}
+              aria-label="Progression de la lecture"
+              aria-valuemin={0}
+              aria-valuemax={Math.round(duration)}
+              aria-valuenow={Math.round(currentTime)}
+              aria-valuetext={formatVideoProgressValueText(currentTime, duration)}
+              className={`pointer-events-auto relative h-11 flex-1 cursor-pointer ${VIDEO_IMMERSIVE_FOCUS}`}
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                seekToRatio(Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width)));
+              }}
+              onKeyDown={(e) => handleVideoProgressKeyDown(e, currentTime, duration, seekToRatio)}
+            >
+              <span className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-white/35">
+                <span
+                  className="absolute left-0 top-0 h-1 rounded-full bg-white"
+                  style={{ width: `${progress}%` }}
+                />
+              </span>
+            </div>
+            <span className="pointer-events-none px-1 text-xs tabular-nums text-white">
+              {formatVideoClock(currentTime)} / {formatLocalVideoDuration(duration)}
+            </span>
+            <button
+              type="button"
+              className={`pointer-events-auto h-11 w-11 text-white ${VIDEO_IMMERSIVE_FOCUS}`}
+              aria-label={isMuted ? "Activer le son" : "Couper le son"}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleMute();
+              }}
+            >
+              {isMuted ? <VolumeX className="mx-auto h-4 w-4" /> : <Volume2 className="mx-auto h-4 w-4" />}
+            </button>
+            <button
+              type="button"
+              className={`pointer-events-auto h-11 w-11 text-white ${VIDEO_IMMERSIVE_FOCUS}`}
+              aria-label="Plein écran"
+              onClick={(e) => {
+                e.stopPropagation();
+                void handleFullscreen();
+              }}
+            >
+              <Maximize2 className="mx-auto h-4 w-4" />
+            </button>
+          </>
+        );
+
+        /* C2 : méta + barre dans le voile bas (réf. Lecteur-desktop). C3 : barre seule. */
+        if (!landscape && caption) {
+          return (
+            <div
+              className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex flex-col gap-1 bg-[rgba(17,24,39,0.6)] px-3.5 pb-3 pt-1.5"
+              data-videos-desktop-overlay-meta-band=""
+            >
+              {caption}
+              <div className="flex items-center gap-1" data-videos-desktop-overlay-bar="">
+                {transport}
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex items-center gap-1 bg-[rgba(17,24,39,0.6)] px-1"
+            data-videos-desktop-overlay-bar=""
+          >
+            {transport}
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -641,108 +678,143 @@ export function VideosDesktopOverlayPlayer({
             </p>
           </section>
         ) : currentItem ? (
-          <div
-            className={`flex ${
-              landscape
-                ? "flex-col items-center"
-                : commentsOpen
-                  ? "flex-row items-start"
-                  : "flex-row items-end"
-            } gap-3`}
-            data-videos-desktop-overlay-layout={landscape ? "landscape" : "portrait"}
-          >
-            <div className={`flex ${landscape ? "flex-col items-stretch" : "flex-row items-stretch gap-3"}`}>
+          (() => {
+            const navColumn = (
+              <NavColumn
+                nav={{
+                  canPrevious: navState.canPrevious,
+                  canNext: Boolean(canNext) && navState.rVide.kind !== "exhausted",
+                  nextBusy: navState.rVide.kind === "loading",
+                  showSeeFeedHint: navState.showSeeFeedHint,
+                  onPrevious: goPrev,
+                  onNext: goNext,
+                }}
+                actions={
+                  <LocalVideoActionRail
+                    likeCount={currentItem.like_count}
+                    commentCount={currentItem.comment_count}
+                    likedByMe={currentItem.liked_by_me}
+                    commentsPressed={commentsOpen}
+                    surface="overlay"
+                    moreStyle="desktop-c2"
+                    onLikeClick={() => onToggleLike(currentItem)}
+                    onCommentsClick={() => {
+                      panelTriggerRef.current = document.activeElement as HTMLElement;
+                      setCommentsOpen(true);
+                    }}
+                    onShareClick={() => onShare(currentItem)}
+                    onMoreClick={(trigger) => {
+                      panelTriggerRef.current = trigger;
+                      setMoreOpen(true);
+                    }}
+                  />
+                }
+              />
+            );
+
+            const videoStage = (
               <DesktopOverlayVideo
                 item={currentItem}
                 isMuted={isMuted}
                 onToggleMute={() => setIsMuted((v) => !v)}
                 suspended={panelOpen}
                 landscape={landscape}
+                caption={
+                  landscape ? null : (
+                    <LocalVideoMobileMetaOverlay
+                      item={currentItem}
+                      surface="overlay"
+                      onExpandDescription={(trigger) => {
+                        panelTriggerRef.current = trigger;
+                        setDescriptionOpen(true);
+                      }}
+                    />
+                  )
+                }
               />
-              {landscape ? (
-                <div className="mt-3 max-w-[800px] text-white" data-videos-desktop-overlay-caption="">
-                  <LocalVideoMobileMetaOverlay
-                    item={currentItem}
-                    surface="overlay"
-                    onExpandDescription={(trigger) => {
-                      panelTriggerRef.current = trigger;
-                      setDescriptionOpen(true);
-                    }}
-                  />
-                  <p className="mt-1 text-xs text-white/80">
-                    {resolveVideosPortraitPlaceLabel(currentItem) ??
-                      currentItem.neighborhood_name ??
-                      currentItem.city}
-                    {" · "}
-                    À découvrir à {currentItem.city || "Reims"}
-                  </p>
-                </div>
-              ) : null}
-            </div>
+            );
 
-            <NavColumn
-              nav={{
-                canPrevious: navState.canPrevious,
-                canNext: Boolean(canNext) && navState.rVide.kind !== "exhausted",
-                nextBusy: navState.rVide.kind === "loading",
-                showSeeFeedHint: navState.showSeeFeedHint,
-                onPrevious: goPrev,
-                onNext: goNext,
-              }}
-              actions={
-                <LocalVideoActionRail
-                  likeCount={currentItem.like_count}
-                  commentCount={currentItem.comment_count}
-                  likedByMe={currentItem.liked_by_me}
-                  commentsPressed={commentsOpen}
-                  surface="overlay"
-                  moreStyle="desktop-c2"
-                  onLikeClick={() => onToggleLike(currentItem)}
-                  onCommentsClick={() => {
-                    panelTriggerRef.current = document.activeElement as HTMLElement;
-                    setCommentsOpen(true);
-                  }}
-                  onShareClick={() => onShare(currentItem)}
-                  onMoreClick={(trigger) => {
-                    panelTriggerRef.current = trigger;
-                    setMoreOpen(true);
-                  }}
-                />
-              }
-            />
-
-            {commentsOpen && !landscape ? (
-              <aside
-                className="flex h-[836px] max-h-[calc(100dvh-4rem)] w-[380px] max-w-[min(380px,28vw)] shrink-0 flex-col self-start overflow-hidden rounded-2xl bg-white"
-                aria-labelledby="desktop-overlay-comments-title"
-                data-videos-desktop-overlay-comments-panel=""
-                data-overlay-arrow-nav="ignore"
-              >
-                <div className="flex items-center justify-between border-b border-neutral-200 py-2 pl-5 pr-2">
-                  <h2 id="desktop-overlay-comments-title" className="text-[17px] font-bold text-neutral-900">
-                    Commentaires{" "}
-                    <span className="font-semibold text-[#6B7280]">{currentItem.comment_count}</span>
-                  </h2>
-                  <button
-                    type="button"
-                    aria-label="Fermer les commentaires"
-                    className={`flex h-11 w-11 items-center justify-center text-neutral-700 ${VIDEO_IMMERSIVE_FOCUS}`}
-                    onClick={() => setCommentsOpen(false)}
+            if (landscape) {
+              return (
+                <div
+                  className="flex max-h-full min-h-0 flex-col items-start"
+                  data-videos-desktop-overlay-layout="landscape"
+                >
+                  {/* Rangée C3 : vidéo | actions (hauteur = cadre). Méta hors rangée. */}
+                  <div className="flex min-h-0 items-stretch gap-3">
+                    {videoStage}
+                    {navColumn}
+                  </div>
+                  <div
+                    className="mt-3 w-full max-w-[800px] shrink-0 text-white"
+                    data-videos-desktop-overlay-caption=""
                   >
-                    <X className="h-5 w-5" />
-                  </button>
+                    <LocalVideoMobileMetaOverlay
+                      item={currentItem}
+                      surface="overlay"
+                      onExpandDescription={(trigger) => {
+                        panelTriggerRef.current = trigger;
+                        setDescriptionOpen(true);
+                      }}
+                    />
+                    <p className="mt-1 text-[13px] text-white">
+                      {resolveVideosPortraitPlaceLabel(currentItem) ??
+                        currentItem.neighborhood_name ??
+                        currentItem.city}
+                      {" · "}
+                      À découvrir à {currentItem.city || "Reims"}
+                    </p>
+                  </div>
                 </div>
-                <VideoCommentsSheet
-                  open={commentsOpen}
-                  video={currentItem}
-                  onClose={() => setCommentsOpen(false)}
-                  onCommentCountDelta={onCommentCountDelta}
-                  returnFocusRef={panelTriggerRef as RefObject<HTMLElement | null>}
-                  presentation="panel"
-                />
-              </aside>
-            ) : null}
-          </div>
+              );
+            }
+
+            return (
+              <div
+                className={`flex max-h-full min-h-0 flex-row gap-3 ${
+                  commentsOpen ? "items-start" : "items-end"
+                }`}
+                data-videos-desktop-overlay-layout="portrait"
+              >
+                {videoStage}
+                {navColumn}
+                {commentsOpen ? (
+                  <aside
+                    className="flex h-[836px] max-h-[calc(100dvh-4rem)] w-[380px] max-w-[min(380px,28vw)] shrink-0 flex-col self-start overflow-hidden rounded-2xl bg-white"
+                    aria-labelledby="desktop-overlay-comments-title"
+                    data-videos-desktop-overlay-comments-panel=""
+                    data-overlay-arrow-nav="ignore"
+                  >
+                    <div className="flex items-center justify-between border-b border-neutral-200 py-2 pl-5 pr-2">
+                      <h2
+                        id="desktop-overlay-comments-title"
+                        className="text-[17px] font-bold text-neutral-900"
+                      >
+                        Commentaires{" "}
+                        <span className="font-semibold text-[#6B7280]">{currentItem.comment_count}</span>
+                      </h2>
+                      <button
+                        type="button"
+                        aria-label="Fermer les commentaires"
+                        className={`flex h-11 w-11 items-center justify-center text-neutral-700 ${VIDEO_IMMERSIVE_FOCUS}`}
+                        onClick={() => setCommentsOpen(false)}
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+                    <VideoCommentsSheet
+                      open={commentsOpen}
+                      video={currentItem}
+                      onClose={() => setCommentsOpen(false)}
+                      onCommentCountDelta={onCommentCountDelta}
+                      returnFocusRef={panelTriggerRef as RefObject<HTMLElement | null>}
+                      presentation="panel"
+                    />
+                  </aside>
+                ) : null}
+              </div>
+            );
+          })()
         ) : (
           <p className="text-sm text-white/80" role="status">
             {DESKTOP_OVERLAY_LABELS.loadingVideo}

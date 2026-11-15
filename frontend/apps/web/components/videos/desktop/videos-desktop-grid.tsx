@@ -50,7 +50,7 @@ function GridSkeletons() {
       aria-label={VIDEOS_PORTAL_LOADING}
     >
       {skeletons.map((skeleton) => (
-        <div key={skeleton.key} className="videos-desktop-grid-tile mb-4 break-inside-avoid">
+        <div key={skeleton.key} className="videos-desktop-grid-tile mb-4">
           <div
             className="animate-pulse rounded-2xl bg-neutral-200"
             style={{ aspectRatio: skeleton.aspect }}
