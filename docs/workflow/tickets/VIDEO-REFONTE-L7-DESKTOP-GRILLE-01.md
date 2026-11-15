@@ -4,8 +4,8 @@
 
 | Champ | Valeur |
 |-------|--------|
-| **Statut** | **SUSPENDU** — BUILD local **ACCEPTÉ** CTO ; **NON clos** ; recette Preview **groupée 7+8+9** restante |
-| **Code** | Diff local non commité dans `yunicity-wt-video-lot1` — **conserver comme réf. avant L8** |
+| **Statut** | **OUVERT — LIVRÉ PREVIEW `a30c9346`** (groupée 7+8+9) ; **NON clos** ; recette CTO Preview restante |
+| **Code** | Inclus dans `a30c9346` sur `feat/c3-videos-refonte-final` |
 | **Preuves** | `docs/qa/controle-rendu/l7-desktop/` |
 
 ## Hors clôture

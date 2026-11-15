@@ -4,7 +4,7 @@
 
 | Champ | Valeur |
 |-------|--------|
-| **Statut** | **OUVERT — BUILD local à jour** (F1=32, D2 simulé) ; **NON clos** ; revue groupée 7+8+9 |
+| **Statut** | **OUVERT — LIVRÉ PREVIEW `a30c9346`** ; **NON clos** ; recette CTO Preview restante |
 | **Base** | L8 + L7 BUILD local ACCEPTÉS / SUSPENDUS ; tip Preview `3b1586bb` / `e49f4bb4` |
 | **PRD** | Story 6 · §6.3 lot 9 · §7 · §9.2 (404 / 500 / D2) |
 | **Cadrage** | `docs/qa/controle-rendu/l9-desktop/CADRAGE-L9-DESKTOP-01.md` |

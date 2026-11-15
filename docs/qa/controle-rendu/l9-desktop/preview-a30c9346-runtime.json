@@ -1,0 +1,22 @@
+{
+  "sha_expected": "a30c9346",
+  "videos_status": 200,
+  "videos_html_len": 12198,
+  "scripts_sampled": 17,
+  "markers": {
+    "data-videos-desktop-grid": true,
+    "data-videos-desktop-overlay": true,
+    "videos-desktop-grid": true,
+    "VideosDesktopOverlayPlayer": false,
+    "desktop-overlay-direct": true,
+    "classifyDesktopOverlayDirectError": false
+  },
+  "api_health_status": 200,
+  "api_health": {
+    "status": "ok",
+    "service": "yunicity-api",
+    "environment": "prod"
+  },
+  "feed_status_without_auth": 401,
+  "note_auth": "feed 401 sans login = Preview réelle (pas API simulée)"
+}
