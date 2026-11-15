@@ -21,7 +21,9 @@
 | Distante relue **après** | **`a30c9346e00bacbc6081246c141d50d4a57fdb59`** |
 | Contenu | **1 commit** code + docs QA L7/L8/L9 (parent `3b1586bb`) |
 
-## 3. CI sur `a30c9346`
+## 3. CI
+
+### Sur `a30c9346` (code)
 
 | Workflow | Résultat |
 |---|---|
@@ -31,13 +33,23 @@
 | Lint agent rules | ✅ success (`43740371740`) |
 | PR Safety Checks | ❌ audit préexistant (`43740371703`) |
 
+### Sur `dd9a3516` (docs relevé)
+
+| Workflow | Résultat |
+|---|---|
+| Frontend CI | ✅ success (`43741834003`) |
+| Backend CI | ✅ success (`43741833913`) |
+| Docker CI | ✅ success (`43741833890`) |
+| Lint agent rules | ✅ success (`43741833961`) |
+| PR Safety Checks | ❌ audit préexistant (`43741833901`) |
+
 ### Audit — comptage constant (périmètre égal)
 
-| Méthode | Baseline attendue | `a30c9346` (`43740371703`) |
-|---------|-------------------|----------------------------|
-| **A — GHSA uniques** | **45** | **45** |
-| **B — occurrences** (« 60 known vulnerabilities ») | **60** | **60** |
-| Diff IDs uniques | — | **0 ajout, 0 retrait** |
+| Méthode | Baseline attendue | `a30c9346` | `dd9a3516` (`43741833901`) |
+|---------|-------------------|------------|----------------------------|
+| **A — GHSA uniques** | **45** | **45** | **45** |
+| **B — occurrences** (« 60 known vulnerabilities ») | **60** | **60** | **60** |
+| Diff IDs uniques | — | 0 | **0 ajout, 0 retrait** |
 
 Périmètre : `frontend/pnpm-lock.yaml` via osv-scanner (PR Safety Checks).
 
@@ -45,8 +57,9 @@ Périmètre : `frontend/pnpm-lock.yaml` via osv-scanner (PR Safety Checks).
 
 | Service | État | Déploiement | Commit |
 |---|---|---|---|
-| `unified-media-preview` (API) | **SUCCESS** | `8fa9197e-8f62-4184-ad23-357afbc62d25` | `a30c9346` |
-| `yunicity.review` (web) | **SUCCESS** | `8e42bde8-5628-4ddd-8c43-404989a0e9c2` | `a30c9346` |
+| `unified-media-preview` (API) | **SUCCESS** | `21bdf034-45e9-42cf-817e-a36a19100b4f` | `dd9a3516` (docs ; image API = même digest que `a30c9346`) |
+| `yunicity.review` (web) | **SUCCESS** | `aec6da58-f841-4cc7-b8ca-8c07daf5e0fa` | `dd9a3516` |
+| *(précédent code)* | SUCCESS puis REMOVED | API `8fa9197e…` / web `8e42bde8…` | `a30c9346` |
 
 ## 5. Runtime Preview
 
