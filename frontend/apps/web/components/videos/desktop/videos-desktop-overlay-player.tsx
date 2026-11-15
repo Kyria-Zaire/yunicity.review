@@ -6,7 +6,6 @@ import {
   LOCAL_VIDEO_PLAYBACK_FALLBACK,
   formatLocalVideoDuration,
   resolveLocalVideoLayout,
-  resolveVideosPortraitPlaceLabel,
 } from "@yunicity/utils";
 import { ChevronDown, ChevronUp, Loader2, Maximize2, Pause, Play, Volume2, VolumeX, X } from "lucide-react";
 import {
@@ -749,6 +748,12 @@ export function VideosDesktopOverlayPlayer({
                     className="mt-3 w-full max-w-[800px] shrink-0 text-white"
                     data-videos-desktop-overlay-caption=""
                   >
+                    {/*
+                      C3 : une seule ligne lieu — badge quartier + contexte via
+                      LocalVideoMobileMetaOverlay (comme C2). Pas de second
+                      paragraphe « quartier · À découvrir… » (doublon CTO).
+                      « plus » conserve l’accès description complète.
+                    */}
                     <LocalVideoMobileMetaOverlay
                       item={currentItem}
                       surface="overlay"
@@ -757,13 +762,6 @@ export function VideosDesktopOverlayPlayer({
                         setDescriptionOpen(true);
                       }}
                     />
-                    <p className="mt-1 text-[13px] text-white">
-                      {resolveVideosPortraitPlaceLabel(currentItem) ??
-                        currentItem.neighborhood_name ??
-                        currentItem.city}
-                      {" · "}
-                      À découvrir à {currentItem.city || "Reims"}
-                    </p>
                   </div>
                 </div>
               );

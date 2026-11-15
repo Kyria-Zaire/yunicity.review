@@ -1,0 +1,58 @@
+﻿diff --git a/frontend/apps/web/components/videos/desktop/videos-desktop-overlay-player.tsx b/frontend/apps/web/components/videos/desktop/videos-desktop-overlay-player.tsx
+index 98ca1cda..d0a4b54c 100644
+--- a/frontend/apps/web/components/videos/desktop/videos-desktop-overlay-player.tsx
++++ b/frontend/apps/web/components/videos/desktop/videos-desktop-overlay-player.tsx
+@@ -6,7 +6,6 @@ import {
+   LOCAL_VIDEO_PLAYBACK_FALLBACK,
+   formatLocalVideoDuration,
+   resolveLocalVideoLayout,
+-  resolveVideosPortraitPlaceLabel,
+ } from "@yunicity/utils";
+ import { ChevronDown, ChevronUp, Loader2, Maximize2, Pause, Play, Volume2, VolumeX, X } from "lucide-react";
+ import {
+@@ -749,6 +748,12 @@ export function VideosDesktopOverlayPlayer({
+                     className="mt-3 w-full max-w-[800px] shrink-0 text-white"
+                     data-videos-desktop-overlay-caption=""
+                   >
++                    {/*
++                      C3 : une seule ligne lieu — badge quartier + contexte via
++                      LocalVideoMobileMetaOverlay (comme C2). Pas de second
++                      paragraphe « quartier · À découvrir… » (doublon CTO).
++                      « plus » conserve l’accès description complète.
++                    */}
+                     <LocalVideoMobileMetaOverlay
+                       item={currentItem}
+                       surface="overlay"
+@@ -757,13 +762,6 @@ export function VideosDesktopOverlayPlayer({
+                         setDescriptionOpen(true);
+                       }}
+                     />
+-                    <p className="mt-1 text-[13px] text-white">
+-                      {resolveVideosPortraitPlaceLabel(currentItem) ??
+-                        currentItem.neighborhood_name ??
+-                        currentItem.city}
+-                      {" · "}
+-                      À découvrir à {currentItem.city || "Reims"}
+-                    </p>
+                   </div>
+                 </div>
+               );
+diff --git a/frontend/apps/web/lib/videos/video-desktop-l8-overlay.test.tsx b/frontend/apps/web/lib/videos/video-desktop-l8-overlay.test.tsx
+index 4c68d78b..14bb6dbb 100644
+--- a/frontend/apps/web/lib/videos/video-desktop-l8-overlay.test.tsx
++++ b/frontend/apps/web/lib/videos/video-desktop-l8-overlay.test.tsx
+@@ -132,7 +132,13 @@ describe("VIDEO-REFONTE-L8 — overlay desktop", () => {
+     );
+     expect(document.querySelector('[data-videos-desktop-overlay-layout="landscape"]')).toBeTruthy();
+     expect(document.querySelector('[data-videos-desktop-overlay-stage="landscape"]')).toBeTruthy();
+-    expect(document.querySelector("[data-videos-desktop-overlay-caption]")).toBeTruthy();
++    const caption = document.querySelector("[data-videos-desktop-overlay-caption]");
++    expect(caption).toBeTruthy();
++    expect(caption?.querySelector("[data-video-caption]")).toBeTruthy();
++    /* Doublon CTO : pas de <p> frère hors caption (ex. « quartier · À découvrir »). */
++    expect(
++      [...(caption?.children ?? [])].filter((el) => el.tagName === "P").length,
++    ).toBe(0);
+     /* Méta C3 sous le cadre — pas de bande méta dans le stage. */
+     expect(document.querySelector("[data-videos-desktop-overlay-meta-band]")).toBeNull();
+   });

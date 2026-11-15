@@ -132,7 +132,13 @@ describe("VIDEO-REFONTE-L8 — overlay desktop", () => {
     );
     expect(document.querySelector('[data-videos-desktop-overlay-layout="landscape"]')).toBeTruthy();
     expect(document.querySelector('[data-videos-desktop-overlay-stage="landscape"]')).toBeTruthy();
-    expect(document.querySelector("[data-videos-desktop-overlay-caption]")).toBeTruthy();
+    const caption = document.querySelector("[data-videos-desktop-overlay-caption]");
+    expect(caption).toBeTruthy();
+    expect(caption?.querySelector("[data-video-caption]")).toBeTruthy();
+    /* Doublon CTO : pas de <p> frère hors caption (ex. « quartier · À découvrir »). */
+    expect(
+      [...(caption?.children ?? [])].filter((el) => el.tagName === "P").length,
+    ).toBe(0);
     /* Méta C3 sous le cadre — pas de bande méta dans le stage. */
     expect(document.querySelector("[data-videos-desktop-overlay-meta-band]")).toBeNull();
   });
