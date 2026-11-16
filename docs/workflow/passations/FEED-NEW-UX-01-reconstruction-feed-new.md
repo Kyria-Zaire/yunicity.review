@@ -774,7 +774,7 @@ multiple — changement produit minimal.
 
 ### 🐞 Défaut initial « 5 photos d'un coup ne s'ajoutent pas »
 
-⛔ **NON REPRODUIT — CAUSE NON ÉTABLIE. Ne PAS le présenter comme corrigé.**
+⛔ **Statut : SIGNALÉ, NON REPRODUIT, CAUSE INCONNUE.** Ne PAS le présenter comme corrigé.
 Non reproduit ni sur la Preview (même SHA que le constat), ni en local
 instrumenté. Les hypothèses encore ouvertes (environnement, jeu de photos,
 état du brouillon, intermittence) **n'ont pas été tranchées** — elles sont
@@ -806,8 +806,46 @@ l'ancien code : ils gardent la chaîne, ils ne prouvent pas une correction.
 | 3 tests de sélection multiple (`new-post-screen.test.tsx`) | tests | idem |
 | Passation (§8 quinquies → §9) | doc | idem |
 
-⚠️ Ce reliquat n'est **pas sur la Preview** : la recette ci-dessus porte sur
-`91d44e70`, **sans** l'annonce de livraison vide.
+*(Ce reliquat est désormais livré sur la Preview — voir ci-dessous.)*
+
+### ✅ LIVRÉ SUR PREVIEW — `1b2dd7f3` *(2026-11-04)*
+
+Commit **`1b2dd7f3`** : annonce de livraison vide + 3 tests + passation —
+**mitigation, pas correction** du défaut — *signalé, non reproduit, cause
+inconnue*. Aucun diagnostic,
+aucun autre ticket dans le commit.
+
+| CI (PR #203, `1b2dd7f3`) | Résultat |
+|---|---|
+| Backend CI | ✅ 1 min 48 |
+| Frontend CI | ✅ 4 min 57 |
+| Docker CI | ✅ **2060 passed**, 19 skipped |
+| Gitleaks · chemins interdits · lint-agent-rules | ✅ |
+| Dependency audit | ❌ **inchangé** — 56 vuln., **21 High/Critical** ; aucun manifeste modifié. **Réserve OUVERTE.** |
+
+Preview, avance rapide `91d44e70..1b2dd7f3`, `main` intouchée (`3e0b27ba`) :
+
+| Service | Statut | SHA actif | Déploiement |
+|---|---|---|---|
+| `yunicity.review` | ✅ SUCCESS | **`1b2dd7f3`** | `b8aea728-8b39-48fb-9f5f-45db962b82c7` |
+| `unified-media-preview` | ✅ SUCCESS | **`1b2dd7f3`** | `bcec3873-d592-409d-a7aa-b9f178e3949b` |
+
+HTTP 200 (`/api/v1/health`, `/feed/new`) ; nouveau libellé **présent** dans le
+chunk servi ; **aucune trace de diagnostic** dans les chunks servis.
+Recette complète **non refaite** (consigne de Kyria) — le reliquat ne
+modifie que le cas d'une livraison vide.
+
+### 📌 LIVRAISON FINALE DU TICKET — état de clôture sur Preview
+
+| Élément | État |
+|---|---|
+| **Branche de travail** `fix/mobile-publishing-p0` | `1b2dd7f3` (+ ce commit documentaire, local) |
+| **Preview** `feat/c3-videos-refonte-final` | **`1b2dd7f3`** servi par `yunicity.review` **et** `unified-media-preview` |
+| **`main`** | `3e0b27ba` — ⛔ **aucune fusion** |
+| **Recette Safari iPhone** | ✅ validée sur `91d44e70` (sélection, réorganisation, retrait, publication de 4 photos dans l'ordre, suppression, clavier, barre basse) ; reliquat `1b2dd7f3` non recetté (ne touche que la livraison vide) |
+| **Recette visuelle** | ✅ desktop, medium, mobile vide validés par Kyria |
+| **Défaut « 5 photos d'un coup »** | **signalé, non reproduit, cause inconnue** — mitigation livrée, aucune correction revendiquée |
+| **Audit des dépendances** | ❌ **réserve ouverte**, inchangée |
 
 ### Hors de ce ticket, ouverts
 
@@ -824,6 +862,30 @@ l'ancien code : ils gardent la chaîne, ils ne prouvent pas une correction.
 - **`TICKETS-INDEX.md`** : diff hors commit, mêlant d'autres tickets — à
   réconcilier par son propriétaire.
 
+### ⚠️ INCIDENT 2026-11-04 — base QA vidée par un redémarrage de Docker
+
+`docker-compose.qa.yml` place les données de `postgres-qa` en **`tmpfs`**
+(« No named volume … disposable ») : **tout arrêt du conteneur efface la
+base**. Le redémarrage de Docker Desktop autorisé pour le nettoyage (étape
+B) a provoqué, au redémarrage, un **`initdb` sur répertoire vide**
+(journal Postgres, 15:00:48 UTC) : `yunicity_qa` ne contient plus que les
+tables PostGIS. ⛔ **Erreur de l'agent** : le redémarrage avait été présenté
+comme préservant les données QA après vérification des **volumes** seulement,
+**sans** vérifier le stockage de la base. Les nettoyages eux-mêmes
+(`docker builder prune`, `docker image prune` — images sans nom) n'y sont pour
+rien ; **33 volumes identiques avant / après**. Probablement même mécanisme
+après le redémarrage forcé du 03/11 (erreurs « relation posts does not
+exist » dans la nuit). **Données perdues** : celles créées hors baseline
+(publications de test locales). **Reconstruite** le 2026-11-04 sur décision de
+Kyria par la baseline documentée, après vérification du ciblage (conteneur
+`backend-qa` : base `postgres-qa/yunicity_qa`, Redis `redis-qa`, aucune
+variable Railway ; garde `QA target OK`) : migrations jusqu'à `20261103_0066`,
+`verify PASS` (13 tables aux effectifs attendus), 4 comptes de référence
+actifs, parcours API connexion → `/auth/me` → `/feed` (9 éléments) en 200.
+**Avertissement ajouté** en tête de `docs/ops/qa-baseline.md` (arrêt =
+effacement, sauvegarde `pg_dump` vérifiée, restauration non éprouvée).
+Stockage `tmpfs` **inchangé**.
+
 ### 🧹 Effet de bord à nettoyer en fin de ticket
 
 **Pile Docker QA créée sur la machine de Kyria et laissée démarrée** :
@@ -836,6 +898,35 @@ besoin pour son tour de correction.
 **La publication de test reste conservée.**
 
 ---
+
+## ⏭️ REPRISE — à lire en premier dans une nouvelle session *(2026-11-04)*
+
+**FEED-NEW-UX-01 est livré sur Preview** (`1b2dd7f3`, deux services SUCCESS),
+**non fusionné** (`main` = `3e0b27ba`). Le ticket peut être clos au stade
+Preview ; la fusion reste une décision de Kyria.
+
+| Point | État |
+|---|---|
+| Branche `fix/mobile-publishing-p0` | distante `1b2dd7f3` · **locale en avance de 2 commits documentaires non poussés** (`f03a242c` + passation/QA) |
+| Défaut « 5 photos d'un coup » | **signalé, non reproduit, cause inconnue** — mitigation livrée |
+| Audit des dépendances | ❌ réserve **ouverte** (21 High/Critical) |
+| QA locale | **reconstruite** — vérifiée **par l'API seulement** ; ⚠️ **interface web QA non vérifiée** |
+| Sauvegarde QA | `pg_dump` vérifié ; ⚠️ **restauration non testée** |
+| Disque C: | ~10,6 Go libres ; `docker_data.vhdx` 43,5 Go **non compacté** |
+
+**Règles apprises, à respecter** : tout arrêt de Postgres QA **efface la
+base** (`tmpfs`) — sauvegarder avant ; `next dev` en LAN casse la redirection
+post-connexion → utiliser `E2E_PROXY_HOST=0.0.0.0 sh scripts/qa-web-server.sh` ;
+Node du pare-feu autorisé : `AppData/Local/nvm/v24.18.1/node.exe` ;
+`TICKETS-INDEX.md` porte un diff d'autres tickets — **ne pas le commiter tel
+quel**.
+
+**Prochaine action** : choisir le prochain ticket dans l'index (**non mis à
+jour par cette session**, pour la raison ci-dessus) et y fermer ou suspendre
+FEED-NEW-UX-01 (règle 15 : un seul ticket actif). Candidats ouverts nés de ce
+ticket : réserve de barre basse partagée (16 shells), spec QA sortie /
+contenu figé / « Précédent », contrôles requis sur `main`, audit des
+dépendances.
 
 ## 10. Portée de ce document
 

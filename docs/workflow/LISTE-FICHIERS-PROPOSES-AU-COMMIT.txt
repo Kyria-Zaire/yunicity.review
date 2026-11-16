@@ -1,0 +1,51 @@
+# Fichiers proposes au commit (perimetre reconciliation documentaire + retouches CTO)
+# Worktree: yunicity-wt-video-lot1
+# Branche: feat/video-refonte-l3l4-mobile-v23
+# Aucun git add effectue.
+# Mis a jour apres retouches CTO (fiches L2/L5/APP-SQL/SCAN + bandeau index).
+
+## Suivis modifies
+
+docs/workflow/TICKETS-INDEX.md
+docs/workflow/passations/APP-SQL-ERROR-VALUES-01-erreurs-sql.md
+docs/workflow/passations/FEED-NEW-UX-01-reconstruction-feed-new.md
+docs/workflow/passations/PASSPORT-QR-THIRD-PARTY-01-qr-tiers.md
+docs/workflow/passations/PASSPORT-SELF-REDEEM-API-01-auto-consommation.md
+docs/workflow/passations/PR202-WEB-recette-publication-photo.md
+docs/workflow/passations/PROFILE-POST-MENU-01-supprimer-sa-publication.md
+docs/workflow/passations/SCAN-RESOLVE-TOKEN-ORACLE-01-oracle-jeton.md
+docs/workflow/passations/VIDEO-REFONTE-DESKTOP-VOILE-MOLETTE-01.md
+docs/workflow/passations/VIDEO-REFONTE-L2-PARTAGE-01-partage-h1-h2-h3.md
+docs/workflow/passations/VIDEO-REFONTE-L5-MEDIUM-01-fil-vertical.md
+docs/workflow/passations/VIDEO-REFONTE-L7-DESKTOP-GRILLE-01-grille-mixte.md
+docs/workflow/passations/VIDEO-REFONTE-L789-CORRECTION-C1C2C3-01.md
+docs/workflow/passations/VIDEO-REFONTE-L8-DESKTOP-LECTEUR-01-lecteur-superpose.md
+docs/workflow/passations/VIDEO-REFONTE-L9-DESKTOP-01-ouverture-echec.md
+docs/workflow/tickets/VIDEO-REFONTE-DESKTOP-VOILE-MOLETTE-01.md
+docs/workflow/tickets/VIDEO-REFONTE-L2-PARTAGE-01.md
+docs/workflow/tickets/VIDEO-REFONTE-L5-MEDIUM-01.md
+docs/workflow/tickets/VIDEO-REFONTE-L7-DESKTOP-GRILLE-01.md
+docs/workflow/tickets/VIDEO-REFONTE-L789-CORRECTION-C1C2C3-01.md
+docs/workflow/tickets/VIDEO-REFONTE-L8-DESKTOP-LECTEUR-01.md
+docs/workflow/tickets/VIDEO-REFONTE-L9-DESKTOP-01.md
+docs/workflow/tickets/APP-SQL-ERROR-VALUES-01.md
+docs/workflow/tickets/SCAN-RESOLVE-TOKEN-ORACLE-01.md
+
+## Nouveaux (untracked) — dont archives selectionnees
+
+docs/workflow/RAPPORT-RECONCILIATION-PASSATIONS-2026-11-16.md
+docs/workflow/LISTE-FICHIERS-PROPOSES-AU-COMMIT.txt
+docs/workflow/passations/DEPS-NEXT-15-5-28-01-mise-a-jour-next.md
+docs/workflow/passations/MEDIA-MULTI-PHOTO-01-publier-plusieurs-photos.md
+
+### Archives selectionnees (seuls fichiers sous docs/workflow/archives/)
+
+docs/workflow/archives/TICKETS-INDEX-avant-reconciliation-2026-11-16-video-lot1.md
+docs/workflow/archives/TICKETS-INDEX-historique-complet-pr202-ci-WT-2026-11-16.md
+
+### Autres sous archives/
+
+Aucun autre fichier dans docs/workflow/archives/ de ce worktree.
+Les index des autres worktrees restent hors perimetre (non copies ici pour commit).
+
+TOTAL_PROPOSES=30

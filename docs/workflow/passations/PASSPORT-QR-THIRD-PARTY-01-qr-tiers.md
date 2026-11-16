@@ -181,6 +181,23 @@ et gestes non détaillés » ; le détail ci-dessus vient de Kyria.*
 - **parcours partenaire** (`/organizations/me/partner/passport`, QR de tampon) :
   **non vérifié** en navigateur, ni en QA locale ni sur Preview.
 
+## 3 quinquies. 🛠 OUTIL DE ROTATION LIVRÉ SUR PREVIEW — *2026-11-05, NON exécuté*
+
+- Commits `e79b1ff3` (outil), `ea5e28fa` (docs : recette iPhone corrigée,
+  tickets `SCAN-RESOLVE-TOKEN-ORACLE-01` et `PREVIEW-PARTNER-TEST-ACCOUNT-01`),
+  `eb07b6ce` (moteur du script durci après l'échec CI de `ea5e28fa`). Preview
+  avancée `1bed2edd..eb07b6ce` en avance rapide, sans `--force`. `main` inchangé.
+- **CI sur `eb07b6ce`** : Frontend, Backend, **Docker (2 072 passed)**, Lint
+  agent rules ✅ ; audit **19, inchangé**. Web `2f0a5c3a`, API `d6af12ae`
+  **SUCCESS** ; `api-preview` `/health` 200.
+- **Aucun lancement automatique** (démarrage, pré-déploiement, migrations) —
+  détail dans `PASSPORT-QR-TOKEN-ROTATION-01`.
+- **Simulation Preview : NON lancée** — clé SSH enregistrée, mais **identité de
+  `ssh.railway.com` non vérifiable officiellement** ; `known_hosts` non modifié ;
+  demande au support préparée, non envoyée
+  (`docs/ops/RAILWAY-SSH-HOST-VERIFICATION-01-demande-support.md`). **Rotation : non exécutée.** Compte partenaire : **non
+  créé**.
+
 ## 4. Décisions attendues de Kyria
 
 1. Option A ou B.

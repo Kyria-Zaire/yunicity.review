@@ -1,5 +1,12 @@
 # Passation — PASSPORT-SELF-REDEEM-API-01 · Un citoyen peut consommer une offre sans partenaire
 
+> ✅ **CLOS le 2026-11-05 au stade Preview sur `eef6fd62`** (décision de Kyria).
+> **Limites conservées** : parcours **authentifiés** (refus citoyen, scan
+> partenaire réel) **non rejoués sur la Preview** — prouvés sur base jetable et
+> par la CI (2 079 passed) ; **données historiques inchangées** (utilisations
+> créées par auto-consommation non recensées ni corrigées). Non fusionné dans
+> `main`. Reprise : section « ⏭️ REPRISE » de `TICKETS-INDEX.md`.
+>
 > **Ouvert le 2026-11-05 par Kyria**, seul ticket actif. ⛔ **ZONE ROUGE**
 > (autorisation, intégrité des données). Préproduction uniquement ; aucune
 > action sur `main` ni la production.
@@ -135,3 +142,26 @@ base ; production non lue) ; production.
 **Hors lot** : `PASSPORT-MOBILE-REDEEM-BUTTON-01` **en attente** (index) ;
 écrans web morts (`PASSPORT-WEB-DEAD-OFFERS-UI-01`) ; **aucune correction des
 données historiques**.
+
+## 6. 🚀 LIVRAISON PREVIEW — *2026-11-05*
+
+- Commit **`eef6fd62`** (7 fichiers de ce ticket) poussé sur
+  `fix/passport-self-redeem`.
+- **Validation AVANT la Preview** : `docker-ci.yml` lancé manuellement
+  (`workflow_dispatch`) sur la branche corrective — run `42107806970`, SHA
+  `eef6fd62`, **success — 2 079 passed, 19 skipped** (suite complète, base
+  jetable ; +4 par rapport à `1900fb01` = nouveaux tests).
+- **Puis** Preview avancée **`1900fb01..eef6fd62`** en avance rapide, distante
+  vérifiée, **sans `--force`**. `main` = `3e0b27ba`, **inchangé**.
+- **CI PR #202 sur `eef6fd62`** : Docker (2 079 passed), Backend, Frontend, Lint
+  agent rules, Gitleaks, chemins interdits ✅ ; audit **19, inchangé**.
+- **Railway Preview** : web et API **SUCCESS** sur `eef6fd62` (identifiants
+  dans l'index) ; `/health` 200 ; `POST /passport/offers/{id}/redeem` **sans
+  session → 401**.
+- ⚠️ **Non vérifié sur la Preview** : appel **authentifié** d'un citoyen (refus
+  `403`) et parcours partenaire réel — pas d'identifiants ni de compte
+  partenaire Preview (`PREVIEW-PARTNER-TEST-ACCOUNT-01`, non créé). Prouvé sur
+  base jetable et par la CI.
+- **Aucune correction des données historiques** (utilisations déjà créées par
+  auto-consommation : non recensées).
+- Section **non commitée** (un commit relancerait un déploiement).

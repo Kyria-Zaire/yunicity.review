@@ -1,34 +1,31 @@
-# VIDEO-REFONTE-L5-MEDIUM-01 — PROPOSÉ (non ouvert)
+# VIDEO-REFONTE-L5-MEDIUM-01 — CLOS
 
 ## Lot 5 — Medium : fil vertical (v1.2)
 
 | Champ | Valeur |
 |-------|--------|
-| **Statut** | **PROPOSÉ** — aucun GO BUILD ; aucun code |
-| **Base Preview** | **`815c6bdf`** (acquis Safari / partage / accueil à préserver) |
+| **Statut** | ✅ **CLOS** après validation CTO (compositions portrait/paysage, 15/11) |
+| **SHA code** | **`e49f4bb4`** |
+| **Tip Preview (docs)** | **`3b1586bb`** |
+| **Branche** | `feat/video-refonte-l3l4-mobile-v23` → Preview `feat/c3-videos-refonte-final` |
+| **Passation** | `docs/workflow/passations/VIDEO-REFONTE-L5-MEDIUM-01-fil-vertical.md` |
 | **PRD** | Story 4 · plan §6.3 lot 5 |
 | **Cadrage** | `CADRAGE-DESKTOP-C-ET-PLAN-IMPLEMENTATION.md` lot 5 |
-| **Maquette** | medium v1.2 figée — planche `maquette-medium/captures-v1.1/planche-medium-v1.2.jpg` |
-| **Canevas** | <https://claude.ai/artifact/GfUQTV2g4TA33gQdV9ELue> |
+| **Maquette** | medium v1.2 figée |
 
-## Objectif
+## Objectif (conservé)
 
 Remplacer le catalogue medium (640 → 1023 px) par le **fil vertical** Shorts-like :
 rail + hero-header **inchangés** ; `/videos?video=` ouvre la vidéo en premier puis la suite.
 
-## Dépendances
+## Dépendances (état à la clôture)
 
 | Dépendance | État |
 |------------|------|
-| Lot 3 (mobile lecteur / fil) | Code sur Preview via L3L4 → `815c6bdf` ; ticket L3L4 **encore SUSPENDU (NON clos)** |
-| Lot 2 | **CLOS** — non requis pour le lot 5 |
-| Lot 4 | Non requis pour le lot 5 (requis pour lot 6) |
-
-## Hors périmètre (ce ticket)
-
-- Panneaux R-PAN / F4 / C7 medium → **lot 6**
-- Grille / lecteur desktop → **lots 7–9**
-- Production / `main`
+| Lot 2 | **CLOS** (`815c6bdf`) |
+| Lot 3 / L3L4 | Code sur Preview ; ticket **encore SUSPENDU (NON clos)** |
+| Lot 4 | Non requis pour le lot 5 |
+| Lots 7–9 / VOILE | **CLOS** depuis 2026-11-16 (tip `cb028a72`) — hors ce ticket |
 
 ## Critères (rappel PRD Story 4 + cadrage)
 
@@ -37,16 +34,20 @@ rail + hero-header **inchangés** ; `/videos?video=` ouvre la vidéo en premier 
 - Lien partagé `?video=` en tête du fil
 - Préserve : Safari immersif, H1–H3 `/videos`, hint accueil
 
-## Prochaine étape
+## Livraison Preview (historique conservé)
 
-Validation CTO du plan → ouverture formelle du ticket (seul actif) → BUILD.
+- SHA initial : **`95674af1`**
+- SHA correctif chrome : **`6fdf5fe4`**
+- SHA portrait/paysage (clôture) : **`e49f4bb4`** — relevé `docs/qa/LIVRAISON-PREVIEW-e49f4bb4-releve.md`
+- Preuves : `docs/qa/controle-rendu/l5-medium/portrait-paysage/`
+- CI tip `3b1586bb` : Frontend/Backend/Lint/Docker ✅ ; audit 45/60 (= baseline)
 
-## Livraison Preview (15/11)
+## Hors périmètre / réserves
 
-- SHA initial : **`95674af1`** — relevé [`LIVRAISON-PREVIEW-95674af1-releve.md`](../../qa/LIVRAISON-PREVIEW-95674af1-releve.md)
-- Recette visuelle CTO : **non validée** → correctif layout (son dans cadre, stage `100dvh−14.5rem`, portal mb 0, scroll vérifié).
-- SHA correctif chrome : **`6fdf5fe4`** — relevé [`LIVRAISON-PREVIEW-6fdf5fe4-releve.md`](../../qa/LIVRAISON-PREVIEW-6fdf5fe4-releve.md)
-- Recette portrait/paysage : **non validée** → correctif cadre ratio média (`fitMediaFrameInBox`, stages portrait/paysage).
-- SHA portrait/paysage : **`e49f4bb4`** — relevé [`LIVRAISON-PREVIEW-e49f4bb4-releve.md`](../../qa/LIVRAISON-PREVIEW-e49f4bb4-releve.md)
-- Preuves : [`portrait-paysage/RAPPORT-PORTRAIT-PAYSAGE.md`](../../qa/controle-rendu/l5-medium/portrait-paysage/RAPPORT-PORTRAIT-PAYSAGE.md) — API simulée + REF CTO + PREVIEW_* (JS servi).
-- Statut : **NON clos** — ticket ouvert jusqu’à nouvelle recette visuelle CTO.
+- Panneaux R-PAN / F4 / C7 medium → **lot 6** (non ouvert)
+- Production / `main`
+- P0-02 / L3L4 / L1 / L1B **toujours SUSPENDUS (NON clos)**
+
+## Prochaine action
+
+Aucune sur ce ticket (clos). Voir index.

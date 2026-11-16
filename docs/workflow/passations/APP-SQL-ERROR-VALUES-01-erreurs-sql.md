@@ -329,8 +329,10 @@ cette synchronisation, **non touché**.
 
 **Implémentation** : branche `fix/app-sql-error-values`, issue de `a4c9a628`,
 commit `5147bdab`, non poussé à ce stade.
-- **C5 : option A appliquée** (`FastAPI(debug=False)` toujours). C'était ma
-  recommandation ; Kyria n'avait pas tranché explicitement : **à confirmer**.
+- **C5 : option A appliquée** (`FastAPI(debug=False)` toujours). *Erreur de
+  classement corrigée* : j'avais noté C5 « à confirmer », alors que Kyria
+  l'avait déjà décidé. Kyria l'a reconfirmé le 2026-11-06 ; la décision est
+  **définitive** (§12).
 - Modules ajoutés :
   - `app/core/sql_error_redaction.py` (300 lignes) : classification,
     description sûre, trace masquée, fabrique d'enregistrements de journal,
@@ -425,25 +427,109 @@ commit `5147bdab`, non poussé à ce stade.
 - mypy strict (3.12, Linux) : 732 fichiers, 0 erreur ;
 - tests des 3 services sur base jetable : 21 réussis.
 
-## 5. Inconnues
+## 4 undecies. 🚀 LIVRÉ SUR PREVIEW le 2026-11-06 — ticket NON clos
 
-- Présence de `SENTRY_DSN` en Preview (non vérifiée).
-- Comportement sous Python 3.12 (CI) : à confirmer par la CI Docker lors de
-  l'implémentation.
-- État de Docker : le démon ne répond plus. Postgres QA et Redis répondent
+**Lot** :
+- `5147bdab` : protections C1 à C7 ;
+- `5960cf68` : rapports de backfill ;
+- `6ef03cee` : commit **documentaire séparé**, sans aucun fichier sous
+  `backend/`. Il contient la fiche du ticket, cette passation (état d'avant
+  intégration) et la passation APP-DEBUG (§11 et §12). L'index n'en fait pas
+  partie : il contient des modifications d'autres sessions.
+
+**CI Docker avant intégration** (`workflow_dispatch`, Python 3.12.16) :
+- `5147bdab` : run 42229543565, 2122 réussis, 19 ignorés, 7 xfailed ;
+- `5960cf68` : run 42234380535, **2125 réussis, 19 ignorés, 7 xfailed**,
+  0 XPASS.
+
+**Intégration** :
+- distante relue : `feat/c3-videos-refonte-final` = `a4c9a628` ;
+- avance rapide `a4c9a628..6ef03cee`, **sans `--force`** ;
+- `main` = `3e0b27ba`, **inchangé**. Production non touchée.
+
+**CI de la PR #202 sur `6ef03cee`** :
+
+| Workflow | Résultat |
+|---|---|
+| Docker CI (42236879135) | ✅ **2125 réussis, 19 ignorés, 7 xfailed** |
+| Backend CI (42236879916) | ✅ ruff OK · mypy 729 fichiers, 0 erreur (Python 3.12) · pytest 987 réussis, 1164 ignorés (sans base) |
+| Frontend CI | ✅ |
+| Lint agent rules | ✅ |
+| PR Safety Checks (42236879200) | Gitleaks ✅ · chemins interdits ✅ · audit des dépendances ❌ **19 hautes, 0 critique**, frontend, **identique** à `a4c9a628` (réserve préexistante, frontend non touché) |
+
+**Railway Preview**, en lecture seule :
+- projet `9e19425b` (`dazzling-wisdom`), vérifié avant toute lecture. La
+  commande a été lancée depuis le chemin exact `C:\Users\kyria\yunicity-wt-pr202-ci`,
+  car le lien est enregistré par chemin et sensible à la casse `C:` / `c:` ;
+- API `unified-media-preview` : déploiement `449abf69` **SUCCESS sur
+  `6ef03cee`** ;
+- web `yunicity.review` : déploiement `08b42858` **SUCCESS sur `6ef03cee`** ;
+- `https://preview.yunicity.city/` → 200 ;
+  `https://api-preview.yunicity.city/api/v1/health` → 200.
+
+**Ce que la livraison protège** (prouvé sur base jetable et en CI, **pas
+observé sur la Preview**, faute d'erreur provoquée avec un vrai jeton) :
+- le message des erreurs SQL est absent des journaux (application, uvicorn,
+  arq), de Sentry et de la réponse HTTP ;
+- le résultat arq stocké dans Redis et les rapports de backfill sont protégés ;
+- le diagnostic (classe, SQLSTATE, contrainte, table) est conservé.
+
+**Ce qu'elle ne protège pas** :
+- le texte brut de l'objet exception ;
+- un texte d'exception recopié à la main hors `safe_str` ;
+- les journaux du serveur Postgres (`POSTGRES-SERVER-LOGS-EXPOSURE-01`) ;
+- les autres moteurs (`DB-ENGINES-HIDE-PARAMS-01`) ;
+- les journaux Preview **antérieurs** à ce déploiement, non examinés.
+
+**Non vérifié** : la présence de `SENTRY_DSN` en Preview.
+
+## 5. Inconnues (conservées à la clôture)
+
+- Présence de `SENTRY_DSN` en Preview : non vérifiée. Kyria a décidé de ne pas
+  la vérifier dans ce lot.
+- Comportement réel sur la Preview : la protection n'a pas été observée
   directement.
+- Python 3.12 : **levée**, puisque la CI Docker et la CI Backend sont vertes en
+  3.12.
 
 ## 6. Tâches actives
 
-Aucune. Diagnostic terminé, plan (§4 octies) présenté, **aucune modification
-de code**.
+Aucune. Ticket clos.
 
 ## 7. Prochaine action
 
-Go de Kyria pour l'intégration (2026-11-06), après l'audit du §4 decies :
-1. Avance rapide de `feat/c3-videos-refonte-final` jusqu'à `5960cf68`, plus
-   un commit documentaire séparé, sans `--force`, après vérification de la
-   distante.
-2. CI de la PR #202, puis SHA servi par les deux services Preview.
-3. Aucune erreur provoquée avec un vrai jeton. C5 (option A) reste à
-   confirmer explicitement par Kyria.
+Aucune sur ce ticket. Suite proposée : cadrage de
+`POSTGRES-SERVER-LOGS-EXPOSURE-01`, par la configuration locale et les fichiers
+du dépôt, sans journaux Preview ni changement d'infrastructure.
+
+Constats transmis :
+- sentry-sdk efface `__cause__` (`raise … from None`) dans son intégration
+  ASGI : les traces d'uvicorn perdent la chaîne quand Sentry est actif. Le
+  diagnostic SQL reste lisible grâce à `.orig`. Aucun ticket ouvert.
+- Docker local ne répond plus et n'a pas été redémarré, conformément à la
+  décision de Kyria. La sauvegarde QA vérifiée est disponible.
+
+## 12. ✅ CLOS le 2026-11-06 AU STADE PRÉPRODUCTION (décision de Kyria)
+
+Livré et servi sur la Preview à `6ef03cee` (§4 undecies). **Non promu en
+production**, qui est gelée.
+
+**Décision C5, définitive** : `FastAPI(debug=False)` en permanence, quel que
+soit `DEBUG`.
+
+**Limites conservées** :
+- **Exceptions brutes** : le texte de l'objet exception garde la valeur. Les
+  7 `xfail(strict=True)` le mesurent ; seules les sorties sont protégées.
+- **Outil d'inventaire exclu explicitement** :
+  `scripts/data_cleanup_01_inventory_run.py` (§4 decies).
+- **Journaux du serveur Postgres** : `POSTGRES-SERVER-LOGS-EXPOSURE-01`.
+- **Autres moteurs** : `DB-ENGINES-HIDE-PARAMS-01`.
+- **Protection non observée directement sur la Preview** : aucune erreur
+  provoquée avec un vrai jeton, journaux Preview non examinés, `SENTRY_DSN` non
+  vérifié.
+
+**Documentation** : la fiche du ticket (clôture, C5) et cette passation sont
+dans un **commit documentaire ciblé, local, non poussé**, sur
+`fix/app-sql-error-values` (le pousser sur la branche Preview relancerait un
+déploiement). L'index reste hors commit : il contient des modifications d'autres
+sessions.

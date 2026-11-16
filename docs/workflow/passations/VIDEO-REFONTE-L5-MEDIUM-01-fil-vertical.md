@@ -2,7 +2,7 @@
 
 ## Objectif
 
-Lot 5 : fil vertical medium v1.2. Conformité portrait / paysage livrée Preview.
+Lot 5 : fil vertical medium v1.2 — **CLOS** après validation CTO.
 
 ## État Git
 
@@ -10,40 +10,46 @@ Lot 5 : fil vertical medium v1.2. Conformité portrait / paysage livrée Preview
 |--|--|
 | Worktree | `yunicity-wt-video-lot1` |
 | Branche | `feat/video-refonte-l3l4-mobile-v23` |
-| HEAD / Preview | **`e49f4bb4`** (FF `0090dc58..e49f4bb4`, sans `--force`) |
+| SHA code | **`e49f4bb4`** |
+| Tip Preview | **`3b1586bb`** (docs) |
 | Production / `main` | gelés |
 
 ## Documents importants
 
-- Relevé : `docs/qa/LIVRAISON-PREVIEW-e49f4bb4-releve.md`
-- Rapport : `docs/qa/controle-rendu/l5-medium/portrait-paysage/RAPPORT-PORTRAIT-PAYSAGE.md`
-- Preuves Preview : `portrait-paysage/preview-e49f4bb4-preuves.json`
+- Relevés : `docs/qa/LIVRAISON-PREVIEW-e49f4bb4-releve.md`
+- Portrait/paysage : `docs/qa/controle-rendu/l5-medium/portrait-paysage/`
+- Ticket : `tickets/VIDEO-REFONTE-L5-MEDIUM-01.md` (**CLOS**)
 
 ## Preuves acquises
 
-- Correctif cadre ratio média livré `e49f4bb4`.
-- CI : Frontend/Backend/Lint ✅ ; audit préexistant **45 uniques / 60 occurrences** (identique baseline `6fdf5fe4`, 0 delta IDs).
-- Railway API + web SUCCESS ; health OK ; `/videos` 200.
-- Preview : JS marqueurs présents ; feed réel 401 sans login ; composition vérifiée sur JS servi + API simulée (PREVIEW_VERIFY_OK).
-- Ticket **ouvert** — recette visuelle CTO.
+- Fil medium + `?video=` + badge ; cadres portrait/paysage `e49f4bb4`.
+- CI tip `3b1586bb` : Frontend/Backend/Lint/Docker ✅ ; audit **45 uniques / 60 occ.** (= baseline).
+- Railway SUCCESS ; health OK ; `/videos` 200.
+- **Recette visuelle CTO** : compositions portrait/paysage **validées** (15/11).
+- « plus » → description : câblé medium + feuille ; vitest callback OK.
+- Plein écran paysage : bouton + `requestFullscreen` ; sortie navigateur (Échap / UI native). Portrait : pas de bouton (aligné mobile D / v1.2).
+- Distinction : preuves simulées / JS servi ≠ recette CTO (compos + médias Preview login).
+
+## Erreurs de classement corrigées
+
+- (néant en clôture)
 
 ## Inconnues / réserves
 
-- Médias Preview DB : login requis.
-- Lot 6 ; L1/L1B/L3L4/P0-02 suspendus.
+- Lot 6 (R-PAN / F4 / C7) non ouvert.
+- P0-02 / L3L4 / L1 / L1B **toujours SUSPENDUS (NON clos)**.
 
 ## Décisions CTO
 
-- GO livraison portrait/paysage (15/11).
-- Pas de clôture avant recette visuelle CTO.
+- Compositions portrait/paysage validées (15/11).
+- Clôture L5 autorisée après contrôles finaux.
 - Production / `main` hors périmètre.
 
 ## Tâches actives
 
-1. ~~Commit + FF + CI/Railway~~
-2. **Recette visuelle CTO**
-3. Clôture sur validation
+Aucune — ticket **clos**.
 
 ## Prochaine action
 
-Recette visuelle CTO sur https://preview.yunicity.city/videos (`e49f4bb4`).
+Aucune sur ce ticket (clos). **L7/L8/L9 et VOILE sont CLOS** (2026-11-16, tip `cb028a72`).
+Aucun ticket produit ouvert — reprise = index court + choix Kyria après `/clear`.

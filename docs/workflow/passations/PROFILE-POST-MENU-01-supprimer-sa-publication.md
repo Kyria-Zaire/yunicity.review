@@ -1,19 +1,38 @@
 # Passation — PROFILE-POST-MENU-01 · Supprimer sa propre publication · desktop + medium + mobile
 
-> ## ▶️ TICKET ACTIF depuis le 2026-10-31 — **CORRECTIF IMPLÉMENTÉ, NON PROUVÉ À L'ÉCRAN**
+> ## ✅ TICKET CLOS le 2026-11-02 — **sur validation de la recette par Kyria**
 >
-> **Demandé par Kyria le 2026-10-31** : **passer de la détection à la
-> correction**, **un ticket à la fois**. **L'implémentation est AUTORISÉE.**
-> ⛔ **Aucun commit**, ⛔ **aucun déploiement** à ce stade.
+> **« Je valide la recette de `PROFILE-POST-MENU-01` réalisée avec ChatGPT.
+> Consigne les résultats et les limites connues, puis clos le ticket. Aucun
+> test supplémentaire, aucune suppression supplémentaire. »** — **Kyria,
+> 2026-11-02.**
 >
-> **État exact du correctif** : **écrit dans l'arbre de travail**, **vérifié par
-> types, lint et tests**, ⛔ **JAMAIS OUVERT DANS UN NAVIGATEUR** — ni en local,
-> ni sur Preview. **Le défaut `PROFILE-POST-MENU-01` reste donc OUVERT** : une
-> vérification automatisée n'est pas une observation d'écran *(règle 15)*.
+> **Ce qui est ACQUIS** : **le correctif est écrit, commité** *(`fcc63538`)*,
+> **déployé sur Preview le 2026-11-01** *(SHA `2ebdbe96`, bascule confirmée au
+> bord)*, **et VÉRIFIÉ À L'ÉCRAN le 2026-11-02** — **critère de sortie `R5` ET
+> `R8` ATTEINT**, **y compris sur SAFARI iPHONE RÉEL**, **le palier où `E6`
+> avait relevé le défaut** *(§8 bis)*.
 >
-> ⛔ **Ce document ne reclasse RIEN.** **La fiche de défaut garde son classement
-> `O` et sa priorité haute** jusqu'à la recette à l'écran, **à faire avec
-> Kyria** (§8).
+> ⚠️ **CE QUE LA CLÔTURE NE DIT PAS** — **à lire avant toute reprise** :
+>
+> | ⛔ | Fait |
+> |---|---|
+> | **le correctif n'est PAS dans `main`** | **il vit sur `fix/mobile-publishing-p0` et sur la branche Preview.** **La PR 203 reste un BROUILLON**, **et AUCUN accord de fusion n'a été donné** |
+> | **`R9` n'a PAS été joué** | **le profil public d'un tiers n'a pas été ouvert** — **la frontière y est tenue par le CODE** *(verrou statique 11 : six composants publics, zéro câblage)*, **pas par l'écran** |
+> | **la suppression réelle au profil sur palier LARGE n'a PAS été jouée** | **confirmation et annulation vérifiées au desktop et au medium 768 px** ; **le RENDU du succès y reste non vu** *(§8 bis.b)* |
+> | **les specs Playwright 21 et 33 ne sont PAS exécutées** | **aucun workflow ne les lance** — **la recette manuelle ne protège pas d'une régression FUTURE** |
+> | **`C3` et `C5` restent OUVERTS** | **constats ACCEPTÉS, non corrigés** *(décision de Kyria)* — [revue §4.5](../../qa/PROFILE-POST-MENU-01-revue-correctif.md) |
+> | **`Dependency audit` reste ROUGE** | **préexistant, prouvé étranger à ce diff** *(§6 ter.a)* — **réserve du dépôt, pas de ce ticket** |
+>
+> ✅ **CE QUE LA CLÔTURE DÉBLOQUE** : **un chemin de suppression EXISTE
+> désormais à l'écran, sur les trois paliers.** **C'était le blocage du
+> NETTOYAGE qui interdisait la phase d'ÉCRITURE de
+> `MEDIA-MULTI-PHOTO-01`** *(son §4.5, option C)*. ⚠️ **Mais sur Preview
+> seulement** — ⛔ **pas sur `main`**, **et la suppression reste DOUCE**.
+>
+> ⛔ **La suppression est DOUCE** : **la ligne reste en base**, **les fichiers
+> restent stockés**, **l'auteur garde l'accès par URL directe.** ⛔ **Ne jamais
+> l'écrire comme un effacement** — **y compris après clôture.**
 >
 > **Ticket précédent** : **`MEDIA-MULTI-PHOTO-01`** — ⏸ **SUSPENDU le 31/10**,
 > **ses observations et ses limites conservées**
@@ -444,6 +463,252 @@ Next**. **Or le correctif est à l'écrasante majorité frontend** : **seul
 
 ---
 
+### 6 bis.d ✅ LIGNE DE BASE AVANT POUSSÉE — **relevée le 2026-11-01, lecture seule**
+
+**Relevé par `railway status --json`** *(aucune écriture)*. **C'est l'état À
+COMPARER après déploiement** — **sans ce relevé, un redéploiement « réussi »
+ne se distingue pas d'un service resté sur l'ancien build.**
+
+| Service | Déploiement actif | SHA servi | Statut | Instances |
+|---|---|---|---|---|
+| **`yunicity.review`** *(web, `preview.yunicity.city`)* | **`14c4094a-adf6-404d-bfa7-f28097338dd7`** *(2026-10-19T16:46:04Z)* | **`bf008a87`** | `SUCCESS` | `RUNNING` |
+| **`unified-media-preview`** *(API, `api-preview.yunicity.city`)* | **`53c0b1eb-9682-4888-8a6a-ef79ffa0d022`** *(2026-10-22T16:21:46Z)* | **`bf008a87`** | `SUCCESS` | `RUNNING` |
+| `postgis-preview` · `redis-preview` | *(sans source Git)* | — | `SUCCESS` | `RUNNING` |
+
+**Écart de dates examiné, puis écarté** : **le web est déployé le 19/10 et
+l'API le 22/10, pour un MÊME SHA.** **Vérification** : **`bf008a87` est
+commité le `2026-10-19T16:46:18+02:00`, soit `14:46:18Z`** — **DEUX HEURES
+AVANT le déploiement web de `16:46:04Z`.** ✅ **L'ordre est cohérent** : **le
+web a bien été construit depuis ce commit** ; **la date du 22/10 de l'API est
+un déploiement postérieur du même SHA.** ⚠️ **Ce qui reste NON vérifié** :
+**pourquoi l'API a été redéployée le 22/10** — **hors périmètre de ce
+ticket.**
+
+**Ce que la poussée vers la branche Preview emporterait** — **vérifié sur
+l'intervalle `bf008a87..2ebdbe96`** :
+
+| Fait | Valeur vérifiée |
+|---|---|
+| **nature de la poussée** | ✅ **FAST-FORWARD** — **`git merge-base --is-ancestor bf008a87 2ebdbe96` réussit** : **AUCUN `--force`**, **aucune réécriture d'historique** |
+| **commits emportés** | **7** — **mes 2** *(`fcc63538`, `2ebdbe96`)* **et les 5 antérieurs** *(`8d2d4c9f`, `d70d6290`, `07236fb0`, `e07e809c`, `0b8b70dd`)* |
+| **fichiers applicatifs** | **28** — **EXACTEMENT ceux de `fcc63538`** : **les 5 commits antérieurs ne touchent AUCUN fichier sous `frontend/` ni `backend/`** *(vérifié une seconde fois sur cet intervalle, et non reporté)* |
+| **fichiers non applicatifs** | **14** — **documents, `CLAUDE.md`, règles 15, `scripts/lint-agent-rules.py`** : **aucun n'est lu à l'exécution par l'application** |
+| **retour arrière PRÉFÉRÉ** | **redéploiement des deux déploiements ci-dessus par leur ID** *(`canRedeploy: true`)* — **sans reconstruction, sans toucher à l'historique Git** |
+| **retour arrière Git** | ⚠️ **exigerait `--force`** *(revenir de `2ebdbe96` à `bf008a87` n'est pas un fast-forward)* — **à n'employer qu'après le redéploiement, jamais à la place** |
+
+## 6 ter. CI de la PR 203 — **résultats et analyse**
+
+**PR brouillon** : **https://github.com/Kyria-Zaire/yunicity.review/pull/203**
+→ **`main`**. **Huit contrôles déclenchés.**
+
+**CI TERMINÉE le 2026-10-31.** **Sept contrôles VERTS, un seul rouge** — **le
+rouge préexistant et prouvé indépendant** *(§6 ter.a)*.
+
+| Contrôle | Workflow | Résultat |
+|---|---|---|
+| **`lint · typecheck · build`** | `frontend-ci.yml` | ✅ **PASS** *(4 min 53 s)* — **il éprouve la CONSTRUCTION du code réellement déployé** — ⚠️ **pas son comportement à l'écran** |
+| **`ruff · mypy · pytest`** | `backend-ci.yml` | ✅ **PASS** *(2 min 34 s)* |
+| **`compose · health · pytest (disposable db)`** | `docker-ci.yml` | ✅ **PASS** *(18 min 18 s)* — **`2013 passed, 19 skipped`** |
+| **`lint-agent-rules`** | `lint-agent-rules.yml` | ✅ **PASS** *(5 s)* |
+| **`Forbidden paths & artifacts`** | `pr-checks.yml` | ✅ **PASS** *(10 s)* |
+| **`Gitleaks`** | `pr-checks.yml` | ✅ **PASS** *(12 s)* |
+| **`CodeRabbit`** | — | ✅ **PASS** *(revue sautée)* |
+| **`Dependency audit`** | `pr-checks.yml` | ❌ **FAIL** *(26 s)* — **PRÉEXISTANT, analysé et PROUVÉ étranger à ce diff** *(§6 ter.a)* |
+
+> ## ✅ LE TEST D'AUTORISATION A TOURNÉ EN CI — **déduction SERRÉE, non lecture du nom**
+>
+> ⚠️ **Formulation CORRIGÉE le 2026-11-01, sur remarque de Kyria** : **la
+> version précédente de ce bloc écrivait « le `+1` est EXACTEMENT
+> `test_soft_delete_post_rejects_other_citizen` ».** **C'était une déduction
+> présentée comme une lecture.** **L'erreur de classement se consigne, elle ne
+> s'efface pas** *(règle 15)*.
+>
+> **CE QUI EST LU** — **deux compteurs** : **`docker-ci` rend `2013 passed, 19
+> skipped` à `2ebdbe96`** ; **`e07e809c` consignait `2012 passed, 19 skipped`
+> à `bf008a87`.** **Soit `+1` passé et `0` ignoré en plus.**
+>
+> **CE QUI EST LU DANS LE DIFF** : **`git show fcc63538 -- backend/` n'ajoute
+> QU'UNE SEULE fonction de test** — **`async def
+> test_soft_delete_post_rejects_other_citizen`**, **`backend/tests/test_feed.py`,
+> `+34` lignes, AUCUNE autre `def test_`** —, **ne touche AUCUNE source
+> backend** *(un seul fichier backend au commit)*, **et les cinq autres
+> fichiers de test du commit sont frontend** *(vitest, Playwright)*, **que
+> `pytest` ne collecte pas.**
+>
+> ⚠️ **CE QUI N'EST PAS LU** : **le journal `docker-ci` ne NOMME aucun test**
+> — **sa sortie n'est pas verbeuse.** **L'identification du `+1` est donc une
+> DÉDUCTION, serrée mais INDIRECTE**, **et non l'observation du nom dans le
+> journal.** **Le compteur seul ne dirait PAS quel test a tourné** ; **ce qui
+> ferme l'alternative, c'est sa conjonction avec un diff qui n'ajoute qu'un
+> test collecté par `pytest`, aucune source backend, et laisse les ignorés à
+> l'identique.**
+>
+> ✅ **L'exécution NOMMÉE existe — mais SUR CE POSTE** : **Docker, base
+> jetable, `test_soft_delete_post_rejects_other_citizen PASSED`** *(§6)*. **La
+> CI apporte la base jetable neutre** ; **ce poste apporte le nom.** **Aucune
+> des deux, seule, ne porte les deux.**
+>
+> ⚠️ **Ce que la CI ne couvre toujours PAS** : **la suite Playwright des 44
+> specs** — **aucun workflow ne la lance** *(lacune consignée dans
+> `e07e809c`)*. **Les deux specs modifiées par ce ticket restent donc NON
+> EXÉCUTÉES**, **et le typecheck qui les compile ne les valide pas en
+> navigateur.**
+>
+> ⚠️ **Et ce que le contrôle frontend ne prouve PAS** : **`lint · typecheck ·
+> build` éprouve que le code COMPILE et SE CONSTRUIT** — **pas qu'il se
+> COMPORTE correctement à l'écran.** **Le comportement n'est éprouvé que par
+> les 54 tests de comportement montés en jsdom** *(§6)* **et, in fine, par la
+> recette à l'écran sur les trois paliers** *(§8)*.
+
+### 6 ter.a ❌ `Dependency audit` — **ÉCHEC PRÉEXISTANT, ÉTABLI, étranger à ce diff**
+
+**Ce qui échoue exactement** : **l'étape `osv-scanner (frontend, gate on
+High/Critical)`**, **qui scanne `frontend/pnpm-lock.yaml`**. ✅ **L'étape
+`pip-audit (backend)` du même contrôle est VERTE** — **« No known
+vulnerabilities found »**.
+
+**Paquets signalés** *(tous TRANSITIFS)* : **`node-forge@1.4.0`**
+*(GHSA-jc66-7q78-782g, CVSS 7.5)* · **`undici@6.28.1`, `7.29.1`, `8.10.2`**
+*(GHSA-2m5v-pch6-74hx, -qrxm-fqhp-jwvm, -xjj6-f33q-929c, -4w7w-5xrc-9h26 ;
+CVSS 7.4–7.5)* · **`vite@7.3.5`** *(GHSA-587h-7wmj-h5pm, CVSS 7.5)*.
+
+**PREUVE que ce diff n'en est pas la cause** — **et non une inférence** :
+
+```bash
+git diff --name-only bf008a87..HEAD -- frontend/pnpm-lock.yaml        # 0
+git diff --name-only bf008a87..HEAD -- frontend/osv-scanner.toml      # 0
+git diff --name-only bf008a87..HEAD -- package.json frontend/package.json                                        frontend/apps/web/package.json  # 0
+git show fcc63538 | grep -cE "node-forge|undici|vite@|pnpm-lock"      # 0
+```
+
+**L'ENTRÉE de l'audit est donc BYTE-POUR-BYTE identique à celle de
+`bf008a87`** — **le SHA actuellement servi par la Preview** —, **et le commit
+de code ne mentionne aucun des paquets signalés.** **Même entrée, même
+verdict.**
+
+✅ **Et cet échec était DÉJÀ CONSIGNÉ** : **le commit `e07e809c`**, **qui porte
+la CI de `bf008a87`**, **écrit noir sur blanc** — **« cinq contrôles verts, un
+échec connu »** et **« audit des dépendances rouge, mitigation de l'image
+d'exécution sans remédiation de l'arbre »**.
+
+> ⛔ **Ce que cela ne veut PAS dire** : **que l'échec est sans importance.**
+> **C'est une RÉSERVE OUVERTE du dépôt** — **la remédiation de l'arbre de
+> dépendances n'a pas été faite**, **seule l'image d'exécution a été mitigée**.
+> ⛔ **Elle ne relève PAS de ce ticket**, **et ce ticket ne la referme pas.**
+>
+> ⚠️ **Conséquence sur la règle « CI verte avant déploiement »** : **la CI de
+> cette PR ne peut PAS être « toute verte » tant que cette réserve est
+> ouverte.** **Le critère applicable est donc** : ✅ **`frontend-ci` ET
+> `backend-ci` ET `docker-ci` vertes**, **et `Dependency audit` rouge au MÊME
+> titre et pour les MÊMES paquets qu'à `bf008a87`** — **ce qui est désormais
+> prouvé.** ⛔ **Toute AUTRE couleur rouge est bloquante et demande une analyse
+> avant toute suite.**
+
+---
+
+## 6 quater. Déploiement Preview — **EXÉCUTÉ le 2026-11-01**, sur autorisation
+
+**Autorisation de Kyria** : **« Oui, j'autorise la poussée de `2ebdbe96` vers
+`feat/c3-videos-refonte-final` et le redéploiement des deux services Preview.
+J'accepte pour cette étape la réserve documentée sur l'audit des dépendances.
+Aucun `--force`, aucune fusion vers `main`, aucune création ni suppression de
+publication. »**
+
+⚠️ **Ce déploiement N'A PAS eu lieu sur une CI verte** : **`PR Safety Checks`
+reste ROUGE** *(§6 ter.a)*. **Il a lieu sous RÉSERVE EXPLICITEMENT ACCEPTÉE.**
+**La formulation est de Kyria et elle est juste** — **une rédaction antérieure
+de ma part parlait de « critère atteint », ce qui était un JUGEMENT présenté
+comme un ÉTAT.**
+
+### 6 quater.a La poussée — **fast-forward, sans `--force`**
+
+```bash
+git push origin 2ebdbe96:refs/heads/feat/c3-videos-refonte-final
+#   bf008a87..2ebdbe96  2ebdbe96 -> feat/c3-videos-refonte-final
+```
+
+✅ **La sortie ne porte PAS de `+`** — **aucune mise à jour forcée, aucun
+historique réécrit.** ✅ **Sommet distant relu après coup** :
+**`2ebdbe96f84dfe303f15009bb63a20267339429d`**.
+
+⚠️ **Aucun workflow CI ne s'est déclenché sur cette poussée** — **les workflows
+ne réagissent qu'aux `pull_request` et aux poussées sur `main`** *(plus
+`develop` pour `lint-agent-rules`)*. **La CI de ce code reste celle de la PR
+203** *(§6 ter)*.
+
+### 6 quater.b Les deux services — **`SUCCESS` sur `2ebdbe96`**
+
+| Service | Déploiement actif | SHA actif | Empreinte d'image | Instances |
+|---|---|---|---|---|
+| **`yunicity.review`** *(web)* | **`66baa70a-7a01-4f61-b86c-ea236bd108d0`** | **`2ebdbe96`** | `sha256:3f54ac0c4238…` | `RUNNING` |
+| **`unified-media-preview`** *(API)* | **`d270bbfc-b6bf-41a1-be5a-ee22b5b914c7`** | **`2ebdbe96`** | `sha256:aeb77d03e46c…` | `RUNNING` *(+1 `REMOVED` — l'ancienne instance)* |
+
+✅ **L'isolation des configurations TIENT** : **le web est construit depuis
+`/frontend/railway.web-docker.toml`** *(`meta.configFile`, racine `frontend`)*,
+**l'API depuis la racine `/backend`** — **exactement le réglage éprouvé par le
+chantier `INFRA-04`.**
+
+✅ **Les anciens déploiements ne sont PLUS actifs** : **`activeDeployments` ne
+contient plus que `2ebdbe96`.** **Ils restent redéployables par leur ID**
+*(§6 quater.e)*.
+
+### 6 quater.c Chronologie MESURÉE
+
+| Horodatage *(UTC)* | Fait observé |
+|---|---|
+| **04:04:22** | **les DEUX déploiements sont créés** — **à la même seconde**, **déclenchés par la poussée** |
+| **04:05:25** | **`preview.yunicity.city` sert ENCORE l'ancien build** — **ETag `"yy6a948g3y8py"`** *(ligne de base prise À DESSEIN pendant la construction)* |
+| **≈ 04:07:11** | **web observé `SUCCESS`** *(sondage 4)* ; **API encore `BUILDING`, puis `DEPLOYING`** |
+| **04:07:44** | **les DEUX observés `SUCCESS`** *(sondage 6)* — **soit ≈ 3 min 20 s après le déclenchement** |
+| **04:08:09** | **le NOUVEAU build est servi au bord** — **ETag `"7u9snj31jp8py"`** |
+
+### 6 quater.d ✅ PREUVE DE BASCULE AU BORD — **indépendante du statut Railway**
+
+**Pourquoi ce contrôle** : **un `SUCCESS` côté Railway dit qu'une image est
+construite et démarrée** — **il ne dit pas que le DOMAINE la sert.** **Sans
+empreinte prise AVANT, un domaine resté sur l'ancienne image serait
+indistinguable d'une bascule réussie.**
+
+| Empreinte | Avant *(04:05:25)* | Après *(04:08:09)* |
+|---|---|---|
+| **ETag de la page d'accueil** | `"yy6a948g3y8py"` | **`"7u9snj31jp8py"`** — ✅ **CHANGÉ** |
+| **Bundles `/_next/static/chunks/`** | **9** | **9** — ✅ **2 REMPLACÉS** |
+
+**Les deux bundles remplacés** : **`3500-abf1bc04cea8898c.js` et
+`7777-ec539f79b87de8ad.js`** → **`7777-01baeed1b802fec2.js` et
+`8795-00d3c2bd8d15cf3b.js`** ; **7 sur 9 sont INCHANGÉS** — **cohérent avec un
+correctif ciblé sur le fil et le profil**, **et non avec une reconstruction
+totale.**
+
+⚠️ **Ce que cette preuve ne dit PAS** : **que le code changé est celui du
+correctif.** **Elle établit la BASCULE, pas le CONTENU.** **Le contenu ne sera
+établi qu'à l'écran** *(§8)*.
+
+**Santé de l'API après bascule** — **lectures seules** :
+
+```
+GET https://api-preview.yunicity.city/api/v1/health  → 200  {"status":"ok","service":"yunicity-api","environment":"prod"}
+GET https://api-preview.yunicity.city/api/v1/ready   → 200  {"status":"ready","checks":{"database":"ok","redis":"ok","registration_config":[]}}
+```
+
+✅ **Base de données et Redis répondent.** ⚠️ **`/health` NU répond `404`** :
+**le chemin canonique est `/api/v1/health`** — **à retenir pour les prochaines
+vérifications.**
+
+⚠️ **Observation HORS PÉRIMÈTRE, PRÉEXISTANTE, non traitée ici** : **l'API de
+Preview se déclare `environment: "prod"`** — **l'environnement Railway
+s'appelle `production`.** **Cela ne vient PAS de ce ticket** ; **mais si des
+comportements dépendent de ce drapeau** *(journalisation, CORS, cookies)*, **la
+recette se déroule sous un réglage « prod ».** → **à ouvrir comme ticket
+distinct.**
+
+### 6 quater.e Retour arrière — **disponible, non employé**
+
+| Voie | Moyen |
+|---|---|
+| ✅ **PRÉFÉRÉE** | **redéployer `14c4094a-adf6-404d-bfa7-f28097338dd7`** *(web)* **et `53c0b1eb-9682-4888-8a6a-ef79ffa0d022`** *(API)* — **les deux déploiements `bf008a87`**, **`canRedeploy: true`**, **sans reconstruction ni modification de l'historique Git** |
+| ⚠️ **Git** | **revenir de `2ebdbe96` à `bf008a87` sur la branche Preview EXIGERAIT `--force`** — ⛔ **à n'employer qu'APRÈS le redéploiement, jamais à la place** |
+
 ## 7. Écritures — **ce que le correctif rend possible, et ce qu'il a écrit**
 
 | Moment | Écriture |
@@ -482,21 +747,162 @@ RECHARGEMENT**, **et le chemin EFFECTIF sur Safari iPhone réel.**
 
 ---
 
+## 8 bis. Résultats de la recette — **rapportés par Kyria le 2026-11-02**
+
+**Environnement** : **Preview, `preview.yunicity.city`**, **SHA
+`2ebdbe96f84dfe303f15009bb63a20267339429d`** — **déployé le 2026-11-01 à
+04:08 Z et vérifié au bord** *(§6 quater)*.
+
+⚠️ **NATURE DE LA PREUVE — DEUX NIVEAUX, à ne pas confondre** *(précisé le
+2026-11-02, captures fournies par Kyria)* :
+
+| Niveau | Ce qui est couvert |
+|---|---|
+| ✅ **CAPTURÉ** *(4 captures, examinées)* | **`R1` et `R2`** — **le contrôle « … » sur SA PROPRE publication**, **et la confirmation** — **sur DEUX surfaces** : **aperçu du profil sur Safari iPhone** et **carte du fil au desktop** |
+| ✅ **OBSERVÉ, confirmé manuellement par Kyria, NON capturé** | **`R4` et `R5`** — **la suppression réelle, le message de succès, et l'ABSENCE APRÈS RECHARGEMENT** |
+
+⛔ **Les absences après rechargement ne sont PAS dans les captures** : **elles
+reposent sur la confirmation manuelle de Kyria.** **C'est le critère de sortie
+lui-même** — **la distinction se conserve.** ⛔ **Aucun geste n'est à
+rejouer** *(consigne de Kyria)*.
+
+**Ces résultats valent pour CE SHA et CET environnement** ; ⛔ **ils ne se
+reportent pas à un autre déploiement** *(règle 15)*.
+
+### 8 bis.0 Ce que les CAPTURES établissent — **et à quel composant elles se rattachent**
+
+| Capture | Surface | Ce qu'elle montre |
+|---|---|---|
+| **1** *(iPhone, 09:06, `preview.yunicity.city`)* | **profil, APERÇU, palier mobile** | **« Publications récentes » + « Voir toutes → »**, **DEUX publications**, **et un contrôle « … » sur CHACUNE** — **sur ses propres publications** |
+| **2** *(iPhone)* | **même écran, assombri** | **la confirmation** : **« Supprimer cette publication ? »** · **« Elle disparaîtra du fil et de votre profil. Vous ne pourrez pas la rétablir. »** · **« Supprimer » (rouge) AU-DESSUS de « Annuler »** |
+| **3** *(desktop)* | **carte du FIL** | **publication propre** *(« Freeway · Reims · À l'instant »)* **portant le contrôle « ⋮ »** — ⚠️ **c'est l'inverse exact du défaut d'origine**, **où le menu n'était pas rendu sur sa propre publication** |
+| **4** *(desktop)* | **la confirmation** | **MÊMES libellés** · **« Annuler » À GAUCHE, « Supprimer » (rouge) À DROITE** |
+
+✅ **RATTACHEMENT AU CODE — vérifié, non supposé** :
+
+- **Les deux libellés de la modale sont IDENTIQUES aux constantes partagées** :
+  **`PUBLICATION_DELETE_CONFIRM_TITLE`** et **`PUBLICATION_DELETE_CONFIRM_BODY`**
+  *(`packages/utils/src/publication-delete.ts:27` et `:30`)*. **La modale
+  capturée est donc BIEN le composant de ce correctif**, **et non une boîte de
+  dialogue du navigateur.**
+- ✅ **La question du §8 bis.b point 3 est TRANCHÉE pour le MOBILE** : **le
+  bloc capturé est l'APERÇU**, **pas l'onglet**. **Preuve** : **l'aperçu est le
+  SEUL des deux montages à passer `seeAllHref` et `seeAllLabel`** — **le lien
+  « Voir toutes → »** *(`profile-medium-overview.tsx:65`-`73`, câblé par
+  `profile-compact-screen.tsx:92`)* —, **et il impose `maxItems={2}`** :
+  **la capture montre EXACTEMENT deux publications.** **L'onglet, lui, monte
+  `maxItems={12}` sans lien d'en-tête** *(`profile-compact-screen.tsx:106`)*.
+- ⚠️ **Pour le MEDIUM 768 px, le montage manipulé reste indéterminé** —
+  **mais les deux montages appellent le MÊME composant avec la MÊME fonction** :
+  **l'ambiguïté est désormais sans conséquence.**
+
+✅ **LA PORTÉE AFFICHÉE EST CONFORME À LA SUPPRESSION DOUCE** — **vérifié à
+l'écran** : **le texte dit « elle disparaîtra du fil et de votre profil »** et
+**« vous ne pourrez pas la rétablir »**. ⛔ **Il ne dit NI « effacée », NI
+« définitivement supprimée ».** **C'est exactement la portée réelle** : **la
+ligne reste en base, les fichiers restent stockés, et il n'existe aucun chemin
+de rétablissement dans le produit.** **L'écran ne ment pas sur ce qu'il fait.**
+
+⛔ **Je n'ai créé ni supprimé AUCUNE publication** : **les publications
+utilisées, et le moment de leur suppression, relèvent de Kyria seule.** **`R0`
+est donc hors de mon périmètre d'exécution.**
+
+| # | Critère écrit | Résultat | Surface et palier |
+|---|---|---|---|
+| **R1** | **le menu s'ouvre, il contient « Supprimer »** | ✅ **OBSERVÉ** — **implicite dans un parcours mené jusqu'à la suppression** | **fil desktop** · **fil Safari iPhone** · **profil Safari iPhone** |
+| **R2** | **la confirmation s'ouvre, rien ne disparaît encore** | ✅ **OBSERVÉ** | **fil desktop** · **fil + profil Safari iPhone** · ✅ **profil desktop** · ✅ **profil medium 768 px** |
+| **R3** | **« Annuler », puis **Échap** : la publication est toujours là** | ⚠️ **PARTIEL** — **annulation VÉRIFIÉE** ; ⛔ **la touche Échap n'est PAS rapportée** | **profil desktop** · **profil medium 768 px** |
+| **R4** | **la carte disparaît, un message apparaît** | ✅ **OBSERVÉ** — **suppression réelle ET message de succès** | **fil desktop** · **fil Safari iPhone** · **profil Safari iPhone** |
+| **R5** | 🛑 **la carte est TOUJOURS absente après rechargement** | ✅ **OBSERVÉ** — **c'est LE contrôle qui prouve** | **fil desktop** · **fil Safari iPhone** · **profil Safari iPhone** |
+| **R6** | **profil : le bouton « Options » répond, « Supprimer » y est** | ✅ **OBSERVÉ sur les TROIS paliers** — **mobile jusqu'à la suppression réelle** ; **desktop et medium jusqu'à la confirmation** | **profil Safari iPhone** *(complet)* · **profil desktop** · **profil medium 768 px** |
+| **R7** | **rejouer `R1`–`R6` au MEDIUM** | ⚠️ **PARTIEL** — **profil : confirmation et annulation vérifiées** ; ⛔ **suppression réelle NON jouée** ; ⛔ **fil au medium NON rapporté** | **profil medium 768 px** |
+| **R8** | 🛑 **rejouer `R1`–`R6` au MOBILE, sur SAFARI iPHONE RÉEL** | ✅ **OBSERVÉ, COMPLET** — **fil ET profil** : **suppression réelle, message de succès, absence après rechargement** | **Safari iPhone RÉEL** |
+| **R9** | **profil PUBLIC d'un autre citoyen : aucun « Supprimer »** | ⛔ **NON JOUÉ** | — |
+
+### 8 bis.a ✅ LE CRITÈRE DE SORTIE ÉCRIT EST ATTEINT
+
+**Le critère de sortie du §8 est : `R5` ET `R8`** — **« la disparition
+CONFIRMÉE APRÈS RECHARGEMENT, et le chemin EFFECTIF sur Safari iPhone
+réel »**.
+
+✅ **`R5` est observé** *(fil desktop, fil iPhone, profil iPhone)*. ✅ **`R8`
+est observé et COMPLET** *(fil et profil sur Safari iPhone réel, jusqu'au
+rechargement)*. **`E6` avait relevé le défaut précisément là** — **le palier
+qui le portait est celui où la correction est désormais observée.**
+
+⚠️ **Ce que cela ne rend PAS vrai** : **que `R1`–`R9` soient tous couverts.**
+**Le critère de sortie était volontairement étroit** *(« le critère n'est PAS
+le bouton existe »)* ; **il est atteint, et il reste des cases non jouées,
+listées au §8 bis.b.** **Les deux énoncés tiennent ensemble** — **l'un ne doit
+pas servir à effacer l'autre.**
+
+### 8 bis.b Ce qui N'A PAS ÉTÉ JOUÉ — **limites ACCEPTÉES à la clôture**
+
+⚠️ **Décision de Kyria, 2026-11-02** : **« Aucun test supplémentaire, aucune
+suppression supplémentaire. »** **Le tableau ci-dessous décrivait ce qui
+restait À JOUER** ; **il décrit désormais ce qui RESTE NON OBSERVÉ, et le
+restera** — **à rouvrir seulement si un doute surgit sur l'une de ces
+surfaces.** ⛔ **La colonne « Nécessité » conserve mon appréciation d'AVANT la
+décision** : **elle n'est pas réécrite après coup.**
+
+| # | Reste à jouer | Écriture ? | Nécessité |
+|---|---|---|---|
+| **1** | **`R9`** — **profil public d'un AUTRE citoyen : aucun « Supprimer »** | ⛔ **AUCUNE** — **lecture seule** ; **ne demande PAS de second compte** *(seule la vérification du `404` médias le demandait)* | 🛑 **NÉCESSAIRE** — **c'est la seule frontière de l'interface qui reste non vue à l'écran**, **et elle ne coûte rien** |
+| **2** | **suppression RÉELLE depuis le PROFIL, sur un palier LARGE** *(desktop ou medium)* — **annonce de succès, déplacement du focus, carte retirée** | ⚠️ **une suppression** — **mais AUCUNE création** : **la publication du test d'annulation est restée en place, l'annulation ne supprimant rien** | ⚠️ **RECOMMANDÉE, non indispensable** — **voir la déduction ci-dessous** |
+| **3** | ✅ **TRANCHÉ pour le MOBILE par la capture 1** : **c'est l'APERÇU** *(lien « Voir toutes → » et `maxItems={2}`, §8 bis.0)* — **`R7` posait explicitement la question : l'aperçu PORTE bien le menu.** ⚠️ **Indéterminé au medium 768 px**, **mais sans conséquence** *(mêmes composant et fonction)* | ⛔ **aucune** | ✅ **CLOS pour le mobile** |
+| **4** | **`R3` seconde moitié** : **Échap sur la confirmation** | ⛔ **aucune** — **Échap ne supprime rien** | **mineure** — **couverte par 2 tests de comportement** |
+
+**Pourquoi le point 2 n'est PAS indispensable** — **déduction, et elle est
+bornée** : **le contrôle « Options » du profil n'est rendu QUE si
+`onDeletePost` est câblé** — **sinon le bouton reste `disabled`**
+*(`profile-desktop-publications.tsx`, verrou statique 12)*. **Or la
+confirmation S'EST OUVERTE sur desktop ET sur medium** : **la chaîne de
+transmission y est donc VIVANTE sur les deux paliers.** **La fonction appelée
+est `ctx.deleteUserPost`, UNE SEULE fonction**, **dont le chemin de succès est
+observé en réel sur iPhone** ; **le retrait de la carte passe par
+`setFeedPosts`, la SOURCE**, **donc les trois paliers suivent.** **Et
+l'annonce comme le focus vivent dans `ProfileDesktopPublications`, LE MÊME
+fichier monté sur les trois paliers.**
+
+⚠️ **Ce qui reste donc réellement non vu sur les paliers larges** : **le RENDU
+du succès** — **que l'annonce soit VISIBLE et que le focus se POSE là où il
+faut dans ces mises en page.** **C'est un risque de CSS et de mise en page**,
+**pas de logique.** **Il ne se lève que par l'écran** — **mais il ne met en
+jeu ni donnée ni autorisation.**
+
+### 8 bis.c Ce que la recette ne referme PAS
+
+⛔ **Les specs Playwright 21 et 33 restent NON EXÉCUTÉES** — **aucun workflow
+ne les lance** *(§6 ter)*. **La recette manuelle ne les remplace pas** :
+**elles protègent contre une RÉGRESSION FUTURE**, **ce qu'une observation
+ponctuelle ne fait pas.**
+
+⛔ **`C3` et `C5` restent des constats ACCEPTÉS**, **non corrigés** *(décision
+de Kyria)*. ⛔ **Le `404` opposé aux TIERS sur les médias reste non vérifié**
+*(second compte impossible, inscription fermée)*. ⛔ **La dette de menu
+dupliquée reste posée** *(`TODO(debt)`, refactor à part)*.
+
+---
+
 ## 9. État, inconnues et prochaine action
 
 | | |
 |---|---|
-| **État** | ▶️ **correctif IMPLÉMENTÉ dans l'arbre de travail** · ⛔ **NON PROUVÉ À L'ÉCRAN** · ⛔ **défaut TOUJOURS OUVERT** |
-| **État Git** | **branche `fix/mobile-publishing-p0`**, **base `8d2d4c9f`** · **20 fichiers de code modifiés** *(17 sources web et paquets · 2 specs Playwright · 1 test backend)* **et 8 nouveaux** · **6 documents** *(index, 2 passations, bilan, couverture, revue)* · ⛔ **aucun commit**, ⛔ **aucun déploiement** · ✅ **les modifications ANTÉRIEURES du dépôt sont préservées** *(aucun `stash`, aucun `reset` ; l'artefact de build `next-env.d.ts` a été restauré après chaque build)* |
-| **Preuve acquise** | ⛔ **AUCUNE preuve d'écran.** ✅ **UNE preuve d'EXÉCUTION réelle, côté serveur** : **`tests/test_feed.py` — 17 passed**, **sous Docker**, **base jetable `yunicity_test_0367990d08e9` créée puis supprimée** *(§6.2)* — **dont le `403` opposé à un tiers et la SURVIE de la publication**. **Le reste est types, lint, tests unitaires et build** *(§6.1)* |
-| **SHA Preview** | ⛔ **sans objet** — **rien n'est déployé** |
+| **État** | ✅ **TICKET CLOS le 2026-11-02**, **sur validation de la recette par Kyria** · **correctif DÉPLOYÉ sur Preview** *(§6 quater)* · ✅ **VÉRIFIÉ À L'ÉCRAN** — **critère de sortie `R5` ET `R8` ATTEINT** *(§8 bis)* · ⚠️ **limites connues ACCEPTÉES** : **`R9` et suppression réelle au profil large NON joués**, **specs Playwright non exécutées**, **`C3`/`C5` ouverts** · ⛔ **le correctif n'est PAS dans `main`** · ✅ **défaut RECLASSÉ CORRIGÉ le 2026-11-02**, **sur validation de Kyria et sur preuve d'écran** — ⚠️ **corrigé sur PREVIEW**, **pas dans `main`** *(couverture §3.2 et §5 mises à jour)* |
+| **État Git** | ✅ **COMMITÉ ET POUSSÉ le 2026-10-31**, **sur autorisation de Kyria** — **branche `fix/mobile-publishing-p0`**, **base `8d2d4c9f`** :<br>• **`fcc63538dd949daa8163d03c799a4104ff39346e`** — *`fix(feed,profile): supprimer sa propre publication depuis l'interface`* — **28 fichiers**, **1677 insertions, 60 suppressions**, **dont 8 nouveaux**<br>• **`2ebdbe96f84dfe303f15009bb63a20267339429d`** — *`docs(workflow): PROFILE-POST-MENU-01 — passation, revue et preparation`* — **3 fichiers, 1591 insertions**<br>**PR BROUILLON** : **https://github.com/Kyria-Zaire/yunicity.review/pull/203** → **`main`**<br>⛔ **AUCUNE fusion vers `main`** · ✅ **poussée vers la branche Preview EXÉCUTÉE le 2026-11-01, sur autorisation** — **fast-forward `bf008a87..2ebdbe96`, sans `--force`** *(§6 quater)* · ⛔ **aucune donnée manipulée**, ⛔ **`R0` NON joué** |
+| **Contrôles de commit — tous passés** | **8 contrôles avant le commit 1** : **chemins IDENTIQUES à la liste de référence** *(`diff`, 28/28, pas un simple décompte)* · **0 document**, **0 artefact** · **0 fichier de la liste resté hors index** · **0 interdit dur ajouté** · **1 `TODO(debt)`** *(celui de `use-overflow-menu.ts`)* **et 0 autre TODO** · **0 `pnpm-lock` ni `vitest.config`** · **8 fichiers nouveaux** · **3 contrôles avant le commit 2** *(3 chemins, tous `PROFILE-POST-MENU-01`, tous sous `docs/`)* |
+| **Modifications antérieures — PRÉSERVÉES, vérifié après les commits** | **les 4 documents suivis restent MODIFIÉS et NON commités** *(`TICKETS-INDEX.md`, `PR202-WEB-bilan-consolide.md`, `PR202-WEB-recette-manuelle.md`, `PR202-WEB-recette-publication-photo.md`)* · **32 documents non suivis d'autres tickets TOUJOURS là** · **0 fichier applicatif en attente** · **statut passé de 67 à 36 lignes** = **28 + 3 commités, et rien d'autre**. ⛔ **Aucun `stash`, aucun `reset`** ; **`next-env.d.ts` restauré après chaque build** |
+| **⚠️ Deux incidents de procédure, consignés** | **1.** **`git commit -F /tmp/…` a ÉCHOUÉ** *(`could not read log file`)* : **sous Git Bash, le `/tmp` de `git` est le TEMP de Windows**, **alors qu'un `python` écrivant dans `"/tmp/…"` crée `C:	mp\…`**. ⛔ **Rien n'avait été commité, l'index était intact** — **refait avec un chemin absolu identique des deux côtés**, **et le piège est consigné au §4.4 du document d'ops**. **2.** **le sujet du commit 2 s'étalait sur DEUX lignes** *(le message commençait par un titre replié)* : **message AMENDÉ seul, avant toute poussée**, **contenu inchangé** *(3 fichiers)* — **le SHA du commit 2 est donc passé de `257a75b8` à `2ebdbe96`**, **et celui du commit 1 n'a PAS bougé** |
+| **⚠️ Ce que la PR 203 N'EST PAS** | **une surface de revue pour CE changement** : **la branche a divergé de `main` depuis longtemps**, **et la PR compte une CENTAINE de commits**. **Elle sert UNIQUEMENT à obtenir la CI.** **Pour relire le correctif seul** : **les deux SHA ci-dessus**, **ou `git diff origin/feat/c3-videos-refonte-final..HEAD`** |
+| **Preuve acquise** | ✅ **PREUVE D'ÉCRAN ACQUISE le 2026-11-02**, **sur Preview `2ebdbe96`**, *(§8 bis)* — **DEUX NIVEAUX** : ✅ **CAPTURÉ** *(4 captures)* : **le contrôle « … » sur sa propre publication et la CONFIRMATION**, **à l'aperçu du profil sur Safari iPhone ET à la carte du fil au desktop** — **libellés identiques aux constantes du code, rattachement vérifié** ; ✅ **OBSERVÉ et confirmé manuellement, NON capturé** : **la suppression réelle, le message de succès et l'ABSENCE APRÈS RECHARGEMENT** — **fil desktop**, **fil Safari iPhone RÉEL**, **profil Safari iPhone RÉEL** ; **confirmation et annulation au profil desktop et medium 768 px.** ⛔ **Non joué** : **`R9`** *(profil public d'un tiers)*, **suppression réelle au profil sur palier large**, **Échap sur la confirmation**, **fil au medium**.<br>**Avant cette recette, l'état était** : ⛔ **AUCUNE preuve d'écran.** ✅ **UNE preuve d'EXÉCUTION réelle, côté serveur** : **`tests/test_feed.py` — 17 passed**, **sous Docker**, **base jetable `yunicity_test_0367990d08e9` créée puis supprimée** *(§6.2)* — **dont le `403` opposé à un tiers et la SURVIE de la publication**. **Le reste est types, lint, tests unitaires et build** *(§6.1)* |
+| **SHA Preview** | ✅ **`2ebdbe96f84dfe303f15009bb63a20267339429d`** — **RELEVÉ, non reporté** : **les DEUX services sont `SUCCESS` sur ce SHA** *(web `66baa70a…`, API `d270bbfc…`)*, **et la bascule est confirmée AU BORD** *(ETag et 2 bundles changés — §6 quater.d)*. **Précédent, redéployable** : **`bf008a87`** *(web `14c4094a…`, API `53c0b1eb…`)* |
 | **Erreurs corrigées et CONSIGNÉES** | **1.** **`profile-mobile-post-card.tsx` n'est PAS une surface de production** *(§2)* · **2.** **une régression de SPÉCIFICATION introduite par ce diff** *(spec Playwright 21)*, **trouvée en revue et corrigée** *(§6.4.a)* · **3.** **ma vérification de session 1 était INCOMPLÈTE** — **le typecheck web ne couvrait pas les fichiers de test écrits après lui**, **et il a révélé DEUX erreurs réelles une fois relancé** *(§6.4.b)* · **4.** **la trace `M1`–`M2` de `MEDIA-MULTI-PHOTO-01`** — **« jamais joués » était FAUX**, **corrigé dans sa passation et dans l'index** |
-| **Inconnues** | **tout le §8** · **le rendu réel du menu sur Safari iPhone** · **le `404` opposé aux TIERS sur les médias** *(second compte impossible : inscription fermée)* · **le comportement réel des specs Playwright 21 et 33** *(modifiées, typechecke, NON EXÉCUTÉES)* · **la cause racine de l'instabilité du pool de workers** *(§6.3 — supposée, non établie)* |
+| **Inconnues** | ✅ **LEVÉES par la recette du 2026-11-02** *(§8 bis — déplacées vers « Preuve acquise », non effacées)* : **le rendu réel du menu sur Safari iPhone**, **le parcours de suppression de bout en bout**, **la persistance après rechargement**. ⛔ **TOUJOURS INCONNUES** : **`R9`** · **le rendu du SUCCÈS au profil sur palier large** *(annonce visible, focus posé — risque de mise en page)* · **le fil au palier medium** *(même arbre DOM, encadré par desktop et mobile — déduction, non observation)* · **le `404` opposé aux TIERS sur les médias** *(second compte impossible : inscription fermée)* · **le comportement réel des specs Playwright 21 et 33** *(modifiées, typechecke, NON EXÉCUTÉES)* · **la cause racine de l'instabilité du pool de workers** *(§6.3 — supposée, non établie)* |
 | **Constats de la dernière revue** | **5 constats, aucun bloquant, aucune donnée en risque** — détail et fichiers au §4.5 de la [revue](../../qa/PROFILE-POST-MENU-01-revue-correctif.md). ✅ **`C1`, `C2` et `C4` CORRIGÉS le 31/10** *(§4.6 de la revue)* : **annonce `role="status"` ajoutée au PROFIL avec le MÊME libellé que le fil**, **focus déplacé sur un ancrage STABLE des DEUX côtés** *(titre « Publications » au profil, région du flux au fil ; `tabIndex={-1}`, ordre de tabulation inchangé)*, **et `aria-describedby` de la modale CONCATÈNE désormais portée + erreur**. **Couverture : 4 tests de comportement et 4 verrous statiques ajoutés.** ⏸ **`C3`** *(minuterie de `deleteMessage` non annulée — `feed-data-controller.tsx`)* **et `C5`** *(état d'attente peu annoncé — `publication-delete-dialog.tsx`)* **restent DOCUMENTÉS et ACCEPTÉS pour cette livraison**, **décision de Kyria** : ⛔ **ils ne doivent pas disparaître d'ici** |
 | **Autorisation — conclusion BORNÉE** | ⛔ **Le masquage du contrôle côté interface n'exclut PAS une IDOR** : **il empêche un parcours accidentel, pas un appel forgé sur `DELETE /posts/{id}`** *(console, client HTTP, script)*. **Son rôle est ERGONOMIQUE** — **ne pas proposer une action que le serveur refusera.** ✅ **La protection repose sur le CONTRÔLE SERVEUR** — **`_can_moderate_post` → `_is_author`** —, **ÉPROUVÉ par un test EXÉCUTÉ** : **`test_soft_delete_post_rejects_other_citizen`**, **`403` au tiers et publication CONSERVÉE** *(§6.2)*. ⚠️ **Une rédaction antérieure écrivait « aucune surface d'IDOR » : conclusion TROP LARGE, corrigée et consignée** |
 | **Vérifié CONFORME en revue** | **prédicat d'AFFICHAGE identique sur les deux surfaces et dérivé de l'identité SERVEUR** *(`filterProfileUserFeedPosts` filtre sur `profile.user_id`)* — **le parcours nominal n'envoie que des identifiants renvoyés par le serveur** · **confirmation** *(rien d'écrit avant `confirm`, verrou anti double-envoi)* · **erreurs** *(4 cas, aucun détail serveur, modale maintenue, aucun `catch` silencieux)* · **retrait après succès** *(jamais avant le `204` ; fil via `items` → `displayedPosts` → flux ; profil via `feedPosts`, la SOURCE, donc les trois paliers et les statistiques suivent)* |
 | **Dette signalée** | **`FeedPostOptionsMenu` porte sa propre mécanique de menu**, **que `useOverflowMenu` duplique désormais** — **`TODO(debt)` posé dans le hook** : **son alignement est un REFACTOR à part**, **le déclencheur du fil étant sous contrat E2E** *(règle 11 : un refactor par PR)* |
-| **Prochaine action** | **1.** **lire la REVUE DU DIFF** — [`../../qa/PROFILE-POST-MENU-01-revue-correctif.md`](../../qa/PROFILE-POST-MENU-01-revue-correctif.md) *(verdict proposé : **REQUEST CHANGES — non bloquant sur le code, bloquant sur la PREUVE**)* · **1 bis.** **suivre la PRÉPARATION de commit et de déploiement Preview** — [`../../ops/PROFILE-POST-MENU-01-commit-et-deploiement-preview.md`](../../ops/PROFILE-POST-MENU-01-commit-et-deploiement-preview.md) *(listes exactes, séparation des modifications antérieures, commandes, retour arrière)* · ⚠️ **la Preview suit `feat/c3-videos-refonte-final`, PAS `fix/mobile-publishing-p0`** : **commiter sur ma branche ne déploie RIEN** · **2.** **DÉCISION DE KYRIA** : **autoriser `R0`** *(créer UNE publication de test — c'est une écriture)* · **3.** **jouer `R1`–`R9` ENSEMBLE**, ⚠️ **dont SAFARI iPHONE RÉEL** · **4.** **seulement ensuite** : **classement du défaut**, **commit**, **déploiement** |
+| **Prochaine action** | ✅ **AUCUNE au titre de ce ticket — il est CLOS.** **Ce qui subsiste relève de DÉCISIONS de Kyria, hors de ce ticket** : **1.** **la FUSION du correctif** — ⛔ **il n'est PAS dans `main`** : **il vit sur `fix/mobile-publishing-p0` et sur la branche Preview**, **la PR 203 est un BROUILLON**, **et aucun accord de fusion n'a été donné** · **2.** **le prochain ticket** — ⛔ **aucun n'est actif** *(règle 15)* ; **deux sont SUSPENDUS** : **`MEDIA-MULTI-PHOTO-01`**, ⚠️ **dont le blocage de NETTOYAGE est LEVÉ sur Preview par ce correctif**, **et `SOCIAL-COMMENT-01`** *(`M5` dû)* · **3.** **l'exécution des specs Playwright en CI** — **lacune du dépôt, consignée dans `e07e809c`** · **4.** **`C3` et `C5`**, **acceptés pour cette livraison** · **5.** **`Dependency audit`**, **réserve préexistante du dépôt** · **6.** **l'API de Preview se déclare `environment: "prod"`** *(§6 quater.d)* — **à ouvrir comme ticket distinct**. ⚠️ **Retour arrière Preview toujours disponible** : **redéploiement des deux ID `bf008a87`** *(§6 quater.e)* |
 
 ---
 

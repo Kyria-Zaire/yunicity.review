@@ -2,43 +2,44 @@
 
 ## Objectif
 
-Lot 9 livré en Preview groupée 7+8+9 — **NON clos** ; recette CTO Preview restante.
+Lot 9 (ouverture / échec / états desktop) — livré en Preview groupée 7+8+9.
+
+## Statut
+
+✅ **CLOS** le 2026-11-16 — recette finale CTO confirmée (avec L7/L8 et VOILE)
+sur tip Preview **`cb028a72`**. Ne pas relancer la recette.
 
 ## État Git
 
 | | |
 |--|--|
-| SHA Preview | **`a30c9346`** sur `feat/c3-videos-refonte-final` |
-| Relevé | `docs/qa/LIVRAISON-PREVIEW-a30c9346-releve.md` |
+| SHA Preview (livraison groupée 7+8+9) | **`a30c9346`** |
+| Tip Preview à la clôture | **`cb028a72`** |
+| Branche Preview | `feat/c3-videos-refonte-final` |
+| Worktree | `yunicity-wt-video-lot1` |
 | Production / `main` | gelés |
 
 ## Documents importants
 
-- Bilan : `docs/qa/controle-rendu/l9-desktop/BILAN-CONSOLIDE-7-8-9.md`
-- Matrice / réserves / justification D2 sous `l9-desktop/`
-- Runtime Preview : `l9-desktop/preview-a30c9346-runtime.json`
+- Bilan : `docs/qa/controle-rendu/l9-desktop/BILAN-CONSOLIDE-7-8-9.md` (si présent)
+- Matrice / réserves sous `docs/qa/controle-rendu/l9-desktop/`
 
 ## Preuves acquises
 
-- BUILD local Next + API simulée (C4/C7/D2/F1=32/R-FOCUS)  
-- Preview réelle : health API 200, `/videos` 200, marqueurs desktop dans JS  
-- CI Frontend/Backend/Docker ✅ ; audit 45/60 constant  
-
-## Inconnues / réserves
-
-- Credentials réels D2 sur Preview  
-- Safari  
-- Recette visuelle CTO  
+- BUILD local Next + API simulée (C4/C7/D2/R-FOCUS)
+- Preview réelle à `a30c9346` : health / `/videos` 200 ; marqueurs desktop
+- CI Frontend/Backend/Docker ✅ ; audit 45/60 constant
+- Retour après connexion réelle + Safari iPhone validés sur **`2d0c48c4`** : **conservés**
 
 ## Décisions CTO
 
-- GO livraison Preview groupée 7+8+9 (15/11)  
+- GO livraison Preview groupée 7+8+9 (15/11)
+- Clôture L7/L8/L9 + VOILE après recette finale sur `cb028a72` (2026-11-16)
 
 ## Tâches actives
 
-1. Recette CTO Preview  
-2. Pas de clôture tant que non validé  
+Aucune — ticket **clos**.
 
 ## Prochaine action
 
-Recette humaine Preview ; tickets L7/L8/L9 restent ouverts.
+Aucune sur ce ticket.

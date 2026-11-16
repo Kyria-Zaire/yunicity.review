@@ -2,41 +2,43 @@
 
 ## Objectif
 
-Lot 8 (lecteur overlay + historique / R-FOCUS) livré en Preview groupée 7+8+9 — **NON clos**.
+Lot 8 (lecteur overlay + historique / R-FOCUS) — livré en Preview groupée 7+8+9.
+
+## Statut
+
+✅ **CLOS** le 2026-11-16 — recette finale CTO confirmée (avec L7/L9 et VOILE)
+sur tip Preview **`cb028a72`**. Ne pas relancer la recette.
 
 ## État Git
 
 | | |
 |--|--|
-| SHA code | **`a30c9346`** |
-| Tip branche | **`dd9a3516`** (relevé docs) |
-| Branche | `feat/c3-videos-refonte-final` |
+| SHA code (livraison groupée 7+8+9) | **`a30c9346`** |
+| Tip Preview à la clôture | **`cb028a72`** |
+| Branche Preview | `feat/c3-videos-refonte-final` |
+| Worktree | `yunicity-wt-video-lot1` |
 | Production / `main` | gelés |
 
 ## Documents importants
 
 - Preuves : `docs/qa/controle-rendu/l8-desktop/`
-- Relevé : `docs/qa/LIVRAISON-PREVIEW-a30c9346-releve.md`
+- Relevé : `docs/qa/LIVRAISON-PREVIEW-a30c9346-releve.md` (si présent)
 
 ## Preuves acquises
 
-- BUILD local accepté (Vitest 18/18, R-FOCUS ±1, gestes)
+- BUILD local accepté (Vitest, R-FOCUS ±1, gestes)
 - Inclus dans `a30c9346` ; Preview SUCCESS
-
-## Inconnues
-
-- Recette visuelle CTO Preview
-- Finitions C2 déjà traitées en L9 (F1–F10) — validation visuelle restante
+- Navigation / fermeture validées sur **`2d0c48c4`** : **conservées** (non réattribuées à `cb028a72`)
 
 ## Décisions CTO
 
 - Preview groupée 7+8+9
+- Clôture L7/L8/L9 + VOILE après recette finale sur `cb028a72` (2026-11-16)
 
 ## Tâches actives
 
-1. Recette CTO Preview  
-2. Pas de clôture
+Aucune — ticket **clos**.
 
 ## Prochaine action
 
-Recette humaine Preview ; ticket **NON clos**.
+Aucune sur ce ticket.
