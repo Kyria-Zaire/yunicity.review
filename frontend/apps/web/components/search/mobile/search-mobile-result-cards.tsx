@@ -82,7 +82,7 @@ function EventRow({
 }) {
   const content = (
     <div className="flex items-center gap-3">
-      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100">
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-yunicity-surface">
         <CalendarDays className="absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 text-emerald-600" aria-hidden />
         <span className="absolute bottom-1 right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-emerald-700 shadow-sm">
           <Camera className="h-3 w-3" aria-hidden />

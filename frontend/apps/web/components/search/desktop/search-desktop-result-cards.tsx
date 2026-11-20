@@ -88,7 +88,7 @@ function EventCard({
 }) {
   const content = (
     <article className="flex overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm transition hover:border-neutral-300">
-      <div className="flex w-28 shrink-0 items-center justify-center bg-gradient-to-br from-emerald-50 to-emerald-100">
+      <div className="flex w-28 shrink-0 items-center justify-center bg-yunicity-surface">
         <CalendarDays className="h-8 w-8 text-emerald-600" aria-hidden />
       </div>
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 p-4">
