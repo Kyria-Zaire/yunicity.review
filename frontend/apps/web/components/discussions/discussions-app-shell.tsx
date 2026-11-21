@@ -3,6 +3,8 @@
 import { CitizenTopNav } from "@/components/layout/citizen-top-nav";
 import { WebSidebar } from "@/components/layout/web-sidebar";
 import { WebMobileFooter, WebMobileHeader } from "@/components/layout/web-mobile-chrome";
+import { WebMobileStrategicBottomNav } from "@/components/layout/web-mobile-strategic-bottom-nav";
+import { CITIZEN_MOBILE_BOTTOM_NAV_PADDING } from "@/lib/layout/feed-mobile-refonte";
 import type { ReactNode } from "react";
 
 export function DiscussionsAppShell({
@@ -21,7 +23,7 @@ export function DiscussionsAppShell({
           <div className="web-desktop-discussions-only">
             <CitizenTopNav />
           </div>
-          <div className="flex gap-6 pb-16 lg:pb-20">
+          <div className={`flex gap-6 pb-16 lg:pb-20 ${CITIZEN_MOBILE_BOTTOM_NAV_PADDING}`}>
             {children}
             {rightRail ? (
               <aside className="hidden w-72 shrink-0 2xl:block">
@@ -32,6 +34,7 @@ export function DiscussionsAppShell({
         </main>
       </div>
       <WebMobileFooter />
+      <WebMobileStrategicBottomNav />
     </div>
   );
 }

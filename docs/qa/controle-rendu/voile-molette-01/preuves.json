@@ -1,0 +1,319 @@
+{
+  "base": "http://localhost:3002",
+  "api": "SIMULEE",
+  "startedAt": "2026-11-15T22:02:17.866Z",
+  "cases": [
+    {
+      "viewport": "1024x768",
+      "preLock": {
+        "scrollY": 480,
+        "gap": 0
+      },
+      "veil": {
+        "innerWidth": 1024,
+        "clientWidth": 1024,
+        "scrollGap": 0,
+        "bodyOverflow": "hidden",
+        "bodyPaddingRight": "",
+        "htmlOverflow": "hidden",
+        "htmlGutter": "auto",
+        "veil": {
+          "left": 0,
+          "right": 1024,
+          "top": 0,
+          "bottom": 768,
+          "width": 1024,
+          "height": 768,
+          "bg": "rgba(17, 24, 39, 0.85)",
+          "styleWidth": "100vw"
+        },
+        "coversViewport": true,
+        "sampleRight": {
+          "x": 1023,
+          "y": 384,
+          "tag": "DIV",
+          "isOverlay": true
+        },
+        "whiteBandLikely": false
+      },
+      "scrollOpen": 214,
+      "urls": {
+        "before": "http://localhost:3002/videos?video=p1",
+        "afterMouseDown": "http://localhost:3002/videos?video=l1",
+        "afterDown": "http://localhost:3002/videos?video=p2",
+        "afterUp": "http://localhost:3002/videos?video=l1",
+        "ctrlBase": "http://localhost:3002/videos?video=l1",
+        "ctrl": "http://localhost:3002/videos?video=l1"
+      },
+      "wheelNavigatedDown": true,
+      "mouseWheelNavigated": true,
+      "ctrlIgnored": true,
+      "panelScrollPreserved": true,
+      "restore": {
+        "scrollY": 214,
+        "bodyOverflow": "",
+        "bodyPaddingRight": "",
+        "htmlGutter": ""
+      },
+      "rFocusDelta": 0
+    },
+    {
+      "viewport": "1280x800",
+      "preLock": {
+        "scrollY": 480,
+        "gap": 0
+      },
+      "veil": {
+        "innerWidth": 1280,
+        "clientWidth": 1280,
+        "scrollGap": 0,
+        "bodyOverflow": "hidden",
+        "bodyPaddingRight": "",
+        "htmlOverflow": "hidden",
+        "htmlGutter": "auto",
+        "veil": {
+          "left": 0,
+          "right": 1280,
+          "top": 0,
+          "bottom": 800,
+          "width": 1280,
+          "height": 800,
+          "bg": "rgba(17, 24, 39, 0.85)",
+          "styleWidth": "100vw"
+        },
+        "coversViewport": true,
+        "sampleRight": {
+          "x": 1279,
+          "y": 400,
+          "tag": "DIV",
+          "isOverlay": true
+        },
+        "whiteBandLikely": false
+      },
+      "scrollOpen": 206,
+      "urls": {
+        "before": "http://localhost:3002/videos?video=p1",
+        "afterMouseDown": "http://localhost:3002/videos?video=l1",
+        "afterDown": "http://localhost:3002/videos?video=p2",
+        "afterUp": "http://localhost:3002/videos?video=l1",
+        "ctrlBase": "http://localhost:3002/videos?video=l1",
+        "ctrl": "http://localhost:3002/videos?video=l1"
+      },
+      "wheelNavigatedDown": true,
+      "mouseWheelNavigated": true,
+      "ctrlIgnored": true,
+      "panelScrollPreserved": true,
+      "restore": {
+        "scrollY": 206,
+        "bodyOverflow": "",
+        "bodyPaddingRight": "",
+        "htmlGutter": ""
+      },
+      "rFocusDelta": 0
+    },
+    {
+      "viewport": "1440x900",
+      "preLock": {
+        "scrollY": 480,
+        "gap": 0
+      },
+      "veil": {
+        "innerWidth": 1440,
+        "clientWidth": 1440,
+        "scrollGap": 0,
+        "bodyOverflow": "hidden",
+        "bodyPaddingRight": "",
+        "htmlOverflow": "hidden",
+        "htmlGutter": "auto",
+        "veil": {
+          "left": 0,
+          "right": 1440,
+          "top": 0,
+          "bottom": 900,
+          "width": 1440,
+          "height": 900,
+          "bg": "rgba(17, 24, 39, 0.85)",
+          "styleWidth": "100vw"
+        },
+        "coversViewport": true,
+        "sampleRight": {
+          "x": 1439,
+          "y": 450,
+          "tag": "DIV",
+          "isOverlay": true
+        },
+        "whiteBandLikely": false
+      },
+      "scrollOpen": 206,
+      "urls": {
+        "before": "http://localhost:3002/videos?video=p1",
+        "afterMouseDown": "http://localhost:3002/videos?video=l1",
+        "afterDown": "http://localhost:3002/videos?video=p2",
+        "afterUp": "http://localhost:3002/videos?video=l1",
+        "ctrlBase": "http://localhost:3002/videos?video=l1",
+        "ctrl": "http://localhost:3002/videos?video=l1"
+      },
+      "wheelNavigatedDown": true,
+      "mouseWheelNavigated": true,
+      "ctrlIgnored": true,
+      "panelScrollPreserved": true,
+      "restore": {
+        "scrollY": 206,
+        "bodyOverflow": "",
+        "bodyPaddingRight": "",
+        "htmlGutter": ""
+      },
+      "rFocusDelta": 0
+    },
+    {
+      "viewport": "1920x1080",
+      "preLock": {
+        "scrollY": 480,
+        "gap": 0
+      },
+      "veil": {
+        "innerWidth": 1920,
+        "clientWidth": 1920,
+        "scrollGap": 0,
+        "bodyOverflow": "hidden",
+        "bodyPaddingRight": "",
+        "htmlOverflow": "hidden",
+        "htmlGutter": "auto",
+        "veil": {
+          "left": 0,
+          "right": 1920,
+          "top": 0,
+          "bottom": 1080,
+          "width": 1920,
+          "height": 1080,
+          "bg": "rgba(17, 24, 39, 0.85)",
+          "styleWidth": "100vw"
+        },
+        "coversViewport": true,
+        "sampleRight": {
+          "x": 1919,
+          "y": 540,
+          "tag": "DIV",
+          "isOverlay": true
+        },
+        "whiteBandLikely": false
+      },
+      "scrollOpen": 206,
+      "urls": {
+        "before": "http://localhost:3002/videos?video=p1",
+        "afterMouseDown": "http://localhost:3002/videos?video=l1",
+        "afterDown": "http://localhost:3002/videos?video=p2",
+        "afterUp": "http://localhost:3002/videos?video=l1",
+        "ctrlBase": "http://localhost:3002/videos?video=l1",
+        "ctrl": "http://localhost:3002/videos?video=l1"
+      },
+      "wheelNavigatedDown": true,
+      "mouseWheelNavigated": true,
+      "ctrlIgnored": true,
+      "panelScrollPreserved": true,
+      "restore": {
+        "scrollY": 206,
+        "bodyOverflow": "",
+        "bodyPaddingRight": "",
+        "htmlGutter": ""
+      },
+      "rFocusDelta": 0
+    }
+  ],
+  "inertia": {
+    "url0": "http://localhost:3002/videos?video=p1",
+    "afterImpulse": "http://localhost:3002/videos?video=l1",
+    "afterTail": "http://localhost:3002/videos?video=l1",
+    "id0": "p1",
+    "idImpulse": "l1",
+    "idTail": "l1",
+    "navigatedOnce": true,
+    "noSecondJump": true,
+    "singleStep": true
+  },
+  "openCloseCycles": {
+    "cycles": [
+      {
+        "openMetrics": {
+          "pad": "",
+          "overflow": "hidden",
+          "htmlOverflow": "hidden",
+          "scrollW": 1440,
+          "clientW": 1440,
+          "scrollY": 206
+        },
+        "closed": {
+          "pad": "",
+          "overflow": "",
+          "htmlOverflow": "",
+          "htmlGutter": "",
+          "scrollW": 1440,
+          "clientW": 1440,
+          "scrollY": 206
+        },
+        "rFocusDelta": 0,
+        "noHOverflowClosed": true,
+        "stylesRestored": true
+      },
+      {
+        "openMetrics": {
+          "pad": "",
+          "overflow": "hidden",
+          "htmlOverflow": "hidden",
+          "scrollW": 1440,
+          "clientW": 1440,
+          "scrollY": 206
+        },
+        "closed": {
+          "pad": "",
+          "overflow": "",
+          "htmlOverflow": "",
+          "htmlGutter": "",
+          "scrollW": 1440,
+          "clientW": 1440,
+          "scrollY": 206
+        },
+        "rFocusDelta": 0,
+        "noHOverflowClosed": true,
+        "stylesRestored": true
+      },
+      {
+        "openMetrics": {
+          "pad": "",
+          "overflow": "hidden",
+          "htmlOverflow": "hidden",
+          "scrollW": 1440,
+          "clientW": 1440,
+          "scrollY": 206
+        },
+        "closed": {
+          "pad": "",
+          "overflow": "",
+          "htmlOverflow": "",
+          "htmlGutter": "",
+          "scrollW": 1440,
+          "clientW": 1440,
+          "scrollY": 206
+        },
+        "rFocusDelta": 0,
+        "noHOverflowClosed": true,
+        "stylesRestored": true
+      }
+    ],
+    "paddingNotCumulative": true,
+    "allRestored": true,
+    "allRFocus": true,
+    "noHOverflow": true
+  },
+  "bounds": {
+    "atEnd": "http://localhost:3002/videos?video=l2",
+    "stillEnd": "http://localhost:3002/videos?video=l2",
+    "endHeld": true,
+    "reachedLast": true,
+    "atStart": "http://localhost:3002/videos?video=p1",
+    "stillStart": "http://localhost:3002/videos?video=p1",
+    "startHeld": true,
+    "reachedFirst": true
+  },
+  "finishedAt": "2026-11-15T22:03:04.877Z"
+}

@@ -8,6 +8,9 @@ export const PASSPORT_LEVEL_SECTION_TITLE = "Votre niveau";
 
 export const PASSPORT_LEVEL_ABOUT_TITLE = "À propos de votre niveau";
 
+/** Aucun tier reconnu par le contrat n'est connu (PASSPORT-LEVEL-SCALE-01, décision D3). */
+export const PASSPORT_LEVEL_UNAVAILABLE_LABEL = "Niveau indisponible";
+
 export const PASSPORT_LEVEL_PROGRESS_HINT =
   "Votre progression reflète votre participation réelle sur le territoire — pas votre temps d’écran.";
 

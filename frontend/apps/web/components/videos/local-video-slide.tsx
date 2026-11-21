@@ -2,208 +2,378 @@
 
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import {
-  LOCAL_VIDEO_DEFAULT_MUTED,
-  buildVideoTerritoryLines,
-  isDoubleTap,
+  LOCAL_VIDEO_PLAYBACK_FALLBACK,
+  LOCAL_VIDEO_SHARED_BADGE,
   isLocalVideoFeedItemProcessing,
-  resolveVideoGoCta,
+  resolveLocalVideoLayout,
+  resolveLocalVideoLayoutFromDims,
 } from "@yunicity/utils";
-import { Heart, MoreVertical, Pause, Play, Volume2, VolumeX } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Link2, Volume2, VolumeX } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
-import { LocalVideoProcessingSlide } from "@/components/videos/local-video-processing-slide";
 import { LocalVideoActionRail } from "@/components/videos/local-video-action-rail";
-import { LocalVideoGoCta } from "@/components/videos/local-video-go-cta";
-import { LocalVideoMetaStrip } from "@/components/videos/local-video-meta-strip";
-import { LocalVideoTerritoryBanner } from "@/components/videos/local-video-territory-banner";
+import { LocalVideoMobileMetaOverlay } from "@/components/videos/local-video-mobile-meta-overlay";
+import { LocalVideoPlaybackBar } from "@/components/videos/local-video-playback-bar";
+import { LocalVideoProcessingSlide } from "@/components/videos/local-video-processing-slide";
+import { LocalVideoProgressThread } from "@/components/videos/local-video-progress-thread";
+import {
+  LocalVideoLandscapeStage,
+  LocalVideoMediumLandscapeStage,
+  LocalVideoMediumPortraitStage,
+  LocalVideoPortraitFrame,
+} from "@/components/videos/local-video-slide-frames";
+import { LocalVideoSlideOverlays } from "@/components/videos/local-video-slide-overlays";
+import { useSlideChrome } from "@/hooks/use-slide-chrome";
+import { usePauseWhileOpen } from "@/hooks/use-pause-while-open";
+import { useSlideGestures } from "@/hooks/use-slide-gestures";
+import { VIDEO_IMMERSIVE_FOCUS } from "@/lib/videos/video-playback-a11y";
 
-const SINGLE_TAP_DELAY_MS = 260;
+/** Diapositive inactive : inert + aria-hidden pour exclure clavier et TA sans démonter le snap. */
+function useSlideInert(articleRef: RefObject<HTMLElement | null>, isActive: boolean): void {
+  useEffect(() => {
+    const element = articleRef.current;
+    if (!element) return;
+    element.inert = !isActive;
+    if (isActive) {
+      element.removeAttribute("aria-hidden");
+    } else {
+      element.setAttribute("aria-hidden", "true");
+    }
+  }, [articleRef, isActive]);
+}
+
+type FullscreenCapableVideo = HTMLVideoElement & { webkitEnterFullscreen?: () => void };
+
+/** Plein écran : API standard, sinon lecteur natif d'iOS (Safari iPhone n'a pas la première). */
+function enterVideoFullscreen(video: FullscreenCapableVideo | null): void {
+  if (!video) return;
+  if (typeof video.requestFullscreen === "function") {
+    video.requestFullscreen().catch(() => video.webkitEnterFullscreen?.());
+    return;
+  }
+  video.webkitEnterFullscreen?.();
+}
 
 type LocalVideoSlideProps = {
   item: LocalVideoFeedItem;
   isActive: boolean;
+  /** Son coupé : réglage du fil (pastille de la barre haute), commun à toutes les vidéos. */
+  isMuted: boolean;
+  pointerOverFeed?: boolean;
   processingError?: string | null;
   onDismissProcessing?: () => void;
   onOpenComments: () => void;
   onToggleLike: () => void;
   onShare: () => void;
-  onOpenReport: () => void;
+  /** « … » (écran I) ; reçoit le bouton, cible du retour du focus. */
+  onOpenMore: (trigger: HTMLElement) => void;
+  /** « plus » de la légende (écran E) ; reçoit le bouton. */
+  onOpenDescription: (trigger: HTMLElement) => void;
+  /** Un panneau est ouvert sur cette vidéo : pause, reprise seulement si elle jouait. */
+  suspended?: boolean;
+  onChromeVisibleChange?: (visible: boolean) => void;
+  /**
+   * `immersive` : mobile plein cadre (défaut).
+   * `medium` : v1.2 — cadre au ratio média + colonne latérale (≠ R-PAN).
+   */
+  presentation?: "immersive" | "medium";
+  mediumNav?: {
+    onPrevious: () => void;
+    onNext: () => void;
+    canPrevious: boolean;
+    canNext: boolean;
+  } | null;
+  /** Medium : bascule son (bouton dans le cadre vidéo, maquette v1.2). */
+  onToggleMute?: () => void;
+  /** Medium : badge « Vidéo partagée » dans le cadre (une seule fois). */
+  showSharedBadge?: boolean;
 };
 
+/**
+ * Diapositive du fil immersif mobile v2.3 (écrans A, B, C, D, K, L).
+ * Appui : pause et retour de la barre ; second appui : reprise ; double appui : J'aime.
+ */
 export function LocalVideoSlide({
   item,
   isActive,
+  isMuted,
+  pointerOverFeed = false,
   processingError,
   onDismissProcessing,
   onOpenComments,
   onToggleLike,
   onShare,
-  onOpenReport,
+  onOpenMore,
+  onOpenDescription,
+  suspended = false,
+  onChromeVisibleChange,
+  presentation = "immersive",
+  mediumNav = null,
+  onToggleMute,
+  showSharedBadge = false,
 }: LocalVideoSlideProps) {
+  const articleRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const lastTapAtRef = useRef<number | null>(null);
-  const singleTapTimerRef = useRef<number | null>(null);
+  const bandRef = useRef<HTMLDivElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
+  useSlideInert(articleRef, isActive);
   const [isPaused, setIsPaused] = useState(false);
-  const [isMuted, setIsMuted] = useState(LOCAL_VIDEO_DEFAULT_MUTED);
-  const [showPauseHint, setShowPauseHint] = useState(false);
-  const [likeBurst, setLikeBurst] = useState(false);
-  const [likeAnimating, setLikeAnimating] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [mediaError, setMediaError] = useState(false);
+  /** Intrinsèques lues une fois si l'API n'a pas de dimensions — évite un basculement paysage→portrait. */
+  const [probedDims, setProbedDims] = useState<{ width: number; height: number } | null>(null);
 
-  const territory = buildVideoTerritoryLines(item);
-  const cta = resolveVideoGoCta(item);
+  // Remise à zéro par vidéo, déclarée AVANT les hooks de lecture : ses effets s'exécutent
+  // ensuite et peuvent mettre en pause (panneau déjà ouvert) sans être écrasés ici.
+  useEffect(() => {
+    setCurrentTime(0);
+    setIsPaused(false);
+    setMediaError(false);
+    setProbedDims(null);
+  }, [item.id]);
+
+  const containers = useMemo(() => [bandRef, actionsRef] as const, []);
+  const chrome = useSlideChrome({ itemId: item.id, isActive, isPaused, pointerOverFeed, containers, onChromeVisibleChange });
+  const { chromeVisible, revealChrome } = chrome;
+  const gestures = useSlideGestures({
+    likedByMe: item.liked_by_me,
+    isPlaying: isActive && !isPaused,
+    chrome,
+    setIsPaused,
+    onToggleLike,
+  });
+  const { togglePause } = gestures;
+  usePauseWhileOpen(suspended, isActive && !isPaused, setIsPaused);
+
+  const mediaWidth = item.media_width ?? probedDims?.width ?? null;
+  const mediaHeight = item.media_height ?? probedDims?.height ?? null;
+  const resolvedLayout =
+    presentation === "medium"
+      ? resolveLocalVideoLayoutFromDims(mediaWidth, mediaHeight)
+      : resolveLocalVideoLayout(item);
+  // Medium sans dims : attendre les métadonnées (pas de composition inventée).
+  const layout = resolvedLayout ?? (presentation === "medium" ? null : "landscape");
+  const isPortrait = layout === "portrait";
+  const duration = item.duration_seconds ?? 0;
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || mediaError) return;
     if (isActive && !isPaused) {
       void video.play().catch(() => setIsPaused(true));
     } else {
       video.pause();
     }
-  }, [isActive, isPaused]);
+  }, [isActive, isPaused, mediaError]);
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
-    video.muted = isMuted;
+    if (video) video.muted = isMuted;
   }, [isMuted]);
 
-  useEffect(() => {
-    return () => {
-      if (singleTapTimerRef.current != null) {
-        window.clearTimeout(singleTapTimerRef.current);
-      }
-    };
+  const handleMediaError = useCallback(() => {
+    setMediaError(true);
+    setIsPaused(true);
+    videoRef.current?.pause();
   }, []);
 
-  const triggerLikeFeedback = useCallback(() => {
-    setLikeBurst(true);
-    setLikeAnimating(true);
-    window.setTimeout(() => setLikeBurst(false), 700);
-    window.setTimeout(() => setLikeAnimating(false), 220);
-  }, []);
+  const handleSeek = useCallback(
+    (ratio: number) => {
+      const video = videoRef.current;
+      if (!video || duration <= 0) return;
+      video.currentTime = ratio * duration;
+      setCurrentTime(video.currentTime);
+      revealChrome(true);
+    },
+    [duration, revealChrome],
+  );
 
-  const handleLike = useCallback(() => {
-    triggerLikeFeedback();
-    onToggleLike();
-  }, [onToggleLike, triggerLikeFeedback]);
-
-  const togglePause = useCallback(() => {
-    setIsPaused((value) => !value);
-    setShowPauseHint(true);
-    window.setTimeout(() => setShowPauseHint(false), 500);
-  }, []);
-
-  const handleVideoTap = useCallback(() => {
-    const now = Date.now();
-    if (isDoubleTap(lastTapAtRef.current, now)) {
-      if (singleTapTimerRef.current != null) {
-        window.clearTimeout(singleTapTimerRef.current);
-        singleTapTimerRef.current = null;
-      }
-      lastTapAtRef.current = null;
-      if (!item.liked_by_me) {
-        handleLike();
-      } else {
-        triggerLikeFeedback();
-      }
-      return;
-    }
-
-    lastTapAtRef.current = now;
-    singleTapTimerRef.current = window.setTimeout(() => {
-      togglePause();
-      singleTapTimerRef.current = null;
-    }, SINGLE_TAP_DELAY_MS);
-  }, [handleLike, item.liked_by_me, togglePause, triggerLikeFeedback]);
-
-  const toggleMute = useCallback(() => {
-    setIsMuted((value) => !value);
-  }, []);
+  const resumeOrPause = useCallback(() => {
+    revealChrome(true);
+    togglePause();
+  }, [revealChrome, togglePause]);
 
   if (isLocalVideoFeedItemProcessing(item)) {
     return (
-      <LocalVideoProcessingSlide
-        item={item}
-        errorMessage={processingError}
-        onDismiss={onDismissProcessing}
-      />
+      <LocalVideoProcessingSlide item={item} errorMessage={processingError} onDismiss={onDismissProcessing} isActive={isActive} />
     );
   }
 
-  return (
-    <article
-      data-video-slide-id={item.id}
-      className="relative h-[100dvh] w-full snap-start snap-always overflow-hidden bg-black md:h-[calc(100dvh-6rem)] md:rounded-2xl"
-    >
+  const objectFitClass =
+    presentation === "medium"
+      ? isPortrait
+        ? "object-cover"
+        : "object-contain"
+      : isPortrait
+        ? "object-cover"
+        : "object-contain";
+
+  const sharedBadgeNode =
+    presentation === "medium" && showSharedBadge ? (
+      <div
+        role="status"
+        className="pointer-events-none absolute left-3 top-3 z-20 flex h-8 items-center gap-1.5 rounded-full bg-[rgba(17,24,39,0.75)] px-3 text-[13px] font-semibold text-white"
+        data-videos-medium-shared-badge=""
+      >
+        <Link2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        {LOCAL_VIDEO_SHARED_BADGE}
+      </div>
+    ) : null;
+
+  const parts = {
+    video: (
       <video
         ref={videoRef}
         src={item.media_url}
         poster={item.thumbnail_url}
-        className="absolute inset-0 h-full w-full object-cover"
+        className={`absolute inset-0 h-full w-full ${objectFitClass}`}
         playsInline
         loop
         muted={isMuted}
         preload="metadata"
-        onClick={handleVideoTap}
+        onClick={gestures.handleVideoTap}
+        onError={handleMediaError}
+        onLoadedMetadata={() => {
+          if (item.media_width && item.media_height) return;
+          const element = videoRef.current;
+          if (!element || element.videoWidth <= 0 || element.videoHeight <= 0) return;
+          setProbedDims((prev) => prev ?? { width: element.videoWidth, height: element.videoHeight });
+        }}
+        onTimeUpdate={() => {
+          const element = videoRef.current;
+          if (element) setCurrentTime(element.currentTime);
+        }}
+      >
+        {LOCAL_VIDEO_PLAYBACK_FALLBACK}
+      </video>
+    ),
+    overlays: (
+      <LocalVideoSlideOverlays
+        mediaError={mediaError}
+        isPaused={isPaused}
+        showResumeHint={gestures.showResumeHint}
+        likeBurst={gestures.likeBurst}
+        suspended={suspended}
+        onResume={resumeOrPause}
       />
-
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-neutral-950/90 via-neutral-950/50 to-transparent" />
-
-      <div className="absolute left-4 top-4 z-10 pt-[env(safe-area-inset-top)] md:top-3">
-        <LocalVideoTerritoryBanner lines={territory} />
-      </div>
-
-      <div className="absolute right-4 top-4 z-10 flex items-center gap-2 pt-[env(safe-area-inset-top)] md:top-3">
+    ),
+    meta: (
+      <LocalVideoMobileMetaOverlay
+        item={item}
+        surface={presentation === "medium" && layout === "landscape" ? "panel" : "overlay"}
+        onExpandDescription={(trigger) => {
+          revealChrome(true);
+          onOpenDescription(trigger);
+        }}
+      />
+    ),
+    bar: chromeVisible ? (
+      <LocalVideoPlaybackBar
+        currentTime={currentTime}
+        duration={duration}
+        isPaused={isPaused}
+        onTogglePause={resumeOrPause}
+        onSeek={handleSeek}
+      />
+    ) : null,
+    thread: chromeVisible ? null : <LocalVideoProgressThread currentTime={currentTime} duration={duration} />,
+    actions: (
+      <LocalVideoActionRail
+        likeCount={item.like_count}
+        commentCount={item.comment_count}
+        likedByMe={item.liked_by_me}
+        likeAnimating={gestures.likeAnimating}
+        surface={
+          presentation === "medium" ? "side" : isPortrait ? "overlay" : "stage"
+        }
+        onLikeClick={gestures.handleLike}
+        onCommentsClick={() => {
+          revealChrome(true);
+          onOpenComments();
+        }}
+        onShareClick={() => {
+          revealChrome(true);
+          onShare();
+        }}
+        onMoreClick={(trigger) => {
+          revealChrome(true);
+          onOpenMore(trigger);
+        }}
+      />
+    ),
+    muteControl:
+      presentation === "medium" && onToggleMute ? (
         <button
           type="button"
-          onClick={onOpenReport}
-          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-neutral-900/55 text-white backdrop-blur-sm"
-          aria-label="Options de la vidéo"
-        >
-          <MoreVertical className="h-5 w-5" aria-hidden />
-        </button>
-        <button
-          type="button"
-          onClick={toggleMute}
-          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-neutral-900/55 text-white backdrop-blur-sm"
           aria-label={isMuted ? "Activer le son" : "Couper le son"}
+          onClick={onToggleMute}
+          className={`absolute right-1.5 top-1.5 z-20 flex h-11 w-11 items-center justify-center text-white ${VIDEO_IMMERSIVE_FOCUS}`}
         >
-          {isMuted ? <VolumeX className="h-5 w-5" aria-hidden /> : <Volume2 className="h-5 w-5" aria-hidden />}
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(17,24,39,0.6)]">
+            {isMuted ? (
+              <VolumeX className="h-[18px] w-[18px]" aria-hidden />
+            ) : (
+              <Volume2 className="h-[18px] w-[18px]" aria-hidden />
+            )}
+          </span>
         </button>
-      </div>
+      ) : null,
+    bandRef,
+    actionsRef,
+    onChromeFocus: chrome.handleChromeFocus,
+    onChromeBlur: chrome.handleChromeBlur,
+  };
 
-      {showPauseHint ? (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          {isPaused ? (
-            <Play className="h-16 w-16 text-white/90" aria-hidden />
-          ) : (
-            <Pause className="h-16 w-16 text-white/90" aria-hidden />
-          )}
-        </div>
-      ) : null}
+  const mediumReady = presentation === "medium" && layout != null;
+  const mediumPortrait = mediumReady && isPortrait;
+  const mediumLandscape = mediumReady && !isPortrait;
 
-      {likeBurst ? (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <Heart className="h-24 w-24 animate-ping text-rose-400/90 fill-rose-400/80" aria-hidden />
-        </div>
-      ) : null}
-
-      <div className="pointer-events-auto absolute inset-x-0 bottom-0 z-10 flex items-end gap-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <div className="min-w-0 flex-1 space-y-3 pb-1">
-          <LocalVideoMetaStrip item={item} />
-          <LocalVideoGoCta cta={cta} />
-        </div>
-        <LocalVideoActionRail
-          likeCount={item.like_count}
-          commentCount={item.comment_count}
-          likedByMe={item.liked_by_me}
-          likeAnimating={likeAnimating}
-          onLikeClick={() => void handleLike()}
-          onCommentsClick={onOpenComments}
-          onShareClick={() => void onShare()}
+  return (
+    <article
+      ref={articleRef}
+      data-video-slide-id={item.id}
+      data-videos-media-layout={layout ?? "pending"}
+      data-videos-slide-presentation={presentation}
+      data-videos-slide-chrome-visible={chromeVisible ? "" : undefined}
+      className={`relative h-full min-h-full w-full snap-start snap-always overflow-hidden ${
+        presentation === "medium" ? "bg-white" : isPortrait ? "bg-black" : "bg-[#111827]"
+      }`}
+    >
+      {mediumPortrait ? (
+        <LocalVideoMediumPortraitStage
+          {...parts}
+          nav={isActive ? mediumNav : null}
+          mediaWidth={mediaWidth}
+          mediaHeight={mediaHeight}
+          sharedBadge={sharedBadgeNode}
         />
-      </div>
+      ) : mediumLandscape ? (
+        <LocalVideoMediumLandscapeStage
+          {...parts}
+          nav={isActive ? mediumNav : null}
+          mediaWidth={mediaWidth}
+          mediaHeight={mediaHeight}
+          sharedBadge={sharedBadgeNode}
+          onFullscreen={() => enterVideoFullscreen(videoRef.current)}
+        />
+      ) : presentation === "medium" ? (
+        <div
+          className="relative h-full w-full bg-white"
+          data-videos-medium-layout-pending=""
+          aria-busy="true"
+        >
+          {/* Vidéo montée (métadonnées) sans composer une fausse orientation. */}
+          <div className="pointer-events-none absolute inset-0 opacity-0">{parts.video}</div>
+        </div>
+      ) : isPortrait ? (
+        <LocalVideoPortraitFrame {...parts} />
+      ) : (
+        <LocalVideoLandscapeStage
+          {...parts}
+          aspectRatio={`${mediaWidth ?? 16} / ${mediaHeight ?? 9}`}
+          onFullscreen={() => enterVideoFullscreen(videoRef.current)}
+        />
+      )}
     </article>
   );
 }

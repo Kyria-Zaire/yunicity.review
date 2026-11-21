@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import type { Locator, Page } from "@playwright/test";
 
-import { CITIZEN_A_EMAIL, expect, test } from "../fixtures";
+import { CITIZEN_A_EMAIL, expect, testCitizen as test } from "../fixtures";
 import { COLD_START_TEST_TIMEOUT, COLD_START_TIMEOUT, gotoCold } from "../cold-start";
 import {
   assertBottomNavUnreachable,

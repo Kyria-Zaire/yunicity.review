@@ -18,13 +18,17 @@
  */
 
 /** Surfaces qui posent un déclencheur Create Hub. */
-export type CreateHubSurface = "default" | "citizen-medium-rail";
+export type CreateHubSurface = "default" | "citizen-medium-rail" | "citizen-top-nav";
 
 /**
  * Toutes les surfaces connues. Sert à dériver la disponibilité d'une route sans
  * recopier la liste — le provider ne rend qu'un dialogue pour toutes.
  */
-export const CREATE_HUB_SURFACES: readonly CreateHubSurface[] = ["default", "citizen-medium-rail"];
+export const CREATE_HUB_SURFACES: readonly CreateHubSurface[] = [
+  "default",
+  "citizen-medium-rail",
+  "citizen-top-nav",
+];
 
 /**
  * Routes où le Create Hub est masqué sur TOUTES les surfaces : écran de
@@ -35,7 +39,11 @@ export const CREATE_HUB_HIDDEN_PATH_PREFIXES: readonly string[] = [
   "/register",
   "/videos/new",
   "/stories/new",
-  "/feed/new",
+  "/discussions/new",
+  // ⚠️ `/feed/new` n'y figure plus (FEED-NEW-UX-01, exception à R1E) : les
+  // planches validées y montrent « Créer » au rail et le « + » mobile. Le
+  // brouillon est protégé par la garde de sortie de l'écran.
+  "/sortir/create",
 ];
 
 /**
@@ -45,6 +53,15 @@ export const CREATE_HUB_HIDDEN_PATH_PREFIXES: readonly string[] = [
  * relèvent de leur propre règle (`/videos/new` est masqué partout).
  */
 const CREATE_HUB_MEDIUM_RAIL_ONLY_PATHS: readonly string[] = ["/videos"];
+
+/**
+ * Routes où la top nav DESKTOP ne pose pas « Créer », alors que le rail medium
+ * et la barre basse mobile le posent (FEED-NEW-UX-01) : la planche desktop
+ * validée de `/feed/new` n'a pas de bouton « Créer » dans sa barre haute, et
+ * l'exception à R1E décidée par Kyria ne vise que le rail medium et le « + »
+ * mobile. Comparaison EXACTE.
+ */
+const CREATE_HUB_HIDDEN_ON_TOP_NAV_PATHS: readonly string[] = ["/feed/new"];
 
 /** Préfixes réservés — pages auth / onboarding sans chrome create. */
 export const CREATE_HUB_HIDDEN_AUTH_PREFIXES: readonly string[] = ["/login", "/register"];
@@ -86,6 +103,10 @@ export function resolveCreateHubVisibility({
 
   if (CREATE_HUB_MEDIUM_RAIL_ONLY_PATHS.includes(normalized)) {
     return surface === "citizen-medium-rail";
+  }
+
+  if (surface === "citizen-top-nav" && CREATE_HUB_HIDDEN_ON_TOP_NAV_PATHS.includes(normalized)) {
+    return false;
   }
 
   return true;

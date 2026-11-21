@@ -4,7 +4,6 @@ import type { VideosPortalTabId } from "@yunicity/utils";
 import {
   VIDEOS_MOBILE_TAB_FOR_YOU,
   VIDEOS_TAB_NEW,
-  VIDEOS_TAB_SUBSCRIPTIONS,
   VIDEOS_TAB_TRENDING,
 } from "@yunicity/utils";
 
@@ -12,7 +11,6 @@ const MOBILE_TABS: { id: VideosPortalTabId; label: string }[] = [
   { id: "all", label: VIDEOS_MOBILE_TAB_FOR_YOU },
   { id: "trending", label: VIDEOS_TAB_TRENDING },
   { id: "new", label: VIDEOS_TAB_NEW },
-  { id: "subscriptions", label: VIDEOS_TAB_SUBSCRIPTIONS },
 ];
 
 type VideosMobileViewPillsProps = {

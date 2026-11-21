@@ -6,6 +6,7 @@ import {
   FEED_PORTAL_FOR_YOU_HINT,
   FEED_PORTAL_POPULAR_HINT,
   PROFILE_INTERESTS,
+  PUBLICATION_DELETE_DONE,
   buildFeedDesktopMoments,
   buildFeedHighlightEvents,
   filterFeedPostsByView,
@@ -31,10 +32,7 @@ import {
   feedEnrichmentForScope,
   resolveFeedEnrichmentSnapshot,
 } from "@/lib/feed/feed-enrichment-snapshot";
-import {
-  buildFeedStream,
-  filterFeedContextFamiliesForDesktop,
-} from "@/lib/feed/feed-stream";
+import { buildFeedStream } from "@/lib/feed/feed-stream";
 import {
   isFeedMediumInterestFilterActive,
   resetFeedMediumFilterActivation,
@@ -82,6 +80,7 @@ export function FeedDataController() {
   const [interestFilterActive, setInterestFilterActive] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [reportMessage, setReportMessage] = useState<string | null>(null);
+  const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
   const filterTriggerRef = useRef<HTMLButtonElement | null>(null);
   const feed = useFeed({
     scopeKey: `${activeView}:${leftNav ?? "main"}:${interestFilterActive}`,
@@ -99,6 +98,7 @@ export function FeedDataController() {
     isLoadingMore,
     createPost,
     toggleLike,
+    deletePost,
   } = feed;
 
   useEffect(() => {
@@ -107,12 +107,21 @@ export function FeedDataController() {
 
   const city = portal.city || user?.city || "Reims";
 
-  // Rails Desktop : armés au premier affichage réel du rail (≥1280px), jamais
-  // désarmés → aucun refetch lorsque la largeur retraverse 1280px.
+  // Rails Desktop : armés au premier affichage réel du rail (≥1024px), jamais
+  // désarmés → aucun refetch lorsque la largeur retraverse 1024px.
   const { ref: desktopProbeRef, activated: desktopRailsEnabled } =
     useVisibleActivation<HTMLElement>();
 
-  const passportRail = usePassportFeedRail(desktopRailsEnabled);
+  // FEED-MAIN-LAYOUT-UIUX-01 §7 — le Passeport n'est plus un module Desktop : il
+  // vit aussi dans la colonne centrale sous 1024px, la ou le rail droit est
+  // masque. Le rail seul ne peut donc plus armer sa requete, sinon le module
+  // compact resterait indefiniment en chargement sur mobile et medium. Seconde
+  // sonde, meme mecanique fail-closed : chaque emplacement arme quand il est
+  // reellement visible, et un seul des deux l'est a une largeur donnee.
+  const { ref: compactPassportProbeRef, activated: compactPassportEnabled } =
+    useVisibleActivation<HTMLDivElement>();
+
+  const passportRail = usePassportFeedRail(desktopRailsEnabled || compactPassportEnabled);
   const weatherRail = useCurrentWeather({
     city: desktopRailsEnabled ? city : "",
   });
@@ -250,9 +259,7 @@ export function FeedDataController() {
         activeView,
         {
           availableContextFamilies: streamIsContextual
-            ? filterFeedContextFamiliesForDesktop(
-                renderedEnrichment?.families ?? [],
-              )
+            ? (renderedEnrichment?.families ?? [])
             : [],
         },
       ),
@@ -312,6 +319,19 @@ export function FeedDataController() {
     await createPost(body, mediaUrl);
   }
 
+  /**
+   * Suppression de SA publication (PROFILE-POST-MENU-01).
+   *
+   * L'erreur est VOLONTAIREMENT laissée remonter : c'est la confirmation
+   * ouverte dans la carte qui l'affiche et autorise un nouvel essai. L'avaler
+   * ici fermerait la modale sans rien supprimer.
+   */
+  async function handleDeletePost(postId: string) {
+    await deletePost(postId);
+    setDeleteMessage(PUBLICATION_DELETE_DONE);
+    setTimeout(() => setDeleteMessage(null), 4000);
+  }
+
   async function handleReport(postId: string, reason: FeedReportReason) {
     await api.reportFeedPost(postId, { reason });
     setReportMessage("Merci, votre signalement a été transmis à l'équipe.");
@@ -356,7 +376,11 @@ export function FeedDataController() {
           highlightOffer={renderedEnrichment?.highlightOffer ?? null}
           weather={weatherRailData}
           passport={passportRailData}
+          eventsLoading={portal.loading}
+          eventsError={portal.eventsError}
+          onRetryEvents={portal.reload}
           desktopProbeRef={desktopProbeRef}
+          compactPassportProbeRef={compactPassportProbeRef}
           showSaved={showSaved}
           stream={desktopStream}
           streamLoading={streamLoading}
@@ -365,6 +389,7 @@ export function FeedDataController() {
           savedEvents={portal.savedEvents}
           onToggleLike={toggleLike}
           onReport={handleReport}
+          onDeletePost={handleDeletePost}
           onRefresh={() => void refresh()}
           hasNextPage={hasNextPage}
           isLoadingMore={isLoadingMore}
@@ -372,6 +397,7 @@ export function FeedDataController() {
           onLoadMore={loadMore}
           viewHint={viewHint}
           reportMessage={reportMessage}
+          deleteMessage={deleteMessage}
           interestFilterBlockedCount={items.length}
           onDisableInterestFilter={() => setInterestFilterActive(false)}
         />

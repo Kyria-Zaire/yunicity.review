@@ -2,11 +2,16 @@ import type { OrganizationType } from "@yunicity/types";
 
 import { resolveCityMapCenter } from "./map-city-defaults";
 import {
-  ORG_REQUEST_STEP_DETAILS,
-  ORG_REQUEST_STEP_INFO,
-  ORG_REQUEST_STEP_PHOTOS,
-  ORG_REQUEST_STEP_PUBLISH,
-  ORG_REQUEST_STEP_REVIEW,
+  ORG_REQUEST_STEP_ADDRESS,
+  ORG_REQUEST_STEP_ADDRESS_HINT,
+  ORG_REQUEST_STEP_IDENTITY,
+  ORG_REQUEST_STEP_IDENTITY_HINT,
+  ORG_REQUEST_STEP_PRACTICAL,
+  ORG_REQUEST_STEP_PRACTICAL_HINT,
+  ORG_REQUEST_STEP_VERIFICATION,
+  ORG_REQUEST_STEP_VERIFICATION_HINT,
+  ORG_REQUEST_STEP_VISUALS,
+  ORG_REQUEST_STEP_VISUALS_HINT,
   ORG_REQUEST_VALIDATION_ADDRESS,
   ORG_REQUEST_VALIDATION_CATEGORY,
   ORG_REQUEST_VALIDATION_NAME,
@@ -14,15 +19,16 @@ import {
 } from "./organization-request-portal-labels";
 
 export type OrganizationRequestStepId =
-  | "info"
-  | "details"
-  | "photos"
-  | "review"
-  | "publish";
+  | "identity"
+  | "address"
+  | "practical"
+  | "visuals"
+  | "verification";
 
 export type OrganizationRequestStep = {
   id: OrganizationRequestStepId;
   label: string;
+  hint: string;
   order: number;
 };
 
@@ -31,11 +37,19 @@ export type OrganizationRequestCategoryOption = {
   label: string;
   type: OrganizationType;
   category: string;
+  badgeLabel: string;
+  badgeTone: "culture" | "nature" | "food" | "commerce" | "sport" | "services" | "default";
+};
+
+export type OrganizationRequestPlaceTypeOption = {
+  id: string;
+  label: string;
 };
 
 export type OrganizationRequestDraft = {
   name: string;
   categoryId: string;
+  placeTypeId: string;
   address: string;
   city: string;
   neighborhoodSlug: string;
@@ -45,6 +59,7 @@ export type OrganizationRequestDraft = {
   postalCode: string;
   instagram: string;
   longDescription: string;
+  isOfficialRepresentative: boolean;
 };
 
 export type OrganizationRequestValidation = {
@@ -52,37 +67,152 @@ export type OrganizationRequestValidation = {
   message: string | null;
 };
 
-export const ORG_REQUEST_SHORT_DESC_MAX = 120;
+export type OrganizationRequestChecklistKey =
+  | "identity"
+  | "address"
+  | "practical"
+  | "visual"
+  | "review";
+
+export const ORG_REQUEST_NAME_MAX = 80;
+export const ORG_REQUEST_SHORT_DESC_MAX = 140;
 
 export const ORGANIZATION_REQUEST_STEPS: OrganizationRequestStep[] = [
-  { id: "info", label: ORG_REQUEST_STEP_INFO, order: 1 },
-  { id: "details", label: ORG_REQUEST_STEP_DETAILS, order: 2 },
-  { id: "photos", label: ORG_REQUEST_STEP_PHOTOS, order: 3 },
-  { id: "review", label: ORG_REQUEST_STEP_REVIEW, order: 4 },
-  { id: "publish", label: ORG_REQUEST_STEP_PUBLISH, order: 5 },
+  {
+    id: "identity",
+    label: ORG_REQUEST_STEP_IDENTITY,
+    hint: ORG_REQUEST_STEP_IDENTITY_HINT,
+    order: 1,
+  },
+  {
+    id: "address",
+    label: ORG_REQUEST_STEP_ADDRESS,
+    hint: ORG_REQUEST_STEP_ADDRESS_HINT,
+    order: 2,
+  },
+  {
+    id: "practical",
+    label: ORG_REQUEST_STEP_PRACTICAL,
+    hint: ORG_REQUEST_STEP_PRACTICAL_HINT,
+    order: 3,
+  },
+  {
+    id: "visuals",
+    label: ORG_REQUEST_STEP_VISUALS,
+    hint: ORG_REQUEST_STEP_VISUALS_HINT,
+    order: 4,
+  },
+  {
+    id: "verification",
+    label: ORG_REQUEST_STEP_VERIFICATION,
+    hint: ORG_REQUEST_STEP_VERIFICATION_HINT,
+    order: 5,
+  },
 ];
 
 /** Catégories maquette → type API + libellé stocké en `category`. */
 export const ORGANIZATION_REQUEST_CATEGORY_OPTIONS: OrganizationRequestCategoryOption[] = [
-  { id: "cafe_restaurant", label: "Cafés & Restaurants", type: "commerce", category: "Cafés & Restaurants" },
-  { id: "commerce", label: "Commerces", type: "commerce", category: "Commerces" },
-  { id: "cultural", label: "Lieux culturels", type: "association", category: "Lieux culturels" },
-  { id: "leisure", label: "Loisirs & Activités", type: "commerce", category: "Loisirs & Activités" },
-  { id: "services", label: "Services", type: "commerce", category: "Services" },
-  { id: "school", label: "Établissement scolaire", type: "school", category: "Établissement scolaire" },
   {
-    id: "public_agency",
-    label: "Institution / Collectivité",
-    type: "public_agency",
-    category: "Service public",
+    id: "cultural",
+    label: "Culture et patrimoine",
+    type: "association",
+    category: "Lieux culturels",
+    badgeLabel: "CULTURE",
+    badgeTone: "culture",
   },
-  { id: "nature", label: "Nature & Plein air", type: "other", category: "Nature & Plein air" },
+  {
+    id: "nature",
+    label: "Nature et jardins",
+    type: "other",
+    category: "Nature & Plein air",
+    badgeLabel: "NATURE",
+    badgeTone: "nature",
+  },
+  {
+    id: "cafe_restaurant",
+    label: "Restaurants et cafés",
+    type: "commerce",
+    category: "Cafés & Restaurants",
+    badgeLabel: "RESTAURANT",
+    badgeTone: "food",
+  },
+  {
+    id: "commerce",
+    label: "Commerces",
+    type: "commerce",
+    category: "Commerces",
+    badgeLabel: "COMMERCE",
+    badgeTone: "commerce",
+  },
+  {
+    id: "leisure",
+    label: "Sport et bien-être",
+    type: "commerce",
+    category: "Loisirs & Activités",
+    badgeLabel: "SPORT",
+    badgeTone: "sport",
+  },
+  {
+    id: "services",
+    label: "Services",
+    type: "commerce",
+    category: "Services",
+    badgeLabel: "SERVICE",
+    badgeTone: "services",
+  },
+  {
+    id: "other",
+    label: "Autre",
+    type: "other",
+    category: "Autre",
+    badgeLabel: "LIEU",
+    badgeTone: "default",
+  },
 ];
+
+export const ORGANIZATION_REQUEST_PLACE_TYPES: Record<
+  string,
+  OrganizationRequestPlaceTypeOption[]
+> = {
+  cultural: [
+    { id: "cultural_space", label: "Espace culturel" },
+    { id: "museum", label: "Musée" },
+    { id: "gallery", label: "Galerie" },
+    { id: "heritage", label: "Patrimoine" },
+  ],
+  nature: [
+    { id: "park", label: "Parc ou jardin" },
+    { id: "trail", label: "Sentier ou espace vert" },
+    { id: "garden", label: "Jardin partagé" },
+  ],
+  cafe_restaurant: [
+    { id: "cafe", label: "Café" },
+    { id: "restaurant", label: "Restaurant" },
+    { id: "bar", label: "Bar ou brasserie" },
+  ],
+  commerce: [
+    { id: "shop", label: "Commerce de proximité" },
+    { id: "market", label: "Marché" },
+    { id: "artisan", label: "Artisan" },
+  ],
+  leisure: [
+    { id: "sport_club", label: "Club ou salle de sport" },
+    { id: "wellness", label: "Bien-être" },
+    { id: "outdoor", label: "Activité plein air" },
+  ],
+  services: [
+    { id: "public_service", label: "Service public" },
+    { id: "association", label: "Association" },
+    { id: "professional", label: "Professionnel" },
+  ],
+  other: [{ id: "other", label: "Autre type" }],
+};
 
 export function createEmptyOrganizationRequestDraft(city = "Reims"): OrganizationRequestDraft {
   return {
     name: "",
     categoryId: "",
+    placeTypeId: "",
     address: "",
     city,
     neighborhoodSlug: "",
@@ -92,6 +222,7 @@ export function createEmptyOrganizationRequestDraft(city = "Reims"): Organizatio
     postalCode: "",
     instagram: "",
     longDescription: "",
+    isOfficialRepresentative: false,
   };
 }
 
@@ -101,19 +232,28 @@ export function resolveOrganizationRequestCategory(
   return ORGANIZATION_REQUEST_CATEGORY_OPTIONS.find((option) => option.id === categoryId) ?? null;
 }
 
+export function resolveOrganizationRequestPlaceType(
+  categoryId: string,
+  placeTypeId: string,
+): OrganizationRequestPlaceTypeOption | null {
+  const options = ORGANIZATION_REQUEST_PLACE_TYPES[categoryId] ?? [];
+  return options.find((option) => option.id === placeTypeId) ?? null;
+}
+
+export function defaultOrganizationRequestPlaceTypeId(categoryId: string): string {
+  return ORGANIZATION_REQUEST_PLACE_TYPES[categoryId]?.[0]?.id ?? "";
+}
+
 export function validateOrganizationRequestStep(
   stepId: OrganizationRequestStepId,
   draft: OrganizationRequestDraft,
 ): OrganizationRequestValidation {
-  if (stepId === "info") {
+  if (stepId === "identity") {
     if (draft.name.trim().length < 2) {
       return { valid: false, message: ORG_REQUEST_VALIDATION_NAME };
     }
     if (!draft.categoryId.trim()) {
       return { valid: false, message: ORG_REQUEST_VALIDATION_CATEGORY };
-    }
-    if (!draft.address.trim()) {
-      return { valid: false, message: ORG_REQUEST_VALIDATION_ADDRESS };
     }
     if (!draft.shortDescription.trim()) {
       return { valid: false, message: ORG_REQUEST_VALIDATION_SHORT_DESC };
@@ -125,7 +265,73 @@ export function validateOrganizationRequestStep(
       return { valid: false, message: ORG_REQUEST_VALIDATION_ADDRESS };
     }
   }
+
+  if (stepId === "address") {
+    if (!draft.address.trim()) {
+      return { valid: false, message: ORG_REQUEST_VALIDATION_ADDRESS };
+    }
+  }
+
   return { valid: true, message: null };
+}
+
+export function validateOrganizationRequestDraft(
+  draft: OrganizationRequestDraft,
+): OrganizationRequestValidation {
+  for (const step of ["identity", "address"] as const) {
+    const result = validateOrganizationRequestStep(step, draft);
+    if (!result.valid) return result;
+  }
+  return { valid: true, message: null };
+}
+
+export function organizationRequestChecklistState(
+  draft: OrganizationRequestDraft,
+): Record<OrganizationRequestChecklistKey, boolean> {
+  const identityValid = validateOrganizationRequestStep("identity", draft).valid;
+  const addressValid = validateOrganizationRequestStep("address", draft).valid;
+  const hasPractical =
+    Boolean(draft.website.trim()) ||
+    Boolean(draft.phone.trim()) ||
+    Boolean(draft.postalCode.trim()) ||
+    Boolean(draft.instagram.trim()) ||
+    Boolean(draft.longDescription.trim());
+
+  return {
+    identity: identityValid,
+    address: addressValid,
+    practical: hasPractical,
+    visual: false,
+    review: identityValid && addressValid,
+  };
+}
+
+export function organizationRequestChecklistProgress(draft: OrganizationRequestDraft): {
+  completed: number;
+  total: number;
+} {
+  const state = organizationRequestChecklistState(draft);
+  const flags = [state.identity, state.address, state.practical, state.visual, state.review];
+  return { completed: flags.filter(Boolean).length, total: flags.length };
+}
+
+export function organizationRequestStepProgressPercent(stepId: OrganizationRequestStepId): number {
+  const index = ORGANIZATION_REQUEST_STEPS.findIndex((step) => step.id === stepId);
+  if (index < 0) return 0;
+  return Math.round(((index + 1) / ORGANIZATION_REQUEST_STEPS.length) * 100);
+}
+
+export function organizationRequestNextStepLabel(
+  stepId: OrganizationRequestStepId,
+): string {
+  const labels: Record<OrganizationRequestStepId, string> = {
+    identity: "Continuer vers l'adresse et la carte",
+    address: "Continuer vers les informations pratiques",
+    practical: "Continuer vers les visuels",
+    visuals: "Continuer vers la vérification",
+    verification: "Envoyer la proposition",
+  };
+  return labels[stepId];
 }
 
 export function buildOrganizationRequestDescription(
@@ -135,8 +341,13 @@ export function buildOrganizationRequestDescription(
   const parts: string[] = [];
   const short = draft.shortDescription.trim();
   const long = draft.longDescription.trim();
+  const placeType = resolveOrganizationRequestPlaceType(draft.categoryId, draft.placeTypeId);
+
   if (short) parts.push(short);
   if (long && long !== short) parts.push(long);
+  if (placeType?.label) {
+    parts.push(`Type : ${placeType.label}`);
+  }
   if (neighborhoodLabel?.trim()) {
     parts.push(`Quartier : ${neighborhoodLabel.trim()}`);
   }
@@ -178,4 +389,51 @@ export function previousOrganizationRequestStep(
   const index = organizationRequestStepIndex(stepId);
   const prev = ORGANIZATION_REQUEST_STEPS[index - 1];
   return prev?.id ?? null;
+}
+
+const ORG_REQUEST_DRAFT_STORAGE_KEY = "yunicity:org-request-draft:v2";
+
+export function persistOrganizationRequestDraft(
+  draft: OrganizationRequestDraft,
+  step: OrganizationRequestStepId,
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      ORG_REQUEST_DRAFT_STORAGE_KEY,
+      JSON.stringify({ draft, step, savedAt: new Date().toISOString() }),
+    );
+  } catch {
+    // ignore quota / private mode
+  }
+}
+
+export function loadOrganizationRequestDraft():
+  | { draft: OrganizationRequestDraft; step: OrganizationRequestStepId }
+  | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(ORG_REQUEST_DRAFT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as {
+      draft?: OrganizationRequestDraft;
+      step?: OrganizationRequestStepId;
+    };
+    if (!parsed.draft || !parsed.step) return null;
+    return {
+      draft: { ...createEmptyOrganizationRequestDraft(), ...parsed.draft },
+      step: parsed.step,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function clearOrganizationRequestDraft(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(ORG_REQUEST_DRAFT_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
 }

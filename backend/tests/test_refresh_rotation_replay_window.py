@@ -434,12 +434,11 @@ async def test_replayable_successor_is_never_written_to_the_logs(
     assert original not in everything, "un token brut ne doit jamais etre journalise"
     assert successor not in everything, "le successeur ne doit jamais etre journalise"
 
-    # Le hash stocke en base transite par les journaux de SQLAlchemy, qui echoe ses
-    # parametres lies quand `echo=settings.debug` est actif : comportement preexistant
-    # du mode DEBUG, jamais actif hors developpement, et sans rapport avec ce ticket.
-    # Ce hash n'est d'ailleurs pas presentable a l'API : seul le token brut ouvre une
-    # session. L'assertion porte donc sur NOS journaux, ou rien de sensible ne doit
-    # apparaitre.
+    # Le moteur de l'application masque desormais les parametres lies dans l'echo SQL
+    # (`hide_parameters=True`, APP-DEBUG-SQL-ECHO-TOKENS-01, couvert par
+    # `test_sql_log_parameters.py`). Ce test garde sa portee d'origine : NOS journaux,
+    # ou rien de sensible ne doit apparaitre. Ce hash n'est d'ailleurs pas presentable
+    # a l'API : seul le token brut ouvre une session.
     ours = "\n".join(
         record.getMessage() for record in caplog.records if record.name.startswith("app.")
     )

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>L2 share visual fixture</title>
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#111}
+.stage{position:relative;width:390px;height:844px;margin:0 auto;overflow:hidden;background:#1f2937}
+.stage img{position:absolute;inset:0;width:100%;height:780px;object-fit:cover;opacity:.35}
+.h1{position:absolute;left:50%;top:300px;transform:translateX(-50%);height:40px;padding:0 16px;border-radius:999px;background:#111827;color:#fff;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.h2{position:absolute;left:24px;top:268px;width:342px;box-sizing:border-box;padding:14px 16px;border-radius:16px;background:#111827;color:#fff;display:flex;flex-direction:column;gap:10px}
+.h2 p{margin:0;font-size:15px;line-height:21px;font-weight:600}
+.h2 .row{display:flex;justify-content:flex-end;gap:8px}
+.h2 button{height:44px;border:0;border-radius:999px;font:inherit;font-size:14px}
+.h3-mask{position:absolute;inset:0;background:rgba(17,24,39,.45)}
+.h3{position:absolute;left:0;top:486px;width:390px;height:358px;box-sizing:border-box;background:#fff;border-radius:20px 20px 0 0;padding:8px 16px 20px;display:flex;flex-direction:column;gap:10px;color:#111827}
+.h3 h2{margin:0;font-size:16px;font-weight:700}
+.h3 p{margin:0;font-size:14px;line-height:20px;color:#374151}
+.h3 textarea{resize:none;box-sizing:border-box;width:100%;padding:10px 14px;border-radius:12px;border:2px solid #2A2FFF;background:#C7CCFF;font:inherit;font-size:15px;line-height:22px;word-break:break-all}
+</style></head><body>
+<div id="root"></div>
+<script>
+const url='https://yunicity.city/videos?video=4f9c2a7e-1b3d-4c5a-9e8f-2d6b7a1c0e93';
+function stage(inner){return '<div class="stage"><div style="position:absolute;inset:0;background:linear-gradient(180deg,#374151,#111827)"></div>'+inner+'</div>';}
+const views={
+  h1: stage('<div class="h1" role="status" data-videos-share-h1=""><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>Lien copié</div>'),
+  h2: stage('<div class="h2" role="alert" data-videos-share-h2=""><div style="display:flex;gap:10px;align-items:flex-start"><span style="width:20px;height:20px;border:2px solid #fff;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">!</span><p>Le partage n\'a pas abouti.</p></div><div class="row"><button type="button" style="background:transparent;color:#fff;padding:0 14px;font-weight:600">Fermer</button><button type="button" style="background:#fff;color:#111827;padding:0 16px;font-weight:700">Copier le lien</button></div></div>'),
+  h3: stage('<div class="h3-mask"></div><section class="h3" role="dialog" aria-modal="true" data-videos-share-h3=""><div style="display:flex;justify-content:center"><span style="width:36px;height:4px;border-radius:999px;background:#D1D5DB"></span></div><h2>Lien de la vidéo</h2><p>Le partage n\'est pas disponible sur cet appareil. Le lien complet est sélectionné : copiez-le avec le menu du téléphone.</p><textarea readonly rows="3">'+url+'</textarea><button type="button" style="height:44px;border:0;background:transparent;color:#2A2FFF;font-weight:600;align-self:flex-start">Sélectionner tout le lien</button><button type="button" style="height:48px;border:1px solid #E5E7EB;border-radius:999px;background:#fff;font-weight:600">Fermer</button></section>')
+};
+window.__show=function(k){document.getElementById('root').innerHTML=views[k];};
+window.__show('h1');
+</script></body></html>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { PARTNER_PORTAL_BASE } from "@yunicity/utils";
+import { PARTNER_PORTAL_BASE, buildPartnerPortalOfferCreateHref } from "@yunicity/utils";
 
 import { buildCreateHubActions, listCreateHubActionHrefs } from "./create-hub-actions";
 
@@ -9,7 +9,7 @@ describe("create-hub-actions", () => {
     expect(buildCreateHubActions({ isAuthenticated: false, partnerAccessStatus: "idle" })).toEqual([]);
   });
 
-  it("expose les cinq actions citoyennes quand le partenaire est refusé", () => {
+  it("expose les six actions citoyennes quand le partenaire est refusé", () => {
     expect(
       listCreateHubActionHrefs({
         isAuthenticated: true,
@@ -19,6 +19,7 @@ describe("create-hub-actions", () => {
       "/feed/new",
       "/stories/new",
       "/videos/new",
+      "/sortir/create",
       "/tribes/create",
       "/organizations/request",
     ]);
@@ -34,6 +35,8 @@ describe("create-hub-actions", () => {
       "/feed/new",
       "/stories/new",
       "/videos/new",
+      "/sortir/create",
+      buildPartnerPortalOfferCreateHref(),
       "/tribes/create",
       "/organizations/request",
       PARTNER_PORTAL_BASE,

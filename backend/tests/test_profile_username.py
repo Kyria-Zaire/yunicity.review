@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime, timedelta
 
 from app.core.profile_username import (
     RESERVED_USERNAMES,
@@ -11,6 +12,7 @@ from app.core.profile_username import (
     is_valid_username_format,
     pick_available_username_sync,
 )
+from app.services.profile_service import username_next_change_at
 
 
 def test_reserved_username_rejected() -> None:
@@ -62,3 +64,11 @@ def test_fallback_username_when_name_too_short() -> None:
 def test_reserved_list_contains_core_names() -> None:
     assert "yunicity" in RESERVED_USERNAMES
     assert "login" in RESERVED_USERNAMES
+
+
+def test_username_change_boundary_is_exactly_fourteen_days() -> None:
+    changed_at = datetime(2026, 9, 1, 12, 0, tzinfo=UTC)
+    boundary = username_next_change_at(changed_at)
+    assert boundary == changed_at + timedelta(days=14)
+    assert boundary - timedelta(microseconds=1) < boundary
+    assert boundary <= changed_at + timedelta(days=14)

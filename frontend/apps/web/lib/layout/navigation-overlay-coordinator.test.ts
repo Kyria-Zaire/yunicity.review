@@ -64,6 +64,13 @@ describe("NavigationOverlayCoordinator — exclusivité (pur)", () => {
     state = reduceNavigationOverlayState(state, { type: "set-viewport", width: 1366 });
     expect(state.menuSurface).toBe("popover");
     expect(state.activeSurface).toBeNull();
-    expect(state.lastCloseReason).toBe("programmatic");
+    /*
+     * La raison de fermeture distingue desormais le changement de palier des
+     * autres fermetures programmatiques : `shouldRestoreNavigationFocus`
+     * l'exclut, et le relais de focus vers un controle VISIBLE s'appuie sur
+     * elle. Rendre « programmatic » ici reviendrait a restituer le focus a un
+     * declencheur que le nouveau palier vient de masquer.
+     */
+    expect(state.lastCloseReason).toBe("viewport");
   });
 });

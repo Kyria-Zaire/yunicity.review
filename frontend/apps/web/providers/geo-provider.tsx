@@ -87,6 +87,55 @@ export function GeoProvider({
     }
   }, [permissionState]);
 
+  useEffect(() => {
+    // Le consentement peut déjà être acquis (bouton « Autour de moi », visite
+    // précédente) : seul `permissionState` et la ville étaient restaurés, jamais
+    // les coordonnées. Les consommateurs qui en dépendent — le feed vidéo et son
+    // classement territorial — n'en recevaient donc aucune.
+    //
+    // L'API Permissions répond sans rien demander à la personne. Quand elle dit
+    // « granted », `getCurrentPosition` n'ouvre aucune fenêtre de consentement :
+    // c'est le seul cas où l'on relit la position. Tout autre état ("prompt",
+    // "denied") reste silencieux — un simple chargement de page ne déclenche
+    // jamais de demande de géolocalisation.
+    //
+    // Les coordonnées ne sont pas persistées : elles sont relues du navigateur à
+    // chaque session, jamais stockées.
+    const permissions: Permissions | undefined = navigator.permissions;
+    if (!permissions || !navigator.geolocation) return;
+
+    let annule = false;
+    void permissions
+      .query({ name: "geolocation" })
+      .then((statut) => {
+        if (annule || statut.state !== "granted") return;
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            if (annule) return;
+            setCurrentPosition({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            });
+            setPermissionState("granted");
+          },
+          () => {
+            // Accord donné mais position indisponible (GPS coupé, délai dépassé) :
+            // on ne dégrade pas l'état de permission et l'UI garde la ville de
+            // repli. Rien à signaler à la personne, elle n'a rien demandé ici.
+          },
+          { enableHighAccuracy: false, timeout: 12_000, maximumAge: 60_000 },
+        );
+      })
+      .catch(() => {
+        // API Permissions absente ou refusant la requête : on s'en tient au
+        // déclenchement manuel existant, sans jamais sonder la position.
+      });
+
+    return () => {
+      annule = true;
+    };
+  }, []);
+
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setPermissionState("error");

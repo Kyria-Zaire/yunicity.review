@@ -3,9 +3,11 @@
 import { CitizenTopNav } from "@/components/layout/citizen-top-nav";
 import { WebSidebar } from "@/components/layout/web-sidebar";
 import { WebMobileFooter, WebMobileHeader } from "@/components/layout/web-mobile-chrome";
+import { WebMobileStrategicBottomNav } from "@/components/layout/web-mobile-strategic-bottom-nav";
+import { CITIZEN_MOBILE_BOTTOM_NAV_PADDING } from "@/lib/layout/feed-mobile-refonte";
 import type { ReactNode } from "react";
 
-/** Shell détail événement — mobile refonte MOBILE-SORTIR-02 + desktop portail existant. */
+/** Shell détail événement — mobile (≤639), medium (640–1023) et desktop (≥1024). */
 export function EventDetailAppShell({
   children,
   leftRail,
@@ -24,7 +26,7 @@ export function EventDetailAppShell({
           <div className="web-desktop-event-detail-only">
             <CitizenTopNav />
           </div>
-          <div className="flex gap-4 pb-16 lg:gap-6 lg:pb-20">
+          <div className={`flex gap-4 lg:gap-6 lg:pb-20 ${CITIZEN_MOBILE_BOTTOM_NAV_PADDING}`}>
             {leftRail ? (
               <aside className="hidden w-72 shrink-0 xl:block">
                 <div className="sticky top-24 space-y-4">{leftRail}</div>
@@ -42,6 +44,7 @@ export function EventDetailAppShell({
         </main>
       </div>
       <WebMobileFooter />
+      <WebMobileStrategicBottomNav />
     </div>
   );
 }

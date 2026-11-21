@@ -25,7 +25,7 @@ type PassportMobileViewProps = {
   stampsLoading: boolean;
 };
 
-/** Vue mobile Passport — layout MOBILE-PASSPORT-01. */
+/** Conservé pour référence — le rendu mobile maquette passe par `PassportDesktopView`. */
 export function PassportMobileView({
   profile,
   displayName,

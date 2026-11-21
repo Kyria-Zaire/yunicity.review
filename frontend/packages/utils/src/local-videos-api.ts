@@ -3,6 +3,7 @@ import type {
   LocalVideoComment,
   LocalVideoCommentCreatePayload,
   LocalVideoCommentListResponse,
+  LocalVideoDurationPolicy,
   LocalVideoFeedItem,
   LocalVideoLikeResponse,
   LocalVideoListParams,
@@ -18,6 +19,7 @@ import type { AuthClient } from "./auth/auth-client";
 import { ApiClientBase } from "./api-client";
 import { parseLocalVideoApiError } from "./local-video-errors";
 import { uploadLocalVideoBinaryDev, uploadLocalVideoBytes } from "./local-video-upload";
+import type { UploadProgress } from "./local-video-upload-progress";
 
 function buildLocalVideoQuery(params: LocalVideoListParams): string {
   const search = new URLSearchParams();
@@ -39,6 +41,14 @@ function buildCommentQuery(cursor?: string | null, limit?: number): string {
 }
 
 export class LocalVideosApi extends ApiClientBase {
+  /**
+   * Politique de durée du créateur connecté (VIDEO-04D).
+   * Aucun paramètre : le tier est déduit des rôles serveur.
+   */
+  getDurationPolicy(): Promise<LocalVideoDurationPolicy> {
+    return this.getJson<LocalVideoDurationPolicy>("/local-videos/policy");
+  }
+
   /** @alias createUpload */
   initUpload(payload: LocalVideoUploadInitPayload): Promise<LocalVideoUpload> {
     return this.postJson<LocalVideoUpload>("/local-videos/upload-init", payload);
@@ -59,6 +69,7 @@ export class LocalVideosApi extends ApiClientBase {
   uploadSessionBytes(
     upload: LocalVideoUpload,
     body: Blob | ArrayBuffer | Uint8Array,
+    options: { onProgress?: (progress: UploadProgress) => void; signal?: AbortSignal } = {},
   ): Promise<void> {
     if (this.isDevFilesystemUploadUrl(upload.presigned_url)) {
       return uploadLocalVideoBinaryDev(
@@ -66,9 +77,10 @@ export class LocalVideosApi extends ApiClientBase {
         this.apiBaseUrl,
         upload.upload_id,
         body,
+        options,
       );
     }
-    return uploadLocalVideoBytes({ upload, body });
+    return uploadLocalVideoBytes({ upload, body, ...options });
   }
 
   /** Feed deep-link compat (existing web callers expect `LocalVideoFeedItem`). */
@@ -199,6 +211,8 @@ export function mapLocalVideoToFeedPreview(video: LocalVideo): LocalVideoFeedIte
     media_url: video.media_url,
     thumbnail_url: video.thumbnail_url,
     duration_seconds: video.duration_seconds,
+    media_width: video.media_width,
+    media_height: video.media_height,
     mime_type: video.mime_type,
     latitude: video.latitude,
     longitude: video.longitude,

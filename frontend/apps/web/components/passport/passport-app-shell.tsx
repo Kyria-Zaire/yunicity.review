@@ -9,17 +9,28 @@ import type { ReactNode } from "react";
 
 type PassportAppShellProps = {
   children: ReactNode;
+  variant?: "default" | "offer-detail";
 };
 
 /**
  * Shell Passport :
- * - &lt; 480px : header mobile
- * - 480px–1279px : sidebar icônes + infobulles (comme le reste du web)
- * - 1280px+ : top nav maquette (sidebar masquée)
+ * - ≤639px : header mobile (ou header fiche offre si variant offer-detail)
+ * - 640px–1279px : sidebar icônes + infobulles
+ * - 1280px+ : top nav maquette
  */
-export function PassportAppShell({ children }: PassportAppShellProps) {
+export function PassportAppShell({ children, variant = "default" }: PassportAppShellProps) {
+  const shellClass =
+    variant === "offer-detail"
+      ? "web-shell-page passport-mobile-shell passport-offer-detail-shell min-h-dvh bg-[#F4F5F7]"
+      : "web-shell-page passport-mobile-shell min-h-dvh bg-[#F4F5F7]";
+
+  const mainPaddingClass =
+    variant === "offer-detail"
+      ? "mx-auto w-full max-w-[1400px] xl:max-w-none xl:px-0 max-[639px]:pb-[env(safe-area-inset-bottom)]"
+      : `mx-auto w-full max-w-[1400px] xl:max-w-none xl:px-0 ${CITIZEN_MOBILE_BOTTOM_NAV_PADDING}`;
+
   return (
-    <div className="web-shell-page passport-mobile-shell min-h-dvh bg-[#F4F5F7]">
+    <div className={shellClass}>
       <WebMobileHeader />
 
       <div className="web-three-col passport-shell-grid">
@@ -29,14 +40,12 @@ export function PassportAppShell({ children }: PassportAppShellProps) {
           <div className="web-desktop-passport-only">
             <CitizenTopNav />
           </div>
-          <div className={`mx-auto w-full max-w-[1400px] xl:max-w-none xl:px-0 ${CITIZEN_MOBILE_BOTTOM_NAV_PADDING}`}>
-            {children}
-          </div>
+          <div className={mainPaddingClass}>{children}</div>
         </main>
       </div>
 
       <WebMobileFooter />
-      <WebMobileStrategicBottomNav />
+      {variant === "offer-detail" ? null : <WebMobileStrategicBottomNav />}
     </div>
   );
 }

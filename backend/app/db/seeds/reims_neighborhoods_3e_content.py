@@ -59,7 +59,7 @@ REIMS_NEIGHBORHOOD_3E_CONTENT: dict[str, dict[str, Any]] = {
         ),
     },
     "courlancy": {
-        "official_label": "Courlancy – Porte de Paris – Bois d'Amour",
+        "official_label": "Bois d'Amour – Porte de Paris – Courlancy",
         "ambiance": NeighborhoodAmbiance.GREEN.value,
         "short_description": (
             "Quartier du sud-ouest entre stade, parcs et Bois d'Amour — équilibre nature, "
@@ -85,7 +85,7 @@ REIMS_NEIGHBORHOOD_3E_CONTENT: dict[str, dict[str, Any]] = {
         ),
     },
     "cernay-jean-jaures": {
-        "official_label": "Cernay – Jamin – Jean-Jaurès – Épinettes",
+        "official_label": "Cernay – Jamin – Jean Jaurès – Épinettes",
         "ambiance": NeighborhoodAmbiance.LIVELY.value,
         "short_description": (
             "Quartier vivant du nord-est : marché historique, commerces indépendants et cafés "

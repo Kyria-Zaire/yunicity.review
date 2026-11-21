@@ -1,28 +1,30 @@
 "use client";
 
 import { NotificationsMobileItem } from "@/components/notifications/mobile/notifications-mobile-item";
-import type { NotificationsMobileGroupedSection } from "@yunicity/utils";
-import { NOTIFICATIONS_MOBILE_CAUGHT_UP } from "@yunicity/utils";
-import { CheckCircle2 } from "lucide-react";
+import type { NotificationsDesktopGroupedSection } from "@yunicity/utils";
+import { NOTIFICATIONS_MOBILE_LOAD_PREVIOUS } from "@yunicity/utils";
 
 type NotificationsMobileListProps = {
-  sections: NotificationsMobileGroupedSection[];
+  sections: NotificationsDesktopGroupedSection[];
   onMarkRead: (id: string) => void;
-  showCaughtUp?: boolean;
+  canLoadEarlier?: boolean;
+  onLoadEarlier?: () => void;
 };
 
-/** Liste groupée mobile Notifications (MOBILE-NOTIFICATIONS-01). */
 export function NotificationsMobileList({
   sections,
   onMarkRead,
-  showCaughtUp = true,
+  canLoadEarlier = false,
+  onLoadEarlier,
 }: NotificationsMobileListProps) {
   return (
-    <div className="space-y-5">
+    <div className="rounded-2xl border border-neutral-200/90 bg-white" data-notifications-mobile-list="">
       {sections.map((section) => (
         <section key={section.section} aria-label={section.label}>
-          <h2 className="mb-2 px-0.5 text-sm font-bold text-neutral-900">{section.label}</h2>
-          <ul className="space-y-2">
+          <h2 className="border-b border-neutral-100 bg-neutral-50/80 px-3 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-neutral-500">
+            {section.label}
+          </h2>
+          <ul>
             {section.items.map((item) => (
               <li key={item.id}>
                 <NotificationsMobileItem item={item} onMarkRead={onMarkRead} />
@@ -32,12 +34,15 @@ export function NotificationsMobileList({
         </section>
       ))}
 
-      {showCaughtUp ? (
-        <div className="flex flex-col items-center gap-2 py-6 text-center">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-violet-50 text-yunicity-primary">
-            <CheckCircle2 className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-          </span>
-          <p className="text-sm font-semibold text-neutral-700">{NOTIFICATIONS_MOBILE_CAUGHT_UP}</p>
+      {canLoadEarlier && onLoadEarlier ? (
+        <div className="border-t border-neutral-100 p-3">
+          <button
+            type="button"
+            onClick={onLoadEarlier}
+            className="inline-flex w-full items-center justify-center rounded-full border border-yunicity-primary px-4 py-2.5 text-sm font-semibold text-yunicity-primary transition hover:bg-[#EEF0FF]"
+          >
+            {NOTIFICATIONS_MOBILE_LOAD_PREVIOUS}
+          </button>
         </div>
       ) : null}
     </div>

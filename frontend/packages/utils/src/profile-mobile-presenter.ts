@@ -84,13 +84,3 @@ export function buildProfileMobileShortcuts(input: {
     },
   ];
 }
-
-export function resolveProfileMobileLevelXpLabel(
-  points: number,
-  nextThreshold: number | null,
-): string {
-  if (nextThreshold == null || nextThreshold <= points) {
-    return `${points} XP`;
-  }
-  return `${points} / ${nextThreshold} XP`;
-}

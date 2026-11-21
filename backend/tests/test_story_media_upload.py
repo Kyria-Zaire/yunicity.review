@@ -111,9 +111,14 @@ async def test_upload_story_media_success(
     assert response.status_code == 201, response.text
     body = response.json()
     assert body["media_type"] == "image"
-    assert body["url"].startswith(f"{STORY_MEDIA_CDN_BASE}/stories/{user_id}/")
+    # STORY-MEDIA-AUTHORIZATION-01 : le backend R2 renvoie desormais la route
+    # protegee, plus l'URL CDN absolue qui contournait l'autorisation.
+    assert body["url"].startswith(f"/api/v1/story-media/{user_id}/")
+    assert not body["url"].startswith("http"), "aucune URL absolue"
+    assert STORY_MEDIA_CDN_BASE not in body["url"]
     assert body["url"].endswith(".jpg")
-    storage_key = body["url"].removeprefix(f"{STORY_MEDIA_CDN_BASE}/")
+    _, _, _, _, url_user_id, url_filename = body["url"].split("/")
+    storage_key = f"stories/{url_user_id}/{url_filename}"
     assert mock_story_media_r2[storage_key] == MINIMAL_JPEG_BYTES
 
 

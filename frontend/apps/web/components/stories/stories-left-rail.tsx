@@ -41,6 +41,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { AuthorizedStoryMedia } from "@/components/stories/authorized-story-media";
+
 const NAV = [
   { href: "/feed", label: STORIES_LEFT_HOME, icon: Home, section: "home" as const },
   { href: "/subscriptions", label: STORIES_LEFT_SUBSCRIPTIONS, icon: Users, section: "subscriptions" as const },
@@ -159,9 +161,8 @@ export function StoriesLeftRail({
             <p className="mt-1 text-sm font-semibold text-neutral-800">{featured.title}</p>
             <p className="mt-1 text-xs leading-relaxed text-neutral-600">{featured.description}</p>
             {featured.media_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={featured.media_url}
+              <AuthorizedStoryMedia
+                mediaUrl={featured.media_url}
                 alt=""
                 className="mt-3 h-28 w-full rounded-xl object-cover"
               />

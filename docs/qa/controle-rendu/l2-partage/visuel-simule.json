@@ -1,0 +1,10 @@
+{
+  "env": "chromium-fixture-simule",
+  "note": "Captures fidèles aux maquettes v2.3 / composant React. ≠ essai partage natif Safari iPhone.",
+  "files": [
+    "H1-apres-copie-simulee.png",
+    "H2-echec-partage-simule.png",
+    "H3-indisponible-simule.png"
+  ],
+  "unitTests": "local-video-state 12/12 ; local-video-share-feedback 3/3 ; interactions (à relancer)"
+}

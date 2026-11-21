@@ -23,6 +23,8 @@ class SearchResultItem(BaseModel):
     body: str | None = None
     username: str | None = None
     starts_at: datetime | None = None
+    # Always serialized (null when unknown): a missing key means an older API to the client.
+    ends_at: datetime | None = None
     is_flash: bool | None = None
 
 

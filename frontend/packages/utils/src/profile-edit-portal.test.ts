@@ -7,6 +7,7 @@ import {
   buildProfileEditDraft,
   buildProfileEditSavePayload,
   joinDisplayName,
+  profileEditDraftEquals,
   splitDisplayName,
 } from "./profile-edit-portal";
 
@@ -65,6 +66,7 @@ describe("buildProfileEditDraft", () => {
     const draft = buildProfileEditDraft(baseProfile());
     expect(draft.firstName).toBe("Kyria");
     expect(draft.lastName).toBe("D.");
+    expect(draft.username).toBe("kyria_d");
   });
 });
 
@@ -76,5 +78,14 @@ describe("buildProfileEditSavePayload", () => {
     const payload = buildProfileEditSavePayload(profile, draft);
     expect(payload.bio).toBe("Nouvelle bio");
     expect(payload.display_name).toBe("Kyria D.");
+    expect(payload.visibility).toBe("public");
+  });
+});
+
+describe("profileEditDraftEquals", () => {
+  it("marks a username-only change as dirty while ignoring normalization-only changes", () => {
+    const original = buildProfileEditDraft(baseProfile());
+    expect(profileEditDraftEquals(original, { ...original, username: "another_name" })).toBe(false);
+    expect(profileEditDraftEquals(original, { ...original, username: " KYRIA_D " })).toBe(true);
   });
 });

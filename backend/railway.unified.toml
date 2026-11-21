@@ -1,0 +1,115 @@
+# Config Railway — SERVICE UNIFIÉ API + worker (RAILWAY-UNIFIED-MEDIA-IMPLEMENT-01).
+#
+# Root directory du service : backend/
+# Config path absolu à renseigner dans Railway : /backend/railway.unified.toml
+#
+# ⚠️  NE PAS RENOMMER EN railway.toml
+#     L'API et le worker partagent le Root Directory backend/. Railway auto-détecte un
+#     fichier nommé railway.toml à cet endroit : tout service rooté sur backend/ en
+#     hériterait, y compris l'ancien worker gardé pour rollback. C'est exactement le
+#     piège OPS-02, déjà payé une fois.
+#
+# ⚠️  CE FICHIER NE CRÉE PAS LE VOLUME — À FAIRE AVANT LE PREMIER DÉPLOIEMENT
+#     Un volume Railway s'attache depuis le dashboard ; l'API CLI ne l'expose pas et le
+#     TOML ne le déclare pas. Le montage est donc une action manuelle, préalable et
+#     obligatoire — pas une conséquence du déploiement :
+#
+#         Volume     : yunicity-media
+#         Service    : le service unifié
+#         Mount path : /data/media          (exactement ce chemin, absolu)
+#
+#     `/data/media` n'est pas un choix de configuration : c'est CANONICAL_MEDIA_ROOT
+#     (app/core/media_root.py), en dur dans le code. La politique refuse tout autre
+#     chemin sur un runtime managé. L'API et le worker étant le même conteneur, ils
+#     partagent nécessairement ce montage et l'uid applicatif 10001.
+#
+#     Déployer sans ce volume fait pointer la racine média sur la couche éphémère du
+#     conteneur. `prepare_media_root` échoue alors au boot : le service refuse de
+#     démarrer plutôt que de perdre des fichiers en silence.
+#
+# ⚠️  OPT-IN OBLIGATOIRE : MANAGED_PERSISTENT_MEDIA_ENABLED=true
+#     Railway injecte des variables RAILWAY_* : `is_managed_cloud_runtime()` est donc
+#     VRAI en production, ce qui arme la politique stricte C3.1-R1D. Sans cet opt-in,
+#     trois gardes indépendantes refusent le backend filesystem au démarrage —
+#     `check_managed_media_policy`, `validate_story_media_storage_config` et
+#     `validate_profile_media_storage_config`. L'enfant API meurt, le superviseur sort
+#     en code non nul, et le service boucle jusqu'à `restartPolicyMaxRetries`.
+#
+#     Cette variable se pose SUR LE SERVICE Railway, comme toutes les autres : Railway
+#     n'applique aucune variable déclarée dans un fichier de config. Ce fichier ne fait
+#     que la documenter — il ne contient volontairement aucune valeur d'environnement,
+#     aucun secret, aucune donnée propre à un environnement donné.
+#
+# ⚠️  RAILWAY_RUN_UID=0 — REQUIS, ET STRICTEMENT POUR L'INITIALISATION DU VOLUME
+#     Mesuré sur ce projet : un volume Railway fraîchement attaché arrive `root:root
+#     0755` sur un système de fichiers neuf (`lost+found` présent), donc rien n'est
+#     hérité du répertoire de l'image que le montage recouvre. Le conteneur tournant en
+#     `app` (uid 10001), la création de `/data/media/local-video` échouait en
+#     « Permission denied » et le service refusait de démarrer.
+#
+#     Le superviseur démarre donc en euid 0, exige un VRAI point de montage sur
+#     /data/media (lu dans /proc/self/mountinfo), crée les trois sous-répertoires,
+#     attribue ces quatre chemins — et QUATRE SEULEMENT — à `app`, puis abandonne
+#     IRRÉVERSIBLEMENT ses privilèges (setgroups → setgid → setuid) avant de lancer le
+#     moindre enfant. Voir app/runtime/volume_bootstrap.py.
+#
+#     Conséquences à connaître :
+#       - l'API, le worker et ffmpeg tournent en uid 10001, jamais en root ;
+#       - sans volume monté, le service SORT en erreur : aucun repli sur la couche
+#         éphémère, aucune perte silencieuse ;
+#       - aucun `chmod`, aucun world-writable, aucun `chown` récursif : les médias déjà
+#         présents et `lost+found` ne sont pas touchés ;
+#       - cette variable ne doit JAMAIS être combinée à une startCommand qui contourne
+#         `app.runtime.unified_process` — elle ferait alors tourner l'application en
+#         root, ce que tout le reste de cette configuration existe pour empêcher.
+#
+#     Le Dockerfile conserve son `USER app` : hors Railway, l'exécution reste non-root
+#     par défaut et le bootstrap privilégié ne s'exécute simplement pas.
+#
+# VARIABLES REQUISES (noms uniquement — aucune valeur, aucun secret ici)
+#
+#   Initialisation du volume, à poser sur ce service :
+#     RAILWAY_RUN_UID = 0
+#
+#   Opt-in du stockage persistant, sans lequel le service ne démarre pas :
+#     MANAGED_PERSISTENT_MEDIA_ENABLED = true
+#
+#   Média, à poser sur ce service :
+#     MEDIA_UPLOAD_DIR          = /data/media      (racine, clés « local-video/… »)
+#     PROFILE_MEDIA_UPLOAD_DIR  = /data/media      (clés « profiles/… »)
+#     STORY_MEDIA_UPLOAD_DIR    = /data/media      (clés « stories/… »)
+#     LOCAL_VIDEO_STORAGE_BACKEND   = filesystem
+#     PROFILE_MEDIA_STORAGE_BACKEND = filesystem
+#     STORY_MEDIA_STORAGE_BACKEND   = filesystem
+#     MEDIA_PUBLIC_BASE_URL     = https://api.yunicity.city
+#
+#   Les trois domaines partagent la MÊME racine : leurs clés portent déjà leur préfixe
+#   (local-video/, profiles/, stories/), donc l'arborescence demandée se forme seule.
+#
+#   Conservées telles quelles (compatibilité des anciennes URLs R2, cf. §4 du ticket) :
+#     LOCAL_VIDEO_R2_ENDPOINT · LOCAL_VIDEO_R2_ACCESS_KEY_ID
+#     LOCAL_VIDEO_R2_SECRET_ACCESS_KEY · LOCAL_VIDEO_R2_BUCKET · LOCAL_VIDEO_CDN_BASE_URL
+#
+#   Héritées de l'ancien service API, inchangées :
+#     APP_ENV · DEBUG · DATABASE_URL · REDIS_URL · CORS_ORIGINS · WEB_FRONTEND_URL
+#     JWT_SECRET_KEY · REFRESH_TOKEN_PEPPER · REFRESH_COOKIE_SECURE
+#     EMAIL_PROVIDER · EMAIL_FROM · RESEND_API_KEY · SENTRY_DSN · OPENWEATHER_API_KEY
+#     LOCAL_VIDEO_PROCESSING_JOB_TIMEOUT_SECONDS
+
+[deploy]
+# Un seul processus parent, deux enfants supervisés. Le shell `uvicorn & arq` est
+# volontairement écarté : il ne relaie pas SIGTERM et masque la mort d'un enfant.
+startCommand = "python -m app.runtime.unified_process"
+
+# Le worker n'a pas de port ; la santé du service reste celle de l'API. La mort du
+# worker fait sortir le superviseur en code non nul, donc Railway redémarre le service
+# même si l'API répondait encore.
+healthcheckPath = "/api/v1/health"
+healthcheckTimeout = 30
+
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# Migrations appliquées entre build et déploiement, comme sur railway.api.toml : un
+# échec bloque le déploiement et laisse l'ancienne version servir.
+preDeployCommand = ["/bin/sh -c 'alembic upgrade head'"]

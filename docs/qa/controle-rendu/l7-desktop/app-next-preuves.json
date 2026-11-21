@@ -1,0 +1,335 @@
+{
+  "env": "next+api-simulee",
+  "note": "Composants Next réels. Distinguer captures-app/ des captures/ (fixture HTML).",
+  "base": "http://localhost:3002",
+  "cases": [
+    {
+      "kind": "desktop-layout",
+      "name": "APP-grille-1024x900",
+      "w": 1024,
+      "h": 900,
+      "file": "APP-grille-1024x900.png",
+      "env": "next+api-simulee",
+      "grid": 1,
+      "tiles": 4,
+      "portrait": 2,
+      "landscape": 2,
+      "splitRejectedPresent": 0,
+      "mediumFeed": 0,
+      "leftRail": 1,
+      "rightRail": 1,
+      "loadMore": 1,
+      "visibleGrid": true,
+      "visibleMedium": false,
+      "titles": [
+        "Marché de Noël — les chalets",
+        "Expo artisanat — ouverture",
+        "Balade au jardin",
+        "Concert place d’Erlon"
+      ],
+      "metas": [
+        "Camille B. · Centre",
+        "Alex R. · Clairmarais",
+        "Léa M. · Laon",
+        "Sam K. · Centre"
+      ],
+      "ok": true
+    },
+    {
+      "kind": "desktop-layout",
+      "name": "APP-grille-1280x800",
+      "w": 1280,
+      "h": 800,
+      "file": "APP-grille-1280x800.png",
+      "env": "next+api-simulee",
+      "grid": 1,
+      "tiles": 4,
+      "portrait": 2,
+      "landscape": 2,
+      "splitRejectedPresent": 0,
+      "mediumFeed": 0,
+      "leftRail": 1,
+      "rightRail": 1,
+      "loadMore": 1,
+      "visibleGrid": true,
+      "visibleMedium": false,
+      "titles": [
+        "Marché de Noël — les chalets",
+        "Expo artisanat — ouverture",
+        "Balade au jardin",
+        "Concert place d’Erlon"
+      ],
+      "metas": [
+        "Camille B. · Centre",
+        "Alex R. · Clairmarais",
+        "Léa M. · Laon",
+        "Sam K. · Centre"
+      ],
+      "ok": true
+    },
+    {
+      "kind": "desktop-layout",
+      "name": "APP-grille-1440x900",
+      "w": 1440,
+      "h": 900,
+      "file": "APP-grille-1440x900.png",
+      "env": "next+api-simulee",
+      "grid": 1,
+      "tiles": 4,
+      "portrait": 2,
+      "landscape": 2,
+      "splitRejectedPresent": 0,
+      "mediumFeed": 0,
+      "leftRail": 1,
+      "rightRail": 1,
+      "loadMore": 1,
+      "visibleGrid": true,
+      "visibleMedium": false,
+      "titles": [
+        "Marché de Noël — les chalets",
+        "Expo artisanat — ouverture",
+        "Balade au jardin",
+        "Concert place d’Erlon"
+      ],
+      "metas": [
+        "Camille B. · Centre",
+        "Alex R. · Clairmarais",
+        "Léa M. · Laon",
+        "Sam K. · Centre"
+      ],
+      "ok": true
+    },
+    {
+      "kind": "state-empty",
+      "file": "APP-etat-vide-1440.png",
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "state-error",
+      "file": "APP-etat-erreur-1440.png",
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "state-retry",
+      "file": "APP-etat-retry-succes-1440.png",
+      "tiles": 4,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "state-loading",
+      "file": "APP-etat-loading-1440.png",
+      "loadingMarker": 0,
+      "note": "Race possible si Next très rapide ; marqueur data-videos-desktop-grid-state=loading",
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "load-more",
+      "file": "APP-charger-plus-1440.png",
+      "page2Hits": 1,
+      "tiles": 6,
+      "unique": 6,
+      "concurrentOk": true,
+      "noDupOk": true,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "pagination-error",
+      "file": "APP-pagination-erreur-1440.png",
+      "retryFile": "APP-pagination-retry-1440.png",
+      "tilesBeforeFail": 4,
+      "tilesAfterFail": 4,
+      "localErr": 1,
+      "tilesAfterRetryMore": 6,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "keyboard-open",
+      "file": "APP-clavier-activation-1440.png",
+      "focusedTag": "A",
+      "url": "http://localhost:3002/videos?video=p1",
+      "videoParam": "p1",
+      "ok": true,
+      "note": "Valide URL ?video= uniquement — lecteur = Lot 8, non affirmé ici.",
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "deep-link",
+      "file": "APP-deep-link-video-p1-1440.png",
+      "url": "http://localhost:3002/videos?video=p1",
+      "hasVideoParam": true,
+      "ok": true,
+      "note": "Lot 8 non validé (lecteur).",
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "frontier-1023-1024",
+      "m1023": {
+        "medium": 1,
+        "mediumVisible": true,
+        "gridVisible": false,
+        "file": "APP-frontiere-1023-medium.png"
+      },
+      "m1024": {
+        "medium": 0,
+        "mediumVisible": false,
+        "gridVisible": true,
+        "file": "APP-frontiere-1024-desktop.png"
+      },
+      "ok": true,
+      "env": "next+api-simulee"
+    }
+  ],
+  "failures": [],
+  "feedHitsSample": [
+    {
+      "t": 1794761630625,
+      "cursor": null,
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761630627,
+      "cursor": null,
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761635845,
+      "cursor": null,
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761635846,
+      "cursor": null,
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761640085,
+      "cursor": null,
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761640088,
+      "cursor": null,
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761645314,
+      "cursor": null,
+      "mode": "empty",
+      "method": "GET"
+    },
+    {
+      "t": 1794761645315,
+      "cursor": null,
+      "mode": "empty",
+      "method": "GET"
+    },
+    {
+      "t": 1794761649945,
+      "cursor": null,
+      "mode": "error",
+      "method": "GET"
+    },
+    {
+      "t": 1794761649946,
+      "cursor": null,
+      "mode": "error",
+      "method": "GET"
+    },
+    {
+      "t": 1794761650784,
+      "cursor": null,
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761656266,
+      "cursor": null,
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761656267,
+      "cursor": null,
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761657001,
+      "cursor": "c1",
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761723471,
+      "cursor": null,
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761723472,
+      "cursor": null,
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761724988,
+      "cursor": "c1",
+      "mode": "page2fail",
+      "method": "GET"
+    },
+    {
+      "t": 1794761727005,
+      "cursor": "c1",
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761731805,
+      "cursor": null,
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761731810,
+      "cursor": null,
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761740655,
+      "cursor": null,
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761740656,
+      "cursor": null,
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761747640,
+      "cursor": null,
+      "mode": "success",
+      "method": "GET"
+    },
+    {
+      "t": 1794761747641,
+      "cursor": null,
+      "mode": "success",
+      "method": "GET"
+    }
+  ],
+  "ok": true
+}

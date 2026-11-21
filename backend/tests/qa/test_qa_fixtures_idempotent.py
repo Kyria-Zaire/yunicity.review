@@ -15,6 +15,14 @@ import pytest
 from app.db.base import Base
 from app.db.search_fts import install_search_fts
 from app.db.seeds.qa_fixtures import EXPECTED_VOLUMES, seed_qa_fixtures
+from app.db.seeds.qa_video_media import (
+    QA_LANDSCAPE_DURATION_SECONDS,
+    QA_LANDSCAPE_HEIGHT,
+    QA_LANDSCAPE_WIDTH,
+    QA_PORTRAIT_DURATION_SECONDS,
+    QA_PORTRAIT_HEIGHT,
+    QA_PORTRAIT_WIDTH,
+)
 from app.models.local_event import EventInterest, LocalEvent
 from app.models.local_video import LocalVideo
 from app.models.organization import Organization
@@ -83,3 +91,24 @@ async def test_second_seed_creates_nothing_and_volumes_match(qa_session: AsyncSe
     for key, model in _COUNT_MODELS.items():
         result = await qa_session.execute(select(func.count()).select_from(model))
         assert int(result.scalar_one()) == EXPECTED_VOLUMES[key], f"volume mismatch for {key}"
+
+
+async def test_local_video_fixture_api_metadata_matches_media_contract(
+    qa_session: AsyncSession,
+) -> None:
+    await seed_qa_fixtures(qa_session, reference_now=_FIXED_NOW)
+    result = await qa_session.execute(select(LocalVideo))
+    videos = {row.title: row for row in result.scalars().all() if row.title}
+
+    landscape = videos.get("QA Vidéo locale")
+    portrait = videos.get("3 adresses à tester ce week-end à Reims")
+    assert landscape is not None
+    assert portrait is not None
+
+    assert landscape.media_width == QA_LANDSCAPE_WIDTH
+    assert landscape.media_height == QA_LANDSCAPE_HEIGHT
+    assert landscape.duration_seconds == QA_LANDSCAPE_DURATION_SECONDS
+
+    assert portrait.media_width == QA_PORTRAIT_WIDTH
+    assert portrait.media_height == QA_PORTRAIT_HEIGHT
+    assert portrait.duration_seconds == QA_PORTRAIT_DURATION_SECONDS

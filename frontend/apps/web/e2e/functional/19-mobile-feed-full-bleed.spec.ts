@@ -1,9 +1,9 @@
 import type { Locator, Page } from "@playwright/test";
 
-import { expect, test } from "../fixtures";
+import { expect, testCitizen as test } from "../fixtures";
 import { COLD_START_TEST_TIMEOUT, COLD_START_TIMEOUT } from "../cold-start";
 import { publishCitizenPostWithMedia } from "../feed-media-fixture";
-import { makeSolidPngDataUri } from "../png-fixture";
+import { makeSolidPngBuffer } from "../png-fixture";
 import { scrollToStableBottom } from "../scroll";
 
 /**
@@ -42,7 +42,24 @@ const MOBILE_VIEWPORTS = [
 
 /** Portrait 9:16 — le format que R1C interdit de recadrer. */
 const PORTRAIT_PNG = { width: 360, height: 640 } as const;
-const PORTRAIT_DATA_URI = makeSolidPngDataUri(
+
+/*
+ * Chemin média CONFORME à l'allowlist produit.
+ *
+ * Ces fixtures portaient une URI `data:`, qu'`useAuthorizedMediaSource` refuse —
+ * et doit refuser. Son contrat est « GET Bearer → Blob → object URL », et
+ * `resolveAuthorizedApiMediaUrl` rejette avant tout fetch tout ce qui n'est pas
+ * un chemin `story-media` allowlisté : `data:` lève `PROTOCOL`, une origine
+ * externe lève aussi, et l'en-tête `Authorization` n'est jamais émis vers elles.
+ * C'est une garde de sécurité, avec ses propres tests.
+ *
+ * Aucune image n'était donc rendue, et le test rapportait « média absent ». La
+ * fixture simule désormais la livraison telle que l'API la fait : un chemin
+ * allowlisté, servi en octets PNG par `stubAuthorizedMedia`.
+ */
+const PORTRAIT_MEDIA_PATH =
+  "/api/v1/story-media/aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa/bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb.png";
+const PORTRAIT_PNG_BUFFER = makeSolidPngBuffer(
   PORTRAIT_PNG.width,
   PORTRAIT_PNG.height,
   0xef,
@@ -114,7 +131,7 @@ function baseFixture(id: string, marker: string, author: FeedAuthorFixture): Fee
     city: "Reims",
     title: null,
     body: marker,
-    media_url: PORTRAIT_DATA_URI,
+    media_url: PORTRAIT_MEDIA_PATH,
     location: null,
     like_count: 3,
     comment_count: 1,
@@ -165,7 +182,25 @@ const CONSUMER_FIXTURES: FeedPostFixture[] = [
   },
 ];
 
+/**
+ * Livraison média authentifiée, simulée fidèlement.
+ *
+ * L'application émet un GET porteur vers le chemin allowlisté puis construit un
+ * object URL depuis le Blob reçu. On sert donc de vrais octets PNG, avec le type
+ * de contenu correspondant — pas une redirection ni une URI embarquée.
+ */
+async function stubAuthorizedMedia(page: Page): Promise<void> {
+  await page.route("**/api/v1/story-media/**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "image/png",
+      body: PORTRAIT_PNG_BUFFER,
+    });
+  });
+}
+
 async function stubFeedWithConsumers(page: Page): Promise<void> {
+  await stubAuthorizedMedia(page);
   await page.route("**/api/v1/feed?*", async (route) => {
     await route.fulfill({
       status: 200,
@@ -624,15 +659,29 @@ test.describe("C3.1-R1D — Feed mobile éditorial unifié", () => {
       "1366 : carte desktop aux angles droits",
     ).toBeGreaterThan(0);
 
-    // Le média desktop garde son propre traitement (rayon non nul) : les règles
-    // bord à bord mobiles n'ont pas fui.
+    /*
+     * Le média desktop garde son traitement arrondi : les règles bord à bord
+     * mobiles n'ont pas fui.
+     *
+     * Le rayon est porté par le CADRE, pas par l'image. Depuis l'unification des
+     * surfaces média (MEDIA-02), `PublicationMediaFrame` porte `rounded-xl` et
+     * `overflow-hidden` ; l'image le remplit sans arrondi propre. Ce test
+     * mesurait l'image et lisait donc 0 — un rayon qui n'a jamais été le sien.
+     *
+     * On vérifie les DEUX faits qui produisent l'arrondi visible : le cadre a un
+     * rayon, et il écrête. Un rayon sans écrêtage laisserait les angles carrés à
+     * l'écran, ce que l'ancienne assertion ne détectait pas.
+     */
     const media = postMedia(card);
     await expect(media).toBeVisible();
-    const mediaRadius = await computed(media, ["border-top-left-radius"]);
+    const cadre = media.locator("xpath=ancestor::*[@data-publication-media-frame][1]");
+    await expect(cadre, "1366 : média hors du cadre partagé").toHaveCount(1);
+    const cadreStyle = await computed(cadre, ["border-top-left-radius", "overflow"]);
     expect(
-      px(mediaRadius["border-top-left-radius"]),
-      "1366 : média desktop aux angles droits",
+      px(cadreStyle["border-top-left-radius"]),
+      "1366 : cadre média desktop aux angles droits",
     ).toBeGreaterThan(0);
+    expect(cadreStyle["overflow"], "1366 : cadre média sans écrêtage").not.toBe("visible");
 
     await expectNoDocumentOverflow(page, "1366");
   });

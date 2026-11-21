@@ -1,0 +1,252 @@
+{
+  "env": "next+api-simulee",
+  "note": "App Next réelle. Captures-app L8. Maquettes C2/C3 = référence géométrie, pas pixel-perfect.",
+  "base": "http://127.0.0.1:3002",
+  "cases": [
+    {
+      "kind": "c2-portrait",
+      "w": 1440,
+      "h": 900,
+      "file": "APP-C2-portrait-1440x900.png",
+      "overlay": 1,
+      "stageP": 1,
+      "gridUnder": 1,
+      "detailPageRejected": 0,
+      "urlHasVideo": true,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "close-escape",
+      "w": 1440,
+      "h": 900,
+      "closed": true,
+      "urlClean": true,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "c3-landscape",
+      "w": 1440,
+      "h": 900,
+      "file": "APP-C3-paysage-1440x900.png",
+      "stageL": 1,
+      "layoutL": 1,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "c2-portrait",
+      "w": 1280,
+      "h": 800,
+      "file": "APP-C2-portrait-1280x800.png",
+      "overlay": 1,
+      "stageP": 1,
+      "gridUnder": 1,
+      "detailPageRejected": 0,
+      "urlHasVideo": true,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "close-escape",
+      "w": 1280,
+      "h": 800,
+      "closed": true,
+      "urlClean": true,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "c3-landscape",
+      "w": 1280,
+      "h": 800,
+      "file": "APP-C3-paysage-1280x800.png",
+      "stageL": 1,
+      "layoutL": 1,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "c2-portrait",
+      "w": 1024,
+      "h": 768,
+      "file": "APP-C2-portrait-1024x768.png",
+      "overlay": 1,
+      "stageP": 1,
+      "gridUnder": 1,
+      "detailPageRejected": 0,
+      "urlHasVideo": true,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "close-escape",
+      "w": 1024,
+      "h": 768,
+      "closed": true,
+      "urlClean": true,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "c3-landscape",
+      "w": 1024,
+      "h": 768,
+      "file": "APP-C3-paysage-1024x768.png",
+      "stageL": 1,
+      "layoutL": 1,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "nav-history",
+      "url1": "http://127.0.0.1:3002/videos?video=p1",
+      "url2": "http://127.0.0.1:3002/videos?video=l1",
+      "replaced": true,
+      "afterBackOverlay": 0,
+      "afterBackUrl": "http://127.0.0.1:3002/videos",
+      "scrollBefore": 80,
+      "scrollAfter": 80,
+      "scrollDelta": 0,
+      "focusTag": "l1",
+      "tileInViewBefore": true,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "nav-forward",
+      "afterForward": 1,
+      "forwardUrl": "http://127.0.0.1:3002/videos?video=l1",
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "rfocus-close-x",
+      "scrollBefore": 80,
+      "scrollAtForward": 80,
+      "scrollAfterClose": 80,
+      "scrollDeltaVsOpen": 0,
+      "focusAfterClose": "l1",
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "rfocus-repeats",
+      "rfocusRepeats": [
+        {
+          "i": 0,
+          "y0": 40,
+          "y1": 40,
+          "delta": 0,
+          "focus": "p2"
+        },
+        {
+          "i": 1,
+          "y0": 60,
+          "y1": 60,
+          "delta": 0,
+          "focus": "p2"
+        },
+        {
+          "i": 2,
+          "y0": 80,
+          "y1": 80,
+          "delta": 0,
+          "focus": "p2"
+        }
+      ],
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "rfocus-max-scroll",
+      "maxMetrics": {
+        "scrollY": 217,
+        "maxY": 217,
+        "scrollHeight": 1117,
+        "p1FullyOutside": false
+      },
+      "maxAfter": {
+        "scrollY": 217,
+        "maxY": 217,
+        "scrollHeight": 1117,
+        "focusTag": "p1"
+      },
+      "delta": 0,
+      "note": "Cause Δ11 mesurée : vignette p1 à top=-11 px en bas de page ; le focus du lien au mousedown recentrait (+11) avant mark au click → sticky 206. Correctifs : capture scroll au pointerdown ; pas de scrollIntoView à la restore ; scrollTo sans pré-clamp maxY. Tolérance PRD ±1 px.",
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "c2-comments-panel",
+      "file": "APP-C2-comments-panel-1440.png",
+      "stageBeforeComments": "portrait",
+      "commentsPanel": 1,
+      "commentsPresentation": 1,
+      "commentsSheetDrawer": 0,
+      "panelWidth": 380,
+      "panelHeight": 836,
+      "panelLeft": 797.5,
+      "stageRight": 717.5,
+      "gapVsLot4Sheet": "Lot4=tiroir bas plein largeur (Drawer bottom). C2/L8=panneau latéral blanc ~380px à droite de la vidéo, sans Drawer. Écart pixel restant (typo/espacements vs maquette) consignable ; placement L8.",
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "controls-1024",
+      "filePortrait": "APP-1024-controls-portrait.png",
+      "fileLandscape": "APP-1024-controls-landscape.png",
+      "controls1024": {
+        "play": 2,
+        "next": 1,
+        "prev": 1,
+        "close": 1,
+        "share": 1
+      },
+      "controls1024L": {
+        "play": 2,
+        "next": 1
+      },
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "direct-orphan",
+      "file": "APP-C6-direct-orphan-1440.png",
+      "loadingOrPlayer": 1,
+      "seeFeed": 0,
+      "prevDisabled": true,
+      "bodySnippet": "Yunicity\nFil local\nVidéos\nCarte\nSortir\nExplorer Reims\nMenu Yunicity\nC\nReims\n\nVidéos locales\n\nPour vous\nPrès de vous\nÉvénements\nLieux\nMes vidéos\nPublier une vidéo\n\nLes vidéos restent liées à la vie loc",
+      "ok": true,
+      "env": "next+api-simulee",
+      "note": "▲ désactivé + hint fil si séquence prête (D5)"
+    },
+    {
+      "kind": "ended-no-autoplay",
+      "urlBeforeEnd": "http://127.0.0.1:3002/videos?video=p1",
+      "urlAfterEnd": "http://127.0.0.1:3002/videos?video=p1",
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "medium-preserved",
+      "file": "APP-medium-820-no-overlay.png",
+      "medium": 1,
+      "overlayAtMedium": 0,
+      "desktopGridAtMedium": 0,
+      "ok": true,
+      "env": "next+api-simulee"
+    },
+    {
+      "kind": "mobile-preserved",
+      "file": "APP-mobile-390-no-desktop-overlay.png",
+      "mobileOverlay": 0,
+      "ok": true,
+      "env": "next+api-simulee"
+    }
+  ],
+  "failures": [],
+  "feedHits": 16,
+  "ok": true
+}

@@ -2,15 +2,28 @@
 
 export const TRIBE_CREATE_TITLE = "Créer une tribu";
 export const TRIBE_CREATE_SUBTITLE =
-  "Rassemblez votre communauté autour d'une passion ou d'un sujet.";
+  "Rassemblez les habitants autour d'un intérêt, d'un projet ou d'une communauté locale.";
 
-export const TRIBE_CREATE_STEP_INFO = "Informations";
-export const TRIBE_CREATE_STEP_PERSONALIZE = "Personnalisation";
-export const TRIBE_CREATE_STEP_RULES = "Règles";
-export const TRIBE_CREATE_STEP_INVITE = "Invitation";
-export const TRIBE_CREATE_STEP_CONFIRM = "Confirmation";
+export const TRIBE_CREATE_STEP_IDENTITY = "Identité";
+export const TRIBE_CREATE_STEP_ACCESS = "Accès et adhésion";
+export const TRIBE_CREATE_STEP_VISUALS = "Visuels";
+export const TRIBE_CREATE_STEP_REVIEW = "Vérification";
+
+/** @deprecated Utiliser TRIBE_CREATE_STEP_IDENTITY */
+export const TRIBE_CREATE_STEP_INFO = TRIBE_CREATE_STEP_IDENTITY;
+/** @deprecated Utiliser TRIBE_CREATE_STEP_VISUALS */
+export const TRIBE_CREATE_STEP_PERSONALIZE = TRIBE_CREATE_STEP_VISUALS;
+/** @deprecated Utiliser TRIBE_CREATE_STEP_ACCESS */
+export const TRIBE_CREATE_STEP_RULES = TRIBE_CREATE_STEP_ACCESS;
+/** @deprecated Fusionné dans TRIBE_CREATE_STEP_ACCESS */
+export const TRIBE_CREATE_STEP_INVITE = TRIBE_CREATE_STEP_ACCESS;
+/** @deprecated Utiliser TRIBE_CREATE_STEP_REVIEW */
+export const TRIBE_CREATE_STEP_CONFIRM = TRIBE_CREATE_STEP_REVIEW;
 
 export const TRIBE_CREATE_INFO_TITLE = "Informations générales";
+export const TRIBE_CREATE_ACCESS_TITLE = "Accès et adhésion";
+export const TRIBE_CREATE_VISUALS_TITLE = "Visuels";
+export const TRIBE_CREATE_REVIEW_TITLE = "Vérification";
 export const TRIBE_CREATE_FIELD_NAME = "Nom de la tribu";
 export const TRIBE_CREATE_FIELD_CATEGORY = "Catégorie";
 export const TRIBE_CREATE_FIELD_DESCRIPTION = "Description";
@@ -79,5 +92,7 @@ export const TRIBE_CREATE_ERROR = "Impossible de créer la tribu.";
 export const TRIBE_CREATE_VALIDATION_NAME = "Indiquez un nom (2 caractères minimum).";
 export const TRIBE_CREATE_VALIDATION_CATEGORY = "Sélectionnez une catégorie.";
 export const TRIBE_CREATE_VALIDATION_DESC =
-  "Ajoutez une description (10 caractères minimum, 200 max).";
+  "Ajoutez une description (10 caractères minimum, 140 max).";
 export const TRIBE_CREATE_VALIDATION_CHARTER = "Acceptez la charte pour continuer.";
+export const TRIBE_CREATE_VALIDATION_CITY = "Indiquez une ville.";
+export const TRIBE_CREATE_DRAFT_SAVED = "Brouillon enregistré";

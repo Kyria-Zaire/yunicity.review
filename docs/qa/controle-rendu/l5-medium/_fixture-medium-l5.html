@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>L5 medium — fixture géométrie</title>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #f5f5f5; }
+    .frame { margin: 12px auto; background: #fff; border: 1px solid #e5e5e5; position: relative; overflow: hidden; }
+    .rail { position: absolute; left: 0; top: 0; bottom: 0; width: 87px; background: #fafafa; border-right: 1px solid #eee; }
+    .hero { position: absolute; left: 87px; right: 0; top: 0; height: 65px; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; padding: 0 16px; font-weight: 700; }
+    .toolbar { position: absolute; left: 87px; right: 0; top: 65px; height: 48px; border-bottom: 1px solid #eee; display: flex; align-items: center; padding: 0 16px; color: #525252; font-size: 13px; }
+    .feed { position: absolute; left: 87px; right: 0; top: 113px; bottom: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; box-sizing: border-box; }
+    .stage { flex: 1; min-height: 0; border-radius: 16px; background: #111827; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+    .badge { align-self: flex-start; background: rgba(17,24,39,.85); color: #fff; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; }
+    .label { position: absolute; left: 8px; top: 8px; background: #2A2FFF; color: #fff; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div class="frame" style="width:640px;height:900px" data-size="640x900">
+    <div class="label">640 × 900</div>
+    <div class="rail"></div>
+    <div class="hero">Vidéos locales · Reims</div>
+    <div class="toolbar">Pour vous · Au plus près</div>
+    <div class="feed" data-videos-medium-vertical-feed="">
+      <div class="stage">Fil vertical medium</div>
+    </div>
+  </div>
+  <div class="frame" style="width:820px;height:1180px" data-size="820x1180">
+    <div class="label">820 × 1180 · F2</div>
+    <div class="rail"></div>
+    <div class="hero">Vidéos locales · Reims</div>
+    <div class="toolbar">Pour vous · Au plus près</div>
+    <div class="feed" data-videos-medium-vertical-feed="">
+      <div class="badge">Vidéo partagée</div>
+      <div class="stage">?video= en tête</div>
+    </div>
+  </div>
+  <div class="frame" style="width:1023px;height:768px" data-size="1023x768">
+    <div class="label">1023 × 768</div>
+    <div class="rail" style="width:101px"></div>
+    <div class="hero" style="left:101px">Vidéos locales · Reims</div>
+    <div class="toolbar" style="left:101px">Pour vous · Au plus près</div>
+    <div class="feed" style="left:101px" data-videos-medium-vertical-feed="">
+      <div class="stage">Fil vertical medium</div>
+    </div>
+  </div>
+  <div class="frame" style="width:844px;height:390px" data-size="844x390">
+    <div class="label">844 × 390 · RC-M1</div>
+    <div class="rail"></div>
+    <div class="hero">Vidéos locales · Reims</div>
+    <div class="toolbar">Pour vous · Au plus près</div>
+    <div class="feed" data-videos-medium-vertical-feed="">
+      <div class="stage" style="font-size:14px">Hero conservé · défilement page</div>
+    </div>
+  </div>
+</body>
+</html>

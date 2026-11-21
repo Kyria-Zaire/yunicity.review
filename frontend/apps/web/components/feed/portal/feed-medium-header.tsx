@@ -14,6 +14,10 @@ import { FEED_PORTAL_FILTER } from "@yunicity/utils";
  * l'ouverture du panneau ; l'état ACTIF du filtre (centres d'intérêt) est
  * annoncé séparément (texte + `aria-pressed` / `data-active`) pour ne pas
  * confondre ouverture et application.
+ *
+ * Sans `onOpenFilter`, le bouton « Filtrer » n'est pas rendu : `/feed/new`
+ * reprend cet en-tête (planche medium FEED-NEW-UX-01) et n'a rien à filtrer —
+ * un bouton sans effet y serait une option inerte.
  */
 export function FeedMediumHeader({
   city,
@@ -23,9 +27,9 @@ export function FeedMediumHeader({
   filterButtonRef,
 }: {
   city: string;
-  filterPanelOpen: boolean;
-  filterActive: boolean;
-  onOpenFilter: (trigger: HTMLButtonElement) => void;
+  filterPanelOpen?: boolean;
+  filterActive?: boolean;
+  onOpenFilter?: (trigger: HTMLButtonElement) => void;
   filterButtonRef?: Ref<HTMLButtonElement>;
 }) {
   const explorer = useExplorerOptional();
@@ -62,27 +66,29 @@ export function FeedMediumHeader({
         <span className="min-w-0 flex-1 truncate">Rechercher à {city}</span>
       </button>
 
-      <button
-        type="button"
-        ref={filterButtonRef}
-        data-feed-medium-header-filter=""
-        data-feed-medium-filter-active={filterActive ? "" : undefined}
-        onClick={(event: MouseEvent<HTMLButtonElement>) => onOpenFilter(event.currentTarget)}
-        aria-expanded={filterPanelOpen}
-        aria-haspopup="dialog"
-        aria-pressed={filterActive}
-        className={`inline-flex min-h-11 min-w-11 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
-          filterActive
-            ? "border-yunicity-primary bg-[#EEF0FF] text-yunicity-primary ring-1 ring-yunicity-primary/40"
-            : filterPanelOpen
-              ? "border-neutral-400 bg-neutral-50 text-neutral-800"
-              : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300"
-        }`}
-      >
-        <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden />
-        <span className="whitespace-nowrap">{FEED_PORTAL_FILTER}</span>
-        {filterActive ? <span className="sr-only"> — filtre actif</span> : null}
-      </button>
+      {onOpenFilter ? (
+        <button
+          type="button"
+          ref={filterButtonRef}
+          data-feed-medium-header-filter=""
+          data-feed-medium-filter-active={filterActive ? "" : undefined}
+          onClick={(event: MouseEvent<HTMLButtonElement>) => onOpenFilter(event.currentTarget)}
+          aria-expanded={filterPanelOpen ?? false}
+          aria-haspopup="dialog"
+          aria-pressed={filterActive ?? false}
+          className={`inline-flex min-h-11 min-w-11 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2 ${
+            filterActive
+              ? "border-yunicity-primary bg-[#EEF0FF] text-yunicity-primary ring-1 ring-yunicity-primary/40"
+              : filterPanelOpen
+                ? "border-neutral-400 bg-neutral-50 text-neutral-800"
+                : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300"
+          }`}
+        >
+          <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden />
+          <span className="whitespace-nowrap">{FEED_PORTAL_FILTER}</span>
+          {filterActive ? <span className="sr-only"> — filtre actif</span> : null}
+        </button>
+      ) : null}
     </div>
   );
 }

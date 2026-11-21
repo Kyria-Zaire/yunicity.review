@@ -2,7 +2,7 @@ import { deflateSync } from "node:zlib";
 
 import type { Locator, Page, Response } from "@playwright/test";
 
-import { expect, test } from "../fixtures";
+import { expect, testCitizen as test } from "../fixtures";
 import { COLD_START_TEST_TIMEOUT, COLD_START_TIMEOUT } from "../cold-start";
 
 /**
@@ -136,10 +136,10 @@ function isDirectApiCall(url: string): boolean {
   return /:(8010|8000)\/api\//.test(url);
 }
 
-async function expectLoadedSameOriginImage(image: Locator): Promise<void> {
+async function expectLoadedAuthorizedImage(image: Locator): Promise<void> {
   await expect(image).toBeVisible();
   const src = await image.getAttribute("src");
-  expect(src).toMatch(/^\/api\/v1\/story-media\//);
+  expect(src).toMatch(/^blob:/);
   await expect
     .poll(async () => image.evaluate((node) => (node as HTMLImageElement).naturalWidth))
     .toBeGreaterThan(1);
@@ -245,9 +245,29 @@ test.describe("C3.1-R1C — Portrait Media Visual Closure", () => {
         await expect(composer).toBeVisible({ timeout: COLD_START_TIMEOUT });
         await expect(composer.locator('input[type="file"]')).toHaveAttribute("accept", ACCEPT);
 
-        // Ouvrir le composer
-        await composer.locator("button").filter({ hasText: /Quoi de neuf|Partagez/ }).first().click();
-        await expect(composer.locator("textarea")).toBeVisible();
+        /*
+         * Le compositeur n'a PAS d'etat replie : rien a ouvrir.
+         *
+         * Ce clic attendait un bouton portant l'espace reserve, affordance de
+         * `FeedMobileComposer` — plus monte nulle part depuis la consolidation
+         * responsive. `/feed` sert `FeedDesktopComposer` a toutes les largeurs,
+         * dont l'espace reserve est le `placeholder` du `textarea` et un `label`
+         * `sr-only`, jamais un bouton.
+         *
+         * Diagnostic du 12/10 : le clic attendait 120 s, le timeout du TEST
+         * expirait, Playwright demontait le contexte, et l'action en attente
+         * rapportait « Target page, context or browser has been closed ». Les six
+         * processus navigateur sortaient en `exitCode=0, signal=null`, sans aucun
+         * marqueur de crash, et l'API repondait 178 fois 200 — l'unique 429
+         * arrivant a la derniere seconde du run, consequence des timeouts.
+         *
+         * La zone de saisie est disponible des le chargement : on le verifie, ce
+         * qui est un fait a prouver, au lieu d'ouvrir ce qui est deja ouvert.
+         */
+        await expect(
+          composer.locator("textarea"),
+          "zone de saisie indisponible sans action prealable",
+        ).toBeVisible();
 
         const fileInput = composer.locator('input[type="file"]');
         const uploadWait = page.waitForResponse(
@@ -261,7 +281,7 @@ test.describe("C3.1-R1C — Portrait Media Visual Closure", () => {
 
         // ─── Aperçu ───────────────────────────────────────────────
         const preview = composer.locator("img").first();
-        await expectLoadedSameOriginImage(preview);
+        await expectLoadedAuthorizedImage(preview);
 
         await expectAspectRatioPreserved(
           preview,
@@ -324,7 +344,7 @@ test.describe("C3.1-R1C — Portrait Media Visual Closure", () => {
         );
         await replaceChooser.setFiles(replacementFilePayload);
         expect((await replaceWait).status()).toBe(201);
-        await expectLoadedSameOriginImage(composer.locator("img").first());
+        await expectLoadedAuthorizedImage(composer.locator("img").first());
 
         await btnRemove.click();
         await expect(composer.locator("img")).toHaveCount(0);
@@ -335,7 +355,7 @@ test.describe("C3.1-R1C — Portrait Media Visual Closure", () => {
         );
         await fileInput.setInputFiles(filePayload);
         expect((await readdWait).status()).toBe(201);
-        await expectLoadedSameOriginImage(composer.locator("img").first());
+        await expectLoadedAuthorizedImage(composer.locator("img").first());
 
         // ─── Publier ──────────────────────────────────────────────
         const marker = `C3RC ${ratioName} ${viewport.name} ${Date.now()}`;
@@ -355,7 +375,7 @@ test.describe("C3.1-R1C — Portrait Media Visual Closure", () => {
         const card = visibleFeedArticle(page, marker);
         await expect(card).toBeVisible({ timeout: COLD_START_TIMEOUT });
         const feedImg = card.locator("img").first();
-        await expectLoadedSameOriginImage(feedImg);
+        await expectLoadedAuthorizedImage(feedImg);
         await expectAspectRatioPreserved(
           feedImg,
           naturalRatio,
@@ -369,7 +389,7 @@ test.describe("C3.1-R1C — Portrait Media Visual Closure", () => {
         const reloaded = visibleFeedArticle(page, marker);
         await expect(reloaded).toBeVisible({ timeout: COLD_START_TIMEOUT });
         const reloadImg = reloaded.locator("img").first();
-        await expectLoadedSameOriginImage(reloadImg);
+        await expectLoadedAuthorizedImage(reloadImg);
         await expectAspectRatioPreserved(
           reloadImg,
           naturalRatio,

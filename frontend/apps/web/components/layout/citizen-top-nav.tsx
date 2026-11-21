@@ -137,7 +137,7 @@ export function CitizenTopNav() {
         <div className="flex min-w-0 shrink-0 items-center justify-end gap-1.5 xl:gap-2">
           <ExplorerTriggerButton variant="desktop-text" />
 
-          <CreateHubTriggerButton variant="nav" />
+          <CreateHubTriggerButton variant="nav" visibilitySurface="citizen-top-nav" />
 
           <CitizenYunicityMenu variant="top-nav" />
 

@@ -1,0 +1,270 @@
+{
+  "base": "http://localhost:3002",
+  "shaLocalWorkingTree": "uncommitted-layout-fix",
+  "previewBase": "95674af1",
+  "reference": "Lecteur-medium.dc.html — son dans cadre (top/right 6), ax=vx+vw+12",
+  "causesAvant": [
+    "toolbar son isolée au-dessus du stage (gap + bouton flottant)",
+    "videos-portal-toolbar margin-bottom 1rem + row-gap 20px (double réserve)",
+    "stage height min(70dvh,720px) trop haut vs chrome → bas hors écran + double scroll"
+  ],
+  "fixes": [
+    "son dans cadre vidéo (maquette)",
+    "portal-toolbar margin-bottom:0 en medium",
+    "stage height = max(240px, min(720px, 100dvh - chrome-offset))"
+  ],
+  "proofs": [
+    {
+      "name": "640x900",
+      "file": "APRES-640x900-simule.png",
+      "env": "localhost+api-simulee",
+      "viewport": {
+        "w": 640,
+        "h": 900
+      },
+      "hero": {
+        "top": 24,
+        "bottom": 89,
+        "height": 65,
+        "width": 552,
+        "left": 88
+      },
+      "portalToolbar": {
+        "top": 121,
+        "bottom": 210,
+        "height": 89,
+        "width": 520,
+        "left": 104
+      },
+      "sortBottom": 210,
+      "gapSortToStagePx": 20,
+      "stage": {
+        "top": 230,
+        "bottom": 898,
+        "height": 668,
+        "width": 520
+      },
+      "video": {
+        "top": 236,
+        "bottom": 892,
+        "height": 656,
+        "width": 440
+      },
+      "side": {
+        "top": 236,
+        "bottom": 892,
+        "height": 656,
+        "width": 56,
+        "left": 562
+      },
+      "mute": {
+        "top": 242,
+        "left": 500,
+        "insideDarkFrame": true
+      },
+      "pageScroll": {
+        "scrollHeight": 932,
+        "clientHeight": 900,
+        "scrolls": true
+      },
+      "feedViewport": {
+        "overflowY": "auto",
+        "scrollHeight": 1336,
+        "clientHeight": 668,
+        "scrolls": true
+      },
+      "stageClippedBelowViewportPx": -2,
+      "mediumFeed": true,
+      "toolbarGone": true
+    },
+    {
+      "name": "820x1180",
+      "file": "APRES-820x1180-simule.png",
+      "env": "localhost+api-simulee",
+      "viewport": {
+        "w": 820,
+        "h": 1180
+      },
+      "hero": {
+        "top": 24,
+        "bottom": 89,
+        "height": 65,
+        "width": 732,
+        "left": 88
+      },
+      "portalToolbar": {
+        "top": 121,
+        "bottom": 210,
+        "height": 89,
+        "width": 692,
+        "left": 108
+      },
+      "sortBottom": 210,
+      "gapSortToStagePx": 20,
+      "stage": {
+        "top": 230,
+        "bottom": 950,
+        "height": 720,
+        "width": 692
+      },
+      "video": {
+        "top": 236,
+        "bottom": 944,
+        "height": 708,
+        "width": 612
+      },
+      "side": {
+        "top": 236,
+        "bottom": 944,
+        "height": 708,
+        "width": 56,
+        "left": 738
+      },
+      "mute": {
+        "top": 242,
+        "left": 676,
+        "insideDarkFrame": true
+      },
+      "pageScroll": {
+        "scrollHeight": 1212,
+        "clientHeight": 1180,
+        "scrolls": true
+      },
+      "feedViewport": {
+        "overflowY": "auto",
+        "scrollHeight": 1440,
+        "clientHeight": 720,
+        "scrolls": true
+      },
+      "stageClippedBelowViewportPx": -230,
+      "mediumFeed": true,
+      "toolbarGone": true
+    },
+    {
+      "name": "1023x768",
+      "file": "APRES-1023x768-simule.png",
+      "env": "localhost+api-simulee",
+      "viewport": {
+        "w": 1023,
+        "h": 768
+      },
+      "hero": {
+        "top": 24,
+        "bottom": 89,
+        "height": 65,
+        "width": 921,
+        "left": 102
+      },
+      "portalToolbar": {
+        "top": 121,
+        "bottom": 210,
+        "height": 89,
+        "width": 881,
+        "left": 122
+      },
+      "sortBottom": 210,
+      "gapSortToStagePx": 20,
+      "stage": {
+        "top": 230,
+        "bottom": 766,
+        "height": 536,
+        "width": 881
+      },
+      "video": {
+        "top": 236,
+        "bottom": 760,
+        "height": 524,
+        "width": 801
+      },
+      "side": {
+        "top": 236,
+        "bottom": 760,
+        "height": 524,
+        "width": 56,
+        "left": 941
+      },
+      "mute": {
+        "top": 242,
+        "left": 879,
+        "insideDarkFrame": true
+      },
+      "pageScroll": {
+        "scrollHeight": 800,
+        "clientHeight": 768,
+        "scrolls": true
+      },
+      "feedViewport": {
+        "overflowY": "auto",
+        "scrollHeight": 1072,
+        "clientHeight": 536,
+        "scrolls": true
+      },
+      "stageClippedBelowViewportPx": -2,
+      "mediumFeed": true,
+      "toolbarGone": true
+    },
+    {
+      "name": "844x390",
+      "file": "APRES-844x390-simule.png",
+      "env": "localhost+api-simulee",
+      "viewport": {
+        "w": 844,
+        "h": 390
+      },
+      "hero": {
+        "top": 24,
+        "bottom": 89,
+        "height": 65,
+        "width": 756,
+        "left": 88
+      },
+      "portalToolbar": {
+        "top": 121,
+        "bottom": 210,
+        "height": 89,
+        "width": 716,
+        "left": 108
+      },
+      "sortBottom": 210,
+      "gapSortToStagePx": 20,
+      "stage": {
+        "top": 230,
+        "bottom": 470,
+        "height": 240,
+        "width": 716
+      },
+      "video": {
+        "top": 236,
+        "bottom": 464,
+        "height": 228,
+        "width": 636
+      },
+      "side": {
+        "top": 236,
+        "bottom": 464,
+        "height": 228,
+        "width": 56,
+        "left": 762
+      },
+      "mute": {
+        "top": 242,
+        "left": 700,
+        "insideDarkFrame": true
+      },
+      "pageScroll": {
+        "scrollHeight": 502,
+        "clientHeight": 390,
+        "scrolls": true
+      },
+      "feedViewport": {
+        "overflowY": "auto",
+        "scrollHeight": 480,
+        "clientHeight": 240,
+        "scrolls": true
+      },
+      "stageClippedBelowViewportPx": 80,
+      "mediumFeed": true,
+      "toolbarGone": true
+    }
+  ]
+}

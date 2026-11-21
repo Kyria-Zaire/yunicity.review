@@ -11,7 +11,12 @@ type ProfileAppShellProps = {
   children: ReactNode;
 };
 
-/** Shell profil — mobile MOBILE-PROFILE-01 + desktop portail existant. */
+/**
+ * Shell profil :
+ * - ≤639px : mobile MOBILE-PROFILE-01
+ * - 640px–1023px : rail citoyen medium + profil medium
+ * - ≥1024px : top nav + desktop DESKTOP-PROFILE-01 (sans sidebar citoyenne)
+ */
 export function ProfileAppShell({ children }: ProfileAppShellProps) {
   return (
     <div className="web-shell-page profile-mobile-shell min-h-dvh bg-[#F4F5F7]">

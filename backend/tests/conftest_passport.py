@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
-from typing import Any
+import uuid
+from typing import Any, cast
 
 from app.core.organization_constants import (
+    OrganizationMemberRole,
+    OrganizationMemberStatus,
     OrganizationType,
     OrganizationVisibility,
     VerificationStatus,
 )
 from app.core.partner_constants import PartnershipType, PartnerStatus
 from app.core.passport_constants import PartnerOfferStatus, PartnerOfferType
-from app.models.organization import Organization
+from app.models.organization import Organization, OrganizationMember
 from app.models.partner_profile import PartnerProfile
 from app.models.passport import PartnerOffer
 from httpx import AsyncClient
@@ -108,3 +111,51 @@ async def create_unverified_org_with_active_offer(
         visibility=OrganizationVisibility.PRIVATE,
     )
     return offer
+
+
+async def register_partner_for_org(
+    client: AsyncClient,
+    session: AsyncSession,
+    *,
+    organization_id: uuid.UUID,
+    suffix: str,
+) -> dict[str, Any]:
+    """Inscrit un partenaire et le rend gestionnaire (owner actif) de l'organisation."""
+    response = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": f"partner{suffix}@example.com",
+            "password": "StrongPassword1!",
+            "full_name": "Partner Scanner",
+            "city": "Reims",
+        },
+    )
+    assert response.status_code == 201, response.text
+    partner = cast(dict[str, Any], response.json())
+    session.add(
+        OrganizationMember(
+            organization_id=organization_id,
+            user_id=uuid.UUID(partner["user"]["id"]),
+            role=OrganizationMemberRole.OWNER.value,
+            status=OrganizationMemberStatus.ACTIVE.value,
+        )
+    )
+    await session.flush()
+    return partner
+
+
+async def partner_redeem(
+    client: AsyncClient,
+    *,
+    partner_token: str,
+    citizen_token: str,
+    offer_id: uuid.UUID | str,
+) -> Any:
+    """Validation d'une offre par le parcours partenaire : QR du citoyen puis ``/scan/redeem``."""
+    qr = await client.get("/api/v1/passport/me/qr", headers=auth_header(citizen_token))
+    assert qr.status_code == 200, qr.text
+    return await client.post(
+        "/api/v1/scan/redeem",
+        json={"qr_secret": qr.json()["qr_payload"], "offer_id": str(offer_id)},
+        headers=auth_header(partner_token),
+    )

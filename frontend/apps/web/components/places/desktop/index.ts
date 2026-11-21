@@ -1,0 +1,11 @@
+export { PlacesDesktopAroundPreviewBlock } from "./places-desktop-around-preview";
+export { PlacesDesktopEditorialHeader } from "./places-desktop-editorial-header";
+export { PlacesDesktopHeroHeader } from "./places-desktop-hero-header";
+export { PlacesDesktopFeaturedSpotlight } from "./places-desktop-featured-spotlight";
+export { PlacesDesktopLeftRail } from "./places-desktop-left-rail";
+export { PlacesDesktopProposeBanner } from "./places-desktop-propose-banner";
+export { PlacesDesktopQuartiersRow } from "./places-desktop-quartiers-row";
+export { PlacesDesktopRightRail } from "./places-desktop-right-rail";
+export { PlacesDesktopScreen } from "./places-desktop-screen";
+export { PlaceDesktopDetailView } from "./detail";
+export { PlacesDesktopSelectionGrid } from "./places-desktop-selection-grid";

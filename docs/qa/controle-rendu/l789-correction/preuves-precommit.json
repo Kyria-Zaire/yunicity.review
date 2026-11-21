@@ -1,0 +1,389 @@
+{
+  "env": "next-local+api-simulee",
+  "base": "http://127.0.0.1:3022",
+  "serverProvenance": {
+    "url": "http://127.0.0.1:3022",
+    "status": 200,
+    "worktreeExpected": "yunicity-wt-video-lot1",
+    "cwdNote": "Next démarré depuis frontend/ de ce worktree (pid terminal 270867)"
+  },
+  "c1": {
+    "1024": {
+      "portraitThenLandscape": {
+        "display": "grid",
+        "gridTemplateColumns": "184.75px 184.75px 184.75px",
+        "rects": [
+          {
+            "id": "p1",
+            "orient": "portrait",
+            "left": 186,
+            "top": 214,
+            "width": 185,
+            "height": 374,
+            "objectFit": "cover",
+            "aspect": "720 / 1280"
+          },
+          {
+            "id": "l1",
+            "orient": "landscape",
+            "left": 387,
+            "top": 214,
+            "width": 386,
+            "height": 262,
+            "objectFit": "contain",
+            "aspect": "1280 / 720"
+          }
+        ],
+        "sameRow": true,
+        "sideBySide": true,
+        "landscapeWider": true,
+        "ok": true,
+        "shot": "PRECOMMIT-C1-portrait-then-landscape-1024x900.png",
+        "order": "portrait-then-landscape",
+        "viewport": "1024x900"
+      },
+      "landscapeThenPortrait": {
+        "display": "grid",
+        "gridTemplateColumns": "184.75px 184.75px 184.75px",
+        "rects": [
+          {
+            "id": "l1",
+            "orient": "landscape",
+            "left": 186,
+            "top": 214,
+            "width": 386,
+            "height": 262,
+            "objectFit": "contain",
+            "aspect": "1280 / 720"
+          },
+          {
+            "id": "p1",
+            "orient": "portrait",
+            "left": 588,
+            "top": 214,
+            "width": 185,
+            "height": 374,
+            "objectFit": "cover",
+            "aspect": "720 / 1280"
+          }
+        ],
+        "sameRow": true,
+        "sideBySide": true,
+        "landscapeWider": true,
+        "ok": true,
+        "shot": "PRECOMMIT-C1-landscape-then-portrait-1024x900.png",
+        "order": "landscape-then-portrait",
+        "viewport": "1024x900"
+      }
+    },
+    "1280": {
+      "portraitThenLandscape": {
+        "display": "grid",
+        "gridTemplateColumns": "169px 169px 169px 169px",
+        "rects": [
+          {
+            "id": "p1",
+            "orient": "portrait",
+            "left": 240,
+            "top": 206,
+            "width": 169,
+            "height": 346,
+            "objectFit": "cover",
+            "aspect": "720 / 1280"
+          },
+          {
+            "id": "l1",
+            "orient": "landscape",
+            "left": 425,
+            "top": 206,
+            "width": 354,
+            "height": 244,
+            "objectFit": "contain",
+            "aspect": "1280 / 720"
+          }
+        ],
+        "sameRow": true,
+        "sideBySide": true,
+        "landscapeWider": true,
+        "ok": true,
+        "shot": "PRECOMMIT-C1-portrait-then-landscape-1280x800.png",
+        "order": "portrait-then-landscape",
+        "viewport": "1280x800"
+      },
+      "landscapeThenPortrait": {
+        "display": "grid",
+        "gridTemplateColumns": "169px 169px 169px 169px",
+        "rects": [
+          {
+            "id": "l1",
+            "orient": "landscape",
+            "left": 240,
+            "top": 206,
+            "width": 354,
+            "height": 244,
+            "objectFit": "contain",
+            "aspect": "1280 / 720"
+          },
+          {
+            "id": "p1",
+            "orient": "portrait",
+            "left": 610,
+            "top": 206,
+            "width": 169,
+            "height": 346,
+            "objectFit": "cover",
+            "aspect": "720 / 1280"
+          }
+        ],
+        "sameRow": true,
+        "sideBySide": true,
+        "landscapeWider": true,
+        "ok": true,
+        "shot": "PRECOMMIT-C1-landscape-then-portrait-1280x800.png",
+        "order": "landscape-then-portrait",
+        "viewport": "1280x800"
+      }
+    },
+    "1440": {
+      "portraitThenLandscape": {
+        "display": "grid",
+        "gridTemplateColumns": "206px 206px 206px 206px",
+        "rects": [
+          {
+            "id": "p1",
+            "orient": "portrait",
+            "left": 240,
+            "top": 206,
+            "width": 206,
+            "height": 411,
+            "objectFit": "cover",
+            "aspect": "720 / 1280"
+          },
+          {
+            "id": "l1",
+            "orient": "landscape",
+            "left": 466,
+            "top": 206,
+            "width": 432,
+            "height": 288,
+            "objectFit": "contain",
+            "aspect": "1280 / 720"
+          }
+        ],
+        "sameRow": true,
+        "sideBySide": true,
+        "landscapeWider": true,
+        "ok": true,
+        "shot": "PRECOMMIT-C1-portrait-then-landscape-1440x900.png",
+        "order": "portrait-then-landscape",
+        "viewport": "1440x900"
+      },
+      "landscapeThenPortrait": {
+        "display": "grid",
+        "gridTemplateColumns": "206px 206px 206px 206px",
+        "rects": [
+          {
+            "id": "l1",
+            "orient": "landscape",
+            "left": 240,
+            "top": 206,
+            "width": 432,
+            "height": 288,
+            "objectFit": "contain",
+            "aspect": "1280 / 720"
+          },
+          {
+            "id": "p1",
+            "orient": "portrait",
+            "left": 692,
+            "top": 206,
+            "width": 206,
+            "height": 411,
+            "objectFit": "cover",
+            "aspect": "720 / 1280"
+          }
+        ],
+        "sameRow": true,
+        "sideBySide": true,
+        "landscapeWider": true,
+        "ok": true,
+        "shot": "PRECOMMIT-C1-landscape-then-portrait-1440x900.png",
+        "order": "landscape-then-portrait",
+        "viewport": "1440x900"
+      }
+    },
+    "1920": {
+      "portraitThenLandscape": {
+        "display": "grid",
+        "gridTemplateColumns": "206px 206px 206px 206px",
+        "rects": [
+          {
+            "id": "p1",
+            "orient": "portrait",
+            "left": 480,
+            "top": 206,
+            "width": 206,
+            "height": 411,
+            "objectFit": "cover",
+            "aspect": "720 / 1280"
+          },
+          {
+            "id": "l1",
+            "orient": "landscape",
+            "left": 706,
+            "top": 206,
+            "width": 432,
+            "height": 288,
+            "objectFit": "contain",
+            "aspect": "1280 / 720"
+          }
+        ],
+        "sameRow": true,
+        "sideBySide": true,
+        "landscapeWider": true,
+        "ok": true,
+        "shot": "PRECOMMIT-C1-portrait-then-landscape-1920x1080.png",
+        "order": "portrait-then-landscape",
+        "viewport": "1920x1080"
+      },
+      "landscapeThenPortrait": {
+        "display": "grid",
+        "gridTemplateColumns": "206px 206px 206px 206px",
+        "rects": [
+          {
+            "id": "l1",
+            "orient": "landscape",
+            "left": 480,
+            "top": 206,
+            "width": 432,
+            "height": 288,
+            "objectFit": "contain",
+            "aspect": "1280 / 720"
+          },
+          {
+            "id": "p1",
+            "orient": "portrait",
+            "left": 932,
+            "top": 206,
+            "width": 206,
+            "height": 411,
+            "objectFit": "cover",
+            "aspect": "720 / 1280"
+          }
+        ],
+        "sameRow": true,
+        "sideBySide": true,
+        "landscapeWider": true,
+        "ok": true,
+        "shot": "PRECOMMIT-C1-landscape-then-portrait-1920x1080.png",
+        "order": "landscape-then-portrait",
+        "viewport": "1920x1080"
+      }
+    }
+  },
+  "c2_1024": {
+    "layout": "portrait",
+    "stage": "portrait",
+    "hasMetaBand": true,
+    "hasCaptionBelow": false,
+    "hasAuthor": true,
+    "hasPlus": true,
+    "stageRect": {
+      "w": 430,
+      "h": 836,
+      "top": 32,
+      "bottom": 868
+    },
+    "navInView": true,
+    "closeInView": true,
+    "stageInView": true,
+    "captionInView": true,
+    "metaInView": true,
+    "overflowPx": 0,
+    "mediaWidth": null,
+    "mediaHeight": null,
+    "videoClient": {
+      "w": 430,
+      "h": 836
+    },
+    "objectFit": "contain",
+    "shot": "PRECOMMIT-C2-1024.png",
+    "hasPlusButton": true,
+    "descriptionSheetOpen": true,
+    "commentsPanel": true,
+    "shotComments": "PRECOMMIT-C2-1024-comments.png",
+    "ok": true
+  },
+  "c3_1024": {
+    "layout": "landscape",
+    "stage": "landscape",
+    "hasMetaBand": false,
+    "hasCaptionBelow": true,
+    "hasAuthor": true,
+    "hasPlus": true,
+    "stageRect": {
+      "w": 800,
+      "h": 600,
+      "top": 32,
+      "bottom": 632
+    },
+    "navInView": true,
+    "closeInView": true,
+    "stageInView": true,
+    "captionInView": true,
+    "metaInView": true,
+    "overflowPx": 0,
+    "mediaWidth": null,
+    "mediaHeight": null,
+    "videoClient": {
+      "w": 800,
+      "h": 600
+    },
+    "objectFit": "contain",
+    "shot": "PRECOMMIT-C3-1024.png",
+    "ok": true,
+    "commentsOpen": true,
+    "shotComments": "PRECOMMIT-C3-1024-comments.png"
+  },
+  "c3_bands": {
+    "intrinsic": {
+      "w": 1280,
+      "h": 720,
+      "ratio": 1.7778,
+      "decoded": {
+        "w": 0,
+        "h": 0
+      },
+      "declared": {
+        "w": 1280,
+        "h": 720
+      },
+      "source": "media_width/height déclarés (fixture)"
+    },
+    "frame": {
+      "w": 800,
+      "h": 600,
+      "ratio": 1.3333,
+      "refC3": "800×600 (ratio 4:3 ≈ 1.333) — C3-Lecteur-paysage.dc.html"
+    },
+    "objectFit": "contain",
+    "containedContent": {
+      "w": 800,
+      "h": 450
+    },
+    "letterboxBarsInFrame": {
+      "horizontalPx": 75,
+      "verticalPx": 0,
+      "explanation": "Bandes calculées par object-contain du média dans le cadre lecteur. Ce ne sont PAS des bandes encodées dans le fichier. Réf. C3 utilise aussi object-fit:contain dans 800×600."
+    },
+    "conformsToC3Frame": true
+  },
+  "rfocus": {
+    "y0": 652,
+    "y1": 652,
+    "delta": 0,
+    "ok": true
+  },
+  "failures": [],
+  "ok": true
+}

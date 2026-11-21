@@ -22,6 +22,8 @@ function processingVideo(): LocalVideo {
     media_url: "",
     thumbnail_url: "",
     duration_seconds: 0,
+    media_width: null,
+    media_height: null,
     file_size_bytes: 0,
     mime_type: "video/mp4",
     latitude: null,

@@ -1,0 +1,221 @@
+{
+  "env": "next+route-mock",
+  "apiHitsSample": [
+    {
+      "method": "POST",
+      "url": "http://localhost:3002/api/v1/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/profile/me"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/notifications?limit=1"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/local-videos/feed?city=Reims&limit=12"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/local-videos/feed?city=Reims&limit=12"
+    },
+    {
+      "method": "POST",
+      "url": "http://localhost:3002/api/v1/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/profile/me"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/notifications?limit=1"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/local-videos/feed?city=Reims&limit=12"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/local-videos/feed?city=Reims&limit=12"
+    },
+    {
+      "method": "POST",
+      "url": "http://localhost:3002/api/v1/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/profile/me"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/notifications?limit=1"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/local-videos/feed?city=Reims&limit=12"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/local-videos/feed?city=Reims&limit=12"
+    },
+    {
+      "method": "POST",
+      "url": "http://localhost:3002/api/v1/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/profile/me"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/notifications?limit=1"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/local-videos/feed?city=Reims&limit=12"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/local-videos/feed?city=Reims&limit=12"
+    },
+    {
+      "method": "POST",
+      "url": "http://localhost:3002/api/v1/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/auth/me"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/profile/me"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/notifications?limit=1"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/local-videos/feed?city=Reims&limit=12"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:3002/api/v1/local-videos/feed?city=Reims&limit=12"
+    }
+  ],
+  "proofs": [
+    {
+      "name": "639-mobile",
+      "w": 639,
+      "h": 900,
+      "mediumFeed": 0,
+      "side": 0,
+      "presentation": 0,
+      "slideIds": [
+        "vid-b",
+        "vid-a"
+      ],
+      "badge": 0,
+      "bodySnippet": "Vidéos locales Pour vous Filtres 3 2 Partager AL Alice B — desc medium L5 plus Centre 0:00 / 0:05 1 0 Partager BO Bob A — second plus Centre 0:00 / 0:05 Accueil Video Carte Sortir",
+      "file": "LIVE-639-mobile.png"
+    },
+    {
+      "name": "640-medium",
+      "w": 640,
+      "h": 900,
+      "mediumFeed": 1,
+      "side": 2,
+      "presentation": 2,
+      "slideIds": [
+        "vid-b",
+        "vid-a"
+      ],
+      "badge": 0,
+      "bodySnippet": "Accueil Vidéos Carte Sortir Explorer Menu Créer Notifications A Vidéos locales Vidéos locales Ville courante : Reims Rechercher à Reims Filtres Pour vous Près de vous Trier par : Au plus près de toi Les plus récents Les plus populaires AL Alice B — desc medium L5 plus Centre 0:",
+      "file": "LIVE-640-medium.png"
+    },
+    {
+      "name": "820-medium",
+      "w": 820,
+      "h": 1180,
+      "mediumFeed": 1,
+      "side": 2,
+      "presentation": 2,
+      "slideIds": [
+        "vid-b",
+        "vid-a"
+      ],
+      "badge": 0,
+      "bodySnippet": "Accueil Vidéos Carte Sortir Explorer Menu Créer Notifications A Vidéos locales Vidéos locales Ville courante : Reims Rechercher à Reims Filtres Pour vous Près de vous Trier par : Au plus près de toi Les plus récents Les plus populaires AL Alice B — desc medium L5 plus Centre 0:",
+      "file": "LIVE-820-medium.png"
+    },
+    {
+      "name": "1023-medium",
+      "w": 1023,
+      "h": 768,
+      "mediumFeed": 1,
+      "side": 2,
+      "presentation": 2,
+      "slideIds": [
+        "vid-b",
+        "vid-a"
+      ],
+      "badge": 0,
+      "bodySnippet": "Accueil Vidéos Carte Sortir Explorer Menu Créer Notifications A Vidéos locales Vidéos locales Ville courante : Reims Rechercher à Reims Filtres Pour vous Près de vous Trier par : Au plus près de toi Les plus récents Les plus populaires AL Alice B — desc medium L5 plus Centre 0:",
+      "file": "LIVE-1023-medium.png"
+    },
+    {
+      "name": "1024-desktop",
+      "w": 1024,
+      "h": 800,
+      "mediumFeed": 0,
+      "side": 0,
+      "presentation": 0,
+      "slideIds": [],
+      "badge": 0,
+      "bodySnippet": "Yunicity Fil local Vidéos Carte Sortir Explorer Reims Menu A Reims Vidéos locales Pour vous Près de vous Événements Lieux Mes vidéos Publier une vidéo Les vidéos restent liées à la vie locale Vidéos locales Découvrez Reims autrement Filtres Pour vous Près de vous Trier par ",
+      "file": "LIVE-1024-desktop.png"
+    },
+    {
+      "name": "820-video-query",
+      "w": 820,
+      "h": 1180,
+      "mediumFeed": 1,
+      "side": 2,
+      "presentation": 2,
+      "slideIds": [
+        "vid-b",
+        "vid-a"
+      ],
+      "badge": 1,
+      "bodySnippet": "Accueil Vidéos Carte Sortir Explorer Menu Créer Notifications A Vidéos locales Vidéos locales Ville courante : Reims Rechercher à Reims Filtres Pour vous Près de vous Trier par : Au plus près de toi Les plus récents Les plus populaires Vidéo partagée AL Alice B — desc medium L",
+      "file": "LIVE-820-video-query.png"
+    },
+    {
+      "kind": "interactions",
+      "shareVisible": true,
+      "commentsVisible": true,
+      "shareClicked": true,
+      "commentsOpened": true
+    }
+  ]
+}

@@ -3,7 +3,11 @@ import { defineConfig, devices } from "@playwright/test";
 /**
  * C3.1-R1 — WebKit mobile ciblé.
  *
- * N'exécute QUE `13-mobile-safari-closure.spec.ts`.
+ * Exécute la recette mobile sur iPhone 14 / WebKit — le moteur de Safari iOS.
+ * La liste exacte est celle de `testMatch` plus bas ; ce commentaire annonçait un
+ * seul fichier alors que dix-neuf y figuraient déjà, ce qui faisait sous-estimer
+ * la couverture réelle en lisant l'en-tête.
+ *
  * Ne pas fusionner dans `playwright.config.ts` : `pnpm exec playwright test` reste Chromium.
  *
  * Usage :
@@ -53,7 +57,7 @@ export default defineConfig({
     {
       name: "webkit-r1-mobile",
       testMatch:
-        /functional\/(13-mobile-safari-closure|17-feed-composer-photo-mobile|18-feed-composer-photo-portrait|19-mobile-feed-full-bleed|20-modal-overlay-bottom-nav|21-mobile-feed-functional|22-medium-feed-shell-rail|23-medium-feed-header|24-medium-feed-editorial-grid|25-medium-feed-stories|26-medium-feed-stories-long-rail|27-medium-feed-composer|28-medium-feed-video|29-citizen-medium-shell|30-medium-feed-publication-cards|31-medium-feed-context-mosaic|32-medium-feed-filter|33-unified-publication-card|34-unified-context-stream-r2b)\.spec\.ts$/,
+        /functional\/(13-mobile-safari-closure|17-feed-composer-photo-mobile|18-feed-composer-photo-portrait|19-mobile-feed-full-bleed|20-modal-overlay-bottom-nav|21-mobile-feed-functional|22-medium-feed-shell-rail|23-medium-feed-header|24-medium-feed-editorial-grid|25-medium-feed-stories|26-medium-feed-stories-long-rail|27-medium-feed-composer|28-medium-feed-video|29-citizen-medium-shell|30-medium-feed-publication-cards|31-medium-feed-context-mosaic|32-medium-feed-filter|33-unified-publication-card|34-unified-context-stream-r2b|44-video-upload-progress-cancel)\.spec\.ts$/,
       use: {
         ...devices["iPhone 14"],
         browserName: "webkit",

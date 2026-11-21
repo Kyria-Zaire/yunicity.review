@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import { expect, test } from "../fixtures";
+import { expect, testCitizen as test } from "../fixtures";
 
 import { COLD_START_TEST_TIMEOUT, COLD_START_TIMEOUT, gotoCold } from "../cold-start";
 import { expectExactlyOneMain, readLandmarkState } from "../landmark-assertions";
@@ -19,8 +19,16 @@ const ACCEPTANCE_VIEWPORTS = [
   { width: 1366, height: 900, name: "1366", explorerOverlay: "center", menuOverlay: "popover" },
 ] as const;
 
+/*
+ * Bascules exercées. 639/640 et 1023/1024 sont de vraies frontières d'HÔTE : la
+ * surface du Menu y change de nature et son ancre disparaît. 1279/1280 n'est
+ * qu'une frontière de MISE EN PAGE : l'ancre y reste visible.
+ */
 const TECHNICAL_TRANSITIONS = [
   { from: 639, to: 640 },
+  { from: 640, to: 639 },
+  { from: 1023, to: 1024 },
+  { from: 1024, to: 1023 },
   { from: 1279, to: 1280 },
   { from: 1280, to: 1279 },
 ] as const;
@@ -43,8 +51,29 @@ async function overlayRoots(page: Page) {
   }));
 }
 
+/**
+ * Déclencheur Explorer, QUEL QUE SOIT le palier.
+ *
+ * Le nom accessible n'est pas unique, et c'est un choix produit : au palier
+ * medium la recherche vit dans le header du feed — « Rechercher à <ville> »,
+ * repérable par `data-feed-medium-header-search` — et la colonne latérale masque
+ * alors son propre déclencheur pour éviter un doublon, ce que
+ * `web-sidebar.tsx` documente en toutes lettres.
+ *
+ * Ce helper exigeait « Explorer Reims » partout : à 900 sur `/feed`, aucun
+ * bouton ne portait ce nom, et le test attendait soixante secondes un élément
+ * qui n'existe pas à ce palier.
+ *
+ * Les deux affordances ouvrent la MÊME primitive, et c'est elle que le test
+ * vérifie ensuite — l'assertion sur le dialogue reste inchangée.
+ */
 async function openExplorer(page: Page) {
-  const trigger = page.getByRole("button", { name: EXPLORER_LABEL }).locator("visible=true").first();
+  const trigger = page
+    .locator(
+      `button[aria-label="${EXPLORER_LABEL}"], button[data-feed-medium-header-search]`,
+    )
+    .locator("visible=true")
+    .first();
   await expect(trigger).toBeVisible({ timeout: COLD_START_TIMEOUT });
   await expect(trigger).toBeEnabled({ timeout: COLD_START_TIMEOUT });
   await trigger.click();
@@ -356,7 +385,7 @@ test.describe("C3.1-T3 — fonctions de navigation", () => {
   });
 
   for (const transition of TECHNICAL_TRANSITIONS) {
-    test(`transition ${transition.from}→${transition.to} ferme Menu sans résidu`, async ({
+    test(`transition ${transition.from}→${transition.to} : le Menu suit son ancre`, async ({
       citizenAPage: page,
     }) => {
       await page.setViewportSize({ width: transition.from, height: 900 });
@@ -364,10 +393,80 @@ test.describe("C3.1-T3 — fonctions de navigation", () => {
       await waitSessionReady(page);
 
       await openMenu(page);
+
+      /*
+       * C'est l'ANCRE qui décide, jamais un seuil.
+       *
+       * Ce test exigeait auparavant la fermeture à chaque bascule. Relevé sur
+       * les six : l'ancre disparaît à 639/640, 1023/1024 et 1024/1023 — le
+       * panneau s'y ferme — mais elle reste VISIBLE à 1279/1280, où seule la
+       * mise en page change. Fermer là aurait chassé l'utilisateur d'un panneau
+       * dont le déclencheur est toujours sous ses yeux.
+       *
+       * On marque donc le déclencheur réellement utilisé, et on vérifie la règle
+       * dans ses deux branches plutôt qu'un résultat unique.
+       */
+      await page.evaluate((label) => {
+        const visible = (element: Element) => {
+          const boite = element.getBoundingClientRect();
+          const style = window.getComputedStyle(element);
+          return (
+            boite.width > 0 &&
+            boite.height > 0 &&
+            style.visibility !== "hidden" &&
+            style.display !== "none"
+          );
+        };
+        Array.from(document.querySelectorAll<HTMLElement>(`button[aria-label="${label}"]`))
+          .find(visible)
+          ?.setAttribute("data-ancre-menu", "");
+      }, MENU_LABEL);
+
       await page.setViewportSize({ width: transition.to, height: 900 });
-      await expect(page.getByRole("navigation", { name: MENU_LABEL })).toHaveCount(0);
+
+      const apres = await page.evaluate(() => {
+        const visible = (element: Element) => {
+          const boite = element.getBoundingClientRect();
+          const style = window.getComputedStyle(element);
+          return (
+            boite.width > 0 &&
+            boite.height > 0 &&
+            style.visibility !== "hidden" &&
+            style.display !== "none"
+          );
+        };
+        const ancre = document.querySelector<HTMLElement>("[data-ancre-menu]");
+        const actif = document.activeElement as HTMLElement | null;
+        return {
+          ancreTenue: Boolean(ancre?.isConnected) && Boolean(ancre && visible(ancre)),
+          focusVisible: Boolean(actif && actif !== document.body && visible(actif)),
+        };
+      });
+
+      const panneau = page
+        .getByRole("dialog", { name: MENU_LABEL })
+        .or(page.getByRole("navigation", { name: MENU_LABEL }));
+
+      if (apres.ancreTenue) {
+        await expect(
+          panneau.first(),
+          `${transition.from}→${transition.to} : ancre visible, le panneau doit rester ouvert`,
+        ).toBeVisible();
+      } else {
+        await expect(
+          panneau,
+          `${transition.from}→${transition.to} : ancre disparue, le panneau doit se fermer`,
+        ).toHaveCount(0);
+        expect(
+          apres.focusVisible,
+          `${transition.from}→${transition.to} : focus laissé sur un élément invisible`,
+        ).toBe(true);
+      }
+
       const roots = await overlayRoots(page);
-      expect(roots.bodyOverflow).not.toBe("hidden");
+      expect(roots.bodyOverflow, `${transition.from}→${transition.to} : défilement bloqué`).not.toBe(
+        "hidden",
+      );
     });
   }
 

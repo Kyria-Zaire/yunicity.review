@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
@@ -25,7 +27,27 @@ from app.services.feed_post_mapper import to_post_response
 from app.services.organization_membership_service import OrganizationMembershipService
 from app.services.passport_level_hooks import evaluate_passport_level_after_activity
 from app.services.post_composer_mapper import apply_composer_create_payload
+from app.services.post_idempotency import compute_request_fingerprint
 from app.services.rbac_service import RbacService
+
+
+@dataclass(frozen=True)
+class PostCreateOutcome:
+    """Issue d'une tentative de creation.
+
+    `created` est False quand la tentative etait un REJEU : rien n'a ete insere, la
+    publication renvoyee est celle de la premiere tentative. La route s'en sert pour
+    choisir son code HTTP -- le service, lui, ne connait pas HTTP.
+    """
+
+    response: PostResponse
+    created: bool
+
+
+@dataclass(frozen=True)
+class _PersistedPost:
+    post: Post
+    created: bool
 
 
 class PostService:
@@ -41,7 +63,7 @@ class PostService:
         self._tribes = TribeRepository(session)
         self._tribe_members = TribeMemberRepository(session)
 
-    async def create_post(self, user: User, payload: PostCreateRequest) -> PostResponse:
+    async def create_post(self, user: User, payload: PostCreateRequest) -> PostCreateOutcome:
         # linked_tribe_id comes straight from the client. Validate membership the
         # same way create_discussion does, otherwise the composer path lets a user
         # associate a post with any (even private) tribe they don't belong to, and
@@ -64,14 +86,20 @@ class PostService:
             apply_composer_create_payload(post, payload)
             if payload.location:
                 post.set_location(payload.location.latitude, payload.location.longitude)
-            await self._posts.add(post)
-            await self._session.commit()
-            await self._session.refresh(post)
+            persisted = await self._persist_with_idempotency(post, payload, user=user)
+            if not persisted.created:
+                return PostCreateOutcome(
+                    response=await self._to_response(persisted.post, user),
+                    created=False,
+                )
             passport = await PassportRepository(self._session).get_active_for_user(user.id)
             if passport is not None:
                 await evaluate_passport_level_after_activity(self._session, passport.id)
             author = await self._authors.resolve_user(user.id)
-            return to_post_response(post, author=author, liked_by_me=False)
+            return PostCreateOutcome(
+                response=to_post_response(post, author=author, liked_by_me=False),
+                created=True,
+            )
 
         assert payload.organization_id is not None
         await self._membership.require_admin_or_owner(
@@ -97,11 +125,78 @@ class PostService:
         apply_composer_create_payload(post, payload)
         if payload.location:
             post.set_location(payload.location.latitude, payload.location.longitude)
-        await self._posts.add(post)
-        await self._session.commit()
-        await self._session.refresh(post)
+        persisted = await self._persist_with_idempotency(post, payload, user=user)
+        if not persisted.created:
+            return PostCreateOutcome(
+                response=await self._to_response(persisted.post, user),
+                created=False,
+            )
         author = await self._authors.resolve_organization(org)
-        return to_post_response(post, author=author, liked_by_me=False)
+        return PostCreateOutcome(
+            response=to_post_response(post, author=author, liked_by_me=False),
+            created=True,
+        )
+
+    async def _persist_with_idempotency(
+        self, post: Post, payload: PostCreateRequest, *, user: User
+    ) -> _PersistedPost:
+        """Insere la publication en honorant la cle d'idempotence du client.
+
+        Sans cle, le comportement historique est inchange : insertion seche. Avec une
+        cle, la meme tentative rejouee ne cree rien et renvoie la publication deja
+        enregistree -- ou refuse si son contenu differe.
+
+        Le scope est `post.author_id`, exactement celui de l'index unique : pour une
+        publication d'organisation c'est l'organisation, pas l'utilisateur courant.
+        Chercher ailleurs ferait echouer la relecture la ou l'index, lui, refuserait.
+        """
+        empreinte: str | None = None
+        if payload.client_request_id is not None:
+            empreinte = compute_request_fingerprint(payload)
+            existant = await self._posts.get_by_client_request(
+                author_id=post.author_id, client_request_id=payload.client_request_id
+            )
+            if existant is not None:
+                return self._replay(existant, empreinte)
+            post.client_request_id = payload.client_request_id
+            post.client_request_fingerprint = empreinte
+
+        try:
+            await self._posts.add(post)
+            await self._session.commit()
+        except IntegrityError:
+            # Course : une requete simultanee a insere la meme cle entre notre lecture
+            # et notre ecriture. L'unicite est tenue par l'index, pas par le test
+            # ci-dessus -- qui n'est qu'un raccourci du cas courant.
+            await self._session.rollback()
+            if payload.client_request_id is None or empreinte is None:
+                raise
+            # `rollback()` EXPIRE tous les objets de la session, y compris le
+            # `current_user` chargé par la dépendance d'authentification : son dict
+            # d'attributs est vidé. Le prochain accès synchrone à `user.id` -- dans
+            # `_to_response`, que l'appelant invoque sur un rejeu -- tenterait une IO
+            # paresseuse hors contexte async : `MissingGreenlet`, donc un 500 sur le
+            # chemin même qui est censé rattraper la course. On le recharge
+            # explicitement ici, avant que quiconque y touche.
+            await self._session.refresh(user)
+            existant = await self._posts.get_by_client_request(
+                author_id=post.author_id, client_request_id=payload.client_request_id
+            )
+            if existant is None:
+                raise
+            return self._replay(existant, empreinte)
+
+        await self._session.refresh(post)
+        return _PersistedPost(post=post, created=True)
+
+    def _replay(self, existant: Post, empreinte: str) -> _PersistedPost:
+        if existant.client_request_fingerprint != empreinte:
+            raise AppError(
+                status_code=409,
+                code="POST_REQUEST_CONFLICT",
+                detail="Cette publication a déjà été envoyée avec un contenu différent.",
+            )
+        return _PersistedPost(post=existant, created=False)
 
     async def update_post(
         self,

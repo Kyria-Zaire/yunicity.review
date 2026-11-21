@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { COMPOSER_MEDIA_MAX_BYTES, validateComposerMediaFile } from "./composer-media";
+import {
+  COMPOSER_MEDIA_HEIC_NOT_SUPPORTED,
+  COMPOSER_MEDIA_MAX_BYTES,
+  COMPOSER_MEDIA_TOO_LARGE,
+  validateComposerMediaFile,
+} from "./composer-media";
 
 describe("validateComposerMediaFile", () => {
   it("accepte jpeg / png / webp sous la limite", () => {
@@ -21,12 +26,21 @@ describe("validateComposerMediaFile", () => {
     expect(validateComposerMediaFile({ type: "video/mp4", size: 1 }).ok).toBe(false);
   });
 
+  it("explique le refus HEIC/HEIF sans accepter le format", () => {
+    for (const type of ["image/heic", "image/heif", "IMAGE/HEIC"]) {
+      expect(validateComposerMediaFile({ type, size: 1 })).toEqual({
+        ok: false,
+        error: COMPOSER_MEDIA_HEIC_NOT_SUPPORTED,
+      });
+    }
+  });
+
   it("rejette au-dessus de 20 Mo", () => {
     const result = validateComposerMediaFile({
       type: "image/png",
       size: COMPOSER_MEDIA_MAX_BYTES + 1,
     });
-    expect(result).toEqual({ ok: false, error: expect.any(String) });
+    expect(result).toEqual({ ok: false, error: COMPOSER_MEDIA_TOO_LARGE });
   });
 
   it("accepte pile à la limite (20 Mo)", () => {

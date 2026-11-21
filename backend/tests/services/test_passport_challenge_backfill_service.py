@@ -35,6 +35,7 @@ from app.models.passport_challenge import PassportChallenge, UserPassportChallen
 from app.models.user import User
 from app.services.passport_challenge_backfill_service import PassportChallengeBackfillService
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
@@ -268,3 +269,31 @@ async def test_backfill_limit_is_respected(
     row = await _explorer_progress(session, user_id)
     if row is not None:
         assert row.progress <= 2
+
+
+async def test_execute_stamps_error_detail_never_quotes_sql_values(
+    challenge_backfill_db: tuple[AsyncSession, uuid.UUID, uuid.UUID],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """APP-SQL-ERROR-VALUES-01 : le rapport, imprimé par le script de backfill, ne
+    recopie pas le texte d'une erreur SQL (DETAIL cite la valeur) ; le SQLSTATE reste."""
+    session, _user_id, passport_id = challenge_backfill_db
+    await _seed_stamps(session, passport_id, 1)
+    service = PassportChallengeBackfillService(session)
+    marker = f"{uuid.uuid4().hex[:16]}-FICTIF"
+
+    class _DriverError(Exception):
+        sqlstate = "23505"
+
+    async def failing(*args: object, **kwargs: object) -> None:
+        raise IntegrityError(
+            "INSERT INTO t VALUES ($1)", None, _DriverError(f"DETAIL:  Key (k)=({marker})")
+        )
+
+    monkeypatch.setattr(service._progress, "increment_stamp_progress", failing)
+    report = await service.execute_stamps()
+
+    assert report.errors >= 1
+    assert report.error_details
+    assert all(marker[:16] not in detail for detail in report.error_details)
+    assert all("sqlstate=23505" in detail for detail in report.error_details)

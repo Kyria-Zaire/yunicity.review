@@ -7,9 +7,11 @@ from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 
 import pytest
+from app.core.organization_constants import OrganizationMemberRole, OrganizationMemberStatus
 from app.core.passport_constants import PassportStatus, PassportTierCode
 from app.db.session import get_engine
 from app.integrations.redis import get_redis_client
+from app.models.organization import OrganizationMember
 from app.models.passport import Passport, PassportTier
 from app.models.passport_admin_action import PassportAdminAction
 from app.models.user import User
@@ -18,6 +20,7 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from tests.conftest_passport import create_verified_org_with_offer
 from tests.conftest_rbac import RbacUserFactory, auth_header
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
@@ -398,7 +401,21 @@ async def test_suspended_passport_not_resolved_by_scan(
     )
     assert suspend.status_code == 200
 
+    # Vrai partenaire : gestionnaire d'une organisation vérifiée. Depuis
+    # SCAN-RESOLVE-TOKEN-ORACLE-01, un utilisateur sans organisation reçoit 403 quel que
+    # soit le jeton ; c'est donc un partenaire qui doit constater le 404.
     partner = await rbac_user_factory()
+    async with factory() as session:
+        org, _ = await create_verified_org_with_offer(session, slug_suffix="suspended-scan")
+        session.add(
+            OrganizationMember(
+                organization_id=org.id,
+                user_id=partner.user_id,
+                role=OrganizationMemberRole.OWNER.value,
+                status=OrganizationMemberStatus.ACTIVE.value,
+            )
+        )
+        await session.commit()
     resolve = await auth_client.post(
         "/api/v1/scan/resolve",
         json={"qr_secret": qr_token},
