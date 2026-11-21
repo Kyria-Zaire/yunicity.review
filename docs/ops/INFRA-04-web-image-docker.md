@@ -21,15 +21,48 @@ racine `frontend`.
 | Arbre au moment du build | SHA + les 5 fichiers de ce candidat, non committés |
 | Image testée (`Id`) | `sha256:13247a554191015067e8a0231948cc64b1840986036bbdf1e3dd76439acd057b` |
 | Tag local | `yunicity-web:candidat2` — jamais poussée, donc **aucun `RepoDigest`** |
-| Taille | 294 457 019 octets (base `node:20-bookworm-slim` : ~200 Mo) |
+| Taille | 294 457 019 octets (base `node:20-bookworm-slim` : ~200 Mo — base **de cette validation**, remplacée : voir § 1 bis) |
 | `BUILD_ID` de l'artefact | `hwCWixfPvFUB5L9JMWug-` |
 | Next | 15.5.25 — identique au lockfile |
-| Node / pnpm | `v20.20.2` / `9.15.9` résolu depuis `packageManager` |
+| Node / pnpm | `v20.20.2` / `9.15.9` résolu depuis `packageManager` (valeurs **de cette validation** ; cible Node actuelle : § 1 bis) |
 
 L'image n'ayant jamais été poussée dans un registre, elle n'a pas de digest de
 dépôt : seul l'`Id` local l'identifie, et il ne survivra pas à un
 `docker system prune`. Toute revue ultérieure doit reconstruire depuis le SHA
 source ci-dessus.
+
+## 1 bis. Base Node — passage à Node 24.22.3 (`RUNTIME-NODE-PREVIEW-01`)
+
+Node 20 est en fin de vie depuis le 2026-04-30 ; son undici intégré (6.24.1) sert
+le `fetch` du serveur Next, dont `/_next/image` vers les hôtes tiers.
+
+| Élément | Valeur |
+|---------|--------|
+| Cible | **Node 24.22.3** (LTS, support jusqu'au 2028-04-30), Debian 12 Bookworm slim |
+| Référence des deux étapes (`build`, `runtime`) | `node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54` — **identique** dans les deux, empreinte d'index OCI multi-architecture |
+| CI frontend | `.github/workflows/frontend-ci.yml` : `node-version: "24.22.3"` |
+| Portée | **Preview web** (seul `railway.web-docker.toml` désigne ce Dockerfile) et **CI frontend**. **Production non concernée** : builds RAILPACK, `engines`, `railway.toml` et `railway.admin.toml` **inchangés** ; version de Node de production inconnue |
+| Hors changement | lockfile, `engines.node`, configuration Railway ; pnpm reste `9.15.9` |
+
+**Préparation locale — faite (2026-11-21)** : empreinte vérifiée (registre, API
+Docker Hub, `docker-library/official-images`) ; binaire `node` de l'image comparé à
+l'archive officielle nodejs.org dont la signature GPG a été vérifiée ; installation
+figée, lint, typecheck, tests, builds, image complète construite et serveur sondé
+(pages publiques, `sharp`/WebP, `/_next/image` local et distant autorisé) — en
+conteneurs jetables. Une attestation de build (SLSA) est **présente** sur l'image ;
+**sa signature n'a pas été vérifiée** : elle n'est donc pas tenue pour authentifiée.
+
+**Déploiement effectif — NON fait.** Ni CI GitHub, ni build Railway, ni SHA servi
+n'ont été observés avec cette base. Jusqu'à ces preuves, la Preview sert toujours
+l'image Node 20.
+
+Réserves : tests locaux sujets à des délais de 5 s (profil identique en Node 20) ;
+avertissement de build `MODULE_TYPELESS_PACKAGE_JSON` (`packages/ui/src/tailwind-preset.ts`)
+**accepté** pour ce lot — sortie statique identique à Node 20, `packages/ui` non
+modifié ; CVE Debian bookworm sans correctif amont toujours présentes dans la base.
+Retour à Node 20 = recours **temporaire**, pas une résolution. Détail et preuves :
+passation `RUNTIME-NODE-PREVIEW-01-diagnostic.md` §8–§9 (locale, non versionnée à ce
+jour) et preuves hors dépôt `yunicity-preuves/RUNTIME-NODE-PREVIEW-01-20261121/`.
 
 ---
 

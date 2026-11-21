@@ -19,9 +19,16 @@
 # `apps/web/next.config.ts` doit porter `output: "standalone"`. Sans cette
 # ligne, `next build` ne produit aucun répertoire `standalone` ; l'étape de
 # copie échoue alors avec un message explicite plutôt que silencieusement.
+#
+# ── Image de base ────────────────────────────────────────────────────────────
+# Node 24 LTS, épinglé par empreinte d'index officielle (Docker Official Image,
+# multi-architecture) : le tag seul est mutable, l'empreinte ne l'est pas. Les
+# DEUX étapes doivent porter la même référence — un serveur exécuté sur un autre
+# Node que celui du build n'a jamais été vérifié. Monter de version = changer
+# les deux lignes ensemble, après vérification de l'empreinte.
 
 # ─────────────────────────────── construction ───────────────────────────────
-FROM node:20-bookworm-slim AS build
+FROM node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54 AS build
 
 # Railway n'expose AUCUNE variable de service à un build Dockerfile sans `ARG`
 # explicite, dans l'étape qui en a besoin (documentation Railway, « Using
@@ -78,7 +85,7 @@ RUN set -eu; \
     cp -r apps/web/public "$SA/public"
 
 # ──────────────────────────────── exécution ─────────────────────────────────
-FROM node:20-bookworm-slim AS runtime
+FROM node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54 AS runtime
 
 ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0
