@@ -57,16 +57,11 @@ function VideosScreenInner() {
 
   const feed = useLocalVideosFeed();
   const pending = useLocalVideoPendingTracker({
-    onPublished: (videoId) => {
+    onPublished: () => {
+      // VID-27 — la vidéo épinglée (`?video=`) est rechargée par l'effet
+      // `fetchPinnedVideo` ci-dessous, relancé à la fin de chaque `refresh()` :
+      // erreurs classées (C4 / C7 / session), réponse obsolète ignorée.
       void feed.refresh();
-      if (focusVideoId === videoId) {
-        void api
-          .getLocalVideo(videoId)
-          .then((video) => setPinnedVideo(video))
-          .catch(() => {
-            /* ignore */
-          });
-      }
     },
   });
   const interactions = useLocalVideoInteractions({ updateItem: feed.updateItem });
