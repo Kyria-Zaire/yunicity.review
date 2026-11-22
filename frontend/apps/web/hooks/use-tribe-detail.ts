@@ -3,12 +3,21 @@
 import type { Tribe, TribeMember } from "@yunicity/types";
 import type { CulturalPlaceListItem, FeedPost, LocalEvent, Neighborhood, PartnerOfferPublic } from "@yunicity/types";
 import { TRIBE_NOT_FOUND, filterAgendaUpcomingEvents, isAuthError } from "@yunicity/utils";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
+import { useAuth } from "@/lib/auth/auth-provider";
 
 export function useTribeDetail(slug: string, city: string) {
   const api = useYunicityApi();
+  // La fiche dépend du lecteur (membre, demande en attente). Au rechargement, la session
+  // n'est restaurée qu'à la fin de l'amorçage : charger plus tôt enverrait une requête
+  // anonyme. On attend donc l'amorçage, puis on recharge à chaque changement d'identité.
+  const { user, isLoading: authLoading } = useAuth();
+  const viewerId = user?.id ?? null;
+  // Seul le dernier chargement lancé écrit l'état : une réponse plus ancienne (lecteur
+  // précédent, rechargement dépassé) est ignorée.
+  const latestLoadRef = useRef(0);
   const [tribe, setTribe] = useState<Tribe | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,10 +35,14 @@ export function useTribeDetail(slug: string, city: string) {
   const [leaving, setLeaving] = useState(false);
 
   const load = useCallback(async () => {
+    const loadId = latestLoadRef.current + 1;
+    latestLoadRef.current = loadId;
+    const isLatest = () => latestLoadRef.current === loadId;
     setLoading(true);
     setError(null);
     try {
       const tribeData = await api.tribes.getTribe(slug, city);
+      if (!isLatest()) return;
       setTribe(tribeData);
       const [eventsRes, hoodsRes, placesRes, offersRes, membersRes, tribesRes] =
         await Promise.allSettled([
@@ -40,6 +53,7 @@ export function useTribeDetail(slug: string, city: string) {
           api.tribes.listTribeMembers(slug, city, { page_size: 12 }),
           api.tribes.listTribes({ city, page_size: 8 }),
         ]);
+      if (!isLatest()) return;
 
       setEvents(
         eventsRes.status === "fulfilled" ? filterAgendaUpcomingEvents(eventsRes.value.items) : [],
@@ -63,25 +77,31 @@ export function useTribeDetail(slug: string, city: string) {
       if (tribeData.viewer_is_member && !tribeData.is_archived) {
         try {
           const postsRes = await api.tribes.listTribePosts(slug, city, { limit: 4 });
-          setPostsPreview(postsRes.items);
+          if (isLatest()) setPostsPreview(postsRes.items);
         } catch {
-          setPostsPreview([]);
+          if (isLatest()) setPostsPreview([]);
         }
       } else {
         setPostsPreview([]);
       }
     } catch (err) {
-      if (!isAuthError(err)) {
+      if (isLatest() && !isAuthError(err)) {
         setError(TRIBE_NOT_FOUND);
       }
     } finally {
-      setLoading(false);
+      if (isLatest()) setLoading(false);
     }
   }, [api.tribes, slug, city]);
 
+  // `viewerId` relance le chargement quand l'identité change (connexion, déconnexion, A → B).
+  // Le nettoyage invalide toute réponse en vol AVANT l'effet suivant : changement
+  // d'identité, retour en amorçage (aucun nouvel appel) et démontage.
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!authLoading) void load();
+    return () => {
+      latestLoadRef.current += 1;
+    };
+  }, [authLoading, load, viewerId]);
 
   const join = useCallback(
     async (charterAccepted: boolean): Promise<TribeMember | null> => {
