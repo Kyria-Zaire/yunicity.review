@@ -17,7 +17,11 @@ export const FEED_PORTAL_LEFT_HOME = "Accueil";
 /** Rail gauche feed desktop refonte (≥1280px). */
 export const FEED_PORTAL_LEFT_FOR_YOU = "Pour vous";
 export const FEED_PORTAL_LEFT_AROUND_ME = "Autour de moi";
-export const FEED_PORTAL_LEFT_FAVORITES = "Mes favoris";
+// FEED-FAVORITES-NAMING-01 : l'entrée ouvre les moments (événements) enregistrés, pas des
+// publications favorites. Même texte que le titre du panneau `FeedSavedEventsPanel`.
+// TODO(debt): nom de constante historique (FAVORITES) ; le renommer touche l'export de
+// `index.ts`, hors périmètre de FEED-FAVORITES-NAMING-01.
+export const FEED_PORTAL_LEFT_FAVORITES = "Moments enregistrés";
 export const FEED_PORTAL_LEFT_MY_EVENTS = "Mes événements";
 export const FEED_PORTAL_LEFT_MY_TRIBES = "Mes tribus";
 export const FEED_PORTAL_LEFT_CREATE = "Créer";

@@ -9,7 +9,7 @@ import {
   FEED_PORTAL_LEFT_MY_EVENTS,
   FEED_PORTAL_LEFT_MY_TRIBES,
 } from "@yunicity/utils";
-import { CalendarDays, Compass, Heart, Home, Users } from "lucide-react";
+import { Bookmark, CalendarDays, Compass, Home, Users } from "lucide-react";
 import Link from "next/link";
 import type { MutableRefObject } from "react";
 
@@ -56,7 +56,7 @@ const NAV_ITEMS: Array<{
 }> = [
   { id: "for_you", label: FEED_PORTAL_LEFT_FOR_YOU, icon: Home, view: "for_you" },
   { id: "nearby", label: FEED_PORTAL_LEFT_AROUND_ME, icon: Compass, href: "/map" },
-  { id: "favorites", label: FEED_PORTAL_LEFT_FAVORITES, icon: Heart, nav: "saved" },
+  { id: "favorites", label: FEED_PORTAL_LEFT_FAVORITES, icon: Bookmark, nav: "saved" },
   { id: "my_events", label: FEED_PORTAL_LEFT_MY_EVENTS, icon: CalendarDays, href: "/sortir" },
   { id: "my_tribes", label: FEED_PORTAL_LEFT_MY_TRIBES, icon: Users, href: "/tribes" },
 ];
