@@ -122,7 +122,7 @@ export const PASSPORT_OFFER_DETAIL_HOW_STEPS = (partnerName: string) =>
     },
     {
       title: "Faites valider l'avantage",
-      body: "L'utilisation apparaît ensuite dans votre historique.",
+      body: "L'avantage est alors compté comme utilisé.",
     },
   ] as const;
 export const PASSPORT_OFFER_DETAIL_CONDITIONS_TITLE = "Conditions de l'offre";
@@ -146,7 +146,7 @@ export const PASSPORT_OFFER_DETAIL_INFO_USAGE = "Utilisation";
 export const PASSPORT_OFFER_DETAIL_USAGE_ON_SITE = "Sur place";
 export const PASSPORT_OFFER_DETAIL_VALIDATION_TITLE = "Une validation transparente";
 export const PASSPORT_OFFER_DETAIL_VALIDATION_BODY =
-  "L'avantage est enregistré dans votre historique après validation du partenaire.";
+  "L'avantage est enregistré seulement après validation par le partenaire.";
 export const PASSPORT_OFFER_DETAIL_VALIDATION_BODY_MOBILE =
   "L'avantage est enregistré seulement après validation par le partenaire.";
 export const PASSPORT_OFFER_DETAIL_RULES = "Consulter les règles Passport";
