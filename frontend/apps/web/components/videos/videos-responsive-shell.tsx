@@ -26,6 +26,7 @@ import {
   VideosMobileSearch,
   VideosMobileViewPills,
 } from "@/components/videos/mobile";
+import type { VideosMediumDirectState } from "@/components/videos/medium/videos-medium-direct-state";
 import { VideosMediumHeader } from "@/components/videos/portal/videos-medium-header";
 import { VideosEditorialStreamRegion } from "@/components/videos/videos-editorial-stream-region";
 import { VideosInternalSidebar } from "@/components/videos/videos-internal-sidebar";
@@ -71,6 +72,8 @@ type VideosResponsiveShellProps = {
   immersiveItems?: readonly LocalVideoFeedItem[];
   /** Lien partagé / deep-link medium (`?video=`). */
   deepLinkVideoId?: string | null;
+  /** Medium : ouverture directe bloquante (chargement, F4, C7). */
+  mediumDirectState?: VideosMediumDirectState | null;
   hasMoreFeed?: boolean;
   isLoadingMore?: boolean;
   onLoadMorePages?: () => Promise<void> | void;
@@ -128,6 +131,7 @@ export function VideosResponsiveShell({
   onLoadMoreFeed,
   immersiveItems,
   deepLinkVideoId = null,
+  mediumDirectState = null,
   hasMoreFeed,
   isLoadingMore,
   onLoadMorePages,
@@ -245,6 +249,7 @@ export function VideosResponsiveShell({
           onTabChange={onTabChange}
           immersiveItems={immersiveItems}
           deepLinkVideoId={deepLinkVideoId}
+          mediumDirectState={mediumDirectState}
           sidebarFilters={sidebarFilters}
           neighborhoods={neighborhoods}
           sourceItems={sourceItems}

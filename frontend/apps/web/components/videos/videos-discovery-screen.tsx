@@ -12,6 +12,7 @@ import {
 import { ChevronDown } from "lucide-react";
 import { useRef, useState } from "react";
 
+import type { VideosMediumDirectState } from "@/components/videos/medium/videos-medium-direct-state";
 import { VideosFilterSheet } from "@/components/videos/videos-filter-sheet";
 import { VideosResponsiveShell } from "@/components/videos/videos-responsive-shell";
 import { useVideosPortalContext } from "@/hooks/use-videos-portal-context";
@@ -34,6 +35,8 @@ type VideosDiscoveryScreenProps = {
   onCommentCountDelta?: (videoId: string, delta: number) => void;
   /** `?video=` — fil medium L5 ; ignoré hors medium. */
   deepLinkVideoId?: string | null;
+  /** Medium : ouverture directe bloquante (chargement, F4, C7) ; ignoré hors medium. */
+  mediumDirectState?: VideosMediumDirectState | null;
   loadMoreError?: boolean;
   onRetryLoadMore?: () => void;
 };
@@ -55,6 +58,7 @@ export function VideosDiscoveryScreen({
   onOpenReport,
   onCommentCountDelta,
   deepLinkVideoId = null,
+  mediumDirectState = null,
   loadMoreError = false,
   onRetryLoadMore,
 }: VideosDiscoveryScreenProps) {
@@ -139,6 +143,7 @@ export function VideosDiscoveryScreen({
         onLoadMoreFeed={handleImmersiveLoadMore}
         immersiveItems={portal.feedItems}
         deepLinkVideoId={deepLinkVideoId}
+        mediumDirectState={mediumDirectState}
         hasMoreFeed={hasMoreFeed}
         isLoadingMore={isLoadingMore}
         onLoadMorePages={

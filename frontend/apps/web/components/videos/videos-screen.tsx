@@ -4,6 +4,7 @@ import { SessionExpiredPanel } from "@/components/auth/session-expired-panel";
 import { LocalVideoReportSheet } from "@/components/videos/local-video-report-sheet";
 import { LocalVideoShareFeedback } from "@/components/videos/local-video-share-feedback";
 import { VideosDesktopOverlayPlayer } from "@/components/videos/desktop/videos-desktop-overlay-player";
+import type { VideosMediumDirectState } from "@/components/videos/medium/videos-medium-direct-state";
 import { VideoDetailScreen } from "@/components/videos/video-detail-screen";
 import { VideosAppShell } from "@/components/videos/videos-app-shell";
 import { VideosDiscoveryScreen } from "@/components/videos/videos-discovery-screen";
@@ -25,7 +26,7 @@ import {
   registerLocalVideoPending,
 } from "@yunicity/utils";
 import type { LocalVideoFeedItem } from "@yunicity/types";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -48,12 +49,14 @@ export function VideosScreen() {
 
 function VideosScreenInner() {
   const api = useYunicityApi();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const focusVideoId = searchParams.get("video")?.trim() || null;
   const viewportTier = useVideosViewportTier();
   // L8 : desktop → superposition sur grille ; mobile → page détail ; medium → fil L5.
   const isMobileDetail = Boolean(focusVideoId) && viewportTier === "mobile";
   const isDesktopOverlay = Boolean(focusVideoId) && viewportTier === "desktop";
+  const isMediumDirect = Boolean(focusVideoId) && viewportTier === "medium";
 
   const feed = useLocalVideosFeed();
   const pending = useLocalVideoPendingTracker({
@@ -134,6 +137,9 @@ function VideosScreenInner() {
     void fetchPinnedVideo(focusVideoId);
   }, [directRetryBusy, fetchPinnedVideo, focusVideoId]);
 
+  // Retour au fil : l'URL de la vidéo indisponible ne reste pas dans l'historique.
+  const seeOtherVideos = useCallback(() => router.replace("/videos"), [router]);
+
   const activeDirectError =
     directError && directError.videoId === focusVideoId ? directError.error : null;
 
@@ -172,6 +178,24 @@ function VideosScreenInner() {
   const focusInDisplay = Boolean(focusVideoId) && displayItems.some((item) => item.id === focusVideoId);
   // Ouverture directe : vidéo ni dans le fil ni chargée, sans erreur → requête en cours.
   const awaitingPinnedVideo = Boolean(focusVideoId) && !focusInDisplay && !activeDirectError;
+  // VIDEO-MEDIUM-DIRECT-STATES-01 — décidé sur la réponse de l'API et la liste NON filtrée :
+  // une vidéo chargée mais exclue du fil medium (onglet, filtres) n'est jamais « indisponible ».
+  // Erreur du fil : la région garde son propre état (comme le mobile).
+  const mediumDirectState: VideosMediumDirectState | null =
+    !isMediumDirect || feed.error
+      ? null
+      : activeDirectError?.kind === "unavailable"
+        ? { kind: "unavailable", onSeeOtherVideos: seeOtherVideos }
+        : activeDirectError?.kind === "load_error"
+          ? {
+              kind: "load_error",
+              onRetry: retryDirectVideo,
+              retryBusy: directRetryBusy,
+              onSeeOtherVideos: seeOtherVideos,
+            }
+          : awaitingPinnedVideo
+            ? { kind: "loading" }
+            : null;
 
   return (
     <VideosAppShell detailMode={isMobileDetail} immersiveMode={isMobileDetail}>
@@ -226,7 +250,7 @@ function VideosScreenInner() {
               />
             )
           ) : feed.sessionExpired ||
-            (isDesktopOverlay && activeDirectError?.kind === "auth") ? (
+            ((isDesktopOverlay || isMediumDirect) && activeDirectError?.kind === "auth") ? (
             <SessionExpiredPanel
               message={LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE}
               returnPath={
@@ -265,6 +289,7 @@ function VideosScreenInner() {
                   feed.updateItem(videoId, (item) => bumpLocalVideoCommentCount(item, delta));
                 }}
                 deepLinkVideoId={viewportTier === "medium" ? focusVideoId : null}
+                mediumDirectState={mediumDirectState}
               />
 
               {isDesktopOverlay && focusVideoId ? (

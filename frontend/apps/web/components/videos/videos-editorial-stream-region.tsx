@@ -21,6 +21,10 @@ import {
 import { useCallback, useRef, useState, type ReactNode } from "react";
 
 import { VideosDesktopFeedStream } from "@/components/videos/desktop/videos-desktop-feed-stream";
+import {
+  VideosMediumDirectStatePanel,
+  type VideosMediumDirectState,
+} from "@/components/videos/medium/videos-medium-direct-state";
 import { VideosMediumVerticalFeed } from "@/components/videos/medium/videos-medium-vertical-feed";
 import {
   VideosMobileFeaturedHero,
@@ -44,6 +48,8 @@ export type VideosEditorialStreamRegionProps = {
   immersiveItems?: readonly LocalVideoFeedItem[];
   /** `?video=` — medium place la cible en tête ; mobile détail géré ailleurs. */
   deepLinkVideoId?: string | null;
+  /** Medium : ouverture directe bloquante (chargement, F4, C7) — remplace le fil. */
+  mediumDirectState?: VideosMediumDirectState | null;
   featuredItems: readonly LocalVideoFeedItem[];
   creators: readonly VideoPortalCreator[];
   onRetry: () => void;
@@ -88,6 +94,7 @@ export function VideosEditorialStreamRegion({
   visibleItems,
   immersiveItems,
   deepLinkVideoId = null,
+  mediumDirectState = null,
   featuredItems,
   creators,
   onRetry,
@@ -165,6 +172,15 @@ export function VideosEditorialStreamRegion({
   }, [onLoadMorePages]);
 
   if (mediumFeed) {
+    // VIDEO-MEDIUM-DIRECT-STATES-01 — état bloquant : fil (et lecture automatique) non monté.
+    if (mediumDirectState) {
+      return (
+        <div className={className} data-videos-medium-region="direct-state">
+          <VideosMediumDirectStatePanel state={mediumDirectState} />
+        </div>
+      );
+    }
+
     const mediumItems = immersiveItems ?? visibleItems;
     const emptyKind = (() => {
       if (isLoading) return "loading" as const;
