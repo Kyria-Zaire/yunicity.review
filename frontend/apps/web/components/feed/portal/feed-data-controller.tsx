@@ -66,7 +66,7 @@ type FeedLeftNav =
  * quelle que soit la largeur.
  *
  * Rails Desktop : armés par `useVisibleActivation`, qui observe le RÉSULTAT du
- * layout. Sous 1280px les rails sont `display: none`, n'intersectent jamais, et
+ * layout. Sous 1024px les rails sont `display: none`, n'intersectent jamais, et
  * aucune requête de rail ne part. L'activation est définitive : élargir puis
  * rétrécir la fenêtre ne relance aucun fetch.
  */

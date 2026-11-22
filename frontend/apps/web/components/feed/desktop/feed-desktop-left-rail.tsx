@@ -40,7 +40,7 @@ type FeedDesktopLeftRailProps = {
   weather: FeedWeatherCardData;
   /**
    * Sonde de visibilité du palier Desktop (R4). Le rail est `display: none`
-   * sous 1280px : il n'intersecte jamais, donc le contrôleur n'arme aucune
+   * sous 1024px : il n'intersecte jamais, donc le contrôleur n'arme aucune
    * requête de rail tant que le Desktop n'est pas réellement affiché.
    */
   desktopProbeRef?: MutableRefObject<HTMLElement | null>;

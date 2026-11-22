@@ -15,7 +15,7 @@ type FeedDesktopHeaderProps = {
 /**
  * En-tête Desktop du fil — salutation + accès au filtre.
  *
- * Élément de shell : monté en permanence, masqué sous 1280px par media query
+ * Élément de shell : monté en permanence, masqué sous 1024px par media query
  * (`.feed-shell-desktop-header`). Le markup reprend à l'identique celui que
  * `FeedDesktopScreen` rendait en tête de colonne — seul le `mb-5` disparaît,
  * remplacé par le `row-gap` de la colonne unique, de valeur identique (20px).
