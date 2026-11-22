@@ -54,17 +54,18 @@ export function buildPassportDesktopNextSteps(input: {
   }));
 }
 
-function resolveActivityTone(index: number): PassportDesktopActivityItem["tone"] {
-  if (index % 3 === 1) return "green";
-  if (index % 3 === 2) return "orange";
-  return "blue";
-}
+/** Every recent-activity entry is tied to a place: same pin icon whatever its rank. */
+const PASSPORT_DESKTOP_ACTIVITY_TONE: PassportDesktopActivityItem["tone"] = "blue";
 
-function resolveActivityTitle(stamp: PassportStamp, index: number): string {
-  if (stamp.human_line?.trim()) return stamp.human_line.trim();
+/**
+ * Title derived from the stamp itself, never from its rank in the list. A visit stamp
+ * carries no redemption or event data, so it is only described as a partner place
+ * (PASSPORT-ACTIVITY-TITLES-01).
+ */
+function resolveActivityTitle(stamp: PassportStamp): string {
+  const humanLine = stamp.human_line?.trim();
+  if (humanLine) return humanLine;
   if (stamp.kind === "memory") return "Souvenir enregistré";
-  if (index % 3 === 1) return "Participation enregistrée";
-  if (index % 3 === 2) return "Avantage utilisé";
   return "Lieu partenaire découvert";
 }
 
@@ -78,16 +79,16 @@ export function buildPassportDesktopActivityItems(
         new Date(right.stamped_at).getTime() - new Date(left.stamped_at).getTime(),
     )
     .slice(0, limit)
-    .map((stamp, index) => ({
+    .map((stamp) => ({
       id: stamp.id,
-      title: resolveActivityTitle(stamp, index),
+      title: resolveActivityTitle(stamp),
       subtitle:
         stamp.organization?.name?.trim() ||
         stamp.title?.trim() ||
         stamp.description?.trim() ||
         "Passage enregistré",
       dateLabel: formatPassportMobileActivityDate(stamp.stamped_at),
-      tone: resolveActivityTone(index),
+      tone: PASSPORT_DESKTOP_ACTIVITY_TONE,
     }));
 }
 
