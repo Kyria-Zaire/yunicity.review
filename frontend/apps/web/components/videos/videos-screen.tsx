@@ -68,17 +68,31 @@ function VideosScreenInner() {
   const [reportOpen, setReportOpen] = useState(false);
   const [reportVideoId, setReportVideoId] = useState<string | null>(null);
   const [pinnedVideo, setPinnedVideo] = useState<LocalVideoFeedItem | null>(null);
-  const [directError, setDirectError] = useState<DesktopOverlayDirectError | null>(null);
+  // L'erreur garde l'id de la vidéo qui l'a produite : jamais affichée pour une autre.
+  const [directError, setDirectError] = useState<{
+    videoId: string;
+    error: DesktopOverlayDirectError;
+  } | null>(null);
   const [directRetryBusy, setDirectRetryBusy] = useState(false);
+  // Numéro du dernier chargement de la vidéo épinglée (ouverture ou Réessayer) : lui seul
+  // écrit l'état. L'effet l'incrémente à son nettoyage (changement de vidéo ou de fil,
+  // démontage), ce qui invalide aussi une relance en vol.
+  const pinnedLoadRef = useRef(0);
   // Évite une boucle d'effet si l'objet `pending` change d'identité à chaque rendu.
   const syncPendingFromStorageRef = useRef(pending.syncFromStorage);
   syncPendingFromStorageRef.current = pending.syncFromStorage;
 
   const fetchPinnedVideo = useCallback(
-    async (videoId: string, signal: { cancelled: boolean }) => {
+    async (videoId: string) => {
+      pinnedLoadRef.current += 1;
+      const loadId = pinnedLoadRef.current;
+      const isCurrent = () => pinnedLoadRef.current === loadId;
+      // VIDEO-MOBILE-DIRECT-ERROR-01 — remise à zéro au début de chaque chargement :
+      // l'écran passe par le chargement, jamais par l'erreur d'une requête précédente.
+      setDirectError(null);
       try {
         const video = await api.getLocalVideo(videoId);
-        if (signal.cancelled) return;
+        if (!isCurrent()) return;
         // Feed item : pas de processing_status — pending si non jouable.
         if (!isLocalVideoFeedItemPlayable(video)) {
           registerLocalVideoPending({
@@ -89,11 +103,12 @@ function VideosScreenInner() {
           syncPendingFromStorageRef.current();
         }
         setPinnedVideo(video);
-        setDirectError(null);
       } catch (error) {
-        if (signal.cancelled) return;
+        if (!isCurrent()) return;
         setPinnedVideo(null);
-        setDirectError(classifyDesktopOverlayDirectError(error));
+        setDirectError({ videoId, error: classifyDesktopOverlayDirectError(error) });
+      } finally {
+        if (isCurrent()) setDirectRetryBusy(false);
       }
     },
     [api],
@@ -107,22 +122,20 @@ function VideosScreenInner() {
       return;
     }
 
-    const signal = { cancelled: false };
-    void fetchPinnedVideo(focusVideoId, signal);
+    void fetchPinnedVideo(focusVideoId);
     return () => {
-      signal.cancelled = true;
+      pinnedLoadRef.current += 1;
     };
   }, [feed.isLoading, feed.items, focusVideoId, fetchPinnedVideo]);
 
   const retryDirectVideo = useCallback(() => {
-    if (!focusVideoId) return;
+    if (!focusVideoId || directRetryBusy) return;
     setDirectRetryBusy(true);
-    setDirectError(null);
-    const signal = { cancelled: false };
-    void fetchPinnedVideo(focusVideoId, signal).finally(() => {
-      if (!signal.cancelled) setDirectRetryBusy(false);
-    });
-  }, [fetchPinnedVideo, focusVideoId]);
+    void fetchPinnedVideo(focusVideoId);
+  }, [directRetryBusy, fetchPinnedVideo, focusVideoId]);
+
+  const activeDirectError =
+    directError && directError.videoId === focusVideoId ? directError.error : null;
 
   const displayItems = useMemo(() => {
     const byId = new Map<string, LocalVideoFeedItem>();
@@ -156,6 +169,9 @@ function VideosScreenInner() {
   }, [pending.tracks]);
 
   const detailProcessingError = focusVideoId ? processingErrors[focusVideoId] : null;
+  const focusInDisplay = Boolean(focusVideoId) && displayItems.some((item) => item.id === focusVideoId);
+  // Ouverture directe : vidéo ni dans le fil ni chargée, sans erreur → requête en cours.
+  const awaitingPinnedVideo = Boolean(focusVideoId) && !focusInDisplay && !activeDirectError;
 
   return (
     <VideosAppShell detailMode={isMobileDetail} immersiveMode={isMobileDetail}>
@@ -172,20 +188,25 @@ function VideosScreenInner() {
       <ActiveReportVideoContext.Provider value={reportOpen ? reportVideoId : null}>
         <div className="relative">
           {isMobileDetail && focusVideoId ? (
-            feed.sessionExpired ? (
+            feed.sessionExpired || activeDirectError?.kind === "auth" ? (
               <SessionExpiredPanel
                 message={LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE}
                 returnPath={`/videos?video=${encodeURIComponent(focusVideoId)}`}
               />
             ) : feed.isLoading && pending.processingFeedItems.length === 0 ? (
               <VideosFeedSkeleton />
-            ) : feed.error && !displayItems.some((item) => item.id === focusVideoId) ? (
+            ) : feed.error && !focusInDisplay ? (
               <VideosFeedError onRetry={() => void feed.refresh()} />
             ) : (
               <VideoDetailScreen
                 videoId={focusVideoId}
                 items={displayItems}
-                isLoading={feed.isLoading}
+                isLoading={feed.isLoading || awaitingPinnedVideo}
+                directLoadError={
+                  activeDirectError?.kind === "load_error"
+                    ? { onRetry: retryDirectVideo, busy: directRetryBusy }
+                    : null
+                }
                 processingError={detailProcessingError}
                 onDismissProcessing={() => pending.dismissTrack(focusVideoId)}
                 onToggleLike={(item) => void interactions.toggleLike(item)}
@@ -205,7 +226,7 @@ function VideosScreenInner() {
               />
             )
           ) : feed.sessionExpired ||
-            (isDesktopOverlay && directError?.kind === "auth") ? (
+            (isDesktopOverlay && activeDirectError?.kind === "auth") ? (
             <SessionExpiredPanel
               message={LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE}
               returnPath={
@@ -254,8 +275,9 @@ function VideosScreenInner() {
                   hasMore={Boolean(feed.nextCursor)}
                   isLoadingMore={feed.isLoadingMore}
                   directError={
-                    directError?.kind === "unavailable" || directError?.kind === "load_error"
-                      ? directError
+                    activeDirectError?.kind === "unavailable" ||
+                    activeDirectError?.kind === "load_error"
+                      ? activeDirectError
                       : null
                   }
                   directRetryBusy={directRetryBusy}

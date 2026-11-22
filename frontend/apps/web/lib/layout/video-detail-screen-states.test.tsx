@@ -6,10 +6,11 @@ import {
   VIDEO_DETAIL_LOADING,
   VIDEO_DETAIL_NOT_FOUND,
 } from "@yunicity/utils";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { VideoDetailScreen } from "@/components/videos/video-detail-screen";
+import { DESKTOP_OVERLAY_DIRECT_LABELS } from "@/lib/videos/desktop-overlay-direct-error";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -224,6 +225,84 @@ describe("VideoDetailScreen — états runtime", () => {
 
     expect(screen.queryByText(VIDEO_DETAIL_LOADING)).toBeNull();
     expect(screen.getByTestId("video-detail-player").textContent).toBe("Après chargement");
+  });
+});
+
+describe("VIDEO-MOBILE-DIRECT-ERROR-01 — ouverture directe mobile, vidéo absente", () => {
+  const retryButtons = () =>
+    screen.queryAllByRole("button", { name: DESKTOP_OVERLAY_DIRECT_LABELS.retry });
+
+  it("U1 — erreur de chargement : message C7 + Réessayer, jamais « introuvable »", () => {
+    viewportTierRef.current = "mobile";
+    render(
+      <VideoDetailScreen
+        videoId="v-missing"
+        items={[]}
+        isLoading={false}
+        directLoadError={{ onRetry: vi.fn(), busy: false }}
+        {...actionProps}
+      />,
+    );
+
+    expect(screen.getAllByText(DESKTOP_OVERLAY_DIRECT_LABELS.loadErrorTitle).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(DESKTOP_OVERLAY_DIRECT_LABELS.loadErrorBody).length).toBeGreaterThan(0);
+    expect(retryButtons().length).toBeGreaterThan(0);
+    expect(screen.queryByText(VIDEO_DETAIL_NOT_FOUND)).toBeNull();
+  });
+
+  it("U2 — Réessayer appelle onRetry ; occupé : bouton désactivé, aucun appel", () => {
+    viewportTierRef.current = "mobile";
+    const onRetry = vi.fn();
+    const { rerender } = render(
+      <VideoDetailScreen
+        videoId="v-missing"
+        items={[]}
+        isLoading={false}
+        directLoadError={{ onRetry, busy: false }}
+        {...actionProps}
+      />,
+    );
+
+    const [first] = retryButtons();
+    expect(first).toBeTruthy();
+    fireEvent.click(first!);
+    expect(onRetry).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <VideoDetailScreen
+        videoId="v-missing"
+        items={[]}
+        isLoading={false}
+        directLoadError={{ onRetry, busy: true }}
+        {...actionProps}
+      />,
+    );
+
+    const busyButtons = retryButtons();
+    expect(busyButtons.length).toBeGreaterThan(0);
+    for (const button of busyButtons) {
+      expect((button as HTMLButtonElement).disabled).toBe(true);
+      expect(button.getAttribute("aria-busy")).toBe("true");
+      fireEvent.click(button);
+    }
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
+  it("U3 — sans erreur de chargement : état introuvable inchangé, sans Réessayer", () => {
+    viewportTierRef.current = "mobile";
+    render(
+      <VideoDetailScreen
+        videoId="v-missing"
+        items={[]}
+        isLoading={false}
+        directLoadError={null}
+        {...actionProps}
+      />,
+    );
+
+    expect(screen.getAllByText(VIDEO_DETAIL_NOT_FOUND).length).toBeGreaterThan(0);
+    expect(retryButtons()).toHaveLength(0);
+    expect(screen.queryByText(DESKTOP_OVERLAY_DIRECT_LABELS.loadErrorTitle)).toBeNull();
   });
 });
 

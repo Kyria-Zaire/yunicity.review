@@ -25,6 +25,10 @@ import { VideoDetailCommentsSection } from "@/components/videos/video-detail-com
 import { VideoDetailMeta } from "@/components/videos/video-detail-meta";
 import { VideoDetailPlayer } from "@/components/videos/video-detail-player";
 import { VideoDetailSidebar } from "@/components/videos/video-detail-sidebar";
+import {
+  VideoDetailMissingState,
+  type VideoDetailDirectLoadError,
+} from "@/components/videos/video-detail-missing-state";
 import { useVideosViewportTier } from "@/hooks/use-videos-viewport-tier";
 import { scrollIntoViewRespectingReducedMotion, VIDEO_CANVAS_FOCUS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
 
@@ -39,6 +43,8 @@ type VideoDetailScreenProps = {
   onOpenReport: (videoId: string) => void;
   onCommentCountDelta: (videoId: string, delta: number) => void;
   onLoadMore?: () => void;
+  /** VIDEO-MOBILE-DIRECT-ERROR-01 — vidéo absente : C7 + Réessayer au lieu de « introuvable ». */
+  directLoadError?: VideoDetailDirectLoadError | null;
 };
 
 export function VideoDetailScreen({
@@ -52,6 +58,7 @@ export function VideoDetailScreen({
   onOpenReport,
   onCommentCountDelta,
   onLoadMore,
+  directLoadError = null,
 }: VideoDetailScreenProps) {
   const router = useRouter();
   const viewportTier = useVideosViewportTier();
@@ -111,34 +118,13 @@ export function VideoDetailScreen({
     return (
       <>
         <div className="videos-detail-immersive-only flex min-h-[100dvh] flex-col items-center justify-center bg-black px-4 text-center">
-          <p className="text-sm text-white/80">{VIDEO_DETAIL_NOT_FOUND}</p>
-          <Link
-            href="/videos"
-            className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-yunicity-primary hover:underline"
-          >
-            <ChevronLeft className="h-4 w-4" aria-hidden />
-            {VIDEO_DETAIL_BACK}
-          </Link>
+          <VideoDetailMissingState tone="dark" directLoadError={directLoadError} />
         </div>
         <div className="videos-detail-medium-only px-4 py-16 text-center">
-          <p className="text-sm text-neutral-600">{VIDEO_DETAIL_NOT_FOUND}</p>
-          <Link
-            href="/videos"
-            className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-yunicity-primary hover:underline"
-          >
-            <ChevronLeft className="h-4 w-4" aria-hidden />
-            {VIDEO_DETAIL_BACK}
-          </Link>
+          <VideoDetailMissingState tone="light" directLoadError={directLoadError} />
         </div>
         <div className="web-desktop-videos-only mx-auto max-w-[1400px] px-4 py-16 text-center">
-          <p className="text-sm text-neutral-600">{VIDEO_DETAIL_NOT_FOUND}</p>
-          <Link
-            href="/videos"
-            className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-yunicity-primary hover:underline"
-          >
-            <ChevronLeft className="h-4 w-4" aria-hidden />
-            {VIDEO_DETAIL_BACK}
-          </Link>
+          <VideoDetailMissingState tone="light" directLoadError={directLoadError} />
         </div>
       </>
     );
