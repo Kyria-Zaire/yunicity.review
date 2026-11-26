@@ -136,7 +136,7 @@ Le jeton et le code **ne sont jamais stockés en clair** ; ils ne sont renvoyés
 |---|---|---|
 | `id` | uuid | PK (identifiant d'opération) |
 | `campaign_id` | uuid | NOT NULL, FK `presence_campaigns.id` `ON DELETE RESTRICT`, index |
-| `agent_user_id` | uuid | NOT NULL, FK `users.id` `ON DELETE CASCADE` |
+| `agent_user_id` | uuid | NULL, FK `users.id` `ON DELETE SET NULL` (la suppression d'un compte agent ne doit pas effacer l'audit) ; toujours renseigné à l'insertion |
 | `client_operation_id` | uuid | NOT NULL |
 | `request_fingerprint` | char(64) | NOT NULL |
 | `participant_user_id` | uuid | NULL (inconnu si l'identifiant n'a pas été résolu), FK `users.id` `ON DELETE SET NULL` |
