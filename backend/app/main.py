@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from app.api.v1.presence_router import presence_api_router
 from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.errors import AppError, app_error_handler
@@ -108,4 +109,8 @@ def create_app() -> FastAPI:
         name="media-local-video",
     )
     app.include_router(api_router, prefix=settings.api_v1_prefix)
+    # PASSPORT-PRESENCE-01 (B11) : fail-closed. Drapeau faux -> routes absentes
+    # (404 du framework, hors OpenAPI) ; le routeur garde en plus son propre controle.
+    if settings.presence_validation_enabled:
+        app.include_router(presence_api_router, prefix=settings.api_v1_prefix)
     return app
