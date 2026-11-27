@@ -145,6 +145,18 @@ Les lots suivants restent soumis aux cinq conditions, à reconsigner pour leur p
 - [ ] Aucune écriture `yuni_transactions`, réputation, défi, tampon ou remise (tests).
 - [ ] Jeton, code et hachés jamais dans les logs, URL ou réponses d'erreur (tests).
 - [ ] `ruff`, `mypy`, `pytest` (unitaire et intégration) verts.
+- [ ] 01B (amendements CTO D1 à D4, 2026-11-27) :
+  - au plus 3 sessions vivantes par Passport (`consumed_at IS NULL AND expires_at >
+    clock_timestamp()`), contrôlées sous le verrou du Passport ; au-delà, `429
+    PRESENCE_SESSION_LIMIT_REACHED` avec `Retry-After`, sans invalider une session
+    vivante ni révéler de jeton ou de condensat ;
+  - drapeau actif sans `REDIS_URL` → refus au démarrage ; Redis indisponible → `503`,
+    aucune session ;
+  - `expires_at` calculé par `clock_timestamp()` après le verrou ;
+  - collisions de condensat rejouées dans un savepoint, trois tentatives au plus, sans
+    ligne partielle ;
+  - suspension concurrente du Passport testée dans les deux ordres de verrouillage ;
+  - aucun secret, code manuel ni QR en clair dans les logs, Redis, erreurs ou colonnes.
 
 ## 5. Hors périmètre
 
@@ -160,6 +172,9 @@ Les lots suivants restent soumis aux cinq conditions, à reconsigner pour leur p
   sans `uv.lock`. Les versions déployées peuvent donc différer de celles validées par la
   suite Linux, qui utilise `uv sync --frozen`. La CI `backend-ci` présente le même écart.
   Ce risque ne bloque pas 01B ; un **suivi est obligatoire avant la production**.
+- Fiabilité de l'IP client derrière le proxy Railway : ticket transversal
+  `PROXY-TRUSTED-CLIENT-IP-01` (D3 de 01B). Dans ce ticket, la limite par IP n'est qu'une
+  protection secondaire.
 
 ## 6. Journal
 
@@ -172,6 +187,7 @@ Les lots suivants restent soumis aux cinq conditions, à reconsigner pour leur p
 | 2026-11-27 | Le CTO approuve la revue des migrations `0067` / `0068` et la revue sécurité humaine de 01A sur `b2fd2705`. Conditions 2 et 5 levées. Un P3 documentaire est consigné ; option A : correction dans le premier commit de 01B. |
 | 2026-11-27 | GO MERGE et GO DEPLOY Preview pour 01A. La PR #206 est fusionnée dans `feat/c3-videos-refonte-final` par le commit `dcf309753435ad57193e4ddb1a8914fe0ef2e9b1`, à condition que la tête soit `b2fd2705`. Ses parents sont `7f11d6bf` et `b2fd2705`, et son arbre est identique à celui de `b2fd2705`. Preuves après déploiement sur la Preview `dazzling-wisdom` : voir ci-dessous. |
 | 2026-11-27 | Le CTO valide le contrôle après déploiement, puis donne le GO 01B. Premier commit de 01B : correction de la docstring P3 et mise à jour du ticket. |
+| 2026-11-27 | Branche `feature/passport-presence-01b` poussée à `a348097c` (sans PR). Plan 01B présenté ; GO 01B avec les arbitrages D1 à D4 et deux corrections techniques (texte ci-dessous). Amendements de l'ADR (§ 4, § 6, § 9, § 10) et du PRD (§ 3, § 6, § 7). Création du ticket transversal `PROXY-TRUSTED-CLIENT-IP-01`. |
 
 ### Preuves après déploiement de 01A (Preview, 2026-11-27)
 
@@ -215,6 +231,49 @@ Les lots suivants restent soumis aux cinq conditions, à reconsigner pour leur p
   technique et faire l’objet d’un suivi avant la production, mais il ne bloque pas 01B. »
 - « Aucun changement du drapeau en Preview et aucune activation des routes sans nouvelle
   autorisation. »
+
+### Arbitrages CTO du lot 01B (2026-11-27) — mot pour mot
+
+| Décision | Arbitrage CTO |
+|---|---|
+| D1 — Sessions vivantes | **3 maximum par Passport.** Au-delà : `429`, sans invalider une session encore active. Ajouter `Retry-After` calculé sur la première expiration. Amender l’ADR et documenter le code d’erreur. |
+| D2 — Redis | **`REDIS_URL` obligatoire dès que le drapeau est actif**, dans tous les environnements. URL absente : refus au démarrage. Redis indisponible à l’exécution : `503`, aucune session créée. |
+| D3 — Limite IP | **600/h acceptée comme protection secondaire uniquement.** Elle ne doit jamais être présentée comme une garantie de sécurité tant que la confiance accordée à `X-Forwarded-For` sur Railway n’est pas prouvée. Créer immédiatement un ticket transversal sur les IP de proxy fiables. |
+| D4 — Horloge | **Horloge PostgreSQL obligatoire**, mais utiliser `clock_timestamp()` et non `now()`. |
+
+« Pourquoi `clock_timestamp()` : dans PostgreSQL, `now()` reste figé au début de la
+transaction. Une requête ayant attendu le verrou du Passport pourrait donc créer une
+session dont une partie des 60 secondes est déjà consommée. Utiliser l’horloge réelle :
+après acquisition du verrou pour calculer `expires_at` ; dans les prédicats d’expiration
+et de consommation de 01C ; dans les tests de concurrence. »
+
+« Deuxième correction : la probabilité de collision du code n’est pas exactement `2⁻⁴⁰`
+si les condensats historiques restent stockés. Elle est approximativement proportionnelle
+au nombre de codes déjà conservés, soit `N / 2⁴⁰` pour le prochain tirage. Le mécanisme
+de trois tentatives reste acceptable, mais le texte et les tests doivent employer la
+formulation correcte. »
+
+Ordre de travail validé :
+
+1. commit documentaire dédié : ADR, PRD et ticket avec D1 à D4, le plafond,
+   `Retry-After`, `clock_timestamp()` et le ticket transversal `X-Forwarded-For` ;
+2. types et fonctions pures de génération, normalisation et HMAC, avec tests unitaires ;
+3. repository et service transactionnel ;
+4. endpoint et rate limiting fail-closed ;
+5. tests d’intégration, concurrence, absence de secrets et isolation ;
+6. revue sécurité, puis suite Linux sur le SHA exact avant toute PR.
+
+Exigences supplémentaires, mot pour mot :
+
+- « Le plafond de trois doit être contrôlé **sous le verrou du Passport**. »
+- « Le décompte doit utiliser uniquement `consumed_at IS NULL AND expires_at >
+  clock_timestamp()`. »
+- « Un `429` lié au plafond ne doit révéler aucun jeton ni condensat. »
+- « Les collisions doivent être rejouées dans un savepoint sans laisser de ligne ou
+  d’audit partiel. »
+- « La suspension concurrente doit être testée dans les deux ordres de verrouillage. »
+- « Aucun secret, code manuel ou QR en clair dans les logs, Redis, erreurs ou colonnes. »
+- « Le drapeau Preview reste désactivé. Aucun déploiement ni activation pendant 01B. »
 
 ### Arbitrages CTO D1–D6 (2026-11-26) — texte consigné mot pour mot
 

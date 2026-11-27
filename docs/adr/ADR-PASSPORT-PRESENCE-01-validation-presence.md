@@ -197,6 +197,14 @@ Le jeton et le code **ne sont jamais stockés en clair** ; ils ne sont renvoyés
   vivantes possibles pour un même Passport (la précédente reste valable jusqu'à son
   expiration, pour ne pas invalider un QR en cours de lecture lors du renouvellement à
   30 s) ; les sessions expirées du Passport sont supprimées à chaque émission.
+  **Plafond (amendement CTO D1 de 01B, 2026-11-27)** : au plus **3** sessions vivantes par
+  Passport, une session vivante vérifiant `consumed_at IS NULL AND expires_at >
+  clock_timestamp()`. Le plafond est contrôlé **sous le verrou du Passport** (`SELECT …
+  FROM passports … FOR UPDATE`), après la purge. Au-delà : `429
+  PRESENCE_SESSION_LIMIT_REACHED` avec `Retry-After`, égal au nombre de secondes jusqu'à la
+  **première** expiration parmi les sessions vivantes (arrondi au supérieur, minimum 1).
+  Aucune session encore vivante n'est invalidée, et la réponse ne contient ni jeton ni
+  condensat.
 - **Présence** : `posted`, immuable (correction = hors périmètre, OPS-01).
 - **Opération** : `posted | already_processed | rejected`, immuable.
 
@@ -223,8 +231,23 @@ Aucun rôle d'agent global ; aucune route d'administration hors staff.
   `HMAC-SHA256(PRESENCE_TOKEN_PEPPER, "code:" + code_normalisé)` — séparation de domaine ;
   le poivre rend inutilisable un vol de base pour un code de 40 bits.
 - **TTL** : 60 s ; `refresh_after` : 30 s.
-- **Consommation** : `UPDATE … SET consumed_at = now() WHERE id = … AND consumed_at IS
-  NULL AND expires_at > now()` dans la transaction qui insère la présence.
+- **Horloge (amendement CTO D4 de 01B, 2026-11-27)** : horloge PostgreSQL
+  **`clock_timestamp()`**, jamais `now()`. `now()` est figé au début de la transaction :
+  une émission ayant attendu le verrou du Passport créerait sinon une session dont une
+  partie des 60 s serait déjà écoulée. `expires_at = clock_timestamp() + 60 s` est calculé
+  **après** l'acquisition du verrou, par la base, et renvoyé par `RETURNING`. Les
+  prédicats d'expiration et de consommation (01C) et les tests de concurrence utilisent
+  la même horloge.
+- **Consommation** : `UPDATE … SET consumed_at = clock_timestamp() WHERE id = … AND
+  consumed_at IS NULL AND expires_at > clock_timestamp()` dans la transaction qui insère
+  la présence.
+- **Collision des condensats** : `qr_token_hmac` et `manual_code_hmac` sont uniques sur
+  toute la table, y compris pour les sessions expirées non encore purgées. Pour le code
+  (40 bits), la probabilité de collision au tirage suivant est donc approximativement
+  **`N / 2⁴⁰`**, où `N` est le nombre de condensats de code conservés, et non `2⁻⁴⁰`.
+  Une violation d'unicité déclenche un nouveau tirage dans un **savepoint**, trois
+  tentatives au maximum, sans laisser de ligne ni d'audit partiel ; au-delà, `503` et
+  aucune session.
 - **Poivre** : variable `PRESENCE_TOKEN_PEPPER` (≥ 32 caractères), **distincte** de
   `JWT_SECRET_KEY` et de `REFRESH_TOKEN_PEPPER`, par environnement, jamais dans Git.
   Drapeau actif sans poivre valide → erreur de configuration au démarrage (même convention
@@ -275,8 +298,9 @@ Aucun rôle d'agent global ; aucune route d'administration hors staff.
 | **I** fuite de PII | résolution | B6 : nom d'affichage, initiale, Passport masqué, état d'inscription uniquement | schéma de réponse |
 | **I** fuite de secret | logs, URL, erreurs, Sentry | identifiants uniquement en corps POST ; jamais journalisés ; erreurs sans écho | capture des logs |
 | **I** vol de base | lecture de `presence_sessions` | HMAC poivré ; TTL 60 s | — |
-| **D** force brute du code | 2^40 combinaisons | débit par agent et par utilisateur ; affectation requise ; TTL | dépassement → 429 |
-| **D** inondation de sessions | émission en boucle | débit par utilisateur ; purge des sessions expirées à l'émission | dépassement → 429 |
+| **D** force brute du code | 2^40 combinaisons | débit par agent et par utilisateur ; affectation requise ; TTL ; au plus 3 codes vivants par Passport (D1 de 01B) | dépassement → 429 |
+| **D** inondation de sessions | émission en boucle | débit par utilisateur (150 / h) ; plafond de 3 sessions vivantes par Passport, contrôlé sous verrou, `429 PRESENCE_SESSION_LIMIT_REACHED` avec `Retry-After` (D1 de 01B) ; purge des sessions expirées à l'émission ; débit par IP (600 / h) **secondaire uniquement** (D3 de 01B) : la confiance accordée à `X-Forwarded-For` sur Railway n'est pas prouvée (`PROXY-TRUSTED-CLIENT-IP-01`) et cette limite n'est pas une garantie | dépassement → 429 ; plafond sous concurrence |
+| **D** contournement de la limitation de débit (D2 de 01B) | Redis absent ou indisponible | drapeau actif sans `REDIS_URL` → refus au démarrage, dans tous les environnements ; Redis indisponible à l'exécution → `503`, aucune session créée | configuration ; Redis en panne → 503 sans écriture |
 | **E** élévation | appel d'une route staff | garde staff existante ; 404 si drapeau désactivé | non-staff → 403 |
 | **E** effets économiques | présence déclenchant un avantage | aucun import des hooks Yunimoney / réputation / défis / tampons / remise | test statique + aucune ligne `yuni_transactions` |
 | **E/R** abus ou erreur d'un membre du staff (amendement D1) | inscription, affectation, statut de campagne ou `is_test` modifiés à tort ou sans droit | autorisation staff stricte (`moderation.manage` ou `system.admin`, jamais anonyme ni utilisateur ordinaire, D4) ; **acteur enregistré** dans `presence_admin_actions` à chaque changement effectif, dans la même transaction. Risque résiduel : la table d'audit n'est pas protégée en base contre un rôle SQL privilégié (même niveau que les autres `*_admin_actions`) | anonyme 401, non-staff 403, `actor_user_id` présent dans l'audit, PUT sans changement → aucun audit |
@@ -292,6 +316,11 @@ Preview n'existe pas en production.
 `PRESENCE_VALIDATION_ENABLED` (`bool`, défaut **`false`**). Désactivé → **404** sur toutes
 les routes du domaine (participant, agent, staff), sans lecture ni écriture. Activation
 Preview uniquement après validation explicite.
+
+Drapeau actif : `PRESENCE_TOKEN_PEPPER` valide (§ 6) **et** `REDIS_URL` renseignée sont
+exigés **dans tous les environnements** (amendement CTO D2 de 01B, 2026-11-27) ; sinon la
+configuration est refusée au démarrage. Redis indisponible à l'exécution → `503`, aucune
+session créée.
 
 ## 11. Migration et retour arrière
 
@@ -330,3 +359,4 @@ Preview uniquement après validation explicite.
 | 2026-11-26 | Création (PROPOSED) |
 | 2026-11-26 | Amendement sur arbitrage CTO provisoire (D1, D3, D4) : migration de convergence `0068` (§ 2, § 11), règle « toute FK indexée » et inventaire des index (§ 3), trois risques ajoutés au modèle de menace (§ 9). Statut **inchangé** : `PROPOSED`, approbation formelle après les résultats de vérification. |
 | 2026-11-27 | GO BUILD formel (CTO, Architecture Authority) : statut **APPROVED** avec les amendements D1 à D7. Ajout au § 9 de la limite D7 (`422 json_invalid` avant authentification pour un JSON syntaxiquement malformé, acceptée sans contournement global de FastAPI). Base de la branche 01A : `7f11d6bf` (D5). Aucun GO MERGE ni GO DEPLOY. |
+| 2026-11-27 | Amendements CTO D1 à D4 du lot 01B. D1 : au plus 3 sessions vivantes par Passport, contrôle sous verrou, `429 PRESENCE_SESSION_LIMIT_REACHED` avec `Retry-After` (§ 4, § 9). D2 : `REDIS_URL` obligatoire si le drapeau est actif, `503` si Redis est indisponible (§ 9, § 10). D3 : limite par IP de 600 / h, secondaire uniquement, et ticket `PROXY-TRUSTED-CLIENT-IP-01` (§ 9). D4 : horloge `clock_timestamp()` (§ 6). Correction de la probabilité de collision du code, `N / 2⁴⁰` (§ 6). Statut **inchangé** : `APPROVED`. |
