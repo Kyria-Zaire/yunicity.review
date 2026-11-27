@@ -12,7 +12,11 @@ def presence_validation_enabled() -> bool:
 
 
 def require_presence_validation_enabled() -> None:
-    """Router-level dependency: runs before authentication, database access and body parsing.
+    """Router-level dependency: runs before authentication, database access and schema
+    validation of the request body.
+
+    FastAPI decodes the JSON body before resolving dependencies, so a syntactically
+    malformed body is rejected with ``422 json_invalid`` first (ADR § 9, D7).
 
     Raises the framework's own 404 so that a disabled route is indistinguishable from an
     unknown path (same status, same body); an ``AppError`` would leak a domain code.
