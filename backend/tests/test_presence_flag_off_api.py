@@ -12,7 +12,7 @@ from collections.abc import Iterator
 import pytest
 from app.core.config import get_settings
 from app.db.session import get_session_factory
-from app.models.presence import PresenceAdminAction, PresenceCampaign
+from app.models.presence import PresenceAdminAction, PresenceCampaign, PresenceSession
 from app.models.user import User
 from httpx import AsyncClient, Response
 from sqlalchemy import func, select
@@ -22,6 +22,7 @@ from tests.conftest_rbac import RbacUserFactory, auth_header
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
 BASE = "/api/v1/admin/presence"
+SESSION_URL = "/api/v1/passport/me/presence-session"
 
 
 @pytest.fixture
@@ -43,6 +44,7 @@ def _calls(user_id: uuid.UUID) -> list[tuple[str, str]]:
         ("PUT", f"{BASE}/campaigns/{some_id}/registrations/{user_id}"),
         ("PUT", f"{BASE}/campaigns/{some_id}/agents/{user_id}"),
         ("PUT", f"{BASE}/users/{user_id}/test-flag"),
+        ("POST", SESSION_URL),
     ]
 
 
@@ -106,11 +108,12 @@ async def test_nothing_is_written_when_off(
     await auth_client.put(
         f"{BASE}/users/{target.user_id}/test-flag", json={"is_test": True}, headers=headers
     )
+    await auth_client.post(SESSION_URL, headers=auth_header(target.access_token))
 
     factory = get_session_factory()
     assert factory is not None
     async with factory() as session:
-        for model in (PresenceCampaign, PresenceAdminAction):
+        for model in (PresenceCampaign, PresenceAdminAction, PresenceSession):
             count = (await session.execute(select(func.count()).select_from(model))).scalar_one()
             assert count == 0, model.__tablename__
         user = await session.get(User, target.user_id)

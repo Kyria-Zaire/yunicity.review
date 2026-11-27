@@ -1,4 +1,5 @@
-"""PASSPORT-PRESENCE-01 (01A) — fail-closed flag and dedicated pepper, without database."""
+"""PASSPORT-PRESENCE-01 (01A, 01B) — fail-closed flag, dedicated pepper and mandatory
+Redis (D2 of 01B), without database."""
 
 from __future__ import annotations
 
@@ -23,6 +24,9 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 _TEST_PEPPER = "test-only-presence-pepper-not-a-secret-0001"
 _TEST_JWT = "test-secret-key-at-least-32-characters-long!!"
 _PRESENCE_PREFIX = "/api/v1/admin/presence"
+_SESSION_PATH = "/api/v1/passport/me/presence-session"
+#: Test-only URL: settings validation only checks that it is present.
+_TEST_REDIS_URL = "redis://127.0.0.1:6390/0"
 
 
 @pytest.fixture
@@ -30,6 +34,8 @@ def clean_presence_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     for name in ("PRESENCE_VALIDATION_ENABLED", "PRESENCE_TOKEN_PEPPER"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("JWT_SECRET_KEY", _TEST_JWT)
+    # Explicit: flag-on tests must not depend on an ambient REDIS_URL (D2 of 01B).
+    monkeypatch.setenv("REDIS_URL", _TEST_REDIS_URL)
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()
@@ -59,6 +65,8 @@ def test_env_example_declares_flag_false_and_no_pepper_value() -> None:
         line.startswith("PRESENCE_TOKEN_PEPPER=") and line != "PRESENCE_TOKEN_PEPPER="
         for line in lines
     )
+    assert "PRESENCE_SESSION_USER_LIMIT_PER_HOUR=150" in lines
+    assert "PRESENCE_SESSION_IP_LIMIT_PER_HOUR=600" in lines
 
 
 @pytest.mark.parametrize("pepper", ["", "   ", "x" * (PRESENCE_TOKEN_PEPPER_MIN_LENGTH - 1)])
@@ -97,6 +105,39 @@ def test_enabled_flag_with_dedicated_pepper_is_valid(
     assert settings.presence_validation_enabled is True
 
 
+@pytest.mark.parametrize("redis_url", [None, "", "   "])
+def test_enabled_flag_requires_redis(
+    clean_presence_env: None, monkeypatch: pytest.MonkeyPatch, redis_url: str | None
+) -> None:
+    """D2 of 01B: without Redis, rate limiting would silently be a no-op."""
+    if redis_url is None:
+        monkeypatch.delenv("REDIS_URL", raising=False)
+    else:
+        monkeypatch.setenv("REDIS_URL", redis_url)
+    with pytest.raises(ValidationError, match="REDIS_URL is required"):
+        _settings(
+            monkeypatch, PRESENCE_VALIDATION_ENABLED="true", PRESENCE_TOKEN_PEPPER=_TEST_PEPPER
+        )
+
+
+def test_disabled_flag_needs_no_redis(
+    clean_presence_env: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("REDIS_URL", raising=False)
+    settings = _settings(monkeypatch, PRESENCE_VALIDATION_ENABLED="false")
+    assert settings.presence_validation_enabled is False
+
+
+def test_session_rate_limits_have_the_prd_defaults(
+    clean_presence_env: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    for name in ("PRESENCE_SESSION_USER_LIMIT_PER_HOUR", "PRESENCE_SESSION_IP_LIMIT_PER_HOUR"):
+        monkeypatch.delenv(name, raising=False)
+    settings = _settings(monkeypatch)
+    assert settings.presence_session_user_limit_per_hour == 150
+    assert settings.presence_session_ip_limit_per_hour == 600
+
+
 def test_disabled_flag_needs_no_pepper(
     clean_presence_env: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -109,7 +150,8 @@ def _presence_paths() -> set[str]:
     return {
         route.path
         for route in application.routes
-        if isinstance(route, APIRoute) and route.path.startswith(_PRESENCE_PREFIX)
+        if isinstance(route, APIRoute)
+        and (route.path.startswith(_PRESENCE_PREFIX) or route.path == _SESSION_PATH)
     }
 
 
@@ -129,6 +171,7 @@ def test_routes_are_mounted_when_flag_is_on(
         f"{_PRESENCE_PREFIX}/campaigns/{{campaign_id}}/registrations/{{user_id}}",
         f"{_PRESENCE_PREFIX}/campaigns/{{campaign_id}}/agents/{{user_id}}",
         f"{_PRESENCE_PREFIX}/users/{{user_id}}/test-flag",
+        _SESSION_PATH,
     }
 
 

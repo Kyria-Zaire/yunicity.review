@@ -6,7 +6,8 @@ routes do not exist at all (framework 404, absent from OpenAPI), whatever the re
 
 from fastapi import APIRouter
 
-from app.api.v1 import admin_presence
+from app.api.v1 import admin_presence, presence_participant
 
 presence_api_router = APIRouter()
 presence_api_router.include_router(admin_presence.router)
+presence_api_router.include_router(presence_participant.router)
