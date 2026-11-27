@@ -9,7 +9,10 @@ from app.core.local_video_constants import (
     LOCAL_VIDEO_MAX_BYTES,
     LOCAL_VIDEO_MAX_DURATION_SECONDS,
 )
-from app.core.presence_constants import PRESENCE_TOKEN_PEPPER_MIN_LENGTH
+from app.core.presence_constants import (
+    PRESENCE_RATE_LIMIT_KEY_PEPPER_MIN_LENGTH,
+    PRESENCE_TOKEN_PEPPER_MIN_LENGTH,
+)
 from app.db.database_url import to_asyncpg_url
 
 AppEnv = Literal["dev", "recette", "preprod", "prod"]
@@ -447,6 +450,25 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "REDIS_URL is required when PRESENCE_VALIDATION_ENABLED is true "
                     "(presence rate limits)"
+                )
+            # P3-1 de 01B : la cle de comptage par IP est un HMAC avec ce pepper. Vide,
+            # l'IPv4 se retrouverait par enumeration ; partage, il melangerait les
+            # domaines de secrets. Aucune valeur n'apparait dans les messages.
+            rate_limit_pepper = self.rate_limit_key_pepper.strip()
+            if len(rate_limit_pepper) < PRESENCE_RATE_LIMIT_KEY_PEPPER_MIN_LENGTH:
+                raise ValueError(
+                    "RATE_LIMIT_KEY_PEPPER must be at least "
+                    f"{PRESENCE_RATE_LIMIT_KEY_PEPPER_MIN_LENGTH} characters when "
+                    "PRESENCE_VALIDATION_ENABLED is true"
+                )
+            if rate_limit_pepper in (
+                pepper,
+                self.jwt_secret_key.strip(),
+                self.refresh_token_pepper.strip(),
+            ):
+                raise ValueError(
+                    "RATE_LIMIT_KEY_PEPPER must differ from PRESENCE_TOKEN_PEPPER, "
+                    "JWT_SECRET_KEY and REFRESH_TOKEN_PEPPER"
                 )
         if self.app_env == "prod":
             if not self.refresh_cookie_secure:

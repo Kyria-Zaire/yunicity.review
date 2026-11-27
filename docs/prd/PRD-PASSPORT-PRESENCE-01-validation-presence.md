@@ -161,6 +161,9 @@ Erreurs : 401, 403 `PASSPORT_NOT_ACTIVE`, 404 (drapeau ou Passport absent), 429.
 Précisions (amendements CTO D1 à D4 de 01B, 2026-11-27) :
 
 - Passport absent : `404 PASSPORT_NOT_FOUND`, code existant du domaine Passport.
+- Compte suspendu : `403 ACCOUNT_SUSPENDED` ; suppression du compte demandée : `403
+  ACCOUNT_PENDING_DELETION`. Ces deux codes existants sont renvoyés par l'authentification
+  partagée, avant toute logique de présence (correction P3-2 de la revue 01B).
 - Débit dépassé, par utilisateur ou par IP : `429 RATE_LIMITED`, code existant.
 - Plafond de 3 sessions vivantes atteint : `429 PRESENCE_SESSION_LIMIT_REACHED`, avec
   l'en-tête `Retry-After` en secondes jusqu'à la première expiration d'une session
@@ -244,6 +247,8 @@ Corps : `{ "client_operation_id": "<uuid v4>", "credential": { "type": "qr" | "m
 | `RATE_LIMITED` (existant) | 429 |
 | `PRESENCE_SESSION_LIMIT_REACHED` (D1 de 01B) | 429, avec `Retry-After` |
 | `PASSPORT_NOT_FOUND` (existant) | 404 |
+| `ACCOUNT_SUSPENDED` (existant, authentification) | 403 |
+| `ACCOUNT_PENDING_DELETION` (existant, authentification) | 403 |
 | `RATE_LIMIT_BACKEND_UNAVAILABLE` (existant) | 503 |
 | `PRESENCE_SESSION_UNAVAILABLE` | 503 |
 
@@ -276,7 +281,11 @@ staff (amendement CTO, 2026-11-26).
   - **D3** : émission de session limitée à 600 / h par IP, à titre de **protection
     secondaire uniquement**. Ce n'est pas une garantie de sécurité tant que la confiance
     accordée à `X-Forwarded-For` sur Railway n'est pas prouvée
-    (`PROXY-TRUSTED-CLIENT-IP-01`).
+    (`PROXY-TRUSTED-CLIENT-IP-01`). La clé de comptage est
+    `HMAC(RATE_LIMIT_KEY_PEPPER, "presence-ip:" + IP)`, jamais l'IP en clair. Drapeau
+    actif : `RATE_LIMIT_KEY_PEPPER` d'au moins 32 caractères, différent de
+    `PRESENCE_TOKEN_PEPPER`, `JWT_SECRET_KEY` et `REFRESH_TOKEN_PEPPER`, sinon refus au
+    démarrage (correction P3-1 de la revue 01B).
   - **D4** : horloge PostgreSQL `clock_timestamp()` pour l'expiration et la
     consommation (ADR § 6).
 
@@ -322,6 +331,7 @@ staff (amendement CTO, 2026-11-26).
 | 2026-11-26 | Amendement sur arbitrage CTO provisoire : codes 404 staff (§ 6), migration de convergence `0068` (§ 6). Statut **inchangé** (`DESIGN`) ; gates § 13 **non cochées**, arbitrées individuellement après les résultats de vérification. |
 | 2026-11-27 | GO BUILD formel (CTO, Product Authority et Architecture Authority) : statut **APPROVED**, phase **BUILD** ; six gates § 13 approuvées individuellement et cochées, preuves et réserves consignées ; `PRESENCE_CAMPAIGN_NOT_FOUND` (404) approuvé dans le contrat. Ni fusion ni déploiement Preview autorisés. |
 | 2026-11-27 | Amendements CTO D1 à D4 du lot 01B (§ 3, § 6, § 7) : plafond de 3 sessions vivantes et `429 PRESENCE_SESSION_LIMIT_REACHED` avec `Retry-After` ; `REDIS_URL` obligatoire si le drapeau est actif ; limite par IP de 600 / h, secondaire uniquement ; horloge `clock_timestamp()`. Codes documentés : `PASSPORT_NOT_FOUND`, `RATE_LIMIT_BACKEND_UNAVAILABLE` (existants) et `PRESENCE_SESSION_UNAVAILABLE`. Statut et phase **inchangés**. |
+| 2026-11-27 | Corrections de la revue 01B (option A du CTO). P3-1 : domaine `presence-ip:` pour la clé IP et exigences sur `RATE_LIMIT_KEY_PEPPER` (§ 7). P3-2 : codes `403 ACCOUNT_SUSPENDED` et `403 ACCOUNT_PENDING_DELETION` documentés (§ 6). Statut et phase **inchangés**. |
 
 # 13. BMAD
 

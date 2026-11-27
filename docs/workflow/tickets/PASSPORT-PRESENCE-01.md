@@ -188,6 +188,7 @@ Les lots suivants restent soumis aux cinq conditions, à reconsigner pour leur p
 | 2026-11-27 | GO MERGE et GO DEPLOY Preview pour 01A. La PR #206 est fusionnée dans `feat/c3-videos-refonte-final` par le commit `dcf309753435ad57193e4ddb1a8914fe0ef2e9b1`, à condition que la tête soit `b2fd2705`. Ses parents sont `7f11d6bf` et `b2fd2705`, et son arbre est identique à celui de `b2fd2705`. Preuves après déploiement sur la Preview `dazzling-wisdom` : voir ci-dessous. |
 | 2026-11-27 | Le CTO valide le contrôle après déploiement, puis donne le GO 01B. Premier commit de 01B : correction de la docstring P3 et mise à jour du ticket. |
 | 2026-11-27 | Branche `feature/passport-presence-01b` poussée à `a348097c` (sans PR). Plan 01B présenté ; GO 01B avec les arbitrages D1 à D4 et deux corrections techniques (texte ci-dessous). Amendements de l'ADR (§ 4, § 6, § 9, § 10) et du PRD (§ 3, § 6, § 7). Création du ticket transversal `PROXY-TRUSTED-CLIENT-IP-01`. |
+| 2026-11-27 | Étapes 2 à 5 de 01B poussées jusqu'à `7178562f`, sans PR. Relecture de l'agent sur les neuf points demandés : aucune anomalie P0, P1 ou P2 ; deux P3. Option A retenue par le CTO : corriger avant la suite Linux. P3-1 : domaine `presence-ip:` pour la clé IP ; drapeau actif → `RATE_LIMIT_KEY_PEPPER` d'au moins 32 caractères, différent de `PRESENCE_TOKEN_PEPPER`, `JWT_SECRET_KEY` et `REFRESH_TOKEN_PEPPER`. P3-2 : `403 ACCOUNT_SUSPENDED` et `403 ACCOUNT_PENDING_DELETION` documentés dans le PRD. |
 
 ### Preuves après déploiement de 01A (Preview, 2026-11-27)
 

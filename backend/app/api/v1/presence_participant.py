@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.dependencies import require_authenticated_user
+from app.core.presence_constants import PRESENCE_IP_RATE_LIMIT_DOMAIN
 from app.core.presence_feature import require_presence_validation_enabled
 from app.core.rate_limit import enforce_rate_limit, rate_limit_identity
 from app.db.session import get_db
@@ -50,6 +51,16 @@ def _client_ip(request: Request) -> str:
     return "unknown"
 
 
+def presence_ip_rate_limit_identity(ip: str) -> str:
+    """Per-IP counting identity: ``HMAC(RATE_LIMIT_KEY_PEPPER, "presence-ip:" + ip)``.
+
+    The explicit domain keeps this digest apart from every other use of the rate-limit
+    pepper (e-mail identities, other routes), even for a client-chosen
+    ``X-Forwarded-For`` value. No clear IP reaches Redis (B9).
+    """
+    return rate_limit_identity(f"{PRESENCE_IP_RATE_LIMIT_DOMAIN}{ip}")
+
+
 def _limit_reached_response(exc: PresenceSessionLimitReached) -> JSONResponse:
     body: dict[str, Any] = {"detail": exc.detail, "code": exc.code, "errors": []}
     return JSONResponse(
@@ -76,9 +87,8 @@ async def issue_presence_session(
         limit=settings.presence_session_user_limit_per_hour,
         window_seconds=_RATE_LIMIT_WINDOW_SECONDS,
     )
-    # The IP is reduced to a peppered digest: no clear IP in Redis (B9).
     await enforce_rate_limit(
-        f"presence:session:ip:{rate_limit_identity(_client_ip(request))}",
+        f"presence:session:ip:{presence_ip_rate_limit_identity(_client_ip(request))}",
         limit=settings.presence_session_ip_limit_per_hour,
         window_seconds=_RATE_LIMIT_WINDOW_SECONDS,
     )

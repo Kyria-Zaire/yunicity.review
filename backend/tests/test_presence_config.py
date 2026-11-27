@@ -3,16 +3,21 @@ Redis (D2 of 01B), without database."""
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from app.api.v1.presence_participant import presence_ip_rate_limit_identity
 from app.core.config import Settings, get_settings
 from app.core.presence_constants import (
     PRESENCE_CAMPAIGN_STATUSES,
     PRESENCE_CAMPAIGN_TRANSITIONS,
+    PRESENCE_RATE_LIMIT_KEY_PEPPER_MIN_LENGTH,
     PRESENCE_TOKEN_PEPPER_MIN_LENGTH,
 )
+from app.core.rate_limit import rate_limit_identity
 from app.main import create_app
 from fastapi.routing import APIRoute
 from pydantic import ValidationError
@@ -27,6 +32,8 @@ _PRESENCE_PREFIX = "/api/v1/admin/presence"
 _SESSION_PATH = "/api/v1/passport/me/presence-session"
 #: Test-only URL: settings validation only checks that it is present.
 _TEST_REDIS_URL = "redis://127.0.0.1:6390/0"
+#: Test-only value, not a secret: >= 32 characters, distinct from every other test secret.
+_TEST_RATE_LIMIT_PEPPER = "test-only-rate-limit-pepper-not-a-secret-01"
 
 
 @pytest.fixture
@@ -36,6 +43,9 @@ def clean_presence_env(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     monkeypatch.setenv("JWT_SECRET_KEY", _TEST_JWT)
     # Explicit: flag-on tests must not depend on an ambient REDIS_URL (D2 of 01B).
     monkeypatch.setenv("REDIS_URL", _TEST_REDIS_URL)
+    # Explicit too: P3-1 of 01B requires a dedicated rate-limit pepper when the flag is on.
+    monkeypatch.setenv("RATE_LIMIT_KEY_PEPPER", _TEST_RATE_LIMIT_PEPPER)
+    monkeypatch.delenv("REFRESH_TOKEN_PEPPER", raising=False)
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()
@@ -126,6 +136,65 @@ def test_disabled_flag_needs_no_redis(
     monkeypatch.delenv("REDIS_URL", raising=False)
     settings = _settings(monkeypatch, PRESENCE_VALIDATION_ENABLED="false")
     assert settings.presence_validation_enabled is False
+
+
+@pytest.mark.parametrize(
+    "rate_limit_pepper",
+    [None, "", "   ", "r" * (PRESENCE_RATE_LIMIT_KEY_PEPPER_MIN_LENGTH - 1)],
+)
+def test_enabled_flag_requires_a_long_rate_limit_pepper(
+    clean_presence_env: None, monkeypatch: pytest.MonkeyPatch, rate_limit_pepper: str | None
+) -> None:
+    if rate_limit_pepper is None:
+        monkeypatch.delenv("RATE_LIMIT_KEY_PEPPER", raising=False)
+    else:
+        monkeypatch.setenv("RATE_LIMIT_KEY_PEPPER", rate_limit_pepper)
+    with pytest.raises(ValidationError, match="RATE_LIMIT_KEY_PEPPER must be at least"):
+        _settings(
+            monkeypatch, PRESENCE_VALIDATION_ENABLED="true", PRESENCE_TOKEN_PEPPER=_TEST_PEPPER
+        )
+
+
+@pytest.mark.parametrize("shared_with", ["PRESENCE_TOKEN_PEPPER", "JWT", "REFRESH_TOKEN_PEPPER"])
+def test_enabled_flag_refuses_a_shared_rate_limit_pepper(
+    clean_presence_env: None, monkeypatch: pytest.MonkeyPatch, shared_with: str
+) -> None:
+    shared = {
+        "PRESENCE_TOKEN_PEPPER": _TEST_PEPPER,
+        "JWT": _TEST_JWT,
+        "REFRESH_TOKEN_PEPPER": "test-only-refresh-pepper-not-a-secret-0001",
+    }[shared_with]
+    env = {"PRESENCE_VALIDATION_ENABLED": "true", "PRESENCE_TOKEN_PEPPER": _TEST_PEPPER}
+    if shared_with == "REFRESH_TOKEN_PEPPER":
+        env["REFRESH_TOKEN_PEPPER"] = shared
+    env["RATE_LIMIT_KEY_PEPPER"] = f"  {shared}  "
+    with pytest.raises(ValidationError, match="RATE_LIMIT_KEY_PEPPER must differ") as excinfo:
+        _settings(monkeypatch, **env)
+    # Configuration errors never echo a secret value.
+    assert shared not in str(excinfo.value)
+
+
+def test_disabled_flag_needs_no_rate_limit_pepper(
+    clean_presence_env: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("RATE_LIMIT_KEY_PEPPER", raising=False)
+    settings = _settings(monkeypatch, PRESENCE_VALIDATION_ENABLED="false")
+    assert settings.presence_validation_enabled is False
+
+
+def test_ip_identity_known_answer_and_domain_separation(
+    clean_presence_env: None,
+) -> None:
+    ip = "203.0.113.77"
+    expected = hmac.new(
+        _TEST_RATE_LIMIT_PEPPER.encode(), f"presence-ip:{ip}".encode(), hashlib.sha256
+    ).hexdigest()[:32]
+    identity = presence_ip_rate_limit_identity(ip)
+    assert identity == expected
+    # Same pepper, no domain: the generic identity (e-mails, other routes) differs.
+    assert identity != rate_limit_identity(ip)
+    assert identity != presence_ip_rate_limit_identity("203.0.113.78")
+    assert ip not in identity
 
 
 def test_session_rate_limits_have_the_prd_defaults(

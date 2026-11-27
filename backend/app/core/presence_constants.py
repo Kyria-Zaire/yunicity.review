@@ -69,6 +69,11 @@ PRESENCE_STAFF_PERMISSIONS: tuple[str, ...] = ("moderation.manage", "system.admi
 
 #: Minimum length of PRESENCE_TOKEN_PEPPER when the feature is enabled (ADR § 6).
 PRESENCE_TOKEN_PEPPER_MIN_LENGTH = 32
+#: Minimum length of RATE_LIMIT_KEY_PEPPER when the feature is enabled (P3-1 of 01B).
+PRESENCE_RATE_LIMIT_KEY_PEPPER_MIN_LENGTH = 32
+#: Domain prefix of the per-IP rate-limit identity, kept apart from every other use
+#: of RATE_LIMIT_KEY_PEPPER (P3-1 of 01B).
+PRESENCE_IP_RATE_LIMIT_DOMAIN = "presence-ip:"
 
 PRESENCE_ADMIN_LIST_PAGE_SIZE_DEFAULT = 20
 PRESENCE_ADMIN_LIST_PAGE_SIZE_MAX = 50

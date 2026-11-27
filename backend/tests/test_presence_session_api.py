@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import ast
 import asyncio
+import hashlib
+import hmac
 import logging
 import uuid
 from collections.abc import AsyncIterator, Iterator
@@ -44,6 +46,8 @@ pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 URL = "/api/v1/passport/me/presence-session"
 #: Test-only value, not a secret.
 _TEST_PEPPER = "test-only-presence-pepper-not-a-secret-0001"
+#: Test-only value, not a secret (>= 32 characters, distinct from the others).
+_TEST_RATE_LIMIT_PEPPER = "test-only-rate-limit-pepper-not-a-secret-01"
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 _EFFECT_TABLES = (
     "yuni_transactions",
@@ -61,6 +65,8 @@ def auth_env(auth_env: None, monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     """Flag on before the application is built (routes are mounted at startup)."""
     monkeypatch.setenv("PRESENCE_VALIDATION_ENABLED", "true")
     monkeypatch.setenv("PRESENCE_TOKEN_PEPPER", _TEST_PEPPER)
+    # P3-1 of 01B: flag on requires a dedicated rate-limit pepper of >= 32 characters.
+    monkeypatch.setenv("RATE_LIMIT_KEY_PEPPER", _TEST_RATE_LIMIT_PEPPER)
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()
@@ -429,6 +435,14 @@ async def test_per_ip_rate_limit_is_keyed_without_a_clear_ip(
     presence_keys = [k for k in keys if k.startswith("presence:session:")]
     assert presence_keys
     assert all(ip not in key for key in presence_keys)
+    # Known answer: HMAC(RATE_LIMIT_KEY_PEPPER, "presence-ip:" + ip), truncated to 128 bits.
+    expected = hmac.new(
+        _TEST_RATE_LIMIT_PEPPER.encode(), f"presence-ip:{ip}".encode(), hashlib.sha256
+    ).hexdigest()[:32]
+    assert f"presence:session:ip:{expected}" in keys
+    # Domain separation: the undomained identity of the same IP is never used.
+    undomained = hmac.new(_TEST_RATE_LIMIT_PEPPER.encode(), ip.encode(), hashlib.sha256)
+    assert all(undomained.hexdigest()[:32] not in key for key in keys)
 
 
 async def test_redis_failure_is_fail_closed_without_any_write(

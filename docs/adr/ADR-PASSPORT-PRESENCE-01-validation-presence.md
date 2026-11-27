@@ -322,6 +322,13 @@ exigés **dans tous les environnements** (amendement CTO D2 de 01B, 2026-11-27) 
 configuration est refusée au démarrage. Redis indisponible à l'exécution → `503`, aucune
 session créée.
 
+Drapeau actif : `RATE_LIMIT_KEY_PEPPER` est aussi exigé, avec au moins 32 caractères, et
+doit différer de `PRESENCE_TOKEN_PEPPER`, `JWT_SECRET_KEY` et `REFRESH_TOKEN_PEPPER`
+(correction P3-1 de la revue 01B). La clé de comptage par IP vaut
+`HMAC(RATE_LIMIT_KEY_PEPPER, "presence-ip:" + IP)` : le domaine explicite la sépare de
+tout autre usage de ce poivre, y compris pour un `X-Forwarded-For` choisi par le client.
+Aucune valeur de poivre n'apparaît dans les messages d'erreur.
+
 ## 11. Migration et retour arrière
 
 - Révision `20261126_0067_passport_presence` (parent `20261103_0066`) : création des sept
@@ -360,3 +367,4 @@ session créée.
 | 2026-11-26 | Amendement sur arbitrage CTO provisoire (D1, D3, D4) : migration de convergence `0068` (§ 2, § 11), règle « toute FK indexée » et inventaire des index (§ 3), trois risques ajoutés au modèle de menace (§ 9). Statut **inchangé** : `PROPOSED`, approbation formelle après les résultats de vérification. |
 | 2026-11-27 | GO BUILD formel (CTO, Architecture Authority) : statut **APPROVED** avec les amendements D1 à D7. Ajout au § 9 de la limite D7 (`422 json_invalid` avant authentification pour un JSON syntaxiquement malformé, acceptée sans contournement global de FastAPI). Base de la branche 01A : `7f11d6bf` (D5). Aucun GO MERGE ni GO DEPLOY. |
 | 2026-11-27 | Amendements CTO D1 à D4 du lot 01B. D1 : au plus 3 sessions vivantes par Passport, contrôle sous verrou, `429 PRESENCE_SESSION_LIMIT_REACHED` avec `Retry-After` (§ 4, § 9). D2 : `REDIS_URL` obligatoire si le drapeau est actif, `503` si Redis est indisponible (§ 9, § 10). D3 : limite par IP de 600 / h, secondaire uniquement, et ticket `PROXY-TRUSTED-CLIENT-IP-01` (§ 9). D4 : horloge `clock_timestamp()` (§ 6). Correction de la probabilité de collision du code, `N / 2⁴⁰` (§ 6). Statut **inchangé** : `APPROVED`. |
+| 2026-11-27 | Correction P3-1 de la revue 01B (option A du CTO) : domaine `presence-ip:` pour la clé de comptage par IP et exigences sur `RATE_LIMIT_KEY_PEPPER` quand le drapeau est actif (§ 10). Statut **inchangé** : `APPROVED`. |
