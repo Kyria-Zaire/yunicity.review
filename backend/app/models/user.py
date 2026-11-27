@@ -58,6 +58,12 @@ class User(TimestampMixin, Base):
     force_password_reset: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
+    #: Compte de test (PASSPORT-PRESENCE-01, B10), pose par le staff uniquement.
+    #: Exclu des recompenses, metriques et exports reels ; l'exclusion dans les flux
+    #: existants fait l'objet d'un ticket de suivi.
+    is_test: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
 
     roles: Mapped[list["UserRole"]] = relationship(
         "UserRole",

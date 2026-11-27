@@ -48,6 +48,15 @@ from app.models.passport_challenge import (
 from app.models.passport_reputation import ReputationEvent, UserReputationSnapshot
 from app.models.password_reset_token import PasswordResetToken
 from app.models.post import Post
+from app.models.presence import (
+    PresenceAdminAction,
+    PresenceAgentAssignment,
+    PresenceCampaign,
+    PresenceOperation,
+    PresenceRecord,
+    PresenceRegistration,
+    PresenceSession,
+)
 from app.models.push_subscription import PushSubscription
 from app.models.rbac import Permission, Role, RolePermission, UserRole
 from app.models.refresh_token import RefreshToken
@@ -102,6 +111,13 @@ __all__ = [
     "PartnerProfile",
     "StampDefinition",
     "Post",
+    "PresenceAdminAction",
+    "PresenceAgentAssignment",
+    "PresenceCampaign",
+    "PresenceOperation",
+    "PresenceRecord",
+    "PresenceRegistration",
+    "PresenceSession",
     "Report",
     "ReportAdminAction",
     "StaffAdminAction",
