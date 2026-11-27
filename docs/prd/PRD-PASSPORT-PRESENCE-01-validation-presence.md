@@ -10,13 +10,13 @@
 |---|---|
 | ID | PRD-PASSPORT-PRESENCE-01 |
 | Nom | Validation de présence par agent affecté |
-| Statut | **DESIGN** |
-| Phase BMAD | — (BUILD après validation des gates § 13) |
+| Statut | **APPROVED** |
+| Phase BMAD | **BUILD** — BUILD autorisé (GO BUILD du 2026-11-27) ; ni fusion ni déploiement Preview autorisés |
 | Priorité | P0 (jalon pilote R1, PILOT-05) |
 | Auteur | Agent d'exécution IA (supervisé) |
 | Owner technique | Kyria (CTO) |
 | Date création | 2026-11-26 |
-| Dernière mise à jour | 2026-11-26 |
+| Dernière mise à jour | 2026-11-27 |
 | Environnement cible | dev → recette (Preview) ; production : décision séparée |
 
 # 1. Résumé produit
@@ -219,11 +219,23 @@ Corps : `{ "client_operation_id": "<uuid v4>", "credential": { "type": "qr" | "m
 | `IDEMPOTENCY_KEY_REUSED` | 409 |
 | `PRESENCE_OPERATION_NOT_FOUND` | 404 |
 | `PRESENCE_INVALID_TRANSITION` | 409 |
+| `PRESENCE_CAMPAIGN_NOT_FOUND` | 404 |
+| `ORGANIZATION_NOT_FOUND` | 404 |
+| `EVENT_NOT_FOUND` | 404 |
+| `USER_NOT_FOUND` | 404 |
 | `RATE_LIMITED` (existant) | 429 |
+
+`ORGANIZATION_NOT_FOUND` et `EVENT_NOT_FOUND` : création de campagne avec une organisation
+ou un événement inexistant. `USER_NOT_FOUND` : inscription, affectation ou `is_test` visant
+un utilisateur inexistant. `PRESENCE_CAMPAIGN_NOT_FOUND` : campagne inconnue sur les routes
+staff (amendement CTO, 2026-11-26).
 
 ## Migrations
 
-`20261126_0067_passport_presence` — additive, réversible (ADR § 11).
+- `20261126_0067_passport_presence` — additive, réversible (ADR § 11).
+- `20261126_0068_users_flags_no_server_default` — **convergence** : retire un éventuel
+  `DEFAULT` résiduel sur `users.is_system_account` et `users.force_password_reset`, sans
+  réécriture de lignes ; `downgrade` no-op motivé (ADR § 11, amendement D1/D3).
 
 # 7. Sécurité & conformité
 
@@ -274,17 +286,35 @@ Corps : `{ "client_operation_id": "<uuid v4>", "credential": { "type": "qr" | "m
 | Date | Changement |
 |---|---|
 | 2026-11-26 | Création (DESIGN) — arbitrages CTO B1–B13 |
+| 2026-11-26 | Amendement sur arbitrage CTO provisoire : codes 404 staff (§ 6), migration de convergence `0068` (§ 6). Statut **inchangé** (`DESIGN`) ; gates § 13 **non cochées**, arbitrées individuellement après les résultats de vérification. |
+| 2026-11-27 | GO BUILD formel (CTO, Product Authority et Architecture Authority) : statut **APPROVED**, phase **BUILD** ; six gates § 13 approuvées individuellement et cochées, preuves et réserves consignées ; `PRESENCE_CAMPAIGN_NOT_FOUND` (404) approuvé dans le contrat. Ni fusion ni déploiement Preview autorisés. |
 
 # 13. BMAD
 
 ## BUILD — gates (cocher avant premier commit code)
 
-- [ ] PRD validé (sections 1–6 complètes)
-- [ ] Architecture identifiée (§ 6, ADR)
-- [ ] Risques identifiés (§ 2, § 7, ADR § 9)
-- [ ] Permissions / authZ définies (§ 6, ADR § 5)
-- [ ] Endpoints + contrats définis (§ 6)
-- [ ] Modèle DB + migration planifiés (ADR § 3, § 11)
+Six gates approuvées individuellement par le CTO (Product Authority et Architecture
+Authority), GO BUILD du 2026-11-27. Cette approbation autorise les commits et la
+publication de la PR ; elle ne vaut **ni** autorisation de fusion **ni** de déploiement
+Preview.
+
+- [x] PRD validé (sections 1–6 complètes) — *preuve* : sections renseignées, § 6 complété
+  (quatre codes 404 staff, migration `0068`) ; *réserve* : purge de rétention, exclusion
+  `is_test` des flux existants et débits renvoyés aux tickets de suivi (§ 11).
+- [x] Architecture identifiée (§ 6, ADR) — *preuve* : ADR § 2 amendé pour `0068`, ADR
+  `APPROVED` (D1).
+- [x] Risques identifiés (§ 2, § 7, ADR § 9) — *preuve* : ADR § 9 avec les trois risques D1
+  et la limite D7 ; *réserve* : `is_test` sans effet dans les anciens flux de récompense,
+  suivi obligatoire avant pilote réel.
+- [x] Permissions / authZ définies (§ 6, ADR § 5) — *preuve* : D4 ; tests anonyme 401 et
+  non-staff 403 sur les six routes staff, sans écriture ; *réserve* : `422 json_invalid`
+  avant authentification pour un JSON syntaxiquement malformé, accepté (D7, ADR § 9).
+- [x] Endpoints + contrats définis (§ 6) — *preuve* : § 6, codes d'erreur 404 staff ;
+  *réserve* : corps de réponse staff non détaillés ici (l'implémentation et ses tests font
+  foi : indicateur `changed`, pagination 20 par défaut, 50 au plus).
+- [x] Modèle DB + migration planifiés (ADR § 3, § 11) — *preuve* : inventaire des index,
+  `0067` et `0068`, retour arrière ; tests de migration et de parité modèle / schéma migré ;
+  *réserve* : revue satisfaisante de `0067` et `0068` = condition de fusion.
 
 ## MEASURE — métriques cibles
 

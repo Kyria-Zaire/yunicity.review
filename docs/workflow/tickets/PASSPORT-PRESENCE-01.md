@@ -1,6 +1,7 @@
 # PASSPORT-PRESENCE-01 — Validation de présence par un agent affecté (contrat backend)
 
-> **Statut : DESIGN — documentation à valider, aucun code.** Ouvert le 2026-11-26 sur
+> **Statut : En cours — GO BUILD accordé ; fusion bloquée en attente des validations finales.**
+> Ouvert le 2026-11-26 sur
 > décision CTO (GO 0015B). ⛔ **ZONE ROUGE** (jetons porteurs, autorisations, PII,
 > migration). Aucune migration distante, aucun déploiement, aucune activation Preview
 > sans décision explicite.
@@ -71,7 +72,7 @@ B13. Ticket PASSPORT-PRESENCE-01, PRD, ADR et modèle de menace obligatoires.
 - Aucun endpoint public d’administration dans ce lot.
 - Aucun changement Web Yunicity.
 
-**Interprétation retenue (à confirmer en revue)** : « aucun endpoint public
+**Interprétation retenue — confirmée par le CTO (D4, 2026-11-26)** : « aucun endpoint public
 d'administration » = aucune route d'administration accessible hors staff. Les opérations
 staff (B4) sont exposées sous `/api/v1/admin/presence/*`, protégées par la garde staff
 existante (`moderation.manage` ou `system.admin`), derrière le même drapeau (404 si
@@ -89,12 +90,27 @@ désactivé), et auditées.
 Chaque lot : PR distincte vers `feat/c3-videos-refonte-final` ; **aucune fusion qui
 déclencherait une migration distante ni aucun déploiement** sans décision explicite.
 
+**Conditions de fusion (CTO, 2026-11-26)** — toutes requises, chacune consignée :
+
+1. suite complète Linux/PostgreSQL verte sur le SHA exact de la PR ;
+2. revue satisfaisante des migrations du lot (01A : `0067` et `0068`) ;
+3. approbation explicite du PRD et de l'ADR — **satisfaite** (GO BUILD du 2026-11-27) ;
+4. validation des gates BUILD (PRD § 13) — **satisfaite** (GO BUILD du 2026-11-27) ;
+5. revue sécurité humaine explicite, distincte de l'auto-revue de l'agent (D6).
+
+**Base 01A (D5, dérogation approuvée sous contrôle)** : la branche du lot 01A part de
+`7f11d6bf` (tête de `feat/c3-videos-refonte-final`, fusion de #205), et non de
+`ea1edf11` ; `ea1edf11..7f11d6bf` ne contient que les quatre documents de #205.
+
 ## 4. Critères d'acceptation (synthèse — détail dans le PRD § 3 et § 9)
 
 - [ ] `PRESENCE_VALIDATION_ENABLED` vaut `false` par défaut ; toutes les routes du domaine
   répondent **404** quand il est désactivé ; aucune écriture.
 - [ ] Migration additive, `upgrade` / `downgrade` testés ; aucune table existante modifiée
-  hormis l'ajout de `users.is_test` (booléen, défaut `false`).
+  hormis : l'ajout de `users.is_test` (booléen, défaut `false`) ; la migration de
+  convergence `20261126_0068`, **sans réécriture de données**, qui garantit l'absence de
+  défaut serveur sur `users.is_system_account` et `users.force_password_reset`
+  (amendement CTO D3, 2026-11-26).
 - [ ] Agent non affecté, campagne non ouverte, hors fenêtre, inscription absente ou annulée,
   jeton ou code inconnu / expiré / déjà consommé, auto-validation : **refus**, aucune
   présence.
@@ -124,3 +140,43 @@ déclencherait une migration distante ni aucun déploiement** sans décision exp
 | Date | Événement |
 |---|---|
 | 2026-11-26 | Audit lecture seule ; version Preview établie (`ea1edf11`) ; arbitrages CTO B1–B13 ; ouverture du ticket et rédaction PRD / ADR |
+| 2026-11-26 | Arbitrages CTO provisoires sur le dossier 01A (D1–D6, texte ci-dessous) ; amendements ADR (§ 2, § 3, § 9, § 11), PRD (§ 6) et ticket (§ 2, § 3, § 4). Statuts ADR `PROPOSED`, PRD `DESIGN` et ticket `DESIGN` **inchangés** ; gates non cochées. |
+| 2026-11-27 | GO BUILD formel accordé par le CTO agissant comme Product Authority et Architecture Authority. ADR approuvé avec les amendements D1 à D7 ; PRD approuvé en phase BUILD ; six gates BUILD approuvées. Base `7f11d6bf` autorisée. Le comportement FastAPI `422 json_invalid` avant authentification pour un JSON syntaxiquement malformé est accepté et documenté, sans modification globale du framework. Cette décision autorise les commits, le push et l’ouverture d’une PR en brouillon, mais n’autorise ni fusion ni déploiement Preview. |
+
+### Arbitrages CTO D1–D6 (2026-11-26) — texte consigné mot pour mot
+
+| Décision | Arbitrage CTO |
+|---|---|
+| **D1 — ADR** | **Accord conditionnel avec amendement.** Ne pas encore passer à `APPROVED`. Ajouter `0068`, compléter les index, les erreurs et les trois risques. Approbation formelle après les résultats. |
+| **D2 — PRD** | **Aucune gate cochée pour l’instant.** Les six gates seront arbitrées individuellement après le §7 complet. |
+| **D3 — Ticket §4** | **Amender le critère.** Autoriser explicitement `users.is_test` et la convergence sans réécriture de données de `is_system_account` et `force_password_reset`. `0068` reste dans le lot. |
+| **D4 — Administration** | **Confirmé.** « Aucun endpoint public d’administration » signifie : routes `/admin/presence/*`, accessibles exclusivement au staff autorisé, jamais anonymes ni ouvertes aux utilisateurs ordinaires. |
+| **D5 — Base** | **Dérogation approuvée sous contrôle.** Repartir de `7f11d6bf`, à condition de vérifier que `ea1edf11..7f11d6bf` ne contient que les documents annoncés et que `7f11d6bf` appartient bien à la lignée de la branche cible. L’ancienne branche sans commit reste intacte. |
+| **D6 — Sécurité** | **Approuvé.** Ajouter une cinquième condition de fusion : revue sécurité humaine explicite, distincte de l’auto-revue de l’agent. |
+
+Compléments CTO (2026-11-26), mot pour mot :
+
+- « Les contrôles D5 sont concluants : la dérogation pour repartir de `7f11d6bf` est
+  désormais validée définitivement. »
+- « J’approuve également l’ajout de `PRESENCE_CAMPAIGN_NOT_FOUND` au PRD. Puisque ce code
+  est implémenté, il fait partie du contrat API et doit être documenté. »
+
+### GO BUILD formel (CTO, 2026-11-27) — D7 et conditions restantes, mot pour mot
+
+D7 — JSON syntaxiquement malformé. Option recommandée **acceptée** :
+
+- un JSON syntaxiquement malformé peut produire `422 json_invalid` avant authentification
+  en raison du fonctionnement de FastAPI 0.136.1 ;
+- ce comportement est accepté pour 01A parce qu’il ne révèle ni l’existence de la campagne
+  ni une donnée métier, ne produit aucun code `*_NOT_FOUND` et n’effectue aucune écriture ;
+- un corps syntaxiquement valide mais métier invalide reste traité après authentification ;
+- aucun contournement global de FastAPI ne doit être introduit dans ce lot ;
+- cette limite et ses preuves doivent être ajoutées à l’ADR §9.
+
+La fusion restera interdite jusqu’à :
+
+- suite Linux/PostgreSQL complète verte ;
+- revue satisfaisante de `0067` et `0068` ;
+- revue sécurité humaine explicite.
+
+« GO BUILD accordé. Aucun GO MERGE ni GO DEPLOY n’est accordé. »
