@@ -2,7 +2,7 @@
 
 | Champ | Valeur |
 |---|---|
-| Statut | **PROPOSED** — à approuver par l'Architecture Authority avant tout code (DOC-GOV-01 § 2.2) |
+| Statut | **APPROVED** — Architecture Authority (CTO), GO BUILD du 2026-11-27, avec les amendements D1 à D7 (DOC-GOV-01 § 2.2) |
 | Date | 2026-11-26 |
 | Ticket | `docs/workflow/tickets/PASSPORT-PRESENCE-01.md` |
 | PRD | `docs/prd/PRD-PASSPORT-PRESENCE-01-validation-presence.md` |
@@ -33,7 +33,10 @@
 Créer un domaine **`presence`** indépendant de la remise et des récompenses :
 
 1. Entités dédiées (§ 3) ; aucune table existante modifiée sauf l'ajout additif
-   `users.is_test`.
+   `users.is_test` et la migration de **convergence** `20261126_0068` (§ 11), qui
+   retire un éventuel `DEFAULT` résiduel sur `users.is_system_account` et
+   `users.force_password_reset` sans réécrire aucune ligne ni changer le schéma
+   canonique (amendement CTO D1/D3, 2026-11-26).
 2. Le participant obtient une **session éphémère** contenant un jeton QR `YNCP2:` opaque
    et un **code manuel** distinct, tous deux stockés **uniquement sous forme HMAC**.
 3. Un **agent affecté** à la campagne résout puis confirme ; l'autorisation de l'agent est
@@ -58,6 +61,21 @@ Créer un domaine **`presence`** indépendant de la remise et des récompenses :
 ## 3. Modèle de données
 
 Toutes les clés primaires sont des UUID ; horodatages `timestamptz` (UTC).
+
+**Règle d'indexation (amendement D1)** : **toute clé étrangère est indexée**, soit par un
+index dédié `ix_<table>_<colonne>`, soit parce qu'elle est la première colonne d'une
+contrainte d'unicité. Les tableaux ci-dessous restent la référence des contraintes ;
+l'inventaire exhaustif des index est le suivant.
+
+| Table | Index dédiés | FK couverte par la première colonne d'une unicité |
+|---|---|---|
+| `presence_campaigns` | `organization_id`, `local_event_id`, `status`, `created_by_user_id` | — |
+| `presence_registrations` | `user_id`, `changed_by_user_id` | `campaign_id` (`uq_presence_registrations_campaign_user`) |
+| `presence_agent_assignments` | `agent_user_id`, `changed_by_user_id` | `campaign_id` (`uq_presence_agent_assignments_campaign_agent`) |
+| `presence_sessions` | `passport_id`, `user_id`, `expires_at` | — (`qr_token_hmac`, `manual_code_hmac` : uniques) |
+| `presence_records` | `participant_user_id`, `registration_id`, `agent_user_id` | `campaign_id` (`uq_presence_records_campaign_participant`) |
+| `presence_operations` | `campaign_id`, `participant_user_id`, `presence_id`, `created_at` | `agent_user_id` (`uq_presence_operations_agent_client_operation`) |
+| `presence_admin_actions` | `action`, `actor_user_id`, `campaign_id`, `target_user_id` | — |
 
 ### `presence_campaigns`
 
@@ -261,6 +279,10 @@ Aucun rôle d'agent global ; aucune route d'administration hors staff.
 | **D** inondation de sessions | émission en boucle | débit par utilisateur ; purge des sessions expirées à l'émission | dépassement → 429 |
 | **E** élévation | appel d'une route staff | garde staff existante ; 404 si drapeau désactivé | non-staff → 403 |
 | **E** effets économiques | présence déclenchant un avantage | aucun import des hooks Yunimoney / réputation / défis / tampons / remise | test statique + aucune ligne `yuni_transactions` |
+| **E/R** abus ou erreur d'un membre du staff (amendement D1) | inscription, affectation, statut de campagne ou `is_test` modifiés à tort ou sans droit | autorisation staff stricte (`moderation.manage` ou `system.admin`, jamais anonyme ni utilisateur ordinaire, D4) ; **acteur enregistré** dans `presence_admin_actions` à chaque changement effectif, dans la même transaction. Risque résiduel : la table d'audit n'est pas protégée en base contre un rôle SQL privilégié (même niveau que les autres `*_admin_actions`) | anonyme 401, non-staff 403, `actor_user_id` présent dans l'audit, PUT sans changement → aucun audit |
+| **T** `is_test` sans effet dans les anciens flux (amendement D1) | compte `is_test` utilisant `YNCP1`, tampons ou remise avant le ticket de suivi | **aucun branchement aux récompenses dans 01A** ; risque **résiduel documenté** ; exclusion dans les flux existants = **suivi obligatoire avant pilote réel** | — (hors 01A, ticket § 5) |
+| **D/T** fenêtre de compatibilité pendant la migration (amendement D1) | `alembic upgrade` exécuté pendant que l'ancienne version sert | ancienne et nouvelle versions compatibles : `users.is_test` garde `DEFAULT false` (l'ancienne version l'ignore) ; `is_system_account` et `force_password_reset` toujours fournis par l'ORM (`default=False`, déjà le cas à `ea1edf11`, aucun INSERT SQL brut sur `users`) ; **aucune réécriture de lignes** ; `0068` convergente et idempotente ; exécution Preview **surveillée** (§ 11) | migration 0066→0067→0068 + downgrade, scénario historique, compilation des INSERT ORM, parité modèle / schéma migré |
+| **I** différence de réponse avant authentification (D7) | anonyme envoyant un JSON **syntaxiquement** malformé à une route staff qui accepte un corps | FastAPI 0.136.1 décode le corps avant de résoudre les dépendances : réponse `422 json_invalid` **avant** authentification. **Limite acceptée pour 01A (D7)** : la réponse ne dépend que de la syntaxe du corps, jamais de l'existence de la campagne ni de l'utilisateur ; aucun code `*_NOT_FOUND`, aucune donnée métier, aucune écriture. Un corps syntaxiquement valide mais invalide métier est traité **après** l'authentification (401). **Aucun contournement global de FastAPI** dans ce lot | `test_anonymous_malformed_json_reveals_nothing_about_resources` (422 `json_invalid`, réponse identique pour une ressource existante ou inconnue, aucune écriture) ; `test_anonymous_is_refused_everywhere_without_existence_oracle` (401 sur les six routes, corps conforme ou non au schéma, aucune écriture) |
 
 Environnements : bases et poivres distincts par environnement ; une session émise en
 Preview n'existe pas en production.
@@ -276,9 +298,22 @@ Preview uniquement après validation explicite.
 - Révision `20261126_0067_passport_presence` (parent `20261103_0066`) : création des sept
   tables, index et contraintes ; ajout `users.is_test`. **Additive.**
 - `downgrade` : suppression des tables dans l'ordre inverse, puis de `users.is_test`.
+- Révision `20261126_0068_users_flags_no_server_default` (parent `20261126_0067`,
+  amendement D1/D3) : **convergence**. `20260608_0040` (`is_system_account`) et
+  `20260614_0052` (`force_password_reset`) retirent le `DEFAULT false` après remplissage,
+  mais s'interrompent si la colonne existe déjà ; une base dont la colonne les précédait
+  garde l'ancien défaut. `0068` impose la postcondition « aucun défaut serveur »
+  (`ALTER COLUMN … DROP DEFAULT`) : idempotente, verrou bref, **aucune ligne réécrite**,
+  aucune valeur modifiée, aucun index ni contrainte créé.
+- `downgrade` de `0068` : **no-op motivé**. L'état canonique, avant comme après, est
+  « sans défaut serveur » ; restaurer `DEFAULT false` recréerait l'état non conforme.
+- Exécution sur la Preview à la fusion (`preDeployCommand`) : `0066 → 0067 → 0068`,
+  **surveillée** (statut de déploiement terminé, `alembic_version = 20261126_0068`,
+  santé, route du domaine en 404 drapeau faux).
 - Ordre d'exploitation : déployer avec drapeau `false` (aucun effet), puis activer.
 - Retour arrière : 1) drapeau `false` (immédiat, sans perte) ; 2) si nécessaire,
-  `alembic downgrade 20261103_0066` après export des données d'audit utiles.
+  `alembic downgrade 20261103_0066` après export des données d'audit utiles (`0068` :
+  no-op ; `0067` : suppression des sept tables et de `users.is_test`).
 - Aucune migration distante ni activation n'est exécutée par ce ticket.
 
 ## 12. Conséquences
@@ -287,3 +322,11 @@ Preview uniquement après validation explicite.
 - **+** Réutilise garde staff, limitation de débit, conventions de migration et d'audit.
 - **−** Nouvelle variable secrète (`PRESENCE_TOKEN_PEPPER`) à provisionner par l'humain ops.
 - **−** Purge de rétention et exclusion `is_test` des flux existants : tickets de suivi.
+
+## 13. Historique
+
+| Date | Changement |
+|---|---|
+| 2026-11-26 | Création (PROPOSED) |
+| 2026-11-26 | Amendement sur arbitrage CTO provisoire (D1, D3, D4) : migration de convergence `0068` (§ 2, § 11), règle « toute FK indexée » et inventaire des index (§ 3), trois risques ajoutés au modèle de menace (§ 9). Statut **inchangé** : `PROPOSED`, approbation formelle après les résultats de vérification. |
+| 2026-11-27 | GO BUILD formel (CTO, Architecture Authority) : statut **APPROVED** avec les amendements D1 à D7. Ajout au § 9 de la limite D7 (`422 json_invalid` avant authentification pour un JSON syntaxiquement malformé, acceptée sans contournement global de FastAPI). Base de la branche 01A : `7f11d6bf` (D5). Aucun GO MERGE ni GO DEPLOY. |

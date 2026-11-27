@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, String, Uuid
+from sqlalchemy import Boolean, DateTime, Index, String, UniqueConstraint, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -22,6 +22,18 @@ if TYPE_CHECKING:
 
 class User(TimestampMixin, Base):
     __tablename__ = "users"
+    #: Declares what the migrations create, so that ``create_all`` (test schema) and
+    #: Alembic (deployed schema) agree; locked by tests/test_model_schema_drift.py.
+    __table_args__ = (
+        # 20260517_0001: a named constraint IN ADDITION to the unique index below.
+        UniqueConstraint("email", name="uq_users_email"),
+        # 20260912_0064: partial index used to find pending deletion requests.
+        Index(
+            "ix_users_deletion_requested_at",
+            "deletion_requested_at",
+            postgresql_where=text("deletion_requested_at IS NOT NULL"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(320), nullable=False, unique=True, index=True)
@@ -52,10 +64,18 @@ class User(TimestampMixin, Base):
         DateTime(timezone=True), nullable=True
     )
 
-    is_system_account: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False, server_default="false"
-    )
-    force_password_reset: Mapped[bool] = mapped_column(
+    #: `is_system_account` et `force_password_reset` : AUCUN `server_default`. Les
+    #: migrations 20260608_0040 et 20260614_0052 le retirent volontairement apres
+    #: remplissage, et 20261126_0068 le garantit pour les bases dont la colonne les
+    #: precedait. Le defaut est applique par l'ORM (`default=False`) ; tout INSERT SQL
+    #: brut doit fournir ces colonnes. Parite verrouillee par
+    #: tests/test_model_schema_drift.py.
+    is_system_account: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    force_password_reset: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    #: Compte de test (PASSPORT-PRESENCE-01, B10), pose par le staff uniquement.
+    #: Exclu des recompenses, metriques et exports reels ; l'exclusion dans les flux
+    #: existants fait l'objet d'un ticket de suivi.
+    is_test: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
 

@@ -9,6 +9,7 @@ from app.core.local_video_constants import (
     LOCAL_VIDEO_MAX_BYTES,
     LOCAL_VIDEO_MAX_DURATION_SECONDS,
 )
+from app.core.presence_constants import PRESENCE_TOKEN_PEPPER_MIN_LENGTH
 from app.db.database_url import to_asyncpg_url
 
 AppEnv = Literal["dev", "recette", "preprod", "prod"]
@@ -181,6 +182,16 @@ class Settings(BaseSettings):
     email_verification_enforced_from: datetime | None = Field(
         default=None, alias="EMAIL_VERIFICATION_ENFORCED_FROM"
     )
+    #: Validation de presence par agent affecte (PASSPORT-PRESENCE-01, B11).
+    #: FAIL-CLOSED : absente ou fausse, tout le domaine repond 404 (participant,
+    #: agent et staff) sans lecture ni ecriture. Activation Preview uniquement
+    #: apres validation explicite.
+    presence_validation_enabled: bool = Field(default=False, alias="PRESENCE_VALIDATION_ENABLED")
+    #: Pepper DEDIE aux HMAC des jetons QR YNCP2 et des codes manuels de presence.
+    #: Distinct de JWT_SECRET_KEY et REFRESH_TOKEN_PEPPER ; obligatoire (>= 32
+    #: caracteres) des que le drapeau est actif. Le changer invalide les sessions
+    #: vivantes (TTL 60 s) et rien d'autre.
+    presence_token_pepper: str = Field(default="", alias="PRESENCE_TOKEN_PEPPER")
     web_frontend_url: str = Field(default="http://localhost:3000", alias="WEB_FRONTEND_URL")
     password_reset_expire_hours: int = Field(default=1, alias="PASSWORD_RESET_EXPIRE_HOURS")
 
@@ -405,6 +416,20 @@ class Settings(BaseSettings):
                 raise ValueError("REFRESH_TOKEN_PEPPER must be set for this environment")
             if len(self.refresh_token_pepper.strip()) < 16:
                 raise ValueError("REFRESH_TOKEN_PEPPER must be at least 16 characters")
+        if self.presence_validation_enabled:
+            # Tous environnements : un drapeau actif sans pepper valide rendrait les
+            # HMAC de presence triviaux ou partages avec un autre secret.
+            pepper = self.presence_token_pepper.strip()
+            if len(pepper) < PRESENCE_TOKEN_PEPPER_MIN_LENGTH:
+                raise ValueError(
+                    "PRESENCE_TOKEN_PEPPER must be at least "
+                    f"{PRESENCE_TOKEN_PEPPER_MIN_LENGTH} characters when "
+                    "PRESENCE_VALIDATION_ENABLED is true"
+                )
+            if pepper in (self.jwt_secret_key.strip(), self.refresh_token_pepper.strip()):
+                raise ValueError(
+                    "PRESENCE_TOKEN_PEPPER must differ from JWT_SECRET_KEY and REFRESH_TOKEN_PEPPER"
+                )
         if self.app_env == "prod":
             if not self.refresh_cookie_secure:
                 raise ValueError("REFRESH_COOKIE_SECURE must be true in prod")
