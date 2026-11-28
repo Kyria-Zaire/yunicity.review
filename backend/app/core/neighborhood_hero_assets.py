@@ -25,15 +25,19 @@ FORBIDDEN_COVER_URL_FRAGMENTS: frozenset[str] = frozenset(
     }
 )
 
+# Les 12 secteurs ACTIFS (conseils de quartier de Reims). Cette liste avait divergé du
+# catalogue apres QUARTIER-01 phase 3c : elle portait encore boulingrin/cernay/jean-jaures
+# (fusionnes puis desactives) et ignorait cernay-jean-jaures/courlancy/chatillons, donc 3
+# secteurs actifs ne recevaient jamais leur hero. Garde-fou : tests/test_reims_official_sectors.py.
 REIMS_NEIGHBORHOOD_HERO_SLUGS: tuple[str, ...] = (
     "centre-ville",
     "saint-remi",
-    "boulingrin",
     "clairmarais",
-    "cernay",
+    "cernay-jean-jaures",
     "croix-rouge",
     "murigny",
-    "jean-jaures",
+    "courlancy",
+    "chatillons",
     "la-neuvillette",
     "orgeval",
     "chemin-vert",

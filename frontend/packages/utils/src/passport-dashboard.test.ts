@@ -3,10 +3,8 @@ import { describe, expect, it } from "vitest";
 import type { PassportMe, PassportStamp, Tribe } from "@yunicity/types";
 
 import {
-  PASSPORT_JOURNEY_LEVELS,
   buildPassportAchievements,
   buildPassportLevel,
-  buildPassportProgression,
   buildPassportRecentBadges,
   formatPassportPoints,
   passportDashboardHasNoFakeMetrics,
@@ -56,7 +54,7 @@ describe("passport-dashboard", () => {
     expect(formatPassportPoints(null)).toBe("0 pts");
   });
 
-  it("calcule le niveau à partir de la réputation réelle", () => {
+  it("affiche le tier, pas un palier calculé sur la réputation (PASSPORT-LEVEL-SCALE-01)", () => {
     const level = buildPassportLevel(
       passport({
         reputation_score: 18,
@@ -69,30 +67,7 @@ describe("passport-dashboard", () => {
         },
       }),
     );
-    expect(level.level.id).toBe("contributeur");
-    expect(level.points).toBe(18);
-    expect(level.nextLevel?.id).toBe("explorateur");
-  });
-
-  it("marque les paliers progression locked/active/unlocked", () => {
-    const steps = buildPassportProgression(
-      passport({
-        reputation_score: 26,
-        progression: {
-          next_tier_code: "gold",
-          next_tier_label: "Gold",
-          hint: null,
-          reputation_score: 26,
-          points_to_next: 24,
-        },
-      }),
-    );
-    const explorateur = steps.find((step) => step.level.id === "explorateur");
-    expect(explorateur?.state).toBe("active");
-    const habitant = steps.find((step) => step.level.id === "habitant");
-    expect(habitant?.state).toBe("unlocked");
-    const referent = steps.find((step) => step.level.id === "referent");
-    expect(referent?.state).toBe("locked");
+    expect(level).toEqual({ tierCode: "basic", currentLabel: "Citoyen·ne", nextLabel: "Silver" });
   });
 
   it("fallback accomplissements sans posts inventés", () => {
@@ -127,6 +102,6 @@ describe("passport-dashboard", () => {
 
   it("refuse copy type leaderboard", () => {
     expect(passportDashboardHasNoFakeMetrics(["Top 10 sur Reims"])).toBe(false);
-    expect(passportDashboardHasNoFakeMetrics([PASSPORT_JOURNEY_LEVELS[0]!.label])).toBe(true);
+    expect(passportDashboardHasNoFakeMetrics(["Citoyen·ne"])).toBe(true);
   });
 });

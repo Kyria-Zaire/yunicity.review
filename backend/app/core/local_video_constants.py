@@ -4,8 +4,27 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-LOCAL_VIDEO_MAX_BYTES = 50 * 1024 * 1024
-LOCAL_VIDEO_MAX_DURATION_SECONDS = 60
+#: Taille maximale d'une video locale. SOURCE CANONIQUE : le frontend n'en
+#: declare aucune copie, il lit celle-ci via `GET /local-videos/policy`.
+#:
+#: 200 Mo parce qu'un iPhone filme en 4K a ~400 Mo/min : 30 secondes pesent
+#: environ 200 Mo, et 50 Mo refusaient donc des clips parfaitement ordinaires.
+#: Cette valeur n'est tenable que depuis que l'upload filesystem lit le corps
+#: par blocs : avant, la reception allouait le fichier entier en memoire.
+LOCAL_VIDEO_MAX_BYTES = 200 * 1024 * 1024
+
+#: Taille des blocs de lecture reseau et de copie disque. 1 Mio : assez grand
+#: pour que le cout par bloc soit negligeable, assez petit pour que la memoire
+#: reste constante quelle que soit la taille du fichier.
+LOCAL_VIDEO_UPLOAD_CHUNK_BYTES = 1024 * 1024
+
+#: Octets suffisants pour reconnaitre un conteneur ISO BMFF (`ftyp` en 4..8).
+#: On valide donc l'entete sur le PREMIER bloc, sans attendre la fin.
+LOCAL_VIDEO_MAGIC_SAMPLE_BYTES = 64
+# Duree pilote citoyen (profil par defaut). Spec Founder, FEATURE-ROADMAP-POST-RC §4.
+LOCAL_VIDEO_MAX_DURATION_SECONDS = 90
+# Duree createur verifie (role RBAC VERIFIED_CREATOR). Meme source.
+LOCAL_VIDEO_VERIFIED_MAX_DURATION_SECONDS = 180
 LOCAL_VIDEO_PRESIGNED_TTL_SECONDS = 900
 LOCAL_VIDEO_UPLOAD_RATE_LIMIT = 10
 LOCAL_VIDEO_UPLOAD_RATE_WINDOW_SECONDS = 3600
@@ -70,6 +89,18 @@ LOCAL_VIDEO_PROCESSING_MAX_TRIES = 3
 LOCAL_VIDEO_PROCESSING_RETRY_BACKOFF_SECONDS = (30, 120, 300)
 LOCAL_VIDEO_PROCESSING_RETRY_JITTER_FRACTION = 0.1
 LOCAL_VIDEO_PROCESSING_RETRY_MAX_DEFER_SECONDS = 300
+# --- Budget des sous-processus ffmpeg (VIDEO-04D) ---
+# Mesure en conteneur `python:3.12-slim-bookworm` + ffmpeg, source MOV 1080p
+# synthetique de 180 s a 2 Mbit/s (45,8 Mo, sous le plafond de 50 Mo), commande de
+# transcodage identique a celle du processeur :
+#   2 vCPU -> 117,7 s (0,65x temps reel)   1 vCPU -> 211,1 s (1,17x), RSS 583 Mo
+# L'ancienne borne de 120 s ne couvrait donc PAS un MOV de 180 s, ni meme un MOV
+# de 90 s sur un seul coeur. 300 s laisse 1,42x de marge au pire cas mesure, et le
+# depassement reste rejouable (LOCAL_VIDEO_PROCESSING_TIMEOUT est transitoire).
+LOCAL_VIDEO_PROBE_TIMEOUT_SECONDS = 30
+LOCAL_VIDEO_TRANSCODE_TIMEOUT_SECONDS = 300
+LOCAL_VIDEO_THUMBNAIL_TIMEOUT_SECONDS = 60
+
 # ARQ job_timeout — min. 300 s recommandé (vidéo 60 s + transcode Railway). Défaut 600 s.
 LOCAL_VIDEO_PROCESSING_JOB_TIMEOUT_SECONDS = 600
 

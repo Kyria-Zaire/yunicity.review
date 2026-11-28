@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Query, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, Query, Request, Response, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -70,6 +70,7 @@ async def upload_post_media(
 @router.post("", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
 async def create_post(
     request: Request,
+    response: Response,
     payload: PostCreateRequest,
     current_user: Annotated[User, Depends(require_authenticated_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
@@ -89,7 +90,13 @@ async def create_post(
         limit=40,
         window_seconds=3600,
     )
-    return await PostService(session).create_post(current_user, payload)
+    outcome = await PostService(session).create_post(current_user, payload)
+    if not outcome.created:
+        # Rejeu d'une tentative deja enregistree : rien n'a ete cree, donc 200 et non
+        # le 201 du decorateur. L'affectation sur `response` est le seul mecanisme
+        # FastAPI qui laisse `response_model` et la doc OpenAPI intacts.
+        response.status_code = status.HTTP_200_OK
+    return outcome.response
 
 
 @router.get("/{post_id}", response_model=PostResponse)

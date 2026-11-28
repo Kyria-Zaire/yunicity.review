@@ -5,10 +5,12 @@ import { usePartnerPortalContext } from "@/hooks/use-partner-portal-context";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import type { PartnerOfferManagement, PartnerOfferType } from "@yunicity/types";
 import {
+  buildPartnerPortalOfferCreateHref,
   isAuthError,
   partnerPortalOfferStatusLabel,
 } from "@yunicity/utils";
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 
 const OFFER_TYPES: { value: PartnerOfferType; label: string }[] = [
   { value: "drink", label: "Boisson" },
@@ -122,16 +124,12 @@ export function PartnerPortalOffers() {
           {ctx.offers.length} offre{ctx.offers.length !== 1 ? "s" : ""} en gestion
         </p>
         {ctx.canManage ? (
-          <button
-            type="button"
-            onClick={() => {
-              resetForm();
-              setShowForm(true);
-            }}
+          <Link
+            href={buildPartnerPortalOfferCreateHref()}
             className="rounded-xl bg-yunicity-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
           >
             Nouvelle offre
-          </button>
+          </Link>
         ) : null}
       </div>
 

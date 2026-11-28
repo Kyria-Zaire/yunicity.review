@@ -45,4 +45,22 @@ describe("auth-return-path", () => {
       "/profile/settings?tab=security",
     );
   });
+
+  // VIDEO-REFONTE-L9 / PRD §7 — REC-01 non-régression chemin vidéo (D2).
+  it("L9 D2 — next vidéo interne accepté et next externe rejeté", () => {
+    const videoPath = "/videos?video=abc-123";
+    expect(isSafeInternalReturnPath(videoPath)).toBe(true);
+    expect(resolveAuthReturnPath(videoPath)).toBe(videoPath);
+    expect(buildLoginUrlWithNext(videoPath)).toBe(
+      "/login?next=%2Fvideos%3Fvideo%3Dabc-123",
+    );
+    expect(buildCurrentAppPath("/videos", "video=abc-123")).toBe(videoPath);
+
+    expect(resolveAuthReturnPath("https://evil.example/videos?video=x")).toBe(
+      DEFAULT_AUTH_REDIRECT,
+    );
+    expect(resolveAuthReturnPath("//evil/videos?video=x")).toBe(DEFAULT_AUTH_REDIRECT);
+    expect(resolveAuthReturnPath("/\\evil")).toBe(DEFAULT_AUTH_REDIRECT);
+    expect(resolveAuthReturnPath("%2f%2fevil")).toBe(DEFAULT_AUTH_REDIRECT);
+  });
 });

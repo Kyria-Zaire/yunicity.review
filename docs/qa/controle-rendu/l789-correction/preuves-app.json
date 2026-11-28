@@ -1,0 +1,442 @@
+{
+  "env": "next-local+api-simulee",
+  "base": "http://127.0.0.1:3022",
+  "note": "Données feed SIMULÉES (route Playwright). App Next réelle.",
+  "viewports": {
+    "1024x900": {
+      "twoPortraits": {
+        "label": "C1-two-portraits-1024x900",
+        "gridWidth": 586,
+        "gridLeft": 186,
+        "columnCount": "auto",
+        "display": "grid",
+        "gridTemplateColumns": "285.125px 285.141px",
+        "tileCount": 2,
+        "tileRects": [
+          {
+            "id": "p1",
+            "orient": "portrait",
+            "left": 186,
+            "top": 214,
+            "width": 285,
+            "height": 552
+          },
+          {
+            "id": "p2",
+            "orient": "portrait",
+            "left": 487,
+            "top": 214,
+            "width": 285,
+            "height": 552
+          }
+        ],
+        "uniqueTops": 1,
+        "uniqueLefts": 2,
+        "sideBySide": true
+      },
+      "mixed": {
+        "label": "C1-mixed-1024x900",
+        "gridWidth": 586,
+        "gridLeft": 186,
+        "columnCount": "auto",
+        "display": "grid",
+        "gridTemplateColumns": "285.125px 285.141px",
+        "tileCount": 5,
+        "tileRects": [
+          {
+            "id": "p1",
+            "orient": "portrait",
+            "left": 186,
+            "top": 214,
+            "width": 285,
+            "height": 552
+          },
+          {
+            "id": "p2",
+            "orient": "portrait",
+            "left": 487,
+            "top": 214,
+            "width": 285,
+            "height": 552
+          },
+          {
+            "id": "l1",
+            "orient": "landscape",
+            "left": 186,
+            "top": 782,
+            "width": 586,
+            "height": 375
+          },
+          {
+            "id": "p3",
+            "orient": "portrait",
+            "left": 186,
+            "top": 1173,
+            "width": 285,
+            "height": 552
+          },
+          {
+            "id": "l2",
+            "orient": "landscape",
+            "left": 186,
+            "top": 1741,
+            "width": 586,
+            "height": 375
+          }
+        ],
+        "uniqueTops": 4,
+        "uniqueLefts": 2,
+        "sideBySide": true
+      },
+      "shots": [
+        "APRES-C1-two-portraits-1024x900.png",
+        "APRES-C1-mixed-1024x900.png"
+      ]
+    },
+    "1280x800": {
+      "twoPortraits": {
+        "label": "C1-two-portraits-1280x800",
+        "gridWidth": 724,
+        "gridLeft": 240,
+        "columnCount": "auto",
+        "display": "grid",
+        "gridTemplateColumns": "169px 169px 169px 169px",
+        "tileCount": 2,
+        "tileRects": [
+          {
+            "id": "p1",
+            "orient": "portrait",
+            "left": 240,
+            "top": 206,
+            "width": 169,
+            "height": 346
+          },
+          {
+            "id": "p2",
+            "orient": "portrait",
+            "left": 425,
+            "top": 206,
+            "width": 169,
+            "height": 346
+          }
+        ],
+        "uniqueTops": 1,
+        "uniqueLefts": 2,
+        "sideBySide": true
+      },
+      "mixed": {
+        "label": "C1-mixed-1280x800",
+        "gridWidth": 724,
+        "gridLeft": 240,
+        "columnCount": "auto",
+        "display": "grid",
+        "gridTemplateColumns": "169px 169px 169px 169px",
+        "tileCount": 5,
+        "tileRects": [
+          {
+            "id": "p1",
+            "orient": "portrait",
+            "left": 240,
+            "top": 206,
+            "width": 169,
+            "height": 346
+          },
+          {
+            "id": "p2",
+            "orient": "portrait",
+            "left": 425,
+            "top": 206,
+            "width": 169,
+            "height": 346
+          },
+          {
+            "id": "l1",
+            "orient": "landscape",
+            "left": 610,
+            "top": 206,
+            "width": 354,
+            "height": 244
+          },
+          {
+            "id": "p3",
+            "orient": "portrait",
+            "left": 240,
+            "top": 568,
+            "width": 169,
+            "height": 346
+          },
+          {
+            "id": "l2",
+            "orient": "landscape",
+            "left": 425,
+            "top": 568,
+            "width": 354,
+            "height": 244
+          }
+        ],
+        "uniqueTops": 2,
+        "uniqueLefts": 3,
+        "sideBySide": true
+      },
+      "shots": [
+        "APRES-C1-two-portraits-1280x800.png",
+        "APRES-C1-mixed-1280x800.png"
+      ]
+    },
+    "1440x900": {
+      "twoPortraits": {
+        "label": "C1-two-portraits-1440x900",
+        "gridWidth": 884,
+        "gridLeft": 240,
+        "columnCount": "auto",
+        "display": "grid",
+        "gridTemplateColumns": "206px 206px 206px 206px",
+        "tileCount": 2,
+        "tileRects": [
+          {
+            "id": "p1",
+            "orient": "portrait",
+            "left": 240,
+            "top": 206,
+            "width": 206,
+            "height": 411
+          },
+          {
+            "id": "p2",
+            "orient": "portrait",
+            "left": 466,
+            "top": 206,
+            "width": 206,
+            "height": 411
+          }
+        ],
+        "uniqueTops": 1,
+        "uniqueLefts": 2,
+        "sideBySide": true
+      },
+      "mixed": {
+        "label": "C1-mixed-1440x900",
+        "gridWidth": 884,
+        "gridLeft": 240,
+        "columnCount": "auto",
+        "display": "grid",
+        "gridTemplateColumns": "206px 206px 206px 206px",
+        "tileCount": 5,
+        "tileRects": [
+          {
+            "id": "p1",
+            "orient": "portrait",
+            "left": 240,
+            "top": 206,
+            "width": 206,
+            "height": 411
+          },
+          {
+            "id": "p2",
+            "orient": "portrait",
+            "left": 466,
+            "top": 206,
+            "width": 206,
+            "height": 411
+          },
+          {
+            "id": "l1",
+            "orient": "landscape",
+            "left": 692,
+            "top": 206,
+            "width": 432,
+            "height": 288
+          },
+          {
+            "id": "p3",
+            "orient": "portrait",
+            "left": 240,
+            "top": 633,
+            "width": 206,
+            "height": 411
+          },
+          {
+            "id": "l2",
+            "orient": "landscape",
+            "left": 466,
+            "top": 633,
+            "width": 432,
+            "height": 288
+          }
+        ],
+        "uniqueTops": 2,
+        "uniqueLefts": 3,
+        "sideBySide": true
+      },
+      "shots": [
+        "APRES-C1-two-portraits-1440x900.png",
+        "APRES-C1-mixed-1440x900.png"
+      ]
+    },
+    "1920x1080": {
+      "twoPortraits": {
+        "label": "C1-two-portraits-1920x1080",
+        "gridWidth": 884,
+        "gridLeft": 480,
+        "columnCount": "auto",
+        "display": "grid",
+        "gridTemplateColumns": "206px 206px 206px 206px",
+        "tileCount": 2,
+        "tileRects": [
+          {
+            "id": "p1",
+            "orient": "portrait",
+            "left": 480,
+            "top": 206,
+            "width": 206,
+            "height": 411
+          },
+          {
+            "id": "p2",
+            "orient": "portrait",
+            "left": 706,
+            "top": 206,
+            "width": 206,
+            "height": 411
+          }
+        ],
+        "uniqueTops": 1,
+        "uniqueLefts": 2,
+        "sideBySide": true
+      },
+      "mixed": {
+        "label": "C1-mixed-1920x1080",
+        "gridWidth": 884,
+        "gridLeft": 480,
+        "columnCount": "auto",
+        "display": "grid",
+        "gridTemplateColumns": "206px 206px 206px 206px",
+        "tileCount": 5,
+        "tileRects": [
+          {
+            "id": "p1",
+            "orient": "portrait",
+            "left": 480,
+            "top": 206,
+            "width": 206,
+            "height": 411
+          },
+          {
+            "id": "p2",
+            "orient": "portrait",
+            "left": 706,
+            "top": 206,
+            "width": 206,
+            "height": 411
+          },
+          {
+            "id": "l1",
+            "orient": "landscape",
+            "left": 932,
+            "top": 206,
+            "width": 432,
+            "height": 288
+          },
+          {
+            "id": "p3",
+            "orient": "portrait",
+            "left": 480,
+            "top": 633,
+            "width": 206,
+            "height": 411
+          },
+          {
+            "id": "l2",
+            "orient": "landscape",
+            "left": 706,
+            "top": 633,
+            "width": 432,
+            "height": 288
+          }
+        ],
+        "uniqueTops": 2,
+        "uniqueLefts": 3,
+        "sideBySide": true
+      },
+      "shots": [
+        "APRES-C1-two-portraits-1920x1080.png",
+        "APRES-C1-mixed-1920x1080.png"
+      ]
+    }
+  },
+  "c2": {
+    "label": "C2-portrait-1440",
+    "layout": "portrait",
+    "stage": "portrait",
+    "hasMetaBand": true,
+    "hasCaptionBelow": false,
+    "captionSnippet": "CBCamille B.Marché p1 — les chalets des Hautes Promenades ouvrent ce soirplusCen",
+    "hasAuthor": true,
+    "stageRect": {
+      "top": 32,
+      "bottom": 868,
+      "height": 836,
+      "width": 470
+    },
+    "navRect": {
+      "top": 32,
+      "bottom": 868,
+      "left": 926
+    },
+    "captionBottom": null,
+    "viewportH": 900,
+    "overflowPx": 0,
+    "navBesideStage": true,
+    "shot": "APRES-C2-portrait-1440.png"
+  },
+  "c3_1440": {
+    "label": "C3-landscape-1440",
+    "layout": "landscape",
+    "stage": "landscape",
+    "hasMetaBand": false,
+    "hasCaptionBelow": true,
+    "captionSnippet": "CBCamille B.Halles l1 — les chalets des Hautes Promenades ouvrent ce soirplusCen",
+    "hasAuthor": true,
+    "stageRect": {
+      "top": 32,
+      "bottom": 632,
+      "height": 600,
+      "width": 800
+    },
+    "navRect": {
+      "top": 32,
+      "bottom": 632,
+      "left": 1091
+    },
+    "captionBottom": 774,
+    "viewportH": 900,
+    "overflowPx": 0,
+    "navBesideStage": true,
+    "shot": "APRES-C3-landscape-1440.png"
+  },
+  "c3_1280": {
+    "label": "C3-landscape-1280",
+    "layout": "landscape",
+    "stage": "landscape",
+    "hasMetaBand": false,
+    "hasCaptionBelow": true,
+    "captionSnippet": "CBCamille B.Halles l1 — les chalets des Hautes Promenades ouvrent ce soirplusCen",
+    "hasAuthor": true,
+    "stageRect": {
+      "top": 32,
+      "bottom": 608,
+      "height": 576,
+      "width": 800
+    },
+    "navRect": {
+      "top": 32,
+      "bottom": 608,
+      "left": 1011
+    },
+    "captionBottom": 750,
+    "viewportH": 800,
+    "overflowPx": 0,
+    "navBesideStage": true,
+    "shot": "APRES-C3-landscape-1280.png"
+  }
+}

@@ -1,5 +1,6 @@
 import { useAuth } from "@/lib/auth-provider";
 import { useRedirectWhenAuthenticated } from "@/lib/use-redirect-when-authenticated";
+import { VERIFY_EMAIL_PENDING_BODY } from "@yunicity/utils";
 import { Link } from "expo-router";
 import { useState } from "react";
 import {
@@ -18,6 +19,7 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   if (showAuthGate) {
     return (
@@ -31,6 +33,7 @@ export default function RegisterScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Inscription</Text>
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {notice ? <Text style={styles.notice}>{notice}</Text> : null}
       <TextInput
         style={styles.input}
         placeholder="Nom complet"
@@ -57,13 +60,17 @@ export default function RegisterScreen() {
         disabled={isSubmitting}
         onPress={async () => {
           clearError();
+          setNotice(null);
           setIsSubmitting(true);
           try {
-            await register({
+            const outcome = await register({
               email,
               password,
               full_name: fullName,
             });
+            if (outcome.status === "verification_required") {
+              setNotice(VERIFY_EMAIL_PENDING_BODY);
+            }
           } finally {
             setIsSubmitting(false);
           }
@@ -87,6 +94,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 24, justifyContent: "center", gap: 12 },
   title: { fontSize: 24, fontWeight: "700" },
   error: { color: "#b91c1c", fontSize: 14 },
+  notice: { color: "#1f2937", fontSize: 14, lineHeight: 20 },
   input: {
     borderWidth: 1,
     borderColor: "#d4d4d4",

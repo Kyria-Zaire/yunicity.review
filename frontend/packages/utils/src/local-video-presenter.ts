@@ -5,6 +5,11 @@ export const LOCAL_VIDEO_DEFAULT_MUTED = true;
 
 export const LOCAL_VIDEO_EMPTY_MESSAGE = "Aucune vidéo autour de vous pour le moment.";
 export const LOCAL_VIDEO_ERROR_MESSAGE = "Impossible de charger les vidéos.";
+/** Erreur de lecture d'une source vidéo individuelle (élément `<video onError>`). */
+export const LOCAL_VIDEO_PLAYBACK_ERROR = "Impossible de lire cette vidéo.";
+/** Texte fallback enfant de `<video>` pour navigateurs sans support ou source invalide. */
+export const LOCAL_VIDEO_PLAYBACK_FALLBACK =
+  "Votre navigateur ne peut pas lire cette vidéo.";
 export const LOCAL_VIDEO_RETRY_LABEL = "Réessayer";
 export const LOCAL_VIDEO_SESSION_EXPIRED_MESSAGE =
   "Votre session a expiré. Reconnectez-vous pour continuer.";
@@ -118,8 +123,12 @@ export function buildVideoTerritoryLines(
   };
 }
 
-export function formatLocalVideoTypeLabel(type: LocalVideoTypeId): string {
-  return LOCAL_VIDEO_TYPE_LABELS[type] ?? "Vidéo";
+// `video_type` arrive en `string` depuis certains contrats (detail quartier) :
+// la signature l'accepte, et le repli « Vidéo » couvre toute valeur inconnue.
+// Le cast est ici, dans le proprietaire du mapping, plutot que repete a chaque
+// appelant — c'est le seul endroit qui sait que la table est partielle.
+export function formatLocalVideoTypeLabel(type: LocalVideoTypeId | string): string {
+  return LOCAL_VIDEO_TYPE_LABELS[type as LocalVideoTypeId] ?? "Vidéo";
 }
 
 export function formatVideoAuthorHandle(item: LocalVideoFeedItem): string {
@@ -129,7 +138,10 @@ export function formatVideoAuthorHandle(item: LocalVideoFeedItem): string {
   return slug ? `@${slug}` : "@citoyen";
 }
 
-export function formatVideoAuthorDisplayName(item: LocalVideoFeedItem): string {
+// Ne lit que `author` : la signature l'exprime, ce qui permet aux contrats
+// qui portent le meme auteur sans le reste du feed (detail quartier) de
+// l'appeler sans cast.
+export function formatVideoAuthorDisplayName(item: Pick<LocalVideoFeedItem, "author">): string {
   const fullName = item.author.full_name?.trim();
   if (fullName) return fullName;
   const username = item.author.username?.trim();

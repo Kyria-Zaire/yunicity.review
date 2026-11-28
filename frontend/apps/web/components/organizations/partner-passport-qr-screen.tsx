@@ -3,11 +3,12 @@
 import { WebAppShell } from "@/components/layout";
 import { ProtectedRoute } from "@/components/protected-route";
 import { usePartnerPortalContextOptional } from "@/hooks/use-partner-portal-context";
+import { usePassportQrImage } from "@/hooks/use-passport-qr-image";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import type { OrganizationMeItem, StampQrGenerateResponse } from "@yunicity/types";
 import { buildPassportStampClaimUrl, isAuthError } from "@yunicity/utils";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 function formatExpiry(iso: string): string {
   const date = new Date(iso);
@@ -109,10 +110,13 @@ export function PartnerPassportQrPanel() {
       ? `${window.location.origin}${claimPath.startsWith("/") ? claimPath : `/${claimPath}`}`
       : claimPath;
 
-  const qrImageSrc =
-    claimUrl.length > 0
-      ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(claimUrl)}`
-      : null;
+  // PASSPORT-QR-THIRD-PARTY-01 — l'URL de réclamation (JWT de tampon) est encodée
+  // telle quelle, sur l'appareil : elle n'est plus envoyée à un service tiers.
+  const {
+    src: qrImageSrc,
+    generating: qrGenerating,
+    failed: qrFailed,
+  } = usePassportQrImage(claimUrl.length > 0 ? claimUrl : null);
 
   const copyClaimLink = useCallback(async () => {
     if (!claimUrl) return;
@@ -181,8 +185,16 @@ export function PartnerPassportQrPanel() {
               <p className="text-xs text-neutral-500">
                 Expire le {formatExpiry(qrResult.expires_at)} (24 h)
               </p>
+              {qrGenerating ? (
+                <p className="text-center text-xs text-neutral-500">Préparation du QR…</p>
+              ) : null}
+              {qrFailed ? (
+                <p className="text-center text-sm text-red-600">
+                  QR indisponible. Utilisez le lien ci-dessous.
+                </p>
+              ) : null}
               {qrImageSrc ? (
-                // eslint-disable-next-line @next/next/no-img-element -- QR externe recette, pas d’asset local
+                // eslint-disable-next-line @next/next/no-img-element -- SVG généré sur l'appareil (data:), pas d'asset distant
                 <img
                   src={qrImageSrc}
                   alt="QR code tampon Passport"

@@ -1,7 +1,12 @@
 "use client";
 
 import type { FeedReportReason } from "@yunicity/types";
-import { FEED_REPORT_LABEL, FEED_REPORT_REASON_LABELS } from "@yunicity/utils";
+import {
+  FEED_REPORT_LABEL,
+  FEED_REPORT_REASON_LABELS,
+  PUBLICATION_DELETE_ACTION,
+  PUBLICATION_DELETE_MENU_SECTION,
+} from "@yunicity/utils";
 
 /** Nom accessible du menu de debordement — commun aux trois bandes. */
 const FEED_PUBLICATION_OVERFLOW_LABEL = "Plus d'actions";
@@ -22,17 +27,27 @@ const REASONS: FeedReportReason[] = ["spam", "inappropriate", "other"];
  * `user_id`. Le rendu client n'est pas la frontière de sécurité — c'est l'API
  * qui refuse — mais il ne doit plus proposer une action impossible.
  *
- * Aucune action n'étant aujourd'hui câblée pour le propriétaire, le menu n'est
- * pas rendu du tout sur sa propre publication : un kebab vide serait un second
- * contrôle mort. `PATCH` et `DELETE /posts/{id}` existent et restent
- * disponibles pour une extension Modifier/Supprimer.
+ * PROFILE-POST-MENU-01 : une action propriétaire EXISTE désormais —
+ * « Supprimer ». Le menu est donc rendu sur sa propre publication, mais
+ * SEULEMENT quand `onDelete` est câblé : sans lui, un kebab vide serait un
+ * second contrôle mort, et c'est exactement le défaut d'origine. Les surfaces
+ * qui ne câblent pas la suppression (mur de Tribu, Discussions, harnais)
+ * gardent donc le comportement précédent.
+ *
+ * `PATCH /posts/{id}` existe et reste disponible pour une extension Modifier.
  */
 export function FeedPostOptionsMenu({
   onReport,
+  onDelete,
   authorUserId,
   currentUserId,
 }: {
   onReport: (reason: FeedReportReason) => Promise<void>;
+  /**
+   * Ouvre la confirmation de suppression — câblé uniquement sur les surfaces
+   * qui savent retirer la carte de leur liste. N'écrit RIEN par lui-même.
+   */
+  onDelete?: () => void;
   /**
    * Identite du lecteur, INJECTEE (C3-FEED-UNIFIED-PUBLICATION-CARD-R2A-TER).
    * Le menu appelait `useAuth()` pour ce seul champ, ce qui rendait toute la
@@ -95,8 +110,19 @@ export function FeedPostOptionsMenu({
     }
   }
 
+  function requestDelete() {
+    // Le focus revient au déclencheur AVANT l'ouverture de la confirmation :
+    // c'est lui que la modale mémorisera comme élément à refocaliser une fois
+    // fermée. Sans ce passage, le focus repartirait de `<body>`.
+    setOpen(false);
+    triggerRef.current?.focus();
+    onDelete?.();
+  }
+
   const viewerIsAuthor = Boolean(authorUserId && currentUserId && authorUserId === currentUserId);
-  if (viewerIsAuthor) {
+  // Signaler sa propre publication n'a pas de sens (C3.1-R1L) : sans action
+  // propriétaire câblée, il n'y a rien à offrir.
+  if (viewerIsAuthor && !onDelete) {
     return null;
   }
 
@@ -125,20 +151,32 @@ export function FeedPostOptionsMenu({
           className="absolute right-0 top-full z-20 mt-1 min-w-[12rem] rounded-xl border border-neutral-200/90 bg-white py-1 shadow-lg"
         >
           <p className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
-            {FEED_REPORT_LABEL}
+            {viewerIsAuthor ? PUBLICATION_DELETE_MENU_SECTION : FEED_REPORT_LABEL}
           </p>
-          {REASONS.map((reason) => (
+          {viewerIsAuthor ? (
             <button
-              key={reason}
               type="button"
               role="menuitem"
-              disabled={isSubmitting}
-              onClick={() => void submit(reason)}
-              className="block w-full px-3 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+              onClick={requestDelete}
+              data-feed-publication-delete=""
+              className="block w-full px-3 py-2 text-left text-sm font-semibold text-red-600 hover:bg-red-50"
             >
-              {FEED_REPORT_REASON_LABELS[reason]}
+              {PUBLICATION_DELETE_ACTION}
             </button>
-          ))}
+          ) : (
+            REASONS.map((reason) => (
+              <button
+                key={reason}
+                type="button"
+                role="menuitem"
+                disabled={isSubmitting}
+                onClick={() => void submit(reason)}
+                className="block w-full px-3 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+              >
+                {FEED_REPORT_REASON_LABELS[reason]}
+              </button>
+            ))
+          )}
         </div>
       ) : null}
     </div>

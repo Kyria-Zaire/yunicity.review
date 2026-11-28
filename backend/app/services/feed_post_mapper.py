@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import Literal
 
 from app.core.flash_offer import build_flash_snapshot
 from app.models.post import Post
@@ -11,6 +12,7 @@ from app.schemas.feed import (
     FeedCreatorContentMeta,
     FeedEventMeta,
     FeedLocation,
+    FeedMediaItem,
     FeedOfferMeta,
     FeedPostItem,
 )
@@ -69,6 +71,37 @@ def _location(post: Post) -> FeedLocation | None:
     return FeedLocation(latitude=point["latitude"], longitude=point["longitude"])
 
 
+def _media_items(post: Post) -> list[FeedMediaItem]:
+    """Liste ORDONNÉE des médias d'une publication (MEDIA-MULTI-PHOTO-01).
+
+    L'ordre de la colonne est l'ordre de publication : il est conservé tel
+    quel, c'est lui que l'auteur a choisi.
+
+    Les doublons d'URL sont écartés : chaque média affiché déclenche sa propre
+    résolution autorisée côté client, et deux tuiles pour un même fichier
+    paieraient deux fois le même appel sans rien montrer de plus.
+
+    Une publication dont la colonne est vide rend une liste VIDE — et non un
+    repli fabriqué depuis `media_url` : deviner le `media_type` d'un média
+    historique reviendrait à inventer une donnée. Le client retombe alors sur
+    `media_url`, exactement comme avant.
+    """
+    items: list[FeedMediaItem] = []
+    seen: set[str] = set()
+    for entry in post.media_urls or []:
+        if not isinstance(entry, dict):
+            continue
+        url = (entry.get("url") or "").strip()
+        if not url or url in seen:
+            continue
+        seen.add(url)
+        media_type: Literal["image", "video"] = (
+            "video" if entry.get("media_type") == "video" else "image"
+        )
+        items.append(FeedMediaItem(url=url, media_type=media_type))
+    return items
+
+
 def to_feed_item(
     post: Post,
     *,
@@ -88,6 +121,7 @@ def to_feed_item(
         title=post.title,
         body=post.body,
         media_url=post.media_url,
+        media_urls=_media_items(post),
         location=_location(post),
         like_count=post.like_count,
         comment_count=post.comment_count,

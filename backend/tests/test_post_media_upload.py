@@ -105,7 +105,12 @@ async def test_upload_post_media_success(
     assert response.status_code == 201, response.text
     body = response.json()
     assert body["media_type"] == "image"
-    storage_key = body["url"].removeprefix(f"{POST_MEDIA_CDN_BASE}/")
+    # L'URL enregistree est la route protegee ; la CLE d'objet s'en deduit, elle n'est
+    # plus derivable d'un prefixe CDN.
+    assert body["url"].startswith("/api/v1/story-media/")
+    assert POST_MEDIA_CDN_BASE not in body["url"]
+    _, _, _, _, url_user_id, url_filename = body["url"].split("/")
+    storage_key = f"stories/{url_user_id}/{url_filename}"
     assert mock_post_media_r2[storage_key] == MINIMAL_JPEG_BYTES
 
 

@@ -7,13 +7,26 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql.elements import ColumnElement
 
 from app.core.local_event_constants import LocalEventModerationStatus
 from app.models.local_event import EventInterest, LocalEvent
 from app.services.local_event_admin_queries import normalize_admin_event_title_query
+
+
+def _public_event_still_relevant(now: datetime) -> ColumnElement[bool]:
+    """Future start OR still ongoing (ends_at > now).
+
+    Sortir « Ce soir » needs events that already started but have not finished;
+    filtering on ``starts_at >= now`` alone emptied the tonight rail after 18:00.
+    """
+    return or_(
+        LocalEvent.starts_at >= now,
+        and_(LocalEvent.ends_at.is_not(None), LocalEvent.ends_at > now),
+    )
 
 
 @dataclass(frozen=True)
@@ -82,7 +95,7 @@ class LocalEventRepository:
         if city:
             stmt = stmt.where(func.lower(LocalEvent.city) == city.strip().lower())
         if now is not None:
-            stmt = stmt.where(LocalEvent.starts_at >= now)
+            stmt = stmt.where(_public_event_still_relevant(now))
         if organization_slug is not None:
             stmt = (
                 stmt
@@ -110,7 +123,7 @@ class LocalEventRepository:
                 LocalEvent.moderation_status == LocalEventModerationStatus.APPROVED.value,
                 LocalEvent.is_cancelled.is_(False),
                 LocalEvent.visibility == "public",
-                LocalEvent.starts_at >= now,
+                _public_event_still_relevant(now),
                 LocalEvent.latitude.is_not(None),
                 LocalEvent.longitude.is_not(None),
                 LocalEvent.latitude >= lat_min,

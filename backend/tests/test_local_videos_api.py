@@ -23,6 +23,16 @@ from sqlalchemy import update
 
 from tests.conftest_passport import auth_header, register_user
 
+#: En-tete ISO BMFF minimal (`ftyp` en octets 4..8), suivi de remplissage.
+#:
+#: L'endpoint binaire valide desormais le CONTENU
+#: (PR202-VIDEO-STREAMING-UPLOAD-01) : il acceptait auparavant n'importe
+#: quels octets comme "video", ce qui laissait passer un fichier falsifie.
+#: Ces tests portent sur la publication et le fil, pas sur la validation :
+#: ils envoient donc un entete reconnaissable plutot que du texte libre.
+MP4_MINIMAL = b"\x00\x00\x00\x18ftypisom" + b"\x00" * 32
+
+
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
 BOULINGRIN_ID = "d6010000-0000-4000-8000-000000000005"
@@ -46,10 +56,21 @@ async def _clear_redis_rate_limits(auth_client: AsyncClient) -> None:
 
 @pytest.fixture
 def mock_processor(monkeypatch: pytest.MonkeyPatch) -> None:
-    def _fake_process(self, *, source_storage_key, city_slug, video_id, content_type):  # type: ignore[no-untyped-def]
-        del self, content_type, source_storage_key
+    def _fake_process(  # type: ignore[no-untyped-def]
+        self,
+        *,
+        source_storage_key,
+        city_slug,
+        video_id,
+        content_type,
+        max_duration_seconds=None,
+    ):
+        # VIDEO-04D — accepte le snapshot de duree passe par le service reel.
+        del self, content_type, source_storage_key, max_duration_seconds
         return LocalVideoProcessResult(
             duration_seconds=12.5,
+            media_width=1080,
+            media_height=1920,
             source_storage_key=f"local-video/{city_slug}/{video_id}/processed.mp4",
             thumbnail_storage_key=f"local-video/{city_slug}/{video_id}/thumbnail.jpg",
             mime_type="video/mp4",
@@ -116,7 +137,7 @@ async def test_binary_upload_endpoint_unavailable_for_r2(
 
     response = await auth_client.put(
         f"{BASE}/uploads/{uuid.uuid4()}/binary",
-        content=b"fake-mp4-bytes",
+        content=MP4_MINIMAL,
         headers={"Content-Type": "video/mp4"},
     )
     assert response.status_code == 404
@@ -176,6 +197,7 @@ async def test_upload_init_prod_requires_city_slug(
     for _key, _value in {
         "DEBUG": "false",
         "REFRESH_COOKIE_SECURE": "true",
+        "REFRESH_TOKEN_PEPPER": "y" * 32,
         "WEB_FRONTEND_URL": "https://app.yunicity.city",
         "CORS_ORIGINS": '["https://app.yunicity.city"]',
         "MEDIA_PUBLIC_BASE_URL": "https://media.yunicity.city",
@@ -210,7 +232,7 @@ async def test_publish_flow(
 
     put_response = await auth_client.put(
         presigned_url,
-        content=b"fake-mp4-bytes-for-test",
+        content=MP4_MINIMAL,
         headers={"Content-Type": "video/mp4"},
     )
     assert put_response.status_code == 204, put_response.text
@@ -275,7 +297,7 @@ async def test_publish_twice_same_upload_rejected(
     init_body = await _init_upload(auth_client, user["access_token"])
     await auth_client.put(
         init_body["presigned_url"],
-        content=b"fake-mp4-bytes",
+        content=MP4_MINIMAL,
         headers={"Content-Type": "video/mp4"},
     )
     payload = {
@@ -312,7 +334,7 @@ async def _publish_video(
     init_body = await _init_upload(auth_client, token)
     await auth_client.put(
         init_body["presigned_url"],
-        content=b"fake-mp4-bytes-for-test",
+        content=MP4_MINIMAL,
         headers={"Content-Type": "video/mp4"},
     )
     payload: dict[str, Any] = {

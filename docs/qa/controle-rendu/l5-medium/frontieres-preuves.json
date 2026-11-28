@@ -1,0 +1,64 @@
+{
+  "proofs": [
+    {
+      "kind": "breakpoint-css",
+      "env": "source-globals.css",
+      "639/640": {
+        "mobileMax639": true,
+        "mediumMin640": true,
+        "feedHiddenByDefault": true,
+        "feedFlexInMedium": true
+      },
+      "1023/1024": {
+        "mediumMax1023": true,
+        "desktopMin1024": true
+      },
+      "note": "Preuve source — pas de rendu Next. Distinguer des captures live."
+    },
+    {
+      "kind": "video-query-fixture",
+      "env": "fixture",
+      "badgeOccurrences": 1,
+      "expect": 1,
+      "ok": true,
+      "note": "Fixture F2 — badge « Vidéo partagée » une fois. Preuve reorder unitaire = video-medium-l5.test.tsx"
+    },
+    {
+      "kind": "accessibilite-fixture",
+      "size": "640x900",
+      "sideColumn": 1,
+      "texts": 1,
+      "video": 2,
+      "ok": true,
+      "env": "fixture"
+    },
+    {
+      "kind": "accessibilite-fixture",
+      "size": "820x1180",
+      "sideColumn": 1,
+      "texts": 1,
+      "video": 2,
+      "ok": true,
+      "env": "fixture"
+    },
+    {
+      "kind": "accessibilite-fixture",
+      "size": "1023x768",
+      "sideColumn": 1,
+      "texts": 1,
+      "video": 2,
+      "ok": true,
+      "env": "fixture"
+    },
+    {
+      "kind": "accessibilite-fixture",
+      "size": "844x390",
+      "sideColumn": 1,
+      "texts": 1,
+      "video": 2,
+      "ok": true,
+      "env": "fixture"
+    }
+  ],
+  "base": null
+}

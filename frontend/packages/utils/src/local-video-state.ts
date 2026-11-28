@@ -32,7 +32,40 @@ export function buildLocalVideoShareUrl(videoId: string, origin?: string): strin
   return `${base}/videos?video=${encodeURIComponent(videoId)}`;
 }
 
-export type LocalVideoShareResult = "shared" | "copied" | "cancelled";
+/**
+ * VIDEO-REFONTE-L2-PARTAGE-01 — cinq résultats distincts (H1 / H2 / H3).
+ * `cancelled` = AbortError uniquement (silencieux, aucune copie).
+ */
+export type LocalVideoShareResult =
+  | "shared"
+  | "cancelled"
+  | "failed"
+  | "copied"
+  | "unavailable";
+
+export type LocalVideoCopyResult = "copied" | "unavailable";
+
+function isShareAbortError(error: unknown): boolean {
+  return (
+    (typeof DOMException !== "undefined" &&
+      error instanceof DOMException &&
+      error.name === "AbortError") ||
+    (error instanceof Error && error.name === "AbortError")
+  );
+}
+
+/** Copie explicite du lien (repli sans `share`, ou « Copier le lien » depuis H2). */
+export async function copyLocalVideoLink(url: string): Promise<LocalVideoCopyResult> {
+  if (typeof navigator === "undefined" || typeof navigator.clipboard?.writeText !== "function") {
+    return "unavailable";
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    return "copied";
+  } catch {
+    return "unavailable";
+  }
+}
 
 export async function shareLocalVideoWithFallback(
   video: Pick<LocalVideoFeedItem, "id" | "title" | "description">,
@@ -41,19 +74,18 @@ export async function shareLocalVideoWithFallback(
   const url = buildLocalVideoShareUrl(video.id, origin);
   const title = video.title?.trim() || "Vidéo Yunicity";
   const text = video.description?.slice(0, 120) ?? undefined;
-  try {
-    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+
+  if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+    try {
       await navigator.share({ title, text, url });
       return "shared";
+    } catch (error) {
+      if (isShareAbortError(error)) return "cancelled";
+      return "failed";
     }
-    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(url);
-      return "copied";
-    }
-    return "cancelled";
-  } catch {
-    return "cancelled";
   }
+
+  return copyLocalVideoLink(url);
 }
 
 const DEFAULT_DOUBLE_TAP_MS = 300;

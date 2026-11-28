@@ -23,6 +23,11 @@ type FeedDesktopEveningEventsStripProps = {
   markPrimarySurface?: boolean;
   /** Événement déjà mis en avant sous le bandeau — exclu des colonnes. */
   excludeEventId?: string | null;
+  /** Agenda encore en vol : ne pas affirmer « aucun événement » avant de savoir. */
+  loading?: boolean;
+  /** L'agenda n'a pas pu être chargé — distinct d'une soirée sans événement. */
+  error?: boolean;
+  onRetry?: () => void;
 };
 
 function EveningEventCover({ event }: { event: LocalEvent }) {
@@ -90,6 +95,9 @@ export function FeedDesktopEveningEventsStrip({
   className = "",
   markPrimarySurface = false,
   excludeEventId = null,
+  loading = false,
+  error = false,
+  onRetry,
 }: FeedDesktopEveningEventsStripProps) {
   const { events: displayEvents } = selectFeedRightRailEveningEvents(events);
   const visibleEvents = filterEveningEventsExcludingFeatured(displayEvents, excludeEventId);
@@ -98,6 +106,18 @@ export function FeedDesktopEveningEventsStrip({
   if (shouldHideFeedEveningEventsStrip(displayEvents, excludeEventId)) {
     return null;
   }
+
+  // Priorite : chargement > erreur > absence. Un agenda vide pendant le
+  // chargement n'est pas une absence d'evenement, et un echec reseau n'en est
+  // pas une non plus — les trois cas disent des choses differentes.
+  const etat =
+    loading && visibleEvents.length === 0
+      ? "loading"
+      : error && visibleEvents.length === 0
+        ? "error"
+        : visibleEvents.length === 0
+          ? "empty"
+          : "loaded";
 
   return (
     <section
@@ -115,7 +135,24 @@ export function FeedDesktopEveningEventsStrip({
         </Link>
       </header>
 
-      {visibleEvents.length === 0 ? (
+      {etat === "loading" ? (
+        <div className="px-4 py-4" aria-hidden="true">
+          <div className="h-14 animate-pulse rounded-lg bg-neutral-100" />
+        </div>
+      ) : etat === "error" ? (
+        <p className="px-4 py-4 text-sm leading-relaxed text-neutral-500">
+          Agenda momentanément indisponible.{" "}
+          {onRetry ? (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="font-medium text-yunicity-primary hover:underline"
+            >
+              Réessayer
+            </button>
+          ) : null}
+        </p>
+      ) : etat === "empty" ? (
         <p className="px-4 py-4 text-sm leading-relaxed text-neutral-500">
           Aucun événement prévu pour le moment.{" "}
           <Link href="/sortir" className="font-medium text-yunicity-primary hover:underline">

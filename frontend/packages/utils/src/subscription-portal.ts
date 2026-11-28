@@ -5,6 +5,8 @@ import type {
   SubscriptionPlan,
 } from "@yunicity/types";
 
+import { SUBSCRIPTION_CHECKOUT_UNAVAILABLE_CTA } from "./subscription-portal-labels";
+
 export type SubscriptionBillingToggle = MembershipBillingInterval;
 
 export function formatSubscriptionPrice(cents: number, currency = "EUR"): string {
@@ -41,9 +43,23 @@ export type SubscriptionPlanCardState = {
   ctaVariant: "primary" | "outline" | "muted";
 };
 
+/**
+ * PAY-01-GUARD — l'état du bouton doit refléter la disponibilité RÉELLE du
+ * paiement.
+ *
+ * `checkoutEnabled` est optionnel et vaut `true` par défaut : les appelants
+ * existants et leurs tests gardent exactement leur comportement. Quand le
+ * paiement est désactivé côté serveur (`checkout_enabled: false`), un plan
+ * payant ne doit plus présenter un bouton d'achat actif — sinon la personne
+ * clique et n'apprend qu'après coup que l'achat est impossible.
+ *
+ * `canCheckoutPlan` reste le garde dur qui empêche tout appel Stripe ; cette
+ * fonction ne fait que rendre l'interface honnête en amont du clic.
+ */
 export function buildSubscriptionPlanCardState(
   plan: SubscriptionPlan,
   me: SubscriptionMe | null,
+  checkoutEnabled = true,
 ): SubscriptionPlanCardState {
   const currentCode = me?.plan_code ?? "free";
 
@@ -60,6 +76,15 @@ export function buildSubscriptionPlanCardState(
 
   if (plan.code === "plus") {
     const isCurrent = currentCode === "plus";
+    if (!isCurrent && !checkoutEnabled) {
+      return {
+        plan,
+        isCurrent,
+        ctaLabel: SUBSCRIPTION_CHECKOUT_UNAVAILABLE_CTA,
+        ctaDisabled: true,
+        ctaVariant: "muted",
+      };
+    }
     return {
       plan,
       isCurrent,
@@ -71,6 +96,15 @@ export function buildSubscriptionPlanCardState(
 
   const isCurrent = currentCode === "premium";
   const isDowngradeBlocked = currentCode === "premium";
+  if (!isCurrent && !isDowngradeBlocked && !checkoutEnabled) {
+    return {
+      plan,
+      isCurrent,
+      ctaLabel: SUBSCRIPTION_CHECKOUT_UNAVAILABLE_CTA,
+      ctaDisabled: true,
+      ctaVariant: "muted",
+    };
+  }
   return {
     plan,
     isCurrent,

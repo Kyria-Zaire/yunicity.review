@@ -32,7 +32,7 @@ const NAV = [
   { href: "/subscriptions", label: SUBSCRIPTION_LEFT_SUBSCRIPTIONS, icon: Users, active: true },
   { href: "/feed", label: SUBSCRIPTION_LEFT_POPULAR, icon: Star, active: false },
   { href: "/map", label: SUBSCRIPTION_LEFT_NEARBY, icon: MapPin, active: false },
-  { href: "/feed", label: SUBSCRIPTION_LEFT_DISCUSSIONS, icon: MessageCircle, active: false },
+  { href: "/discussions", label: SUBSCRIPTION_LEFT_DISCUSSIONS, icon: MessageCircle, active: false },
   { href: "/feed", label: SUBSCRIPTION_LEFT_CONTRIBUTIONS, icon: PenLine, active: false },
   { href: "/events", label: SUBSCRIPTION_LEFT_SAVED, icon: Bookmark, active: false },
 ] as const;

@@ -1,5 +1,6 @@
-import { API_URL, bearer, expect, test, type QaUser } from "../fixtures";
+import { API_URL, bearer, expect, testCitizen as test, type QaUser } from "../fixtures";
 import { evaluateBrowserFailures, type FailedRequestRecord } from "../browser-failure-policy";
+import { ProvenMediaRegistry, proveFeedLocalVideoMedia } from "../proven-media-registry";
 import { COLD_START_TEST_TIMEOUT, COLD_START_TIMEOUT, gotoCold } from "../cold-start";
 import type { APIRequestContext, Locator, Page } from "@playwright/test";
 
@@ -10,8 +11,11 @@ import type { APIRequestContext, Locator, Page } from "@playwright/test";
  *
  * Données 100 % QA réelles : vidéo seedée, acteur seedé connectable, API locale 8010.
  */
-const REPORT_TRIGGER = "Plus d'options";
+const REPORT_TRIGGER_MORE = "Plus d'options";
+const REPORT_TRIGGER_DIRECT = "Signaler";
 const DRAWER_TITLE = "Signaler";
+/** Action du menu « … » mobile (v2.3, écran I) — une entrée DU menu, pas son déclencheur. */
+const REPORT_MENU_ACTION = "Signaler la vidéo";
 const CLOSE_LABEL = "Fermer";
 
 async function seededVideoId(api: APIRequestContext, user: QaUser): Promise<string> {
@@ -57,6 +61,13 @@ async function overlayState(page: Page) {
 async function openDrawer(page: Page, trigger: Locator) {
   await trigger.click();
   await expect(page.getByRole("dialog")).toBeVisible();
+  // Mobile v2.3 (VIDEO-REFONTE-L3L4, écran I) : « … » ouvre d'abord un menu dont la
+  // première ligne est « Signaler la vidéo » ; elle ouvre la feuille de motifs, qui le remplace.
+  const reportAction = page.getByRole("button", { name: REPORT_MENU_ACTION });
+  if (await reportAction.isVisible()) {
+    await reportAction.click();
+    await expect(page.getByRole("dialog", { name: DRAWER_TITLE })).toBeVisible();
+  }
 }
 
 /**
@@ -66,16 +77,21 @@ async function openDrawer(page: Page, trigger: Locator) {
  * 1. navigation terminée (`domcontentloaded`) ;
  * 2. l'URL est bien la route vidéo et non une redirection d'authentification — si la session
  *    n'était pas hydratée, l'app renverrait vers `/login` ;
- * 3. le véritable déclencheur produit « Plus d'options » est rendu et visible.
+ * 3. le déclencheur produit est rendu : « Plus d'options » (desktop/medium) ou
+ *    « Signaler » (immersif mobile).
  */
 async function gotoVideoDetail(page: Page, videoId: string): Promise<Locator> {
   await gotoCold(page, `/videos?video=${encodeURIComponent(videoId)}`, /\/videos\?video=/);
 
-  const trigger = page.getByRole("button", { name: REPORT_TRIGGER }).first();
-  await expect(trigger, "déclencheur du signalement indisponible").toBeVisible({
+  const moreOptions = page.getByRole("button", { name: REPORT_TRIGGER_MORE }).first();
+  const directReport = page.getByRole("button", { name: REPORT_TRIGGER_DIRECT }).first();
+  await expect(
+    moreOptions.or(directReport).first(),
+    "déclencheur du signalement indisponible",
+  ).toBeVisible({
     timeout: COLD_START_TIMEOUT,
   });
-  return trigger;
+  return (await moreOptions.isVisible()) ? moreOptions : directReport;
 }
 
 test.describe("Signalement vidéo — Drawer partagé", () => {
@@ -93,6 +109,9 @@ test.describe("Signalement vidéo — Drawer partagé", () => {
   }) => {
     const consoleErrors: string[] = [];
     const externalRequests: string[] = [];
+    const provenMedia = new ProvenMediaRegistry();
+    provenMedia.attachHttpErrorObserver(page);
+    provenMedia.attachSuccessfulMediaObserver(page);
     page.on("pageerror", (error) => consoleErrors.push(`pageerror: ${error.message}`));
     page.on("console", (message) => {
       if (message.type() === "error") consoleErrors.push(message.text());
@@ -109,6 +128,7 @@ test.describe("Signalement vidéo — Drawer partagé", () => {
         url: request.url(),
         method: request.method(),
         errorText: request.failure()?.errorText ?? "",
+        resourceType: request.resourceType(),
       });
     });
 
@@ -117,6 +137,11 @@ test.describe("Signalement vidéo — Drawer partagé", () => {
 
     // 1. Le vrai CTA produit est visible (attente d'état, tolérante au démarrage à froid).
     const trigger = await gotoVideoDetail(page, videoId);
+
+    // Prouver tous les médias local-video susceptibles d'être abortés (feed + carousel).
+    await proveFeedLocalVideoMedia(page, api, API_URL, bearer(citizenA), provenMedia);
+    await provenMedia.proveAllPageVideoMedia(page);
+    await provenMedia.proveCurrentVideoMedia(page);
 
     // 2-4. Ouverture : un seul dialogue, nom accessible correct, aria-modal.
     await openDrawer(page, trigger);
@@ -177,10 +202,13 @@ test.describe("Signalement vidéo — Drawer partagé", () => {
     expect(final.appAnyNeutralized).toBe(false);
     expect(final.overlayRootsEmpty).toBe(true);
 
-    // Politique EXACTE (cf. `e2e/browser-failure-policy.ts`) : seules les signatures QA
-    // documentées (QA-NOTIF-01, QA-MEDIA-01) sont tolérées, par URL + méthode + erreur.
-    // Toute autre requête échouée — y compris avec le même `net::ERR_FAILED` — est bloquante.
-    const verdict = evaluateBrowserFailures({ failedRequests, consoleErrors });
+    // Politique EXACTE (cf. `e2e/browser-failure-policy.ts`) : signatures statiques QA
+    // + médias dynamiques prouvés (QA-MEDIA-03, registre par exécution).
+    const verdict = evaluateBrowserFailures({
+      failedRequests,
+      consoleErrors,
+      provenMedia: provenMedia.toContext(),
+    });
     expect(verdict.violations, verdict.violations.join(" | ")).toEqual([]);
     expect(externalRequests, `requêtes externes : ${externalRequests.join(" | ")}`).toEqual([]);
   });

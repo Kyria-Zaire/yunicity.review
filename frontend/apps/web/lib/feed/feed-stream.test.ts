@@ -80,6 +80,8 @@ const video = (id = "v1"): LocalVideoFeedItem => ({
   media_url: "/media/qa/qa-sample-video.mp4",
   thumbnail_url: "/media/qa/qa-sample-video.png",
   duration_seconds: 42,
+  media_width: 1920,
+  media_height: 1080,
   mime_type: "video/mp4",
   latitude: null,
   longitude: null,

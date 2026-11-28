@@ -4,7 +4,6 @@ import type { LocalEvent, PartnerPublic, PassportStamp, Tribe } from "@yunicity/
 import {
   buildPassportAchievements,
   buildPassportLevel,
-  buildPassportProgression,
   buildPassportRecentBadges,
   countEarnedPassportBadges,
 } from "@yunicity/utils";
@@ -92,11 +91,6 @@ export function usePassportDashboardContext() {
     [achievementInput],
   );
 
-  const progression = useMemo(
-    () => (passportState.passport ? buildPassportProgression(passportState.passport) : []),
-    [passportState.passport],
-  );
-
   const badges = useMemo(
     () => (achievementInput ? buildPassportRecentBadges(achievementInput) : []),
     [achievementInput],
@@ -115,7 +109,6 @@ export function usePassportDashboardContext() {
     savedEvents,
     levelView,
     achievements,
-    progression,
     badges,
     earnedBadgesCount,
     offers: offersState.offers,

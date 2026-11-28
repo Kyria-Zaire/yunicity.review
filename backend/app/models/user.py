@@ -1,13 +1,16 @@
 import uuid
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, String, Uuid
+from sqlalchemy import Boolean, DateTime, Index, String, UniqueConstraint, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 from app.models._mixins import TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.account_deletion_token import AccountDeletionToken
+    from app.models.email_verification_token import EmailVerificationToken
     from app.models.passport import Passport
     from app.models.password_reset_token import PasswordResetToken
     from app.models.push_subscription import PushSubscription
@@ -19,6 +22,18 @@ if TYPE_CHECKING:
 
 class User(TimestampMixin, Base):
     __tablename__ = "users"
+    #: Declares what the migrations create, so that ``create_all`` (test schema) and
+    #: Alembic (deployed schema) agree; locked by tests/test_model_schema_drift.py.
+    __table_args__ = (
+        # 20260517_0001: a named constraint IN ADDITION to the unique index below.
+        UniqueConstraint("email", name="uq_users_email"),
+        # 20260912_0064: partial index used to find pending deletion requests.
+        Index(
+            "ix_users_deletion_requested_at",
+            "deletion_requested_at",
+            postgresql_where=text("deletion_requested_at IS NOT NULL"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(320), nullable=False, unique=True, index=True)
@@ -31,10 +46,36 @@ class User(TimestampMixin, Base):
     is_verified: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
-    is_system_account: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False, server_default="false"
+    #: Suppression demandee par l'utilisateur (AUTH-02A). DISTINCT de `is_active`,
+    #: qui porte la suspension administrative : confondre les deux empecherait de
+    #: savoir qui a decide quoi, et une reactivation d'un cote effacerait l'autre.
+    #: Aucune donnee n'est supprimee tant que ces champs sont poses.
+    deletion_requested_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
-    force_password_reset: Mapped[bool] = mapped_column(
+    #: Date a laquelle la purge definitive deviendra possible. Informative ici :
+    #: AUCUN worker ne la lit, la purge fait l'objet d'un ticket distinct.
+    deletion_scheduled_for: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    #: Derniere annulation. Conservee pour tracer la decision, pas pour bloquer
+    #: une nouvelle demande.
+    deletion_cancelled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    #: `is_system_account` et `force_password_reset` : AUCUN `server_default`. Les
+    #: migrations 20260608_0040 et 20260614_0052 le retirent volontairement apres
+    #: remplissage, et 20261126_0068 le garantit pour les bases dont la colonne les
+    #: precedait. Le defaut est applique par l'ORM (`default=False`) ; tout INSERT SQL
+    #: brut doit fournir ces colonnes. Parite verrouillee par
+    #: tests/test_model_schema_drift.py.
+    is_system_account: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    force_password_reset: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    #: Compte de test (PASSPORT-PRESENCE-01, B10), pose par le staff uniquement.
+    #: Exclu des recompenses, metriques et exports reels ; l'exclusion dans les flux
+    #: existants fait l'objet d'un ticket de suivi.
+    is_test: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
 
@@ -51,6 +92,16 @@ class User(TimestampMixin, Base):
     )
     password_reset_tokens: Mapped[list["PasswordResetToken"]] = relationship(
         "PasswordResetToken",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    account_deletion_tokens: Mapped[list["AccountDeletionToken"]] = relationship(
+        "AccountDeletionToken",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    email_verification_tokens: Mapped[list["EmailVerificationToken"]] = relationship(
+        "EmailVerificationToken",
         back_populates="user",
         cascade="all, delete-orphan",
     )

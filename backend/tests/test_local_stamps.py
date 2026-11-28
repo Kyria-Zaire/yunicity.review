@@ -21,6 +21,8 @@ from tests.conftest_passport import (
     activate_passport,
     auth_header,
     create_verified_org_with_offer,
+    partner_redeem,
+    register_partner_for_org,
     register_user,
 )
 
@@ -50,17 +52,23 @@ async def test_redeem_awards_memory_stamp(auth_client: AsyncClient, auth_env: No
     assert engine is not None
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     async with factory() as session:
-        _, offer = await create_verified_org_with_offer(
+        org, offer = await create_verified_org_with_offer(
             session, slug_suffix="stamp-mem", offer_title="Café découverte"
+        )
+        partner = await register_partner_for_org(
+            auth_client, session, organization_id=org.id, suffix="-stamp-mem"
         )
         offer_id = offer.id
         await session.commit()
 
-    redeem = await auth_client.post(
-        f"/api/v1/passport/offers/{offer_id}/redeem",
-        headers=auth_header(data["access_token"]),
+    # PASSPORT-SELF-REDEEM-API-01 : validation par le parcours partenaire.
+    redeem = await partner_redeem(
+        auth_client,
+        partner_token=partner["access_token"],
+        citizen_token=data["access_token"],
+        offer_id=offer_id,
     )
-    assert redeem.status_code == 200
+    assert redeem.status_code == 200, redeem.text
 
     stamps = await auth_client.get(
         "/api/v1/passport/stamps",
@@ -104,21 +112,22 @@ async def test_redeem_does_not_duplicate_memory_stamps(
         )
         session.add(offer_b)
         await session.flush()
+        partner = await register_partner_for_org(
+            auth_client, session, organization_id=org.id, suffix="-stamp-dedup"
+        )
         offer_a_id = offer_a.id
         offer_b_id = offer_b.id
         await session.commit()
 
-    headers = auth_header(data["access_token"])
-    redeem_a = await auth_client.post(
-        f"/api/v1/passport/offers/{offer_a_id}/redeem",
-        headers=headers,
-    )
-    assert redeem_a.status_code == 200
-    redeem_b = await auth_client.post(
-        f"/api/v1/passport/offers/{offer_b_id}/redeem",
-        headers=headers,
-    )
-    assert redeem_b.status_code == 200
+    # PASSPORT-SELF-REDEEM-API-01 : validation par le parcours partenaire.
+    for offer_id in (offer_a_id, offer_b_id):
+        redeem = await partner_redeem(
+            auth_client,
+            partner_token=partner["access_token"],
+            citizen_token=data["access_token"],
+            offer_id=offer_id,
+        )
+        assert redeem.status_code == 200, redeem.text
 
     async with factory() as session:
         result = await session.execute(

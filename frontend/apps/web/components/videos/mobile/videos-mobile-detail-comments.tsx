@@ -19,7 +19,7 @@ import { useAuth } from "@/lib/auth/auth-provider";
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
 import {
   CITIZEN_MOBILE_BOTTOM_NAV_PADDING,
-  CITIZEN_MOBILE_FLOATING_NAV_BOTTOM_GAP,
+  CITIZEN_MOBILE_DOCKED_NAV_HEIGHT,
 } from "@/lib/layout/feed-mobile-refonte";
 
 type VideosMobileDetailCommentsProps = {
@@ -40,7 +40,99 @@ function commentAuthorInitials(comment: LocalVideoComment): string {
   return commentAuthorLabel(comment).slice(0, 2).toUpperCase();
 }
 
-/** Commentaires mobile — aperçu + composer fixe (MOBILE-VIDEOS-02). */
+type CommentComposerProps = {
+  draft: string;
+  userInitial: string;
+  isSubmitting: boolean;
+  onDraftChange: (value: string) => void;
+  onSubmit: (event: React.FormEvent) => void;
+  className?: string;
+  style?: React.CSSProperties;
+  variant?: "mobile-fixed" | "medium-inline";
+};
+
+function CommentComposer({
+  draft,
+  userInitial,
+  isSubmitting,
+  onDraftChange,
+  onSubmit,
+  className = "",
+  style,
+  variant = "mobile-fixed",
+}: CommentComposerProps) {
+  const isMedium = variant === "medium-inline";
+
+  return (
+    <form onSubmit={onSubmit} className={className} style={style}>
+      <div className={`flex items-center gap-2.5 ${isMedium ? "items-start" : ""}`}>
+        <span
+          className={`flex shrink-0 items-center justify-center rounded-full bg-yunicity-primary font-bold text-white ${
+            isMedium ? "h-10 w-10 text-sm" : "h-9 w-9 text-xs"
+          }`}
+        >
+          {userInitial}
+        </span>
+        {isMedium ? (
+          <div className="min-w-0 flex-1">
+            <div className="flex items-end gap-2 rounded-2xl border border-neutral-200 bg-white px-3 py-2 shadow-sm focus-within:border-yunicity-primary/40 focus-within:ring-2 focus-within:ring-yunicity-primary/15">
+              <input
+                type="text"
+                value={draft}
+                onChange={(event) => onDraftChange(event.target.value)}
+                placeholder={LOCAL_VIDEO_COMMENT_PLACEHOLDER}
+                maxLength={500}
+                className="min-h-10 flex-1 bg-transparent py-2 text-sm text-neutral-800 outline-none"
+                aria-label="Ajouter un commentaire"
+              />
+              <button
+                type="submit"
+                disabled={!draft.trim() || isSubmitting}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-yunicity-primary disabled:opacity-40"
+                aria-label={LOCAL_VIDEO_COMMENT_SUBMIT_LABEL}
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <SendHorizontal className="h-4 w-4" aria-hidden />
+                )}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <input
+              type="text"
+              value={draft}
+              onChange={(event) => onDraftChange(event.target.value)}
+              placeholder={LOCAL_VIDEO_COMMENT_PLACEHOLDER}
+              maxLength={500}
+              className="min-h-10 flex-1 rounded-full border border-neutral-200 bg-neutral-50 px-4 text-sm text-neutral-800 outline-none focus:border-yunicity-primary/40 focus:ring-2 focus:ring-yunicity-primary/15"
+              aria-label="Ajouter un commentaire"
+            />
+            <button
+              type="submit"
+              disabled={!draft.trim() || isSubmitting}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-yunicity-primary text-white disabled:opacity-40"
+              aria-label={LOCAL_VIDEO_COMMENT_SUBMIT_LABEL}
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <SendHorizontal className="h-4 w-4" aria-hidden />
+              )}
+            </button>
+          </>
+        )}
+      </div>
+    </form>
+  );
+}
+
+/**
+ * Commentaires détail vidéo — mobile ≤639 : composer fixe au-dessus de la bottom nav ;
+ * medium 640–1023 : composer inline dans le flux (pas de bande flottante).
+ */
 export function VideosMobileDetailComments({
   video,
   onCommentCountDelta,
@@ -97,13 +189,21 @@ export function VideosMobileDetailComments({
   const hasHiddenComments = !expanded && comments.length > MOBILE_PREVIEW_COUNT;
   const userInitial = user?.full_name?.trim()?.slice(0, 1).toUpperCase() || "K";
 
-  const composerBottom = `calc(5rem + ${CITIZEN_MOBILE_FLOATING_NAV_BOTTOM_GAP} + env(safe-area-inset-bottom, 0px))`;
+  const composerBottom = `calc(${CITIZEN_MOBILE_DOCKED_NAV_HEIGHT} + env(safe-area-inset-bottom, 0px))`;
+
+  const composerProps = {
+    draft,
+    userInitial,
+    isSubmitting,
+    onDraftChange: setDraft,
+    onSubmit: (event: React.FormEvent) => void handleSubmit(event),
+  };
 
   return (
     <>
       <section
         id="video-detail-comments"
-        className={`scroll-mt-24 space-y-4 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] ${CITIZEN_MOBILE_BOTTOM_NAV_PADDING}`}
+        className={`scroll-mt-24 space-y-4 ${CITIZEN_MOBILE_BOTTOM_NAV_PADDING}`}
       >
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-base font-bold text-neutral-900">
@@ -119,6 +219,12 @@ export function VideosMobileDetailComments({
             </button>
           ) : null}
         </div>
+
+        <CommentComposer
+          {...composerProps}
+          variant="medium-inline"
+          className="hidden min-[640px]:block"
+        />
 
         {error ? (
           <p className="text-sm text-red-600" role="alert">
@@ -166,38 +272,12 @@ export function VideosMobileDetailComments({
         )}
       </section>
 
-      <form
-        onSubmit={(event) => void handleSubmit(event)}
-        className="fixed inset-x-0 z-[var(--z-chrome)] border-t border-neutral-200 bg-white px-4 py-2.5"
+      <CommentComposer
+        {...composerProps}
+        variant="mobile-fixed"
+        className="fixed inset-x-0 z-[var(--z-chrome)] border-t border-neutral-200 bg-white px-4 py-2.5 min-[640px]:hidden"
         style={{ bottom: composerBottom }}
-      >
-        <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-yunicity-primary text-xs font-bold text-white">
-            {userInitial}
-          </span>
-          <input
-            type="text"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder={LOCAL_VIDEO_COMMENT_PLACEHOLDER}
-            maxLength={500}
-            className="min-h-10 flex-1 rounded-full border border-neutral-200 bg-neutral-50 px-4 text-sm text-neutral-800 outline-none focus:border-yunicity-primary/40 focus:ring-2 focus:ring-yunicity-primary/15"
-            aria-label="Ajouter un commentaire"
-          />
-          <button
-            type="submit"
-            disabled={!draft.trim() || isSubmitting}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-yunicity-primary text-white disabled:opacity-40"
-            aria-label={LOCAL_VIDEO_COMMENT_SUBMIT_LABEL}
-          >
-            {isSubmitting ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            ) : (
-              <SendHorizontal className="h-4 w-4" aria-hidden />
-            )}
-          </button>
-        </div>
-      </form>
+      />
     </>
   );
 }

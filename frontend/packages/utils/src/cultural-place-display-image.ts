@@ -11,10 +11,18 @@ import {
 /** Minimal shape accepted by the display resolver: a slug (for overrides) plus any
  *  subset of image fields. Lets neighborhood-detail places (image_url only) reuse it. */
 export type CulturalPlaceDisplaySource = Pick<CulturalPlaceListItem, "slug"> &
-  CulturalPlaceImageSource;
+  CulturalPlaceImageSource &
+  Partial<Pick<CulturalPlaceListItem, "gallery_images">>;
 
 /** URL Unsplash unique utilisée comme fallback seed `_wiki()` — placeholder générique à ignorer. */
 export const GENERIC_CULTURAL_UNSPLASH_PHOTO_ID = "photo-1761983084378-6d63f5e996cb";
+
+/** Halles / marché Boulingrin — Commons stable (dev QA + seed sans CDN). */
+export const CULTURAL_PLACE_BOULINGRIN_MARKET_IMAGE =
+  "https://commons.wikimedia.org/wiki/Special:FilePath/Reims_-_halles_du_Boulingrin_(04).JPG?width=1400";
+
+const CULTURAL_PLACE_CARNEGIE_IMAGE =
+  "https://commons.wikimedia.org/wiki/Special:FilePath/Reims_-_biblioth%C3%A8que_Carnegie_%281%29.JPG?width=1400";
 
 /**
  * Overrides d'images par slug — UNIQUEMENT pour les lieux culturels NON traités par SEED-PROD-01B.
@@ -23,8 +31,7 @@ export const GENERIC_CULTURAL_UNSPLASH_PHOTO_ID = "photo-1761983084378-6d63f5e99
  * un slug qui possède une cover R2 officielle — l'API doit primer (cf. fix/web-cultural-covers-display).
  */
 const CULTURAL_PLACE_SLUG_IMAGE_OVERRIDES: Record<string, string> = {
-  "bibliotheque-carnegie":
-    "https://tse3.mm.bing.net/th/id/OIP.cLDw55L0jijFkgopwKjCAgHaFj?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+  "bibliotheque-carnegie": CULTURAL_PLACE_CARNEGIE_IMAGE,
   "domaine-pommery":
     "https://images.unsplash.com/photo-1510812431401-41d2bd2724f3?auto=format&fit=crop&w=900&q=80",
   "place-royale":
@@ -33,6 +40,17 @@ const CULTURAL_PLACE_SLUG_IMAGE_OVERRIDES: Record<string, string> = {
     "https://images.unsplash.com/photo-1449824913935-59a10b85d9bf?auto=format&fit=crop&w=900&q=80",
   "villa-demoiselle":
     "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=900&q=80",
+  "marche-du-boulingrin": CULTURAL_PLACE_BOULINGRIN_MARKET_IMAGE,
+};
+
+/** Fallback éditorial quand l'API ne sert que le placeholder générique ou rien (dev / QA). */
+const CULTURAL_PLACE_SLUG_EDITORIAL_FALLBACKS: Record<string, string> = {
+  "halles-boulingrin": CULTURAL_PLACE_BOULINGRIN_MARKET_IMAGE,
+  "marche-du-boulingrin": CULTURAL_PLACE_BOULINGRIN_MARKET_IMAGE,
+};
+
+const CULTURAL_PLACE_SLUG_IMAGE_ALIASES: Record<string, string> = {
+  "marche-du-boulingrin": "halles-boulingrin",
 };
 
 export type CulturalPlaceImageVariant = "hero" | "thumbnail";
@@ -43,10 +61,51 @@ export function isGenericCulturalPlaceholderUrl(url: string | null | undefined):
   return trimmed.includes(GENERIC_CULTURAL_UNSPLASH_PHOTO_ID);
 }
 
+/** Hôtes ou URLs connus pour échouer côté navigateur (hotlink, expiration). */
+export function isUnreliableCulturalImageUrl(url: string | null | undefined): boolean {
+  const trimmed = url?.trim();
+  if (!trimmed) return false;
+  if (isGenericCulturalPlaceholderUrl(trimmed)) return true;
+  try {
+    const host = new URL(trimmed).hostname.toLowerCase();
+    return host.endsWith(".bing.net") || host === "bing.net";
+  } catch {
+    return false;
+  }
+}
+
 export function resolveCulturalPlaceSlugImageOverride(
   slug: string,
 ): string | null {
-  return CULTURAL_PLACE_SLUG_IMAGE_OVERRIDES[slug] ?? null;
+  const direct = CULTURAL_PLACE_SLUG_IMAGE_OVERRIDES[slug];
+  if (direct) return direct;
+  const alias = CULTURAL_PLACE_SLUG_IMAGE_ALIASES[slug];
+  if (alias) {
+    return CULTURAL_PLACE_SLUG_IMAGE_OVERRIDES[alias] ?? null;
+  }
+  return null;
+}
+
+function resolveCulturalPlaceSlugEditorialFallback(slug: string): string | null {
+  const direct = CULTURAL_PLACE_SLUG_EDITORIAL_FALLBACKS[slug];
+  if (direct) return direct;
+  const alias = CULTURAL_PLACE_SLUG_IMAGE_ALIASES[slug];
+  if (alias) {
+    return CULTURAL_PLACE_SLUG_EDITORIAL_FALLBACKS[alias] ?? null;
+  }
+  return null;
+}
+
+function resolveCulturalPlaceGalleryUrl(
+  place: CulturalPlaceDisplaySource,
+): string | null {
+  for (const image of place.gallery_images ?? []) {
+    const url = image.url?.trim();
+    if (url && !isGenericCulturalPlaceholderUrl(url)) {
+      return url;
+    }
+  }
+  return null;
 }
 
 /** @deprecated Préférer resolveCulturalPlaceDisplayUrl — conservé pour imports existants. */
@@ -81,5 +140,10 @@ export function resolveCulturalPlaceDisplayUrl(
     return alternate;
   }
 
-  return null;
+  const fromGallery = resolveCulturalPlaceGalleryUrl(place);
+  if (fromGallery) {
+    return fromGallery;
+  }
+
+  return resolveCulturalPlaceSlugEditorialFallback(place.slug);
 }

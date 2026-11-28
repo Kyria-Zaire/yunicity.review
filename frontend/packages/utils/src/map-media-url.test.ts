@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { NEIGHBORHOOD_EDITORIAL_IMAGE_BOULINGRIN } from "./editorial-fallback-images";
 import {
   isPendingYunicityHostedCoverUrl,
   resolveMapNeighborhoodImageUrl,
@@ -102,11 +103,22 @@ describe("resolveMapPlaceImageUrl", () => {
 });
 
 describe("resolveMapNeighborhoodImageUrl", () => {
-  it("falls back to editorial image when cover is a pending hosted path", () => {
+  // L'assertion porte sur le COMPORTEMENT — retomber sur l'image éditoriale du
+  // quartier — et non sur l'hébergeur qui la sert. Les sources éditoriales ont
+  // déjà migré une fois (stock tiers en 404/403 → Wikimedia Commons) ; coupler le
+  // test à un domaine le rendait rouge à chaque changement de source légitime.
+  it("falls back to the neighborhood editorial image when cover is a pending hosted path", () => {
     const url = resolveMapNeighborhoodImageUrl({
       slug: "boulingrin",
       cover_image_url: "https://yunicity.city/neighborhoods/reims/boulingrin/hero.jpg",
     });
-    expect(url).toContain("bing.com");
+    expect(url).toBe(NEIGHBORHOOD_EDITORIAL_IMAGE_BOULINGRIN);
+  });
+
+  it("keeps a real cover untouched", () => {
+    const cover = "https://media.yunicity.city/neighborhoods/reims/boulingrin/cover.jpg";
+    expect(resolveMapNeighborhoodImageUrl({ slug: "boulingrin", cover_image_url: cover })).toBe(
+      cover,
+    );
   });
 });

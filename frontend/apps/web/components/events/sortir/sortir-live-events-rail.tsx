@@ -17,6 +17,7 @@ const BADGE_TONE: Record<SortirLiveEventCard["badgeTone"], string> = {
   concert: "bg-violet-600/95",
   tasting: "bg-pink-600/95",
   exhibition: "bg-blue-600/95",
+  local: "bg-emerald-600/95",
   default: "bg-yunicity-primary/95",
 };
 

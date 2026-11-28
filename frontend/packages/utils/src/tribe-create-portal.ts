@@ -1,19 +1,20 @@
 import type { TribeVisibility } from "@yunicity/types";
 
 import { TRIBE_CATEGORY_LABELS } from "./tribe-labels";
+import { TRIBE_CREATE_DESKTOP_STEP_ACCESS_HINT } from "./tribe-create-desktop-labels";
 import {
   TRIBE_CREATE_VALIDATION_CATEGORY,
   TRIBE_CREATE_VALIDATION_CHARTER,
+  TRIBE_CREATE_VALIDATION_CITY,
   TRIBE_CREATE_VALIDATION_DESC,
   TRIBE_CREATE_VALIDATION_NAME,
-  TRIBE_CREATE_STEP_CONFIRM,
-  TRIBE_CREATE_STEP_INFO,
-  TRIBE_CREATE_STEP_INVITE,
-  TRIBE_CREATE_STEP_PERSONALIZE,
-  TRIBE_CREATE_STEP_RULES,
+  TRIBE_CREATE_STEP_ACCESS,
+  TRIBE_CREATE_STEP_IDENTITY,
+  TRIBE_CREATE_STEP_REVIEW,
+  TRIBE_CREATE_STEP_VISUALS,
 } from "./tribe-create-portal-labels";
 
-export type TribeCreateStepId = "info" | "personalize" | "rules" | "invite" | "confirm";
+export type TribeCreateStepId = "identity" | "access" | "visuals" | "review";
 
 export type TribeCreateStep = {
   id: TribeCreateStepId;
@@ -36,15 +37,14 @@ export type TribeCreateValidation = {
   message: string | null;
 };
 
-export const TRIBE_CREATE_NAME_MAX = 50;
-export const TRIBE_CREATE_DESC_MAX = 200;
+export const TRIBE_CREATE_NAME_MAX = 80;
+export const TRIBE_CREATE_DESC_MAX = 140;
 
 export const TRIBE_CREATE_STEPS: TribeCreateStep[] = [
-  { id: "info", label: TRIBE_CREATE_STEP_INFO, order: 1 },
-  { id: "personalize", label: TRIBE_CREATE_STEP_PERSONALIZE, order: 2 },
-  { id: "rules", label: TRIBE_CREATE_STEP_RULES, order: 3 },
-  { id: "invite", label: TRIBE_CREATE_STEP_INVITE, order: 4 },
-  { id: "confirm", label: TRIBE_CREATE_STEP_CONFIRM, order: 5 },
+  { id: "identity", label: TRIBE_CREATE_STEP_IDENTITY, order: 1 },
+  { id: "access", label: TRIBE_CREATE_STEP_ACCESS, order: 2 },
+  { id: "visuals", label: TRIBE_CREATE_STEP_VISUALS, order: 3 },
+  { id: "review", label: TRIBE_CREATE_STEP_REVIEW, order: 4 },
 ];
 
 export const TRIBE_CREATE_CATEGORY_OPTIONS = Object.entries(TRIBE_CATEGORY_LABELS).map(
@@ -81,29 +81,76 @@ export function createTribeCreateDraftFromParams(
   return draft;
 }
 
+const TRIBE_CREATE_VALID: TribeCreateValidation = { valid: true, message: null };
+
+/** Champs d'identité seuls (nom, catégorie, description, ville) — hors visibilité. */
+function validateTribeCreateIdentityFields(draft: TribeCreateDraft): TribeCreateValidation {
+  if (draft.name.trim().length < 2) {
+    return { valid: false, message: TRIBE_CREATE_VALIDATION_NAME };
+  }
+  if (draft.name.trim().length > TRIBE_CREATE_NAME_MAX) {
+    return { valid: false, message: TRIBE_CREATE_VALIDATION_NAME };
+  }
+  if (!draft.category.trim()) {
+    return { valid: false, message: TRIBE_CREATE_VALIDATION_CATEGORY };
+  }
+  const desc = draft.description.trim();
+  if (desc.length < 10 || desc.length > TRIBE_CREATE_DESC_MAX) {
+    return { valid: false, message: TRIBE_CREATE_VALIDATION_DESC };
+  }
+  if (!draft.city.trim()) {
+    return { valid: false, message: TRIBE_CREATE_VALIDATION_CITY };
+  }
+  return TRIBE_CREATE_VALID;
+}
+
+/**
+ * Validation d'une étape du parcours. Le choix de visibilité (« Communauté ») est un
+ * champ de l'étape Identité : c'est là qu'une visibilité invalide est signalée et corrigeable.
+ */
 export function validateTribeCreateStep(
   stepId: TribeCreateStepId,
   draft: TribeCreateDraft,
 ): TribeCreateValidation {
-  if (stepId === "info") {
-    if (draft.name.trim().length < 2) {
-      return { valid: false, message: TRIBE_CREATE_VALIDATION_NAME };
-    }
-    if (draft.name.trim().length > TRIBE_CREATE_NAME_MAX) {
-      return { valid: false, message: TRIBE_CREATE_VALIDATION_NAME };
-    }
-    if (!draft.category.trim()) {
-      return { valid: false, message: TRIBE_CREATE_VALIDATION_CATEGORY };
-    }
-    const desc = draft.description.trim();
-    if (desc.length < 10 || desc.length > TRIBE_CREATE_DESC_MAX) {
-      return { valid: false, message: TRIBE_CREATE_VALIDATION_DESC };
+  if (stepId === "identity") {
+    const fields = validateTribeCreateIdentityFields(draft);
+    if (!fields.valid) return fields;
+    if (!isTribeCreateVisibilityValid(draft.visibility)) {
+      return { valid: false, message: TRIBE_CREATE_DESKTOP_STEP_ACCESS_HINT };
     }
   }
-  if (stepId === "rules" && !draft.charterAccepted) {
+  if (stepId === "access" && !isTribeCreateCharterAccepted(draft)) {
     return { valid: false, message: TRIBE_CREATE_VALIDATION_CHARTER };
   }
-  return { valid: true, message: null };
+  return TRIBE_CREATE_VALID;
+}
+
+/** Coche « Identité complète » : champs d'identité valides, visibilité comptée à part. */
+export function isTribeCreateIdentityComplete(draft: TribeCreateDraft): boolean {
+  return validateTribeCreateIdentityFields(draft).valid;
+}
+
+const TRIBE_CREATE_VISIBILITIES: readonly TribeVisibility[] = ["public", "private_invite"];
+
+/**
+ * Visibilité acceptée par l'API. Le brouillon relu depuis `sessionStorage` n'est pas fiable :
+ * la valeur par défaut (« Publique ») est valide, une valeur inconnue ou absente ne l'est pas.
+ */
+export function isTribeCreateVisibilityValid(visibility: unknown): visibility is TribeVisibility {
+  return TRIBE_CREATE_VISIBILITIES.some((value) => value === visibility);
+}
+
+/** Les trois cas d'une visibilité de brouillon : les deux valeurs de l'API, ou invalide. */
+export type TribeCreateVisibilityState = TribeVisibility | "invalid";
+
+/** Point unique de distinction `public` / `private_invite` / valeur invalide. */
+export function resolveTribeCreateVisibility(visibility: unknown): TribeCreateVisibilityState {
+  return isTribeCreateVisibilityValid(visibility) ? visibility : "invalid";
+}
+
+/** Seule une acceptation explicite (`true`) compte : une charte non acceptée bloque toujours. */
+export function isTribeCreateCharterAccepted(draft: TribeCreateDraft): boolean {
+  return draft.charterAccepted === true;
 }
 
 export function nextTribeCreateStep(stepId: TribeCreateStepId): TribeCreateStepId | null {

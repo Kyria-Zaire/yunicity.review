@@ -3,10 +3,13 @@ import sys
 
 from app.core.config import Settings
 from app.core.observability import ContextFilter, JsonLogFormatter
+from app.core.sql_error_redaction import install_log_record_redaction
 
 
 def configure_logging(settings: Settings) -> None:
     level = getattr(logging, settings.log_level.upper(), logging.INFO)
+    # Avant tout handler : couvre aussi ceux qu'uvicorn a posés en ligne de commande.
+    install_log_record_redaction()
 
     handler = logging.StreamHandler(sys.stdout)
     handler.addFilter(ContextFilter())

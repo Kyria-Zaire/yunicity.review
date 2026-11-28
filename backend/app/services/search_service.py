@@ -299,6 +299,7 @@ def _row_to_item(row: SearchRow) -> SearchResultItem:
         body=row.body,
         username=row.username,
         starts_at=row.starts_at,
+        ends_at=row.ends_at,
         is_flash=row.is_flash,
     )
 

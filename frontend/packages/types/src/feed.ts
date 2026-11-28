@@ -6,6 +6,12 @@ export type FeedAuthorType = "citizen" | "organization";
 
 export type FeedReportReason = "spam" | "inappropriate" | "other";
 
+/** Un média d'une publication, tel que le fil le restitue (MEDIA-MULTI-PHOTO-01). */
+export interface FeedMedia {
+  url: string;
+  media_type: "image" | "video";
+}
+
 export interface FeedLocation {
   latitude: number;
   longitude: number;
@@ -59,6 +65,15 @@ export interface FeedPost {
   title: string | null;
   body: string | null;
   media_url: string | null;
+  /**
+   * Liste ORDONNÉE des médias — l'ordre choisi par l'auteur.
+   *
+   * `media_url` reste le PREMIER et ne change pas. La liste est VIDE pour les
+   * publications dont la colonne n'a jamais été écrite : l'affichage retombe
+   * alors sur `media_url`, exactement comme avant. Optionnelle au type, car
+   * les fixtures et harnais antérieurs ne la portent pas.
+   */
+  media_urls?: FeedMedia[];
   location: FeedLocation | null;
   like_count: number;
   comment_count: number;

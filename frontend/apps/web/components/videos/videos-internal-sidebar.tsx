@@ -49,6 +49,7 @@ type VideosInternalSidebarProps = {
     key: K,
     value: VideosPortalSidebarFilters[K],
   ) => void;
+  variant?: "rail" | "sheet";
 };
 
 type FilterSectionProps = {
@@ -130,6 +131,7 @@ export function VideosInternalSidebar({
   items,
   onReset,
   onChange,
+  variant = "rail",
 }: VideosInternalSidebarProps) {
   const [openSection, setOpenSection] = useState<string | null>("category");
   const categories = listVideoPortalCategoryOptions();
@@ -163,19 +165,23 @@ export function VideosInternalSidebar({
         ? "Les plus aimées"
         : "Les plus commentées";
 
+  const Wrapper = variant === "sheet" ? "div" : "aside";
+
   return (
-    <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
-      <div className="hidden space-y-3 lg:block">
-        <h1 className="text-3xl font-bold tracking-tight text-neutral-900">{VIDEOS_PORTAL_TITLE}</h1>
-        <p className="text-sm leading-relaxed text-neutral-600">{VIDEOS_PORTAL_SUBTITLE}</p>
-        <Link
-          href="/videos/new"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-yunicity-primary px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
-        >
-          <Video className="h-4 w-4" aria-hidden />
-          {VIDEOS_PORTAL_PUBLISH_CTA}
-        </Link>
-      </div>
+    <Wrapper className={variant === "sheet" ? "space-y-3" : "space-y-5 lg:sticky lg:top-24 lg:self-start"}>
+      {variant === "rail" ? (
+        <div className="hidden space-y-3 lg:block">
+          <h1 className="text-3xl font-bold tracking-tight text-neutral-900">{VIDEOS_PORTAL_TITLE}</h1>
+          <p className="text-sm leading-relaxed text-neutral-600">{VIDEOS_PORTAL_SUBTITLE}</p>
+          <Link
+            href="/videos/new"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-yunicity-primary px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-yunicity-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary"
+          >
+            <Video className="h-4 w-4" aria-hidden />
+            {VIDEOS_PORTAL_PUBLISH_CTA}
+          </Link>
+        </div>
+      ) : null}
 
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2">
@@ -321,6 +327,6 @@ export function VideosInternalSidebar({
           </FilterSection>
         </div>
       </div>
-    </aside>
+    </Wrapper>
   );
 }

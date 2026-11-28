@@ -69,6 +69,7 @@ export type GoogleEventMapProps = {
   selectedPartnerSlug?: string | null;
   recenterSignal?: number;
   flyToTarget?: LatLon | null;
+  zoomAdjustSignal?: { delta: number; tick: number } | null;
   fullHeight?: boolean;
   hideRecenterButton?: boolean;
 };
@@ -260,6 +261,7 @@ export function GoogleEventMap({
   selectedPartnerSlug = null,
   recenterSignal = 0,
   flyToTarget = null,
+  zoomAdjustSignal = null,
   fullHeight = false,
   hideRecenterButton = false,
 }: GoogleEventMapProps) {
@@ -503,6 +505,15 @@ export function GoogleEventMap({
     if (!flyToTarget) return;
     flyToPoint(flyToTarget.latitude, flyToTarget.longitude, 13);
   }, [flyToTarget, flyToPoint]);
+
+  useEffect(() => {
+    if (!zoomAdjustSignal) return;
+    const map = mapRef.current;
+    if (!map) return;
+    const current = map.getZoom();
+    if (current == null) return;
+    map.setZoom(Math.max(1, Math.min(20, current + zoomAdjustSignal.delta)));
+  }, [zoomAdjustSignal]);
 
   useEffect(() => {
     if (!focusedEventId) return;

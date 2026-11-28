@@ -1,34 +1,14 @@
 "use client";
 
 import type { FeedPost, FeedReportReason } from "@yunicity/types";
-import {
-  FEED_ACTION_SAVED,
-  FEED_EVENT_INTEREST_CTA,
-  formatEventLocation,
-  formatTerritorialLine,
-} from "@yunicity/utils";
+import { FEED_ACTION_SAVED, FEED_EVENT_INTEREST_CTA, formatEventLocation } from "@yunicity/utils";
 import { MapPin } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
 
-import { FeedPostOptionsMenu } from "@/components/feed/feed-post-options-menu";
+import { FeedAuthorHeader } from "@/components/feed/feed-author-header";
+import { FeedPublicationContextualCta } from "@/components/feed/feed-publication-actions";
 import { FeedPublicationMedia } from "@/components/feed/feed-publication-media";
 import { formatFeedPostEventScheduleBadge } from "@/lib/feed/feed-event-badge";
-
-function IconBookmark({ filled }: { filled?: boolean }) {
-  return (
-    <svg
-      className="h-[18px] w-[18px]"
-      viewBox="0 0 24 24"
-      fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      strokeWidth={1.8}
-      aria-hidden
-    >
-      <path d="M6 4h12v16l-6-4-6 4V4z" />
-    </svg>
-  );
-}
 
 export function EventFeedCard({
   post,
@@ -49,10 +29,10 @@ export function EventFeedCard({
   }
 
   const scheduleBadge = formatFeedPostEventScheduleBadge(meta.starts_at);
-  const where =
-    formatTerritorialLine(post.neighborhood_summary, post.city, meta.district) ??
-    formatEventLocation(meta, post.city);
-  const eventHref = `/events/${meta.local_event_id}`;
+  // Le lieu de l'evenement, uniquement s'il est connu : `formatEventLocation`
+  // concatenerait sinon une chaine vide avec la ville, et afficherait un lieu
+  // qui n'existe pas.
+  const lieu = meta.location_name?.trim() ? formatEventLocation(meta, post.city) : null;
   const eventInterested = meta.interested_by_me;
 
   async function handleEventInterest() {
@@ -68,21 +48,22 @@ export function EventFeedCard({
   return (
     <div data-feed-publication-event="" className="feed-publication-event-editorial -mx-5 -mt-5 sm:-mx-6 sm:-mt-6">
       {post.media_url ? (
-        <div className="feed-publication-event-media relative">
+        <div className="feed-publication-event-media">
           <FeedPublicationMedia mediaUrl={post.media_url} label={post.title ?? undefined} />
-          {onReport ? (
-            <div className="absolute right-3 top-3 rounded-full bg-white/90 shadow-sm">
-              <FeedPostOptionsMenu
-                onReport={onReport}
-                currentUserId={currentUserId}
-                authorUserId={post.author.type === "citizen" ? post.author.id : null}
-              />
-            </div>
-          ) : null}
         </div>
       ) : null}
 
       <div className="feed-publication-event-body space-y-3 px-5 py-4 sm:px-6">
+        {/*
+          Qui publie — l'en-tete PARTAGE, pas une copie.
+          Place sous le media pour conserver le visuel pleine largeur, et au-dessus
+          du contenu : le lecteur sait de qui vient la publication avant de la lire.
+          Il porte aussi le menu « Plus d'actions », qui etait auparavant superpose
+          a l'image. Deux instances auraient fait deux menus sur une meme carte, et
+          une carte sans media n'en avait aucun — donc rien a signaler.
+        */}
+        <FeedAuthorHeader post={post} currentUserId={currentUserId} onReport={onReport} />
+
         {scheduleBadge ? (
           <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800">
             {scheduleBadge}
@@ -93,10 +74,18 @@ export function EventFeedCard({
           <h3 className="text-lg font-bold leading-snug text-neutral-900">{post.title}</h3>
         ) : null}
 
-        {where ? (
+        {/*
+          LIEU DE L'EVENEMENT, pas contexte de publication.
+          L'en-tete porte desormais « Quartier, Ville • il y a … » : reprendre ici
+          `formatTerritorialLine` aurait affiche le meme quartier deux fois, a trois
+          lignes d'intervalle. Cette ligne dit donc ou l'evenement a lieu — une
+          information que l'en-tete ne porte pas. Absente si le lieu est inconnu :
+          on n'invente pas une adresse.
+        */}
+        {lieu ? (
           <p className="flex items-center gap-1.5 text-sm text-neutral-500">
             <MapPin className="h-4 w-4 shrink-0" aria-hidden />
-            <span className="truncate">{where}</span>
+            <span className="truncate">{lieu}</span>
           </p>
         ) : null}
 
@@ -119,15 +108,21 @@ export function EventFeedCard({
           >
             {eventInterested ? FEED_ACTION_SAVED : FEED_EVENT_INTEREST_CTA}
           </button>
-          <Link
-            href={eventHref}
-            aria-label="Enregistrer l'événement"
-            data-feed-publication-action="event-bookmark"
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-neutral-200 text-neutral-600 transition hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary focus-visible:ring-offset-2"
-          >
-            <IconBookmark filled={eventInterested} />
-          </Link>
         </div>
+
+        {/*
+          Destinations — la zone PARTAGEE, conditionnee a une donnee reelle :
+          « Voir l'evenement », le quartier, la carte. Chacune disparait si sa
+          donnee manque, donc aucune destination fictive.
+
+          Elle remplace un lien `event-bookmark` qui portait
+          `aria-label="Enregistrer l'evenement"` et une icone marque-page, mais
+          NAVIGUAIT vers `/events/…` : un libelle qui promettait une action que le
+          controle n'executait pas, vers la meme page que « Voir l'evenement ».
+          L'intention « enregistrer » est deja portee par le bouton d'interet, qui
+          l'execute vraiment et expose `aria-pressed`.
+        */}
+        <FeedPublicationContextualCta post={post} />
       </div>
     </div>
   );

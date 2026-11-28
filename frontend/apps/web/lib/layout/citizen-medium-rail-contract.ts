@@ -1,4 +1,7 @@
-import { WEB_CITIZEN_NOTIFICATIONS_NAV, type WebNavItem } from "@/lib/layout/web-layout-config";
+import {
+  WEB_CITIZEN_NOTIFICATIONS_NAV,
+  type WebNavItem,
+} from "@/lib/layout/web-layout-config";
 
 /**
  * Contrat du rail citoyen medium (C3-FEED-M2.4).
@@ -21,7 +24,7 @@ export const CITIZEN_MEDIUM_RAIL_DESTINATIONS: readonly (WebNavItem & {
 ] as const;
 
 /**
- * Identité stable de chacun des huit contrôles du rail (C3-CITIZEN-MEDIUM-SHELL-R1D).
+ * Identité stable de chacun des neuf contrôles du rail (C3-CITIZEN-MEDIUM-SHELL-R1D).
  *
  * Le composant pose ces identifiants en `data-citizen-medium-rail-control`, et
  * les preuves E2E les lisent d'ici. Motif : le défaut `/videos` — libellé
@@ -29,8 +32,15 @@ export const CITIZEN_MEDIUM_RAIL_DESTINATIONS: readonly (WebNavItem & {
  * fondée sur le texte. Une identité portée par l'élément interactif réel rend
  * ce genre d'amputation impossible à manquer.
  */
+/**
+ * Libellé COURT de l'accès Explorer dans le rail. Le nom accessible du bouton
+ * est distinct — voir le commentaire du contrôle `explorer` ci-dessous.
+ */
+export const CITIZEN_MEDIUM_RAIL_EXPLORER_LABEL = "Explorer";
+
 export type CitizenMediumRailControlId =
   | CitizenMediumRailDestination
+  | "explorer"
   | "menu"
   | "create"
   | "notifications"
@@ -41,6 +51,29 @@ export const CITIZEN_MEDIUM_RAIL_CONTROLS: readonly {
   label: string;
 }[] = [
   ...CITIZEN_MEDIUM_RAIL_DESTINATIONS.map(({ id, label }) => ({ id, label })),
+  /*
+   * Accès Explorer du palier medium.
+   *
+   * Il manquait : la colonne latérale masque son propre déclencheur dès que le
+   * rail est actif — « la recherche y vit dans le header de contenu (feed
+   * medium) », dit `web-sidebar.tsx` — mais ce header n'existe QUE sur le fil.
+   * Sur toute autre route medium, `/neighborhoods` par exemple, plus aucun accès
+   * n'était offert, ni au visiteur ni au connecté.
+   *
+   * ── Deux libellés, et c'est voulu ──────────────────────────────────────────
+   * Ce contrat annonçait `WEB_CITIZEN_SEARCH_ACCESS.label` (« Explorer Reims »)
+   * en affirmant qu'aucune seconde source ne pouvait diverger. Le rail rendait
+   * pourtant « Explorer », codé en dur : la divergence existait, invisible,
+   * parce que les preuves E2E comparaient les IDENTITÉS et non les libellés.
+   *
+   * Les deux valeurs sont légitimes, mais ce ne sont pas les mêmes choses : le
+   * rail est une bande étroite et affiche un libellé COURT, tandis que le NOM
+   * ACCESSIBLE du bouton reste `WEB_CITIZEN_SEARCH_ACCESS.label` — porté par
+   * `ExplorerTriggerButton` et verrouillé par les specs 10 et 12. Ce champ
+   * décrit le libellé du rail ; le composant le consomme d'ici, et il n'y a
+   * donc plus qu'une source pour chacun des deux.
+   */
+  { id: "explorer", label: CITIZEN_MEDIUM_RAIL_EXPLORER_LABEL },
   { id: "menu", label: "Menu" },
   { id: "create", label: "Créer" },
   { id: "notifications", label: WEB_CITIZEN_NOTIFICATIONS_NAV.label },
@@ -48,7 +81,7 @@ export const CITIZEN_MEDIUM_RAIL_CONTROLS: readonly {
 ];
 
 /**
- * Ordre visuel complet des huit contrôles du rail, de haut en bas — DÉRIVÉ des
+ * Ordre visuel complet des neuf contrôles du rail, de haut en bas — DÉRIVÉ des
  * identités ci-dessus. Recopier ces libellés créerait une seconde source qui
  * pourrait diverger en silence.
  */

@@ -47,12 +47,24 @@ export interface AdminCockpitTopStampPartner {
   stamps_count: number;
 }
 
+/** État de l'agenda territorial dérivé de `events_upcoming` (RF-03B). */
+export type AdminCockpitAgendaHealthStatus = "healthy" | "warning" | "critical";
+
+export interface AdminCockpitAgendaHealth {
+  status: AdminCockpitAgendaHealthStatus;
+  upcoming_count: number;
+  threshold: number;
+  label: string;
+  is_alerting: boolean;
+}
+
 export interface AdminCockpitSignals {
   offers_published: number;
   stamps_today: number;
   redemptions_today: number;
   passports_last_7_days: number;
   events_upcoming: number;
+  agenda_health: AdminCockpitAgendaHealth;
   top_stamp_partner: AdminCockpitTopStampPartner;
 }
 

@@ -6,16 +6,14 @@ import { Eye, MapPin, MoreVertical, Send } from "lucide-react";
 import { useEffect } from "react";
 
 import { useYunicityApi } from "@/hooks/use-yunicity-api";
+import { AvatarImage } from "@/components/avatar-image";
+import { AuthorizedStoryMedia } from "@/components/stories/authorized-story-media";
 
 type StoryCardProps = {
   story: StoryItem;
   city: string;
   isHighlighted?: boolean;
 };
-
-function isStoryVideoMedia(mediaUrl: string): boolean {
-  return /\.mp4(?:[?#]|$)/i.test(mediaUrl);
-}
 
 export function StoryCard({ story, city, isHighlighted = false }: StoryCardProps) {
   const api = useYunicityApi();
@@ -34,31 +32,19 @@ export function StoryCard({ story, city, isHighlighted = false }: StoryCardProps
         isHighlighted ? " ring-4 ring-yunicity-primary ring-offset-2 ring-offset-white" : ""
       }`}
     >
-      {isStoryVideoMedia(story.media_url) ? (
-        <video
-          src={story.media_url}
-          className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-          muted
-          playsInline
-          preload="metadata"
-          aria-label=""
-        />
-      ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={story.media_url}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-        />
-      )}
+      <AuthorizedStoryMedia
+        mediaUrl={story.media_url}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+        controls
+      />
       <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/75" />
 
       <header className="relative z-10 flex items-start justify-between gap-2 p-3">
         <div className="flex min-w-0 items-center gap-2">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-xs font-bold text-white ring-2 ring-white/30">
             {story.author.logo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <AvatarImage
                 src={story.author.logo_url}
                 alt=""
                 className="h-full w-full rounded-full object-cover"

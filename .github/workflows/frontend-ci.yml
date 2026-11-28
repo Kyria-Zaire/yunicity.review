@@ -28,17 +28,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.9
-
+      # Pas de `cache: pnpm` : setup-node l'evalue (`pnpm store path`) pendant sa propre
+      # etape, avant que Corepack ait installe pnpm a l'etape suivante.
       - name: Setup Node.js LTS
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
+          node-version: "24.22.3"
+
+      # pnpm vient de Corepack (fourni avec ce Node), comme dans Dockerfile.web : la version
+      # ET l'empreinte `+sha512` du `packageManager` de frontend/package.json (repertoire de
+      # travail par defaut) sont verifiees au telechargement ; une empreinte fausse fait
+      # echouer l'etape. Les etapes suivantes doivent utiliser ce pnpm-la, et aucun autre.
+      - name: Setup pnpm (Corepack)
+        env:
+          COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+        run: |
+          corepack --version
+          corepack enable
+          pnpm --version
+          expected="$(node -p "require('./package.json').packageManager.split('+')[0].split('@')[1]")"
+          test "$(pnpm --version)" = "$expected"
+          test "$(command -v pnpm)" = "$(dirname "$(command -v node)")/pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

@@ -42,6 +42,10 @@ class Post(TimestampMixin, Base):
         Index("ix_posts_author", "author_type", "author_id"),
         Index("ix_posts_is_active_created_at", "is_active", "created_at"),
         Index("ix_posts_tribe_created_at", "tribe_id", "created_at"),
+        # Idempotency of post creation (FEED-NEW-UX-01). Scoped to the author, never
+        # global: one account's key must not collide with another's. PostgreSQL treats
+        # each NULL as distinct, so posts without a key stay unconstrained.
+        Index("uq_posts_author_client_request", "author_id", "client_request_id", unique=True),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
@@ -155,6 +159,11 @@ class Post(TimestampMixin, Base):
     view_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default="0"
     )
+    # Client idempotency key and the server-computed fingerprint of the content it was
+    # sent with (FEED-NEW-UX-01). The fingerprint is what distinguishes a harmless
+    # replay from the same key reused for a DIFFERENT post.
+    client_request_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
+    client_request_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
     search_vector: Mapped[str] = mapped_column(
         TSVECTOR,
         nullable=False,

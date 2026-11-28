@@ -10,9 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
 from app.core.flash_offer import build_flash_snapshot
-from app.core.organization_constants import VerificationStatus
 from app.core.passport_constants import (
-    OfferRedemptionStatus,
     PassportStatus,
     PassportTierCode,
 )
@@ -23,7 +21,6 @@ from app.models.local_stamp import CitizenLocalStamp
 from app.models.passport import (
     PartnerOffer,
     Passport,
-    PassportOfferRedemption,
     PassportStamp,
     PassportTier,
 )
@@ -45,14 +42,9 @@ from app.schemas.passport import (
     PassportTierListResponse,
     PassportTierResponse,
 )
-from app.schemas.redemption import RedemptionResponse
 from app.schemas.scan import PassportQrResponse
 from app.services.local_stamp_service import LocalStampService
-from app.services.passport_challenge_hooks import update_challenges_for_partner_redemption
-from app.services.passport_level_hooks import evaluate_passport_level_after_activity
 from app.services.passport_level_service import PassportLevelService
-from app.services.passport_reputation_hooks import award_reputation_for_partner_redemption
-from app.services.yuni_wallet_hooks import award_yuni_for_partner_redemption
 
 
 class PassportService:
@@ -196,102 +188,6 @@ class PassportService:
                 "remaining_minutes": flash.remaining_minutes,
             }
         )
-
-    async def redeem_offer(self, user: User, offer_id: uuid.UUID) -> RedemptionResponse:
-        passport = await self._require_active_passport(user.id)
-        now = datetime.now(UTC)
-        offer = await self._offers.get_visible_offer_by_id(offer_id, now=now)
-        if offer is None:
-            raise AppError(
-                status_code=404,
-                code="OFFER_NOT_FOUND",
-                detail="Offre introuvable ou non disponible.",
-            )
-
-        tier_code = passport.tier.code if passport.tier else PassportTierCode.BASIC.value
-        if not tier_can_access(offer.tier_code_required, tier_code):
-            raise AppError(
-                status_code=403,
-                code="OFFER_TIER_REQUIRED",
-                detail="Votre tier Passport ne permet pas cette offre.",
-            )
-
-        if offer.organization.verification_status != VerificationStatus.VERIFIED.value:
-            raise AppError(
-                status_code=403,
-                code="OFFER_NOT_VERIFIED",
-                detail="Cette offre provient d'un partenaire non vérifié.",
-            )
-
-        existing = await self._passports.get_redemption(
-            passport_id=passport.id,
-            partner_offer_id=offer.id,
-        )
-        if existing is not None:
-            raise AppError(
-                status_code=409,
-                code="REDEMPTION_ALREADY_EXISTS",
-                detail="Vous avez déjà utilisé cette offre.",
-            )
-
-        if offer.max_redemptions_total is not None:
-            used = await self._offers.count_completed_redemptions(offer.id)
-            if used >= offer.max_redemptions_total:
-                raise AppError(
-                    status_code=410,
-                    code="OFFER_EXHAUSTED",
-                    detail="Cette offre n'est plus disponible.",
-                )
-
-        redemption = PassportOfferRedemption(
-            passport_id=passport.id,
-            partner_offer_id=offer.id,
-            status=OfferRedemptionStatus.COMPLETED,
-            redeemed_at=now,
-        )
-        org = offer.organization
-        if org is None:
-            raise AppError(
-                status_code=500,
-                code="OFFER_ORGANIZATION_MISSING",
-                detail="Organisation partenaire introuvable.",
-            )
-        try:
-            created = await self._passports.create_redemption(redemption)
-            await self._passports.increment_redemptions_count(passport)
-            new_local = await LocalStampService(self._session).evaluate_after_redemption(
-                passport=passport,
-                offer=offer,
-                organization=org,
-                redeemed_at=now,
-                via_partner_scan=False,
-                send_notifications=False,
-            )
-            await self._session.commit()
-            await self._session.refresh(created)
-            for stamp in new_local:
-                await LocalStampService(self._session).notify_stamp_earned(passport.user_id, stamp)
-        except IntegrityError as exc:
-            await self._session.rollback()
-            raise AppError(
-                status_code=409,
-                code="REDEMPTION_ALREADY_EXISTS",
-                detail="Vous avez déjà utilisé cette offre.",
-            ) from exc
-
-        await evaluate_passport_level_after_activity(self._session, passport.id)
-        await award_reputation_for_partner_redemption(
-            self._session,
-            redemption_id=created.id,
-            user_id=passport.user_id,
-        )
-        await award_yuni_for_partner_redemption(
-            self._session,
-            redemption_id=created.id,
-            user_id=passport.user_id,
-        )
-        await update_challenges_for_partner_redemption(self._session, created)
-        return RedemptionResponse.model_validate(created)
 
     async def _require_active_passport(self, user_id: uuid.UUID) -> Passport:
         passport = await self._passports.get_active_for_user(user_id)

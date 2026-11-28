@@ -90,8 +90,7 @@ export const SORTIR_FEATURED_LINK_TRIBES = "Tribus";
 export const SORTIR_FEATURED_LINK_MAP = "Carte";
 
 /** Copy mobile Sortir (MOBILE-SORTIR-01). */
-export const SORTIR_MOBILE_SEARCH_PLACEHOLDER =
-  "Rechercher un événement, un lieu, une soirée…";
+export const SORTIR_MOBILE_SEARCH_PLACEHOLDER = "Rechercher une sortie, un lieu...";
 export const SORTIR_MOBILE_FILTERS_ARIA = "Filtres Sortir";
 export const SORTIR_MOBILE_CATEGORY_ALL = "Tous";
 export const SORTIR_MOBILE_CATEGORY_CONCERTS = "Concerts";
@@ -105,3 +104,72 @@ export const SORTIR_MOBILE_POPULAR_PLACES_TITLE = "Lieux populaires";
 export const SORTIR_MOBILE_VIEW_ALL = "Voir tout";
 export const SORTIR_MOBILE_BOOKMARK_ARIA = "Enregistrer";
 export const SORTIR_MOBILE_BOOKMARK_SOON = "Enregistrer — bientôt disponible";
+export const SORTIR_MOBILE_EDITORIAL_BODY = "Des idées locales selon vos envies.";
+export const SORTIR_MOBILE_AGENDA_PILL = (count: number): string => `Mon agenda · ${count}`;
+export const SORTIR_MOBILE_FEATURED_MAP = "Sur la carte";
+
+/** Copy desktop Sortir — shell 3 colonnes (DESKTOP-SORTIR-01). */
+export const SORTIR_DESKTOP_PAGE_TITLE = "Sortir à Reims";
+export const SORTIR_DESKTOP_EDITORIAL_KICKER = (city: string, moment: string): string =>
+  `${city.toUpperCase()} · ${moment}`;
+export const SORTIR_DESKTOP_EDITORIAL_TITLE = (city: string): string => `Que faire à ${city} ?`;
+export const SORTIR_DESKTOP_EDITORIAL_BODY =
+  "Des idées locales choisies selon le moment, vos envies et votre quartier.";
+export const SORTIR_DESKTOP_SEARCH_PLACEHOLDER =
+  "Rechercher une sortie, un lieu, une ambiance…";
+export const SORTIR_DESKTOP_WHEN_TITLE = "Quand ?";
+export const SORTIR_DESKTOP_WHEN_TODAY = "Aujourd'hui";
+export const SORTIR_DESKTOP_WHEN_TOMORROW = "Demain";
+export const SORTIR_DESKTOP_WHEN_WEEKEND = "Ce week-end";
+export const SORTIR_DESKTOP_WHEN_PICK = "Choisir une date";
+export const SORTIR_DESKTOP_CATEGORIES_TITLE = "Catégories";
+export const SORTIR_DESKTOP_CATEGORY_ALL = "Tout";
+export const SORTIR_DESKTOP_CATEGORY_CULTURE = "Culture";
+export const SORTIR_DESKTOP_CATEGORY_MUSIC = "Musique";
+export const SORTIR_DESKTOP_CATEGORY_FOOD = "Food";
+export const SORTIR_DESKTOP_CATEGORY_SPORT = "Sport";
+export const SORTIR_DESKTOP_CATEGORY_FAMILY = "Famille";
+export const SORTIR_DESKTOP_CATEGORY_LOCAL = "Vie locale";
+export const SORTIR_DESKTOP_FILTERS_TITLE = "Filtres";
+export const SORTIR_DESKTOP_FILTER_FREE = "Gratuit";
+export const SORTIR_DESKTOP_FILTER_NEARBY = "À moins de 3 km";
+export const SORTIR_DESKTOP_FILTER_ACCESSIBLE = "Accessible";
+export const SORTIR_DESKTOP_FILTER_INDOOR = "En intérieur";
+export const SORTIR_DESKTOP_MORE_FILTERS = "Plus de filtres";
+export const SORTIR_DESKTOP_MOOD_TONIGHT = "Ce soir";
+export const SORTIR_DESKTOP_MOOD_FRIENDS = "Entre amis";
+export const SORTIR_DESKTOP_MOOD_FAMILY = "En famille";
+export const SORTIR_DESKTOP_MOOD_BUDGET = "Petit budget";
+export const SORTIR_DESKTOP_MOOD_CALM = "Au calme";
+export const SORTIR_DESKTOP_MOOD_DANCE = "Danser";
+export const SORTIR_DESKTOP_FEATURED_BADGE = "À LA UNE";
+export const SORTIR_DESKTOP_FEATURED_CTA = "Voir l'événement";
+export const SORTIR_DESKTOP_FEATURED_SAVE = "Enregistrer";
+export const SORTIR_DESKTOP_FEATURED_MAP = "Voir sur la carte";
+export const SORTIR_DESKTOP_TONIGHT_TITLE = "Ce soir à Reims";
+export const SORTIR_DESKTOP_TONIGHT_VIEW_ALL = "Voir tout →";
+export const SORTIR_DESKTOP_CARD_DETAIL = "Voir le détail";
+export const SORTIR_DESKTOP_AGENDA_TITLE = "Votre agenda";
+export const SORTIR_DESKTOP_AGENDA_COUNT = (count: number): string =>
+  count === 0
+    ? "Aucune sortie enregistrée"
+    : count === 1
+      ? "1 sortie enregistrée"
+      : `${count} sorties enregistrées`;
+export const SORTIR_DESKTOP_AGENDA_CTA = "Voir mon agenda";
+export const SORTIR_DESKTOP_SOON_TITLE = "Bientôt";
+export const SORTIR_DESKTOP_SOON_CTA = "Voir";
+export const SORTIR_DESKTOP_EXPLORE_TITLE = "Explorer autrement";
+export const SORTIR_DESKTOP_EXPLORE_MAP = "Autour de moi";
+export const SORTIR_DESKTOP_EXPLORE_MAP_BODY = "Voir les sorties autour de vous";
+export const SORTIR_DESKTOP_EXPLORE_NEIGHBORHOOD = "Par quartier";
+export const SORTIR_DESKTOP_EXPLORE_NEIGHBORHOOD_BODY = "Découvrir les ambiances locales";
+export const SORTIR_DESKTOP_EXPLORE_PASSPORT = "Offres Passport";
+export const SORTIR_DESKTOP_EXPLORE_PASSPORT_BODY = "Sorties, avantages et bons plans";
+export const SORTIR_DESKTOP_WEEKEND_TITLE = "Ce week-end";
+export const SORTIR_DESKTOP_WEEKEND_CTA = "Voir l'événement";
+export const SORTIR_DESKTOP_SAVE_SOON = "Enregistrer — bientôt disponible";
+export const SORTIR_CARD_BADGE_MUSIC = "Musique";
+export const SORTIR_CARD_BADGE_FOOD = "Food";
+export const SORTIR_CARD_BADGE_LOCAL = "Vie locale";
+export const SORTIR_CARD_BADGE_CULTURE = "Culture";

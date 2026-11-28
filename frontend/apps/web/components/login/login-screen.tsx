@@ -1,11 +1,8 @@
 "use client";
 
-import { LoginFooter } from "@/components/login/login-footer";
-import { LoginFormPanel } from "@/components/login/login-form-panel";
-import { LoginHelpCard } from "@/components/login/login-help-card";
-import { LoginMarketingPanel } from "@/components/login/login-marketing-panel";
-import { LoginMobileView } from "@/components/login/mobile";
-import { LoginSecurityBanner } from "@/components/login/login-security-banner";
+import { LoginDesktopScreen } from "@/components/login/desktop";
+import { LoginMediumScreen } from "@/components/login/medium";
+import { LoginMobileScreen } from "@/components/login/mobile";
 import { useAuth } from "@/lib/auth/auth-provider";
 import { buildLoginApiPayload, resolveAuthReturnPath, validateLoginForm } from "@yunicity/utils";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -62,37 +59,9 @@ function LoginScreenInner() {
 
   return (
     <main>
-      <div className="web-desktop-auth-only min-h-dvh bg-[#F4F5F7]">
-        <div className="mx-auto w-full max-w-6xl px-4 py-8 lg:px-6 lg:py-12">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_16rem]">
-            <div className="min-w-0">
-              <div className="overflow-hidden rounded-2xl border border-neutral-200/90 bg-white shadow-sm">
-                <div className="grid lg:grid-cols-2">
-                  <LoginFormPanel {...formProps} />
-                  <LoginMarketingPanel />
-                </div>
-              </div>
-
-              <LoginSecurityBanner />
-              <LoginFooter />
-            </div>
-
-            <div className="hidden lg:block">
-              <div className="sticky top-8">
-                <LoginHelpCard />
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8 lg:hidden">
-            <LoginHelpCard />
-          </div>
-        </div>
-      </div>
-
-      <div className="web-mobile-auth-only">
-        <LoginMobileView {...formProps} />
-      </div>
+      <LoginMobileScreen {...formProps} />
+      <LoginMediumScreen {...formProps} />
+      <LoginDesktopScreen {...formProps} />
     </main>
   );
 }

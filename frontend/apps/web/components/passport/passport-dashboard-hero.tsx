@@ -16,15 +16,24 @@ const HERO_IMAGE_URL =
 type PassportDashboardHeroProps = {
   levelView: PassportLevelView;
   displayName: string;
+  /** Points de réputation tels que l'API les renvoie — indépendants de toute échelle de niveau. */
+  reputationPoints: number;
+  /** `progression.points_to_next` de l'API, ou `null`. */
+  pointsToNext: number | null;
   onScrollProgression: () => void;
 };
 
 export function PassportDashboardHero({
   levelView,
   displayName,
+  reputationPoints,
+  pointsToNext,
   onScrollProgression,
 }: PassportDashboardHeroProps) {
-  const nextLabel = levelView.nextLevelLabel ?? levelView.nextLevel?.label ?? null;
+  // PASSPORT-LEVEL-SCALE-01 : composant orphelin (non monté). Le niveau suit le tier ;
+  // l'échelle à cinq paliers (description de palier, barre) est retirée. Les points de
+  // réputation et « N pts restants », données API indépendantes de l'échelle, sont conservés.
+  const { currentLabel, nextLabel } = levelView;
 
   return (
     <section
@@ -46,26 +55,15 @@ export function PassportDashboardHero({
               {PASSPORT_HERO_LEVEL_LABEL}
             </p>
           </div>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">{levelView.level.label}</h1>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">{currentLabel}</h1>
           <p className="mt-1 text-sm text-neutral-300">{displayName}</p>
-          <p className="mt-2 max-w-lg text-sm leading-relaxed text-neutral-400">{levelView.level.description}</p>
 
           <div className="mt-6 max-w-md">
             <div className="mb-2 flex items-center justify-between text-xs text-neutral-400">
-              <span>{formatPassportPoints(levelView.points)}</span>
+              <span>{formatPassportPoints(reputationPoints)}</span>
               {nextLabel ? (
-                <span>
-                  {levelView.pointsToNext != null
-                    ? `${levelView.pointsToNext} pts restants`
-                    : PASSPORT_HERO_NEXT_PREFIX}
-                </span>
+                <span>{pointsToNext != null ? `${pointsToNext} pts restants` : PASSPORT_HERO_NEXT_PREFIX}</span>
               ) : null}
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-white/15">
-              <div
-                className="h-full rounded-full bg-yunicity-primary transition-[width]"
-                style={{ width: `${levelView.progressPercent}%` }}
-              />
             </div>
             {nextLabel ? (
               <button
@@ -84,11 +82,8 @@ export function PassportDashboardHero({
           <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
             {PASSPORT_HERO_POINTS_TITLE}
           </p>
-          <p className="mt-2 text-4xl font-bold tabular-nums">{formatPassportPoints(levelView.points)}</p>
+          <p className="mt-2 text-4xl font-bold tabular-nums">{formatPassportPoints(reputationPoints)}</p>
           <p className="mt-3 text-xs leading-relaxed text-neutral-400">{PASSPORT_HERO_POINTS_HINT}</p>
-          <p className="mt-4 text-[10px] uppercase tracking-wide text-neutral-500">
-            Palier API · {levelView.backendTierLabel}
-          </p>
         </div>
       </div>
     </section>

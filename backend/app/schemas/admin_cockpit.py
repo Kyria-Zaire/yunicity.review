@@ -56,6 +56,20 @@ class AdminCockpitTopStampPartner(BaseModel):
     stamps_count: int = Field(ge=0)
 
 
+class AdminCockpitAgendaHealth(BaseModel):
+    """Etat de l'agenda territorial derive de `events_upcoming` (RF-03B).
+
+    Derive, jamais compte a part : le seuil et les libelles viennent de
+    `app.core.territory_agenda_health`, source unique.
+    """
+
+    status: str
+    upcoming_count: int = Field(ge=0)
+    threshold: int = Field(ge=1)
+    label: str
+    is_alerting: bool
+
+
 class AdminCockpitSignalsMetrics(BaseModel):
     """Derived cockpit signals — real aggregates for dashboard hints (ADMIN-01B+)."""
 
@@ -64,6 +78,7 @@ class AdminCockpitSignalsMetrics(BaseModel):
     redemptions_today: int = Field(ge=0)
     passports_last_7_days: int = Field(ge=0)
     events_upcoming: int = Field(ge=0)
+    agenda_health: AdminCockpitAgendaHealth
     top_stamp_partner: AdminCockpitTopStampPartner
 
 

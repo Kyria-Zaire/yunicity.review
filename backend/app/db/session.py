@@ -15,6 +15,25 @@ from app.db.base import Base
 
 logger = logging.getLogger(__name__)
 
+# SQLAlchemy logs statements at INFO and, when its logger is at DEBUG, every result
+# row at DEBUG. Rows carry tokens and PII: they must never be logged, whatever the
+# configured level (APP-DEBUG-SQL-ECHO-TOKENS-01).
+_SQLALCHEMY_ENGINE_LOGGER = "sqlalchemy.engine.Engine"
+
+
+class _DropAllDebugRecords(logging.Filter):
+    """Drop EVERY DEBUG record of the logger it is attached to.
+
+    On ``sqlalchemy.engine.Engine`` this removes result rows and column names, and
+    any other DEBUG message SQLAlchemy may emit there. INFO and above pass through.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.levelno > logging.DEBUG
+
+
+_ENGINE_DEBUG_FILTER = _DropAllDebugRecords()
+
 _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None
 
@@ -30,7 +49,14 @@ def init_db(settings: Settings | None = None) -> None:
         settings.database_url,
         pool_pre_ping=True,
         echo=settings.debug,
+        # Bound values carry tokens and PII: keep them out of the SQL echo and out of
+        # the text of SQLAlchemy errors, DEBUG or not. Does NOT cover values quoted by
+        # the Postgres server or by asyncpg in their own error messages.
+        hide_parameters=True,
     )
+    engine_logger = logging.getLogger(_SQLALCHEMY_ENGINE_LOGGER)
+    if _ENGINE_DEBUG_FILTER not in engine_logger.filters:
+        engine_logger.addFilter(_ENGINE_DEBUG_FILTER)
     _session_factory = async_sessionmaker(
         bind=_engine,
         class_=AsyncSession,

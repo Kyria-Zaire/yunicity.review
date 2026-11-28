@@ -19,6 +19,7 @@ import {
   type PassportDerivedBadge,
   type PassportLevelView,
 } from "./passport-dashboard";
+import { PASSPORT_LEVEL_UNAVAILABLE_LABEL } from "./passport-level-labels";
 import { neighborhoodHref } from "./neighborhood-labels";
 import {
   PROFILE_PORTAL_ACTIVITY_BADGE,
@@ -146,6 +147,66 @@ const MS_PER_MINUTE = 60_000;
 const MS_PER_HOUR = 3_600_000;
 const MS_PER_DAY = 86_400_000;
 
+const TECHNICAL_FEED_TEXT =
+  /\d{3,4}\s*[x×]\s*\d{3,4}|\b(?:r\d+[a-z]?|qa|test|sample|fixture)[\s_-]|^\d{10,}$/i;
+
+/** Exclut corps/titres de posts QA ou métadonnées techniques (dimensions, ids). */
+export function looksLikeTechnicalFeedText(value: string | null | undefined): boolean {
+  const text = value?.trim() ?? "";
+  if (!text || text.length < 4) return true;
+  if (TECHNICAL_FEED_TEXT.test(text)) return true;
+  if (/^(fil|reel|video|photo|media|portrait|landscape)\b/i.test(text) && text.length < 96) {
+    return true;
+  }
+  if (!/\s/.test(text) && /[_-]/.test(text) && text.length > 24) return true;
+  return false;
+}
+
+function truncateActivityText(value: string, maxLength = 120): string {
+  const text = value.trim();
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+/** Libellé lisible pour une publication citoyenne dans la timeline profil. */
+export function resolveProfileActivityPostDescription(post: FeedPost): string {
+  const body = post.body?.trim() ?? "";
+  const title = post.title?.trim() ?? "";
+
+  if (body && !looksLikeTechnicalFeedText(body)) {
+    return truncateActivityText(body);
+  }
+  if (title && !looksLikeTechnicalFeedText(title)) {
+    return truncateActivityText(title);
+  }
+  if (post.neighborhood_summary?.display_name?.trim()) {
+    return post.neighborhood_summary.display_name.trim();
+  }
+  if (post.media_url?.trim()) {
+    if (/\.(mp4|webm|mov|m4v)(\?|$)/i.test(post.media_url)) {
+      return "Vidéo partagée sur le fil local";
+    }
+    return "Photo partagée sur le fil local";
+  }
+  return "Publication sur le fil local.";
+}
+
+const MAX_TIMELINE_POSTS = 2;
+
+function finalizeProfileActivityTimeline(
+  items: ProfileTimelineItem[],
+  maxItems: number,
+): ProfileTimelineItem[] {
+  const posts = items.filter((item) => item.kind === "post");
+  const others = items.filter((item) => item.kind !== "post");
+  const capped = [...others, ...posts.slice(0, MAX_TIMELINE_POSTS)];
+
+  return capped
+    .filter((item) => item.timestampLabel && Number.isFinite(Date.parse(item.sortAt)))
+    .sort((a, b) => Date.parse(b.sortAt) - Date.parse(a.sortAt))
+    .slice(0, maxItems);
+}
+
 function countUniqueNeighborhoodSlugs(stamps: PassportStamp[]): number {
   const slugs = new Set<string>();
   for (const stamp of stamps) {
@@ -259,7 +320,7 @@ export function buildProfileActivityItems(input: {
         id: `post-${post.id}`,
         kind: "post",
         title: PROFILE_PORTAL_ACTIVITY_POST,
-        description: post.body?.trim() || post.title?.trim() || "Publication sur le fil local.",
+        description: resolveProfileActivityPostDescription(post),
         timestampLabel: formatProfileActivityTimestamp(post.created_at, now),
         imageUrl: post.media_url,
         href: "/feed",
@@ -314,7 +375,7 @@ export function buildProfileActivityTimeline(input: {
       id: `post-${post.id}`,
       kind: "post",
       title: PROFILE_PORTAL_ACTIVITY_POST,
-      description: post.body?.trim() || post.title?.trim() || "Publication sur le fil local.",
+      description: resolveProfileActivityPostDescription(post),
       timestampLabel: formatProfileActivityTimestamp(post.created_at, now),
       imageUrl: post.media_url,
       href: "/feed",
@@ -377,10 +438,7 @@ export function buildProfileActivityTimeline(input: {
     }
   }
 
-  return items
-    .filter((item) => item.timestampLabel && Number.isFinite(Date.parse(item.sortAt)))
-    .sort((a, b) => Date.parse(b.sortAt) - Date.parse(a.sortAt))
-    .slice(0, maxItems);
+  return finalizeProfileActivityTimeline(items, maxItems);
 }
 
 export function buildProfileLocalJourneyItems(input: {
@@ -518,7 +576,7 @@ export function formatProfileImpactLabel(
   if (percent <= 0) {
     return {
       primary: PROFILE_PORTAL_IMPACT_START,
-      secondary: levelView?.level.label ?? "Explorateur local",
+      secondary: levelView?.currentLabel ?? PASSPORT_LEVEL_UNAVAILABLE_LABEL,
       showPercent: false,
       percent: 0,
     };
@@ -526,7 +584,7 @@ export function formatProfileImpactLabel(
   if (percent >= 100) {
     return {
       primary: PROFILE_PORTAL_IMPACT_ADVANCING,
-      secondary: levelView?.level.label ?? "Palier actuel",
+      secondary: levelView?.currentLabel ?? PASSPORT_LEVEL_UNAVAILABLE_LABEL,
       showPercent: false,
       percent,
     };
@@ -647,18 +705,13 @@ export function buildProfileTribeCards(input: {
   });
 }
 
+/** Le tier Passport (PASSPORT-LEVEL-SCALE-01) — « Explorateur local » est un badge, pas un niveau. */
 export function resolveProfilePortalLevelTitle(levelView: PassportLevelView | null): string {
-  if (!levelView) return "Explorateur local";
-  return levelView.level.label;
+  return levelView?.currentLabel ?? PASSPORT_LEVEL_UNAVAILABLE_LABEL;
 }
 
-export function resolveProfilePortalHeroImage(profile: ProfileMe): string | null {
+export function resolveProfilePortalHeroImage(profile: { banner_url: string | null }): string | null {
   return profile.banner_url?.trim() || null;
-}
-
-export function buildProfilePortalImpactPercent(levelView: PassportLevelView | null): number {
-  if (!levelView) return 0;
-  return Math.min(100, Math.max(0, levelView.progressPercent));
 }
 
 export function buildProfilePortalBadgeItems(input: {

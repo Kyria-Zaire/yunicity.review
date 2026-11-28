@@ -7,7 +7,10 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
-    "sqlalchemy[asyncio]>=2.0.36",
+    # Borne haute : SQLAlchemy 2.1 retire le tuple du generique (`Select[T]` au
+    # lieu de `Select[tuple[T]]`), ce qui invalide les annotations 2.0 de neuf
+    # repositories. Adopter 2.1 est une migration a part, pas une resolution pip.
+    "sqlalchemy[asyncio]>=2.0.36,<2.1",
     "asyncpg>=0.30.0",
     "alembic>=1.14.0",
     "redis>=5.2.0",
@@ -22,6 +25,12 @@ dependencies = [
     "boto3>=1.35.0",
     "arq>=0.26.0",
     "sentry-sdk[fastapi]>=2.0.0",
+    # Variantes d'affichage des photos de publication (MEDIA-MULTI-PHOTO-01).
+    # Seule dependance d'IMAGE de l'API : la route servait jusqu'ici l'original
+    # du telephone, jusqu'a 20 Mo. Borne basse a 10.3 pour `Image.Resampling`
+    # et les correctifs de decodage de 10.x ; aucune borne haute, la surface
+    # utilisee (`open`, `thumbnail`, `save`, `exif_transpose`) est stable.
+    "pillow>=10.3.0",
 ]
 
 [project.optional-dependencies]
@@ -30,7 +39,10 @@ dev = [
     "pytest-asyncio>=0.24.0",
     "httpx>=0.28.0",
     "ruff>=0.8.0",
-    "mypy>=1.13.0",
+    # Plafond sur la MAJEURE seulement : mypy 2.x est la version verte du 24/09 et
+    # celle que `uv.lock` designe. Sans plafond, une majeure future rougit la CI
+    # sans qu'aucun commit ne l'ait provoquee.
+    "mypy>=1.13.0,<3",
 ]
 
 [build-system]

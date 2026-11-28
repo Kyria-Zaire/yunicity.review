@@ -3,8 +3,6 @@
 import type { LocalVideoFeedItem } from "@yunicity/types";
 import {
   VIDEO_DETAIL_COMMENT,
-  VIDEO_DETAIL_FOLLOW,
-  VIDEO_DETAIL_FOLLOW_SOON,
   VIDEO_DETAIL_LIKE,
   VIDEO_DETAIL_MORE,
   VIDEO_DETAIL_SHARE,
@@ -26,6 +24,9 @@ import {
   Share2,
 } from "lucide-react";
 
+import { VIDEO_CANVAS_FOCUS, VIDEO_TOUCH_TARGET } from "@/lib/videos/video-playback-a11y";
+import { AvatarImage } from "@/components/avatar-image";
+
 type VideoDetailMetaProps = {
   item: LocalVideoFeedItem;
   onToggleLike: () => void;
@@ -42,7 +43,7 @@ function authorInitials(item: LocalVideoFeedItem): string {
 }
 
 function actionButtonClass(active = false): string {
-  return `inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-yunicity-primary ${
+  return `inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${VIDEO_CANVAS_FOCUS} ${
     active
       ? "border-yunicity-primary/20 bg-yunicity-primary-soft text-yunicity-primary"
       : "border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300"
@@ -86,7 +87,7 @@ export function VideoDetailMeta({
           <button
             type="button"
             onClick={onOpenReport}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300"
+            className={`${VIDEO_TOUCH_TARGET} rounded-full border border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 ${VIDEO_CANVAS_FOCUS}`}
             aria-label={VIDEO_DETAIL_MORE}
           >
             <MoreVertical className="h-4 w-4" aria-hidden />
@@ -97,8 +98,7 @@ export function VideoDetailMeta({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           {item.author.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <AvatarImage
               src={item.author.avatar_url}
               alt=""
               className="h-11 w-11 rounded-full object-cover ring-2 ring-white"
@@ -114,15 +114,6 @@ export function VideoDetailMeta({
             </p>
           </div>
         </div>
-
-        <button
-          type="button"
-          disabled
-          title={VIDEO_DETAIL_FOLLOW_SOON}
-          className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#ECE8FF] px-5 py-2.5 text-sm font-semibold text-[#5B44D6] opacity-80"
-        >
-          {VIDEO_DETAIL_FOLLOW}
-        </button>
       </div>
 
       {item.description?.trim() ? (

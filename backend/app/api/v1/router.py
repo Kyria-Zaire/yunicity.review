@@ -40,6 +40,7 @@ from app.api.v1 import (
     passport_me,
     posts,
     profile,
+    profile_media,
     rbac_validation,
     scan,
     search,
@@ -57,6 +58,7 @@ api_router = APIRouter()
 api_router.include_router(health.router)
 api_router.include_router(auth.router)
 api_router.include_router(profile.router)
+api_router.include_router(profile_media.router)
 api_router.include_router(organizations.router)
 api_router.include_router(partner_leads.router)
 api_router.include_router(partners.router)

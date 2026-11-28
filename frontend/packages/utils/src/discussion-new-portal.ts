@@ -31,6 +31,10 @@ export const DISCUSSION_NEW_CATEGORY_CARDS: DiscussionNewCategoryCard[] = [
   { id: "tribes", label: DISCUSSIONS_CATEGORY_TRIBES },
 ];
 
+export const DISCUSSION_NEW_SELECTABLE_CATEGORIES = DISCUSSION_NEW_CATEGORY_CARDS.filter(
+  (card) => card.id !== "all",
+);
+
 export type DiscussionNewExample = {
   title: string;
   categoryId: string;
@@ -76,6 +80,18 @@ export function validateDiscussionNewForm(state: DiscussionNewFormState): string
     return `Maximum ${DISCUSSION_TAGS_MAX} tags.`;
   }
   return null;
+}
+
+export function insertTextAtSelection(
+  value: string,
+  selectionStart: number,
+  selectionEnd: number,
+  insert: string,
+): { next: string; cursor: number } {
+  const before = value.slice(0, selectionStart);
+  const after = value.slice(selectionEnd);
+  const next = `${before}${insert}${after}`;
+  return { next, cursor: selectionStart + [...insert].length };
 }
 
 export function wrapEditorSelection(

@@ -1,0 +1,12 @@
+export { PassportDesktopEditorialHeader } from "./passport-desktop-editorial-header";
+export { PassportDesktopFlashBanner } from "./passport-desktop-flash-banner";
+export { PassportDesktopHeroCard } from "./passport-desktop-hero-card";
+export { PassportDesktopHowItWorks } from "./passport-desktop-how-it-works";
+export { PassportDesktopLeftRail, type PassportDesktopNavId } from "./passport-desktop-left-rail";
+export { PassportDesktopNextSteps } from "./passport-desktop-next-steps";
+export { PassportDesktopOffersGrid } from "./passport-desktop-offers-grid";
+export { PassportDesktopOffersSidebar } from "./passport-desktop-offers-sidebar";
+export { PassportDesktopOffersTab } from "./passport-desktop-offers-tab";
+export { PassportDesktopPartnersRail } from "./passport-desktop-partners-rail";
+export { PassportDesktopRightRail } from "./passport-desktop-right-rail";
+export { PassportDesktopView } from "./passport-desktop-view";

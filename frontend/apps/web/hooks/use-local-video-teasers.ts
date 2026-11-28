@@ -69,10 +69,10 @@ export function useLocalVideoTeasers({
     };
   }, [api, city, enabled, filterKey, latitude, longitude]);
 
-  const items = useMemo(
-    () => filterLocalVideoTeasers(rawItems, filter),
-    [filter, rawItems],
-  );
+  const items = useMemo(() => {
+    const parsed = JSON.parse(filterKey) as LocalVideoTeaserFilter;
+    return filterLocalVideoTeasers(rawItems, parsed);
+  }, [filterKey, rawItems]);
 
   return {
     items,

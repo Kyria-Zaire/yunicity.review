@@ -9,6 +9,7 @@ Index de la documentation projet.
 | [prd/PRD-template.md](prd/PRD-template.md) | Template spécification feature |
 | [workflow/YUNICITY-OFFICIAL-WORKFLOW.md](workflow/YUNICITY-OFFICIAL-WORKFLOW.md) | Flow Idea → Production |
 | [bmad/BMAD.md](bmad/BMAD.md) | BUILD → MEASURE → ANALYZE → DECIDE |
+| [workflow/TICKETS-INDEX.md](workflow/TICKETS-INDEX.md) | **Ticket actif, autres tickets et passations** |
 
 ## Technique
 

@@ -1,9 +1,11 @@
 """ORM models — import all modules so Alembic sees Base.metadata."""
 
+from app.models.account_deletion_token import AccountDeletionToken
 from app.models.activation_wave import ActivationWave, ActivationWaveItem
 from app.models.comment import Comment
 from app.models.creator_content_admin_action import CreatorContentAdminAction
 from app.models.cultural_place import CulturalPlace
+from app.models.email_verification_token import EmailVerificationToken
 from app.models.event_admin_action import EventAdminAction
 from app.models.like import Like
 from app.models.local_event import EventInterest, LocalEvent
@@ -46,6 +48,15 @@ from app.models.passport_challenge import (
 from app.models.passport_reputation import ReputationEvent, UserReputationSnapshot
 from app.models.password_reset_token import PasswordResetToken
 from app.models.post import Post
+from app.models.presence import (
+    PresenceAdminAction,
+    PresenceAgentAssignment,
+    PresenceCampaign,
+    PresenceOperation,
+    PresenceRecord,
+    PresenceRegistration,
+    PresenceSession,
+)
 from app.models.push_subscription import PushSubscription
 from app.models.rbac import Permission, Role, RolePermission, UserRole
 from app.models.refresh_token import RefreshToken
@@ -62,7 +73,7 @@ from app.models.tribe import (
 )
 from app.models.user import User
 from app.models.user_notification import UserNotification
-from app.models.user_profile import ProfileVisibility, UserProfile
+from app.models.user_profile import ProfileVisibility, UserProfile, UserProfileUsernameHistory
 from app.models.user_subscription import UserSubscription
 from app.models.yuni_wallet import YuniTransaction, YuniWallet
 from app.models.yunicity_category import YunicityCategory
@@ -100,6 +111,13 @@ __all__ = [
     "PartnerProfile",
     "StampDefinition",
     "Post",
+    "PresenceAdminAction",
+    "PresenceAgentAssignment",
+    "PresenceCampaign",
+    "PresenceOperation",
+    "PresenceRecord",
+    "PresenceRegistration",
+    "PresenceSession",
     "Report",
     "ReportAdminAction",
     "StaffAdminAction",
@@ -124,6 +142,8 @@ __all__ = [
     "PassportChallengeProgressEvent",
     "UserPassportChallenge",
     "ReputationEvent",
+    "AccountDeletionToken",
+    "EmailVerificationToken",
     "PasswordResetToken",
     "Permission",
     "ProfileVisibility",
@@ -133,6 +153,7 @@ __all__ = [
     "User",
     "UserNotification",
     "UserProfile",
+    "UserProfileUsernameHistory",
     "UserRole",
     "UserReputationSnapshot",
     "UserSubscription",

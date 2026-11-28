@@ -67,11 +67,18 @@ def init_sentry(settings: Settings) -> bool:
     from sentry_sdk.integrations.fastapi import FastApiIntegration
     from sentry_sdk.integrations.starlette import StarletteIntegration
 
+    from app.core.sentry_sql_scrubbing import scrub_sentry_breadcrumb, scrub_sentry_event
+
     sentry_sdk.init(
         dsn=dsn,
         environment=settings.app_env,
         traces_sample_rate=settings.sentry_traces_sample_rate,
         send_default_pii=False,  # never attach request bodies / headers / user PII
+        # Les frames SQLAlchemy/asyncpg portent les paramètres liés (`parameters`,
+        # `args`) : leurs variables locales partiraient quel que soit hide_parameters.
+        include_local_variables=False,
+        before_send=scrub_sentry_event,
+        before_breadcrumb=scrub_sentry_breadcrumb,
         integrations=[StarletteIntegration(), FastApiIntegration()],
     )
     _sentry_enabled = True
@@ -100,7 +107,8 @@ class JsonLogFormatter(logging.Formatter):
             "user_id": getattr(record, "user_id", "-"),
         }
         if record.exc_info:
-            payload["exc"] = self.formatException(record.exc_info)
+            # `exc_text` porte la trace déjà masquée (APP-SQL-ERROR-VALUES-01).
+            payload["exc"] = record.exc_text or self.formatException(record.exc_info)
         return json.dumps(payload, ensure_ascii=False)
 
 

@@ -1,0 +1,90 @@
+{
+  "env": "chromium-fixture-simule",
+  "reference": "docs/ux/video-refonte/maquette-medium/Lecteur-medium.dc.html — ax = vx + vw + 12",
+  "distinction": {
+    "actionColumn": "colonne 56px hors cadre vidéo (side)",
+    "rPan": "panneau commentaires Lot 6 — NON implémenté ici"
+  },
+  "results": [
+    {
+      "size": "640x900",
+      "phase": "avant",
+      "file": "CAPTURE-640x900-avant.png",
+      "width": 642,
+      "height": 902,
+      "sideColumn": 0,
+      "overlayActions": 1,
+      "kind": "fixture-geometrie"
+    },
+    {
+      "size": "640x900",
+      "phase": "apres",
+      "file": "CAPTURE-640x900-apres.png",
+      "width": 642,
+      "height": 902,
+      "sideColumn": 1,
+      "overlayActions": 0,
+      "kind": "fixture-geometrie"
+    },
+    {
+      "size": "820x1180",
+      "phase": "avant",
+      "file": "CAPTURE-820x1180-avant.png",
+      "width": 822,
+      "height": 1182,
+      "sideColumn": 0,
+      "overlayActions": 0,
+      "kind": "fixture-geometrie"
+    },
+    {
+      "size": "820x1180",
+      "phase": "apres",
+      "file": "CAPTURE-820x1180-apres.png",
+      "width": 822,
+      "height": 1182,
+      "sideColumn": 1,
+      "overlayActions": 0,
+      "kind": "fixture-geometrie"
+    },
+    {
+      "size": "1023x768",
+      "phase": "avant",
+      "file": "CAPTURE-1023x768-avant.png",
+      "width": 1025,
+      "height": 770,
+      "sideColumn": 0,
+      "overlayActions": 0,
+      "kind": "fixture-geometrie"
+    },
+    {
+      "size": "1023x768",
+      "phase": "apres",
+      "file": "CAPTURE-1023x768-apres.png",
+      "width": 1025,
+      "height": 770,
+      "sideColumn": 1,
+      "overlayActions": 0,
+      "kind": "fixture-geometrie"
+    },
+    {
+      "size": "844x390",
+      "phase": "avant",
+      "file": "CAPTURE-844x390-avant.png",
+      "width": 846,
+      "height": 392,
+      "sideColumn": 0,
+      "overlayActions": 0,
+      "kind": "fixture-geometrie"
+    },
+    {
+      "size": "844x390",
+      "phase": "apres",
+      "file": "CAPTURE-844x390-apres.png",
+      "width": 846,
+      "height": 392,
+      "sideColumn": 1,
+      "overlayActions": 0,
+      "kind": "fixture-geometrie"
+    }
+  ]
+}

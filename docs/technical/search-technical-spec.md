@@ -244,7 +244,7 @@ ORDER BY ts_rank_cd(search_vector, plainto_tsquery('french', :q_normalized)) DES
     {
       "type": "event",
       "label": "Événements",
-      "items": [ { "id": "...", "title": "...", "starts_at": "...", "href": "/events/..." } ],
+      "items": [ { "id": "...", "title": "...", "starts_at": "...", "ends_at": "... | null", "href": "/events/..." } ],
       "total": 4,
       "page": 1,
       "page_size": 8,
@@ -271,7 +271,7 @@ ORDER BY ts_rank_cd(search_vector, plainto_tsquery('french', :q_normalized)) DES
 
 | Valeur API | Libellé UI | Item schema (réutilise DTO existants) |
 |------------|------------|--------------------------------------|
-| `event` | Événements | Sous-ensemble `LocalEventResponse` |
+| `event` | Événements | Sous-ensemble `LocalEventResponse` — dont `starts_at` et `ends_at` (toujours présente, `null` si non renseignée ; affichage seulement, n'entre ni dans `period` ni dans le tri — SEARCH-EVENT-PAST-STATUS-01) |
 | `organization` | Lieux | `OrganizationPublicResponse` (champs publics) |
 | `post` | Publications | Sous-ensemble `PostResponse` feed |
 | `offer` | Offres | Sous-ensemble offre passport visible |

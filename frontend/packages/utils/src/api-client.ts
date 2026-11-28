@@ -18,11 +18,16 @@ export class ApiClientBase {
     return this.readJson<T>(response);
   }
 
-  protected async postJson<T>(segment: string, body: unknown): Promise<T> {
+  protected async postJson<T>(
+    segment: string,
+    body: unknown,
+    init: Pick<RequestInit, "signal"> = {},
+  ): Promise<T> {
     const response = await this.client.fetch(this.apiPath(segment), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      signal: init.signal,
     });
     return this.readJson<T>(response);
   }
@@ -72,10 +77,15 @@ export class ApiClientBase {
     return (await response.json()) as T;
   }
 
-  protected async postFormData<T>(segment: string, body: FormData): Promise<T> {
+  protected async postFormData<T>(
+    segment: string,
+    body: FormData,
+    init: Pick<RequestInit, "signal"> = {},
+  ): Promise<T> {
     const response = await this.client.fetch(this.apiPath(segment), {
       method: "POST",
       body,
+      ...init,
     });
     return this.readJson<T>(response);
   }
