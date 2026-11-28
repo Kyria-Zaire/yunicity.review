@@ -1,8 +1,8 @@
 # PASSPORT-PRESENCE-01 — Validation de présence par un agent affecté (contrat backend)
 
-> **Statut : En cours — lot 01A fusionné (`dcf30975`) et déployé sur la Preview, drapeau
-> désactivé ; lot 01B en cours (GO du 2026-11-27). Aucune activation du drapeau ni des
-> routes sans nouvelle autorisation.**
+> **Statut : En cours — lots 01A (`dcf30975`) et 01B (`31aae36e`) fusionnés et déployés
+> sur la Preview, drapeau désactivé ; lot 01C non démarré (cadrage à venir). Aucune
+> activation du drapeau ni des routes sans nouvelle autorisation.**
 > Ouvert le 2026-11-26 sur
 > décision CTO (GO 0015B). ⛔ **ZONE ROUGE** (jetons porteurs, autorisations, PII,
 > migration). Aucune migration distante, aucun déploiement, aucune activation Preview
@@ -86,7 +86,7 @@ désactivé), et auditées.
 |---|---|---|
 | **01-DOCS** | ticket, PRD, ADR + modèle de menace, dette `MAIN-RECONCILIATION-01` | `feature/passport-presence-01-docs` |
 | **01A** | modèles, migration Alembic additive et réversible, contraintes, drapeau, `is_test` (utilisateurs, campagnes), administration staff-only auditée, tests | `feature/passport-presence-01a-foundation` |
-| **01B** | session éphémère : jeton `YNCP2` et code manuel, stockage HMAC, TTL, renouvellement, limitation de débit, tests de sécurité | `feature/passport-presence-01b-session` |
+| **01B** | session éphémère : jeton `YNCP2` et code manuel, stockage HMAC, TTL, renouvellement, limitation de débit, tests de sécurité | `feature/passport-presence-01b` |
 | **01C** | `assigned`, `resolve`, `confirm`, statut d'opération, idempotence, `already_processed`, audit, tests de concurrence | `feature/passport-presence-01c-validation` |
 
 Chaque lot : PR distincte vers `feat/c3-videos-refonte-final` ; **aucune fusion qui
@@ -116,6 +116,29 @@ conditions sont levées.
   docstring de `require_presence_validation_enabled` affirmait une exécution avant le
   décodage du corps, ce que D7 contredit. Il a été corrigé dans le premier commit de 01B
   (option A), sans changement de comportement ni du SHA validé de 01A.
+
+**État pour 01B (PR #207, SHA `4d0a6004e7dbf2b952bbc29655c48e2288fc7f4b`)** : les cinq
+conditions sont levées et le GO MERGE distinct a été accordé le 2026-11-28.
+
+- **Condition 1** (suite Linux/PostgreSQL) : **satisfaite** sur le SHA exact `4d0a6004`.
+  2273 passed, 0 failed, 0 error, 19 skipped et 7 xfailed ; code de sortie pytest 0. Images
+  épinglées par digest, identiques à celles de l'essai 3 de 01A ; skips identiques ligne à
+  ligne. L'hôte a été suspendu pendant 4 h 20 au cours de l'essai (VM WSL gelée d'un bloc,
+  aucun processus tué) : seule la durée est affectée, elle n'est pas comparable.
+- **Condition 2** (migrations) : **sans objet**. Le lot n'ajoute ni ne modifie aucune
+  migration (`git diff --name-only dcf30975 4d0a6004` ne contient aucun fichier Alembic) ;
+  la tête reste `20261126_0068`.
+- **Conditions 3 et 4** : **satisfaites** (GO BUILD du 2026-11-27 ; GO 01B et arbitrages
+  D1 à D4 du 2026-11-27).
+- **Condition 5** (revue sécurité humaine) : **satisfaite**, approuvée par le CTO le
+  2026-11-28 avec la revue finale technique. Aucune anomalie P0, P1 ou P2.
+
+Contrôles locaux complémentaires sur `4d0a6004` : 134 tests du domaine présence verts sous
+Windows ; `ruff` OK ; `mypy --strict --platform linux` OK. Mutations : remplacer
+`clock_timestamp()` par `now()` fait échouer le test D4 ; retirer `FOR UPDATE` fait échouer
+les deux tests de suspension concurrente. Publication `dcf30975..4d0a6004` :
+`git diff --check` OK, 19 fichiers en LF, gitleaks v8.21.2 (digest épinglé) sur les cinq
+commits : aucune fuite.
 
 Les lots suivants restent soumis aux cinq conditions, à reconsigner pour leur propre PR.
 
@@ -189,6 +212,10 @@ Les lots suivants restent soumis aux cinq conditions, à reconsigner pour leur p
 | 2026-11-27 | Le CTO valide le contrôle après déploiement, puis donne le GO 01B. Premier commit de 01B : correction de la docstring P3 et mise à jour du ticket. |
 | 2026-11-27 | Branche `feature/passport-presence-01b` poussée à `a348097c` (sans PR). Plan 01B présenté ; GO 01B avec les arbitrages D1 à D4 et deux corrections techniques (texte ci-dessous). Amendements de l'ADR (§ 4, § 6, § 9, § 10) et du PRD (§ 3, § 6, § 7). Création du ticket transversal `PROXY-TRUSTED-CLIENT-IP-01`. |
 | 2026-11-27 | Étapes 2 à 5 de 01B poussées jusqu'à `7178562f`, sans PR. Relecture de l'agent sur les neuf points demandés : aucune anomalie P0, P1 ou P2 ; deux P3. Option A retenue par le CTO : corriger avant la suite Linux. P3-1 : domaine `presence-ip:` pour la clé IP ; drapeau actif → `RATE_LIMIT_KEY_PEPPER` d'au moins 32 caractères, différent de `PRESENCE_TOKEN_PEPPER`, `JWT_SECRET_KEY` et `REFRESH_TOKEN_PEPPER`. P3-2 : `403 ACCOUNT_SUSPENDED` et `403 ACCOUNT_PENDING_DELETION` documentés dans le PRD. |
+| 2026-11-27 | Corrections P3-1 et P3-2 poussées dans `4d0a6004`. Suite Linux/PostgreSQL complète lancée sur ce SHA exact (14:38:32Z → 23:58:54Z) : verte (voir § 3). Condition 1 levée. |
+| 2026-11-28 | PR #207 ouverte en brouillon vers `feat/c3-videos-refonte-final` (5 commits, 19 fichiers, aucune migration). Le CTO approuve la revue finale technique et la revue sécurité humaine de 01B sur `4d0a6004`, sans P0, P1 ni P2 ; aucun GO MERGE à ce stade. |
+| 2026-11-28 | GO MERGE et GO DEPLOY Preview pour 01B. Contrôles juste avant la fusion : tête `4d0a6004e7dbf2b952bbc29655c48e2288fc7f4b`, base `dcf309753435ad57193e4ddb1a8914fe0ef2e9b1`, `MERGEABLE` / `CLEAN`. La PR #207 est fusionnée à 03:12:13Z par le merge commit `31aae36ebabb3ad367e1310b4a51876e92f7390c` (fusion verrouillée sur la tête attendue, branche conservée). Ses parents sont `dcf30975` et `4d0a6004`, et son arbre est identique à celui de `4d0a6004`. Preuves après déploiement : voir ci-dessous. |
+| 2026-11-28 | Branche documentaire `docs/passport-presence-01b-closure` créée depuis `31aae36e` : consignation des preuves de 01B et correction du P3 documentaire du § 3 (nom de branche réel `feature/passport-presence-01b`). Lot 01C non démarré. |
 
 ### Preuves après déploiement de 01A (Preview, 2026-11-27)
 
@@ -213,6 +240,51 @@ Les lots suivants restent soumis aux cinq conditions, à reconsigner pour leur p
   `PRESENCE_VALIDATION_ENABLED` vaut `false`. Il est inchangé.
 - **Journaux** : aucune ligne `ERROR`, `WARNING`, `CRITICAL` ni `Traceback` après le
   démarrage. Le worker et la tâche cron s'exécutent sans échec (`j_failed=0`).
+
+### Preuves après déploiement de 01B (Preview, 2026-11-28)
+
+- **Déploiement réellement terminé** : le service backend `unified-media-preview` est en
+  `SUCCESS` sur `31aae36e` (build 03:12:15Z, `SUCCESS` observé à 03:13:42Z ; healthcheck
+  Railway réussi), et le déploiement précédent (`dcf30975`) est passé à `REMOVED`. Le
+  déploiement GitHub de `31aae36e` est en `success`. Le service Web `yunicity.review` a
+  aussi été redéployé en `SUCCESS` sur le même commit (déploiement `dcf30975` passé à
+  `REMOVED`) ; ce lot ne modifie aucun fichier Web.
+- **Migrations** : le journal de pré-déploiement montre l'exécution d'Alembic (`Context
+  impl PostgresqlImpl`, `Will assume transactional DDL`) **sans aucune ligne `Running
+  upgrade`**. Le lot ne contient aucune migration et aucun fichier ne descend de
+  `20261126_0068`.
+- **`alembic_version` = `20261126_0068`** est **déduit**, comme pour 01A, de ce journal et
+  de l'absence de migration dans le lot. Il n'y a **pas eu de lecture SQL directe**.
+- **`/api/v1/health`** : 200. **`/api/v1/ready`** : 200, avec `status: ready`, base `ok`
+  et Redis `ok`.
+- **Routes présence** : `POST` et `GET /api/v1/passport/me/presence-session`, `GET` et
+  `POST /api/v1/admin/presence/campaigns` répondent 404 `{"detail":"Not Found"}`, réponse
+  identique à celle d'une route inconnue (également sondée). Le journal d'accès de
+  l'application confirme ces codes.
+- **Drapeau et configuration** : aucune variable `PRESENCE_*` n'est définie sur les
+  services Preview, donc `PRESENCE_VALIDATION_ENABLED` vaut `false`. Il est inchangé. Les
+  noms de variables et une empreinte de leurs valeurs (hors variables `RAILWAY_*`), relevés
+  sur les deux services avant puis après la fusion, sont **identiques** : aucune variable
+  ni configuration distante n'a été ajoutée ou modifiée.
+- **Journaux** : aucune ligne `ERROR`, `WARNING`, `CRITICAL` ni `Traceback` après le
+  démarrage (`Application startup complete`). Le worker et la tâche cron s'exécutent sans
+  échec (`j_failed=0`).
+
+### Décisions CTO du 2026-11-28 (revues et fusion de 01B) — mot pour mot
+
+- « J'approuve la revue finale technique et la revue sécurité humaine de
+  PASSPORT-PRESENCE-01B sur le SHA 4d0a6004e7dbf2b952bbc29655c48e2288fc7f4b. Aucun P0, P1
+  ou P2 n'est relevé. Les suivis P3 et dettes déjà consignés sont acceptés et ne bloquent
+  pas ce lot. »
+- « Aucun GO MERGE n'est encore accordé. »
+- « GO MERGE PR #207 et GO DEPLOY Preview automatique, uniquement si juste avant la
+  fusion : tête exacte : 4d0a6004e7dbf2b952bbc29655c48e2288fc7f4b ; base exacte :
+  feat/c3-videos-refonte-final à dcf30975… ; état fusionnable et sans conflit ; fusion par
+  merge commit, sans squash, rebase ni suppression de branche. » (liste d'origine rendue
+  en ligne)
+- « Si un contrôle échoue, arrêter et rapporter l’écart. Ne pas activer le drapeau. »
+- « Pas d’autorisation de fusionner cette PR documentaire sans nouveau GO. Ne pas démarrer
+  01C. »
 
 ### Décisions CTO du 2026-11-27 (revues, fusion, déploiement, 01B) — mot pour mot
 
