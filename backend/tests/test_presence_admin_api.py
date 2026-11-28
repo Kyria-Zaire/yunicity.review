@@ -35,6 +35,8 @@ pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 BASE = "/api/v1/admin/presence"
 #: Test-only value, not a secret.
 _TEST_PEPPER = "test-only-presence-pepper-not-a-secret-0001"
+#: Test-only value, not a secret (>= 32 characters, distinct from the others).
+_TEST_RATE_LIMIT_PEPPER = "test-only-rate-limit-pepper-not-a-secret-01"
 
 
 @pytest.fixture
@@ -43,6 +45,8 @@ def auth_env(auth_env: None, monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     guaranteed to be set before the application is built (routes mounted at startup)."""
     monkeypatch.setenv("PRESENCE_VALIDATION_ENABLED", "true")
     monkeypatch.setenv("PRESENCE_TOKEN_PEPPER", _TEST_PEPPER)
+    # P3-1 of 01B: flag on requires a dedicated rate-limit pepper of >= 32 characters.
+    monkeypatch.setenv("RATE_LIMIT_KEY_PEPPER", _TEST_RATE_LIMIT_PEPPER)
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()

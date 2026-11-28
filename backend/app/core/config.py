@@ -9,7 +9,10 @@ from app.core.local_video_constants import (
     LOCAL_VIDEO_MAX_BYTES,
     LOCAL_VIDEO_MAX_DURATION_SECONDS,
 )
-from app.core.presence_constants import PRESENCE_TOKEN_PEPPER_MIN_LENGTH
+from app.core.presence_constants import (
+    PRESENCE_RATE_LIMIT_KEY_PEPPER_MIN_LENGTH,
+    PRESENCE_TOKEN_PEPPER_MIN_LENGTH,
+)
 from app.db.database_url import to_asyncpg_url
 
 AppEnv = Literal["dev", "recette", "preprod", "prod"]
@@ -192,6 +195,17 @@ class Settings(BaseSettings):
     #: caracteres) des que le drapeau est actif. Le changer invalide les sessions
     #: vivantes (TTL 60 s) et rien d'autre.
     presence_token_pepper: str = Field(default="", alias="PRESENCE_TOKEN_PEPPER")
+    #: Debit d'emission des sessions de presence (PRD § 7, valeurs initiales).
+    #: Par utilisateur : protection principale, rattachee a un compte authentifie.
+    presence_session_user_limit_per_hour: int = Field(
+        default=150, ge=1, alias="PRESENCE_SESSION_USER_LIMIT_PER_HOUR"
+    )
+    #: Par IP : protection SECONDAIRE uniquement (D3 de 01B). L'IP derive d'un
+    #: X-Forwarded-For dont la fiabilite derriere Railway n'est pas prouvee
+    #: (PROXY-TRUSTED-CLIENT-IP-01) : ce n'est pas une garantie de securite.
+    presence_session_ip_limit_per_hour: int = Field(
+        default=600, ge=1, alias="PRESENCE_SESSION_IP_LIMIT_PER_HOUR"
+    )
     web_frontend_url: str = Field(default="http://localhost:3000", alias="WEB_FRONTEND_URL")
     password_reset_expire_hours: int = Field(default=1, alias="PASSWORD_RESET_EXPIRE_HOURS")
 
@@ -429,6 +443,32 @@ class Settings(BaseSettings):
             if pepper in (self.jwt_secret_key.strip(), self.refresh_token_pepper.strip()):
                 raise ValueError(
                     "PRESENCE_TOKEN_PEPPER must differ from JWT_SECRET_KEY and REFRESH_TOKEN_PEPPER"
+                )
+            # D2 de 01B : sans Redis configure, la limitation de debit est un no-op
+            # silencieux. Le domaine refuse donc de demarrer sans elle, partout.
+            if not (self.redis_url or "").strip():
+                raise ValueError(
+                    "REDIS_URL is required when PRESENCE_VALIDATION_ENABLED is true "
+                    "(presence rate limits)"
+                )
+            # P3-1 de 01B : la cle de comptage par IP est un HMAC avec ce pepper. Vide,
+            # l'IPv4 se retrouverait par enumeration ; partage, il melangerait les
+            # domaines de secrets. Aucune valeur n'apparait dans les messages.
+            rate_limit_pepper = self.rate_limit_key_pepper.strip()
+            if len(rate_limit_pepper) < PRESENCE_RATE_LIMIT_KEY_PEPPER_MIN_LENGTH:
+                raise ValueError(
+                    "RATE_LIMIT_KEY_PEPPER must be at least "
+                    f"{PRESENCE_RATE_LIMIT_KEY_PEPPER_MIN_LENGTH} characters when "
+                    "PRESENCE_VALIDATION_ENABLED is true"
+                )
+            if rate_limit_pepper in (
+                pepper,
+                self.jwt_secret_key.strip(),
+                self.refresh_token_pepper.strip(),
+            ):
+                raise ValueError(
+                    "RATE_LIMIT_KEY_PEPPER must differ from PRESENCE_TOKEN_PEPPER, "
+                    "JWT_SECRET_KEY and REFRESH_TOKEN_PEPPER"
                 )
         if self.app_env == "prod":
             if not self.refresh_cookie_secure:
